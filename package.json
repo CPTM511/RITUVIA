@@ -10,7 +10,10 @@
   },
   "scripts": {
     "build": "turbo run build && node scripts/verify-workspace-build.mjs",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm check:evidence && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "check:ci-contract": "node --import tsx scripts/verify-ci-contract.ts",
+    "check:evidence": "pnpm check:ci-contract && pnpm check:migrations && pnpm scan:secrets",
+    "check:migrations": "node --import tsx scripts/verify-migration-policy.ts",
     "db:reset": "pnpm --filter @rituvia/db db:local:reset",
     "db:setup": "pnpm --filter @rituvia/db db:local:setup",
     "db:start": "pnpm --filter @rituvia/db db:local:start",
@@ -18,11 +21,13 @@
     "db:stop": "pnpm --filter @rituvia/db db:local:stop",
     "db:url": "pnpm --filter @rituvia/db db:local:url",
     "dev": "turbo run dev",
-    "format": "prettier --write package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.mjs\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json}\" \"packages/**/*.{ts,mjs,json}\"",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.mjs\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json}\" \"packages/**/*.{ts,mjs,json}\"",
+    "format": "prettier --write package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.{mjs,ts}\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json}\" \"packages/**/*.{ts,mjs,json}\" \".github/workflows/*.{yml,yaml}\" \".github/codex/workflow-examples/*.{yml,yaml}\"",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.{mjs,ts}\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json}\" \"packages/**/*.{ts,mjs,json}\" \".github/workflows/*.{yml,yaml}\" \".github/codex/workflow-examples/*.{yml,yaml}\"",
     "lint": "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps/web apps/worker packages/config packages/db packages/domain --max-warnings=0",
+    "scan:secrets": "node --import tsx scripts/scan-secrets.ts",
     "test": "pnpm test:unit && pnpm test:configuration-boundary && pnpm test:database-foundation",
     "test:configuration-boundary": "node scripts/verify-configuration-boundary.mjs",
+    "test:ci-database": "pnpm --filter @rituvia/db test:ci",
     "test:database-foundation": "pnpm --filter @rituvia/db test:integration",
     "test:list": "vitest list --filesOnly",
     "test:unit": "vitest run",
@@ -37,6 +42,7 @@
     "tsx": "4.23.1",
     "turbo": "2.10.5",
     "typescript": "6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "yaml": "2.9.0"
   }
 }

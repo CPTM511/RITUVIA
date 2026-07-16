@@ -1129,6 +1129,7 @@ export const localPrismaEnvironment = (runtime, databaseUrl) => ({
   APP_ENV: "local",
   DATABASE_URL: databaseUrl,
   RITUVIA_LOCAL_POSTGRES_CLUSTER_NAME: `rituvia_${runtime.marker.systemIdentifier}`,
+  RITUVIA_SEED_TARGET: "local",
 });
 
 export const runLocalPrisma = (runtime, databaseUrl, args, options = {}) => {

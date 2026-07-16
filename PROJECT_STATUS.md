@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; reproducible monorepo, typed configuration boundary, and local database foundation complete; product features not started.
+**Stage:** M0 engineering foundation in progress; repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
 
 **Release:** Pre-M0
 
@@ -24,12 +24,14 @@
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
 - Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
-- Root formatting, ESLint, TypeScript, Vitest, real PostgreSQL integration, and production-build gates with non-empty behavioral tests and artifact verification.
+- One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
+- Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
+- Root formatting, ESLint, TypeScript, 83 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
 
 ## What does not exist yet
 
 - User-facing product features and production-ready application behavior.
-- Active CI, general secret scanning, and CI migration enforcement.
+- Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
 - Formal trademark clearance or secured canonical domain.
@@ -49,16 +51,17 @@
 | OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
 | OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
 | OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
+| OWN-008 | Repository remote and required CI checks       | Final RIT-004 acceptance               | Provide/approve the GitHub remote and protect the three CI jobs plus workflow changes          |
 
 These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-004` — Create test harness and CI quality gates.
+`RIT-004` — Obtain owner-approved remote/required-check configuration and one passing hosted run for the implemented CI quality gates.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 39 unit/contract tests in five files, a real PostgreSQL foundation suite, and production builds pass. The database suite proves clean/idempotent migration, deterministic/idempotent seed, CHECK and unique constraints, transaction rollback, concurrent-write enforcement, guarded isolated reset, custom-format logical dump/restore, lifecycle-lock exclusion and stale recovery, exact managed configuration, and log-privacy canaries. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. Active CI, general secret scanning, and CI migration enforcement remain RIT-004 work.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 83 unit/contract tests in ten files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The local database suite proves clean/idempotent migration and seed, constraints, transaction/race behavior, guarded reset, logical dump/restore, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, two deterministic generations, two migration deployments, two seeds, migration status/drift, exact migration inventory, constraints, and rollback. The repository CI/toolchain, historical migration, current-tree secret, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and supply-chain reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
 
 ## Update rules
 

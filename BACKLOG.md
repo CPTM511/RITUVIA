@@ -23,7 +23,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-001 | M0 | P0 | Done | Create pnpm/Turborepo strict TypeScript monorepo | RIT-000 | backend | Clean install, lint, typecheck, unit test, and build work from a fresh clone. |
 | RIT-002 | M0 | P0 | Done | Add environment validation and brand configuration | RIT-001 | backend | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded. |
 | RIT-003 | M0 | P0 | Done | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
-| RIT-004 | M0 | P0 | Ready | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
+| RIT-004 | M0 | P0 | In Review | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
 | RIT-005 | M0 | P1 | Planned | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
 | RIT-006 | M0 | P1 | Planned | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |
 | RIT-007 | M0 | P1 | Planned | Add feature flag and typed configuration registry | RIT-002,RIT-003 | backend | Server-side flags are versioned, default safe-off, and testable. |
@@ -141,6 +141,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | OWN-005 | External | P0 | Blocked | Set operating and launch budget limits | None | owner | Monthly, AI, infrastructure, refund/fraud and marketing budgets are configured. |
 | OWN-006 | External | P1 | Blocked | Approve crypto provider, countries, assets, refund, and legal path | None | owner | Written approval and non-custodial architecture scope are recorded. |
 | OWN-007 | External | P2 | Blocked | Approve regional-tradition expert and source program | None | owner | Qualified reviewers, sources, rights, scope, language and compensation are documented. |
+| OWN-008 | External | P0 | Blocked | Configure the GitHub remote and enforce CI checks | None | owner | Remote, workflow-change protection, and all three required CI jobs are configured and one hosted run passes. |
 
 
 ## Backlog maintenance

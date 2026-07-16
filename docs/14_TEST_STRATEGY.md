@@ -204,6 +204,13 @@ Per PR, run the smallest affected matrix plus mandatory foundation:
 
 Nightly/full release runs expanded browser, AI red-team, performance, link/SEO, provider fixture, and flaky detection.
 
+The M0 active workflow separates mandatory checks into `Quality`, `PostgreSQL integration`, and
+`Security scans` jobs on GitHub-hosted Ubuntu 24.04 runners. It has read-only repository permission,
+no repository secrets, no deployment environment, immutable action references, and a digest-pinned
+ephemeral PostgreSQL service. Repository contract tests enforce that boundary before later tasks add
+affected-area suites. Required-check and workflow-file protection are repository-owner settings and
+must be verified on the eventual remote before RIT-004 can be marked done.
+
 ## 13. Test data
 
 - Synthetic only by default.

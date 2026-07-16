@@ -22,3 +22,18 @@ No field is personal, private, secret, payment, authentication, or content-right
 - Local and isolated test rollback may drop only their guarded database and then reapply committed migrations.
 - Standard PostgreSQL logical and physical backups include this table. RIT-003 verifies a custom-format logical dump can restore into a second isolated database; production backup automation, point-in-time recovery, RPO/RTO, and restore operations remain RIT-123.
 - Check constraints are committed SQL because the Prisma schema cannot express every PostgreSQL invariant. Integration tests must fail if they are removed or weakened.
+
+## CI enforcement
+
+`prisma/migration-manifest.json` is the immutable checksum inventory for every committed migration
+SQL file and `migration_lock.toml`. Any edit, omission, or additional migration must be reviewed and
+the manifest updated in the same change. The static policy rejects unlisted and destructive SQL;
+there are no blanket exceptions.
+
+The active CI database job starts a fresh digest-pinned PostgreSQL 17 service with data checksums and
+SCRAM host authentication. A repository script accepts only the exact GitHub Actions run identity,
+derived ephemeral password, loopback host, port 5432, database name, and roles. The service bootstrap
+administrator is discarded after creating a non-superuser application owner; Prisma migrations,
+seed, status, and drift checks then run only as that application role. This isolated CI path does not
+accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
+`DATABASE_URL`.

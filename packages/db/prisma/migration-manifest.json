@@ -1,0 +1,7 @@
+{
+  "policyVersion": 1,
+  "files": {
+    "migrations/202607160001_foundation/migration.sql": "4172b187284acde1e7497b5eca4410fe27b65dab9831e0fcc9ec4c79cb72c253",
+    "migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900"
+  }
+}

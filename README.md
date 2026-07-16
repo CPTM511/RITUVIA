@@ -28,7 +28,7 @@ An English-first, Web/PWA product for global users that offers:
 4. Read `ENGINEERING_BASELINE.md` for the observed repository state and exact M0 execution plan.
 5. Use the documents under `docs/` as canonical specifications.
 6. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
-7. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/workflows/*.example.yml` files only after security review.
+7. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
 
 ## Local development
 
@@ -39,7 +39,16 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate first verifies the active CI contract, immutable migration manifest, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` is active and contains separate quality, PostgreSQL integration, and
+security jobs. It uses only read access, GitHub-hosted Ubuntu 24.04 runners, immutable action SHAs, a
+digest-pinned PostgreSQL 17 service, synthetic data, and no repository secrets or deployment
+environment. See `.github/workflows/README.md` for the enforced workflow contract and owner-side
+required-check setup. Codex workflow examples live outside the Actions workflow directory and remain
+inert.
 
 ### Local environment configuration
 
@@ -109,7 +118,7 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, and RIT-003 local PostgreSQL/Prisma foundation are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-004`.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, and RIT-003 local PostgreSQL/Prisma foundation are complete. RIT-004 CI gates are implemented and locally verified but remain in review until an owner-approved GitHub remote, required checks, and a passing hosted run exist. No user-facing product feature is implemented yet.
 
 ## Non-negotiable product principle
 

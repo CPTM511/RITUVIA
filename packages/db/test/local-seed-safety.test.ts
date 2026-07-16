@@ -26,8 +26,9 @@ describe("synthetic seed target", () => {
         appEnvironment: "local",
         databaseUrl: url.toString(),
         expectedClusterName: clusterName,
+        seedTarget: "local",
       }),
-    ).toEqual({ databaseName: "rituvia_local", expectedClusterName: clusterName });
+    ).toEqual({ databaseName: "rituvia_local", expectedClusterName: clusterName, kind: "local" });
   });
 
   it.each([
@@ -53,6 +54,7 @@ describe("synthetic seed target", () => {
         appEnvironment,
         databaseUrl: url.toString(),
         expectedClusterName: expected,
+        seedTarget: "local",
       });
     } catch (error) {
       diagnostic = `${error instanceof Error ? error.message : String(error)}\n${

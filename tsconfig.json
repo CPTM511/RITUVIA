@@ -7,5 +7,5 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["vitest.config.ts", "tests/**/*.ts"]
+  "include": ["vitest.config.ts", "scripts/**/*.ts", "tests/**/*.ts"]
 }

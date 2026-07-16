@@ -1,4 +1,5 @@
 import { createDatabaseClient } from "../src/client.js";
+import { assertCiServiceAddress } from "../src/ci-database-safety.js";
 import { assertSyntheticSeedTarget } from "../src/local-seed-safety.js";
 
 const FOUNDATION_SEED = Object.freeze({
@@ -11,10 +12,16 @@ const FOUNDATION_SEED = Object.freeze({
 });
 
 const databaseUrl = process.env.DATABASE_URL?.trim();
-const { databaseName, expectedClusterName } = assertSyntheticSeedTarget({
+const target = assertSyntheticSeedTarget({
   appEnvironment: process.env.APP_ENV,
+  ci: process.env.CI,
   databaseUrl,
   expectedClusterName: process.env.RITUVIA_LOCAL_POSTGRES_CLUSTER_NAME,
+  expectedSystemIdentifier: process.env.RITUVIA_CI_POSTGRES_SYSTEM_IDENTIFIER,
+  githubActions: process.env.GITHUB_ACTIONS,
+  githubRunAttempt: process.env.GITHUB_RUN_ATTEMPT,
+  githubRunId: process.env.GITHUB_RUN_ID,
+  seedTarget: process.env.RITUVIA_SEED_TARGET,
 });
 if (databaseUrl === undefined) {
   throw new Error("Synthetic seed requires an attested local database target.");
@@ -23,28 +30,60 @@ if (databaseUrl === undefined) {
 const prisma = createDatabaseClient(databaseUrl);
 
 try {
-  const [attestation] = await prisma.$queryRaw<
-    Array<{
-      databaseName: string;
-      clusterName: string;
-      serverAddress: string;
-      serverPort: number;
-      userName: string;
-    }>
-  >`SELECT current_database() AS "databaseName",
-           current_user AS "userName",
-           current_setting('cluster_name') AS "clusterName",
-           host(inet_server_addr()) AS "serverAddress",
-           inet_server_port() AS "serverPort"`;
+  if (target.kind === "local") {
+    const [attestation] = await prisma.$queryRaw<
+      Array<{
+        clusterName: string;
+        databaseName: string;
+        serverAddress: string;
+        serverPort: number;
+        userName: string;
+      }>
+    >`SELECT current_database() AS "databaseName",
+             current_user AS "userName",
+             current_setting('cluster_name') AS "clusterName",
+             host(inet_server_addr()) AS "serverAddress",
+             inet_server_port() AS "serverPort"`;
 
-  if (
-    attestation?.databaseName !== databaseName ||
-    attestation.userName !== "rituvia_app" ||
-    attestation.clusterName !== expectedClusterName ||
-    attestation.serverAddress !== "127.0.0.1" ||
-    attestation.serverPort !== 55432
-  ) {
-    throw new Error("Synthetic seed requires an attested local database target.");
+    if (
+      attestation?.databaseName !== target.databaseName ||
+      attestation.userName !== "rituvia_app" ||
+      attestation.clusterName !== target.expectedClusterName ||
+      attestation.serverAddress !== "127.0.0.1" ||
+      attestation.serverPort !== 55432
+    ) {
+      throw new Error("Synthetic seed requires an attested local database target.");
+    }
+  } else {
+    const [attestation] = await prisma.$queryRaw<
+      Array<{
+        databaseName: string;
+        inRecovery: boolean;
+        serverAddress: string;
+        serverPort: number;
+        serverVersionNumber: number;
+        systemIdentifier: string;
+        userName: string;
+      }>
+    >`SELECT current_database() AS "databaseName",
+             current_user AS "userName",
+             host(inet_server_addr()) AS "serverAddress",
+             inet_server_port() AS "serverPort",
+             current_setting('server_version_num')::int AS "serverVersionNumber",
+             pg_is_in_recovery() AS "inRecovery",
+             (SELECT system_identifier::text FROM pg_control_system()) AS "systemIdentifier"`;
+
+    if (
+      attestation?.databaseName !== target.databaseName ||
+      attestation.userName !== "rituvia_ci_app" ||
+      attestation.serverPort !== 5432 ||
+      Math.trunc(attestation.serverVersionNumber / 10_000) !== 17 ||
+      attestation.inRecovery ||
+      attestation.systemIdentifier !== target.expectedSystemIdentifier
+    ) {
+      throw new Error("Synthetic seed requires an attested local database target.");
+    }
+    assertCiServiceAddress(attestation.serverAddress);
   }
 
   await prisma.seedManifest.createMany({

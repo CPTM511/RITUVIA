@@ -10,7 +10,7 @@
 - `OWNER_OPERATING_GUIDE_ZH.md` — Chinese owner operating manual.
 - `CODEX_MASTER_PROMPT.md` — first-session and continuation prompts.
 - `AGENTS.md` — top-level binding project instructions.
-- `BACKLOG.md` — 122 sequenced tasks, including seven explicit owner gates.
+- `BACKLOG.md` — 123 sequenced tasks, including eight explicit owner gates.
 - `ROADMAP.md` — 16 milestones from repository foundation through expansion.
 - `PROJECT_STATUS.md` — current truth and blockers.
 - `ENGINEERING_BASELINE.md` — observed repository reality, setup gaps, and exact M0 plan.
@@ -74,7 +74,8 @@
 - `automation/prompts/release-readiness.md`
 - `automation/schemas/task-result.schema.json`
 - `.github/codex/prompts/*.md`
-- `.github/workflows/*.example.yml` — intentionally inactive until renamed and secured.
+- `.github/workflows/ci.yml` — active least-privilege quality, database, dependency, and security gates.
+- `.github/codex/workflow-examples/*.yml` — intentionally inactive outside the Actions workflow directory until reviewed, moved, and secured.
 
 ## Local validation
 

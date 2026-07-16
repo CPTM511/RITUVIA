@@ -19,6 +19,7 @@
     "db:local:stop": "node scripts/local-postgres.mjs stop",
     "db:local:url": "node scripts/local-postgres.mjs url",
     "generate": "prisma generate",
+    "test:ci": "node --import tsx scripts/verify-ci-foundation.ts",
     "test:integration": "node scripts/verify-foundation.mjs",
     "typecheck": "pnpm generate && tsc --noEmit"
   },
