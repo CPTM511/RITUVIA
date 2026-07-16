@@ -8,6 +8,9 @@ loadEnvConfig(repositoryRoot, process.env.NODE_ENV === "development");
 parseBuildConfiguration(process.env);
 
 const nextConfig: NextConfig = {
+  experimental: {
+    caseSensitiveRoutes: true,
+  },
   reactStrictMode: true,
   typedRoutes: true,
 };

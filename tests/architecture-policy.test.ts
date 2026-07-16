@@ -581,6 +581,32 @@ describe("package architecture policy", () => {
     expect(rules(files)).toContain("framework-config-dynamic");
   });
 
+  it("allows only the reviewed static case-sensitive route experiment", () => {
+    const accepted = baseline();
+    accepted.push({
+      path: "apps/web/next.config.ts",
+      source:
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, typedRoutes: true }; export default nextConfig;",
+    });
+    expect(rules(accepted)).not.toContain("framework-config-dynamic");
+
+    const unreviewed = baseline();
+    unreviewed.push({
+      path: "apps/web/next.config.ts",
+      source:
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true, typedEnv: true }, reactStrictMode: true }; export default nextConfig;",
+    });
+    expect(rules(unreviewed)).toContain("framework-config-dynamic");
+
+    const caseInsensitive = baseline();
+    caseInsensitive.push({
+      path: "apps/web/next.config.ts",
+      source:
+        "const nextConfig = { experimental: { caseSensitiveRoutes: false }, reactStrictMode: true }; export default nextConfig;",
+    });
+    expect(rules(caseInsensitive)).toContain("framework-config-dynamic");
+  });
+
   it("rejects private test traversal and runtime code-loading escape hatches", () => {
     const files = baseline();
     files.push(

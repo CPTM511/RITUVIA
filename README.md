@@ -63,6 +63,37 @@ Every example assignment is intentionally empty. Local development uses typed wo
 
 The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
 
+### Local Web shell
+
+Build the English-first shell without a database:
+
+```bash
+npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web build
+```
+
+The running route is deliberately safe-off. Starting the local server without a validated
+read-only runtime database and an explicit active `experience.public_shell=on` version returns an
+empty 404 for the shell HTML and RSC representations; it does not bypass the activation plane.
+After those existing RIT-007 prerequisites are present, run:
+
+```bash
+npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web dev
+```
+
+When explicitly enabled, opening `http://localhost:3000` returns a permanent redirect to the only
+active, reviewed locale at `/en`. Unsupported or non-canonical locale segments return 404 rather
+than silently falling back or generating caches. The page is server rendered and remains readable
+without JavaScript. Local, preview, and staging metadata is `noindex`; a production environment
+must provide the approved HTTPS canonical origin before it may emit indexable metadata. The
+configuration-boundary integration harness reproducibly verifies enabled and disabled behavior
+without documenting an activation bypass or ad hoc SQL. The current shell is an honest foundation,
+not a claim that accounts, readings, legal pages, purchases, or a public launch exist.
+
+The production build enforces compressed budgets for the localized HTML, initial CSS/JavaScript,
+and SVG icon and rejects remote script/style/font/media resources on the home route. Browser QA
+still remains required for keyboard, screen reader, zoom/reflow, reduced motion, RTL, contrast, and
+Core Web Vitals behavior.
+
 ### Local PostgreSQL and Prisma
 
 The verified local database path requires PostgreSQL 17 or 18 command-line tools from one installation. This host uses Homebrew PostgreSQL 17.10. Standard Homebrew versioned locations are detected automatically; otherwise set `RITUVIA_POSTGRES_BIN` to the absolute directory containing all required PostgreSQL tools. Docker is not installed, so no container-reproducibility claim is made; RIT-004 owns the separate CI runtime.

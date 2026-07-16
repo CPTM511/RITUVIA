@@ -5,6 +5,8 @@ import net from "node:net";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
+import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
+
 const repositoryRoot = process.cwd();
 const webRoot = path.join(repositoryRoot, "apps/web");
 const nextCli = path.join(webRoot, "node_modules/next/dist/bin/next");
@@ -62,6 +64,7 @@ const createEnvironment = (overrides = {}) => {
     BRAND_NAME: publicCanary,
     BRAND_TRANSACTIONAL_SENDER: senderCanary,
     DATABASE_URL: databaseUrl,
+    NEXT_TELEMETRY_DISABLED: "1",
     ...overrides,
   };
 };
@@ -205,7 +208,7 @@ const stopManagedProcess = async (managed) => {
   clearTimeout(timeoutId);
 };
 
-const fetchRenderedPage = async (managed, port) => {
+const fetchBuiltWeb = async (managed, port, pathname, options = {}) => {
   const deadline = Date.now() + 15_000;
   let lastError;
 
@@ -215,21 +218,24 @@ const fetchRenderedPage = async (managed, port) => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/`, {
+      const response = await fetch(`http://127.0.0.1:${port}${pathname}`, {
+        redirect: options.redirect ?? "follow",
         headers: {
           baggage: forgedTraceCanary,
           traceparent: "00-11111111111111111111111111111111-1111111111111111-01",
           "x-request-id": forgedRequestCanary,
           "x-rituvia-correlation-id": forgedTraceCanary,
+          ...options.headers,
         },
       });
-      if (response.ok) {
-        return {
-          html: await response.text(),
-          requestId: response.headers.get("x-request-id"),
-        };
-      }
-      lastError = new Error(`HTTP ${response.status}`);
+      return {
+        contentSecurityPolicy: response.headers.get("content-security-policy"),
+        contentType: response.headers.get("content-type"),
+        html: await response.text(),
+        location: response.headers.get("location"),
+        requestId: response.headers.get("x-request-id"),
+        status: response.status,
+      };
     } catch (error) {
       lastError = error;
     }
@@ -238,12 +244,12 @@ const fetchRenderedPage = async (managed, port) => {
   }
 
   fail(
-    `The built Web application did not become ready: ${lastError instanceof Error ? lastError.message : "unknown error"}.`,
+    `The built Web application did not become ready for ${pathname}: ${lastError instanceof Error ? lastError.message : "unknown error"}.`,
     managed.getOutput(),
   );
 };
 
-const assertHttpBoundary = ({ html, requestId }, processOutput) => {
+const assertHttpBoundary = ({ contentSecurityPolicy, html, requestId }, processOutput) => {
   if (!html.includes(publicCanary)) {
     fail("The public configuration canary was absent from the rendered HTTP response.");
   }
@@ -254,6 +260,13 @@ const assertHttpBoundary = ({ html, requestId }, processOutput) => {
   }
   if (!/^req_[0-9a-f]{32}$/.test(requestId ?? "")) {
     fail("The Web request boundary did not return a server-generated correlation ID.");
+  }
+  if (
+    !contentSecurityPolicy?.includes("default-src 'self'") ||
+    !contentSecurityPolicy.includes("connect-src 'self'") ||
+    !contentSecurityPolicy.includes("object-src 'none'")
+  ) {
+    fail("The Web request boundary did not return its restrictive shell security policy.");
   }
   if (
     requestId === forgedRequestCanary ||
@@ -312,6 +325,17 @@ try {
     path.join(temporaryRoot, "tsconfig.base.json"),
   );
   await symlink(path.join(webRoot, "node_modules"), path.join(temporaryWebRoot, "node_modules"));
+  await writeFile(
+    path.join(temporaryWebRoot, "server/feature-flags.ts"),
+    `import "server-only";
+
+export const loadWebFeatureFlagEvaluator = async () => ({
+  evaluate: (_flagKey: string, _context: unknown) => ({
+    enabled: process.env.RITUVIA_TEST_PUBLIC_SHELL === "on",
+  }),
+});
+`,
+  );
 
   const validEnvironment = createEnvironment();
   await assertSuccessfulCommand(
@@ -329,11 +353,96 @@ try {
     [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
     {
       cwd: temporaryWebRoot,
-      env: validEnvironment,
+      env: { ...validEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "on" },
     },
   );
-  const page = await fetchRenderedPage(webProcess, port);
+  const uppercaseCold = await fetchBuiltWeb(webProcess, port, "/EN", { redirect: "manual" });
+  if (uppercaseCold.status !== 404) {
+    fail(`Cold non-canonical locale request returned HTTP ${uppercaseCold.status}, expected 404.`);
+  }
+  const page = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
+  if (page.status !== 200) fail(`Canonical locale returned HTTP ${page.status}, expected 200.`);
   assertHttpBoundary(page, webProcess.getOutput());
+  const uppercaseAfterCanonical = await fetchBuiltWeb(webProcess, port, "/EN", {
+    redirect: "manual",
+  });
+  const canonicalAgain = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
+  const rootRedirect = await fetchBuiltWeb(webProcess, port, "/", { redirect: "manual" });
+  const directRscStatuses = await Promise.all(
+    ["/en.rsc", "/en.segments/_full.segment.rsc"].map(
+      async (pathname) =>
+        (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
+    ),
+  );
+  const rscRepresentations = await Promise.all(
+    [{ rsc: "1" }, { "next-router-prefetch": "1", rsc: "1" }].map((headers) =>
+      fetchBuiltWeb(webProcess, port, "/en", { headers, redirect: "manual" }),
+    ),
+  );
+  const unsupportedStatuses = await Promise.all(
+    ["/fr", "/en-US", "/en/other"].map(
+      async (pathname) =>
+        (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
+    ),
+  );
+  if (
+    uppercaseAfterCanonical.status !== 404 ||
+    canonicalAgain.status !== 200 ||
+    rootRedirect.status !== 308 ||
+    rootRedirect.location !== "/en" ||
+    directRscStatuses.some((status) => status !== 404) ||
+    rscRepresentations.some(
+      ({ contentType, status }) => status !== 200 || !contentType?.startsWith("text/x-component"),
+    ) ||
+    unsupportedStatuses.some((status) => status !== 404)
+  ) {
+    fail(
+      `The built Web application violated its finite, case-sensitive locale route contract: ${JSON.stringify(
+        {
+          canonicalAgain: canonicalAgain.status,
+          directRscStatuses,
+          rootLocation: rootRedirect.location,
+          rootStatus: rootRedirect.status,
+          rscRepresentations: rscRepresentations.map(({ contentType, status }) => ({
+            contentType,
+            status,
+          })),
+          unsupportedStatuses,
+          uppercaseAfterCanonical: uppercaseAfterCanonical.status,
+        },
+      )}.`,
+    );
+  }
+  await verifyWebShellBuild(temporaryRoot);
+  await stopManagedProcess(webProcess);
+  webProcess = undefined;
+
+  webProcess = startManagedProcess(
+    process.execPath,
+    [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
+    {
+      cwd: temporaryWebRoot,
+      env: { ...validEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "off" },
+    },
+  );
+  const disabledRepresentations = await Promise.all(
+    [
+      "/",
+      "/index.rsc",
+      "/index.segments/_full.segment.rsc",
+      "/en",
+      "/en.rsc",
+      "/en.segments/_full.segment.rsc",
+    ].map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
+  );
+  if (
+    disabledRepresentations.some(
+      ({ contentSecurityPolicy, html, status }) =>
+        status !== 404 || html !== "" || !contentSecurityPolicy?.includes("default-src 'self'"),
+    )
+  ) {
+    fail("The public-shell activation gate exposed a disabled HTML or RSC representation.");
+  }
   await stopManagedProcess(webProcess);
   webProcess = undefined;
 

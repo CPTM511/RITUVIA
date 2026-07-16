@@ -1,8 +1,12 @@
 import { access } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
+import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
+
 const requiredArtifacts = [
   "apps/web/.next/BUILD_ID",
+  "apps/web/.next/server/app/en.html",
+  "apps/web/.next/server/app/icon.svg.body",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
@@ -27,6 +31,7 @@ const requiredArtifacts = [
 ];
 
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
+const webShellBuild = await verifyWebShellBuild(process.cwd());
 
 const domainModule = await import(pathToFileURL(`${process.cwd()}/packages/domain/dist/index.js`));
 const databaseModule = await import(pathToFileURL(`${process.cwd()}/packages/db/dist/index.js`));
@@ -112,4 +117,6 @@ if (
   throw new TypeError("The client configuration build exposed server-side feature flags.");
 }
 
-console.log(`Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports.`);
+console.log(
+  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; Web shell gzip budgets: HTML ${webShellBuild.htmlGzipBytes} B, CSS ${webShellBuild.cssGzipBytes} B, JS ${webShellBuild.javascriptGzipBytes} B.`,
+);

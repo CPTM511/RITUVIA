@@ -7,6 +7,7 @@ import {
   auditRecordSet,
   auditTaskResult,
   auditTaskResultSchema,
+  isSafeRepositoryPath,
   parseBacklog,
 } from "../scripts/record-policy.js";
 
@@ -692,6 +693,20 @@ describe("task-result semantics", () => {
     const evidence = validResult();
     evidence.observed_evidence[0]!.source = unsafePath;
     expect(rules(evidence)).toContain("evidence-shape-or-source");
+  });
+
+  it("accepts one bounded Next dynamic route segment without weakening path safety", () => {
+    expect(isSafeRepositoryPath("apps/web/app/[locale]/page.tsx")).toBe(true);
+    for (const unsafePath of [
+      "apps/web/app/[..]/page.tsx",
+      "apps/web/app/[locale/page.tsx",
+      "apps/web/app/locale]/page.tsx",
+      "apps/web/app/[[locale]]/page.tsx",
+      "apps/web/app/[...locale]/page.tsx",
+      "apps/web/app/[loc ale]/page.tsx",
+    ]) {
+      expect(isSafeRepositoryPath(unsafePath)).toBe(false);
+    }
   });
 
   it("rejects nested extra fields, duplicate references, invalid dates, and schema bounds", () => {

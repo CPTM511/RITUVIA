@@ -3,6 +3,12 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  oxc: {
+    jsx: {
+      importSource: "react",
+      runtime: "automatic",
+    },
+  },
   resolve: {
     alias: {
       "@rituvia/config/feature-flags": fileURLToPath(
@@ -15,6 +21,8 @@ export default defineConfig({
   test: {
     include: [
       "tests/**/*.test.ts",
+      "apps/web/test/**/*.test.ts",
+      "apps/web/test/**/*.test.tsx",
       "apps/worker/test/**/*.test.ts",
       "packages/*/test/**/*.test.ts",
     ],

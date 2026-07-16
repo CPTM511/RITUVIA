@@ -23,7 +23,8 @@ const recordPattern =
 const controlOrBidi = /[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u;
 const recordControlOrBidi = /[\u0000-\u0008\u000b-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u;
 const remoteOrEmbeddedContent = /!\[|<(?:!|\?|\/?[A-Za-z])/u;
-const safePathPattern = /^[A-Za-z0-9._/-]{1,240}$/;
+const plainPathPart = /^[A-Za-z0-9._-]+$/u;
+const nextDynamicPathPart = /^\[[A-Za-z0-9_-]+\]$/u;
 const grandfatheredDone = new Set([
   "RIT-000",
   "RIT-001",
@@ -62,7 +63,7 @@ const add = (findings: RecordPolicyFinding[], location: string, rule: string): v
 };
 
 export const isSafeRepositoryPath = (value: unknown): value is string => {
-  if (typeof value !== "string" || !safePathPattern.test(value) || value.startsWith("/"))
+  if (typeof value !== "string" || value.length < 1 || value.length > 240 || value.startsWith("/"))
     return false;
   if (
     value.includes("\\") ||
@@ -72,7 +73,10 @@ export const isSafeRepositoryPath = (value: unknown): value is string => {
     return false;
   }
   const parts = value.split("/");
-  return parts.every((part) => part.length > 0 && part !== "." && part !== "..");
+  return parts.every(
+    (part) =>
+      part !== "." && part !== ".." && (plainPathPart.test(part) || nextDynamicPathPart.test(part)),
+  );
 };
 
 export const parseBacklog = (source: string): Readonly<Record<string, BacklogTask>> => {

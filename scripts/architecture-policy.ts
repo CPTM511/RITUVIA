@@ -490,6 +490,28 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
       ts.isIdentifier(property.name) || ts.isStringLiteralLike(property.name)
         ? property.name.text
         : null;
+    if (name === "experimental") {
+      const value = unwrapExpression(property.initializer);
+      if (!ts.isObjectLiteralExpression(value) || value.properties.length !== 1) return false;
+      const [caseSensitiveRoutes] = value.properties;
+      if (
+        !caseSensitiveRoutes ||
+        !ts.isPropertyAssignment(caseSensitiveRoutes) ||
+        ts.isComputedPropertyName(caseSensitiveRoutes.name)
+      ) {
+        return false;
+      }
+      const experimentalName =
+        ts.isIdentifier(caseSensitiveRoutes.name) ||
+        ts.isStringLiteralLike(caseSensitiveRoutes.name)
+          ? caseSensitiveRoutes.name.text
+          : null;
+      const experimentalValue = unwrapExpression(caseSensitiveRoutes.initializer);
+      return (
+        experimentalName === "caseSensitiveRoutes" &&
+        experimentalValue.kind === ts.SyntaxKind.TrueKeyword
+      );
+    }
     if (name === null || !allowedBooleanKeys.has(name)) return false;
     const value = unwrapExpression(property.initializer);
     return value.kind === ts.SyntaxKind.TrueKeyword || value.kind === ts.SyntaxKind.FalseKeyword;

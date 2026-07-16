@@ -39,6 +39,12 @@ unignored file without following symlinks and emits only path, line, rule, and a
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
 
+`scripts/web-shell-build-policy.mjs` runs from the workspace build verifier. It reads the generated
+English home HTML and its referenced local assets, rejects remote JavaScript/styles, CSS resource
+loading, and unexpected media elements, and enforces gzip budgets for HTML, CSS, and JavaScript plus
+a raw SVG icon limit. Budget changes require measured evidence and review; increasing a number only
+to make a build pass is not an acceptable fix.
+
 It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
 inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server
 closure taint, provider ownership, dependency direction, and cycles against one registered policy.
