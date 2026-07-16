@@ -37,11 +37,16 @@ type ImportReference = Readonly<{
 type ParsedSource = Readonly<{
   buildPathAlias: boolean;
   clientModule: boolean;
+  consoleAccess: boolean;
+  descriptorReflection: boolean;
   environmentAccess: boolean;
   frameworkConfigStatic: boolean;
   imports: readonly ImportReference[];
   networkAccess: boolean;
+  rawOutputAccess: boolean;
   runtimeGlobalAccess: boolean;
+  trustedJobContinuation: boolean;
+  unsafeConsoleAccess: boolean;
   unsafeCodeLoading: boolean;
 }>;
 
@@ -222,13 +227,13 @@ const unsafeRuntimeIdentifiers = new Set([
   "createRequire",
   "defineProperty",
   "eval",
-  "getOwnPropertyDescriptor",
   "getOwnPropertyDescriptors",
   "getBuiltinModule",
   "getPrototypeOf",
   "require",
   "setPrototypeOf",
 ]);
+const descriptorReflectionIdentifiers = new Set(["getOwnPropertyDescriptor"]);
 const networkRuntimeIdentifiers = new Set([
   "SharedWorker",
   "EventSource",
@@ -483,8 +488,13 @@ const parseSource = (
       statement.expression.text === "use client",
   );
   let environmentAccess = false;
+  let consoleAccess = false;
+  let descriptorReflection = false;
   let networkAccess = false;
+  let rawOutputAccess = false;
   let runtimeGlobalAccess = false;
+  let trustedJobContinuation = false;
+  let unsafeConsoleAccess = false;
   let unsafeCodeLoading = false;
   let buildPathAlias = false;
   const addImport = (node: ts.Node, specifier: string | null): void => {
@@ -571,6 +581,23 @@ const parseSource = (
       if (callChain?.at(-1) === "fetch") {
         networkAccess = true;
       }
+      if (callChain?.at(-1) === "continueTrustedJob") {
+        trustedJobContinuation = true;
+      }
+      if (
+        [
+          "globalThis.process._rawDebug",
+          "globalThis.process.emitWarning",
+          "globalThis.process.stderr.write",
+          "globalThis.process.stdout.write",
+          "process._rawDebug",
+          "process.emitWarning",
+          "process.stderr.write",
+          "process.stdout.write",
+        ].includes(callChain?.join(".") ?? "")
+      ) {
+        rawOutputAccess = true;
+      }
       if (
         ["createRequire", "eval", "Function", "getBuiltinModule", "require"].includes(
           callChain?.at(-1) ?? "",
@@ -595,15 +622,92 @@ const parseSource = (
     }
 
     if (ts.isIdentifier(node)) {
+      if (node.text === "console") {
+        consoleAccess = true;
+        const property = node.parent;
+        const call = ts.isPropertyAccessExpression(property) ? property.parent : undefined;
+        const arrow = call && ts.isCallExpression(call) ? call.parent : undefined;
+        const assignment = arrow && ts.isArrowFunction(arrow) ? arrow.parent : undefined;
+        const parameter = arrow && ts.isArrowFunction(arrow) ? arrow.parameters[0] : undefined;
+        const argument = call && ts.isCallExpression(call) ? call.arguments[0] : undefined;
+        if (
+          !ts.isPropertyAccessExpression(property) ||
+          property.expression !== node ||
+          property.name.text !== "info" ||
+          !call ||
+          !ts.isCallExpression(call) ||
+          call.expression !== property ||
+          call.arguments.length !== 1 ||
+          !argument ||
+          !ts.isIdentifier(argument) ||
+          argument.text !== "line" ||
+          !arrow ||
+          !ts.isArrowFunction(arrow) ||
+          arrow.body !== call ||
+          arrow.parameters.length !== 1 ||
+          !parameter ||
+          !ts.isIdentifier(parameter.name) ||
+          parameter.name.text !== "line" ||
+          !assignment ||
+          !ts.isPropertyAssignment(assignment) ||
+          (ts.isIdentifier(assignment.name) && assignment.name.text !== "writeLine") ||
+          (ts.isStringLiteralLike(assignment.name) && assignment.name.text !== "writeLine") ||
+          (!ts.isIdentifier(assignment.name) && !ts.isStringLiteralLike(assignment.name))
+        ) {
+          unsafeConsoleAccess = true;
+        }
+      }
+      if (["_rawDebug", "emitWarning", "stderr", "stdout"].includes(node.text)) {
+        rawOutputAccess = true;
+      }
+      if (node.text === "continueTrustedJob" || node.text === "continuePersistedJobObservability") {
+        trustedJobContinuation = true;
+      }
       if (["Bun", "Deno", "globalThis", "process"].includes(node.text)) {
         runtimeGlobalAccess = true;
       }
       if (unsafeRuntimeIdentifiers.has(node.text)) unsafeCodeLoading = true;
+      if (descriptorReflectionIdentifiers.has(node.text)) descriptorReflection = true;
       if (networkRuntimeIdentifiers.has(node.text)) networkAccess = true;
     }
 
     if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
       const chain = propertyChain(node);
+      if (
+        ts.isElementAccessExpression(node) &&
+        staticPropertyArgument(node.argumentExpression) === "console"
+      ) {
+        consoleAccess = true;
+      }
+      const staticProperty = ts.isElementAccessExpression(node)
+        ? staticPropertyArgument(node.argumentExpression)
+        : null;
+      if (
+        staticProperty !== null &&
+        [
+          "_rawDebug",
+          "continuePersistedJobObservability",
+          "continueTrustedJob",
+          "emitWarning",
+          "stderr",
+          "stdout",
+        ].includes(staticProperty)
+      ) {
+        if (
+          staticProperty === "continuePersistedJobObservability" ||
+          staticProperty === "continueTrustedJob"
+        ) {
+          trustedJobContinuation = true;
+        } else {
+          rawOutputAccess = true;
+        }
+      }
+      if (
+        ts.isElementAccessExpression(node) &&
+        descriptorReflectionIdentifiers.has(staticPropertyArgument(node.argumentExpression) ?? "")
+      ) {
+        descriptorReflection = true;
+      }
       if (
         chain &&
         ((chain[0] === "process" && chain[1] === "env") ||
@@ -655,11 +759,16 @@ const parseSource = (
   return Object.freeze({
     buildPathAlias,
     clientModule,
+    consoleAccess,
+    descriptorReflection,
     environmentAccess,
     frameworkConfigStatic,
     imports,
     networkAccess,
+    rawOutputAccess,
     runtimeGlobalAccess,
+    trustedJobContinuation,
+    unsafeConsoleAccess,
     unsafeCodeLoading,
   });
 };
@@ -1080,6 +1189,39 @@ export const auditArchitecture = (
       add(findings, "unsafe-code-loading", file.path);
       serverTaintedFiles.add(file.path);
     }
+    if (
+      parsed.descriptorReflection &&
+      isRuntimeDependencyFile(file.path) &&
+      file.path !== "packages/observability/src/redaction.ts"
+    ) {
+      add(findings, "descriptor-reflection-outside-redaction", file.path);
+      serverTaintedFiles.add(file.path);
+    }
+    if (
+      parsed.consoleAccess &&
+      isRuntimeDependencyFile(file.path) &&
+      (parsed.unsafeConsoleAccess ||
+        (file.path !== "apps/web/server/observability.ts" &&
+          file.path !== "apps/worker/src/observability.ts"))
+    ) {
+      add(findings, "console-outside-observability-adapter", file.path);
+      serverTaintedFiles.add(file.path);
+    }
+    if (parsed.rawOutputAccess && isRuntimeDependencyFile(file.path)) {
+      add(findings, "raw-output-outside-observability-sink", file.path);
+      serverTaintedFiles.add(file.path);
+    }
+    if (
+      parsed.trustedJobContinuation &&
+      isRuntimeDependencyFile(file.path) &&
+      file.path !== "apps/worker/src/job-observability.ts" &&
+      file.path !== "packages/observability/src/contracts.ts" &&
+      file.path !== "packages/observability/src/runtime.ts" &&
+      file.path !== "packages/observability/src/worker.ts"
+    ) {
+      add(findings, "trusted-job-continuation-outside-worker-boundary", file.path);
+      serverTaintedFiles.add(file.path);
+    }
     if (sourceModule.root === "packages/domain" && isProductionFile(file.path)) {
       if (parsed.environmentAccess) add(findings, "domain-environment-access", file.path);
       if (parsed.networkAccess) add(findings, "domain-network-access", file.path);
@@ -1148,6 +1290,12 @@ export const auditArchitecture = (
       const dependency = packageNameFromSpecifier(specifier);
       const targetModule = moduleByName.get(dependency);
       if (targetModule) {
+        if (
+          specifier === "@rituvia/observability/worker" &&
+          file.path !== "apps/worker/src/job-observability.ts"
+        ) {
+          add(findings, "worker-observability-capability-import", location, specifier);
+        }
         if (targetModule.name === sourceModule.name) {
           add(findings, "self-package-import", location, specifier);
         }

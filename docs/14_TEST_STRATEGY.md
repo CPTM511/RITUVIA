@@ -47,6 +47,15 @@ Tests are executable product memory. They must prove deterministic correctness, 
 - AI eval/regression and red-team.
 - Backup restore and disaster rehearsal.
 
+### Observability and redaction baseline
+
+- Exact W3C `traceparent` length/version/lowercase/nonzero validation and span rotation.
+- Server-authoritative request IDs; client `x-request-id`, trace, baggage, and tracestate never become trusted context.
+- JSON-serialized Web → persisted carrier → Worker → provider protocol continuity, with the production continuation capability confined to the Worker persistence boundary.
+- Fixed service/environment/release/event/result taxonomies; no free-text, arbitrary attributes, raw errors, stack, cause, URL, headers, body, prompt, journal, prayer, birth data, or provider payload.
+- Getter, `toJSON`, Proxy width, cycle, `BigInt`, symbol, function, control-character, UTF-8 byte-limit, clock, duplicate-end, invalid-carrier, sink-failure, and canary regressions.
+- Real built-Web request proves `x-request-id`, correlated `http.proxy_handoff` JSON output, client-state override, and absence of secret canaries. This handoff test does not assert downstream response status/duration.
+
 ## 3. Deterministic test vectors
 
 ### Tarot

@@ -51,6 +51,9 @@ importers:
       '@rituvia/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@rituvia/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       next:
         specifier: 16.2.10
         version: 16.2.10(@babel/core@7.29.7)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -79,6 +82,9 @@ importers:
       '@rituvia/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@rituvia/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
 
   packages/config:
     dependencies:
@@ -106,6 +112,8 @@ importers:
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
 
   packages/domain: {}
+
+  packages/observability: {}
 
 packages:
 

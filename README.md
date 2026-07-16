@@ -92,33 +92,33 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Canonical document map
 
-| Concern | Canonical file |
-|---|---|
-| Product mission and boundaries | `docs/00_PROJECT_CHARTER.md` |
-| Complete feature requirements | `docs/01_PRODUCT_REQUIREMENTS.md` |
-| User journeys and UX behavior | `docs/02_USER_EXPERIENCE.md` |
-| Visual system and component rules | `docs/03_DESIGN_SYSTEM.md` |
-| Software architecture | `docs/04_ARCHITECTURE.md` |
-| Data model and classification | `docs/05_DATA_MODEL.md` |
-| AI interpretation and safety | `docs/06_AI_INTERPRETATION_SAFETY.md` |
-| Payments, country policy, and compliance | `docs/07_PAYMENTS_COMPLIANCE.md` |
-| Localization, SEO, GEO, and growth | `docs/08_I18N_SEO_GEO_GROWTH.md` |
-| Metrics and experiments | `docs/09_ANALYTICS_EXPERIMENTS.md` |
-| Security, privacy, and reliability | `docs/10_SECURITY_PRIVACY_RELIABILITY.md` |
-| One-person autonomous operations | `docs/11_AUTONOMOUS_OPERATIONS.md` |
-| Content and cultural governance | `docs/12_CONTENT_GOVERNANCE.md` |
-| API and integration contracts | `docs/13_API_CONTRACTS.md` |
-| Test strategy | `docs/14_TEST_STRATEGY.md` |
-| Launch and rollback | `docs/15_LAUNCH_RUNBOOK.md` |
-| Cost controls | `docs/16_COST_GUARDRAILS.md` |
-| Brand decision | `docs/17_BRAND_NAMING.md` |
-| Sources and verification | `docs/18_REFERENCES.md` |
-| Name-clearance execution worksheet | `docs/19_NAME_CLEARANCE_WORKSHEET.md` |
-| AI-native marketing and distribution | `docs/20_AI_GROWTH_ENGINE.md` |
+| Concern                                  | Canonical file                            |
+| ---------------------------------------- | ----------------------------------------- |
+| Product mission and boundaries           | `docs/00_PROJECT_CHARTER.md`              |
+| Complete feature requirements            | `docs/01_PRODUCT_REQUIREMENTS.md`         |
+| User journeys and UX behavior            | `docs/02_USER_EXPERIENCE.md`              |
+| Visual system and component rules        | `docs/03_DESIGN_SYSTEM.md`                |
+| Software architecture                    | `docs/04_ARCHITECTURE.md`                 |
+| Data model and classification            | `docs/05_DATA_MODEL.md`                   |
+| AI interpretation and safety             | `docs/06_AI_INTERPRETATION_SAFETY.md`     |
+| Payments, country policy, and compliance | `docs/07_PAYMENTS_COMPLIANCE.md`          |
+| Localization, SEO, GEO, and growth       | `docs/08_I18N_SEO_GEO_GROWTH.md`          |
+| Metrics and experiments                  | `docs/09_ANALYTICS_EXPERIMENTS.md`        |
+| Security, privacy, and reliability       | `docs/10_SECURITY_PRIVACY_RELIABILITY.md` |
+| One-person autonomous operations         | `docs/11_AUTONOMOUS_OPERATIONS.md`        |
+| Content and cultural governance          | `docs/12_CONTENT_GOVERNANCE.md`           |
+| API and integration contracts            | `docs/13_API_CONTRACTS.md`                |
+| Test strategy                            | `docs/14_TEST_STRATEGY.md`                |
+| Launch and rollback                      | `docs/15_LAUNCH_RUNBOOK.md`               |
+| Cost controls                            | `docs/16_COST_GUARDRAILS.md`              |
+| Brand decision                           | `docs/17_BRAND_NAMING.md`                 |
+| Sources and verification                 | `docs/18_REFERENCES.md`                   |
+| Name-clearance execution worksheet       | `docs/19_NAME_CLEARANCE_WORKSHEET.md`     |
+| AI-native marketing and distribution     | `docs/20_AI_GROWTH_ENGINE.md`             |
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, and RIT-005 fail-closed package architecture policy are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. No user-facing product feature is implemented yet.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, RIT-005 fail-closed package architecture policy, and RIT-006 privacy-safe local observability baseline are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. RIT-007 is the next Ready task. No user-facing product feature is implemented yet.
 
 ## Non-negotiable product principle
 

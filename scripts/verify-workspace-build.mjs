@@ -16,6 +16,10 @@ const requiredArtifacts = [
   "packages/db/dist/index.js",
   "packages/domain/dist/index.d.ts",
   "packages/domain/dist/index.js",
+  "packages/observability/dist/index.d.ts",
+  "packages/observability/dist/index.js",
+  "packages/observability/dist/worker.d.ts",
+  "packages/observability/dist/worker.js",
 ];
 
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
@@ -32,6 +36,12 @@ const configServerModule = await import(
   pathToFileURL(`${process.cwd()}/packages/config/dist/server.js`)
 );
 const workerModule = await import(pathToFileURL(`${process.cwd()}/apps/worker/dist/runtime.js`));
+const observabilityModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/observability/dist/index.js`)
+);
+const observabilityWorkerModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/observability/dist/worker.js`)
+);
 
 if (Object.keys(domainModule).length !== 0) {
   throw new Error("The empty domain boundary emitted unexpected runtime exports.");
@@ -48,6 +58,23 @@ if (
 
 if (typeof workerModule.createWorkerRuntime !== "function") {
   throw new TypeError("The worker build does not export createWorkerRuntime.");
+}
+
+if (
+  typeof observabilityModule.createObservability !== "function" ||
+  typeof observabilityModule.isTraceparent !== "function"
+) {
+  throw new TypeError("The observability build does not expose its safe runtime boundaries.");
+}
+if (
+  "continueTrustedJob" in observabilityModule ||
+  "createJsonLinesSink" in observabilityModule ||
+  "isTraceCarrier" in observabilityModule
+) {
+  throw new TypeError("The observability build exposed a raw sink or trust-ambiguous carrier API.");
+}
+if (typeof observabilityWorkerModule.continueTrustedJob !== "function") {
+  throw new TypeError("The observability worker build omitted its isolated continuation boundary.");
 }
 
 if (

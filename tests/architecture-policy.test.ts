@@ -531,6 +531,127 @@ describe("package architecture policy", () => {
     );
   });
 
+  it("confines descriptor reflection to the observability redaction boundary", () => {
+    const accepted = baseline();
+    accepted.push(
+      manifest("packages/observability", "@rituvia/observability"),
+      moduleTsconfig("packages/observability", true),
+      {
+        path: "packages/observability/src/redaction.ts",
+        source:
+          "export const descriptor = (value: object) => Object.getOwnPropertyDescriptor(value, 'safe');",
+      },
+      {
+        path: "packages/observability/src/index.ts",
+        source: 'export { descriptor } from "./redaction.js";',
+      },
+    );
+    expect(auditArchitecture(accepted)).toEqual([]);
+
+    const misplaced = baseline();
+    misplaced.push({
+      path: "packages/domain/src/reflection.ts",
+      source:
+        "export const descriptor = (value: object) => Object['getOwnPropertyDescriptor'](value, 'value');",
+    });
+    expect(rules(misplaced)).toContain("descriptor-reflection-outside-redaction");
+
+    const unsafeInsideException = baseline();
+    unsafeInsideException.push(
+      manifest("packages/observability", "@rituvia/observability"),
+      moduleTsconfig("packages/observability", true),
+      {
+        path: "packages/observability/src/redaction.ts",
+        source: "export const unsafe = (value: object) => Reflect.get(value, 'secret');",
+      },
+      {
+        path: "packages/observability/src/index.ts",
+        source: 'export { unsafe } from "./redaction.js";',
+      },
+    );
+    expect(rules(unsafeInsideException)).toContain("unsafe-code-loading");
+  });
+
+  it("keeps observability a server-only leaf package", () => {
+    const reverseDependency = baseline();
+    reverseDependency.push(
+      manifest("packages/observability", "@rituvia/observability", {
+        "@rituvia/config": "workspace:*",
+      }),
+      moduleTsconfig("packages/observability"),
+      {
+        path: "packages/observability/src/index.ts",
+        source: 'export { configured } from "@rituvia/config/server";',
+      },
+    );
+    expect(rules(reverseDependency)).toContain("internal-dependency-direction");
+
+    const clientImport = baseline();
+    replaceSource(
+      clientImport,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          "@rituvia/observability": "workspace:*",
+          react: "19.2.7",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    clientImport.push(
+      manifest("packages/observability", "@rituvia/observability"),
+      moduleTsconfig("packages/observability"),
+      {
+        path: "packages/observability/src/index.ts",
+        source: "export const telemetry = true;",
+      },
+      {
+        path: "apps/web/app/telemetry.tsx",
+        source:
+          '\"use client\"; import { telemetry } from "@rituvia/observability"; export { telemetry };',
+      },
+    );
+    expect(rules(clientImport)).toEqual(
+      expect.arrayContaining(["client-server-import", "client-server-transitive-import"]),
+    );
+  });
+
+  it("confines console output to the two structured observability adapters", () => {
+    const files = baseline();
+    files.push(
+      {
+        path: "apps/web/server/debug.ts",
+        source:
+          "export const debug = (value: unknown) => { const write = process.stdout.write; write(String(value)); };",
+      },
+      {
+        path: "apps/web/server/observability.ts",
+        source: "export const leak = (value: unknown) => console.warn(value);",
+      },
+      {
+        path: "apps/web/server/job.ts",
+        source:
+          "declare const telemetry: { continueTrustedJob(carrier: unknown, input: unknown): unknown }; export const continueJob = (carrier: unknown) => telemetry.continueTrustedJob(carrier, {});",
+      },
+      {
+        path: "apps/worker/src/bypass.ts",
+        source:
+          'import { continueTrustedJob as alias } from "@rituvia/observability/worker"; export const bypass = (telemetry: never, carrier: unknown) => alias(telemetry, carrier, {} as never);',
+      },
+    );
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "console-outside-observability-adapter",
+        "raw-output-outside-observability-sink",
+        "trusted-job-continuation-outside-worker-boundary",
+        "worker-observability-capability-import",
+      ]),
+    );
+  });
+
   it("keeps payment provider SDKs inside explicit adapter zones", () => {
     const files = baseline();
     files.push(manifest("packages/payments", "@rituvia/payments", { stripe: "20.4.0" }), {

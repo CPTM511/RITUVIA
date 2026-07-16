@@ -29,6 +29,8 @@ const publicCanary = `public-brand-${identifier}`;
 const senderCanary = `server-sender-${identifier}@invalid.example`;
 const databaseCanary = `database-secret-${identifier}`;
 const invalidCanary = `invalid-database-${identifier}`;
+const forgedRequestCanary = `forged-request-${identifier}`;
+const forgedTraceCanary = `forged-trace-${identifier}`;
 const databaseUrl = `postgresql://local:${databaseCanary}@127.0.0.1:5432/app`;
 const secretCanaries = [senderCanary, databaseCanary, invalidCanary, databaseUrl];
 
@@ -213,9 +215,19 @@ const fetchRenderedPage = async (managed, port) => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/`);
+      const response = await fetch(`http://127.0.0.1:${port}/`, {
+        headers: {
+          baggage: forgedTraceCanary,
+          traceparent: "00-11111111111111111111111111111111-1111111111111111-01",
+          "x-request-id": forgedRequestCanary,
+          "x-rituvia-correlation-id": forgedTraceCanary,
+        },
+      });
       if (response.ok) {
-        return response.text();
+        return {
+          html: await response.text(),
+          requestId: response.headers.get("x-request-id"),
+        };
       }
       lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {
@@ -231,14 +243,32 @@ const fetchRenderedPage = async (managed, port) => {
   );
 };
 
-const assertHttpBoundary = (html) => {
+const assertHttpBoundary = ({ html, requestId }, processOutput) => {
   if (!html.includes(publicCanary)) {
     fail("The public configuration canary was absent from the rendered HTTP response.");
   }
   for (const canary of secretCanaries) {
-    if (html.includes(canary)) {
-      fail("A server-only configuration canary entered the rendered HTTP response.");
+    if (html.includes(canary) || processOutput.includes(canary)) {
+      fail("A server-only configuration canary entered HTTP or observability output.");
     }
+  }
+  if (!/^req_[0-9a-f]{32}$/.test(requestId ?? "")) {
+    fail("The Web request boundary did not return a server-generated correlation ID.");
+  }
+  if (
+    requestId === forgedRequestCanary ||
+    processOutput.includes(forgedRequestCanary) ||
+    processOutput.includes(forgedTraceCanary)
+  ) {
+    fail("The Web request boundary trusted or logged client-supplied correlation state.");
+  }
+  if (
+    !processOutput.includes(`\"correlationId\":\"${requestId}\"`) ||
+    !processOutput.includes('"event":"trace.span_started"') ||
+    !processOutput.includes('"level":"info"') ||
+    !processOutput.includes('"operation":"http.proxy_handoff"')
+  ) {
+    fail("The Web request boundary did not emit its structured correlated trace.");
   }
 };
 
@@ -302,8 +332,8 @@ try {
       env: validEnvironment,
     },
   );
-  const html = await fetchRenderedPage(webProcess, port);
-  assertHttpBoundary(html);
+  const page = await fetchRenderedPage(webProcess, port);
+  assertHttpBoundary(page, webProcess.getOutput());
   await stopManagedProcess(webProcess);
   webProcess = undefined;
 

@@ -1,8 +1,8 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-16
+**Last reconciled:** 2026-07-17
 
-**Stage:** M0 engineering foundation in progress; package architecture and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
+**Stage:** M0 engineering foundation in progress; package architecture, local observability, and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
 
 **Release:** Pre-M0
 
@@ -27,13 +27,15 @@
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
-- Root formatting, ESLint, TypeScript, 102 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
+- Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
+- Root formatting, ESLint, TypeScript, 131 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
 
 ## What does not exist yet
 
 - User-facing product features and production-ready application behavior.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
+- Production metrics, alerts, retention/sampling policy, vendor exporters, and a real persisted outbox/queue consumer; the current Worker carrier path is a reviewed protocol and sealed adapter boundary, not a deployed queue.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
 - Formal trademark clearance or secured canonical domain.
 - Payment-provider written underwriting approval.
@@ -58,11 +60,11 @@ These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-006` — Add observability, correlation IDs, and a sensitive-field redaction baseline while RIT-004 remains blocked on owner-controlled remote and hosted-CI evidence.
+`RIT-007` — Ready: add a versioned, server-side feature-flag and typed configuration registry with safe-off defaults while RIT-004 remains blocked on owner-controlled remote and hosted-CI evidence.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 102 unit/contract tests in eleven files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The architecture verifier audits 32 active source files across five modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, JSDoc/type edges, and file/module cycles. The local database suite proves clean/idempotent migration and seed, constraints, transaction/race behavior, guarded reset, logical dump/restore, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, two deterministic generations, two migration deployments, two seeds, migration status/drift, exact migration inventory, constraints, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 131 unit/contract tests in 15 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The build verifier checks 18 emitted artifacts and narrowed runtime exports. The architecture verifier audits 48 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, JSDoc/type edges, and file/module cycles. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, constraints, transaction/race behavior, guarded reset, logical dump/restore, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, two deterministic generations, two migration deployments, two seeds, migration status/drift, exact migration inventory, constraints, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
 
 ## Update rules
 

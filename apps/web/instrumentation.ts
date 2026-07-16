@@ -1,4 +1,9 @@
 export async function register() {
-  const { getWebRuntimeConfiguration } = await import("./config/server");
-  getWebRuntimeConfiguration();
+  const { getWebObservability } = await import("./server/observability");
+  const lifecycle = getWebObservability().start({
+    kind: "service",
+    operation: "service.lifecycle",
+  });
+  lifecycle.event({ name: "service.ready" });
+  lifecycle.end({ outcome: "success" });
 }
