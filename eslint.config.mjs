@@ -27,5 +27,6 @@ export default defineConfig([
     "**/dist/**",
     "**/node_modules/**",
     "**/next-env.d.ts",
+    "packages/db/src/generated/prisma/**",
   ]),
 ]);

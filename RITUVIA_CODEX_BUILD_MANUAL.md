@@ -59,6 +59,7 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `packages/ai/AGENTS.md`
 - `packages/country-policy/AGENTS.md`
 - `packages/db/AGENTS.md`
+- `packages/db/MIGRATIONS.md`
 - `packages/divination/AGENTS.md`
 - `packages/domain/AGENTS.md`
 - `packages/i18n/AGENTS.md`
@@ -125,6 +126,8 @@ dist/
 playwright-report/
 test-results/
 .rituvia-config-boundary-*/
+.local/
+packages/db/src/generated/prisma/
 
 __pycache__/
 *.py[cod]
@@ -177,7 +180,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
 
 ### Local environment configuration
 
@@ -187,9 +190,37 @@ The repository root is the shared environment-file location for both Web and Wor
 cp .env.example .env
 ```
 
-Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted, and the database URL remains optional until `RIT-003`. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
+Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted. The database lifecycle commands derive the attested local URL themselves; application processes still receive `DATABASE_URL` explicitly through the process environment or an ignored environment file. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
 
 The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
+
+### Local PostgreSQL and Prisma
+
+The verified local database path requires PostgreSQL 17 or 18 command-line tools from one installation. This host uses Homebrew PostgreSQL 17.10. Standard Homebrew versioned locations are detected automatically; otherwise set `RITUVIA_POSTGRES_BIN` to the absolute directory containing all required PostgreSQL tools. Docker is not installed, so no container-reproducibility claim is made; RIT-004 owns the separate CI runtime.
+
+After the frozen install, create or reuse the repository-owned cluster, apply committed migrations, and load the deterministic synthetic seed:
+
+```bash
+APP_ENV=local npm exec --yes --package=pnpm@11.13.1 -- pnpm db:setup
+```
+
+The cluster lives under ignored `.local/postgres/`, generates random mode-0600 credentials, uses SCRAM authentication and data checksums, and binds only `127.0.0.1:55432`. The application role is not a superuser and cannot create roles or databases. Inspect its state or obtain the local application URL only while it is running:
+
+```bash
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:status
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:url
+```
+
+`db:url` prints only the path to an ignored mode-0600 URL file. Use `pnpm db:url -- --reveal` only when explicit terminal disclosure is necessary to supply a local application process; do not paste the URL into committed files, logs, tickets, or remote environments.
+
+Reset is local and destructive, requires `APP_ENV=local`, and accepts only the exact fixed development database after a live cluster/data-directory/system-identifier attestation:
+
+```bash
+APP_ENV=local npm exec --yes --package=pnpm@11.13.1 -- pnpm db:reset -- --confirm=reset:rituvia_local@127.0.0.1:55432
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:stop
+```
+
+Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or the local seed against preview, staging, or production. Migration compatibility, field classification, rollback, and recovery boundaries are recorded in `packages/db/MIGRATIONS.md`.
 
 ## Canonical document map
 
@@ -219,7 +250,7 @@ The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*`
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, and RIT-002 typed configuration boundary are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-003`.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, and RIT-003 local PostgreSQL/Prisma foundation are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-004`.
 
 ## Non-negotiable product principle
 
@@ -337,29 +368,23 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 **Validated:** 2026-07-16
 
-**Result:** PASS for the imported instruction pack, repository consistency, and the RIT-001/RIT-002 engineering foundation.
+**Result:** PASS for the imported instruction pack, repository consistency, and the RIT-001 through RIT-003 engineering foundation.
 
 ## Checks passed
 
-- All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes.
-- Before mutation, all 84 archive checksum entries passed; this proved the imported ZIP was intact.
-- All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist.
-- All project TOML and JSON files parse successfully. Repository YAML parses with the host Ruby YAML parser, and pnpm accepts the workspace policy; the Python validator emits an explicit warning when PyYAML is unavailable instead of claiming that check ran.
-- Backlog contains 122 unique items: 115 product/engineering tasks and seven explicit owner gates. Dependency references are valid, the graph is acyclic, `RIT-000` through `RIT-002` are Done, and exactly one executable item is Ready: `RIT-003`.
-- Ten custom Codex agents contain required name, description, and developer instructions.
-- Root plus every nested `AGENTS.md` remains below the configured 65,536-byte project instruction limit.
-- The installed Codex CLI loads the project configuration and command rules. Thirty-five representative exec-policy cases cover normal push approval; common force-push variants; destructive Git; recursive deletion; Prisma reset/deploy variants; Terraform/Kubernetes changes; production deploy CLIs; remote PR/release creation; and package publishing.
-- Local Markdown links do not escape the package or point to missing local targets.
-- Historical `LUMORA` text is contained to retained references, migration/name-clearance/baseline notes, manifest/compiled manual, QA, and the validator allowlist.
-- Both retained HTML artifacts exist, pass an integrity-size check, and were reviewed as non-canonical research rather than production code.
-- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 85 current text sources; the two HTML artifacts remain external references.
-- `checksums.sha256` covers every tracked or non-ignored current package file except itself, with no missing, extra, duplicate, or mismatched entry.
-- The task-result schema now includes the documented assumptions/blockers fields and supports review cadences that have no single backlog task; the task template uses the backlog status/priority vocabulary.
-- Node.js 24.18.0, pnpm 11.13.1, and every direct JavaScript dependency are pinned; the frozen lockfile passes strict peer, engine, release-age, exotic-subdependency, and exact install-script allowlist policies.
-- A clean temporary repository copy completed `pnpm install --frozen-lockfile` without changing the lockfile or leaving ignored/pending build scripts.
-- Root format, ESLint, strict TypeScript, Vitest, configuration-boundary, and build gates pass. Turbo executes Web, Worker, config, and domain tasks; 29 behavioral/contract tests run across four test files; the build verifier checks ten emitted artifacts and imports built ESM exports.
-- `.env.example` contains exactly the typed server inventory as empty assignments. Production source limits environment reads to reviewed adapters, rejects every `NEXT_PUBLIC_*` variable, keeps the working-brand display literal out of application code, and sends only a strict client allowlist.
-- An isolated normal Next.js production build and HTTP start deliver a randomized public canary while excluding randomized sender/database canaries from browser artifacts and the response. Invalid Web and Worker configuration exits nonzero with key-only diagnostics, and a deliberately illegal Client Component import fails specifically at the `server-only` boundary.
+- All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
+- All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
+- Backlog contains 122 unique items: 115 product/engineering tasks and seven owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003` are Done, and exactly one executable item is Ready: `RIT-004`.
+- Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
+- Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
+- Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
+- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 86 current text sources; `checksums.sha256` covers every current non-ignored package file except itself, without missing, extra, duplicate, or mismatched entries.
+- Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
+- Root formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across five workspaces. Thirty-nine unit/contract tests run in five files; the build verifier checks 14 emitted artifacts and imports built ESM exports.
+- `.env.example` exactly matches the typed server inventory. Production source limits environment reads to reviewed adapters, rejects all `NEXT_PUBLIC_*` variables, excludes secrets from client artifacts and HTTP, and proves sanitized nonzero Web/Worker startup failure plus a real `server-only` negative build.
+- The repository-owned PostgreSQL 17 runtime is bound to `127.0.0.1:55432`, uses random mode-0600 SCRAM credentials, data checksums, exact managed HBA/configuration files, an attested cluster fingerprint, and a non-superuser application role. Lifecycle operations are directory-lock serialized, including a two-contender stale-lock recovery test.
+- Prisma 7.8 generation and `migrate deploy` pass against isolated real databases. The suite proves clean and idempotent migration, deterministic/idempotent synthetic seed, database CHECK/unique constraints, transaction rollback, eight-way concurrent uniqueness, guarded isolated reset, custom-format dump/restore into a second isolated database, managed-setting attestation, and absence of a unique failure canary from PostgreSQL logs.
+- `db:setup`, the exact-confirmation local development reset, default non-disclosing `db:url`, and `db:stop` pass. No production, preview, staging, remote, or arbitrary ambient database URL is accepted by these lifecycle commands.
 
 ## Validation commands
 
@@ -369,24 +394,28 @@ python3 scripts/build_checksums.py --check
 python3 scripts/validate_instruction_pack.py
 shasum -a 256 -c checksums.sha256
 codex execpolicy check --pretty --rules .codex/rules/default.rules -- <command...>
-npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
-npm exec --yes --package=pnpm@11.13.1 -- pnpm check
-npm exec --yes --package=pnpm@11.13.1 -- pnpm test:configuration-boundary
+pnpm install --frozen-lockfile
+pnpm ignored-builds
+pnpm check
+pnpm test:configuration-boundary
+pnpm test:database-foundation
+APP_ENV=local pnpm db:setup
+APP_ENV=local pnpm db:reset -- --confirm=reset:rituvia_local@127.0.0.1:55432
+pnpm db:stop
 ```
 
 ## Limitations
 
-- This validates the specification/instruction package and the RIT-001/RIT-002 application foundation, including built client-delivery and local production-start boundaries. It does not validate a user-facing product flow, interactive browser behavior, payment, database, AI, accessibility, general security scanning, deployment, or a hosted production runtime.
-- PyYAML and a JSON Schema meta-validator are not installed in the host environment. YAML is independently parsed with the available host Ruby parser; JSON is parsed and critical task-result schema invariants are checked locally. RIT-004 must add portable CI validation.
-- Command rules are exact positional prefixes and are an additional guard, not a substitute for the binding owner-approval rules in `AGENTS.md`. Reordered flags, aliases, and opaque shell wrappers still require human review.
-- The current CLI accepted the configuration, but model availability and configuration enums can change by CLI release/account. Re-check the official Codex configuration before enabling automation or upgrading Codex integration settings.
-- Example GitHub workflows are intentionally named `.example.yml` and remain inactive. Official action versions/inputs, pinned dependencies, fork-secret behavior, permissions, branch protection, and budget controls require review before activation.
-- `RITUVIA` has only a preliminary public-web exact-name screen. This report does not establish trademark registrability, confusing-similarity clearance, domain/handle availability, company-name availability, or legal right to use.
-- Payment, crypto, tax, legal, country, astrology-license, content-rights, and vendor decisions remain blocked until written current evidence and owner/qualified approval exist.
+- This validates the specification package and RIT-001 through RIT-003 foundations. It does not validate a user-facing product flow, browser interaction, payment, AI, accessibility, hosted infrastructure, or a production database.
+- Docker and Podman are absent on the verified host. The local native PostgreSQL path is real and reproducible for the supported toolchains, but RIT-004 must add and verify a separate CI database runtime, secret scanning, migration enforcement, and active CI workflow.
+- PyYAML and a JSON Schema meta-validator are unavailable in the host environment. YAML is independently parsed with Ruby; JSON and critical task-result schema invariants are checked locally. RIT-004 must make these checks portable in CI.
+- Command rules are exact positional prefixes and supplement, rather than replace, the owner-approval boundaries in `AGENTS.md`. Reordered flags, aliases, and opaque wrappers still require human review.
+- Example GitHub workflows remain intentionally inactive. Official action versions, permissions, fork-secret behavior, branch protection, and budget controls require review before activation.
+- `RITUVIA` has only a preliminary exact-name web screen; this report does not establish legal clearance, domain availability, or right to use. Payment, crypto, tax, country, astrology-license, content-rights, vendor, and production decisions remain owner- or qualified-reviewer-gated.
 
-## Import acceptance result
+## Acceptance result
 
-The imported build system now has a reproducible strict TypeScript monorepo, typed environment/configurable-brand boundaries, and a deterministic consistency workflow. The next task is `RIT-003`; it must add the reproducible local PostgreSQL and Prisma foundation. CI and production readiness remain gated by later M0 tasks.
+The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, and an attested real PostgreSQL/Prisma local foundation with deterministic migrations, synthetic seeding, guarded reset, and recovery evidence. The next task is `RIT-004`, which must activate portable CI quality, security, and migration gates. Production remains gated by later milestones and explicit owner approvals.
 
 ---
 
@@ -834,7 +863,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; reproducible monorepo and typed configuration boundary complete; product features not started.
+**Stage:** M0 engineering foundation in progress; reproducible monorepo, typed configuration boundary, and local database foundation complete; product features not started.
 
 **Release:** Pre-M0
 
@@ -854,12 +883,14 @@ Use this order:
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
-- Root formatting, ESLint, TypeScript, Vitest, and production-build gates with non-empty behavioral tests and artifact verification.
+- Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
+- Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
+- Root formatting, ESLint, TypeScript, Vitest, real PostgreSQL integration, and production-build gates with non-empty behavioral tests and artifact verification.
 
 ## What does not exist yet
 
 - User-facing product features and production-ready application behavior.
-- Database schema, migrations, local PostgreSQL runtime, and integration-test infrastructure.
+- Active CI, general secret scanning, and CI migration enforcement.
 - Production infrastructure.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
 - Formal trademark clearance or secured canonical domain.
@@ -870,25 +901,25 @@ Use this order:
 
 ## Current blockers and owner decisions
 
-| ID | Decision needed | Blocks | Owner action |
-|---|---|---|---|
-| OWN-001 | Formal brand/domain clearance | Public branding and trademark filing | Commission trademark and linguistic search; secure domains/accounts |
-| OWN-002 | Payment underwriting path | Production checkout | Obtain written pre-approval from primary and backup providers |
-| OWN-003 | Astrology engine license/provider | Production natal chart | Select and license a lawful deterministic engine |
-| OWN-004 | Launch legal markets and entity | Public launch | Select entity, tax setup, legal counsel, and first launch countries |
-| OWN-005 | Initial operating budget | Paid vendors and traffic | Set monthly infrastructure, AI, payment-loss, and marketing limits |
-| OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
-| OWN-007 | Regional-tradition expert/content approval | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries |
+| ID      | Decision needed                                | Blocks                                | Owner action                                                                                  |
+| ------- | ---------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| OWN-001 | Formal brand/domain clearance                  | Public branding and trademark filing  | Commission trademark and linguistic search; secure domains/accounts                           |
+| OWN-002 | Payment underwriting path                      | Production checkout                   | Obtain written pre-approval from primary and backup providers                                 |
+| OWN-003 | Astrology engine license/provider              | Production natal chart                | Select and license a lawful deterministic engine                                              |
+| OWN-004 | Launch legal markets and entity                | Public launch                         | Select entity, tax setup, legal counsel, and first launch countries                           |
+| OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
+| OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
+| OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
 
 These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-003` — Create local PostgreSQL and Prisma foundation.
+`RIT-004` — Create test harness and CI quality gates.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across four workspaces, 29 unit/contract tests in four files, and production builds pass. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. CI, database integration, general secret scanning, and migration checks remain later M0 gates in RIT-003/RIT-004.
+The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 39 unit/contract tests in five files, a real PostgreSQL foundation suite, and production builds pass. The database suite proves clean/idempotent migration, deterministic/idempotent seed, CHECK and unique constraints, transaction rollback, concurrent-write enforcement, guarded isolated reset, custom-format logical dump/restore, lifecycle-lock exclusion and stale recovery, exact managed configuration, and log-privacy canaries. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. Active CI, general secret scanning, and CI migration enforcement remain RIT-004 work.
 
 ## Update rules
 
@@ -1135,6 +1166,12 @@ This is an append-only summary of accepted architectural and product decisions. 
 - **Reason:** Prevents accidental secret bundling and scattered brand constants, makes Web/Worker startup fail closed with sanitized diagnostics, and preserves the ability to replace the uncleared working brand without rewriting user-facing modules.
 - **Date:** 2026-07-16
 
+### D-017 — Attested native PostgreSQL and Prisma foundation
+
+- **Decision:** Use the installed supported PostgreSQL 17.10 tools for a repository-owned local cluster at ignored `.local/postgres/`, bound only to `127.0.0.1:55432` with random SCRAM credentials, data checksums, cluster fingerprinting, and a least-privilege application role. Keep Prisma 7.8 inside `packages/db`, require committed `migrate deploy` migrations and explicit local-only synthetic seeding, and represent only internal seed provenance until later domain tasks own their schemas. RIT-004 must establish the independent CI PostgreSQL runtime; production remains managed-provider and owner-gated work.
+- **Reason:** Docker is absent on the verified host. This path makes local setup/reset and real database tests reproducible without weakening authentication, consuming arbitrary connection URLs, or preempting identity/content/payment domains, while keeping builds free of database secrets.
+- **Date:** 2026-07-16
+
 ---
 
 # File: `ROADMAP.md`
@@ -1151,7 +1188,7 @@ Includes:
 
 - Monorepo, strict TypeScript, formatting/linting, package boundaries.
 - Environment validation, brand config, feature flags, synthetic seed strategy.
-- PostgreSQL/Prisma foundation and local containers.
+- PostgreSQL/Prisma foundation, a verified local database runtime, and a separately verified CI database runtime.
 - CI, test harness, preview smoke, dependency/secret scanning.
 - Observability/redaction baseline.
 - Status/backlog/ADR discipline.
@@ -1393,8 +1430,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-000 | M0 | P0 | Done | Audit repository and establish evidence baseline | None | architect | Repository reality is documented; setup gaps and exact M0 plan are committed; status/backlog reconciled. |
 | RIT-001 | M0 | P0 | Done | Create pnpm/Turborepo strict TypeScript monorepo | RIT-000 | backend | Clean install, lint, typecheck, unit test, and build work from a fresh clone. |
 | RIT-002 | M0 | P0 | Done | Add environment validation and brand configuration | RIT-001 | backend | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded. |
-| RIT-003 | M0 | P0 | Ready | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
-| RIT-004 | M0 | P0 | Planned | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
+| RIT-003 | M0 | P0 | Done | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
+| RIT-004 | M0 | P0 | Ready | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
 | RIT-005 | M0 | P1 | Planned | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
 | RIT-006 | M0 | P1 | Planned | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |
 | RIT-007 | M0 | P1 | Planned | Add feature flag and typed configuration registry | RIT-002,RIT-003 | backend | Server-side flags are versioned, default safe-off, and testable. |
@@ -6052,6 +6089,35 @@ Add constraint, migration, transaction/race, ownership, retention/deletion, and 
 
 ---
 
+# File: `packages/db/MIGRATIONS.md`
+
+# Database migration policy
+
+## RIT-003 foundation classification
+
+The `seed_manifest` table is operational provenance for committed synthetic datasets. It is not a domain-content store and must not contain fixture payloads or user-like records.
+
+| Field | Classification | Purpose |
+|---|---|---|
+| `id` | Internal | Stable row identity |
+| `dataset_key` | Internal | Bounded synthetic dataset identifier |
+| `version` | Internal | Positive immutable dataset version |
+| `checksum_sha256` | Internal | Integrity digest for the committed dataset definition |
+| `is_synthetic` | Internal | Database-enforced proof that the dataset is synthetic |
+| `created_at` | Internal | Fixed UTC provenance timestamp |
+
+No field is personal, private, secret, payment, authentication, or content-rights data. There is no user owner and no user deletion workflow. The row is retained while its migration and seed version remain supported.
+
+## Compatibility and recovery
+
+- The initial migration is an explicit transaction and expand-only: it adds one table and indexes atomically, performs no backfill, and does not change an existing read or write path.
+- Runtime rollback leaves the additive table unused. Production schema removal requires a later reviewed forward migration, current backup evidence, and owner approval; do not manually drop it.
+- Local and isolated test rollback may drop only their guarded database and then reapply committed migrations.
+- Standard PostgreSQL logical and physical backups include this table. RIT-003 verifies a custom-format logical dump can restore into a second isolated database; production backup automation, point-in-time recovery, RPO/RTO, and restore operations remain RIT-123.
+- Check constraints are committed SQL because the Prisma schema cannot express every PostgreSQL invariant. Integration tests must fail if they are removed or weakened.
+
+---
+
 # File: `packages/divination/AGENTS.md`
 
 # Divination Engine Instructions
@@ -7650,6 +7716,7 @@ SOURCE_FILES = [
     "packages/ai/AGENTS.md",
     "packages/country-policy/AGENTS.md",
     "packages/db/AGENTS.md",
+    "packages/db/MIGRATIONS.md",
     "packages/divination/AGENTS.md",
     "packages/domain/AGENTS.md",
     "packages/i18n/AGENTS.md",

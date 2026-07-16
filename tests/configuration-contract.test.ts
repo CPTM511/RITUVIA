@@ -16,6 +16,9 @@ const readProductionTypeScriptFiles = async (directory: string): Promise<string[
     entries.map(async (entry): Promise<string[]> => {
       const absolutePath = path.join(directory, entry.name);
       if (entry.isDirectory()) {
+        if (path.relative(root, absolutePath) === "packages/db/src/generated/prisma") {
+          return [];
+        }
         if ([".next", ".turbo", "dist", "node_modules", "test"].includes(entry.name)) {
           return [];
         }
@@ -80,6 +83,10 @@ describe("source configuration boundaries", () => {
       "apps/web/next.config.ts",
       "apps/web/start.mjs",
       "apps/worker/src/main.ts",
+      "packages/db/prisma.config.ts",
+      "packages/db/prisma/seed.ts",
+      "packages/db/scripts/local-postgres.mjs",
+      "packages/db/scripts/verify-foundation.mjs",
     ]);
   });
 

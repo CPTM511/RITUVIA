@@ -1,0 +1,34 @@
+{
+  "name": "@rituvia/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm generate && tsc -p tsconfig.build.json",
+    "db:local:reset": "node scripts/manage-development-database.mjs reset",
+    "db:local:setup": "node scripts/manage-development-database.mjs setup",
+    "db:local:start": "node scripts/local-postgres.mjs start",
+    "db:local:status": "node scripts/local-postgres.mjs status",
+    "db:local:stop": "node scripts/local-postgres.mjs stop",
+    "db:local:url": "node scripts/local-postgres.mjs url",
+    "generate": "prisma generate",
+    "test:integration": "node scripts/verify-foundation.mjs",
+    "typecheck": "pnpm generate && tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.8.0",
+    "@prisma/client": "7.8.0",
+    "pg": "8.22.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.20.0",
+    "prisma": "7.8.0"
+  }
+}

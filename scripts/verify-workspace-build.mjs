@@ -10,6 +10,10 @@ const requiredArtifacts = [
   "packages/config/dist/brand.js",
   "packages/config/dist/client.js",
   "packages/config/dist/server.js",
+  "packages/db/dist/client.d.ts",
+  "packages/db/dist/client.js",
+  "packages/db/dist/index.d.ts",
+  "packages/db/dist/index.js",
   "packages/domain/dist/index.d.ts",
   "packages/domain/dist/index.js",
 ];
@@ -17,6 +21,7 @@ const requiredArtifacts = [
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
 
 const domainModule = await import(pathToFileURL(`${process.cwd()}/packages/domain/dist/index.js`));
+const databaseModule = await import(pathToFileURL(`${process.cwd()}/packages/db/dist/index.js`));
 const configBrandModule = await import(
   pathToFileURL(`${process.cwd()}/packages/config/dist/brand.js`)
 );
@@ -30,6 +35,15 @@ const workerModule = await import(pathToFileURL(`${process.cwd()}/apps/worker/di
 
 if (Object.keys(domainModule).length !== 0) {
   throw new Error("The empty domain boundary emitted unexpected runtime exports.");
+}
+
+if (
+  typeof databaseModule.assertDatabaseUrl !== "function" ||
+  typeof databaseModule.createDatabaseClient !== "function"
+) {
+  throw new TypeError(
+    "The database build does not expose its injected, connection-free adapter boundary.",
+  );
 }
 
 if (typeof workerModule.createWorkerRuntime !== "function") {

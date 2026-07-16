@@ -53,6 +53,7 @@ SOURCE_FILES = [
     "packages/ai/AGENTS.md",
     "packages/country-policy/AGENTS.md",
     "packages/db/AGENTS.md",
+    "packages/db/MIGRATIONS.md",
     "packages/divination/AGENTS.md",
     "packages/domain/AGENTS.md",
     "packages/i18n/AGENTS.md",

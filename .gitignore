@@ -13,6 +13,8 @@ dist/
 playwright-report/
 test-results/
 .rituvia-config-boundary-*/
+.local/
+packages/db/src/generated/prisma/
 
 __pycache__/
 *.py[cod]

@@ -18,6 +18,7 @@ describe("workspace contract", () => {
         "apps/web/package.json",
         "apps/worker/package.json",
         "packages/config/package.json",
+        "packages/db/package.json",
         "packages/domain/package.json",
       ].map(readManifest),
     );
@@ -26,6 +27,7 @@ describe("workspace contract", () => {
       "@rituvia/web",
       "@rituvia/worker",
       "@rituvia/config",
+      "@rituvia/db",
       "@rituvia/domain",
     ]);
 

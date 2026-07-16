@@ -39,7 +39,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
 
 ### Local environment configuration
 
@@ -49,9 +49,37 @@ The repository root is the shared environment-file location for both Web and Wor
 cp .env.example .env
 ```
 
-Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted, and the database URL remains optional until `RIT-003`. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
+Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted. The database lifecycle commands derive the attested local URL themselves; application processes still receive `DATABASE_URL` explicitly through the process environment or an ignored environment file. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
 
 The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
+
+### Local PostgreSQL and Prisma
+
+The verified local database path requires PostgreSQL 17 or 18 command-line tools from one installation. This host uses Homebrew PostgreSQL 17.10. Standard Homebrew versioned locations are detected automatically; otherwise set `RITUVIA_POSTGRES_BIN` to the absolute directory containing all required PostgreSQL tools. Docker is not installed, so no container-reproducibility claim is made; RIT-004 owns the separate CI runtime.
+
+After the frozen install, create or reuse the repository-owned cluster, apply committed migrations, and load the deterministic synthetic seed:
+
+```bash
+APP_ENV=local npm exec --yes --package=pnpm@11.13.1 -- pnpm db:setup
+```
+
+The cluster lives under ignored `.local/postgres/`, generates random mode-0600 credentials, uses SCRAM authentication and data checksums, and binds only `127.0.0.1:55432`. The application role is not a superuser and cannot create roles or databases. Inspect its state or obtain the local application URL only while it is running:
+
+```bash
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:status
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:url
+```
+
+`db:url` prints only the path to an ignored mode-0600 URL file. Use `pnpm db:url -- --reveal` only when explicit terminal disclosure is necessary to supply a local application process; do not paste the URL into committed files, logs, tickets, or remote environments.
+
+Reset is local and destructive, requires `APP_ENV=local`, and accepts only the exact fixed development database after a live cluster/data-directory/system-identifier attestation:
+
+```bash
+APP_ENV=local npm exec --yes --package=pnpm@11.13.1 -- pnpm db:reset -- --confirm=reset:rituvia_local@127.0.0.1:55432
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:stop
+```
+
+Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or the local seed against preview, staging, or production. Migration compatibility, field classification, rollback, and recovery boundaries are recorded in `packages/db/MIGRATIONS.md`.
 
 ## Canonical document map
 
@@ -81,7 +109,7 @@ The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*`
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, and RIT-002 typed configuration boundary are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-003`.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, and RIT-003 local PostgreSQL/Prisma foundation are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-004`.
 
 ## Non-negotiable product principle
 

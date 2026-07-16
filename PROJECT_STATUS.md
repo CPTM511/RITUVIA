@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; reproducible monorepo and typed configuration boundary complete; product features not started.
+**Stage:** M0 engineering foundation in progress; reproducible monorepo, typed configuration boundary, and local database foundation complete; product features not started.
 
 **Release:** Pre-M0
 
@@ -22,12 +22,14 @@
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
-- Root formatting, ESLint, TypeScript, Vitest, and production-build gates with non-empty behavioral tests and artifact verification.
+- Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
+- Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
+- Root formatting, ESLint, TypeScript, Vitest, real PostgreSQL integration, and production-build gates with non-empty behavioral tests and artifact verification.
 
 ## What does not exist yet
 
 - User-facing product features and production-ready application behavior.
-- Database schema, migrations, local PostgreSQL runtime, and integration-test infrastructure.
+- Active CI, general secret scanning, and CI migration enforcement.
 - Production infrastructure.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
 - Formal trademark clearance or secured canonical domain.
@@ -38,25 +40,25 @@
 
 ## Current blockers and owner decisions
 
-| ID | Decision needed | Blocks | Owner action |
-|---|---|---|---|
-| OWN-001 | Formal brand/domain clearance | Public branding and trademark filing | Commission trademark and linguistic search; secure domains/accounts |
-| OWN-002 | Payment underwriting path | Production checkout | Obtain written pre-approval from primary and backup providers |
-| OWN-003 | Astrology engine license/provider | Production natal chart | Select and license a lawful deterministic engine |
-| OWN-004 | Launch legal markets and entity | Public launch | Select entity, tax setup, legal counsel, and first launch countries |
-| OWN-005 | Initial operating budget | Paid vendors and traffic | Set monthly infrastructure, AI, payment-loss, and marketing limits |
-| OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
-| OWN-007 | Regional-tradition expert/content approval | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries |
+| ID      | Decision needed                                | Blocks                                | Owner action                                                                                  |
+| ------- | ---------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
+| OWN-001 | Formal brand/domain clearance                  | Public branding and trademark filing  | Commission trademark and linguistic search; secure domains/accounts                           |
+| OWN-002 | Payment underwriting path                      | Production checkout                   | Obtain written pre-approval from primary and backup providers                                 |
+| OWN-003 | Astrology engine license/provider              | Production natal chart                | Select and license a lawful deterministic engine                                              |
+| OWN-004 | Launch legal markets and entity                | Public launch                         | Select entity, tax setup, legal counsel, and first launch countries                           |
+| OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
+| OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
+| OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
 
 These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-003` — Create local PostgreSQL and Prisma foundation.
+`RIT-004` — Create test harness and CI quality gates.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across four workspaces, 29 unit/contract tests in four files, and production builds pass. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. CI, database integration, general secret scanning, and migration checks remain later M0 gates in RIT-003/RIT-004.
+The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 39 unit/contract tests in five files, a real PostgreSQL foundation suite, and production builds pass. The database suite proves clean/idempotent migration, deterministic/idempotent seed, CHECK and unique constraints, transaction rollback, concurrent-write enforcement, guarded isolated reset, custom-format logical dump/restore, lifecycle-lock exclusion and stale recovery, exact managed configuration, and log-privacy canaries. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. Active CI, general secret scanning, and CI migration enforcement remain RIT-004 work.
 
 ## Update rules
 

@@ -1,0 +1,22 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+  runtime      = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model SeedManifest {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  datasetKey     String   @map("dataset_key") @db.VarChar(100)
+  version        Int
+  checksumSha256 String   @map("checksum_sha256") @db.Char(64)
+  isSynthetic    Boolean  @default(true) @map("is_synthetic")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([datasetKey, version], map: "seed_manifest_dataset_key_version_key")
+  @@map("seed_manifest")
+}

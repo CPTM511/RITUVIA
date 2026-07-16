@@ -10,7 +10,7 @@ Includes:
 
 - Monorepo, strict TypeScript, formatting/linting, package boundaries.
 - Environment validation, brand config, feature flags, synthetic seed strategy.
-- PostgreSQL/Prisma foundation and local containers.
+- PostgreSQL/Prisma foundation, a verified local database runtime, and a separately verified CI database runtime.
 - CI, test harness, preview smoke, dependency/secret scanning.
 - Observability/redaction baseline.
 - Status/backlog/ADR discipline.
