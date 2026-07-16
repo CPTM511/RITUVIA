@@ -12,6 +12,7 @@ coverage/
 dist/
 playwright-report/
 test-results/
+.rituvia-config-boundary-*/
 
 __pycache__/
 *.py[cod]

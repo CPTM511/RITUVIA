@@ -12,11 +12,13 @@
     "build": "turbo run build && node scripts/verify-workspace-build.mjs",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "dev": "turbo run dev",
-    "format": "prettier --write package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.mjs\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,json}\" \"packages/**/*.{ts,json}\"",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.mjs\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,json}\" \"packages/**/*.{ts,json}\"",
-    "lint": "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps/web apps/worker packages/domain --max-warnings=0",
-    "test": "vitest run",
+    "format": "prettier --write package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.mjs\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json}\" \"packages/**/*.{ts,json}\"",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.mjs\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json}\" \"packages/**/*.{ts,json}\"",
+    "lint": "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps/web apps/worker packages/config packages/domain --max-warnings=0",
+    "test": "pnpm test:unit && pnpm test:configuration-boundary",
+    "test:configuration-boundary": "node scripts/verify-configuration-boundary.mjs",
     "test:list": "vitest list --filesOnly",
+    "test:unit": "vitest run",
     "typecheck": "turbo run typecheck && tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {

@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; reproducible monorepo complete; product features not started.
+**Stage:** M0 engineering foundation in progress; reproducible monorepo and typed configuration boundary complete; product features not started.
 
 **Release:** Pre-M0
 
@@ -21,12 +21,12 @@
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
+- Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Root formatting, ESLint, TypeScript, Vitest, and production-build gates with non-empty behavioral tests and artifact verification.
 
 ## What does not exist yet
 
 - User-facing product features and production-ready application behavior.
-- Environment validation, runtime configuration, and configurable brand boundary.
 - Database schema, migrations, local PostgreSQL runtime, and integration-test infrastructure.
 - Production infrastructure.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
@@ -52,11 +52,11 @@ These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-002` — Add environment validation and brand configuration.
+`RIT-003` — Create local PostgreSQL and Prisma foundation.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, a dependency-free temporary copy passed frozen installation, formatting, ESLint, strict type checking across all three workspaces, five unit/contract tests in two files, and production builds for Web, Worker, and domain. CI, integration tests, secret scanning, and database migration checks remain later M0 gates in RIT-003/RIT-004.
+The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across four workspaces, 29 unit/contract tests in four files, and production builds pass. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. CI, database integration, general secret scanning, and migration checks remain later M0 gates in RIT-003/RIT-004.
 
 ## Update rules
 

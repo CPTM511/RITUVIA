@@ -14,14 +14,18 @@ const readManifest = async (path: string): Promise<PackageManifest> =>
 describe("workspace contract", () => {
   it("keeps every application and package private with real build gates", async () => {
     const manifests = await Promise.all(
-      ["apps/web/package.json", "apps/worker/package.json", "packages/domain/package.json"].map(
-        readManifest,
-      ),
+      [
+        "apps/web/package.json",
+        "apps/worker/package.json",
+        "packages/config/package.json",
+        "packages/domain/package.json",
+      ].map(readManifest),
     );
 
     expect(manifests.map(({ name }) => name)).toEqual([
       "@rituvia/web",
       "@rituvia/worker",
+      "@rituvia/config",
       "@rituvia/domain",
     ]);
 

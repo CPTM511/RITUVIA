@@ -124,6 +124,7 @@ coverage/
 dist/
 playwright-report/
 test-results/
+.rituvia-config-boundary-*/
 
 __pycache__/
 *.py[cod]
@@ -176,7 +177,19 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, and production builds. The active workspaces are `apps/web`, `apps/worker`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+
+### Local environment configuration
+
+The repository root is the shared environment-file location for both Web and Worker processes. Start with the optional baseline file:
+
+```bash
+cp .env.example .env
+```
+
+Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted, and the database URL remains optional until `RIT-003`. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
+
+The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
 
 ## Canonical document map
 
@@ -206,7 +219,7 @@ The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vi
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, and RIT-001 reproducible TypeScript monorepo are complete. No product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-002`.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, and RIT-002 typed configuration boundary are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-003`.
 
 ## Non-negotiable product principle
 
@@ -324,7 +337,7 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 **Validated:** 2026-07-16
 
-**Result:** PASS for the imported instruction pack, repository consistency, and the RIT-001 engineering foundation.
+**Result:** PASS for the imported instruction pack, repository consistency, and the RIT-001/RIT-002 engineering foundation.
 
 ## Checks passed
 
@@ -332,7 +345,7 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - Before mutation, all 84 archive checksum entries passed; this proved the imported ZIP was intact.
 - All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist.
 - All project TOML and JSON files parse successfully. Repository YAML parses with the host Ruby YAML parser, and pnpm accepts the workspace policy; the Python validator emits an explicit warning when PyYAML is unavailable instead of claiming that check ran.
-- Backlog contains 122 unique items: 115 product/engineering tasks and seven explicit owner gates. Dependency references are valid, the graph is acyclic, `RIT-000` and `RIT-001` are Done, and exactly one executable item is Ready: `RIT-002`.
+- Backlog contains 122 unique items: 115 product/engineering tasks and seven explicit owner gates. Dependency references are valid, the graph is acyclic, `RIT-000` through `RIT-002` are Done, and exactly one executable item is Ready: `RIT-003`.
 - Ten custom Codex agents contain required name, description, and developer instructions.
 - Root plus every nested `AGENTS.md` remains below the configured 65,536-byte project instruction limit.
 - The installed Codex CLI loads the project configuration and command rules. Thirty-five representative exec-policy cases cover normal push approval; common force-push variants; destructive Git; recursive deletion; Prisma reset/deploy variants; Terraform/Kubernetes changes; production deploy CLIs; remote PR/release creation; and package publishing.
@@ -344,7 +357,9 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - The task-result schema now includes the documented assumptions/blockers fields and supports review cadences that have no single backlog task; the task template uses the backlog status/priority vocabulary.
 - Node.js 24.18.0, pnpm 11.13.1, and every direct JavaScript dependency are pinned; the frozen lockfile passes strict peer, engine, release-age, exotic-subdependency, and exact install-script allowlist policies.
 - A clean temporary repository copy completed `pnpm install --frozen-lockfile` without changing the lockfile or leaving ignored/pending build scripts.
-- Root format, ESLint, strict TypeScript, Vitest, and build gates pass. Turbo executes Web, Worker, and domain tasks; five behavioral/contract assertions run across two test files; the build verifier checks six emitted artifacts and imports built ESM exports.
+- Root format, ESLint, strict TypeScript, Vitest, configuration-boundary, and build gates pass. Turbo executes Web, Worker, config, and domain tasks; 29 behavioral/contract tests run across four test files; the build verifier checks ten emitted artifacts and imports built ESM exports.
+- `.env.example` contains exactly the typed server inventory as empty assignments. Production source limits environment reads to reviewed adapters, rejects every `NEXT_PUBLIC_*` variable, keeps the working-brand display literal out of application code, and sends only a strict client allowlist.
+- An isolated normal Next.js production build and HTTP start deliver a randomized public canary while excluding randomized sender/database canaries from browser artifacts and the response. Invalid Web and Worker configuration exits nonzero with key-only diagnostics, and a deliberately illegal Client Component import fails specifically at the `server-only` boundary.
 
 ## Validation commands
 
@@ -356,11 +371,12 @@ shasum -a 256 -c checksums.sha256
 codex execpolicy check --pretty --rules .codex/rules/default.rules -- <command...>
 npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
+npm exec --yes --package=pnpm@11.13.1 -- pnpm test:configuration-boundary
 ```
 
 ## Limitations
 
-- This validates the specification/instruction package and the minimal RIT-001 application foundation. It does not validate a user-facing product flow, browser behavior, payment, database, AI, accessibility, security scan, deployment, or production runtime.
+- This validates the specification/instruction package and the RIT-001/RIT-002 application foundation, including built client-delivery and local production-start boundaries. It does not validate a user-facing product flow, interactive browser behavior, payment, database, AI, accessibility, general security scanning, deployment, or a hosted production runtime.
 - PyYAML and a JSON Schema meta-validator are not installed in the host environment. YAML is independently parsed with the available host Ruby parser; JSON is parsed and critical task-result schema invariants are checked locally. RIT-004 must add portable CI validation.
 - Command rules are exact positional prefixes and are an additional guard, not a substitute for the binding owner-approval rules in `AGENTS.md`. Reordered flags, aliases, and opaque shell wrappers still require human review.
 - The current CLI accepted the configuration, but model availability and configuration enums can change by CLI release/account. Re-check the official Codex configuration before enabling automation or upgrading Codex integration settings.
@@ -370,7 +386,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 
 ## Import acceptance result
 
-The imported build system now has a reproducible strict TypeScript monorepo and deterministic consistency workflow. The next task is `RIT-002`; it must add typed environment and configurable-brand boundaries. CI, database, and production readiness remain gated by later M0 tasks.
+The imported build system now has a reproducible strict TypeScript monorepo, typed environment/configurable-brand boundaries, and a deterministic consistency workflow. The next task is `RIT-003`; it must add the reproducible local PostgreSQL and Prisma foundation. CI and production readiness remain gated by later M0 tasks.
 
 ---
 
@@ -818,7 +834,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; reproducible monorepo complete; product features not started.
+**Stage:** M0 engineering foundation in progress; reproducible monorepo and typed configuration boundary complete; product features not started.
 
 **Release:** Pre-M0
 
@@ -837,12 +853,12 @@ Use this order:
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
+- Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Root formatting, ESLint, TypeScript, Vitest, and production-build gates with non-empty behavioral tests and artifact verification.
 
 ## What does not exist yet
 
 - User-facing product features and production-ready application behavior.
-- Environment validation, runtime configuration, and configurable brand boundary.
 - Database schema, migrations, local PostgreSQL runtime, and integration-test infrastructure.
 - Production infrastructure.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
@@ -868,11 +884,11 @@ These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-002` — Add environment validation and brand configuration.
+`RIT-003` — Create local PostgreSQL and Prisma foundation.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, a dependency-free temporary copy passed frozen installation, formatting, ESLint, strict type checking across all three workspaces, five unit/contract tests in two files, and production builds for Web, Worker, and domain. CI, integration tests, secret scanning, and database migration checks remain later M0 gates in RIT-003/RIT-004.
+The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across four workspaces, 29 unit/contract tests in four files, and production builds pass. A separate production-boundary harness proves public configuration delivery, secret absence from client artifacts and HTTP, sanitized nonzero Web/Worker startup failure, and a real `server-only` negative build. CI, database integration, general secret scanning, and migration checks remain later M0 gates in RIT-003/RIT-004.
 
 ## Update rules
 
@@ -1111,6 +1127,12 @@ This is an append-only summary of accepted architectural and product decisions. 
 
 - **Decision:** Pin the engineering contract to Node.js 24.18.0 LTS, pnpm 11.13.1, TypeScript 6.0.3, and ESLint 9.39.5; activate only the Web, Worker, and domain workspaces during RIT-001.
 - **Reason:** The exact versions are mutually compatible, reproducible from the lockfile, and avoid initializing speculative packages before their backlog slices. TypeScript 7 is outside the current typescript-eslint support range, and ESLint 10 conflicts with the React ESLint peer used by the selected Next.js release.
+- **Date:** 2026-07-16
+
+### D-016 — Server-authoritative environment and brand boundary
+
+- **Decision:** Centralize typed environment and working-brand parsing in `packages/config`; load the repository-root environment file set with identical pinned `@next/env` semantics in Web and Worker; reject `NEXT_PUBLIC_*`; and expose browser configuration only through a strict server-created allowlist projection. Require the complete approved brand surface and HTTPS canonical origin in production while retaining non-release local working defaults.
+- **Reason:** Prevents accidental secret bundling and scattered brand constants, makes Web/Worker startup fail closed with sanitized diagnostics, and preserves the ability to replace the uncleared working brand without rewriting user-facing modules.
 - **Date:** 2026-07-16
 
 ---
@@ -1370,8 +1392,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 |---|---|---:|---|---|---|---|---|
 | RIT-000 | M0 | P0 | Done | Audit repository and establish evidence baseline | None | architect | Repository reality is documented; setup gaps and exact M0 plan are committed; status/backlog reconciled. |
 | RIT-001 | M0 | P0 | Done | Create pnpm/Turborepo strict TypeScript monorepo | RIT-000 | backend | Clean install, lint, typecheck, unit test, and build work from a fresh clone. |
-| RIT-002 | M0 | P0 | Ready | Add environment validation and brand configuration | RIT-001 | backend | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded. |
-| RIT-003 | M0 | P0 | Planned | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
+| RIT-002 | M0 | P0 | Done | Add environment validation and brand configuration | RIT-001 | backend | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded. |
+| RIT-003 | M0 | P0 | Ready | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
 | RIT-004 | M0 | P0 | Planned | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
 | RIT-005 | M0 | P1 | Planned | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
 | RIT-006 | M0 | P1 | Planned | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |

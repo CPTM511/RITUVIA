@@ -6,13 +6,16 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "start": "next start",
+    "start": "node start.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@next/env": "16.2.10",
+    "@rituvia/config": "workspace:*",
     "next": "16.2.10",
     "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "react-dom": "19.2.7",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@types/react": "19.2.17",

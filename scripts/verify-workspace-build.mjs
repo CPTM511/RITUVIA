@@ -6,6 +6,10 @@ const requiredArtifacts = [
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
+  "packages/config/dist/brand.d.ts",
+  "packages/config/dist/brand.js",
+  "packages/config/dist/client.js",
+  "packages/config/dist/server.js",
   "packages/domain/dist/index.d.ts",
   "packages/domain/dist/index.js",
 ];
@@ -13,6 +17,15 @@ const requiredArtifacts = [
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
 
 const domainModule = await import(pathToFileURL(`${process.cwd()}/packages/domain/dist/index.js`));
+const configBrandModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/config/dist/brand.js`)
+);
+const configClientModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/config/dist/client.js`)
+);
+const configServerModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/config/dist/server.js`)
+);
 const workerModule = await import(pathToFileURL(`${process.cwd()}/apps/worker/dist/runtime.js`));
 
 if (Object.keys(domainModule).length !== 0) {
@@ -21,6 +34,14 @@ if (Object.keys(domainModule).length !== 0) {
 
 if (typeof workerModule.createWorkerRuntime !== "function") {
   throw new TypeError("The worker build does not export createWorkerRuntime.");
+}
+
+if (
+  typeof configBrandModule.createBrandConfiguration !== "function" ||
+  typeof configClientModule.parseClientConfiguration !== "function" ||
+  typeof configServerModule.parseServerConfiguration !== "function"
+) {
+  throw new TypeError("The config build does not expose its typed runtime boundaries.");
 }
 
 console.log(`Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports.`);

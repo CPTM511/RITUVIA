@@ -39,7 +39,19 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, and production builds. The active workspaces are `apps/web`, `apps/worker`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration checks, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+
+### Local environment configuration
+
+The repository root is the shared environment-file location for both Web and Worker processes. Start with the optional baseline file:
+
+```bash
+cp .env.example .env
+```
+
+Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted, and the database URL remains optional until `RIT-003`. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
+
+The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
 
 ## Canonical document map
 
@@ -69,7 +81,7 @@ The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vi
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, and RIT-001 reproducible TypeScript monorepo are complete. No product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-002`.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, and RIT-002 typed configuration boundary are complete. No user-facing product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-003`.
 
 ## Non-negotiable product principle
 
