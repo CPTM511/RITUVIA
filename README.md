@@ -30,6 +30,17 @@ An English-first, Web/PWA product for global users that offers:
 6. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
 7. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/workflows/*.example.yml` files only after security review.
 
+## Local development
+
+The repository contract is Node.js `24.18.0` (see `.node-version`) and pnpm `11.13.1`. Corepack is not required; from the repository root, use npm's package runner to invoke the exact package-manager version:
+
+```bash
+npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
+npm exec --yes --package=pnpm@11.13.1 -- pnpm check
+```
+
+The root quality gate checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, and production builds. The active workspaces are `apps/web`, `apps/worker`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+
 ## Canonical document map
 
 | Concern | Canonical file |
@@ -58,7 +69,7 @@ An English-first, Web/PWA product for global users that offers:
 
 ## Current status
 
-The strategy, operating specifications, and RIT-000 evidence baseline are complete. Production implementation has not started. Codex must select the single current executable task in `BACKLOG.md`; after the baseline commit that task is `RIT-001`.
+The strategy, operating specifications, RIT-000 evidence baseline, and RIT-001 reproducible TypeScript monorepo are complete. No product feature is implemented yet. Codex must select the single current executable task in `BACKLOG.md`; the current task is `RIT-002`.
 
 ## Non-negotiable product principle
 

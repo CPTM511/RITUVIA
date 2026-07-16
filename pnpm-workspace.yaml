@@ -1,0 +1,18 @@
+packages:
+  - apps/*
+  - packages/*
+
+nodeVersion: 24.18.0
+engineStrict: true
+strictPeerDependencies: true
+saveExact: true
+verifyStoreIntegrity: true
+strictDepBuilds: true
+blockExoticSubdeps: true
+minimumReleaseAge: 1440
+minimumReleaseAgeIgnoreMissingTime: false
+
+allowBuilds:
+  esbuild@0.28.1: true
+  sharp@0.34.5: true
+  unrs-resolver@1.12.2: true

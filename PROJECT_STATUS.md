@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; production feature implementation not started.
+**Stage:** M0 engineering foundation in progress; reproducible monorepo complete; product features not started.
 
 **Release:** Pre-M0
 
@@ -19,10 +19,15 @@
 - Sequenced roadmap and executable backlog.
 - Codex root/nested instructions, specialized roles, command rules, automation prompts, and review templates.
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
+- Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
+- Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
+- Root formatting, ESLint, TypeScript, Vitest, and production-build gates with non-empty behavioral tests and artifact verification.
 
 ## What does not exist yet
 
-- Production application code.
+- User-facing product features and production-ready application behavior.
+- Environment validation, runtime configuration, and configurable brand boundary.
+- Database schema, migrations, local PostgreSQL runtime, and integration-test infrastructure.
 - Production infrastructure.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
 - Formal trademark clearance or secured canonical domain.
@@ -47,11 +52,11 @@ These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-001` — Create pnpm/Turborepo strict TypeScript monorepo.
+`RIT-002` — Add environment validation and brand configuration.
 
 ## Current quality state
 
-The instruction/build package, generated manual, command-policy fixtures, and whole-package checksums pass local validation. No production code exists, so no application install/build/test/runtime claim is valid yet. RIT-001 must create the first reproducible implementation slice; CI remains a later M0 gate in RIT-004.
+The instruction pack and generated evidence pass local validation. On Node.js 24.18.0 with pnpm 11.13.1, a dependency-free temporary copy passed frozen installation, formatting, ESLint, strict type checking across all three workspaces, five unit/contract tests in two files, and production builds for Web, Worker, and domain. CI, integration tests, secret scanning, and database migration checks remain later M0 gates in RIT-003/RIT-004.
 
 ## Update rules
 
