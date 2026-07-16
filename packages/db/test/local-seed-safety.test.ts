@@ -7,7 +7,7 @@ const passwordCanary = "seed-password-canary";
 
 const createUrl = () => {
   const url = new URL("postgresql://127.0.0.1");
-  url.username = "rituvia_app";
+  url.username = "rituvia_migrator";
   url.password = passwordCanary;
   url.port = "55432";
   url.pathname = "/rituvia_local";

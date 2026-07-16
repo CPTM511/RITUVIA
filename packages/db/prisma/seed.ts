@@ -47,7 +47,7 @@ try {
 
     if (
       attestation?.databaseName !== target.databaseName ||
-      attestation.userName !== "rituvia_app" ||
+      attestation.userName !== "rituvia_migrator" ||
       attestation.clusterName !== target.expectedClusterName ||
       attestation.serverAddress !== "127.0.0.1" ||
       attestation.serverPort !== 55432
@@ -75,7 +75,7 @@ try {
 
     if (
       attestation?.databaseName !== target.databaseName ||
-      attestation.userName !== "rituvia_ci_app" ||
+      attestation.userName !== "rituvia_ci_migrator" ||
       attestation.serverPort !== 5432 ||
       Math.trunc(attestation.serverVersionNumber / 10_000) !== 17 ||
       attestation.inRecovery ||

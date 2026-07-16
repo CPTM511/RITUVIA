@@ -6,6 +6,7 @@ import { Client, Pool } from "pg";
 
 import {
   assertExactLocalDatabaseUrl,
+  ensureRuntimeDatabasePrivileges,
   localPostgresConstants,
   resetDevelopmentDatabase,
   runLocalPrisma,
@@ -143,19 +144,84 @@ const verifyMigrationState = async (pool) => {
       FROM _prisma_migrations
      ORDER BY started_at
   `);
-  assert.equal(result.rowCount, 1);
-  assert.equal(result.rows[0]?.migrationName, "202607160001_foundation");
-  assert.ok(result.rows[0]?.finishedAt instanceof Date);
-  assert.equal(result.rows[0]?.rolledBackAt, null);
+  assert.deepEqual(
+    result.rows.map(({ migrationName }) => migrationName),
+    ["202607160001_foundation", "202607170001_feature_flag_registry"],
+  );
+  for (const row of result.rows) {
+    assert.ok(row.finishedAt instanceof Date);
+    assert.equal(row.rolledBackAt, null);
+  }
+
+  const appendOnlyPolicies = await pool.query(`
+    SELECT c.relrowsecurity AS "rowSecurity",
+           c.relforcerowsecurity AS "forceRowSecurity",
+           array_agg(p.cmd ORDER BY p.cmd) AS commands
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_policies p ON p.schemaname = n.nspname AND p.tablename = c.relname
+     WHERE n.nspname = 'public' AND c.relname = 'feature_flag_version'
+     GROUP BY c.relrowsecurity, c.relforcerowsecurity
+  `);
+  assert.deepEqual(appendOnlyPolicies.rows[0], {
+    commands: ["INSERT", "SELECT"],
+    forceRowSecurity: true,
+    rowSecurity: true,
+  });
+  const policyRoles = await pool.query(`
+    SELECT policyname AS "policyName", cmd AS command, to_json(roles) AS roles
+      FROM pg_policies
+     WHERE schemaname = 'public' AND tablename = 'feature_flag_version'
+     ORDER BY policyname
+  `);
+  assert.deepEqual(policyRoles.rows, [
+    {
+      command: "INSERT",
+      policyName: "feature_flag_version_append",
+      roles: ["rituvia_feature_flag_writer"],
+    },
+    {
+      command: "SELECT",
+      policyName: "feature_flag_version_read",
+      roles: ["rituvia_feature_flag_reader"],
+    },
+  ]);
 };
 
 const verifyRoleRestrictions = async (databaseUrl) => {
   const client = new Client({ connectionString: databaseUrl, connectionTimeoutMillis: 5_000 });
   await client.connect();
   try {
+    const ownership = await client.query(`
+      SELECT pg_get_userbyid((SELECT datdba FROM pg_database WHERE datname = current_database())) AS "databaseOwner",
+             pg_get_userbyid((SELECT nspowner FROM pg_namespace WHERE nspname = 'public')) AS "schemaOwner",
+             pg_get_userbyid((SELECT relowner FROM pg_class WHERE oid = 'public.feature_flag_version'::regclass)) AS "tableOwner",
+             has_database_privilege(current_user, current_database(), 'CREATE') AS "canCreateInDatabase",
+             has_schema_privilege(current_user, 'public', 'CREATE') AS "canCreateInSchema",
+             has_table_privilege(current_user, 'public.feature_flag_version', 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') AS "canMutateFeatureFlags"
+    `);
+    assert.deepEqual(ownership.rows[0], {
+      canCreateInDatabase: false,
+      canCreateInSchema: false,
+      canMutateFeatureFlags: false,
+      databaseOwner: localPostgresConstants.migratorRole,
+      schemaOwner: localPostgresConstants.migratorRole,
+      tableOwner: localPostgresConstants.migratorRole,
+    });
     const suffix = randomBytes(6).toString("hex");
     await expectPostgresError(() => client.query(`CREATE ROLE forbidden_${suffix}`), "42501");
     await expectPostgresError(() => client.query(`CREATE DATABASE forbidden_${suffix}`), "42501");
+    await expectPostgresError(
+      () => client.query(`CREATE TABLE forbidden_${suffix} (id int)`),
+      "42501",
+    );
+    for (const statement of [
+      "ALTER TABLE feature_flag_version DISABLE ROW LEVEL SECURITY",
+      "DROP POLICY feature_flag_version_read ON feature_flag_version",
+      "TRUNCATE feature_flag_version",
+    ]) {
+      await expectPostgresError(() => client.query(statement), "42501");
+    }
   } finally {
     await client.end();
   }
@@ -251,12 +317,212 @@ const verifyConstraintsAndTransactions = async (pool) => {
   assert.equal(serverLog.includes(logCanary), false);
 };
 
-const migrateAndSeed = (lease, databaseUrl) => {
-  runLocalPrisma(lease.runtime, databaseUrl, ["generate"]);
-  runLocalPrisma(lease.runtime, databaseUrl, ["migrate", "deploy"]);
-  runLocalPrisma(lease.runtime, databaseUrl, ["migrate", "deploy"]);
-  runLocalPrisma(lease.runtime, databaseUrl, ["db", "seed"]);
-  runLocalPrisma(lease.runtime, databaseUrl, ["db", "seed"]);
+const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
+  const initial = await runtimePool.query(
+    "SELECT count(*)::int AS count FROM feature_flag_version",
+  );
+  assert.equal(initial.rows[0]?.count, 0);
+
+  const insert = (overrides = {}) => {
+    const record = {
+      actorId: "codex.local",
+      approvalReference: null,
+      changeReference: "RIT-007",
+      countryCodes: [],
+      createdAt: new Date("2026-07-17T10:00:00.000Z"),
+      effectiveAt: new Date("2026-07-17T11:00:00.000Z"),
+      expiresAt: null,
+      flagKey: "experience.public_shell",
+      localeTags: [],
+      registryVersion: 1,
+      state: "off",
+      version: 1,
+      ...overrides,
+    };
+    return controlPool.query(
+      `INSERT INTO feature_flag_version
+         (registry_version, flag_key, version, state, country_codes, locale_tags,
+          effective_at, expires_at, change_reference, approval_reference, actor_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       RETURNING id::text AS id`,
+      [
+        record.registryVersion,
+        record.flagKey,
+        record.version,
+        record.state,
+        record.countryCodes,
+        record.localeTags,
+        record.effectiveAt,
+        record.expiresAt,
+        record.changeReference,
+        record.approvalReference,
+        record.actorId,
+        record.createdAt,
+      ],
+    );
+  };
+
+  await expectPostgresError(
+    () => insert({ registryVersion: 0 }),
+    "23514",
+    "feature_flag_version_registry_version_check",
+  );
+  await expectPostgresError(
+    () => insert({ flagKey: "Invalid Key" }),
+    "23514",
+    "feature_flag_version_flag_key_check",
+  );
+  await expectPostgresError(
+    () => insert({ version: 0 }),
+    "23514",
+    "feature_flag_version_version_check",
+  );
+  await expectPostgresError(
+    () => insert({ state: "partial" }),
+    "23514",
+    "feature_flag_version_state_check",
+  );
+  await expectPostgresError(
+    () => insert({ countryCodes: ["usa"] }),
+    "23514",
+    "feature_flag_version_country_codes_check",
+  );
+  await expectPostgresError(
+    () => insert({ localeTags: ["not_a_locale"] }),
+    "23514",
+    "feature_flag_version_locale_tags_check",
+  );
+  await expectPostgresError(
+    () =>
+      insert({
+        expiresAt: new Date("2026-07-17T11:00:00.000Z"),
+      }),
+    "23514",
+    "feature_flag_version_expiry_check",
+  );
+  await expectPostgresError(
+    () => insert({ createdAt: new Date("2026-07-17T12:00:00.000Z") }),
+    "23514",
+    "feature_flag_version_effective_at_check",
+  );
+  await expectPostgresError(
+    () => insert({ changeReference: "private free text" }),
+    "23514",
+    "feature_flag_version_change_reference_check",
+  );
+  await expectPostgresError(
+    () => insert({ approvalReference: "approved" }),
+    "23514",
+    "feature_flag_version_approval_reference_check",
+  );
+  await expectPostgresError(
+    () => insert({ actorId: "Invalid Actor" }),
+    "23514",
+    "feature_flag_version_actor_id_check",
+  );
+
+  const created = await insert();
+  const id = created.rows[0]?.id;
+  assert.match(id, /^[0-9a-f-]{36}$/);
+  await expectPostgresError(
+    () => insert(),
+    "23505",
+    "feature_flag_version_registry_flag_key_version_key",
+  );
+
+  await expectPostgresError(
+    () =>
+      insert({
+        countryCodes: ["US"],
+        flagKey: "payments.fiat_checkout",
+        state: "on",
+      }),
+    "42501",
+  );
+  const approved = await insert({
+    approvalReference: "OWN-002:local-owner-record",
+    countryCodes: ["US"],
+    flagKey: "payments.fiat_checkout",
+    state: "on",
+  });
+  assert.match(approved.rows[0]?.id, /^[0-9a-f-]{36}$/);
+  await expectPostgresError(
+    () =>
+      insert({
+        approvalReference: "OWN-004:wrong-gate",
+        countryCodes: ["US"],
+        flagKey: "payments.fiat_checkout",
+        state: "on",
+        version: 2,
+      }),
+    "42501",
+  );
+  await insert({ registryVersion: 2 });
+
+  await expectPostgresError(
+    () =>
+      runtimePool.query(
+        `INSERT INTO feature_flag_version
+           (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+         VALUES (1, 'experience.public_shell', 99, now(), 'RIT-007', 'runtime.denied')`,
+      ),
+    "42501",
+  );
+
+  for (const [statement, values] of [
+    ["UPDATE feature_flag_version SET state = 'on' WHERE id = $1::uuid", [id]],
+    ["DELETE FROM feature_flag_version WHERE id = $1::uuid", [id]],
+    ["TRUNCATE feature_flag_version", []],
+  ]) {
+    await expectPostgresError(() => controlPool.query(statement, values), "42501");
+  }
+  const unchanged = await runtimePool.query(
+    "SELECT state FROM feature_flag_version WHERE id = $1::uuid",
+    [id],
+  );
+  assert.deepEqual(unchanged.rows, [{ state: "off" }]);
+  const histories = await runtimePool.query(
+    `SELECT registry_version AS "registryVersion", flag_key AS "flagKey", version, state,
+            country_codes AS "countryCodes", approval_reference AS "approvalReference"
+       FROM feature_flag_version
+      ORDER BY registry_version, flag_key, version`,
+  );
+  assert.deepEqual(histories.rows, [
+    {
+      approvalReference: null,
+      countryCodes: [],
+      flagKey: "experience.public_shell",
+      registryVersion: 1,
+      state: "off",
+      version: 1,
+    },
+    {
+      approvalReference: "OWN-002:local-owner-record",
+      countryCodes: ["US"],
+      flagKey: "payments.fiat_checkout",
+      registryVersion: 1,
+      state: "on",
+      version: 1,
+    },
+    {
+      approvalReference: null,
+      countryCodes: [],
+      flagKey: "experience.public_shell",
+      registryVersion: 2,
+      state: "off",
+      version: 1,
+    },
+  ]);
+  return histories.rows;
+};
+
+const migrateAndSeed = async (lease, database) => {
+  runLocalPrisma(lease.runtime, database.migrationDatabaseUrl, ["generate"]);
+  runLocalPrisma(lease.runtime, database.migrationDatabaseUrl, ["migrate", "deploy"]);
+  runLocalPrisma(lease.runtime, database.migrationDatabaseUrl, ["migrate", "deploy"]);
+  await ensureRuntimeDatabasePrivileges(lease.runtime, database.databaseName);
+  runLocalPrisma(lease.runtime, database.migrationDatabaseUrl, ["db", "seed"]);
+  runLocalPrisma(lease.runtime, database.migrationDatabaseUrl, ["db", "seed"]);
 };
 
 verifyTargetGuards();
@@ -297,41 +563,67 @@ await withLocalPostgresLease(async (lease) => {
 
     const database = await lease.createTestDatabase();
     databases.push(database);
-    migrateAndSeed(lease, database.databaseUrl);
+    await migrateAndSeed(lease, database);
 
     let pool = createTrackedPool(database.databaseUrl, 10);
+    let migrationPool = createTrackedPool(database.migrationDatabaseUrl, 10);
+    let controlPool = createTrackedPool(database.controlDatabaseUrl, 10);
     await verifyMigrationState(pool);
     await verifySeed(pool);
     await verifyRoleRestrictions(database.databaseUrl);
-    await verifyConstraintsAndTransactions(pool);
+    await verifyConstraintsAndTransactions(migrationPool);
+    await verifyFeatureFlagVersions(pool, controlPool);
 
-    await pool.query(
+    await migrationPool.query(
       `INSERT INTO seed_manifest (dataset_key, version, checksum_sha256, is_synthetic)
        VALUES ('reset-marker', 1, $1, true)`,
       ["b".repeat(64)],
     );
     await closeTrackedPool(pool);
+    await closeTrackedPool(migrationPool);
+    await closeTrackedPool(controlPool);
     await database.reset();
-    migrateAndSeed(lease, database.databaseUrl);
+    await migrateAndSeed(lease, database);
     pool = createTrackedPool(database.databaseUrl);
+    controlPool = createTrackedPool(database.controlDatabaseUrl);
     await verifyMigrationState(pool);
     await verifySeed(pool);
     const resetMarker = await pool.query(
       "SELECT count(*)::int AS count FROM seed_manifest WHERE dataset_key = 'reset-marker'",
     );
     assert.equal(resetMarker.rows[0]?.count, 0);
+    const sourceHistory = await verifyFeatureFlagVersions(pool, controlPool);
     await closeTrackedPool(pool);
+    await closeTrackedPool(controlPool);
 
     const restored = await lease.createTestDatabase();
     databases.push(restored);
     assert.notEqual(database.databaseName, restored.databaseName);
     await verifyLogicalDumpRestore(lease.runtime, database, restored);
-    runLocalPrisma(lease.runtime, restored.databaseUrl, ["migrate", "deploy"]);
-    runLocalPrisma(lease.runtime, restored.databaseUrl, ["db", "seed"]);
+    runLocalPrisma(lease.runtime, restored.migrationDatabaseUrl, ["migrate", "deploy"]);
+    await ensureRuntimeDatabasePrivileges(lease.runtime, restored.databaseName);
+    runLocalPrisma(lease.runtime, restored.migrationDatabaseUrl, ["db", "seed"]);
     const restoredPool = createTrackedPool(restored.databaseUrl);
+    const restoredControlPool = createTrackedPool(restored.controlDatabaseUrl);
     await verifyMigrationState(restoredPool);
     await verifySeed(restoredPool);
+    const restoredHistory = await restoredPool.query(
+      `SELECT registry_version AS "registryVersion", flag_key AS "flagKey", version, state,
+              country_codes AS "countryCodes", approval_reference AS "approvalReference"
+         FROM feature_flag_version
+        ORDER BY registry_version, flag_key, version`,
+    );
+    assert.deepEqual(restoredHistory.rows, sourceHistory);
+    await verifyRoleRestrictions(restored.databaseUrl);
+    await expectPostgresError(
+      () =>
+        restoredControlPool.query(
+          "UPDATE feature_flag_version SET state = 'off' WHERE state = 'on'",
+        ),
+      "42501",
+    );
     await closeTrackedPool(restoredPool);
+    await closeTrackedPool(restoredControlPool);
   } catch (error) {
     primaryError = error;
   }
@@ -365,5 +657,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 process.stdout.write(
-  "Verified local PostgreSQL attestation, migration, seed, constraints, transaction, race, reset, and logical restore.\n",
+  "Verified local PostgreSQL attestation, migration, seed, feature-flag immutability, constraints, transaction, race, reset, and logical restore.\n",
 );

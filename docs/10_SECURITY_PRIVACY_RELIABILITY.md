@@ -147,6 +147,41 @@ Finalize objectives before launch and align alerting/runbooks.
 - Backup retention aligned with deletion/legal policy.
 - Infrastructure and configuration reproducible from code/documented provider state.
 
+The feature-flag version table uses forced row-level security and separate migrator, read-only
+runtime, and append-only control identities. Logical dumps run as runtime with row security and
+INSERT-form data; restore runs as the non-superuser migrator into an empty isolated database, then
+reapplies least-privilege grants. The test backs up non-empty off and approved-on history, compares
+restored fields exactly, and re-attests RLS, constraints, runtime DDL/TRUNCATE denial, and control
+update denial. It never disables RLS or gives the runtime ownership/bypass privileges.
+
+### Feature-flag failure boundary
+
+- Missing, malformed, unknown-version, future-only, expired, out-of-scope, or stale-removal records
+  resolve to disabled or reject snapshot construction; none become truthy through coercion.
+- Owner-gated flags require the exact gate-prefix reference plus their required country/locale
+  shape; the control credential is granted only after the referenced owner record exists.
+- Evaluation time is supplied by a server-owned clock rather than a request field.
+- Raw evaluator construction is restricted to one exact Web composition adapter; runtime scope is
+  server policy context, not client-supplied authorization evidence.
+- The exported Web loader is zero-argument and owns runtime configuration lookup plus database
+  client lifecycle, so another server module cannot inject a fake persistence adapter.
+- Each loader invocation attests the connected PostgreSQL identity before reading and rejects
+  database/schema/table owners, DDL privileges, mutation privileges, superuser/bypass-RLS roles,
+  CREATEDB/CREATEROLE/REPLICATION, table or column mutation including MAINTAIN, missing SELECT,
+  ambiguous results, preselected startup roles where `session_user` differs from `current_user`, and
+  any direct or transitive role-membership path to those capabilities, including membership that is
+  currently marked non-settable.
+- A later-created emergency-off version outranks future scheduled lower versions, and retired keys
+  remain forced off until cleanup and a later registry-version removal.
+- Snapshots and results contain bounded identifiers and categorical metadata only—never customer
+  identifiers, private text, secrets, provider payloads, or arbitrary JSON.
+- The database reader is bounded one record beyond the parser maximum so oversized state fails
+  closed instead of being silently truncated.
+- The runtime database role is read-only. The separate append-only control identity and policies are
+  modeled and exercised locally/CI, but a production credential grant, approval-record system,
+  change workflow, cache/invalidation strategy, and emergency operator UX do not yet exist and must
+  not be claimed.
+
 ## 14. Observability
 
 ### Logs

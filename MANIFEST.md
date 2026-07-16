@@ -1,6 +1,6 @@
 # RITUVIA Codex Build System Manifest
 
-**Generated:** 2026-07-16
+**Generated:** 2026-07-17
 
 **Purpose:** a repository-ready instruction and operating package for building RITUVIA as an AI-leveraged one-person company.
 
@@ -10,7 +10,7 @@
 - `OWNER_OPERATING_GUIDE_ZH.md` — Chinese owner operating manual.
 - `CODEX_MASTER_PROMPT.md` — first-session and continuation prompts.
 - `AGENTS.md` — top-level binding project instructions.
-- `BACKLOG.md` — 123 sequenced tasks, including eight explicit owner gates.
+- `BACKLOG.md` — 128 sequenced tasks, including eight explicit owner gates.
 - `ROADMAP.md` — 16 milestones from repository foundation through expansion.
 - `PROJECT_STATUS.md` — current truth and blockers.
 - `ENGINEERING_BASELINE.md` — observed repository reality, setup gaps, and exact M0 plan.

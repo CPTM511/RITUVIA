@@ -1,4 +1,5 @@
 import {
+  ensureRuntimeDatabasePrivileges,
   localPostgresConstants,
   resetDevelopmentDatabase,
   runLocalPrisma,
@@ -12,16 +13,16 @@ if (command !== "setup" && command !== "reset") {
 }
 
 await withLocalPostgresLease(async (lease) => {
-  let databaseUrl = lease.developmentDatabaseUrl;
-
   if (command === "reset") {
     const confirmationArgument = args.find((argument) => argument.startsWith("--confirm="));
     const confirmation = confirmationArgument?.slice("--confirm=".length);
-    databaseUrl = await resetDevelopmentDatabase(lease.runtime, confirmation);
+    await resetDevelopmentDatabase(lease.runtime, confirmation);
   }
 
+  const databaseUrl = lease.developmentMigrationDatabaseUrl;
   runLocalPrisma(lease.runtime, databaseUrl, ["generate"]);
   runLocalPrisma(lease.runtime, databaseUrl, ["migrate", "deploy"]);
+  await ensureRuntimeDatabasePrivileges(lease.runtime, localPostgresConstants.developmentDatabase);
   runLocalPrisma(lease.runtime, databaseUrl, ["db", "seed"]);
 
   process.stdout.write(

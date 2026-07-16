@@ -260,7 +260,7 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, RIT-005 fail-closed package architecture policy, and RIT-006 privacy-safe local observability baseline are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. RIT-007 is the next Ready task. No user-facing product feature is implemented yet.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, RIT-005 fail-closed package architecture policy, RIT-006 privacy-safe local observability baseline, and RIT-007 typed safe-off feature-flag registry are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. RIT-009 is the next Ready task because RIT-008 still depends on blocked RIT-004. No user-facing product feature is implemented yet.
 
 ## Non-negotiable product principle
 
@@ -272,7 +272,7 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 # RITUVIA Codex Build System Manifest
 
-**Generated:** 2026-07-16
+**Generated:** 2026-07-17
 
 **Purpose:** a repository-ready instruction and operating package for building RITUVIA as an AI-leveraged one-person company.
 
@@ -282,7 +282,7 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - `OWNER_OPERATING_GUIDE_ZH.md` — Chinese owner operating manual.
 - `CODEX_MASTER_PROMPT.md` — first-session and continuation prompts.
 - `AGENTS.md` — top-level binding project instructions.
-- `BACKLOG.md` — 123 sequenced tasks, including eight explicit owner gates.
+- `BACKLOG.md` — 128 sequenced tasks, including eight explicit owner gates.
 - `ROADMAP.md` — 16 milestones from repository foundation through expansion.
 - `PROJECT_STATUS.md` — current truth and blockers.
 - `ENGINEERING_BASELINE.md` — observed repository reality, setup gaps, and exact M0 plan.
@@ -379,29 +379,31 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 **Validated:** 2026-07-17
 
-**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-006 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
+**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-007 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
 
 ## Checks passed
 
 - All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
 - All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
-- Backlog contains 123 unique items: 115 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003`, `RIT-005`, and `RIT-006` are Done, `RIT-004` is blocked only by `OWN-008`, and exactly one executable item is Ready: `RIT-007`.
+- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003` and `RIT-005` through `RIT-007` are Done, `RIT-004` is blocked only by `OWN-008`, RIT-008 remains Planned behind it, and exactly one executable item is Ready: `RIT-009`.
 - Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
 - Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
 - Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
 - `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 87 current text sources; `checksums.sha256` covers every intended repository file except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
 - Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
-- Root CI/toolchain, architecture, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across six workspaces. One hundred thirty-one unit/contract tests run in 15 files; the build verifier checks 18 emitted artifacts, imports built ESM exports, and proves that raw sink and trust-ambiguous continuation APIs are absent from the root export.
-- The fail-closed architecture gate audits 48 active source files across six modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, and file/module cycles. Mutation tests cover the reviewed bypass classes, and CI invokes the exact architecture command as an independent mandatory step.
+- Root CI/toolchain, architecture, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across six workspaces. One hundred seventy-two unit/contract tests run in 18 files; the build verifier checks 22 emitted artifacts, imports built ESM exports, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
+- The fail-closed architecture gate audits 53 active source files across six modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, exact feature-flag composition, and file/module cycles. Mutation tests cover the reviewed bypass classes, including injected and dead-code-camouflaged feature-flag sources, and CI invokes the exact architecture command as an independent mandatory step.
 - The zero-dependency server-only observability package emits only fixed bounded JSON-line events with service/environment/release/level/correlation/trace fields. Web Crypto creates nonzero server-authoritative IDs; W3C trace validation rejects malformed, uppercase, unsupported, and zero identifiers; spans rotate across JSON-persisted Web → Worker → provider protocol steps; and neither baggage nor tracestate propagates.
 - Adversarial telemetry tests prove that unknown private fields, prompts, journal/prayer/birth text, authorization, URLs, raw `Error`, stack/cause, getters, `toJSON`, coercion hooks, revoked/wide proxies, cycles, symbols, `BigInt`, functions, control characters, oversized UTF-8 records, invalid metadata/carriers, duplicate span end, clock reversal, and failing writers cannot leak canaries or alter application flow.
+- The typed feature-flag registry is immutable, version-qualified, bounded, server-authoritative, and literal safe-off. Tests cover unknown keys/fields, non-canonical scope, missing approval, scheduled activation, immediate emergency off, expiry/removal, retired tombstones, cleanup-task integrity, and rolling v1/v2 coexistence plus rollback isolation.
+- Raw snapshot/evaluator construction is exported only from the exact capability subpath and consumed by one complete-source-pinned, zero-argument Web adapter. The adapter owns runtime configuration and client lifecycle, performs a live PostgreSQL catalog/privilege attestation before reading, and rejects owner, DDL, mutation, superuser/bypass-RLS, missing-SELECT, caller-injected, and ambiguous persistence contexts.
 - A real built-Web request returns a fresh `x-request-id`, overrides client correlation/trace/baggage state, passes server-generated context downstream, and emits a correlated `http.proxy_handoff` record without server-only canaries. That span intentionally proves proxy handoff only, not downstream status or full request duration.
 - `.env.example` exactly matches the typed server inventory. Production source limits environment reads to reviewed adapters, rejects all `NEXT_PUBLIC_*` variables, excludes secrets from client artifacts and HTTP, and proves sanitized nonzero Web/Worker startup failure plus a real `server-only` negative build.
-- The repository-owned PostgreSQL 17 runtime is bound to `127.0.0.1:55432`, uses random mode-0600 SCRAM credentials, data checksums, exact managed HBA/configuration files, an attested cluster fingerprint, and a non-superuser application role. Lifecycle operations are directory-lock serialized, including a two-contender stale-lock recovery test.
-- Prisma 7.8 generation and `migrate deploy` pass against isolated real databases. The suite proves clean and idempotent migration, deterministic/idempotent synthetic seed, database CHECK/unique constraints, transaction rollback, eight-way concurrent uniqueness, guarded isolated reset, custom-format dump/restore into a second isolated database, managed-setting attestation, and absence of a unique failure canary from PostgreSQL logs.
+- The repository-owned PostgreSQL 17 runtime is bound to `127.0.0.1:55432`, uses random mode-0600 SCRAM credentials, data checksums, exact managed HBA/configuration files, an attested cluster fingerprint, and separate non-superuser migrator, read-only runtime, and append-only feature-control roles. Lifecycle operations are directory-lock serialized, including a two-contender stale-lock recovery test.
+- Prisma 7.8 generation and `migrate deploy` pass against isolated real databases. The suite proves clean/idempotent migrations and seed, database constraints, forced RLS, exact approved activation, runtime DDL/TRUNCATE denial, control update/delete denial, registry coexistence, transaction rollback, concurrent uniqueness, guarded isolated reset, and a row-security-aware non-empty custom-format dump/restore with exact row comparison and post-restore privilege attestation.
 - `db:setup`, the exact-confirmation local development reset, default non-disclosing `db:url`, and `db:stop` pass. No production, preview, staging, remote, or arbitrary ambient database URL is accepted by these lifecycle commands.
 - One active GitHub Actions workflow has exact read-only triggers, immutable actions, GitHub-hosted runners, ordered non-skippable steps, synchronized Node/pnpm versions, and no secrets, artifacts, write permissions, or deployment environment. Codex examples live outside the workflow directory.
-- A fresh PostgreSQL 17 CI-shaped run proves run-derived exact target guards, checksums, private service addressing, least privilege, deterministic client generation twice, migration deployment twice, seed twice, exact migration inventory/status/drift, constraints, and rollback. Historical migration bytes are compared with the trusted event baseline and dangerous SQL is rejected.
+- A fresh PostgreSQL 17 CI-shaped run proves run-derived exact target guards, checksums, private service addressing, separated non-superuser roles, deterministic client generation, idempotent migration deployment and seed, exact migration inventory/status/drift, feature-flag activation/append-only constraints, registry coexistence, runtime DDL denial, and rollback. Historical migration bytes are compared with the trusted event baseline and dangerous SQL is rejected.
 - Current-tree secret policy, repository-independent Gitleaks configuration, full-history scan wiring, and high-severity dependency audit are fail-closed. The current npm audit reports no known vulnerability after exact patched transitive overrides.
 
 ## Validation commands
@@ -429,8 +431,9 @@ pnpm db:stop
 
 ## Limitations
 
-- This validates the specification package and locally executable RIT-001 through RIT-006 foundations. It does not validate a user-facing product flow, payment, AI, accessibility, hosted infrastructure, or a production database.
+- This validates the specification package and locally executable RIT-001 through RIT-007 foundations. It does not validate a user-facing product flow, payment, AI, accessibility, hosted infrastructure, or a production database.
 - The Web proxy handoff is a real local HTTP boundary, but no route wrapper yet measures final downstream status/duration. The Worker continuation subpath and serialized carrier are protocol evidence behind a sealed persistence adapter type; no database outbox, queue, deployed consumer, telemetry vendor, metrics, alerting, sampling, or retention system exists yet.
+- The feature-flag control plane has database-level append-only enforcement but no production credential grant, approval-record service, admin endpoint/UI, cache/invalidation policy, or operator emergency workflow. Enabling any gated capability still requires its explicit owner approval and later product task.
 - Docker and Podman are absent on the verified host. A native fresh PostgreSQL 17 instance reproduced the CI target contract, but the digest-pinned service image and bridge networking still require the first hosted Actions run.
 - The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; critical task-result schema invariants are checked directly.
 - Command rules are exact positional prefixes and supplement, rather than replace, the owner-approval boundaries in `AGENTS.md`. Reordered flags, aliases, and opaque wrappers still require human review.
@@ -439,7 +442,7 @@ pnpm db:stop
 
 ## Acceptance result
 
-The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, and active portable quality, dependency, secret, migration, and build gates. RIT-006 is complete and RIT-007 is Ready. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
+The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, and active portable quality, dependency, secret, migration, and build gates. RIT-007 is complete and RIT-009 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
 
 ---
 
@@ -887,7 +890,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M0 engineering foundation in progress; package architecture, local observability, and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
+**Stage:** M0 engineering foundation in progress; package architecture, local observability, typed safe-off feature flags, and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
 
 **Release:** Pre-M0
 
@@ -913,7 +916,9 @@ Use this order:
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
-- Root formatting, ESLint, TypeScript, 131 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
+- Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
+- Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
+- Root formatting, ESLint, TypeScript, 172 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
 
 ## What does not exist yet
 
@@ -945,11 +950,11 @@ These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-007` — Ready: add a versioned, server-side feature-flag and typed configuration registry with safe-off defaults while RIT-004 remains blocked on owner-controlled remote and hosted-CI evidence.
+`RIT-009` — Ready: connect ADR, task, incident, and experiment records to repository contribution workflows without stale duplication. RIT-008 remains Planned because it depends on blocked RIT-004 hosted-CI evidence.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 131 unit/contract tests in 15 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The build verifier checks 18 emitted artifacts and narrowed runtime exports. The architecture verifier audits 48 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, JSDoc/type edges, and file/module cycles. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, constraints, transaction/race behavior, guarded reset, logical dump/restore, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, two deterministic generations, two migration deployments, two seeds, migration status/drift, exact migration inventory, constraints, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 172 unit/contract tests in 18 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The build verifier checks 22 emitted artifacts and narrowed runtime exports. The architecture verifier audits 53 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, exact feature-flag composition, JSDoc/type edges, and file/module cycles. Feature-flag tests prove strict typed registry metadata, safe-off evaluation, owner-gate and canonical-scope validation, scheduled activation, emergency off, expiry/removal behavior, version-qualified rolling upgrade/rollback, and fail-closed live database privilege attestation. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, separated non-superuser migrator/read-only runtime/append-only control roles, forced RLS, exact activation constraints, guarded reset, non-empty logical dump/restore with exact row comparison, transaction/race behavior, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, deterministic generation, migration deployment/status/drift, exact migration inventory, activation and append-only constraints, registry-version coexistence, DDL denial, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
 
 ## Update rules
 
@@ -1220,6 +1225,37 @@ This is an append-only summary of accepted architectural and product decisions. 
 - **Reason:** Privacy-sensitive reflection text, birth data, safety content, provider payloads, credentials, and errors must be structurally impossible to log, while local services still need useful correlation. Fixed fields and exact capability/sink boundaries are auditable without a production telemetry vendor and avoid misleading evidence about infrastructure that does not yet exist.
 - **Date:** 2026-07-17
 
+### D-021 — Typed safe-off feature-flag registry and separated activation plane
+
+- **Decision:** Keep raw feature-flag snapshot parsing and evaluator construction on the exact
+  `@rituvia/config/feature-flags` capability, importable only by the reviewed Web server composition
+  adapter. Every immutable definition has an owner, purpose, creation/removal date, lifecycle,
+  cleanup task, required country/locale scope, approval gate where applicable, and literal `off`
+  default. Evaluation uses a server-owned clock and the highest effective version; a later-created
+  emergency version may take effect before an already scheduled lower version. PostgreSQL objects
+  belong to a non-superuser migrator, runtime is read-only and non-owner, and a separate control
+  login can only read and append versions through forced RLS. Enabled rows require the exact
+  registry key, gate prefix, and scope shape; no migration seeds one, and control access remains an
+  owner-governed capability rather than an application endpoint. Registry-version-qualified reads
+  and uniqueness permit rolling upgrade and rollback while retired keys remain safe-off tombstones
+  until their cleanup task is complete. The zero-argument composition adapter obtains its database
+  source internally and performs a live catalog attestation before every read; any database,
+  schema, or table owner, DDL/table/column mutation privilege, missing read privilege, privileged
+  role attribute, direct or transitive role-membership escalation path, or ambiguous result fails
+  closed. Membership traversal includes non-settable membership so later membership administration
+  cannot create a post-check upgrade.
+  The authenticated session identity must also equal the current role, preventing startup role
+  options from hiding a privileged login. Architecture policy requires the adapter's complete
+  reviewed source exactly, so aliases, injected adapters, re-exports, and dead-code camouflage do
+  not create a second construction path.
+- **Reason:** A client-visible, generally importable raw factory, mutable row, runtime-owned table,
+  or unversioned activation switch could bypass legal, payment, country, content, or safety gates
+  and erase decision history. Exact code capability boundaries, separate database identities,
+  append-only provenance, deterministic version isolation, and mandatory cleanup make incomplete
+  or compromised runtime configuration fail closed without claiming that a future admin UI or
+  owner-approval record system already exists.
+- **Date:** 2026-07-17
+
 ---
 
 # File: `ROADMAP.md`
@@ -1481,15 +1517,16 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-004 | M0        |       P0 | Blocked | Create test harness and CI quality gates                                  | RIT-001,RIT-003,OWN-008                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                           |
 | RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                   | RIT-001                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                          |
 | RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                  |
-| RIT-007 | M0        |       P1 | Ready   | Add feature flag and typed configuration registry                         | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                             |
+| RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                         | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                             |
 | RIT-008 | M0        |       P1 | Planned | Create preview/staging/production environment documentation               | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.       |
-| RIT-009 | M0        |       P1 | Planned | Add ADR, task, incident, experiment workflow to repository                | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                       |
+| RIT-009 | M0        |       P1 | Ready   | Add ADR, task, incident, experiment workflow to repository                | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                       |
 | RIT-010 | M1        |       P0 | Planned | Implement accessible Web shell and locale-prefixed routing                | RIT-001,RIT-002                         | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                   |
 | RIT-011 | M1        |       P0 | Planned | Implement design tokens and accessible component primitives               | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                   |
 | RIT-012 | M1        |       P0 | Planned | Build product positioning, methodology, safety, and privacy public pages  | RIT-010,RIT-011                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                  |
 | RIT-013 | M1        |       P1 | Planned | Add SEO metadata, canonical, robots, and sitemap foundation               | RIT-010                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                         |
 | RIT-014 | M1        |       P1 | Planned | Add accessibility and pseudolocale CI smoke                               | RIT-010,RIT-011                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                   |
 | RIT-015 | M1        |       P1 | Planned | Create error, empty, offline, and provider-unavailable patterns           | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                              |
+| RIT-016 | M1        |       P2 | Planned | Clean up the public-shell rollout flag                                    | RIT-010,RIT-014                         | backend       | Flag is retired safe-off for one registry compatibility window, then removed with old history ignored.      |
 | RIT-020 | M2        |       P0 | Planned | Implement anonymous subject/session and consent baseline                  | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                 |
 | RIT-021 | M2        |       P0 | Planned | Implement safe question/theme intake rules and UX                         | RIT-020,RIT-012                         | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                      |
 | RIT-022 | M2        |       P0 | Planned | Create versioned tarot deck, spread, and content schema                   | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.             |
@@ -1584,11 +1621,15 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-142 | M14       |       P0 | Planned | Run complete launch and rollback rehearsal                                | RIT-123,RIT-124,RIT-141                 | qa_security   | Release evidence, migration, smoke, payment, AI, privacy, backup, rollback all pass.                         |
 | RIT-143 | M14       |       P0 | Blocked | Owner production go/no-go and limited rollout                             | RIT-142                                 | operations    | Owner approves; progressive launch thresholds and monitoring window are recorded.                            |
 | RIT-144 | M14       |       P0 | Planned | Complete post-launch verification and economics baseline                  | RIT-143                                 | operations    | Health, core loop, payment, refund, AI, support, cost and contribution are reconciled.                       |
+| RIT-145 | M14       |       P2 | Planned | Clean up country and fiat-checkout rollout flags                           | RIT-075,RIT-144                         | backend       | Both flags are retired safe-off for one registry window, then removed after rollback evidence passes.       |
 | RIT-150 | M15       |       P1 | Planned | Create evidence-led locale/country expansion scorecard                    | RIT-144                                 | product       | Search, retention, payment, legal, culture, support and economics determine ranked candidates.               |
 | RIT-151 | M15       |       P1 | Blocked | Pilot hosted non-custodial crypto checkout                                | RIT-144,OWN-006                         | payments_risk | Separate provider/legal/country/asset approval and full payment tests pass.                                  |
 | RIT-152 | M15       |       P2 | Planned | Evaluate additional tarot/report/ritual products                          | RIT-144                                 | product       | User need, ethics, content rights, economics and experiments justify exact product.                          |
 | RIT-153 | M15       |       P2 | Blocked | Propose first regional tradition pack                                     | RIT-144,OWN-007                         | localization  | Named experts/sources/rights/method/local law/payment/support/evals are approved.                            |
 | RIT-154 | M15       |       P2 | Planned | Review architecture scaling evidence                                      | RIT-144                                 | architect     | Measured load/failure/deployment evidence determines whether any service extraction is warranted.            |
+| RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                  | RIT-151                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence. |
+| RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                      | RIT-031,RIT-110,RIT-153                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.   |
+| RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                               | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes. |
 | OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance       | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                               |
 | OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval           | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                           |
 | OWN-003 | External  |       P0 | Blocked | Select and license astrology engine/provider                              | None                                    | owner         | Commercial rights, usage, data, cost, SLA, attribution and exit are approved.                                |
@@ -2688,11 +2729,52 @@ Never share databases, signing secrets, webhook endpoints, storage buckets, anal
 
 Flags must have:
 
-- Owner, purpose, creation date, rollout state, country/locale scope, and removal date.
+- Owner, purpose, creation date, lifecycle, country/locale scope, removal date, and cleanup task.
 - Server-side enforcement.
 - Safe default off for payments, crypto, new countries, new traditions, and sensitive AI behavior.
 - Audit log for production changes.
 - A cleanup task after full rollout.
+
+The M0 raw registry capability lives only on `@rituvia/config/feature-flags`; architecture policy
+allows that subpath only in `apps/web/server/feature-flags.ts`. The general server configuration
+entry and client projection expose no raw parser, factory, flag key, state, evaluator, or persisted
+version. The zero-argument Web loader obtains the reviewed runtime URL internally, creates and
+closes the database client itself, and therefore cannot accept a caller-supplied snapshot or
+Prisma-like object. Before reading, it performs a live privilege attestation and fails closed unless
+the connected role is a read-only, non-owner, non-DDL, non-superuser identity for the registry
+table with the same authenticated session/current identity and no role-membership path to an owner,
+writer, or privileged identity. The attestation follows all role-membership paths, including
+currently non-settable membership, so membership administration cannot become a post-check upgrade.
+Registry version 1 defines exact typed keys for the public shell and the owner-gated country,
+fiat checkout, hosted crypto checkout, and regional-tradition boundaries. Every definition
+is immutable metadata with owner, purpose, creation date, active/retired lifecycle, required scope,
+approval gate, safe-off default, removal date, and a real BACKLOG cleanup reference.
+
+Persisted snapshots are strict and bounded. They reject unknown keys/fields, wrong registry
+versions, duplicate or non-monotonic creation versions, non-canonical scope, invalid UTC instants,
+and enabled owner-gated records without the required gate reference. Evaluation uses a server-owned
+clock, selects the highest effective version, never resurrects an older version after expiry, and
+fails off for missing scope, retirement, expiry, or an overdue removal date. `effectiveAt` need not
+increase with version: a later-created emergency-off version may become effective immediately and
+continues to outrank an earlier scheduled activation. Results carry registry and flag versions for
+decision provenance. Country and locale inputs must come from the future server-owned RIT-060
+policy boundary, never directly from a client header or form field.
+
+PostgreSQL stores only bounded operational metadata in `feature_flag_version`. A non-superuser
+migrator owns the database, public schema, and tables. The runtime login is a non-owner with schema
+usage and table reads only; it cannot create, insert, update, delete, truncate, alter RLS, or drop a
+policy. A distinct control login inherits only the feature-flag reader/writer capabilities and can
+append through forced RLS; enabled rows must match registry version 1's exact key, required owner
+gate prefix, and scope shape. It cannot update/delete/truncate history or change DDL, and no
+migration creates an enabled row. There is deliberately no activation endpoint: granting control
+credentials and recording the referenced owner approval remain operational approval actions.
+
+Registry upgrades are rolling-safe. Storage uniqueness is `(registryVersion, flagKey, version)`,
+and each deployed reader queries only its exact registry version, so v1 and v2 histories can coexist
+and a rollback to v1 cannot ingest v2 keys. A key is first marked `retired` and therefore forced off;
+its referenced cleanup task must reach Done before a later registry version removes the tombstone.
+The preceding registry history remains in append-only storage and is ignored, not reparsed, by the
+new reader.
 
 ## 14. API and rendering
 
@@ -4125,6 +4207,41 @@ Finalize objectives before launch and align alerting/runbooks.
 - Backup retention aligned with deletion/legal policy.
 - Infrastructure and configuration reproducible from code/documented provider state.
 
+The feature-flag version table uses forced row-level security and separate migrator, read-only
+runtime, and append-only control identities. Logical dumps run as runtime with row security and
+INSERT-form data; restore runs as the non-superuser migrator into an empty isolated database, then
+reapplies least-privilege grants. The test backs up non-empty off and approved-on history, compares
+restored fields exactly, and re-attests RLS, constraints, runtime DDL/TRUNCATE denial, and control
+update denial. It never disables RLS or gives the runtime ownership/bypass privileges.
+
+### Feature-flag failure boundary
+
+- Missing, malformed, unknown-version, future-only, expired, out-of-scope, or stale-removal records
+  resolve to disabled or reject snapshot construction; none become truthy through coercion.
+- Owner-gated flags require the exact gate-prefix reference plus their required country/locale
+  shape; the control credential is granted only after the referenced owner record exists.
+- Evaluation time is supplied by a server-owned clock rather than a request field.
+- Raw evaluator construction is restricted to one exact Web composition adapter; runtime scope is
+  server policy context, not client-supplied authorization evidence.
+- The exported Web loader is zero-argument and owns runtime configuration lookup plus database
+  client lifecycle, so another server module cannot inject a fake persistence adapter.
+- Each loader invocation attests the connected PostgreSQL identity before reading and rejects
+  database/schema/table owners, DDL privileges, mutation privileges, superuser/bypass-RLS roles,
+  CREATEDB/CREATEROLE/REPLICATION, table or column mutation including MAINTAIN, missing SELECT,
+  ambiguous results, preselected startup roles where `session_user` differs from `current_user`, and
+  any direct or transitive role-membership path to those capabilities, including membership that is
+  currently marked non-settable.
+- A later-created emergency-off version outranks future scheduled lower versions, and retired keys
+  remain forced off until cleanup and a later registry-version removal.
+- Snapshots and results contain bounded identifiers and categorical metadata only—never customer
+  identifiers, private text, secrets, provider payloads, or arbitrary JSON.
+- The database reader is bounded one record beyond the parser maximum so oversized state fails
+  closed instead of being silently truncated.
+- The runtime database role is read-only. The separate append-only control identity and policies are
+  modeled and exercised locally/CI, but a production credential grant, approval-record system,
+  change workflow, cache/invalidation strategy, and emergency operator UX do not yet exist and must
+  not be claimed.
+
 ## 14. Observability
 
 ### Logs
@@ -4850,6 +4967,31 @@ Tests are executable product memory. They must prove deterministic correctness, 
 - Fixed service/environment/release/event/result taxonomies; no free-text, arbitrary attributes, raw errors, stack, cause, URL, headers, body, prompt, journal, prayer, birth data, or provider payload.
 - Getter, `toJSON`, Proxy width, cycle, `BigInt`, symbol, function, control-character, UTF-8 byte-limit, clock, duplicate-end, invalid-carrier, sink-failure, and canary regressions.
 - Real built-Web request proves `x-request-id`, correlated `http.proxy_handoff` JSON output, client-state override, and absence of secret canaries. This handoff test does not assert downstream response status/duration.
+
+### Feature-flag and typed-registry baseline
+
+- Registry metadata is deeply immutable, versioned, safe-off, and includes lifecycle plus a real
+  cleanup reference; the client and general server entries expose no raw feature-flag factory.
+- Snapshot tests cover wrong registry version, unknown/extra fields, duplicate versions,
+  non-monotonic creation time, invalid UTC instants, unsorted scope, non-canonical locale,
+  missing/wrong approval, missing gated scope, and redacted diagnostics.
+- Evaluator tests use an injected server clock and prove default off, explicit off, approved on,
+  country/locale mismatch, scheduled changeover, emergency off over a future activation, expired
+  newest-version behavior without fallback, and automatic safe-off after the removal date.
+- The database reader filters one exact registry version, uses deterministic ordering, an explicit
+  projection, a 10,001-row fail-closed sentinel, ISO serialization, immutable output, and no
+  mutation API; v1/v2 coexistence and rollback reads are isolated.
+- Runtime privilege-attestation unit and composition tests reject owners, DDL/mutation privileges,
+  privileged role attributes, table/column mutation including MAINTAIN, missing SELECT, ambiguous
+  results, authenticated/current role mismatch, transitive membership escalation, and any
+  caller-injected database source.
+- Real PostgreSQL tests deploy both migrations twice; prove migrator/runtime/control ownership and
+  grants, exact approval/scope RLS, approved-on control insertion, runtime/DDL/TRUNCATE denial,
+  append-only history, registry coexistence, reset, and a row-security-aware non-empty logical
+  dump/restore with exact row comparison.
+- CI-shaped PostgreSQL repeats migration inventory/drift, empty default state, separated role
+  ownership, controlled activation, registry coexistence, DDL denial, append-only behavior, and
+  transaction rollback under non-superuser identities.
 
 ## 3. Deterministic test vectors
 
@@ -6197,14 +6339,14 @@ Add constraint, migration, transaction/race, ownership, retention/deletion, and 
 
 The `seed_manifest` table is operational provenance for committed synthetic datasets. It is not a domain-content store and must not contain fixture payloads or user-like records.
 
-| Field | Classification | Purpose |
-|---|---|---|
-| `id` | Internal | Stable row identity |
-| `dataset_key` | Internal | Bounded synthetic dataset identifier |
-| `version` | Internal | Positive immutable dataset version |
-| `checksum_sha256` | Internal | Integrity digest for the committed dataset definition |
-| `is_synthetic` | Internal | Database-enforced proof that the dataset is synthetic |
-| `created_at` | Internal | Fixed UTC provenance timestamp |
+| Field             | Classification | Purpose                                               |
+| ----------------- | -------------- | ----------------------------------------------------- |
+| `id`              | Internal       | Stable row identity                                   |
+| `dataset_key`     | Internal       | Bounded synthetic dataset identifier                  |
+| `version`         | Internal       | Positive immutable dataset version                    |
+| `checksum_sha256` | Internal       | Integrity digest for the committed dataset definition |
+| `is_synthetic`    | Internal       | Database-enforced proof that the dataset is synthetic |
+| `created_at`      | Internal       | Fixed UTC provenance timestamp                        |
 
 No field is personal, private, secret, payment, authentication, or content-rights data. There is no user owner and no user deletion workflow. The row is retained while its migration and seed version remain supported.
 
@@ -6226,10 +6368,45 @@ there are no blanket exceptions.
 The active CI database job starts a fresh digest-pinned PostgreSQL 17 service with data checksums and
 SCRAM host authentication. A repository script accepts only the exact GitHub Actions run identity,
 derived ephemeral password, loopback host, port 5432, database name, and roles. The service bootstrap
-administrator is discarded after creating a non-superuser application owner; Prisma migrations,
-seed, status, and drift checks then run only as that application role. This isolated CI path does not
+administrator creates a non-superuser migrator owner, a read-only runtime login, and an append-only
+feature-flag control login. Prisma migration/seed/status/drift use the migrator; runtime and control
+receive only explicit post-migration grants. This isolated CI path does not
 accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
 `DATABASE_URL`.
+
+## RIT-007 feature-flag registry classification
+
+`feature_flag_version` stores internal operational configuration only: a registry/key version,
+safe `off`/`on` state, bounded country/locale scope, activation/expiry instants, ticket and approval
+references, a non-personal operator identifier, and creation time. It must never contain customer
+identifiers, private text, secrets, legal copy, provider payloads, or arbitrary JSON.
+
+The migration is expand-only and creates no enabled records. Forced RLS grants reads to a common
+reader capability and inserts to a common writer capability. Environment provisioning assigns the
+reader to runtime and control, but assigns the writer only to control; runtime is never an object
+owner. `off` rows are always appendable by control. `on` rows additionally require registry version
+1's exact key, gate-prefix reference, and scope shape. Control cannot update/delete/truncate or use
+DDL. Owner approval still governs whether a control credential may be used; the database checks
+structure and provenance fields, not the external approval record's truth.
+
+The Web composition adapter does not trust the URL or login name alone. Before every registry read,
+it queries PostgreSQL's live ownership, role, and privilege catalogs and fails closed unless the
+connected identity is a non-owner, non-privileged SELECT-only reader with no database/schema CREATE
+or table/column mutation capability and no direct or transitive role-membership path to an owner, writer,
+DDL, MAINTAIN, or privileged role. All role membership is traversed even when SET is currently
+disabled, preventing membership administration from enabling a post-check upgrade. The
+authenticated `session_user` must equal `current_user`, so a
+high-privilege login cannot use connection startup options to preselect a safe-looking role.
+
+Uniqueness includes registry version, and readers filter their exact deployed registry, allowing
+v1/v2 history to coexist during rolling upgrade and rollback. A key remains a forced-off tombstone
+until its cleanup task is Done; only a later registry version removes it. Dropping the table or
+policies remains a destructive migration requiring backup evidence and owner approval.
+
+Logical dumps run as read-only runtime with explicit row security and INSERT-form data. Restore runs
+as migrator into an empty isolated database and reapplies grants. The local test preserves non-empty
+off, approved-on, and cross-registry history; compares restored rows exactly; and reruns policy,
+constraint, owner, DDL/TRUNCATE, and append-only checks.
 
 ---
 

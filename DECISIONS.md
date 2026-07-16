@@ -124,3 +124,34 @@ This is an append-only summary of accepted architectural and product decisions. 
 - **Decision:** Keep `@rituvia/observability` a zero-dependency server-only leaf package. Emit only fixed discriminated operational events into bounded JSON lines; reject free-text messages, arbitrary attributes, raw `Error` objects, raw sinks, and unreviewed console/process output. Generate correlation and W3C trace IDs with Web Crypto, ignore client correlation state, expose only the correlation ID as public `x-request-id`, and propagate only versioned correlation plus `traceparent`. Isolate persisted-job continuation behind the exact `@rituvia/observability/worker` capability and one branded Worker persistence boundary. The current Web span measures proxy handoff, not downstream response duration or status; the current job path proves serialization-safe protocol behavior but does not claim a deployed outbox or queue.
 - **Reason:** Privacy-sensitive reflection text, birth data, safety content, provider payloads, credentials, and errors must be structurally impossible to log, while local services still need useful correlation. Fixed fields and exact capability/sink boundaries are auditable without a production telemetry vendor and avoid misleading evidence about infrastructure that does not yet exist.
 - **Date:** 2026-07-17
+
+### D-021 — Typed safe-off feature-flag registry and separated activation plane
+
+- **Decision:** Keep raw feature-flag snapshot parsing and evaluator construction on the exact
+  `@rituvia/config/feature-flags` capability, importable only by the reviewed Web server composition
+  adapter. Every immutable definition has an owner, purpose, creation/removal date, lifecycle,
+  cleanup task, required country/locale scope, approval gate where applicable, and literal `off`
+  default. Evaluation uses a server-owned clock and the highest effective version; a later-created
+  emergency version may take effect before an already scheduled lower version. PostgreSQL objects
+  belong to a non-superuser migrator, runtime is read-only and non-owner, and a separate control
+  login can only read and append versions through forced RLS. Enabled rows require the exact
+  registry key, gate prefix, and scope shape; no migration seeds one, and control access remains an
+  owner-governed capability rather than an application endpoint. Registry-version-qualified reads
+  and uniqueness permit rolling upgrade and rollback while retired keys remain safe-off tombstones
+  until their cleanup task is complete. The zero-argument composition adapter obtains its database
+  source internally and performs a live catalog attestation before every read; any database,
+  schema, or table owner, DDL/table/column mutation privilege, missing read privilege, privileged
+  role attribute, direct or transitive role-membership escalation path, or ambiguous result fails
+  closed. Membership traversal includes non-settable membership so later membership administration
+  cannot create a post-check upgrade.
+  The authenticated session identity must also equal the current role, preventing startup role
+  options from hiding a privileged login. Architecture policy requires the adapter's complete
+  reviewed source exactly, so aliases, injected adapters, re-exports, and dead-code camouflage do
+  not create a second construction path.
+- **Reason:** A client-visible, generally importable raw factory, mutable row, runtime-owned table,
+  or unversioned activation switch could bypass legal, payment, country, content, or safety gates
+  and erase decision history. Exact code capability boundaries, separate database identities,
+  append-only provenance, deterministic version isolation, and mandatory cleanup make incomplete
+  or compromised runtime configuration fail closed without claiming that a future admin UI or
+  owner-approval record system already exists.
+- **Date:** 2026-07-17

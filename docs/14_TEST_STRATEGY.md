@@ -56,6 +56,31 @@ Tests are executable product memory. They must prove deterministic correctness, 
 - Getter, `toJSON`, Proxy width, cycle, `BigInt`, symbol, function, control-character, UTF-8 byte-limit, clock, duplicate-end, invalid-carrier, sink-failure, and canary regressions.
 - Real built-Web request proves `x-request-id`, correlated `http.proxy_handoff` JSON output, client-state override, and absence of secret canaries. This handoff test does not assert downstream response status/duration.
 
+### Feature-flag and typed-registry baseline
+
+- Registry metadata is deeply immutable, versioned, safe-off, and includes lifecycle plus a real
+  cleanup reference; the client and general server entries expose no raw feature-flag factory.
+- Snapshot tests cover wrong registry version, unknown/extra fields, duplicate versions,
+  non-monotonic creation time, invalid UTC instants, unsorted scope, non-canonical locale,
+  missing/wrong approval, missing gated scope, and redacted diagnostics.
+- Evaluator tests use an injected server clock and prove default off, explicit off, approved on,
+  country/locale mismatch, scheduled changeover, emergency off over a future activation, expired
+  newest-version behavior without fallback, and automatic safe-off after the removal date.
+- The database reader filters one exact registry version, uses deterministic ordering, an explicit
+  projection, a 10,001-row fail-closed sentinel, ISO serialization, immutable output, and no
+  mutation API; v1/v2 coexistence and rollback reads are isolated.
+- Runtime privilege-attestation unit and composition tests reject owners, DDL/mutation privileges,
+  privileged role attributes, table/column mutation including MAINTAIN, missing SELECT, ambiguous
+  results, authenticated/current role mismatch, transitive membership escalation, and any
+  caller-injected database source.
+- Real PostgreSQL tests deploy both migrations twice; prove migrator/runtime/control ownership and
+  grants, exact approval/scope RLS, approved-on control insertion, runtime/DDL/TRUNCATE denial,
+  append-only history, registry coexistence, reset, and a row-security-aware non-empty logical
+  dump/restore with exact row comparison.
+- CI-shaped PostgreSQL repeats migration inventory/drift, empty default state, separated role
+  ownership, controlled activation, registry coexistence, DDL denial, append-only behavior, and
+  transaction rollback under non-superuser identities.
+
 ## 3. Deterministic test vectors
 
 ### Tarot

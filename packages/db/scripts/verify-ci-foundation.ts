@@ -7,8 +7,14 @@ import path from "node:path";
 import { Client } from "pg";
 
 import { assertCiDatabaseEnvironment, assertCiServiceAddress } from "../src/ci-database-safety.js";
+import { createDatabaseClient } from "../src/client.js";
+import { assertFeatureFlagRuntimeDatabasePrivileges } from "../src/feature-flags.js";
 
 const APP_ROLE = "rituvia_ci_app";
+const CONTROL_ROLE = "rituvia_ci_config_writer";
+const MIGRATOR_ROLE = "rituvia_ci_migrator";
+const FLAG_READER_ROLE = "rituvia_feature_flag_reader";
+const FLAG_WRITER_ROLE = "rituvia_feature_flag_writer";
 const DATABASE_NAME = "rituvia_ci";
 const repositoryRoot = path.resolve("../..");
 const prismaEntry = path.resolve("node_modules/prisma/build/index.js");
@@ -72,7 +78,7 @@ const trackedStatus = (): string =>
 const prismaEnvironment = (): NodeJS.ProcessEnv => ({
   APP_ENV: "test",
   CI: "true",
-  DATABASE_URL: environment.appUrl,
+  DATABASE_URL: environment.migratorUrl,
   GITHUB_ACTIONS: "true",
   GITHUB_RUN_ATTEMPT: process.env.GITHUB_RUN_ATTEMPT,
   GITHUB_RUN_ID: process.env.GITHUB_RUN_ID,
@@ -100,8 +106,9 @@ const runPrisma = (label: string, args: readonly string[]): void => {
   if (
     result.status !== 0 ||
     result.error !== undefined ||
-    result.stdout.includes(environment.appPassword) ||
-    result.stderr.includes(environment.appPassword)
+    [environment.appPassword, environment.controlPassword, environment.migratorPassword].some(
+      (secret) => result.stdout.includes(secret) || result.stderr.includes(secret),
+    )
   ) {
     throw new Error(`Prisma command failed during ${label}.`);
   }
@@ -151,22 +158,71 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     assert.equal(tables.rows[0]?.count, 0);
 
     verificationStage = "least-privilege role statement formatting";
-    const formatted = await admin.query<{ statement: string }>(
-      "SELECT format('CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS', $1::text, $2::text) AS statement",
+    for (const roleName of [FLAG_READER_ROLE, FLAG_WRITER_ROLE]) {
+      const formatted = await admin.query<{ statement: string }>(
+        "SELECT format('CREATE ROLE %I NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', $1::text) AS statement",
+        [roleName],
+      );
+      assert.ok(formatted.rows[0]?.statement);
+      await admin.query(formatted.rows[0]!.statement);
+    }
+    for (const [roleName, password] of [
       [APP_ROLE, environment.appPassword],
-    );
-    const statement = formatted.rows[0]?.statement;
-    assert.ok(statement);
-    verificationStage = "least-privilege role statement execution";
-    await admin.query(statement);
+      [CONTROL_ROLE, environment.controlPassword],
+      [MIGRATOR_ROLE, environment.migratorPassword],
+    ] as const) {
+      const formatted = await admin.query<{ statement: string }>(
+        "SELECT format('CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOREPLICATION NOBYPASSRLS', $1::text, $2::text) AS statement",
+        [roleName, password],
+      );
+      assert.ok(formatted.rows[0]?.statement);
+      await admin.query(formatted.rows[0]!.statement);
+    }
+    verificationStage = "least-privilege role membership";
+    await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
     verificationStage = "CI database ownership transfer";
-    await admin.query(`ALTER DATABASE ${DATABASE_NAME} OWNER TO ${APP_ROLE}`);
+    await admin.query(`ALTER DATABASE ${DATABASE_NAME} OWNER TO ${MIGRATOR_ROLE}`);
     verificationStage = "public schema privilege revocation";
     await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
     verificationStage = "public schema ownership transfer";
-    await admin.query(`ALTER SCHEMA public OWNER TO ${APP_ROLE}`);
+    await admin.query(`ALTER SCHEMA public OWNER TO ${MIGRATOR_ROLE}`);
     verificationStage = "system identity attestation grant";
-    await admin.query(`GRANT EXECUTE ON FUNCTION pg_control_system() TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT EXECUTE ON FUNCTION pg_control_system() TO ${APP_ROLE}, ${MIGRATOR_ROLE}`,
+    );
+  } finally {
+    await admin.end();
+  }
+};
+
+const grantRuntimePrivileges = async (): Promise<void> => {
+  verificationStage = "runtime database privilege grants";
+  const admin = new Client({
+    connectionString: environment.adminUrl,
+    connectionTimeoutMillis: 5_000,
+    statement_timeout: 30_000,
+  });
+  await admin.connect();
+  try {
+    await admin.query(`REVOKE ALL ON DATABASE ${DATABASE_NAME} FROM PUBLIC`);
+    await admin.query(`REVOKE ALL ON DATABASE ${DATABASE_NAME} FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT CONNECT ON DATABASE ${DATABASE_NAME} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
+    await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}`,
+    );
+    await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${APP_ROLE}`);
+    await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
+    await admin.query(`GRANT INSERT ON TABLE feature_flag_version TO ${FLAG_WRITER_ROLE}`);
+    await admin.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
+    );
+    await admin.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public GRANT SELECT ON TABLES TO ${APP_ROLE}`,
+    );
   } finally {
     await admin.end();
   }
@@ -186,6 +242,18 @@ const expectConstraint = async (
   }
 };
 
+const expectPostgresError = async (
+  operation: () => Promise<unknown>,
+  code: string,
+): Promise<void> => {
+  try {
+    await operation();
+    assert.fail(`Expected PostgreSQL error ${code}.`);
+  } catch (error) {
+    assert.equal((error as { code?: unknown }).code, code);
+  }
+};
+
 const verifyMigratedDatabase = async (): Promise<void> => {
   verificationStage = "migrated database connection";
   const app = new Client({
@@ -193,20 +261,58 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     connectionTimeoutMillis: 5_000,
     statement_timeout: 30_000,
   });
-  await app.connect();
+  const control = new Client({
+    connectionString: environment.controlUrl,
+    connectionTimeoutMillis: 5_000,
+    statement_timeout: 30_000,
+  });
+  const migrator = new Client({
+    connectionString: environment.migratorUrl,
+    connectionTimeoutMillis: 5_000,
+    statement_timeout: 30_000,
+  });
+  const runtimeDatabase = createDatabaseClient(environment.appUrl);
+  const controlDatabase = createDatabaseClient(environment.controlUrl);
+  const migratorDatabase = createDatabaseClient(environment.migratorUrl);
+  const preselectedRuntimeUrl = new URL(environment.adminUrl);
+  preselectedRuntimeUrl.searchParams.set("options", `-c role=${APP_ROLE}`);
+  const preselectedRuntimeDatabase = createDatabaseClient(preselectedRuntimeUrl.toString());
+  await Promise.all([app.connect(), control.connect(), migrator.connect()]);
   try {
     verificationStage = "migrated database invariants";
+    await assertFeatureFlagRuntimeDatabasePrivileges(runtimeDatabase);
+    await assert.rejects(
+      assertFeatureFlagRuntimeDatabasePrivileges(controlDatabase),
+      /runtime database privileges are unsafe/u,
+    );
+    await assert.rejects(
+      assertFeatureFlagRuntimeDatabasePrivileges(migratorDatabase),
+      /runtime database privileges are unsafe/u,
+    );
+    await assert.rejects(
+      assertFeatureFlagRuntimeDatabasePrivileges(preselectedRuntimeDatabase),
+      /runtime database privileges are unsafe/u,
+    );
     const identity = await app.query<{
+      canCreateInDatabase: boolean;
+      canCreateInSchema: boolean;
       databaseOwner: string;
       schemaOwner: string;
       systemIdentifier: string;
+      tableOwner: string;
     }>(`SELECT pg_get_userbyid((SELECT datdba FROM pg_database WHERE datname = current_database())) AS "databaseOwner",
               pg_get_userbyid((SELECT nspowner FROM pg_namespace WHERE nspname = 'public')) AS "schemaOwner",
+              pg_get_userbyid((SELECT relowner FROM pg_class WHERE oid = 'public.feature_flag_version'::regclass)) AS "tableOwner",
+              has_database_privilege(current_user, current_database(), 'CREATE') AS "canCreateInDatabase",
+              has_schema_privilege(current_user, 'public', 'CREATE') AS "canCreateInSchema",
               (SELECT system_identifier::text FROM pg_control_system()) AS "systemIdentifier"`);
     assert.deepEqual(identity.rows[0], {
-      databaseOwner: APP_ROLE,
-      schemaOwner: APP_ROLE,
+      canCreateInDatabase: false,
+      canCreateInSchema: false,
+      databaseOwner: MIGRATOR_ROLE,
+      schemaOwner: MIGRATOR_ROLE,
       systemIdentifier,
+      tableOwner: MIGRATOR_ROLE,
     });
 
     const role = await app.query<{
@@ -253,31 +359,189 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       synthetic: true,
     });
 
+    const featureFlags = await app.query<{ count: number }>(
+      "SELECT count(*)::int AS count FROM feature_flag_version",
+    );
+    assert.equal(featureFlags.rows[0]?.count, 0);
+    const appendOnlyPolicies = await app.query<{
+      commands: string[];
+      forceRowSecurity: boolean;
+      rowSecurity: boolean;
+    }>(`
+      SELECT c.relrowsecurity AS "rowSecurity",
+             c.relforcerowsecurity AS "forceRowSecurity",
+             array_agg(p.cmd ORDER BY p.cmd) AS commands
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        JOIN pg_policies p ON p.schemaname = n.nspname AND p.tablename = c.relname
+       WHERE n.nspname = 'public' AND c.relname = 'feature_flag_version'
+       GROUP BY c.relrowsecurity, c.relforcerowsecurity
+    `);
+    assert.deepEqual(appendOnlyPolicies.rows[0], {
+      commands: ["INSERT", "SELECT"],
+      forceRowSecurity: true,
+      rowSecurity: true,
+    });
+    const policyRoles = await app.query<{
+      command: string;
+      policyName: string;
+      roles: string[];
+    }>(`SELECT policyname AS "policyName", cmd AS command, to_json(roles) AS roles
+          FROM pg_policies
+         WHERE schemaname = 'public' AND tablename = 'feature_flag_version'
+         ORDER BY policyname`);
+    assert.deepEqual(policyRoles.rows, [
+      {
+        command: "INSERT",
+        policyName: "feature_flag_version_append",
+        roles: [FLAG_WRITER_ROLE],
+      },
+      {
+        command: "SELECT",
+        policyName: "feature_flag_version_read",
+        roles: [FLAG_READER_ROLE],
+      },
+    ]);
+
     await expectConstraint(
-      app,
+      migrator,
       "INSERT INTO seed_manifest (dataset_key, version, checksum_sha256, is_synthetic) VALUES ($1, 1, $2, true)",
       ["Invalid Key", "a".repeat(64)],
       "seed_manifest_dataset_key_check",
     );
     await expectConstraint(
-      app,
+      migrator,
       "INSERT INTO seed_manifest (id, dataset_key, version, checksum_sha256, is_synthetic) VALUES ($1, $2, 1, $3, true)",
       ["6d393ec1-2019-4abc-9cf8-62f58c72efe8", "foundation-synthetic", "a".repeat(64)],
       "seed_manifest_pkey",
     );
+    await expectConstraint(
+      control,
+      `INSERT INTO feature_flag_version
+         (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+       VALUES (0, $1, 1, $2, 'RIT-007', 'ci.verifier')`,
+      ["experience.public_shell", new Date("2026-07-17T11:00:00.000Z")],
+      "feature_flag_version_registry_version_check",
+    );
 
-    await app.query("BEGIN");
-    await app.query(
+    const inserted = await control.query<{ id: string }>(
+      `INSERT INTO feature_flag_version
+         (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+       VALUES (1, $1, 1, $2, 'RIT-007', 'ci.verifier')
+       RETURNING id::text AS id`,
+      ["experience.public_shell", new Date("2026-07-17T11:00:00.000Z")],
+    );
+    await expectPostgresError(
+      () =>
+        control.query(
+          `INSERT INTO feature_flag_version
+             (registry_version, flag_key, version, state, country_codes, effective_at,
+              change_reference, approval_reference, actor_id)
+           VALUES (1, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
+                   'RIT-063', 'OWN-004:wrong-gate', 'ci.verifier')`,
+          [new Date("2026-07-17T12:00:00.000Z")],
+        ),
+      "42501",
+    );
+    await control.query(
+      `INSERT INTO feature_flag_version
+         (registry_version, flag_key, version, state, country_codes, effective_at,
+          change_reference, approval_reference, actor_id)
+       VALUES (1, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
+               'RIT-063', 'OWN-002:ci-owner-record', 'ci.verifier')`,
+      [new Date("2026-07-17T12:00:00.000Z")],
+    );
+    await control.query(
+      `INSERT INTO feature_flag_version
+         (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+       VALUES (2, 'experience.public_shell', 1, $1, 'RIT-007', 'ci.verifier')`,
+      [new Date("2026-07-17T12:00:00.000Z")],
+    );
+    await expectPostgresError(
+      () =>
+        app.query(
+          `INSERT INTO feature_flag_version
+             (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+           VALUES (1, 'experience.public_shell', 99, now(), 'RIT-007', 'ci.runtime')`,
+        ),
+      "42501",
+    );
+    await expectPostgresError(
+      () =>
+        control.query("UPDATE feature_flag_version SET state = 'on' WHERE id = $1::uuid", [
+          inserted.rows[0]?.id,
+        ]),
+      "42501",
+    );
+    const unchanged = await app.query<{ state: string }>(
+      "SELECT state FROM feature_flag_version WHERE id = $1::uuid",
+      [inserted.rows[0]?.id],
+    );
+    assert.deepEqual(unchanged.rows, [{ state: "off" }]);
+    const persisted = await app.query<{
+      countryCodes: string[];
+      flagKey: string;
+      registryVersion: number;
+      state: string;
+      version: number;
+    }>(`SELECT registry_version AS "registryVersion", flag_key AS "flagKey", version, state,
+               country_codes AS "countryCodes"
+          FROM feature_flag_version
+         ORDER BY registry_version, flag_key, version`);
+    assert.deepEqual(persisted.rows, [
+      {
+        countryCodes: [],
+        flagKey: "experience.public_shell",
+        registryVersion: 1,
+        state: "off",
+        version: 1,
+      },
+      {
+        countryCodes: ["US"],
+        flagKey: "payments.fiat_checkout",
+        registryVersion: 1,
+        state: "on",
+        version: 1,
+      },
+      {
+        countryCodes: [],
+        flagKey: "experience.public_shell",
+        registryVersion: 2,
+        state: "off",
+        version: 1,
+      },
+    ]);
+
+    await expectPostgresError(
+      () => app.query("ALTER TABLE feature_flag_version DISABLE ROW LEVEL SECURITY"),
+      "42501",
+    );
+    await expectPostgresError(
+      () => app.query("DROP POLICY feature_flag_version_read ON feature_flag_version"),
+      "42501",
+    );
+    await expectPostgresError(() => app.query("TRUNCATE feature_flag_version"), "42501");
+
+    await migrator.query("BEGIN");
+    await migrator.query(
       "INSERT INTO seed_manifest (dataset_key, version, checksum_sha256, is_synthetic) VALUES ($1, 1, $2, true)",
       ["transaction-rollback", "b".repeat(64)],
     );
-    await app.query("ROLLBACK");
+    await migrator.query("ROLLBACK");
     const rollback = await app.query<{ count: number }>(
       "SELECT count(*)::int AS count FROM seed_manifest WHERE dataset_key = 'transaction-rollback'",
     );
     assert.equal(rollback.rows[0]?.count, 0);
   } finally {
-    await app.end();
+    await Promise.all([
+      app.end(),
+      control.end(),
+      migrator.end(),
+      runtimeDatabase.$disconnect(),
+      controlDatabase.$disconnect(),
+      migratorDatabase.$disconnect(),
+      preselectedRuntimeDatabase.$disconnect(),
+    ]);
   }
 };
 
@@ -297,6 +561,7 @@ try {
   runPrisma("first migration deployment", ["migrate", "deploy"]);
   verificationStage = "idempotent migration deployment";
   runPrisma("idempotent migration deployment", ["migrate", "deploy"]);
+  await grantRuntimePrivileges();
   verificationStage = "first synthetic seed";
   runPrisma("first synthetic seed", ["db", "seed"]);
   verificationStage = "idempotent synthetic seed";
@@ -314,7 +579,7 @@ try {
   ]);
   await verifyMigratedDatabase();
   process.stdout.write(
-    "Verified ephemeral CI PostgreSQL attestation, least privilege, migration idempotence/drift, seed idempotence, constraints, and transaction rollback.\n",
+    "Verified ephemeral CI PostgreSQL attestation, least privilege, migration idempotence/drift, seed idempotence, feature-flag immutability, constraints, and transaction rollback.\n",
   );
 } catch {
   process.stderr.write(

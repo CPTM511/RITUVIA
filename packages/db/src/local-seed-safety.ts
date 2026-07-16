@@ -1,6 +1,6 @@
 const LOCAL_HOST = "127.0.0.1";
 const LOCAL_PORT = "55432";
-const LOCAL_ROLE = "rituvia_app";
+const LOCAL_ROLE = "rituvia_migrator";
 const DEVELOPMENT_DATABASE = "rituvia_local";
 const TEST_DATABASE_PATTERN = /^rituvia_test_[a-f0-9]{24}$/;
 const CLUSTER_NAME_PATTERN = /^rituvia_\d{10,}$/;
@@ -13,10 +13,10 @@ const REQUIRED_QUERY_PARAMETERS = Object.freeze({
 
 const CI_HOST = "127.0.0.1";
 const CI_PORT = "5432";
-const CI_ROLE = "rituvia_ci_app";
+const CI_ROLE = "rituvia_ci_migrator";
 const CI_DATABASE = "rituvia_ci";
 const CI_QUERY_PARAMETERS = Object.freeze({
-  application_name: "rituvia_ci",
+  application_name: "rituvia_ci_migrator",
   connect_timeout: "5",
   schema: "public",
   sslmode: "disable",
@@ -79,7 +79,7 @@ export const assertSyntheticSeedTarget = ({
       return Object.freeze({ databaseName, expectedClusterName, kind: "local" });
     }
 
-    const expectedPassword = `rituvia-ci-${githubRunId ?? ""}-${githubRunAttempt ?? ""}-admin-app`;
+    const expectedPassword = `rituvia-ci-${githubRunId ?? ""}-${githubRunAttempt ?? ""}-admin-migrator`;
     if (
       seedTarget !== "ci" ||
       appEnvironment !== "test" ||

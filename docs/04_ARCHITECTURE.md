@@ -218,11 +218,52 @@ Never share databases, signing secrets, webhook endpoints, storage buckets, anal
 
 Flags must have:
 
-- Owner, purpose, creation date, rollout state, country/locale scope, and removal date.
+- Owner, purpose, creation date, lifecycle, country/locale scope, removal date, and cleanup task.
 - Server-side enforcement.
 - Safe default off for payments, crypto, new countries, new traditions, and sensitive AI behavior.
 - Audit log for production changes.
 - A cleanup task after full rollout.
+
+The M0 raw registry capability lives only on `@rituvia/config/feature-flags`; architecture policy
+allows that subpath only in `apps/web/server/feature-flags.ts`. The general server configuration
+entry and client projection expose no raw parser, factory, flag key, state, evaluator, or persisted
+version. The zero-argument Web loader obtains the reviewed runtime URL internally, creates and
+closes the database client itself, and therefore cannot accept a caller-supplied snapshot or
+Prisma-like object. Before reading, it performs a live privilege attestation and fails closed unless
+the connected role is a read-only, non-owner, non-DDL, non-superuser identity for the registry
+table with the same authenticated session/current identity and no role-membership path to an owner,
+writer, or privileged identity. The attestation follows all role-membership paths, including
+currently non-settable membership, so membership administration cannot become a post-check upgrade.
+Registry version 1 defines exact typed keys for the public shell and the owner-gated country,
+fiat checkout, hosted crypto checkout, and regional-tradition boundaries. Every definition
+is immutable metadata with owner, purpose, creation date, active/retired lifecycle, required scope,
+approval gate, safe-off default, removal date, and a real BACKLOG cleanup reference.
+
+Persisted snapshots are strict and bounded. They reject unknown keys/fields, wrong registry
+versions, duplicate or non-monotonic creation versions, non-canonical scope, invalid UTC instants,
+and enabled owner-gated records without the required gate reference. Evaluation uses a server-owned
+clock, selects the highest effective version, never resurrects an older version after expiry, and
+fails off for missing scope, retirement, expiry, or an overdue removal date. `effectiveAt` need not
+increase with version: a later-created emergency-off version may become effective immediately and
+continues to outrank an earlier scheduled activation. Results carry registry and flag versions for
+decision provenance. Country and locale inputs must come from the future server-owned RIT-060
+policy boundary, never directly from a client header or form field.
+
+PostgreSQL stores only bounded operational metadata in `feature_flag_version`. A non-superuser
+migrator owns the database, public schema, and tables. The runtime login is a non-owner with schema
+usage and table reads only; it cannot create, insert, update, delete, truncate, alter RLS, or drop a
+policy. A distinct control login inherits only the feature-flag reader/writer capabilities and can
+append through forced RLS; enabled rows must match registry version 1's exact key, required owner
+gate prefix, and scope shape. It cannot update/delete/truncate history or change DDL, and no
+migration creates an enabled row. There is deliberately no activation endpoint: granting control
+credentials and recording the referenced owner approval remain operational approval actions.
+
+Registry upgrades are rolling-safe. Storage uniqueness is `(registryVersion, flagKey, version)`,
+and each deployed reader queries only its exact registry version, so v1 and v2 histories can coexist
+and a rollback to v1 cannot ingest v2 keys. A key is first marked `retired` and therefore forced off;
+its referenced cleanup task must reach Done before a later registry version removes the tombstone.
+The preceding registry history remains in append-only storage and is ignored, not reparsed, by the
+new reader.
 
 ## 14. API and rendering
 

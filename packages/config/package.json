@@ -15,6 +15,11 @@
       "import": "./dist/client.js",
       "default": "./dist/client.js"
     },
+    "./feature-flags": {
+      "types": "./src/feature-flags.ts",
+      "import": "./dist/feature-flags.js",
+      "default": "./dist/feature-flags.js"
+    },
     "./server": {
       "types": "./src/server.ts",
       "import": "./dist/server.js",

@@ -12,6 +12,7 @@
   "dependencies": {
     "@next/env": "16.2.10",
     "@rituvia/config": "workspace:*",
+    "@rituvia/db": "workspace:*",
     "@rituvia/observability": "workspace:*",
     "next": "16.2.10",
     "react": "19.2.7",

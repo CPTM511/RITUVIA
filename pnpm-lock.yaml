@@ -51,6 +51,9 @@ importers:
       '@rituvia/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@rituvia/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@rituvia/observability':
         specifier: workspace:*
         version: link:../../packages/observability

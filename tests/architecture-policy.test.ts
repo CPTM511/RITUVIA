@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   auditArchitecture,
+  expectedWebFeatureFlagCompositionSource,
   type RepositoryArchitectureFile,
 } from "../scripts/architecture-policy.js";
 
@@ -223,6 +224,96 @@ describe("package architecture policy", () => {
       }),
     );
     expect(rules(files)).toEqual(expect.arrayContaining(["client-server-transitive-import"]));
+  });
+
+  it("confines raw feature-flag construction to the reviewed Web composition adapter", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          "@rituvia/db": "workspace:*",
+          react: "19.2.7",
+          "server-only": "0.0.1",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    replaceSource(
+      files,
+      "packages/config/package.json",
+      JSON.stringify({
+        exports: {
+          "./feature-flags": "./src/feature-flags.ts",
+          "./server": "./src/server.ts",
+        },
+        name: "@rituvia/config",
+        private: true,
+      }),
+    );
+    files.push(
+      {
+        path: "packages/config/src/feature-flags.ts",
+        source: "export const createFeatureFlagEvaluator = () => true;",
+      },
+      {
+        path: "apps/web/config/server.ts",
+        source: "export const getWebRuntimeConfiguration = () => ({ databaseUrl: 'db' });",
+      },
+      {
+        path: "apps/web/server/feature-flags.ts",
+        source: expectedWebFeatureFlagCompositionSource,
+      },
+      {
+        path: "apps/web/server/unsafe-feature-flags.ts",
+        source:
+          'export { createFeatureFlagEvaluator as bypass } from "@rituvia/config/feature-flags";',
+      },
+      {
+        path: "apps/web/app/unsafe-feature-client.tsx",
+        source:
+          '"use client"; import { createFeatureFlagEvaluator as alias } from "@rituvia/config/feature-flags"; export const bypass = alias;',
+      },
+    );
+
+    const findings = auditArchitecture(files);
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          location: expect.stringContaining("apps/web/server/unsafe-feature-flags.ts"),
+          rule: "feature-flag-capability-import",
+        }),
+        expect.objectContaining({
+          location: expect.stringContaining("apps/web/app/unsafe-feature-client.tsx"),
+          rule: "client-server-import",
+        }),
+      ]),
+    );
+    expect(
+      findings.some(
+        ({ location, rule }) =>
+          rule === "feature-flag-capability-import" &&
+          location.startsWith("apps/web/server/feature-flags.ts"),
+      ),
+    ).toBe(false);
+    expect(findings.some(({ rule }) => rule === "feature-flag-composition-boundary")).toBe(false);
+
+    replaceSource(
+      files,
+      "apps/web/server/feature-flags.ts",
+      'import "server-only"; import { createFeatureFlagEvaluator as create } from "@rituvia/config/feature-flags"; export const loadWebFeatureFlagEvaluator = async (database: unknown) => create(database);',
+    );
+    expect(rules(files)).toContain("feature-flag-composition-boundary");
+
+    replaceSource(
+      files,
+      "apps/web/server/feature-flags.ts",
+      `${expectedWebFeatureFlagCompositionSource}\nconst fakeDatabase = { featureFlagVersion: true };\n`,
+    );
+    expect(rules(files)).toContain("feature-flag-composition-boundary");
   });
 
   it("blocks divination from importing AI through package or relative paths", () => {

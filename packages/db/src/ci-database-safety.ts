@@ -40,7 +40,15 @@ export const assertCiDatabaseEnvironment = ({
   githubActions: string | undefined;
   githubRunAttempt: string | undefined;
   githubRunId: string | undefined;
-}>): Readonly<{ adminUrl: string; appPassword: string; appUrl: string }> => {
+}>): Readonly<{
+  adminUrl: string;
+  appPassword: string;
+  appUrl: string;
+  controlPassword: string;
+  controlUrl: string;
+  migratorPassword: string;
+  migratorUrl: string;
+}> => {
   if (
     ci !== "true" ||
     githubActions !== "true" ||
@@ -54,9 +62,15 @@ export const assertCiDatabaseEnvironment = ({
   }
 
   const appPassword = `${adminPassword}-app`;
+  const controlPassword = `${adminPassword}-control`;
+  const migratorPassword = `${adminPassword}-migrator`;
   return Object.freeze({
     adminUrl: createUrl("rituvia_ci_admin", adminPassword, "rituvia_ci_admin"),
     appPassword,
     appUrl: createUrl("rituvia_ci_app", appPassword, "rituvia_ci"),
+    controlPassword,
+    controlUrl: createUrl("rituvia_ci_config_writer", controlPassword, "rituvia_ci_config_writer"),
+    migratorPassword,
+    migratorUrl: createUrl("rituvia_ci_migrator", migratorPassword, "rituvia_ci_migrator"),
   });
 };

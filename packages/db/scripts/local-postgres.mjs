@@ -34,6 +34,10 @@ const HOST = "127.0.0.1";
 const PORT = 55_432;
 const ADMIN_ROLE = "rituvia_local_admin";
 const APP_ROLE = "rituvia_app";
+const CONTROL_ROLE = "rituvia_config_writer";
+const MIGRATOR_ROLE = "rituvia_migrator";
+const FLAG_READER_ROLE = "rituvia_feature_flag_reader";
+const FLAG_WRITER_ROLE = "rituvia_feature_flag_writer";
 const DEVELOPMENT_DATABASE = "rituvia_local";
 const SUPPORTED_POSTGRES_MAJORS = new Set([17, 18]);
 const TEST_DATABASE_PATTERN = /^rituvia_test_[a-f0-9]{24}$/;
@@ -332,6 +336,8 @@ const createCredentials = async () => {
   const credentials = {
     adminPassword: randomBytes(32).toString("base64url"),
     appPassword: randomBytes(32).toString("base64url"),
+    controlPassword: randomBytes(32).toString("base64url"),
+    migratorPassword: randomBytes(32).toString("base64url"),
   };
   await writeFile(credentialsPath, `${JSON.stringify(credentials, null, 2)}\n`, {
     encoding: "utf8",
@@ -341,7 +347,7 @@ const createCredentials = async () => {
   return credentials;
 };
 
-const assertCredentials = (credentials) => {
+const assertBaseCredentials = (credentials) => {
   const secretPattern = /^[A-Za-z0-9_-]{43}$/;
   if (
     typeof credentials !== "object" ||
@@ -350,6 +356,44 @@ const assertCredentials = (credentials) => {
     !secretPattern.test(credentials.appPassword ?? "")
   ) {
     throw genericFailure("Local PostgreSQL credentials are invalid.");
+  }
+};
+
+const assertCredentials = (credentials) => {
+  const secretPattern = /^[A-Za-z0-9_-]{43}$/;
+  assertBaseCredentials(credentials);
+  if (
+    !secretPattern.test(credentials.controlPassword ?? "") ||
+    !secretPattern.test(credentials.migratorPassword ?? "")
+  ) {
+    throw genericFailure("Local PostgreSQL credentials are invalid.");
+  }
+};
+
+const upgradeCredentials = async () => {
+  const existing = await readJson(credentialsPath, "Local PostgreSQL credentials");
+  assertBaseCredentials(existing);
+  const secretPattern = /^[A-Za-z0-9_-]{43}$/;
+  const upgraded = {
+    adminPassword: existing.adminPassword,
+    appPassword: existing.appPassword,
+    controlPassword: secretPattern.test(existing.controlPassword ?? "")
+      ? existing.controlPassword
+      : randomBytes(32).toString("base64url"),
+    migratorPassword: secretPattern.test(existing.migratorPassword ?? "")
+      ? existing.migratorPassword
+      : randomBytes(32).toString("base64url"),
+  };
+  assertCredentials(upgraded);
+  if (
+    upgraded.controlPassword !== existing.controlPassword ||
+    upgraded.migratorPassword !== existing.migratorPassword
+  ) {
+    await writeManagedFileAtomically(
+      credentialsPath,
+      `${JSON.stringify(upgraded, null, 2)}\n`,
+      "Local PostgreSQL credential file",
+    );
   }
 };
 
@@ -388,6 +432,7 @@ const initializeCluster = async (toolchain) => {
       }
       await writeManagedClusterConfiguration(existingMarker.systemIdentifier);
     }
+    await upgradeCredentials();
     return;
   }
 
@@ -513,8 +558,17 @@ const loadRuntime = async ({ initialize = true } = {}) => {
 const buildDatabaseUrl = (runtime, databaseName, role = APP_ROLE) => {
   const url = new URL("postgresql://127.0.0.1");
   url.username = role;
-  url.password =
-    role === ADMIN_ROLE ? runtime.credentials.adminPassword : runtime.credentials.appPassword;
+  const passwords = {
+    [ADMIN_ROLE]: runtime.credentials.adminPassword,
+    [APP_ROLE]: runtime.credentials.appPassword,
+    [CONTROL_ROLE]: runtime.credentials.controlPassword,
+    [MIGRATOR_ROLE]: runtime.credentials.migratorPassword,
+  };
+  const password = passwords[role];
+  if (password === undefined) {
+    throw genericFailure("Local database role is not an approved login role.");
+  }
+  url.password = password;
   url.hostname = HOST;
   url.port = String(PORT);
   url.pathname = `/${databaseName}`;
@@ -524,7 +578,12 @@ const buildDatabaseUrl = (runtime, databaseName, role = APP_ROLE) => {
   return url.toString();
 };
 
-export const assertExactLocalDatabaseUrl = (databaseUrl, expectedDatabase, expectedPassword) => {
+export const assertExactLocalDatabaseUrl = (
+  databaseUrl,
+  expectedDatabase,
+  expectedPassword,
+  expectedRole = APP_ROLE,
+) => {
   try {
     const parsed = new URL(databaseUrl);
     const entries = Object.fromEntries(parsed.searchParams.entries());
@@ -533,7 +592,7 @@ export const assertExactLocalDatabaseUrl = (databaseUrl, expectedDatabase, expec
       parsed.protocol !== "postgresql:" ||
       parsed.hostname !== HOST ||
       parsed.port !== String(PORT) ||
-      parsed.username !== APP_ROLE ||
+      parsed.username !== expectedRole ||
       parsed.password !== expectedPassword ||
       parsed.pathname !== `/${expectedDatabase}` ||
       parsed.hash !== "" ||
@@ -693,49 +752,129 @@ const isPortOpen = () =>
     socket.once("error", () => finish(false));
   });
 
+const ensureLoginRole = async (admin, roleName, password) => {
+  const roleResult = await admin.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [roleName]);
+  const passwordLiteral = password.replaceAll("'", "''");
+  if (roleResult.rowCount === 0) {
+    await admin.query(`CREATE ROLE ${roleName} LOGIN PASSWORD '${passwordLiteral}'`);
+  }
+  await admin.query(
+    `ALTER ROLE ${roleName} LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD '${passwordLiteral}'`,
+  );
+};
+
+const ensureGroupRole = async (admin, roleName) => {
+  const roleResult = await admin.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [roleName]);
+  if (roleResult.rowCount === 0) {
+    await admin.query(`CREATE ROLE ${roleName} NOLOGIN`);
+  }
+  await admin.query(
+    `ALTER ROLE ${roleName} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`,
+  );
+};
+
+export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => {
+  if (databaseName !== DEVELOPMENT_DATABASE && !TEST_DATABASE_PATTERN.test(databaseName)) {
+    throw genericFailure("Database privilege target is not allowed.");
+  }
+  const admin = await connectAttested(runtime, databaseName, ADMIN_ROLE, {
+    verifyManagedSettings: false,
+  });
+  try {
+    const ownership = await admin.query(
+      "SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = current_database()",
+    );
+    if (ownership.rows[0]?.owner !== MIGRATOR_ROLE) {
+      throw genericFailure("Database privilege target owner is unexpected.");
+    }
+    await admin.query(`REASSIGN OWNED BY ${APP_ROLE} TO ${MIGRATOR_ROLE}`);
+    await admin.query(`ALTER SCHEMA public OWNER TO ${MIGRATOR_ROLE}`);
+    await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM PUBLIC`);
+    await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
+    await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}`,
+    );
+    await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${APP_ROLE}`);
+    const featureFlagTable = await admin.query(
+      "SELECT to_regclass('public.feature_flag_version') IS NOT NULL AS present",
+    );
+    if (featureFlagTable.rows[0]?.present === true) {
+      await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
+      await admin.query(`GRANT INSERT ON TABLE feature_flag_version TO ${FLAG_WRITER_ROLE}`);
+    }
+    await admin.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
+    );
+    await admin.query(
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public GRANT SELECT ON TABLES TO ${APP_ROLE}`,
+    );
+  } finally {
+    await admin.end();
+  }
+};
+
 const ensureApplicationRoleAndDatabase = async (runtime) => {
   const admin = await connectAttested(runtime, "postgres", ADMIN_ROLE, {
     verifyManagedSettings: false,
   });
   try {
-    const passwordLiteral = runtime.credentials.appPassword.replaceAll("'", "''");
-    const roleResult = await admin.query("SELECT 1 FROM pg_roles WHERE rolname = $1", [APP_ROLE]);
-    if (roleResult.rowCount === 0) {
-      await admin.query(`CREATE ROLE ${APP_ROLE} LOGIN PASSWORD '${passwordLiteral}'`);
-    }
-    await admin.query(
-      `ALTER ROLE ${APP_ROLE} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD '${passwordLiteral}'`,
-    );
+    await ensureGroupRole(admin, FLAG_READER_ROLE);
+    await ensureGroupRole(admin, FLAG_WRITER_ROLE);
+    await ensureLoginRole(admin, APP_ROLE, runtime.credentials.appPassword);
+    await ensureLoginRole(admin, CONTROL_ROLE, runtime.credentials.controlPassword);
+    await ensureLoginRole(admin, MIGRATOR_ROLE, runtime.credentials.migratorPassword);
+    await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(`REVOKE ${FLAG_WRITER_ROLE} FROM ${APP_ROLE}`);
 
     const databaseResult = await admin.query(
       "SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1",
       [DEVELOPMENT_DATABASE],
     );
     if (databaseResult.rowCount === 0) {
-      await admin.query(`CREATE DATABASE ${DEVELOPMENT_DATABASE} OWNER ${APP_ROLE}`);
-    } else if (databaseResult.rows[0]?.owner !== APP_ROLE) {
+      await admin.query(`CREATE DATABASE ${DEVELOPMENT_DATABASE} OWNER ${MIGRATOR_ROLE}`);
+    } else if (
+      databaseResult.rows[0]?.owner !== MIGRATOR_ROLE &&
+      databaseResult.rows[0]?.owner !== APP_ROLE
+    ) {
       throw genericFailure("Local development database owner is unexpected.");
     }
+    await admin.query(`ALTER DATABASE ${DEVELOPMENT_DATABASE} OWNER TO ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ALL ON DATABASE ${DEVELOPMENT_DATABASE} FROM PUBLIC`);
 
     const privileges = await admin.query(
       `SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls
-         FROM pg_roles WHERE rolname = $1`,
-      [APP_ROLE],
+         FROM pg_roles WHERE rolname = ANY($1::text[])`,
+      [[APP_ROLE, CONTROL_ROLE, MIGRATOR_ROLE]],
     );
-    const role = privileges.rows[0];
-    if (
-      role?.rolsuper !== false ||
-      role.rolcreatedb !== false ||
-      role.rolcreaterole !== false ||
-      role.rolreplication !== false ||
-      role.rolbypassrls !== false
-    ) {
-      throw genericFailure("Local application role has excessive privileges.");
+    for (const role of privileges.rows) {
+      if (
+        role?.rolsuper !== false ||
+        role.rolcreatedb !== false ||
+        role.rolcreaterole !== false ||
+        role.rolreplication !== false ||
+        role.rolbypassrls !== false
+      ) {
+        throw genericFailure("Local database role has excessive privileges.");
+      }
     }
   } finally {
     await admin.end();
   }
+  const databaseAdmin = await connectAttested(runtime, DEVELOPMENT_DATABASE, ADMIN_ROLE, {
+    verifyManagedSettings: false,
+  });
+  try {
+    await databaseAdmin.query(`REASSIGN OWNED BY ${APP_ROLE} TO ${MIGRATOR_ROLE}`);
+    await databaseAdmin.query(`ALTER SCHEMA public OWNER TO ${MIGRATOR_ROLE}`);
+  } finally {
+    await databaseAdmin.end();
+  }
+  await ensureRuntimeDatabasePrivileges(runtime, DEVELOPMENT_DATABASE);
   await writeManagedFileAtomically(
     databaseUrlPath,
     `${buildDatabaseUrl(runtime, DEVELOPMENT_DATABASE)}\n`,
@@ -1033,7 +1172,7 @@ const recreateDatabase = async (runtime, databaseName) => {
       "SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1",
       [databaseName],
     );
-    if (target.rowCount !== 1 || target.rows[0]?.owner !== APP_ROLE) {
+    if (target.rowCount !== 1 || target.rows[0]?.owner !== MIGRATOR_ROLE) {
       throw genericFailure("Database recreation target owner is unexpected.");
     }
     await admin.query(
@@ -1041,11 +1180,12 @@ const recreateDatabase = async (runtime, databaseName) => {
       [databaseName],
     );
     await admin.query(`DROP DATABASE ${databaseName}`);
-    await admin.query(`CREATE DATABASE ${databaseName} OWNER ${APP_ROLE}`);
+    await admin.query(`CREATE DATABASE ${databaseName} OWNER ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM PUBLIC`);
   } finally {
     await admin.end();
   }
+  await ensureRuntimeDatabasePrivileges(runtime, databaseName);
 };
 
 export const resetDevelopmentDatabase = async (runtime, confirmation) => {
@@ -1077,19 +1217,36 @@ const createTestDatabase = async (runtime) => {
     if (existing.rowCount !== 0) {
       throw genericFailure("Generated test database already exists.");
     }
-    await admin.query(`CREATE DATABASE ${databaseName} OWNER ${APP_ROLE}`);
+    await admin.query(`CREATE DATABASE ${databaseName} OWNER ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM PUBLIC`);
   } finally {
     await admin.end();
   }
+  await ensureRuntimeDatabasePrivileges(runtime, databaseName);
 
   let active = true;
   const databaseUrl = buildDatabaseUrl(runtime, databaseName);
+  const controlDatabaseUrl = buildDatabaseUrl(runtime, databaseName, CONTROL_ROLE);
+  const migrationDatabaseUrl = buildDatabaseUrl(runtime, databaseName, MIGRATOR_ROLE);
   assertExactLocalDatabaseUrl(databaseUrl, databaseName, runtime.credentials.appPassword);
+  assertExactLocalDatabaseUrl(
+    controlDatabaseUrl,
+    databaseName,
+    runtime.credentials.controlPassword,
+    CONTROL_ROLE,
+  );
+  assertExactLocalDatabaseUrl(
+    migrationDatabaseUrl,
+    databaseName,
+    runtime.credentials.migratorPassword,
+    MIGRATOR_ROLE,
+  );
 
   const handle = Object.freeze({
     databaseName,
     databaseUrl,
+    controlDatabaseUrl,
+    migrationDatabaseUrl,
     async attest() {
       if (!active) throw genericFailure("Test database handle is no longer active.");
       const client = await connectAttested(runtime, databaseName, APP_ROLE);
@@ -1107,7 +1264,7 @@ const createTestDatabase = async (runtime) => {
           "SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1",
           [databaseName],
         );
-        if (target.rowCount !== 1 || target.rows[0]?.owner !== APP_ROLE) {
+        if (target.rowCount !== 1 || target.rows[0]?.owner !== MIGRATOR_ROLE) {
           throw genericFailure("Test database cleanup target owner is unexpected.");
         }
         await adminClient.query(
@@ -1125,12 +1282,29 @@ const createTestDatabase = async (runtime) => {
   return handle;
 };
 
-export const localPrismaEnvironment = (runtime, databaseUrl) => ({
-  APP_ENV: "local",
-  DATABASE_URL: databaseUrl,
-  RITUVIA_LOCAL_POSTGRES_CLUSTER_NAME: `rituvia_${runtime.marker.systemIdentifier}`,
-  RITUVIA_SEED_TARGET: "local",
-});
+export const localPrismaEnvironment = (runtime, databaseUrl) => {
+  let databaseName;
+  try {
+    databaseName = new URL(databaseUrl).pathname.slice(1);
+  } catch {
+    throw genericFailure("Local Prisma target did not pass the exact-target guard.");
+  }
+  if (databaseName !== DEVELOPMENT_DATABASE && !TEST_DATABASE_PATTERN.test(databaseName)) {
+    throw genericFailure("Local Prisma target did not pass the exact-target guard.");
+  }
+  assertExactLocalDatabaseUrl(
+    databaseUrl,
+    databaseName,
+    runtime.credentials.migratorPassword,
+    MIGRATOR_ROLE,
+  );
+  return {
+    APP_ENV: "local",
+    DATABASE_URL: databaseUrl,
+    RITUVIA_LOCAL_POSTGRES_CLUSTER_NAME: `rituvia_${runtime.marker.systemIdentifier}`,
+    RITUVIA_SEED_TARGET: "local",
+  };
+};
 
 export const runLocalPrisma = (runtime, databaseUrl, args, options = {}) => {
   const prismaEntry = path.join(
@@ -1169,7 +1343,8 @@ export const verifyLogicalDumpRestore = async (runtime, sourceHandle, targetHand
   await chmod(dumpDirectory, 0o700);
   const dumpPath = path.join(dumpDirectory, `${sourceDatabase}-${targetDatabase}.dump`);
   await assertNotSymlink(dumpPath, "Local PostgreSQL logical dump");
-  const pgEnvironment = { PGPASSWORD: runtime.credentials.appPassword };
+  const dumpEnvironment = { PGPASSWORD: runtime.credentials.appPassword };
+  const restoreEnvironment = { PGPASSWORD: runtime.credentials.migratorPassword };
 
   try {
     await sourceHandle.attest();
@@ -1180,7 +1355,7 @@ export const verifyLogicalDumpRestore = async (runtime, sourceHandle, targetHand
         "SELECT datname, pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = ANY($1::text[])",
         [[sourceDatabase, targetDatabase]],
       );
-      if (ownership.rowCount !== 2 || ownership.rows.some(({ owner }) => owner !== APP_ROLE)) {
+      if (ownership.rowCount !== 2 || ownership.rows.some(({ owner }) => owner !== MIGRATOR_ROLE)) {
         throw genericFailure("Logical dump database ownership is unexpected.");
       }
     } finally {
@@ -1216,12 +1391,14 @@ export const verifyLogicalDumpRestore = async (runtime, sourceHandle, targetHand
         sourceDatabase,
         "--format",
         "custom",
+        "--enable-row-security",
+        "--inserts",
         "--file",
         dumpPath,
         "--no-owner",
         "--no-acl",
       ],
-      { env: pgEnvironment, timeout: 120_000 },
+      { env: dumpEnvironment, timeout: 120_000 },
     );
     await chmod(dumpPath, 0o600);
     runCommand(
@@ -1232,17 +1409,19 @@ export const verifyLogicalDumpRestore = async (runtime, sourceHandle, targetHand
         "--port",
         String(PORT),
         "--username",
-        APP_ROLE,
+        MIGRATOR_ROLE,
         "--dbname",
         targetDatabase,
         "--exit-on-error",
         "--single-transaction",
+        "--enable-row-security",
         "--no-owner",
         "--no-acl",
         dumpPath,
       ],
-      { env: pgEnvironment, timeout: 120_000 },
+      { env: restoreEnvironment, timeout: 120_000 },
     );
+    await ensureRuntimeDatabasePrivileges(runtime, targetDatabase);
   } finally {
     await rm(dumpPath, { force: true });
   }
@@ -1256,7 +1435,17 @@ export const withLocalPostgresLease = async (operation) =>
       Object.freeze({
         runtime,
         startedByInvocation,
+        developmentControlDatabaseUrl: buildDatabaseUrl(
+          runtime,
+          DEVELOPMENT_DATABASE,
+          CONTROL_ROLE,
+        ),
         developmentDatabaseUrl: buildDatabaseUrl(runtime, DEVELOPMENT_DATABASE),
+        developmentMigrationDatabaseUrl: buildDatabaseUrl(
+          runtime,
+          DEVELOPMENT_DATABASE,
+          MIGRATOR_ROLE,
+        ),
         createTestDatabase: () => createTestDatabase(runtime),
       }),
     );
@@ -1270,10 +1459,12 @@ export const stopLeaseOwnedRuntime = async (lease) => {
 
 export const localPostgresConstants = Object.freeze({
   appRole: APP_ROLE,
+  controlRole: CONTROL_ROLE,
   dataDirectory,
   logPath,
   developmentDatabase: DEVELOPMENT_DATABASE,
   host: HOST,
+  migratorRole: MIGRATOR_ROLE,
   port: PORT,
   databaseUrlPath,
   resetConfirmation: RESET_CONFIRMATION,

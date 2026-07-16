@@ -20,3 +20,23 @@ model SeedManifest {
   @@unique([datasetKey, version], map: "seed_manifest_dataset_key_version_key")
   @@map("seed_manifest")
 }
+
+model FeatureFlagVersion {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  registryVersion   Int       @map("registry_version")
+  flagKey           String    @map("flag_key") @db.VarChar(100)
+  version           Int
+  state             String    @default("off") @db.VarChar(16)
+  countryCodes      String[]  @default([]) @map("country_codes")
+  localeTags        String[]  @default([]) @map("locale_tags")
+  effectiveAt       DateTime  @map("effective_at") @db.Timestamptz(6)
+  expiresAt         DateTime? @map("expires_at") @db.Timestamptz(6)
+  changeReference   String    @map("change_reference") @db.VarChar(200)
+  approvalReference String?   @map("approval_reference") @db.VarChar(200)
+  actorId           String    @map("actor_id") @db.VarChar(100)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([registryVersion, flagKey, version], map: "feature_flag_version_registry_flag_key_version_key")
+  @@index([registryVersion, flagKey, effectiveAt], map: "feature_flag_version_lookup_idx")
+  @@map("feature_flag_version")
+}

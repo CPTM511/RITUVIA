@@ -23,11 +23,15 @@ describe("CI database safety", () => {
     expect(appUrl.username).toBe("rituvia_ci_app");
     expect(appUrl.pathname).toBe("/rituvia_ci");
     expect(appUrl.searchParams.get("sslmode")).toBe("disable");
+    const migratorUrl = new URL(environment.migratorUrl);
+    expect(migratorUrl.username).toBe("rituvia_ci_migrator");
+    expect(migratorUrl.searchParams.get("application_name")).toBe("rituvia_ci_migrator");
+    expect(new URL(environment.controlUrl).username).toBe("rituvia_ci_config_writer");
     expect(
       assertSyntheticSeedTarget({
         appEnvironment: "test",
         ci: "true",
-        databaseUrl: environment.appUrl,
+        databaseUrl: environment.migratorUrl,
         expectedClusterName: undefined,
         expectedSystemIdentifier: systemIdentifier,
         githubActions: "true",
@@ -73,7 +77,7 @@ describe("CI database safety", () => {
       githubRunAttempt: runAttempt,
       githubRunId: runId,
     });
-    const remote = new URL(environment.appUrl);
+    const remote = new URL(environment.migratorUrl);
     remote.hostname = "198.51.100.10";
     expect(() =>
       assertSyntheticSeedTarget({

@@ -217,6 +217,40 @@ const paymentProviderPackages = new Set([
   "coinbase-commerce-node",
   "stripe",
 ]);
+export const expectedWebFeatureFlagCompositionSource = `import "server-only";
+
+import {
+  createFeatureFlagEvaluator,
+  featureFlagRegistryVersion,
+  type FeatureFlagEvaluator,
+} from "@rituvia/config/feature-flags";
+import {
+  assertFeatureFlagRuntimeDatabasePrivileges,
+  createDatabaseClient,
+  readFeatureFlagVersions,
+} from "@rituvia/db";
+
+import { getWebRuntimeConfiguration } from "../config/server";
+
+export const loadWebFeatureFlagEvaluator = async (): Promise<FeatureFlagEvaluator> => {
+  const databaseUrl = getWebRuntimeConfiguration().databaseUrl;
+  if (databaseUrl === undefined) {
+    throw new TypeError("Web database configuration is unavailable.");
+  }
+  const database = createDatabaseClient(databaseUrl);
+  try {
+    await assertFeatureFlagRuntimeDatabasePrivileges(database);
+    const records = await readFeatureFlagVersions(database, featureFlagRegistryVersion);
+
+    return createFeatureFlagEvaluator({
+      records,
+      registryVersion: featureFlagRegistryVersion,
+    });
+  } finally {
+    await database.$disconnect();
+  }
+};
+`;
 const unsafeRuntimeIdentifiers = new Set([
   "AsyncFunctionConstructor",
   "Function",
@@ -1222,6 +1256,13 @@ export const auditArchitecture = (
       add(findings, "trusted-job-continuation-outside-worker-boundary", file.path);
       serverTaintedFiles.add(file.path);
     }
+    if (
+      file.path === "apps/web/server/feature-flags.ts" &&
+      file.source !== expectedWebFeatureFlagCompositionSource
+    ) {
+      add(findings, "feature-flag-composition-boundary", file.path);
+      serverTaintedFiles.add(file.path);
+    }
     if (sourceModule.root === "packages/domain" && isProductionFile(file.path)) {
       if (parsed.environmentAccess) add(findings, "domain-environment-access", file.path);
       if (parsed.networkAccess) add(findings, "domain-network-access", file.path);
@@ -1296,6 +1337,12 @@ export const auditArchitecture = (
         ) {
           add(findings, "worker-observability-capability-import", location, specifier);
         }
+        if (
+          specifier === "@rituvia/config/feature-flags" &&
+          file.path !== "apps/web/server/feature-flags.ts"
+        ) {
+          add(findings, "feature-flag-capability-import", location, specifier);
+        }
         if (targetModule.name === sourceModule.name) {
           add(findings, "self-package-import", location, specifier);
         }
@@ -1347,7 +1394,9 @@ export const auditArchitecture = (
         if (
           parsed.clientModule &&
           (targetModule.root === "packages/db" ||
-            (targetModule.root === "packages/config" && specifier === "@rituvia/config/server"))
+            (targetModule.root === "packages/config" &&
+              (specifier === "@rituvia/config/server" ||
+                specifier === "@rituvia/config/feature-flags")))
         ) {
           add(findings, "client-server-import", location, specifier);
         }
@@ -1360,7 +1409,9 @@ export const auditArchitecture = (
         }
         if (
           targetModule.root === "packages/db" ||
-          (targetModule.root === "packages/config" && specifier === "@rituvia/config/server") ||
+          (targetModule.root === "packages/config" &&
+            (specifier === "@rituvia/config/server" ||
+              specifier === "@rituvia/config/feature-flags")) ||
           (!allowedClientInternalPackages.has(targetModule.name) &&
             specifier !== "@rituvia/config/client")
         ) {

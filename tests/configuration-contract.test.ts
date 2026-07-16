@@ -7,6 +7,7 @@ import {
   buildEnvironmentVariables,
   serverEnvironmentVariables,
 } from "../packages/config/src/server.js";
+import { featureFlagKeys, featureFlagRegistry } from "../packages/config/src/feature-flags.js";
 
 const root = process.cwd();
 
@@ -64,6 +65,26 @@ describe("environment file contract", () => {
 });
 
 describe("source configuration boundaries", () => {
+  it("links every feature flag to an executable cleanup task", async () => {
+    const backlog = await readFile(path.join(root, "BACKLOG.md"), "utf8");
+
+    for (const flagKey of featureFlagKeys) {
+      const definition = featureFlagRegistry[flagKey];
+      const taskLine = backlog
+        .split("\n")
+        .find((line) => line.includes(`| ${definition.cleanupReference} |`));
+      expect(taskLine).toBeDefined();
+      const columns = taskLine?.split("|").map((column) => column.trim()) ?? [];
+      expect(columns[5]).toMatch(/^Clean up /);
+      expect(columns[6]).not.toBe("None");
+      expect(columns[8]).toMatch(/retired safe-off.*registry/);
+      expect(["active", "retired"]).toContain(definition.lifecycle);
+      if (definition.lifecycle === "retired") {
+        expect(definition.defaultState).toBe("off");
+      }
+    }
+  });
+
   it("keeps process environment access in the approved adapters", async () => {
     const files = [
       ...(await readProductionTypeScriptFiles(path.join(root, "apps"))),
@@ -106,10 +127,31 @@ describe("source configuration boundaries", () => {
       "utf8",
     );
     const nextConfig = await readFile(path.join(root, "apps/web/next.config.ts"), "utf8");
+    const serverConfiguration = await readFile(
+      path.join(root, "packages/config/src/server.ts"),
+      "utf8",
+    );
+    const featureFlagAdapter = await readFile(
+      path.join(root, "apps/web/server/feature-flags.ts"),
+      "utf8",
+    );
 
     expect(serverEntry.startsWith('import "server-only";')).toBe(true);
     expect(clientEntry).not.toMatch(/process\.env|config\/server/);
     expect(sharedClientEntry).not.toMatch(/process\.env|\.\/server|from "\.\/brand/);
+    expect(sharedClientEntry).not.toMatch(/featureFlag|feature-flags/);
+    expect(serverConfiguration).not.toMatch(
+      /createFeatureFlagEvaluator|parseFeatureFlagSnapshot|\.\/feature-flags/,
+    );
+    expect(featureFlagAdapter).toContain('from "@rituvia/config/feature-flags"');
+    expect(featureFlagAdapter).toContain("assertFeatureFlagRuntimeDatabasePrivileges");
+    expect(featureFlagAdapter).toContain("createDatabaseClient");
+    expect(featureFlagAdapter).toContain("getWebRuntimeConfiguration");
+    expect(featureFlagAdapter).toContain("database.$disconnect()");
+    expect(featureFlagAdapter).toMatch(
+      /export const loadWebFeatureFlagEvaluator\s*=\s*async\s*\(\s*\)/,
+    );
+    expect(featureFlagAdapter).not.toMatch(/loadWebFeatureFlagEvaluator\s*=\s*async\s*\([^)]/);
     expect(clientBrandEntry).not.toMatch(
       /legalEntity|supportEmail|transactionalSender|working-brand/,
     );

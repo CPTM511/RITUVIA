@@ -11,7 +11,7 @@ export type ConfigurationIssue = Readonly<{
   key: string;
 }>;
 
-export type ConfigurationScope = "brand" | "build" | "client" | "server";
+export type ConfigurationScope = "brand" | "build" | "client" | "feature-flags" | "server";
 
 export class ConfigurationError extends Error {
   readonly code = "CONFIG_VALIDATION_FAILED";
