@@ -126,7 +126,30 @@ Owns privacy-safe events, attribution, experiments, and SEO metadata. It cannot 
 - `payments` never trusts `web` client values.
 - `analytics` receives explicit safe event fields; it cannot serialize arbitrary domain objects.
 
-Enforce boundaries with TypeScript project references/lint rules and architecture tests.
+Enforce boundaries with TypeScript project references where the build graph benefits, a
+repository-owned architecture verifier, lint/type checks, and mutation tests. The verifier runs as
+an explicit immutable CI step and fails closed when it encounters an unregistered module, unsafe
+source form, alias, export, or dependency.
+
+Current enforcement:
+
+- Every active app/package has a registered identity, is private, extends the strict root TypeScript
+  contract, and uses exact `workspace:*` internal dependencies from a central allow matrix.
+- Cross-module relative imports, package self-imports, unexported/deep entry points, wildcard or
+  unsafe export targets, path/package aliases, runtime use of dev-only dependencies, and module or
+  source-file dependency cycles are rejected.
+- `domain` has no runtime, environment, network, framework, vendor, or host-global dependency.
+  `divination` has the same purity boundary and may depend only on `domain`.
+- Browser-entry closures must remain browser safe. Local bridge files cannot hide Node/server,
+  database, AI, payment, provider, or server-only dependencies from client code.
+- Provider SDKs are default-deny and belong only to the registered adapter owner and its explicit
+  adapter/provider zone. Other external and Node built-in runtime dependencies are also
+  default-deny per module; dynamic reflection/loading and non-literal runtime property access are
+  rejected.
+- `apps/web` is the server composition root. Database access is permitted only below its reviewed
+  `server/` or `composition/` roots, never from a page, route-independent UI, or client closure.
+- Package runtime code and public export targets must live below `src/`; app runtime roots are
+  explicitly registered. Next configuration must remain a statically auditable allowlisted object.
 
 ## 7. Request lifecycle example: tarot
 

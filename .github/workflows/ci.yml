@@ -39,6 +39,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify CI contract
         run: pnpm check:ci-contract
+      - name: Verify architecture boundaries
+        run: pnpm check:architecture
       - name: Verify migration policy
         run: pnpm check:migrations
       - name: Check formatting

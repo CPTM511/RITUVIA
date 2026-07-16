@@ -118,7 +118,7 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, and RIT-003 local PostgreSQL/Prisma foundation are complete. RIT-004 CI gates are implemented and locally verified but remain in review until an owner-approved GitHub remote, required checks, and a passing hosted run exist. No user-facing product feature is implemented yet.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, and RIT-005 fail-closed package architecture policy are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. No user-facing product feature is implemented yet.
 
 ## Non-negotiable product principle
 

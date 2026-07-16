@@ -151,8 +151,9 @@ const assertProductionBrandOverrides = (
     return;
   }
 
+  const environmentValues = new Map(Object.entries(environment));
   const missingKeys = brandEnvironmentVariables.filter(
-    (key) => normalizeEnvironmentValue(environment[key]) === undefined,
+    (key) => normalizeEnvironmentValue(environmentValues.get(key)) === undefined,
   );
 
   if (missingKeys.length > 0) {

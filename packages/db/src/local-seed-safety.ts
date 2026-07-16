@@ -57,8 +57,6 @@ export const assertSyntheticSeedTarget = ({
   try {
     const parsed = new URL(databaseUrl);
     const databaseName = parsed.pathname.slice(1);
-    const parameters = Object.fromEntries(parsed.searchParams.entries());
-
     if (seedTarget === "local") {
       if (
         appEnvironment !== "local" ||
@@ -72,7 +70,9 @@ export const assertSyntheticSeedTarget = ({
         parsed.hash !== "" ||
         (databaseName !== DEVELOPMENT_DATABASE && !TEST_DATABASE_PATTERN.test(databaseName)) ||
         parsed.searchParams.size !== Object.keys(REQUIRED_QUERY_PARAMETERS).length ||
-        Object.entries(REQUIRED_QUERY_PARAMETERS).some(([key, value]) => parameters[key] !== value)
+        Object.entries(REQUIRED_QUERY_PARAMETERS).some(
+          ([key, value]) => parsed.searchParams.get(key) !== value,
+        )
       ) {
         return fail();
       }
@@ -99,7 +99,9 @@ export const assertSyntheticSeedTarget = ({
       parsed.hash !== "" ||
       databaseName !== CI_DATABASE ||
       parsed.searchParams.size !== Object.keys(CI_QUERY_PARAMETERS).length ||
-      Object.entries(CI_QUERY_PARAMETERS).some(([key, value]) => parameters[key] !== value)
+      Object.entries(CI_QUERY_PARAMETERS).some(
+        ([key, value]) => parsed.searchParams.get(key) !== value,
+      )
     ) {
       return fail();
     }

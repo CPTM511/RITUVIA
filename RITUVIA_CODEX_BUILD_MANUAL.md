@@ -260,7 +260,7 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, and RIT-003 local PostgreSQL/Prisma foundation are complete. RIT-004 CI gates are implemented and locally verified but remain in review until an owner-approved GitHub remote, required checks, and a passing hosted run exist. No user-facing product feature is implemented yet.
+The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, and RIT-005 fail-closed package architecture policy are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. No user-facing product feature is implemented yet.
 
 ## Non-negotiable product principle
 
@@ -379,19 +379,20 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 **Validated:** 2026-07-16
 
-**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-004 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
+**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-005 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
 
 ## Checks passed
 
 - All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
 - All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
-- Backlog contains 123 unique items: 115 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003` are Done, and exactly one executable item is In Review: `RIT-004`.
+- Backlog contains 123 unique items: 115 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003` and `RIT-005` are Done, `RIT-004` is blocked only by `OWN-008`, and exactly one executable item is Ready: `RIT-006`.
 - Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
 - Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
 - Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
 - `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 87 current text sources; `checksums.sha256` covers every intended repository file except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
 - Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
-- Root CI/toolchain, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across five workspaces. Eighty-three unit/contract tests run in ten files; the build verifier checks 14 emitted artifacts and imports built ESM exports.
+- Root CI/toolchain, architecture, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across five workspaces. One hundred two unit/contract tests run in eleven files; the build verifier checks 14 emitted artifacts and imports built ESM exports.
+- The fail-closed architecture gate audits manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, and file/module cycles. Mutation tests cover the reviewed bypass classes, and CI invokes the exact architecture command as an independent mandatory step.
 - `.env.example` exactly matches the typed server inventory. Production source limits environment reads to reviewed adapters, rejects all `NEXT_PUBLIC_*` variables, excludes secrets from client artifacts and HTTP, and proves sanitized nonzero Web/Worker startup failure plus a real `server-only` negative build.
 - The repository-owned PostgreSQL 17 runtime is bound to `127.0.0.1:55432`, uses random mode-0600 SCRAM credentials, data checksums, exact managed HBA/configuration files, an attested cluster fingerprint, and a non-superuser application role. Lifecycle operations are directory-lock serialized, including a two-contender stale-lock recovery test.
 - Prisma 7.8 generation and `migrate deploy` pass against isolated real databases. The suite proves clean and idempotent migration, deterministic/idempotent synthetic seed, database CHECK/unique constraints, transaction rollback, eight-way concurrent uniqueness, guarded isolated reset, custom-format dump/restore into a second isolated database, managed-setting attestation, and absence of a unique failure canary from PostgreSQL logs.
@@ -414,6 +415,7 @@ pnpm check
 pnpm test:configuration-boundary
 pnpm test:database-foundation
 pnpm check:ci-contract
+pnpm check:architecture
 pnpm check:migrations
 pnpm scan:secrets
 pnpm audit --audit-level=high
@@ -424,7 +426,7 @@ pnpm db:stop
 
 ## Limitations
 
-- This validates the specification package and locally executable RIT-001 through RIT-004 foundations. It does not validate a user-facing product flow, browser interaction, payment, AI, accessibility, hosted infrastructure, or a production database.
+- This validates the specification package and locally executable RIT-001 through RIT-005 foundations. It does not validate a user-facing product flow, browser interaction, payment, AI, accessibility, hosted infrastructure, or a production database.
 - Docker and Podman are absent on the verified host. A native fresh PostgreSQL 17 instance reproduced the CI target contract, but the digest-pinned service image and bridge networking still require the first hosted Actions run.
 - The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; critical task-result schema invariants are checked directly.
 - Command rules are exact positional prefixes and supplement, rather than replace, the owner-approval boundaries in `AGENTS.md`. Reordered flags, aliases, and opaque wrappers still require human review.
@@ -433,7 +435,7 @@ pnpm db:stop
 
 ## Acceptance result
 
-The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, and active portable quality, dependency, secret, migration, and build gates. RIT-004 remains In Review until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
+The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, and active portable quality, dependency, secret, migration, and build gates. RIT-005 is complete. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
 
 ---
 
@@ -881,7 +883,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-16
 
-**Stage:** M0 engineering foundation in progress; repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
+**Stage:** M0 engineering foundation in progress; package architecture and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
 
 **Release:** Pre-M0
 
@@ -905,7 +907,8 @@ Use this order:
 - Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
-- Root formatting, ESLint, TypeScript, 83 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
+- Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
+- Root formatting, ESLint, TypeScript, 102 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
 
 ## What does not exist yet
 
@@ -930,17 +933,17 @@ Use this order:
 | OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
 | OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
 | OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
-| OWN-008 | Repository remote and required CI checks       | Final RIT-004 acceptance               | Provide/approve the GitHub remote and protect the three CI jobs plus workflow changes          |
+| OWN-008 | Repository remote and required CI checks       | Final RIT-004 acceptance              | Provide/approve the GitHub remote and protect the three CI jobs plus workflow changes         |
 
 These do not block local engineering foundation work.
 
 ## Next task
 
-`RIT-004` — Obtain owner-approved remote/required-check configuration and one passing hosted run for the implemented CI quality gates.
+`RIT-006` — Add observability, correlation IDs, and a sensitive-field redaction baseline while RIT-004 remains blocked on owner-controlled remote and hosted-CI evidence.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 83 unit/contract tests in ten files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The local database suite proves clean/idempotent migration and seed, constraints, transaction/race behavior, guarded reset, logical dump/restore, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, two deterministic generations, two migration deployments, two seeds, migration status/drift, exact migration inventory, constraints, and rollback. The repository CI/toolchain, historical migration, current-tree secret, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and supply-chain reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across five workspaces, 102 unit/contract tests in eleven files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The architecture verifier audits 32 active source files across five modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, JSDoc/type edges, and file/module cycles. The local database suite proves clean/idempotent migration and seed, constraints, transaction/race behavior, guarded reset, logical dump/restore, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, two deterministic generations, two migration deployments, two seeds, migration status/drift, exact migration inventory, constraints, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
 
 ## Update rules
 
@@ -1197,6 +1200,12 @@ This is an append-only summary of accepted architectural and product decisions. 
 
 - **Decision:** Use one active GitHub Actions workflow with independent quality, PostgreSQL integration, and security jobs on GitHub-hosted Ubuntu 24.04. Grant only top-level `contents: read`; pin every action to a reviewed commit and PostgreSQL 17.10 to its reviewed manifest digest; accept only run-derived ephemeral loopback CI database targets; enforce migration checksums, protected historical bytes, and destructive-SQL policy; and combine dependency audit, a repository-owned current-tree scanner, checksum-pinned actionlint, and full-history Gitleaks. Keep Codex automation examples outside `.github/workflows` so they are actually inert.
 - **Reason:** Makes mandatory evidence diagnosable and reproducible while preventing mutable supply-chain references, privileged fork execution, arbitrary database targets, secret-bearing artifacts, and migration history drift. Remote required-check/workflow-protection settings remain an owner-controlled gate.
+- **Date:** 2026-07-16
+
+### D-019 — Fail-closed modular architecture boundaries
+
+- **Decision:** Register every active app/package in one repository-owned architecture policy with an explicit internal allow matrix and exact external and Node built-in runtime allowlists. Require private package identities, strict TypeScript inheritance, package `src/` runtime/export roots, registered app runtime roots, public export subpaths, and exact `workspace:*` links; reject aliases, cross-module relatives, self/deep imports, unsafe exports, undeclared or dev-only runtime dependencies, dynamic loading/reflection/property access, dynamic framework configuration, and module/source cycles. Keep `domain` and `divination` free of host/network globals, propagate browser-safety taint through local and public-package imports, and confine provider SDKs to registered owners and adapter/provider zones. Treat `apps/web` as the server composition root and permit database imports only in reviewed server/composition paths. Run the verifier as a separate exact CI command.
+- **Reason:** Manifests and TypeScript alone do not expose deep or type-only cycles, client bridge leaks, provider leakage, unsafe export targets, or script-alias bypasses. A default-deny AST and repository-metadata audit turns these architectural promises into reviewable, mutation-tested evidence.
 - **Date:** 2026-07-16
 
 ---
@@ -1458,9 +1467,9 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-001 | M0 | P0 | Done | Create pnpm/Turborepo strict TypeScript monorepo | RIT-000 | backend | Clean install, lint, typecheck, unit test, and build work from a fresh clone. |
 | RIT-002 | M0 | P0 | Done | Add environment validation and brand configuration | RIT-001 | backend | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded. |
 | RIT-003 | M0 | P0 | Done | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
-| RIT-004 | M0 | P0 | In Review | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
-| RIT-005 | M0 | P1 | Planned | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
-| RIT-006 | M0 | P1 | Planned | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |
+| RIT-004 | M0 | P0 | Blocked | Create test harness and CI quality gates | RIT-001,RIT-003,OWN-008 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
+| RIT-005 | M0 | P1 | Done | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
+| RIT-006 | M0 | P1 | Ready | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |
 | RIT-007 | M0 | P1 | Planned | Add feature flag and typed configuration registry | RIT-002,RIT-003 | backend | Server-side flags are versioned, default safe-off, and testable. |
 | RIT-008 | M0 | P1 | Planned | Create preview/staging/production environment documentation | RIT-002,RIT-004 | operations | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible. |
 | RIT-009 | M0 | P1 | Planned | Add ADR, task, incident, experiment workflow to repository | RIT-000 | product | Templates and contribution rules link decisions/tasks/tests without stale duplication. |
@@ -2577,7 +2586,30 @@ Owns privacy-safe events, attribution, experiments, and SEO metadata. It cannot 
 - `payments` never trusts `web` client values.
 - `analytics` receives explicit safe event fields; it cannot serialize arbitrary domain objects.
 
-Enforce boundaries with TypeScript project references/lint rules and architecture tests.
+Enforce boundaries with TypeScript project references where the build graph benefits, a
+repository-owned architecture verifier, lint/type checks, and mutation tests. The verifier runs as
+an explicit immutable CI step and fails closed when it encounters an unregistered module, unsafe
+source form, alias, export, or dependency.
+
+Current enforcement:
+
+- Every active app/package has a registered identity, is private, extends the strict root TypeScript
+  contract, and uses exact `workspace:*` internal dependencies from a central allow matrix.
+- Cross-module relative imports, package self-imports, unexported/deep entry points, wildcard or
+  unsafe export targets, path/package aliases, runtime use of dev-only dependencies, and module or
+  source-file dependency cycles are rejected.
+- `domain` has no runtime, environment, network, framework, vendor, or host-global dependency.
+  `divination` has the same purity boundary and may depend only on `domain`.
+- Browser-entry closures must remain browser safe. Local bridge files cannot hide Node/server,
+  database, AI, payment, provider, or server-only dependencies from client code.
+- Provider SDKs are default-deny and belong only to the registered adapter owner and its explicit
+  adapter/provider zone. Other external and Node built-in runtime dependencies are also
+  default-deny per module; dynamic reflection/loading and non-literal runtime property access are
+  rejected.
+- `apps/web` is the server composition root. Database access is permitted only below its reviewed
+  `server/` or `composition/` roots, never from a page, route-independent UI, or client closure.
+- Package runtime code and public export targets must live below `src/`; app runtime roots are
+  explicitly registered. Next configuration must remain a statically auditable allowlisted object.
 
 ## 7. Request lifecycle example: tarot
 
@@ -4948,6 +4980,14 @@ Per PR, run the smallest affected matrix plus mandatory foundation:
 - Payment contract suite when commerce changes.
 - Migration drift and generated-client check.
 - Build and preview smoke.
+
+The architecture gate parses package manifests, TypeScript configuration/extends chains, package
+exports, and source ASTs. Mutation tests exercise deep/type-only imports, source and module cycles,
+client-to-server bridge taint, environment/network/global aliases, unsafe dynamic loading and
+property access, Node built-ins, JSDoc/type edges, provider leakage, cross-module assets, unsafe
+export targets, symlinks, computed specifiers, dynamic framework configuration, and malformed or
+unregistered inputs. CI invokes the exact root `pnpm check:architecture` command as its own mandatory
+quality step; architecture enforcement is not hidden inside lint.
 
 Nightly/full release runs expanded browser, AI red-team, performance, link/SEO, provider fixture, and flaky detection.
 
@@ -7327,6 +7367,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify CI contract
         run: pnpm check:ci-contract
+      - name: Verify architecture boundaries
+        run: pnpm check:architecture
       - name: Verify migration policy
         run: pnpm check:migrations
       - name: Check formatting
@@ -7778,6 +7820,18 @@ files, transaction loss, and destructive SQL. The current-tree secret policy sca
 unignored file without following symlinks and emits only path, line, rule, and a non-secret
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
+
+RIT-005 adds a separate fail-closed architecture command:
+
+```bash
+pnpm check:architecture
+```
+
+It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
+inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server
+closure taint, provider ownership, dependency direction, and cycles against one registered policy.
+Mutation tests cover representative bypass forms, and the CI contract requires this exact command
+as an explicit quality step.
 
 It does not replace current Codex CLI validation, legal/trademark review, provider underwriting, security testing, or product implementation tests. Re-run official Codex documentation/config checks whenever the CLI/action version changes.
 

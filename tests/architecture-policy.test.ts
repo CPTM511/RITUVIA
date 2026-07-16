@@ -1,0 +1,564 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  auditArchitecture,
+  type RepositoryArchitectureFile,
+} from "../scripts/architecture-policy.js";
+
+const manifest = (
+  root: string,
+  name: string,
+  dependencies: Record<string, string> = {},
+  exports: Record<string, string> | null = { ".": "./src/index.ts" },
+): RepositoryArchitectureFile => ({
+  path: `${root}/package.json`,
+  source: JSON.stringify({ dependencies, exports, name, private: true }),
+});
+
+const moduleTsconfig = (root: string, pure = false): RepositoryArchitectureFile => ({
+  path: `${root}/tsconfig.json`,
+  source: JSON.stringify({
+    compilerOptions: pure ? { lib: ["ES2022"], types: [] } : {},
+    extends: "../../tsconfig.base.json",
+  }),
+});
+
+const baseline = (): RepositoryArchitectureFile[] => [
+  { path: "tsconfig.base.json", source: "{}" },
+  manifest("packages/config", "@rituvia/config", {}, { "./server": "./src/server.ts" }),
+  moduleTsconfig("packages/config"),
+  { path: "packages/config/src/server.ts", source: "export const configured = true;" },
+  manifest("packages/domain", "@rituvia/domain"),
+  moduleTsconfig("packages/domain", true),
+  { path: "packages/domain/src/index.ts", source: "export const domain = true;" },
+  manifest("packages/db", "@rituvia/db", { "@rituvia/domain": "workspace:*" }),
+  moduleTsconfig("packages/db"),
+  {
+    path: "packages/db/src/index.ts",
+    source: 'import type { domain } from "@rituvia/domain"; export type Domain = typeof domain;',
+  },
+  manifest("packages/divination", "@rituvia/divination", { "@rituvia/domain": "workspace:*" }),
+  moduleTsconfig("packages/divination", true),
+  {
+    path: "packages/divination/src/index.ts",
+    source: 'export type { domain as Domain } from "@rituvia/domain";',
+  },
+  manifest("packages/ai", "@rituvia/ai", { "@rituvia/divination": "workspace:*" }),
+  moduleTsconfig("packages/ai"),
+  {
+    path: "packages/ai/src/index.ts",
+    source: 'import type { Domain } from "@rituvia/divination"; export type Input = Domain;',
+  },
+  manifest("packages/ui", "@rituvia/ui", { react: "19.2.7" }, { ".": "./src/index.tsx" }),
+  moduleTsconfig("packages/ui"),
+  {
+    path: "packages/ui/src/index.tsx",
+    source: 'import type { ReactNode } from "react"; export type Slot = ReactNode;',
+  },
+  manifest(
+    "apps/web",
+    "@rituvia/web",
+    {
+      "@rituvia/config": "workspace:*",
+      react: "19.2.7",
+    },
+    null,
+  ),
+  moduleTsconfig("apps/web"),
+  {
+    path: "apps/web/app/page.tsx",
+    source:
+      'import type { ReactNode } from "react"; import type { configured } from "@rituvia/config/server"; export type Page = ReactNode | typeof configured;',
+  },
+];
+
+const rules = (files: readonly RepositoryArchitectureFile[]): string[] =>
+  auditArchitecture(files).map(({ rule }) => rule);
+
+const replaceSource = (
+  files: RepositoryArchitectureFile[],
+  filePath: string,
+  source: string,
+): void => {
+  const index = files.findIndex(({ path }) => path === filePath);
+  if (index < 0) throw new Error(`fixture missing: ${filePath}`);
+  files[index] = { path: filePath, source };
+};
+
+describe("package architecture policy", () => {
+  it("accepts the canonical acyclic dependency direction", () => {
+    expect(auditArchitecture(baseline())).toEqual([]);
+  });
+
+  it("keeps domain free of runtime packages, environment access, and network access", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "packages/domain/package.json",
+      JSON.stringify({
+        dependencies: { zod: "4.4.3" },
+        exports: { ".": "./src/index.ts" },
+        name: "@rituvia/domain",
+        private: true,
+      }),
+    );
+    files.push({
+      path: "packages/domain/src/unsafe.ts",
+      source:
+        'import { request } from "node:https"; export const leaked = process["env"].TOKEN; export const result = fetch(String(request));',
+    });
+    files.push({
+      path: "packages/domain/src/aliased.ts",
+      source:
+        "const runtime = process; const network = globalThis as { fetch(value: string): Promise<unknown> }; export const secret = runtime.env.TOKEN; export const response = network.fetch('https://example.invalid');",
+    });
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "domain-environment-access",
+        "domain-external-dependency",
+        "domain-network-access",
+        "domain-runtime-global",
+        "domain-runtime-dependency",
+      ]),
+    );
+  });
+
+  it("blocks UI access to the database and every unreviewed external adapter", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          "@rituvia/db": "workspace:*",
+          react: "19.2.7",
+          stripe: "20.4.0",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    files.push({
+      path: "apps/web/app/unsafe.tsx",
+      source:
+        'import { domain } from "@rituvia/db"; import Stripe from "stripe"; export { domain, Stripe };',
+    });
+    expect(rules(files)).toEqual(
+      expect.arrayContaining(["ui-data-adapter", "ui-external-adapter"]),
+    );
+  });
+
+  it("keeps client modules away from server configuration, Node, and database composition", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          "@rituvia/db": "workspace:*",
+          react: "19.2.7",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    files.push({
+      path: "apps/web/app/client.tsx",
+      source:
+        '"use client"; import { readFile } from "node:fs"; import { configured } from "@rituvia/config/server"; import { domain } from "@rituvia/db"; export { configured, domain, readFile };',
+    });
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "client-server-import",
+        "ui-data-adapter",
+        "web-db-outside-composition",
+      ]),
+    );
+  });
+
+  it("propagates server taint through local bridges and rejects client capability imports", () => {
+    const files = baseline();
+    files.push(
+      manifest("packages/payments", "@rituvia/payments"),
+      moduleTsconfig("packages/payments"),
+      { path: "packages/payments/src/index.ts", source: "export const checkout = true;" },
+      manifest("packages/i18n", "@rituvia/i18n", { "@rituvia/domain": "workspace:*" }),
+      moduleTsconfig("packages/i18n"),
+      {
+        path: "packages/i18n/src/index.ts",
+        source: 'import { readFileSync } from "node:fs"; export const messages = readFileSync;',
+      },
+      {
+        path: "apps/web/config/bridge.ts",
+        source: 'export { configured } from "@rituvia/config/server";',
+      },
+      {
+        path: "apps/web/lib/payment-bridge.ts",
+        source: 'export { checkout } from "@rituvia/payments";',
+      },
+      {
+        path: "apps/web/app/bridged-client.tsx",
+        source:
+          '"use client"; export { configured } from "../config/bridge.js"; export { checkout } from "../lib/payment-bridge.js";',
+      },
+      {
+        path: "apps/web/app/i18n-client.tsx",
+        source: '"use client"; export { messages } from "@rituvia/i18n";',
+      },
+    );
+    replaceSource(
+      files,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          "@rituvia/i18n": "workspace:*",
+          "@rituvia/payments": "workspace:*",
+          react: "19.2.7",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    expect(rules(files)).toEqual(expect.arrayContaining(["client-server-transitive-import"]));
+  });
+
+  it("blocks divination from importing AI through package or relative paths", () => {
+    const direct = baseline();
+    replaceSource(
+      direct,
+      "packages/divination/package.json",
+      JSON.stringify({
+        dependencies: { "@rituvia/ai": "workspace:*", "@rituvia/domain": "workspace:*" },
+        name: "@rituvia/divination",
+        private: true,
+      }),
+    );
+    direct.push({
+      path: "packages/divination/src/unsafe.ts",
+      source: 'export { Input } from "@rituvia/ai";',
+    });
+    expect(rules(direct)).toContain("divination-imports-ai");
+
+    const relative = baseline();
+    relative.push({
+      path: "packages/divination/src/relative.ts",
+      source: 'export { Input } from "../../ai/src/index.js";',
+    });
+    expect(rules(relative)).toEqual(
+      expect.arrayContaining(["divination-imports-ai", "relative-cross-module-import"]),
+    );
+
+    const globals = baseline();
+    globals.push({
+      path: "packages/divination/src/globals.ts",
+      source:
+        'declare const fetch: (url: string) => Promise<unknown>; declare const self: Record<string, (url: string) => Promise<unknown>>; const request = fetch; const method = "fe" + "tch"; export const unsafe = () => Promise.all([request(process.env.PROVIDER_URL), self[method](process.env.PROVIDER_URL)]);',
+    });
+    expect(rules(globals)).toEqual(
+      expect.arrayContaining([
+        "divination-environment-access",
+        "divination-network-access",
+        "divination-runtime-global",
+      ]),
+    );
+  });
+
+  it("rejects undeclared, non-workspace, and unexported internal package imports", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: { "@rituvia/config": "^0.0.0", react: "19.2.7" },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    files.push({
+      path: "apps/web/config/unsafe.ts",
+      source:
+        'export { domain } from "@rituvia/domain"; export { configured } from "@rituvia/config/src/server";',
+    });
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "undeclared-dependency",
+        "unexported-internal-import",
+        "workspace-protocol",
+      ]),
+    );
+
+    files.push({
+      path: "packages/domain/src/package-json.ts",
+      source: 'export { name } from "../../db/package.json";',
+    });
+    expect(rules(files)).toContain("unresolved-relative-import");
+  });
+
+  it("detects manifest-level and production-file cycles", () => {
+    const moduleCycle = baseline();
+    replaceSource(
+      moduleCycle,
+      "packages/domain/package.json",
+      JSON.stringify({
+        dependencies: { "@rituvia/db": "workspace:*" },
+        exports: { ".": "./src/index.ts" },
+        name: "@rituvia/domain",
+        private: true,
+      }),
+    );
+    expect(rules(moduleCycle)).toContain("module-cycle");
+
+    const fileCycle = baseline();
+    fileCycle.push(
+      {
+        path: "packages/domain/src/a.ts",
+        source: 'export { b } from "./b.js"; export const a = 1;',
+      },
+      {
+        path: "packages/domain/src/b.ts",
+        source: 'export { a } from "./a.js"; export const b = 1;',
+      },
+    );
+    expect(rules(fileCycle)).toContain("file-cycle");
+  });
+
+  it("counts triple-slash and import-type edges and rejects self-cycles", () => {
+    const files = baseline();
+    files.push(
+      {
+        path: "packages/domain/src/a.ts",
+        source: '/// <reference path="./b.ts" />\nexport const a = 1;',
+      },
+      {
+        path: "packages/domain/src/b.ts",
+        source: 'export type A = typeof import("./a.js").a; export const b = 1;',
+      },
+    );
+    expect(rules(files)).toContain("file-cycle");
+
+    replaceSource(
+      files,
+      "packages/domain/package.json",
+      JSON.stringify({
+        dependencies: { "@rituvia/domain": "workspace:*" },
+        exports: { ".": "./src/index.ts" },
+        name: "@rituvia/domain",
+        private: true,
+      }),
+    );
+    expect(rules(files)).toContain("module-cycle");
+
+    files.push({
+      path: "packages/domain/src/self.ts",
+      source: 'export { domain } from "@rituvia/domain";',
+    });
+    expect(rules(files)).toContain("self-package-import");
+  });
+
+  it("counts triple-slash type package references in direction and module cycles", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "packages/domain/package.json",
+      JSON.stringify({
+        devDependencies: { "@rituvia/db": "workspace:*" },
+        exports: { ".": "./src/index.ts" },
+        name: "@rituvia/domain",
+        private: true,
+      }),
+    );
+    files.push({
+      path: "packages/domain/src/js-edge.js",
+      source: '/** @type {import("@rituvia/db").Domain} */\nexport const edge = {};',
+    });
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "domain-internal-dependency",
+        "module-cycle",
+        "production-dev-dependency",
+      ]),
+    );
+  });
+
+  it("rejects dev-only production imports, path aliases, package aliases, and exotic protocols", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: { "@rituvia/config": "workspace:*", react: "19.2.7" },
+        devDependencies: { zod: "4.4.3" },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    files.push(
+      { path: "apps/web/src/schema.config.ts", source: 'export { z } from "zod";' },
+      {
+        path: "tsconfig.json",
+        source: JSON.stringify({ compilerOptions: { paths: { "@unsafe/*": ["packages/db/*"] } } }),
+      },
+    );
+    replaceSource(
+      files,
+      "packages/config/package.json",
+      JSON.stringify({
+        dependencies: { validator: "npm:zod@4.4.3" },
+        exports: { "./*": "./src/*.ts" },
+        imports: { "#unsafe": "../db/src/index.ts" },
+        name: "@rituvia/config",
+        private: true,
+      }),
+    );
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "dependency-protocol",
+        "manifest-path-alias",
+        "production-dev-dependency",
+        "tsconfig-path-alias",
+        "wildcard-export",
+      ]),
+    );
+  });
+
+  it("validates every public export target and rejects test or symlink promotion", () => {
+    const files = baseline();
+    replaceSource(
+      files,
+      "packages/domain/package.json",
+      JSON.stringify({
+        exports: {
+          ".": "./src/index.ts",
+          "./config": "./build.config.ts",
+          "./escape": "./test/escape.ts",
+          "./seed": "./prisma/seed.ts",
+          "./symlink-escape": "./src/escape.ts",
+          "./tool": "./tools/generate.ts",
+        },
+        name: "@rituvia/domain",
+        private: true,
+      }),
+    );
+    files.push(
+      {
+        path: "packages/domain/build.config.ts",
+        source: "export const build = true;",
+      },
+      {
+        path: "packages/domain/prisma/seed.ts",
+        source: "export const seed = true;",
+      },
+      {
+        path: "packages/domain/test/escape.ts",
+        source: "export const escape = () => fetch('https://example.invalid');",
+      },
+      {
+        path: "packages/domain/tools/generate.ts",
+        source: "export const generate = true;",
+      },
+      { kind: "symlink", path: "packages/domain/src", source: "" },
+    );
+    expect(rules(files)).toEqual(expect.arrayContaining(["export-target", "source-symlink"]));
+  });
+
+  it("rejects aliases hidden behind an unapproved tsconfig extends chain", () => {
+    const files = baseline();
+    files.push({
+      path: "apps/web/tsconfig.json",
+      source: JSON.stringify({ extends: "./aliases.json" }),
+    });
+    files.push({
+      path: "apps/web/next.config.ts",
+      source:
+        'export default { turbopack: { resolveAlias: { "next/server": "../../packages/db/src/index.ts" } }, webpack(config: { resolve: { alias: object } }) { config.resolve.alias = {}; return config; } };',
+    });
+    expect(rules(files)).toEqual(
+      expect.arrayContaining(["framework-path-alias", "tsconfig-extends"]),
+    );
+  });
+
+  it("requires a statically auditable Next configuration export", () => {
+    const files = baseline();
+    files.push({
+      path: "apps/web/next.config.ts",
+      source:
+        'const hook = "web" + "pack"; const configure = (config: object) => { const resolve = Reflect.get(config, "resolve") as object; Reflect.set(resolve, "alias", {}); return config; }; export default Object.fromEntries([[hook, configure]]);',
+    });
+    expect(rules(files)).toContain("framework-config-dynamic");
+  });
+
+  it("rejects private test traversal and runtime code-loading escape hatches", () => {
+    const files = baseline();
+    files.push(
+      manifest("apps/worker", "@rituvia/worker", { "@rituvia/db": "workspace:*" }, null),
+      moduleTsconfig("apps/worker"),
+      {
+        path: "packages/divination/test/escape.test.ts",
+        source: 'export { Input } from "../../ai/src/index.js";',
+      },
+      {
+        path: "apps/worker/src/loader.ts",
+        source:
+          'import { createRequire as cr } from "node:module"; const execute = eval; const load = cr(new URL("../../../packages/db/package.json", import.meta.url)); export const database = execute(\'import("@rituvia/db")\'); export const client = load("@prisma/client"); export const resolve = (name: string) => require["resolve"](name);',
+      },
+      {
+        path: "apps/worker/src/commonjs.cts",
+        source:
+          'declare const require: (name: string) => unknown; const load = require; export const client = load("@prisma/client");',
+      },
+      {
+        path: "apps/worker/src/reflection.ts",
+        source:
+          'const builtin = Reflect.get(process, "get" + "BuiltinModule"); const key = "con" + "structor"; const make = ((() => undefined) as unknown as Record<string, () => unknown>)[key]; const alias = make; export const value = [builtin, alias()];',
+      },
+      {
+        path: "apps/worker/src/vm.ts",
+        source:
+          'import { compileFunction as compile } from "node:vm"; export const value = compile("return 1")();',
+      },
+    );
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "commonjs-runtime-source",
+        "dynamic-module-specifier",
+        "node-runtime-dependency",
+        "relative-cross-module-import",
+        "unsafe-code-loading",
+      ]),
+    );
+  });
+
+  it("keeps payment provider SDKs inside explicit adapter zones", () => {
+    const files = baseline();
+    files.push(manifest("packages/payments", "@rituvia/payments", { stripe: "20.4.0" }), {
+      path: "packages/payments/src/core/order.ts",
+      source: 'import Stripe from "stripe"; export type Client = Stripe;',
+    });
+    expect(rules(files)).toContain("provider-outside-adapter");
+  });
+
+  it("fails closed on computed imports, syntax errors, symlinks, and unknown modules", () => {
+    const files = baseline();
+    files.push(
+      {
+        path: "packages/domain/src/computed.ts",
+        source: "export const load = (name: string) => import(name);",
+      },
+      { path: "packages/domain/src/invalid.ts", source: "export const = ;" },
+      { kind: "symlink", path: "packages/domain/src/link.ts", source: "" },
+      { path: "packages/unknown/package.json", source: "{}" },
+      { path: "packages/unknown/src/index.ts", source: "export {};" },
+    );
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "dynamic-module-specifier",
+        "source-parse",
+        "source-symlink",
+        "unregistered-module",
+      ]),
+    );
+  });
+});

@@ -3,7 +3,11 @@ import { readFile } from "node:fs/promises";
 
 import { parse } from "yaml";
 
-import { auditToolchainVersions, verifyCiWorkflowDirectory } from "./ci-contract.js";
+import {
+  auditCiScripts,
+  auditToolchainVersions,
+  verifyCiWorkflowDirectory,
+} from "./ci-contract.js";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
 const workflowResult = await verifyCiWorkflowDirectory(
@@ -14,6 +18,7 @@ const packageJson = JSON.parse(
 ) as {
   engines?: { node?: unknown; pnpm?: unknown };
   packageManager?: unknown;
+  scripts?: unknown;
 };
 const workspace = parse(
   await readFile(path.join(repositoryRoot, "pnpm-workspace.yaml"), "utf8"),
@@ -27,7 +32,12 @@ const toolchainFindings = auditToolchainVersions({
   pnpmEngine: packageJson.engines?.pnpm,
   workspaceNodeVersion: workspace.nodeVersion,
 });
+const scriptFindings = auditCiScripts(packageJson.scripts);
 if (toolchainFindings.length > 0) {
   process.stderr.write("CI contract failure: toolchain versions are not synchronized.\n");
 }
-process.exitCode = workflowResult === 0 && toolchainFindings.length === 0 ? 0 : 1;
+if (scriptFindings.length > 0) {
+  process.stderr.write("CI contract failure: repository gate scripts are not exact.\n");
+}
+process.exitCode =
+  workflowResult === 0 && toolchainFindings.length === 0 && scriptFindings.length === 0 ? 0 : 1;

@@ -30,4 +30,16 @@ unignored file without following symlinks and emits only path, line, rule, and a
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
 
+RIT-005 adds a separate fail-closed architecture command:
+
+```bash
+pnpm check:architecture
+```
+
+It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
+inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server
+closure taint, provider ownership, dependency direction, and cycles against one registered policy.
+Mutation tests cover representative bypass forms, and the CI contract requires this exact command
+as an explicit quality step.
+
 It does not replace current Codex CLI validation, legal/trademark review, provider underwriting, security testing, or product implementation tests. Re-run official Codex documentation/config checks whenever the CLI/action version changes.

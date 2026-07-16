@@ -23,9 +23,9 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-001 | M0 | P0 | Done | Create pnpm/Turborepo strict TypeScript monorepo | RIT-000 | backend | Clean install, lint, typecheck, unit test, and build work from a fresh clone. |
 | RIT-002 | M0 | P0 | Done | Add environment validation and brand configuration | RIT-001 | backend | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded. |
 | RIT-003 | M0 | P0 | Done | Create local PostgreSQL and Prisma foundation | RIT-001 | backend | Local database starts reproducibly; initial migration and synthetic seed/test reset pass. |
-| RIT-004 | M0 | P0 | In Review | Create test harness and CI quality gates | RIT-001,RIT-003 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
-| RIT-005 | M0 | P1 | Planned | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
-| RIT-006 | M0 | P1 | Planned | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |
+| RIT-004 | M0 | P0 | Blocked | Create test harness and CI quality gates | RIT-001,RIT-003,OWN-008 | qa_security | CI runs format/lint/type/unit/integration/build, secret scan, and migration check. |
+| RIT-005 | M0 | P1 | Done | Enforce package architecture boundaries | RIT-001 | architect | Lint/architecture tests prevent forbidden imports and circular domain dependencies. |
+| RIT-006 | M0 | P1 | Ready | Add observability, correlation IDs, and redaction baseline | RIT-001,RIT-002 | operations | Structured logs/traces work locally; sensitive-field tests prove redaction. |
 | RIT-007 | M0 | P1 | Planned | Add feature flag and typed configuration registry | RIT-002,RIT-003 | backend | Server-side flags are versioned, default safe-off, and testable. |
 | RIT-008 | M0 | P1 | Planned | Create preview/staging/production environment documentation | RIT-002,RIT-004 | operations | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible. |
 | RIT-009 | M0 | P1 | Planned | Add ADR, task, incident, experiment workflow to repository | RIT-000 | product | Templates and contribution rules link decisions/tasks/tests without stale duplication. |

@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import {
   auditActiveWorkflowFileNames,
+  auditCiScripts,
   auditCiWorkflow,
   auditToolchainVersions,
   parseWorkflowYaml,
@@ -47,6 +48,24 @@ describe("active CI workflow contract", () => {
     expect(auditToolchainVersions({ ...valid, workspaceNodeVersion: "24.17.0" })).toEqual([
       { location: "toolchain", rule: "toolchain-version-drift" },
     ]);
+  });
+
+  it("rejects attempts to remove the explicit architecture gate from repository scripts", () => {
+    const valid = {
+      "check:architecture": "node --import tsx scripts/verify-architecture.ts",
+      "check:evidence":
+        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:migrations && pnpm scan:secrets",
+      lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
+    };
+    expect(auditCiScripts(valid)).toEqual([]);
+    expect(auditCiScripts({ ...valid, "check:architecture": "node -e 'process.exit(0)'" })).toEqual(
+      [
+        {
+          location: "package.json#scripts.check:architecture",
+          rule: "ci-script-command",
+        },
+      ],
+    );
   });
 
   it("rejects write permissions and dangerous triggers", () => {
@@ -104,6 +123,21 @@ describe("active CI workflow contract", () => {
       location: "jobs.quality",
       rule: "step-sequence",
     });
+  });
+
+  it("rejects removal of the explicit architecture workflow step", () => {
+    const candidate = cloneWorkflow();
+    const quality = record(record(candidate.jobs).quality);
+    const steps = quality.steps as unknown[];
+    const index = steps.findIndex((step) => record(step).run === "pnpm check:architecture");
+    if (index < 0) throw new Error("architecture fixture step missing");
+    steps.splice(index, 1);
+    expect(auditCiWorkflow(candidate)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.quality", rule: "run-command-sequence" },
+        { location: "jobs.quality", rule: "step-sequence" },
+      ]),
+    );
   });
 
   it("rejects any extra PostgreSQL service environment key", () => {

@@ -202,6 +202,14 @@ Per PR, run the smallest affected matrix plus mandatory foundation:
 - Migration drift and generated-client check.
 - Build and preview smoke.
 
+The architecture gate parses package manifests, TypeScript configuration/extends chains, package
+exports, and source ASTs. Mutation tests exercise deep/type-only imports, source and module cycles,
+client-to-server bridge taint, environment/network/global aliases, unsafe dynamic loading and
+property access, Node built-ins, JSDoc/type edges, provider leakage, cross-module assets, unsafe
+export targets, symlinks, computed specifiers, dynamic framework configuration, and malformed or
+unregistered inputs. CI invokes the exact root `pnpm check:architecture` command as its own mandatory
+quality step; architecture enforcement is not hidden inside lint.
+
 Nightly/full release runs expanded browser, AI red-team, performance, link/SEO, provider fixture, and flaky detection.
 
 The M0 active workflow separates mandatory checks into `Quality`, `PostgreSQL integration`, and
