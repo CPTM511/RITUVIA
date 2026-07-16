@@ -33,3 +33,9 @@ Output sections:
 7. Three recommended actions.
 8. Decisions and approvals needed.
 9. Data gaps and confidence.
+
+After those sections, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. For this read-only review use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. The result cannot update `BACKLOG.md`, accept a
+decision, or satisfy an owner gate.

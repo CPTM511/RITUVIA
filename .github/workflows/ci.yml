@@ -41,8 +41,12 @@ jobs:
         run: pnpm check:ci-contract
       - name: Verify architecture boundaries
         run: pnpm check:architecture
+      - name: Verify durable record policy
+        run: pnpm check:records
       - name: Verify migration policy
         run: pnpm check:migrations
+      - name: Verify generated repository evidence
+        run: pnpm check:generated
       - name: Check formatting
         run: pnpm format:check
       - name: Lint

@@ -1,10 +1,13 @@
-# ADR-NNN: Decision title
+# D-NNN: Decision title
 
-- Status: Proposed | Accepted | Superseded | Rejected
 - Date:
 - Owners:
 - Related tasks:
-- Supersedes / superseded by:
+- Evidence references:
+
+Store the accepted detail as `records/decisions/D-NNN.md` and add only its concise index/supersession entry
+to `DECISIONS.md`. Draft/rejected proposals stay in the task record until accepted. Register presence and
+incoming supersession edges determine decision state; a detail record never grants an owner gate by itself.
 
 ## Context
 

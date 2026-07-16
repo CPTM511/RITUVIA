@@ -5,6 +5,11 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
+    "run_id",
+    "as_of",
+    "repository_revision",
+    "branch",
     "task_id",
     "status",
     "summary",
@@ -15,97 +20,217 @@
     "blockers",
     "risks",
     "owner_actions",
+    "record_refs",
+    "rollback_notes",
     "next_recommended_task"
   ],
   "properties": {
-    "task_id": { "type": ["string", "null"], "pattern": "^(RIT|OWN)-[0-9]{3}$" },
+    "schema_version": { "const": 1 },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run-[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "as_of": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "repository_revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|WORKTREE)$"
+    },
+    "branch": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,159}$"
+    },
+    "task_id": { "type": ["string", "null"], "pattern": "^RIT-[0-9]{3}$" },
     "status": {
       "type": "string",
       "enum": ["completed", "partial", "blocked", "review_only", "no_change"]
     },
-    "summary": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 4000 },
     "observed_evidence": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["claim", "source"],
+        "required": ["claim", "source", "as_of", "confidence"],
         "properties": {
-          "claim": { "type": "string" },
-          "source": { "type": "string" },
-          "as_of": { "type": ["string", "null"], "format": "date-time" },
+          "claim": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "source": {
+            "type": "string",
+            "maxLength": 240,
+            "pattern": "^(?:evidence:[A-Za-z0-9._:-]{1,120}|(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]{1,240})$"
+          },
+          "as_of": { "type": ["string", "null"], "format": "date-time", "maxLength": 40 },
           "confidence": { "type": "string", "enum": ["high", "medium", "low"] }
         }
       }
     },
     "changes": {
       "type": "array",
+      "maxItems": 200,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["path", "description"],
         "properties": {
-          "path": { "type": "string" },
-          "description": { "type": "string" }
+          "path": {
+            "type": "string",
+            "maxLength": 240,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]{1,240}$"
+          },
+          "description": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
     "verification": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["check", "result"],
+        "required": ["check", "result", "details"],
         "properties": {
-          "check": { "type": "string" },
-          "result": { "type": "string", "enum": ["passed", "failed", "not_run", "not_applicable"] },
-          "details": { "type": "string" }
+          "check": { "type": "string", "minLength": 1, "maxLength": 240 },
+          "result": {
+            "type": "string",
+            "enum": ["passed", "failed", "not_run", "not_applicable"]
+          },
+          "details": { "type": "string", "minLength": 1, "maxLength": 2000 }
         }
       }
     },
     "assumptions": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "maxItems": 100,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
     },
     "blockers": {
       "type": "array",
+      "maxItems": 50,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["description", "evidence_needed"],
         "properties": {
-          "description": { "type": "string", "minLength": 1 },
-          "evidence_needed": { "type": "string", "minLength": 1 }
+          "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "evidence_needed": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
     "risks": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["severity", "description", "mitigation"],
+        "required": ["severity", "status", "description", "mitigation"],
         "properties": {
           "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
-          "description": { "type": "string" },
-          "mitigation": { "type": "string" }
+          "status": { "type": "string", "enum": ["open", "mitigated"] },
+          "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "mitigation": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
     "owner_actions": {
       "type": "array",
+      "maxItems": 50,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["action", "blocking"],
+        "required": ["action", "blocking", "evidence_needed"],
         "properties": {
-          "action": { "type": "string" },
+          "action": { "type": "string", "minLength": 1, "maxLength": 1000 },
           "blocking": { "type": "boolean" },
-          "evidence_needed": { "type": "string" }
+          "evidence_needed": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
-    "rollback_notes": { "type": "string" },
-    "next_recommended_task": { "type": ["string", "null"], "pattern": "^(RIT|OWN)-[0-9]{3}$" }
-  }
+    "record_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task", "decisions", "incidents", "experiments"],
+      "properties": {
+        "task": {
+          "type": ["string", "null"],
+          "pattern": "^records/tasks/RIT-[0-9]{3}\\.md$"
+        },
+        "decisions": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^records/decisions/D-[0-9]{3}\\.md$" }
+        },
+        "incidents": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^records/incidents/INC-[0-9]{3}\\.md$" }
+        },
+        "experiments": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^records/experiments/EXP-[0-9]{3}\\.md$" }
+        }
+      }
+    },
+    "rollback_notes": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "next_recommended_task": {
+      "type": ["string", "null"],
+      "pattern": "^(?:RIT|OWN)-[0-9]{3}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "task_id": { "type": "string" } }, "required": ["task_id"] },
+      "then": {
+        "properties": {
+          "record_refs": { "properties": { "task": { "type": "string" } } }
+        }
+      },
+      "else": {
+        "properties": {
+          "record_refs": { "properties": { "task": { "type": "null" } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "completed" } }, "required": ["status"] },
+      "then": {
+        "properties": {
+          "task_id": { "type": "string" },
+          "verification": {
+            "minItems": 1,
+            "contains": { "properties": { "result": { "const": "passed" } } },
+            "minContains": 1,
+            "items": { "properties": { "result": { "enum": ["passed", "not_applicable"] } } }
+          },
+          "blockers": { "maxItems": 0 },
+          "owner_actions": {
+            "items": { "properties": { "blocking": { "const": false } } }
+          },
+          "risks": {
+            "items": {
+              "if": {
+                "properties": { "severity": { "enum": ["critical", "high"] } },
+                "required": ["severity"]
+              },
+              "then": { "properties": { "status": { "const": "mitigated" } } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "blocked" } }, "required": ["status"] },
+      "then": { "properties": { "blockers": { "minItems": 1 } } }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["review_only", "no_change"] } },
+        "required": ["status"]
+      },
+      "then": { "properties": { "changes": { "maxItems": 0 } } }
+    }
+  ]
 }

@@ -7,11 +7,14 @@ import argparse
 import re
 from pathlib import Path
 
+from generated_evidence_io import require_regular_repository_file, write_regular_repository_file
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "RITUVIA_CODEX_BUILD_MANUAL.md"
 
 SOURCE_FILES = [
     ".gitignore",
+    ".gitattributes",
     "README.md",
     "MANIFEST.md",
     "QA_REPORT.md",
@@ -23,6 +26,9 @@ SOURCE_FILES = [
     "DECISIONS.md",
     "ROADMAP.md",
     "BACKLOG.md",
+    "CONTRIBUTING.md",
+    "records/README.md",
+    "records/INDEX.md",
     *[f"docs/{index:02d}_{name}.md" for index, name in enumerate([
         "PROJECT_CHARTER",
         "PRODUCT_REQUIREMENTS",
@@ -79,6 +85,7 @@ SOURCE_FILES = [
     "automation/prompts/release-readiness.md",
     "automation/prompts/weekly-product-review.md",
     "automation/schemas/task-result.schema.json",
+    "automation/examples/task-result.example.json",
     ".github/codex/prompts/localization.md",
     ".github/codex/prompts/next-task.md",
     ".github/codex/prompts/release.md",
@@ -98,6 +105,9 @@ SOURCE_FILES = [
     "scripts/README.md",
     "scripts/build_checksums.py",
     "scripts/build_compiled_manual.py",
+    "scripts/build_record_index.py",
+    "scripts/generated_evidence_io.py",
+    "scripts/sync_generated_evidence.py",
     "scripts/validate_instruction_pack.py",
     "reference/README.md",
 ]
@@ -122,9 +132,8 @@ def snapshot_date() -> str:
 
 
 def render_manual() -> str:
-    missing = [path for path in SOURCE_FILES if not (ROOT / path).is_file()]
-    if missing:
-        raise FileNotFoundError(f"Manual source files missing: {missing}")
+    for item in SOURCE_FILES:
+        require_regular_repository_file(ROOT, ROOT / item)
 
     lines = [
         "# RITUVIA — Complete Codex Build Manual",
@@ -189,7 +198,7 @@ def main() -> int:
         print(f"Compiled manual is current ({len(SOURCE_FILES)} embedded sources)")
         return 0
 
-    OUTPUT.write_text(rendered, encoding="utf-8")
+    write_regular_repository_file(ROOT, OUTPUT, rendered)
     print(f"Wrote {OUTPUT.relative_to(ROOT)} with {len(SOURCE_FILES)} embedded sources")
     return 0
 

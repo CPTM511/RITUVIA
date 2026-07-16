@@ -1,11 +1,10 @@
 # RIT-NNN: Task title
 
-- Priority: P0 | P1 | P2
-- Status: Planned | Ready | In Progress | In Review | Blocked | Changes Requested | Done
-- Milestone:
-- Owner: Codex | Human owner | Qualified reviewer
-- Dependencies:
-- Owner gates:
+- Backlog item: RIT-NNN
+- Related records: None | D-NNN, INC-NNN, EXP-NNN
+
+The queue state, priority, milestone, dependencies, and owner gates remain canonical in
+`BACKLOG.md`; do not copy them into this record.
 
 ## Outcome
 
@@ -23,7 +22,7 @@ Included and explicitly excluded work.
 - [ ] Tests and verification evidence pass.
 - [ ] Documentation/status/decision records are updated.
 
-## Verification
+## Verification evidence
 
 Commands, browser flows, fixtures, metrics, and evidence to inspect.
 

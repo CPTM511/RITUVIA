@@ -20,6 +20,7 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 ## Included files
 
 - `.gitignore`
+- `.gitattributes`
 - `README.md`
 - `MANIFEST.md`
 - `QA_REPORT.md`
@@ -31,6 +32,9 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `DECISIONS.md`
 - `ROADMAP.md`
 - `BACKLOG.md`
+- `CONTRIBUTING.md`
+- `records/README.md`
+- `records/INDEX.md`
 - `docs/00_PROJECT_CHARTER.md`
 - `docs/01_PRODUCT_REQUIREMENTS.md`
 - `docs/02_USER_EXPERIENCE.md`
@@ -85,6 +89,7 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `automation/prompts/release-readiness.md`
 - `automation/prompts/weekly-product-review.md`
 - `automation/schemas/task-result.schema.json`
+- `automation/examples/task-result.example.json`
 - `.github/codex/prompts/localization.md`
 - `.github/codex/prompts/next-task.md`
 - `.github/codex/prompts/release.md`
@@ -104,6 +109,9 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `scripts/README.md`
 - `scripts/build_checksums.py`
 - `scripts/build_compiled_manual.py`
+- `scripts/build_record_index.py`
+- `scripts/generated_evidence_io.py`
+- `scripts/sync_generated_evidence.py`
 - `scripts/validate_instruction_pack.py`
 - `reference/README.md`
 
@@ -138,6 +146,12 @@ __pycache__/
 
 ---
 
+# File: `.gitattributes`
+
+* text=auto eol=lf
+
+---
+
 # File: `README.md`
 
 # RITUVIA Codex Build System
@@ -168,9 +182,10 @@ An English-first, Web/PWA product for global users that offers:
 2. Read `CODEX_MASTER_PROMPT.md` and submit it to Codex for the first implementation session.
 3. Treat `PROJECT_STATUS.md`, `BACKLOG.md`, `ROADMAP.md`, and `DECISIONS.md` as persistent operational memory.
 4. Read `ENGINEERING_BASELINE.md` for the observed repository state and exact M0 execution plan.
-5. Use the documents under `docs/` as canonical specifications.
-6. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
-7. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
+5. Follow `CONTRIBUTING.md` and the typed durable-record policy in `records/README.md`.
+6. Use the documents under `docs/` as canonical specifications.
+7. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
+8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
 
 ## Local development
 
@@ -181,7 +196,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate first verifies the active CI contract, immutable migration manifest, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
 
 ### Continuous integration
 
@@ -260,7 +275,9 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, RIT-005 fail-closed package architecture policy, RIT-006 privacy-safe local observability baseline, and RIT-007 typed safe-off feature-flag registry are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. RIT-009 is the next Ready task because RIT-008 still depends on blocked RIT-004. No user-facing product feature is implemented yet.
+Current task state, dependencies, and executable-next selection live only in `BACKLOG.md`; current
+capabilities, blockers, environments, and quality totals live only in `PROJECT_STATUS.md`. This
+orientation file intentionally does not copy their mutable snapshot.
 
 ## Non-negotiable product principle
 
@@ -288,8 +305,10 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - `ENGINEERING_BASELINE.md` — observed repository reality, setup gaps, and exact M0 plan.
 - `QA_REPORT.md` — local consistency checks, passed assertions, and validation limits.
 - `DECISIONS.md` — persistent decision register.
+- `CONTRIBUTING.md` — one-task workflow, authority boundaries, and generated-evidence order.
+- `records/README.md` and generated `records/INDEX.md` — typed durable-record policy and compact discovery index.
 - `RITUVIA_CODEX_BUILD_MANUAL.md` — generated reading/handoff compilation; individual files remain canonical.
-- `checksums.sha256` — SHA-256 coverage for every tracked or non-ignored package file except the checksum file itself.
+- `checksums.sha256` — SHA-256 coverage for regular files represented in the Git index, except the checksum file itself.
 
 ## Canonical specifications
 
@@ -345,6 +364,7 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - `automation/prompts/monthly-risk-audit.md`
 - `automation/prompts/release-readiness.md`
 - `automation/schemas/task-result.schema.json`
+- `automation/examples/task-result.example.json`
 - `.github/codex/prompts/*.md`
 - `.github/workflows/ci.yml` — active least-privilege quality, database, dependency, and security gates.
 - `.github/codex/workflow-examples/*.yml` — intentionally inactive outside the Actions workflow directory until reviewed, moved, and secured.
@@ -352,11 +372,18 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 ## Local validation
 
 - `scripts/build_compiled_manual.py` — deterministically rebuilds/checks the handoff compilation.
-- `scripts/build_checksums.py` — deterministically hashes tracked and non-ignored repository artifacts.
+- `scripts/build_record_index.py` — validates typed records and deterministically renders their compact index.
+- `scripts/sync_generated_evidence.py` — safely renders index, manual, then Git-index-only checksums.
+- `scripts/build_checksums.py` — fail-closed hashing of regular Git-indexed repository artifacts.
+- `scripts/verify-records.ts` — validates record graphs and contextual task-result semantics.
 - `scripts/validate_instruction_pack.py` — verifies syntax, dependency graph, instruction limits, links, generated manual, checksums, and package invariants.
 
 ## Reusable records
 
+- `records/tasks/RIT-NNN.md`
+- `records/decisions/D-NNN.md`
+- `records/incidents/INC-NNN.md`
+- `records/experiments/EXP-NNN.md`
 - `templates/ADR_TEMPLATE.md`
 - `templates/TASK_TEMPLATE.md`
 - `templates/INCIDENT_TEMPLATE.md`
@@ -379,19 +406,20 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 **Validated:** 2026-07-17
 
-**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-007 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
+**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-009 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
 
 ## Checks passed
 
 - All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
 - All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
-- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003` and `RIT-005` through `RIT-007` are Done, `RIT-004` is blocked only by `OWN-008`, RIT-008 remains Planned behind it, and exactly one executable item is Ready: `RIT-009`.
+- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003`, `RIT-005` through `RIT-007`, and `RIT-009` are Done, `RIT-004` is blocked only by `OWN-008`, RIT-008 remains Planned behind it, and exactly one executable item is Ready: `RIT-010`.
 - Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
 - Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
 - Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
-- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 87 current text sources; `checksums.sha256` covers every intended repository file except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
+- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 95 current text sources; `checksums.sha256` covers all 213 intended Git-indexed inputs except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
 - Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
-- Root CI/toolchain, architecture, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across six workspaces. One hundred seventy-two unit/contract tests run in 18 files; the build verifier checks 22 emitted artifacts, imports built ESM exports, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
+- Root CI/toolchain, architecture, record, generated-evidence, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across six workspaces. Two hundred sixteen unit/contract tests run in 20 files; the build verifier checks 22 emitted artifacts, imports built ESM exports, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
+- The durable record workflow enforces four typed grammars, canonical task/decision authority, reciprocal task dossier and decision graph links, contextual task-result semantics, privacy-safe Markdown, Git-index-only regular-file checksums, and staged exact-order synchronization. CI and mutation tests reject stale, dangling, duplicated, unsafe, unreviewed, or locally untracked evidence.
 - The fail-closed architecture gate audits 53 active source files across six modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, exact feature-flag composition, and file/module cycles. Mutation tests cover the reviewed bypass classes, including injected and dead-code-camouflaged feature-flag sources, and CI invokes the exact architecture command as an independent mandatory step.
 - The zero-dependency server-only observability package emits only fixed bounded JSON-line events with service/environment/release/level/correlation/trace fields. Web Crypto creates nonzero server-authoritative IDs; W3C trace validation rejects malformed, uppercase, unsupported, and zero identifiers; spans rotate across JSON-persisted Web → Worker → provider protocol steps; and neither baggage nor tracestate propagates.
 - Adversarial telemetry tests prove that unknown private fields, prompts, journal/prayer/birth text, authorization, URLs, raw `Error`, stack/cause, getters, `toJSON`, coercion hooks, revoked/wide proxies, cycles, symbols, `BigInt`, functions, control characters, oversized UTF-8 records, invalid metadata/carriers, duplicate span end, clock reversal, and failing writers cannot leak canaries or alter application flow.
@@ -409,9 +437,9 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 ## Validation commands
 
 ```bash
-python3 scripts/build_compiled_manual.py --check
-python3 scripts/build_checksums.py --check
-python3 scripts/validate_instruction_pack.py
+pnpm check:records
+pnpm check:generated
+python3 -B scripts/sync_generated_evidence.py --check
 shasum -a 256 -c checksums.sha256
 codex execpolicy check --pretty --rules .codex/rules/default.rules -- <command...>
 pnpm install --frozen-lockfile
@@ -431,18 +459,19 @@ pnpm db:stop
 
 ## Limitations
 
-- This validates the specification package and locally executable RIT-001 through RIT-007 foundations. It does not validate a user-facing product flow, payment, AI, accessibility, hosted infrastructure, or a production database.
+- This validates the specification package and locally executable RIT-001 through RIT-009 foundations. It does not validate a user-facing product flow, payment, AI, accessibility, hosted infrastructure, or a production database.
 - The Web proxy handoff is a real local HTTP boundary, but no route wrapper yet measures final downstream status/duration. The Worker continuation subpath and serialized carrier are protocol evidence behind a sealed persistence adapter type; no database outbox, queue, deployed consumer, telemetry vendor, metrics, alerting, sampling, or retention system exists yet.
 - The feature-flag control plane has database-level append-only enforcement but no production credential grant, approval-record service, admin endpoint/UI, cache/invalidation policy, or operator emergency workflow. Enabling any gated capability still requires its explicit owner approval and later product task.
 - Docker and Podman are absent on the verified host. A native fresh PostgreSQL 17 instance reproduced the CI target contract, but the digest-pinned service image and bridge networking still require the first hosted Actions run.
-- The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; critical task-result schema invariants are checked directly.
+- The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; an exact schema fingerprint plus contextual semantic validation locks the critical task-result contract.
+- A durable record status or linked decision does not itself grant approval. Owner gates, qualified review, production actions, and external system evidence remain separately authoritative.
 - Command rules are exact positional prefixes and supplement, rather than replace, the owner-approval boundaries in `AGENTS.md`. Reordered flags, aliases, and opaque wrappers still require human review.
 - Codex GitHub workflow examples remain intentionally inactive outside `.github/workflows`. The active CI workflow is contract-tested, but remote required-check enforcement and workflow-change protection require owner configuration.
 - `RITUVIA` has only a preliminary exact-name web screen; this report does not establish legal clearance, domain availability, or right to use. Payment, crypto, tax, country, astrology-license, content-rights, vendor, and production decisions remain owner- or qualified-reviewer-gated.
 
 ## Acceptance result
 
-The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, and active portable quality, dependency, secret, migration, and build gates. RIT-007 is complete and RIT-009 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
+The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, a machine-checked durable record workflow, and active portable quality, dependency, secret, migration, and build gates. RIT-009 is complete and RIT-010 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
 
 ---
 
@@ -890,7 +919,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M0 engineering foundation in progress; package architecture, local observability, typed safe-off feature flags, and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
+**Stage:** M0 engineering foundation in progress; package architecture, local observability, typed safe-off feature flags, repository CI quality gates, and durable repository records implemented and locally verified; hosted evidence pending; product features not started.
 
 **Release:** Pre-M0
 
@@ -907,6 +936,7 @@ Use this order:
 - Sequenced roadmap and executable backlog.
 - Codex root/nested instructions, specialized roles, command rules, automation prompts, and review templates.
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
+- Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
@@ -918,7 +948,7 @@ Use this order:
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 172 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
+- Root formatting, ESLint, TypeScript, 216 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
 
 ## What does not exist yet
 
@@ -948,13 +978,15 @@ Use this order:
 
 These do not block local engineering foundation work.
 
-## Next task
+## Queue authority
 
-`RIT-009` — Ready: connect ADR, task, incident, and experiment records to repository contribution workflows without stale duplication. RIT-008 remains Planned because it depends on blocked RIT-004 hosted-CI evidence.
+`BACKLOG.md` alone determines the executable next task from priority, status, dependencies, and
+owner gates. This dated capability snapshot intentionally does not copy a task ID; blocked context
+remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 172 unit/contract tests in 18 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The build verifier checks 22 emitted artifacts and narrowed runtime exports. The architecture verifier audits 53 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, exact feature-flag composition, JSDoc/type edges, and file/module cycles. Feature-flag tests prove strict typed registry metadata, safe-off evaluation, owner-gate and canonical-scope validation, scheduled activation, emergency off, expiry/removal behavior, version-qualified rolling upgrade/rollback, and fail-closed live database privilege attestation. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, separated non-superuser migrator/read-only runtime/append-only control roles, forced RLS, exact activation constraints, guarded reset, non-empty logical dump/restore with exact row comparison, transaction/race behavior, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, deterministic generation, migration deployment/status/drift, exact migration inventory, activation and append-only constraints, registry-version coexistence, DDL denial, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 216 unit/contract tests in 20 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The record-policy mutation suite covers typed filenames and headings, authority duplication, task/decision graphs, incident and experiment gates, privacy-safe Markdown, contextual task-result semantics, and schema drift; generated evidence is staged and verified in the exact index-to-manual-to-checksums order. The build verifier checks 22 emitted artifacts and narrowed runtime exports. The architecture verifier audits 53 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, exact feature-flag composition, JSDoc/type edges, and file/module cycles. Feature-flag tests prove strict typed registry metadata, safe-off evaluation, owner-gate and canonical-scope validation, scheduled activation, emergency off, expiry/removal behavior, version-qualified rolling upgrade/rollback, and fail-closed live database privilege attestation. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, separated non-superuser migrator/read-only runtime/append-only control roles, forced RLS, exact activation constraints, guarded reset, non-empty logical dump/restore with exact row comparison, transaction/race behavior, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, deterministic generation, migration deployment/status/drift, exact migration inventory, activation and append-only constraints, registry-version coexistence, DDL denial, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved P0/P1 issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
 
 ## Update rules
 
@@ -1100,7 +1132,9 @@ Until all six are proved, the repository must remain Pre-M0 and make no product-
 
 # RITUVIA Decision Log
 
-This is an append-only summary of accepted architectural and product decisions. Detailed decisions may use `templates/ADR_TEMPLATE.md`. Do not rewrite historical rationale; supersede it with a new entry.
+This is an append-only summary of accepted architectural and product decisions. Detailed decisions use
+`records/decisions/D-NNN.md` and the template in `templates/ADR_TEMPLATE.md`. A detailed record is not
+effective until this register links it. Do not rewrite historical rationale; supersede it with a new entry.
 
 ## Accepted decisions
 
@@ -1254,6 +1288,12 @@ This is an append-only summary of accepted architectural and product decisions. 
   append-only provenance, deterministic version isolation, and mandatory cleanup make incomplete
   or compromised runtime configuration fail closed without claiming that a future admin UI or
   owner-approval record system already exists.
+- **Date:** 2026-07-17
+
+### [D-022 — Canonical repository record workflow](records/decisions/D-022.md)
+
+- **Decision:** Keep backlog and decision state in their canonical registers; link bounded typed detail records through a generated compact index and machine-validated task results. Build canonical checksums from regular files in the Git index only, after the record index and compiled manual.
+- **Reason:** Stable links and fail-closed generation preserve traceability without duplicating mutable state, leaking untracked personal files, or allowing a record to manufacture owner approval. This clarifies D-014's package scope without superseding its canonical-source or manual-order rules.
 - **Date:** 2026-07-17
 
 ---
@@ -1519,8 +1559,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                  |
 | RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                         | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                             |
 | RIT-008 | M0        |       P1 | Planned | Create preview/staging/production environment documentation               | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.       |
-| RIT-009 | M0        |       P1 | Ready   | Add ADR, task, incident, experiment workflow to repository                | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                       |
-| RIT-010 | M1        |       P0 | Planned | Implement accessible Web shell and locale-prefixed routing                | RIT-001,RIT-002                         | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                   |
+| RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                       |
+| RIT-010 | M1        |       P0 | Ready   | Implement accessible Web shell and locale-prefixed routing                | RIT-001,RIT-002                         | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                   |
 | RIT-011 | M1        |       P0 | Planned | Implement design tokens and accessible component primitives               | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                   |
 | RIT-012 | M1        |       P0 | Planned | Build product positioning, methodology, safety, and privacy public pages  | RIT-010,RIT-011                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                  |
 | RIT-013 | M1        |       P1 | Planned | Add SEO metadata, canonical, robots, and sitemap foundation               | RIT-010                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                         |
@@ -1642,6 +1682,136 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 ## Backlog maintenance
 
 When adding a task, include an outcome rather than a vague activity, explicit dependencies, a primary review role, and testable completion. Do not remove completed tasks; archive them to a dated release log only after a release if this file becomes unwieldy. Owner tasks remain blocked until the owner supplies evidence; Codex may prepare dossiers and code but may not mark external approval complete.
+
+---
+
+# File: `CONTRIBUTING.md`
+
+# Contributing to RITUVIA
+
+Every change must preserve one authoritative location for each fact. Links connect records; copying
+status, dependencies, evidence, or decisions into multiple hand-maintained summaries is not a
+substitute for a source of truth.
+
+## Sources of truth
+
+| Concern | Canonical source | Supporting evidence |
+| --- | --- | --- |
+| Task priority, status, milestone, dependencies, owner gate, executable-next selection | `BACKLOG.md` | `records/tasks/RIT-NNN.md` stores scope, acceptance, verification, and rollback without copying queue fields. |
+| Current project capabilities, blockers, environments, quality totals | `PROJECT_STATUS.md` | Tests, generated QA evidence, and the current commit. |
+| Accepted decision index and supersession | `DECISIONS.md` | `records/decisions/D-NNN.md` contains detailed context, alternatives, validation, rollout, and approvals. |
+| Incident facts, assessment, and corrective actions | `records/incidents/INC-NNN.md` | Safe evidence locations and linked backlog tasks. |
+| Experiment design, guardrails, results, and decision | `records/experiments/EXP-NNN.md` | Approved analytics definitions and linked task/decision records. |
+| Executable behavior | Tests and committed migrations | Task-record verification commands and CI results. |
+| Historical implementation | Git commits and reviewed pull requests | Task-result output and linked records. |
+| Reading bundle and file-integrity inventory | Generated `RITUVIA_CODEX_BUILD_MANUAL.md` and `checksums.sha256` | Their canonical source files; never edit generated output by hand. |
+
+## One-task contribution flow
+
+1. Select the single highest-priority `Ready` task whose dependencies and gates are complete.
+2. Change only its `BACKLOG.md` status to `In Progress` before implementation.
+3. Create or update `records/tasks/RIT-NNN.md` from `templates/TASK_TEMPLATE.md`. Do not copy priority,
+   status, milestone, dependencies, or owner gates into the task record.
+4. Add a detailed ADR only for a durable decision. Add the corresponding concise `DECISIONS.md`
+   index entry and link both directions.
+5. Create incident or experiment records only for real events or approved experiments. Never create
+   fictional evidence to satisfy a template.
+6. Implement and run focused checks, independent review, and the complete applicable quality gate.
+7. Update the task record with exact verification evidence and resolved review findings. Then move
+   the backlog task through `In Review` to `Done` and promote exactly one eligible next task.
+8. Return a result conforming to `automation/schemas/task-result.schema.json`. Its `record_refs.task`
+   must match the task ID, and decision/incident/experiment arrays list only records changed or used.
+
+The task-result status is a run outcome, not a second backlog state. Use `completed` only when the
+canonical task becomes Done, `partial` while approved work remains, `blocked` for an evidenced
+impasse, `review_only` for a read-only review, and `no_change` when no repository state changed.
+
+## Record rules
+
+- Store durable records only in the typed paths defined by `records/README.md`; the heading ID must
+  match the filename. Existing decisions use the canonical `D-NNN` namespace, not a parallel ADR ID.
+- Regenerate `records/INDEX.md` in the same change. `pnpm check:records` rejects missing, duplicate,
+  placeholder, stale-index, dangling, or cyclic records and active tasks without a task dossier.
+- Keep record text bounded and evidence-linked. Never paste secrets, credentials, private user text,
+  raw prompts, journals, prayers, birth data, payment payloads, access tokens, stack dumps, or
+  unredacted incident exports.
+- An ADR records a decision; it does not grant an owner approval. Payment, legal, country, language,
+  cultural, safety, production, remote, destructive-data, and spending gates remain explicit.
+- An experiment may move to Running only after a linked Done RIT dossier records checked
+  safety/privacy/cultural review evidence, and after its instrumentation, assignment checks,
+  stopping rule, rollback, and any directly dependent OWN gates are complete. Incident closure
+  requires substantive minimized sections and the applicable owner/counsel/notification evidence;
+  record status never manufactures that approval.
+
+## Generated evidence
+
+Canonical files are edited first and staged. Generated evidence is refreshed exactly once, after
+all other changes:
+
+```bash
+python3 scripts/sync_generated_evidence.py
+python3 scripts/sync_generated_evidence.py --check
+```
+
+The synchronizer renders the compact record index first, the compiled manual second, and hashes the
+Git-indexed repository last. Running builders in another order produces stale evidence. Stage the
+intended source files before synchronization, then stage `records/INDEX.md`,
+`RITUVIA_CODEX_BUILD_MANUAL.md`, and `checksums.sha256` again before `--check` or the full gate.
+The synchronizer rejects any other indexed path whose worktree bytes differ from the staged blob;
+unrelated untracked personal files are never canonical checksum inputs. Never hand-edit any generated
+artifact. A checksum proves byte consistency, not authenticity, review, or owner approval.
+
+## Required verification before commit
+
+```bash
+pnpm check:records
+pnpm check
+python3 scripts/sync_generated_evidence.py --check
+python3 scripts/validate_instruction_pack.py
+shasum -a 256 -c checksums.sha256
+git diff --check
+```
+
+Inspect the staged file list before committing. Until OWN-008 is complete, local checks do not prove
+remote required-review or branch protection. Do not push, deploy, publish, mutate production,
+activate a provider/country/language, alter legal or safety policy, spend money, or perform a
+destructive action without the approval required by `AGENTS.md`.
+
+---
+
+# File: `records/README.md`
+
+# Durable record index
+
+`BACKLOG.md`, `PROJECT_STATUS.md`, and `DECISIONS.md` remain the canonical queue, current snapshot,
+and accepted-decision index. This directory holds linked detail that would otherwise make those
+files unwieldy. See [CONTRIBUTING.md](../CONTRIBUTING.md) for lifecycle and source-of-truth rules.
+
+Typed paths are fixed:
+
+- `tasks/RIT-NNN.md`
+- `decisions/D-NNN.md`
+- `incidents/INC-NNN.md`
+- `experiments/EXP-NNN.md`
+
+[INDEX.md](./INDEX.md) is generated, compact, and embedded in the compiled handoff manual. Never
+edit it by hand. Full record text remains individually checksummed but is not copied into the manual.
+Absence of an incident or experiment entry is not evidence that no event occurred.
+
+---
+
+# File: `records/INDEX.md`
+
+# Durable record index
+
+> Generated by `scripts/build_record_index.py`; do not edit by hand.
+
+| Type | ID | Title | Record |
+| --- | --- | --- | --- |
+| Decision | D-022 | Canonical repository record workflow | [decisions/D-022.md](./decisions/D-022.md) |
+| Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
+
+The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
 ---
 
@@ -4345,9 +4515,12 @@ The main Codex session is the orchestrator and primary writer. Subagents should 
 - `DECISIONS.md`: accepted decisions and supersessions.
 - Tests and fixtures: executable product memory.
 - Git commits/PRs: implementation history.
-- ADRs/incident/experiment records: rationale and learning.
+- `records/tasks/RIT-NNN.md`: scope, acceptance, verification, risk, and rollback without copied queue state.
+- `records/decisions/D-NNN.md`: detailed rationale linked from the accepted `DECISIONS.md` register.
+- `records/incidents/INC-NNN.md` and `records/experiments/EXP-NNN.md`: minimized facts and learning linked to backlog work.
 
 Every run begins by reconciling these sources with reality and ends by updating them.
+The generated compact `records/INDEX.md` aids discovery but is never an authority for state or approval.
 
 ## 4. Task state machine
 
@@ -7128,7 +7301,14 @@ Automations may inspect, test, draft, patch branches, update documentation, and 
 
 ## Required result
 
-Every run returns a structured summary compatible with `automation/schemas/task-result.schema.json`, plus human-readable Markdown. It must distinguish facts observed, changes made, tests run, assumptions, blockers, risks, approvals needed, and the next task.
+Every run returns a structured summary compatible with `automation/schemas/task-result.schema.json`,
+plus human-readable Markdown. It includes bounded run/time/revision trace metadata, a RIT task ID,
+typed durable-record references, rollback notes, observed facts, changes, verification, assumptions,
+blockers, risks, owner actions, and the next task. A result describes a run; it cannot change
+`BACKLOG.md`, accept a decision in `DECISIONS.md`, or satisfy an owner gate.
+The JSON Schema enforces portable shape and core completed-state constraints. Before accepting a real
+result, run the repository-context validator (`pnpm check:records` or its `auditTaskResult` policy)
+so task state, dependency readiness, exact record paths, and tracked evidence sources are checked.
 
 ## Scheduling suggestion
 
@@ -7160,6 +7340,12 @@ Operate as the repository's primary Codex orchestrator.
 10. Return the structured task result and a concise owner summary.
 
 Do not build multiple major backlog items in one run. Do not mark a plan, mock, or unverified generated file as complete.
+
+After the human-readable summary, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. Set `task_id` to the selected RIT ID and
+`record_refs.task` to its exact `records/tasks/RIT-NNN.md` path; include only durable records and
+tracked evidence actually used. The result reports this run and cannot update `BACKLOG.md`, accept a
+decision in `DECISIONS.md`, or satisfy an owner gate.
 
 ---
 
@@ -7198,6 +7384,12 @@ Output:
 6. Backlog changes proposed.
 7. Data gaps and confidence.
 
+After those sections, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. For a read-only scheduled review use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. The result cannot update `BACKLOG.md`, accept a
+decision, or satisfy an owner gate.
+
 ---
 
 # File: `automation/prompts/monthly-risk-audit.md`
@@ -7231,6 +7423,12 @@ Output:
 7. Owner/qualified-review decisions.
 8. Residual risk statement.
 
+After those sections, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. For this read-only audit use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. The result cannot update `BACKLOG.md`, accept a
+decision, or satisfy an owner gate.
+
 ---
 
 # File: `automation/prompts/release-readiness.md`
@@ -7251,6 +7449,12 @@ Verify:
 - Cost and rate limits are set.
 
 Return exactly one recommendation: `GO`, `GO_WITH_EXPLICIT_OWNER_ACCEPTANCE`, or `NO_GO`. List blockers separately from follow-ups. Never deploy the release.
+
+After the recommendation, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. This is a read-only review, so use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. Neither `GO` nor the JSON result satisfies an owner gate,
+changes `BACKLOG.md`, or deploys anything.
 
 ---
 
@@ -7292,6 +7496,12 @@ Output sections:
 8. Decisions and approvals needed.
 9. Data gaps and confidence.
 
+After those sections, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. For this read-only review use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. The result cannot update `BACKLOG.md`, accept a
+decision, or satisfy an owner gate.
+
 ---
 
 # File: `automation/schemas/task-result.schema.json`
@@ -7304,6 +7514,11 @@ Output sections:
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
+    "run_id",
+    "as_of",
+    "repository_revision",
+    "branch",
     "task_id",
     "status",
     "summary",
@@ -7314,99 +7529,264 @@ Output sections:
     "blockers",
     "risks",
     "owner_actions",
+    "record_refs",
+    "rollback_notes",
     "next_recommended_task"
   ],
   "properties": {
-    "task_id": { "type": ["string", "null"], "pattern": "^(RIT|OWN)-[0-9]{3}$" },
+    "schema_version": { "const": 1 },
+    "run_id": {
+      "type": "string",
+      "pattern": "^run-[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "as_of": { "type": "string", "format": "date-time", "maxLength": 40 },
+    "repository_revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|WORKTREE)$"
+    },
+    "branch": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,159}$"
+    },
+    "task_id": { "type": ["string", "null"], "pattern": "^RIT-[0-9]{3}$" },
     "status": {
       "type": "string",
       "enum": ["completed", "partial", "blocked", "review_only", "no_change"]
     },
-    "summary": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 4000 },
     "observed_evidence": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["claim", "source"],
+        "required": ["claim", "source", "as_of", "confidence"],
         "properties": {
-          "claim": { "type": "string" },
-          "source": { "type": "string" },
-          "as_of": { "type": ["string", "null"], "format": "date-time" },
+          "claim": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "source": {
+            "type": "string",
+            "maxLength": 240,
+            "pattern": "^(?:evidence:[A-Za-z0-9._:-]{1,120}|(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]{1,240})$"
+          },
+          "as_of": { "type": ["string", "null"], "format": "date-time", "maxLength": 40 },
           "confidence": { "type": "string", "enum": ["high", "medium", "low"] }
         }
       }
     },
     "changes": {
       "type": "array",
+      "maxItems": 200,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["path", "description"],
         "properties": {
-          "path": { "type": "string" },
-          "description": { "type": "string" }
+          "path": {
+            "type": "string",
+            "maxLength": 240,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]{1,240}$"
+          },
+          "description": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
     "verification": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["check", "result"],
+        "required": ["check", "result", "details"],
         "properties": {
-          "check": { "type": "string" },
-          "result": { "type": "string", "enum": ["passed", "failed", "not_run", "not_applicable"] },
-          "details": { "type": "string" }
+          "check": { "type": "string", "minLength": 1, "maxLength": 240 },
+          "result": {
+            "type": "string",
+            "enum": ["passed", "failed", "not_run", "not_applicable"]
+          },
+          "details": { "type": "string", "minLength": 1, "maxLength": 2000 }
         }
       }
     },
     "assumptions": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "maxItems": 100,
+      "items": { "type": "string", "minLength": 1, "maxLength": 1000 }
     },
     "blockers": {
       "type": "array",
+      "maxItems": 50,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["description", "evidence_needed"],
         "properties": {
-          "description": { "type": "string", "minLength": 1 },
-          "evidence_needed": { "type": "string", "minLength": 1 }
+          "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "evidence_needed": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
     "risks": {
       "type": "array",
+      "maxItems": 100,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["severity", "description", "mitigation"],
+        "required": ["severity", "status", "description", "mitigation"],
         "properties": {
           "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
-          "description": { "type": "string" },
-          "mitigation": { "type": "string" }
+          "status": { "type": "string", "enum": ["open", "mitigated"] },
+          "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "mitigation": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
     "owner_actions": {
       "type": "array",
+      "maxItems": 50,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["action", "blocking"],
+        "required": ["action", "blocking", "evidence_needed"],
         "properties": {
-          "action": { "type": "string" },
+          "action": { "type": "string", "minLength": 1, "maxLength": 1000 },
           "blocking": { "type": "boolean" },
-          "evidence_needed": { "type": "string" }
+          "evidence_needed": { "type": "string", "minLength": 1, "maxLength": 1000 }
         }
       }
     },
-    "rollback_notes": { "type": "string" },
-    "next_recommended_task": { "type": ["string", "null"], "pattern": "^(RIT|OWN)-[0-9]{3}$" }
-  }
+    "record_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task", "decisions", "incidents", "experiments"],
+      "properties": {
+        "task": {
+          "type": ["string", "null"],
+          "pattern": "^records/tasks/RIT-[0-9]{3}\\.md$"
+        },
+        "decisions": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^records/decisions/D-[0-9]{3}\\.md$" }
+        },
+        "incidents": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^records/incidents/INC-[0-9]{3}\\.md$" }
+        },
+        "experiments": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^records/experiments/EXP-[0-9]{3}\\.md$" }
+        }
+      }
+    },
+    "rollback_notes": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "next_recommended_task": {
+      "type": ["string", "null"],
+      "pattern": "^(?:RIT|OWN)-[0-9]{3}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "task_id": { "type": "string" } }, "required": ["task_id"] },
+      "then": {
+        "properties": {
+          "record_refs": { "properties": { "task": { "type": "string" } } }
+        }
+      },
+      "else": {
+        "properties": {
+          "record_refs": { "properties": { "task": { "type": "null" } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "completed" } }, "required": ["status"] },
+      "then": {
+        "properties": {
+          "task_id": { "type": "string" },
+          "verification": {
+            "minItems": 1,
+            "contains": { "properties": { "result": { "const": "passed" } } },
+            "minContains": 1,
+            "items": { "properties": { "result": { "enum": ["passed", "not_applicable"] } } }
+          },
+          "blockers": { "maxItems": 0 },
+          "owner_actions": {
+            "items": { "properties": { "blocking": { "const": false } } }
+          },
+          "risks": {
+            "items": {
+              "if": {
+                "properties": { "severity": { "enum": ["critical", "high"] } },
+                "required": ["severity"]
+              },
+              "then": { "properties": { "status": { "const": "mitigated" } } }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "status": { "const": "blocked" } }, "required": ["status"] },
+      "then": { "properties": { "blockers": { "minItems": 1 } } }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["review_only", "no_change"] } },
+        "required": ["status"]
+      },
+      "then": { "properties": { "changes": { "maxItems": 0 } } }
+    }
+  ]
+}
+```
+
+---
+
+# File: `automation/examples/task-result.example.json`
+
+```json
+{
+  "schema_version": 1,
+  "run_id": "run-synthetic-contract-example",
+  "as_of": "2026-07-17T00:00:00Z",
+  "repository_revision": "WORKTREE",
+  "branch": "main",
+  "task_id": "RIT-009",
+  "status": "no_change",
+  "summary": "Synthetic RIT-009 contract example only; this file is not execution evidence.",
+  "observed_evidence": [
+    {
+      "claim": "The example contains every required task-result field.",
+      "source": "automation/examples/task-result.example.json",
+      "as_of": null,
+      "confidence": "high"
+    }
+  ],
+  "changes": [],
+  "verification": [
+    {
+      "check": "synthetic schema-shape example",
+      "result": "not_applicable",
+      "details": "The repository record validator checks this local example without claiming a real run."
+    }
+  ],
+  "assumptions": [],
+  "blockers": [],
+  "risks": [],
+  "owner_actions": [],
+  "record_refs": {
+    "task": "records/tasks/RIT-009.md",
+    "decisions": ["records/decisions/D-022.md"],
+    "incidents": [],
+    "experiments": []
+  },
+  "rollback_notes": "No repository or external state changes are represented by this example.",
+  "next_recommended_task": null
 }
 ```
 
@@ -7428,7 +7808,7 @@ Check cultural specificity, false equivalence, invented lineage, stereotypes, ge
 
 Follow `automation/prompts/continue-next-task.md`. Work only on the single task identified in the triggering issue/input, or the highest-priority `Ready` task when the trigger explicitly permits automatic selection.
 
-Create a focused branch/commit-ready diff. Do not push, merge, deploy, publish, alter production data, change payment/country/legal policy, or spend money. Return the task-result schema and a PR-ready summary.
+Create a focused branch/commit-ready diff. Do not push, merge, deploy, publish, alter production data, change payment/country/legal policy, or spend money. Return a result conforming to `automation/schemas/task-result.schema.json` and a PR-ready summary.
 
 ---
 
@@ -7490,8 +7870,9 @@ Block private readings, journals, sanctuaries, account, checkout, thin generated
 `main`, and manual dispatch, with top-level `contents: read` only. Its three independent jobs
 cover:
 
-- formatting, lint, strict type checking, unit/contract tests, the production configuration
-  boundary, migration policy, CI contract, and production builds;
+- durable-record graph and generated-evidence integrity, formatting, lint, strict type checking,
+  unit/contract tests, the production configuration boundary, architecture and migration policy,
+  CI contract, and production builds;
 - Prisma generation, two idempotent migration deployments, two idempotent synthetic seeds,
   migration status/drift, constraints, transactions, and least-privilege attestation against a
   digest-pinned ephemeral PostgreSQL 17 service; and
@@ -7571,8 +7952,12 @@ jobs:
         run: pnpm check:ci-contract
       - name: Verify architecture boundaries
         run: pnpm check:architecture
+      - name: Verify durable record policy
+        run: pnpm check:records
       - name: Verify migration policy
         run: pnpm check:migrations
+      - name: Verify generated repository evidence
+        run: pnpm check:generated
       - name: Check formatting
         run: pnpm format:check
       - name: Lint
@@ -7760,13 +8145,16 @@ jobs:
 
 # File: `templates/ADR_TEMPLATE.md`
 
-# ADR-NNN: Decision title
+# D-NNN: Decision title
 
-- Status: Proposed | Accepted | Superseded | Rejected
 - Date:
 - Owners:
 - Related tasks:
-- Supersedes / superseded by:
+- Evidence references:
+
+Store the accepted detail as `records/decisions/D-NNN.md` and add only its concise index/supersession entry
+to `DECISIONS.md`. Draft/rejected proposals stay in the task record until accepted. Register presence and
+incoming supersession edges determine decision state; a detail record never grants an owner gate by itself.
 
 ## Context
 
@@ -7805,7 +8193,11 @@ Primary-source links/evidence locations, access dates, counsel/provider/owner ap
 
 - Status: Draft | Approved | Running | Stopped | Concluded
 - Owner:
-- Related task/decision:
+- Related tasks/decisions:
+- Required owner/qualified-reviewer gates:
+- Gate evidence references: None
+- Qualified review task: None
+- Qualified review evidence: None
 - Population/countries/locales:
 - Start/end:
 
@@ -7819,17 +8211,23 @@ Eligibility, unit of randomization, allocation, exclusions, persistence, and con
 
 ## Metrics
 
-- Primary metric and denominator:
-- Guardrails: safety, free-path quality, refund/dispute, trust, accessibility, retention, performance, cost.
-- Minimum detectable effect / duration / stopping rule:
+- Primary metric:
+- Guardrails:
+- Stopping rule:
 
 ## Ethics and privacy
 
 No vulnerable-state targeting, private-text features, deceptive urgency, or paid-efficacy framing. State consent and data minimization.
 
+Running status does not itself prove approval. Before assignment begins, link a completed related RIT
+review dossier whose checked evidence covers safety, privacy, and cultural review. Any listed OWN gate
+must be both Done and a declared dependency of that related RIT task.
+
 ## Implementation and QA
 
-Flags, analytics schema, sample-ratio checks, locale/device/payment coverage, and rollback.
+- Flags, analytics schema, sample-ratio checks, and locale/device/payment coverage:
+- Rollback:
+- Cleanup date: YYYY-MM-DD
 
 ## Results
 
@@ -7845,11 +8243,14 @@ Ship / iterate / reject / inconclusive, with rationale and follow-up.
 
 # INC-NNN: Incident title
 
-- Severity:
-- Status:
+- Severity: SEV-0 | SEV-1 | SEV-2 | SEV-3
+- Status: Investigating | Mitigated | Resolved | Closed
+- Related tasks/decisions:
 - Start / detected / mitigated / resolved times:
 - Incident commander:
 - Affected environments/countries/features:
+- Closure review evidence: None until Resolved/Closed
+- Owner/counsel/notification decision evidence: None unless applicable
 
 ## User/business impact
 
@@ -7858,6 +8259,11 @@ Quantify scope and uncertainty without exposing private content.
 ## Detection
 
 Alert/report and why existing controls did or did not detect earlier.
+
+## Evidence locations
+
+Access-controlled references, retention owner, and safe fingerprints only. Never paste credentials,
+private user content, raw provider/payment payloads, access tokens, or unredacted exports.
 
 ## Timeline
 
@@ -7877,8 +8283,11 @@ Data classes, exposure evidence, notification/counsel decisions, and unresolved 
 
 ## Corrective actions
 
-| ID | Action | Priority | Owner | Due | Verification |
-|---|---|---|---|---|---|
+| Backlog ID | Action and completion evidence |
+| --- | --- |
+| RIT-NNN or OWN-NNN |  |
+
+Priority, owner, dependency, gate, and status live only in `BACKLOG.md`.
 
 ## Lessons and control updates
 
@@ -7925,12 +8334,11 @@ Runbooks, alerts, tests, architecture, training, vendor, and policy changes.
 
 # RIT-NNN: Task title
 
-- Priority: P0 | P1 | P2
-- Status: Planned | Ready | In Progress | In Review | Blocked | Changes Requested | Done
-- Milestone:
-- Owner: Codex | Human owner | Qualified reviewer
-- Dependencies:
-- Owner gates:
+- Backlog item: RIT-NNN
+- Related records: None | D-NNN, INC-NNN, EXP-NNN
+
+The queue state, priority, milestone, dependencies, and owner gates remain canonical in
+`BACKLOG.md`; do not copy them into this record.
 
 ## Outcome
 
@@ -7948,7 +8356,7 @@ Included and explicitly excluded work.
 - [ ] Tests and verification evidence pass.
 - [ ] Documentation/status/decision records are updated.
 
-## Verification
+## Verification evidence
 
 Commands, browser flows, fixtures, metrics, and evidence to inspect.
 
@@ -7996,21 +8404,30 @@ Adapter boundary, data portability/deletion, fallback, kill switch, reconciliati
 Run from the repository root:
 
 ```bash
-python3 scripts/build_compiled_manual.py --check
-python3 scripts/build_checksums.py --check
-python3 scripts/validate_instruction_pack.py
+pnpm check:records
+pnpm check:generated
 shasum -a 256 -c checksums.sha256
 ```
 
-The manual builder deterministically compiles the explicit source set. The checksum builder hashes tracked and non-ignored untracked repository artifacts, excluding the checksum file itself; it respects `.gitignore` and has a conservative fallback outside Git. The validator checks required files, TOML/JSON syntax, YAML when PyYAML is available, backlog IDs/dependencies/cycles/executable-task state, Codex agent contracts, instruction-size limits, command-rule structure, local Markdown links, reference artifacts, generated-manual freshness, checksum coverage/content, and legacy-brand placement.
+The record gate checks typed IDs, graph references, canonical authority, bounded task-result semantics,
+and the exact generated index. The generated-evidence gate verifies the fixed index → manual →
+checksums order and then validates the instruction pack. The checksum builder uses only regular files
+represented in the Git index, rejects symlinks and unsafe paths, and fails closed when Git is
+unavailable; it never scans untracked workspace content. Stage intended canonical inputs before
+running `python3 -B scripts/sync_generated_evidence.py`.
+Stage the three generated outputs again before `pnpm check:generated`; the check rejects unstaged
+generated bytes and any source whose worktree content differs from the Git index.
 
 If PyYAML is unavailable, the validator prints a warning instead of claiming YAML was parsed. Validate workflow YAML in CI with a pinned parser before activation.
 
-RIT-004 adds three fail-closed repository evidence commands:
+The fail-closed repository evidence commands are:
 
 ```bash
 pnpm check:ci-contract
+pnpm check:architecture
+pnpm check:records
 pnpm check:migrations
+pnpm check:generated
 pnpm scan:secrets
 ```
 
@@ -8022,12 +8439,6 @@ files, transaction loss, and destructive SQL. The current-tree secret policy sca
 unignored file without following symlinks and emits only path, line, rule, and a non-secret
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
-
-RIT-005 adds a separate fail-closed architecture command:
-
-```bash
-pnpm check:architecture
-```
 
 It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
 inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server
@@ -8043,72 +8454,67 @@ It does not replace current Codex CLI validation, legal/trademark review, provid
 
 ```python
 #!/usr/bin/env python3
-"""Build or verify checksums for repository artifacts, excluding ignored files."""
+"""Build or verify checksums for regular files represented in the Git index."""
 
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import hashlib
+import re
+import stat
 import subprocess
 from pathlib import Path
+
+from generated_evidence_io import write_regular_repository_file
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_NAME = "checksums.sha256"
 OUTPUT = ROOT / OUTPUT_NAME
 
-FALLBACK_IGNORED_DIRS = {
-    ".git",
-    ".next",
-    ".turbo",
-    "__pycache__",
-    "coverage",
-    "dist",
-    "node_modules",
-    "playwright-report",
-    "test-results",
-}
-FALLBACK_IGNORED_NAMES = {".DS_Store", ".env"}
-FALLBACK_IGNORED_GLOBS = {".env.*", "*.log", "*.py[cod]", "*.tsbuildinfo"}
+UNSAFE_PATH = re.compile(r"[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]")
 
 
-def _fallback_files() -> set[str]:
-    files: set[str] = set()
-    for path in ROOT.rglob("*"):
-        if not path.is_file():
-            continue
-        rel = path.relative_to(ROOT)
-        if any(part in FALLBACK_IGNORED_DIRS for part in rel.parts[:-1]):
-            continue
-        if rel.name in FALLBACK_IGNORED_NAMES:
-            continue
-        if rel.name != ".env.example" and any(fnmatch.fnmatch(rel.name, pattern) for pattern in FALLBACK_IGNORED_GLOBS):
-            continue
-        files.add(rel.as_posix())
-    return files
+def _safe_index_path(raw: bytes) -> str:
+    try:
+        rel = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError("Git index contains a non-UTF-8 path") from exc
+    pure = Path(rel)
+    if (
+        not rel
+        or rel.startswith("/")
+        or "\\" in rel
+        or pure.is_absolute()
+        or any(part in {"", ".", ".."} for part in pure.parts)
+        or UNSAFE_PATH.search(rel)
+    ):
+        raise RuntimeError(f"Git index contains an unsafe path: {rel!r}")
+    path = ROOT / rel
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Git-indexed file is missing from worktree: {rel}") from exc
+    if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+        raise RuntimeError(f"Checksum inputs must be regular non-symlink files: {rel}")
+    try:
+        path.resolve(strict=True).relative_to(ROOT.resolve(strict=True))
+    except ValueError as exc:
+        raise RuntimeError(f"Checksum input escapes repository: {rel}") from exc
+    return rel
 
 
 def package_files() -> set[str]:
-    """Return tracked and non-ignored untracked repository files."""
+    """Return regular files represented in the Git index, failing closed on Git/path errors."""
     try:
         result = subprocess.run(
-            ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "ls-files", "-z", "--cached"],
             cwd=ROOT,
-            check=False,
+            check=True,
             capture_output=True,
         )
-    except OSError:
-        return _fallback_files()
-
-    if result.returncode != 0:
-        return _fallback_files()
-
-    files = {
-        rel
-        for raw in result.stdout.split(b"\0")
-        if raw and (rel := raw.decode("utf-8")) and (ROOT / rel).is_file()
-    }
-    return files
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("Git index is required to build canonical checksums") from exc
+    return {_safe_index_path(raw) for raw in result.stdout.split(b"\0") if raw}
 
 
 def render_checksums() -> str:
@@ -8132,7 +8538,7 @@ def main() -> int:
         print(f"Checksums are current ({len(package_files()) - 1} entries)")
         return 0
 
-    OUTPUT.write_text(rendered, encoding="utf-8")
+    write_regular_repository_file(ROOT, OUTPUT, rendered)
     print(f"Wrote {OUTPUT_NAME} with {len(package_files()) - 1} entries")
     return 0
 
@@ -8155,11 +8561,14 @@ import argparse
 import re
 from pathlib import Path
 
+from generated_evidence_io import require_regular_repository_file, write_regular_repository_file
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "RITUVIA_CODEX_BUILD_MANUAL.md"
 
 SOURCE_FILES = [
     ".gitignore",
+    ".gitattributes",
     "README.md",
     "MANIFEST.md",
     "QA_REPORT.md",
@@ -8171,6 +8580,9 @@ SOURCE_FILES = [
     "DECISIONS.md",
     "ROADMAP.md",
     "BACKLOG.md",
+    "CONTRIBUTING.md",
+    "records/README.md",
+    "records/INDEX.md",
     *[f"docs/{index:02d}_{name}.md" for index, name in enumerate([
         "PROJECT_CHARTER",
         "PRODUCT_REQUIREMENTS",
@@ -8227,6 +8639,7 @@ SOURCE_FILES = [
     "automation/prompts/release-readiness.md",
     "automation/prompts/weekly-product-review.md",
     "automation/schemas/task-result.schema.json",
+    "automation/examples/task-result.example.json",
     ".github/codex/prompts/localization.md",
     ".github/codex/prompts/next-task.md",
     ".github/codex/prompts/release.md",
@@ -8246,6 +8659,9 @@ SOURCE_FILES = [
     "scripts/README.md",
     "scripts/build_checksums.py",
     "scripts/build_compiled_manual.py",
+    "scripts/build_record_index.py",
+    "scripts/generated_evidence_io.py",
+    "scripts/sync_generated_evidence.py",
     "scripts/validate_instruction_pack.py",
     "reference/README.md",
 ]
@@ -8270,9 +8686,8 @@ def snapshot_date() -> str:
 
 
 def render_manual() -> str:
-    missing = [path for path in SOURCE_FILES if not (ROOT / path).is_file()]
-    if missing:
-        raise FileNotFoundError(f"Manual source files missing: {missing}")
+    for item in SOURCE_FILES:
+        require_regular_repository_file(ROOT, ROOT / item)
 
     lines = [
         "# RITUVIA — Complete Codex Build Manual",
@@ -8337,8 +8752,344 @@ def main() -> int:
         print(f"Compiled manual is current ({len(SOURCE_FILES)} embedded sources)")
         return 0
 
-    OUTPUT.write_text(rendered, encoding="utf-8")
+    write_regular_repository_file(ROOT, OUTPUT, rendered)
     print(f"Wrote {OUTPUT.relative_to(ROOT)} with {len(SOURCE_FILES)} embedded sources")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+---
+
+# File: `scripts/build_record_index.py`
+
+```python
+#!/usr/bin/env python3
+"""Build or verify the deterministic compact durable-record index."""
+
+from __future__ import annotations
+
+import argparse
+import re
+import stat
+from dataclasses import dataclass
+from pathlib import Path
+
+from generated_evidence_io import write_regular_repository_file
+
+ROOT = Path(__file__).resolve().parents[1]
+RECORD_ROOT = ROOT / "records"
+OUTPUT = RECORD_ROOT / "INDEX.md"
+MAX_RECORD_BYTES = 64 * 1024
+
+TYPE_RULES = (
+    ("Decision", "decisions", re.compile(r"D-[0-9]{3}")),
+    ("Task", "tasks", re.compile(r"RIT-[0-9]{3}")),
+    ("Incident", "incidents", re.compile(r"INC-[0-9]{3}")),
+    ("Experiment", "experiments", re.compile(r"EXP-[0-9]{3}")),
+)
+
+
+@dataclass(frozen=True)
+class Record:
+    kind: str
+    record_id: str
+    title: str
+    path: str
+
+
+def _regular_repository_file(path: Path) -> None:
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise ValueError(f"record file disappeared: {path.relative_to(ROOT)}") from exc
+    if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+        raise ValueError(f"record inputs must be regular non-symlink files: {path.relative_to(ROOT)}")
+    try:
+        path.resolve(strict=True).relative_to(ROOT.resolve(strict=True))
+    except ValueError as exc:
+        raise ValueError(f"record path escapes repository: {path}") from exc
+    if path.stat().st_size > MAX_RECORD_BYTES:
+        raise ValueError(f"record exceeds {MAX_RECORD_BYTES} bytes: {path.relative_to(ROOT)}")
+
+
+def records() -> tuple[Record, ...]:
+    found: list[Record] = []
+    seen: set[str] = set()
+    for kind, directory, id_pattern in TYPE_RULES:
+        base = RECORD_ROOT / directory
+        if not base.exists():
+            continue
+        if not base.is_dir() or base.is_symlink():
+            raise ValueError(f"record directory is unsafe: records/{directory}")
+        for path in sorted(base.iterdir(), key=lambda item: item.name):
+            _regular_repository_file(path)
+            match = re.fullmatch(rf"({id_pattern.pattern})\.md", path.name)
+            if match is None:
+                raise ValueError(f"unexpected record filename: {path.relative_to(ROOT)}")
+            record_id = match.group(1)
+            if record_id in seen:
+                raise ValueError(f"duplicate record ID: {record_id}")
+            seen.add(record_id)
+            try:
+                first_line = path.read_text(encoding="utf-8").splitlines()[0]
+            except (UnicodeDecodeError, IndexError) as exc:
+                raise ValueError(f"record is empty or not UTF-8: {path.relative_to(ROOT)}") from exc
+            heading = re.fullmatch(rf"# {re.escape(record_id)}: (.+)", first_line)
+            if heading is None or not heading.group(1).strip():
+                raise ValueError(f"record heading must match filename ID: {path.relative_to(ROOT)}")
+            title = heading.group(1).strip()
+            if "|" in title or "\n" in title or "\r" in title:
+                raise ValueError(f"record title contains an unsafe table delimiter: {path.relative_to(ROOT)}")
+            found.append(Record(kind, record_id, title, path.relative_to(ROOT).as_posix()))
+    return tuple(sorted(found, key=lambda item: (item.kind, item.record_id, item.path)))
+
+
+def render_index() -> str:
+    lines = [
+        "# Durable record index",
+        "",
+        "> Generated by `scripts/build_record_index.py`; do not edit by hand.",
+        "",
+        "| Type | ID | Title | Record |",
+        "| --- | --- | --- | --- |",
+    ]
+    for item in records():
+        target = item.path.removeprefix("records/")
+        lines.append(f"| {item.kind} | {item.record_id} | {item.title} | [{target}](./{target}) |")
+    lines.extend(["", "The index is discovery metadata only; canonical state and approvals remain in their named sources.", ""])
+    return "\n".join(lines)
+
+
+def write_index() -> None:
+    write_regular_repository_file(ROOT, OUTPUT, render_index())
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="fail if the committed index is stale")
+    args = parser.parse_args()
+    try:
+        rendered = render_index()
+    except ValueError as exc:
+        print(f"Record index validation failed: {exc}")
+        return 1
+    if args.check:
+        if OUTPUT.is_symlink() or not OUTPUT.is_file() or OUTPUT.read_text(encoding="utf-8") != rendered:
+            print("Record index is stale; run: python3 scripts/sync_generated_evidence.py")
+            return 1
+        print(f"Record index is current ({len(records())} records)")
+        return 0
+    if OUTPUT.exists() and (OUTPUT.is_symlink() or not stat.S_ISREG(OUTPUT.lstat().st_mode)):
+        print("Record index output must be a regular non-symlink file")
+        return 1
+    write_index()
+    print(f"Wrote {OUTPUT.relative_to(ROOT)} with {len(records())} records")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+---
+
+# File: `scripts/generated_evidence_io.py`
+
+```python
+"""Fail-closed repository file I/O shared by generated-evidence builders."""
+
+from __future__ import annotations
+
+import os
+import stat
+import tempfile
+from pathlib import Path
+
+
+def require_regular_repository_file(root: Path, path: Path) -> None:
+    root_real = root.resolve(strict=True)
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise ValueError(f"required repository file is missing: {path.relative_to(root)}") from exc
+    if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+        raise ValueError(f"repository input must be a regular non-symlink file: {path.relative_to(root)}")
+    try:
+        path.resolve(strict=True).relative_to(root_real)
+    except ValueError as exc:
+        raise ValueError(f"repository input escapes root: {path}") from exc
+
+
+def preflight_output(root: Path, path: Path) -> None:
+    root_real = root.resolve(strict=True)
+    parent = path.parent
+    if parent.is_symlink() or not parent.is_dir():
+        raise ValueError(f"generated output parent is unsafe: {parent}")
+    try:
+        parent.resolve(strict=True).relative_to(root_real)
+    except ValueError as exc:
+        raise ValueError(f"generated output parent escapes root: {parent}") from exc
+    if not path.exists() and not path.is_symlink():
+        return
+    require_regular_repository_file(root, path)
+
+
+def write_regular_repository_file(root: Path, path: Path, content: str) -> None:
+    preflight_output(root, path)
+    temporary_name: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            "w",
+            dir=path.parent,
+            encoding="utf-8",
+            newline="",
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary_name = handle.name
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_name, path)
+        temporary_name = None
+    finally:
+        if temporary_name is not None:
+            try:
+                Path(temporary_name).unlink()
+            except FileNotFoundError:
+                pass
+```
+
+---
+
+# File: `scripts/sync_generated_evidence.py`
+
+```python
+#!/usr/bin/env python3
+"""Synchronize record index, compiled manual, then tracked-file checksums."""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from build_checksums import OUTPUT as CHECKSUM_OUTPUT, ROOT, package_files, render_checksums
+from build_compiled_manual import OUTPUT as MANUAL_OUTPUT, SOURCE_FILES, render_manual
+from build_record_index import OUTPUT as INDEX_OUTPUT, records, render_index
+from generated_evidence_io import (
+    preflight_output,
+    require_regular_repository_file,
+    write_regular_repository_file,
+)
+
+
+def _check(path, rendered: str, label: str) -> bool:
+    if path.is_symlink() or not path.is_file() or path.read_text(encoding="utf-8") != rendered:
+        print(f"{label} is stale; run: python3 scripts/sync_generated_evidence.py")
+        return False
+    return True
+
+
+def _unstaged_paths() -> set[str]:
+    result = subprocess.run(
+        ["git", "diff", "--name-only", "-z", "--diff-filter=ACDMRTUXB", "--"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    try:
+        return {raw.decode("utf-8", errors="strict") for raw in result.stdout.split(b"\0") if raw}
+    except UnicodeDecodeError as exc:
+        raise RuntimeError("Git reported a non-UTF-8 unstaged path") from exc
+
+
+def _untracked_canonical_paths() -> set[str]:
+    result = subprocess.run(
+        [
+            "git",
+            "ls-files",
+            "-z",
+            "--others",
+            "--exclude-standard",
+            "--",
+            "scripts",
+            "tests",
+            "automation",
+            "records",
+            ".github",
+            "apps",
+            "packages",
+            "templates",
+            "docs",
+            "content",
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+    )
+    try:
+        return {raw.decode("utf-8", errors="strict") for raw in result.stdout.split(b"\0") if raw}
+    except UnicodeDecodeError as exc:
+        raise RuntimeError("Git reported a non-UTF-8 untracked canonical path") from exc
+
+
+def _require_staged_sources(*, check_outputs: bool) -> None:
+    outputs = {
+        INDEX_OUTPUT.relative_to(ROOT).as_posix(),
+        MANUAL_OUTPUT.relative_to(ROOT).as_posix(),
+        CHECKSUM_OUTPUT.relative_to(ROOT).as_posix(),
+    }
+    unstaged = _unstaged_paths()
+    untracked = sorted(_untracked_canonical_paths())
+    if untracked:
+        raise RuntimeError(f"canonical paths must be represented in the Git index: {untracked}")
+    forbidden = sorted(unstaged if check_outputs else unstaged - outputs)
+    if forbidden:
+        if check_outputs:
+            raise RuntimeError(f"generated outputs must be staged before verification: {forbidden}")
+        raise RuntimeError(f"canonical input bytes must be staged before synchronization: {forbidden}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="verify all generated outputs without writing")
+    args = parser.parse_args()
+
+    if args.check:
+        _require_staged_sources(check_outputs=True)
+        index_ok = _check(INDEX_OUTPUT, render_index(), "Record index")
+        manual_ok = index_ok and _check(MANUAL_OUTPUT, render_manual(), "Compiled manual")
+        checksums_ok = manual_ok and _check(CHECKSUM_OUTPUT, render_checksums(), "Checksums")
+        if not (index_ok and manual_ok and checksums_ok):
+            return 1
+        print("Generated evidence is current in index -> manual -> checksums order")
+        return 0
+
+    _require_staged_sources(check_outputs=False)
+    for output in (INDEX_OUTPUT, MANUAL_OUTPUT, CHECKSUM_OUTPUT):
+        preflight_output(ROOT, output)
+    rendered_index = render_index()
+    for item in SOURCE_FILES:
+        require_regular_repository_file(ROOT, ROOT / item)
+    indexed = package_files()
+    required = set(SOURCE_FILES) | {item.path for item in records()} | {
+        CHECKSUM_OUTPUT.relative_to(ROOT).as_posix(),
+        MANUAL_OUTPUT.relative_to(ROOT).as_posix(),
+    }
+    missing = sorted(required - indexed)
+    if missing:
+        raise RuntimeError(f"canonical inputs must be staged before synchronization: {missing}")
+    write_regular_repository_file(ROOT, INDEX_OUTPUT, rendered_index)
+    write_regular_repository_file(ROOT, MANUAL_OUTPUT, render_manual())
+    write_regular_repository_file(ROOT, CHECKSUM_OUTPUT, render_checksums())
+    print("Synchronized records/INDEX.md -> RITUVIA_CODEX_BUILD_MANUAL.md -> checksums.sha256")
     return 0
 
 
@@ -8368,6 +9119,7 @@ sys.dont_write_bytecode = True
 
 from build_checksums import package_files
 from build_compiled_manual import SOURCE_FILES, render_manual
+from build_record_index import records
 
 try:
     import yaml  # type: ignore
@@ -8394,6 +9146,11 @@ ALLOWED_STATUSES = {
 }
 
 TASK_RESULT_REQUIRED = {
+    "schema_version",
+    "run_id",
+    "as_of",
+    "repository_revision",
+    "branch",
     "task_id",
     "status",
     "summary",
@@ -8404,6 +9161,8 @@ TASK_RESULT_REQUIRED = {
     "blockers",
     "risks",
     "owner_actions",
+    "record_refs",
+    "rollback_notes",
     "next_recommended_task",
 }
 TASK_RESULT_STATUSES = {"completed", "partial", "blocked", "review_only", "no_change"}
@@ -8417,6 +9176,17 @@ def validate_expected(failures: list[str]) -> None:
     for rel in EXPECTED:
         if not (ROOT / rel).is_file():
             fail(f"Missing required file: {rel}", failures)
+
+
+def validate_canonical_inputs_are_indexed(failures: list[str]) -> None:
+    indexed = package_files()
+    required = set(SOURCE_FILES) | {record.path for record in records()} | {
+        "RITUVIA_CODEX_BUILD_MANUAL.md",
+        "checksums.sha256",
+    }
+    missing = sorted(required - indexed)
+    if missing:
+        fail(f"Canonical inputs are absent from the Git index: {missing}", failures)
 
 
 def package_paths() -> list[Path]:
@@ -8579,6 +9349,11 @@ def validate_rules(failures: list[str]) -> None:
             fail(f"Unsupported rule decision: {decision}", failures)
 
 
+def validate_line_ending_policy(failures: list[str]) -> None:
+    if (ROOT / ".gitattributes").read_text(encoding="utf-8") != "* text=auto eol=lf\n":
+        fail(".gitattributes must enforce deterministic LF worktree text", failures)
+
+
 def validate_task_result_schema(failures: list[str]) -> None:
     path = ROOT / "automation/schemas/task-result.schema.json"
     schema = json.loads(path.read_text(encoding="utf-8"))
@@ -8596,12 +9371,19 @@ def validate_task_result_schema(failures: list[str]) -> None:
         fail(f"Task-result required fields drifted: {sorted(required ^ TASK_RESULT_REQUIRED)}", failures)
     if set(property_map.get("status", {}).get("enum", [])) != TASK_RESULT_STATUSES:
         fail("Task-result status enum drifted", failures)
-    for field in ("task_id", "next_recommended_task"):
-        definition = property_map.get(field, {})
-        if set(definition.get("type", [])) != {"string", "null"}:
-            fail(f"Task-result {field} must allow a task ID or null", failures)
-        if definition.get("pattern") != "^(RIT|OWN)-[0-9]{3}$":
-            fail(f"Task-result {field} pattern drifted", failures)
+    task_definition = property_map.get("task_id", {})
+    if set(task_definition.get("type", [])) != {"string", "null"} or task_definition.get("pattern") != "^RIT-[0-9]{3}$":
+        fail("Task-result task_id must allow only a RIT task ID or null", failures)
+    next_definition = property_map.get("next_recommended_task", {})
+    if set(next_definition.get("type", [])) != {"string", "null"} or next_definition.get("pattern") != "^(?:RIT|OWN)-[0-9]{3}$":
+        fail("Task-result next_recommended_task pattern drifted", failures)
+    if property_map.get("schema_version", {}).get("const") != 1:
+        fail("Task-result schema_version must remain 1", failures)
+    if property_map.get("record_refs", {}).get("additionalProperties") is not False:
+        fail("Task-result record_refs must remain a closed object", failures)
+    risk_status = property_map.get("risks", {}).get("items", {}).get("properties", {}).get("status", {}).get("enum", [])
+    if set(risk_status) != {"open", "mitigated"}:
+        fail("Task-result risk status must remain open or mitigated", failures)
     for field in ("assumptions", "blockers"):
         if property_map.get(field, {}).get("type") != "array":
             fail(f"Task-result {field} must remain an array", failures)
@@ -8705,6 +9487,7 @@ def main() -> int:
             print(f"- {item}", file=sys.stderr)
         return 1
 
+    validate_canonical_inputs_are_indexed(failures)
     validate_toml_json_yaml(failures, warnings)
     if failures:
         print("RITUVIA instruction-pack validation FAILED", file=sys.stderr)
@@ -8717,6 +9500,7 @@ def main() -> int:
     validate_agents_size(failures)
     validate_codex_agents(failures)
     validate_rules(failures)
+    validate_line_ending_policy(failures)
     validate_task_result_schema(failures)
     validate_local_markdown_links(failures)
     validate_brand_legacy(failures)

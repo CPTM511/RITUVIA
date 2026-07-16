@@ -26,9 +26,10 @@ An English-first, Web/PWA product for global users that offers:
 2. Read `CODEX_MASTER_PROMPT.md` and submit it to Codex for the first implementation session.
 3. Treat `PROJECT_STATUS.md`, `BACKLOG.md`, `ROADMAP.md`, and `DECISIONS.md` as persistent operational memory.
 4. Read `ENGINEERING_BASELINE.md` for the observed repository state and exact M0 execution plan.
-5. Use the documents under `docs/` as canonical specifications.
-6. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
-7. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
+5. Follow `CONTRIBUTING.md` and the typed durable-record policy in `records/README.md`.
+6. Use the documents under `docs/` as canonical specifications.
+7. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
+8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
 
 ## Local development
 
@@ -39,7 +40,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate first verifies the active CI contract, immutable migration manifest, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
 
 ### Continuous integration
 
@@ -118,7 +119,9 @@ Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or
 
 ## Current status
 
-The strategy, operating specifications, RIT-000 evidence baseline, RIT-001 reproducible TypeScript monorepo, RIT-002 typed configuration boundary, RIT-003 local PostgreSQL/Prisma foundation, RIT-005 fail-closed package architecture policy, RIT-006 privacy-safe local observability baseline, and RIT-007 typed safe-off feature-flag registry are complete. RIT-004 CI gates are implemented and locally verified but remain blocked until an owner-approved GitHub remote, required checks, and a passing hosted run exist. RIT-009 is the next Ready task because RIT-008 still depends on blocked RIT-004. No user-facing product feature is implemented yet.
+Current task state, dependencies, and executable-next selection live only in `BACKLOG.md`; current
+capabilities, blockers, environments, and quality totals live only in `PROJECT_STATUS.md`. This
+orientation file intentionally does not copy their mutable snapshot.
 
 ## Non-negotiable product principle
 

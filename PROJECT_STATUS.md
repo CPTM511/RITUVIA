@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M0 engineering foundation in progress; package architecture, local observability, typed safe-off feature flags, and repository CI quality gates implemented and locally verified; hosted evidence pending; product features not started.
+**Stage:** M0 engineering foundation in progress; package architecture, local observability, typed safe-off feature flags, repository CI quality gates, and durable repository records implemented and locally verified; hosted evidence pending; product features not started.
 
 **Release:** Pre-M0
 
@@ -19,6 +19,7 @@
 - Sequenced roadmap and executable backlog.
 - Codex root/nested instructions, specialized roles, command rules, automation prompts, and review templates.
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
+- Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Minimal buildable Next.js Web shell, cancellable Worker runtime, and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
@@ -30,7 +31,7 @@
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 172 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
+- Root formatting, ESLint, TypeScript, 216 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral and artifact verification.
 
 ## What does not exist yet
 
@@ -60,13 +61,15 @@
 
 These do not block local engineering foundation work.
 
-## Next task
+## Queue authority
 
-`RIT-009` — Ready: connect ADR, task, incident, and experiment records to repository contribution workflows without stale duplication. RIT-008 remains Planned because it depends on blocked RIT-004 hosted-CI evidence.
+`BACKLOG.md` alone determines the executable next task from priority, status, dependencies, and
+owner gates. This dated capability snapshot intentionally does not copy a task ID; blocked context
+remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 172 unit/contract tests in 18 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The build verifier checks 22 emitted artifacts and narrowed runtime exports. The architecture verifier audits 53 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, exact feature-flag composition, JSDoc/type edges, and file/module cycles. Feature-flag tests prove strict typed registry metadata, safe-off evaluation, owner-gate and canonical-scope validation, scheduled activation, emergency off, expiry/removal behavior, version-qualified rolling upgrade/rollback, and fail-closed live database privilege attestation. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, separated non-superuser migrator/read-only runtime/append-only control roles, forced RLS, exact activation constraints, guarded reset, non-empty logical dump/restore with exact row comparison, transaction/race behavior, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, deterministic generation, migration deployment/status/drift, exact migration inventory, activation and append-only constraints, registry-version coexistence, DDL denial, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved high issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across six workspaces, 216 unit/contract tests in 20 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The record-policy mutation suite covers typed filenames and headings, authority duplication, task/decision graphs, incident and experiment gates, privacy-safe Markdown, contextual task-result semantics, and schema drift; generated evidence is staged and verified in the exact index-to-manual-to-checksums order. The build verifier checks 22 emitted artifacts and narrowed runtime exports. The architecture verifier audits 53 active source files across six modules, and its mutation suite covers forbidden directions, browser/server bridges, provider leakage, unsafe exports, runtime/tool separation, host globals, dynamic loading, reflection, raw output, structured-console shape, Worker continuation capability imports, exact feature-flag composition, JSDoc/type edges, and file/module cycles. Feature-flag tests prove strict typed registry metadata, safe-off evaluation, owner-gate and canonical-scope validation, scheduled activation, emergency off, expiry/removal behavior, version-qualified rolling upgrade/rollback, and fail-closed live database privilege attestation. The real Web boundary test proves a server-generated `x-request-id`, a correlated structured proxy-handoff trace, client correlation override, and absence of server-only canaries from HTTP and observability output. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, separated non-superuser migrator/read-only runtime/append-only control roles, forced RLS, exact activation constraints, guarded reset, non-empty logical dump/restore with exact row comparison, transaction/race behavior, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, deterministic generation, migration deployment/status/drift, exact migration inventory, activation and append-only constraints, registry-version coexistence, DDL denial, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, security, and dependency reviews found no unresolved P0/P1 issue after remediation. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
 
 ## Update rules
 

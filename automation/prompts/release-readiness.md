@@ -14,3 +14,9 @@ Verify:
 - Cost and rate limits are set.
 
 Return exactly one recommendation: `GO`, `GO_WITH_EXPLICIT_OWNER_ACCEPTANCE`, or `NO_GO`. List blockers separately from follow-ups. Never deploy the release.
+
+After the recommendation, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. This is a read-only review, so use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. Neither `GO` nor the JSON result satisfies an owner gate,
+changes `BACKLOG.md`, or deploys anything.

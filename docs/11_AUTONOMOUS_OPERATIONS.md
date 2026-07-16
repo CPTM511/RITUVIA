@@ -30,9 +30,12 @@ The main Codex session is the orchestrator and primary writer. Subagents should 
 - `DECISIONS.md`: accepted decisions and supersessions.
 - Tests and fixtures: executable product memory.
 - Git commits/PRs: implementation history.
-- ADRs/incident/experiment records: rationale and learning.
+- `records/tasks/RIT-NNN.md`: scope, acceptance, verification, risk, and rollback without copied queue state.
+- `records/decisions/D-NNN.md`: detailed rationale linked from the accepted `DECISIONS.md` register.
+- `records/incidents/INC-NNN.md` and `records/experiments/EXP-NNN.md`: minimized facts and learning linked to backlog work.
 
 Every run begins by reconciling these sources with reality and ends by updating them.
+The generated compact `records/INDEX.md` aids discovery but is never an authority for state or approval.
 
 ## 4. Task state machine
 

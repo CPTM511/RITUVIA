@@ -50,11 +50,15 @@ describe("active CI workflow contract", () => {
     ]);
   });
 
-  it("rejects attempts to remove the explicit architecture gate from repository scripts", () => {
+  it("rejects attempts to remove explicit repository evidence gates from scripts", () => {
     const valid = {
       "check:architecture": "node --import tsx scripts/verify-architecture.ts",
+      "check:generated":
+        "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
+      "check:records":
+        "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
       "check:evidence":
-        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:migrations && pnpm scan:secrets",
+        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
     };
     expect(auditCiScripts(valid)).toEqual([]);
@@ -139,6 +143,36 @@ describe("active CI workflow contract", () => {
       ]),
     );
   });
+
+  it.each(["pnpm check:records", "pnpm check:generated"])(
+    "rejects removal or reordering of the %s workflow gate",
+    (command) => {
+      const removed = cloneWorkflow();
+      const removedSteps = record(record(removed.jobs).quality).steps as unknown[];
+      const index = removedSteps.findIndex((step) => record(step).run === command);
+      if (index < 0) throw new Error(`${command} fixture step missing`);
+      removedSteps.splice(index, 1);
+      expect(auditCiWorkflow(removed)).toEqual(
+        expect.arrayContaining([
+          { location: "jobs.quality", rule: "run-command-sequence" },
+          { location: "jobs.quality", rule: "step-sequence" },
+        ]),
+      );
+
+      const reordered = cloneWorkflow();
+      const reorderedSteps = record(record(reordered.jobs).quality).steps as unknown[];
+      const current = reorderedSteps.findIndex((step) => record(step).run === command);
+      if (current < 0) throw new Error(`${command} fixture step missing`);
+      [reorderedSteps[current], reorderedSteps[current + 1]] = [
+        reorderedSteps[current + 1],
+        reorderedSteps[current],
+      ];
+      expect(auditCiWorkflow(reordered)).toContainEqual({
+        location: "jobs.quality",
+        rule: "run-command-sequence",
+      });
+    },
+  );
 
   it("rejects any extra PostgreSQL service environment key", () => {
     const candidate = cloneWorkflow();

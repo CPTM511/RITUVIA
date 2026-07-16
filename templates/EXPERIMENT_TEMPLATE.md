@@ -2,7 +2,11 @@
 
 - Status: Draft | Approved | Running | Stopped | Concluded
 - Owner:
-- Related task/decision:
+- Related tasks/decisions:
+- Required owner/qualified-reviewer gates:
+- Gate evidence references: None
+- Qualified review task: None
+- Qualified review evidence: None
 - Population/countries/locales:
 - Start/end:
 
@@ -16,17 +20,23 @@ Eligibility, unit of randomization, allocation, exclusions, persistence, and con
 
 ## Metrics
 
-- Primary metric and denominator:
-- Guardrails: safety, free-path quality, refund/dispute, trust, accessibility, retention, performance, cost.
-- Minimum detectable effect / duration / stopping rule:
+- Primary metric:
+- Guardrails:
+- Stopping rule:
 
 ## Ethics and privacy
 
 No vulnerable-state targeting, private-text features, deceptive urgency, or paid-efficacy framing. State consent and data minimization.
 
+Running status does not itself prove approval. Before assignment begins, link a completed related RIT
+review dossier whose checked evidence covers safety, privacy, and cultural review. Any listed OWN gate
+must be both Done and a declared dependency of that related RIT task.
+
 ## Implementation and QA
 
-Flags, analytics schema, sample-ratio checks, locale/device/payment coverage, and rollback.
+- Flags, analytics schema, sample-ratio checks, and locale/device/payment coverage:
+- Rollback:
+- Cleanup date: YYYY-MM-DD
 
 ## Results
 

@@ -19,7 +19,9 @@ const expectedRunCommands = Object.freeze({
     "pnpm install --frozen-lockfile",
     "pnpm check:ci-contract",
     "pnpm check:architecture",
+    "pnpm check:records",
     "pnpm check:migrations",
+    "pnpm check:generated",
     "pnpm format:check",
     "pnpm lint",
     "pnpm typecheck",
@@ -116,8 +118,12 @@ export const auditToolchainVersions = ({
 export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
   const expected = Object.freeze({
     "check:architecture": "node --import tsx scripts/verify-architecture.ts",
+    "check:generated":
+      "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
+    "check:records":
+      "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
     "check:evidence":
-      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:migrations && pnpm scan:secrets",
+      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
   });
   if (!isRecord(scripts)) return [{ location: "package.json#scripts", rule: "ci-scripts" }];

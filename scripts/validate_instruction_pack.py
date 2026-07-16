@@ -15,6 +15,7 @@ sys.dont_write_bytecode = True
 
 from build_checksums import package_files
 from build_compiled_manual import SOURCE_FILES, render_manual
+from build_record_index import records
 
 try:
     import yaml  # type: ignore
@@ -41,6 +42,11 @@ ALLOWED_STATUSES = {
 }
 
 TASK_RESULT_REQUIRED = {
+    "schema_version",
+    "run_id",
+    "as_of",
+    "repository_revision",
+    "branch",
     "task_id",
     "status",
     "summary",
@@ -51,6 +57,8 @@ TASK_RESULT_REQUIRED = {
     "blockers",
     "risks",
     "owner_actions",
+    "record_refs",
+    "rollback_notes",
     "next_recommended_task",
 }
 TASK_RESULT_STATUSES = {"completed", "partial", "blocked", "review_only", "no_change"}
@@ -64,6 +72,17 @@ def validate_expected(failures: list[str]) -> None:
     for rel in EXPECTED:
         if not (ROOT / rel).is_file():
             fail(f"Missing required file: {rel}", failures)
+
+
+def validate_canonical_inputs_are_indexed(failures: list[str]) -> None:
+    indexed = package_files()
+    required = set(SOURCE_FILES) | {record.path for record in records()} | {
+        "RITUVIA_CODEX_BUILD_MANUAL.md",
+        "checksums.sha256",
+    }
+    missing = sorted(required - indexed)
+    if missing:
+        fail(f"Canonical inputs are absent from the Git index: {missing}", failures)
 
 
 def package_paths() -> list[Path]:
@@ -226,6 +245,11 @@ def validate_rules(failures: list[str]) -> None:
             fail(f"Unsupported rule decision: {decision}", failures)
 
 
+def validate_line_ending_policy(failures: list[str]) -> None:
+    if (ROOT / ".gitattributes").read_text(encoding="utf-8") != "* text=auto eol=lf\n":
+        fail(".gitattributes must enforce deterministic LF worktree text", failures)
+
+
 def validate_task_result_schema(failures: list[str]) -> None:
     path = ROOT / "automation/schemas/task-result.schema.json"
     schema = json.loads(path.read_text(encoding="utf-8"))
@@ -243,12 +267,19 @@ def validate_task_result_schema(failures: list[str]) -> None:
         fail(f"Task-result required fields drifted: {sorted(required ^ TASK_RESULT_REQUIRED)}", failures)
     if set(property_map.get("status", {}).get("enum", [])) != TASK_RESULT_STATUSES:
         fail("Task-result status enum drifted", failures)
-    for field in ("task_id", "next_recommended_task"):
-        definition = property_map.get(field, {})
-        if set(definition.get("type", [])) != {"string", "null"}:
-            fail(f"Task-result {field} must allow a task ID or null", failures)
-        if definition.get("pattern") != "^(RIT|OWN)-[0-9]{3}$":
-            fail(f"Task-result {field} pattern drifted", failures)
+    task_definition = property_map.get("task_id", {})
+    if set(task_definition.get("type", [])) != {"string", "null"} or task_definition.get("pattern") != "^RIT-[0-9]{3}$":
+        fail("Task-result task_id must allow only a RIT task ID or null", failures)
+    next_definition = property_map.get("next_recommended_task", {})
+    if set(next_definition.get("type", [])) != {"string", "null"} or next_definition.get("pattern") != "^(?:RIT|OWN)-[0-9]{3}$":
+        fail("Task-result next_recommended_task pattern drifted", failures)
+    if property_map.get("schema_version", {}).get("const") != 1:
+        fail("Task-result schema_version must remain 1", failures)
+    if property_map.get("record_refs", {}).get("additionalProperties") is not False:
+        fail("Task-result record_refs must remain a closed object", failures)
+    risk_status = property_map.get("risks", {}).get("items", {}).get("properties", {}).get("status", {}).get("enum", [])
+    if set(risk_status) != {"open", "mitigated"}:
+        fail("Task-result risk status must remain open or mitigated", failures)
     for field in ("assumptions", "blockers"):
         if property_map.get(field, {}).get("type") != "array":
             fail(f"Task-result {field} must remain an array", failures)
@@ -352,6 +383,7 @@ def main() -> int:
             print(f"- {item}", file=sys.stderr)
         return 1
 
+    validate_canonical_inputs_are_indexed(failures)
     validate_toml_json_yaml(failures, warnings)
     if failures:
         print("RITUVIA instruction-pack validation FAILED", file=sys.stderr)
@@ -364,6 +396,7 @@ def main() -> int:
     validate_agents_size(failures)
     validate_codex_agents(failures)
     validate_rules(failures)
+    validate_line_ending_policy(failures)
     validate_task_result_schema(failures)
     validate_local_markdown_links(failures)
     validate_brand_legacy(failures)

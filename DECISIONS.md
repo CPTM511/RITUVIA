@@ -1,6 +1,8 @@
 # RITUVIA Decision Log
 
-This is an append-only summary of accepted architectural and product decisions. Detailed decisions may use `templates/ADR_TEMPLATE.md`. Do not rewrite historical rationale; supersede it with a new entry.
+This is an append-only summary of accepted architectural and product decisions. Detailed decisions use
+`records/decisions/D-NNN.md` and the template in `templates/ADR_TEMPLATE.md`. A detailed record is not
+effective until this register links it. Do not rewrite historical rationale; supersede it with a new entry.
 
 ## Accepted decisions
 
@@ -154,4 +156,10 @@ This is an append-only summary of accepted architectural and product decisions. 
   append-only provenance, deterministic version isolation, and mandatory cleanup make incomplete
   or compromised runtime configuration fail closed without claiming that a future admin UI or
   owner-approval record system already exists.
+- **Date:** 2026-07-17
+
+### [D-022 — Canonical repository record workflow](records/decisions/D-022.md)
+
+- **Decision:** Keep backlog and decision state in their canonical registers; link bounded typed detail records through a generated compact index and machine-validated task results. Build canonical checksums from regular files in the Git index only, after the record index and compiled manual.
+- **Reason:** Stable links and fail-closed generation preserve traceability without duplicating mutable state, leaking untracked personal files, or allowing a record to manufacture owner approval. This clarifies D-014's package scope without superseding its canonical-source or manual-order rules.
 - **Date:** 2026-07-17

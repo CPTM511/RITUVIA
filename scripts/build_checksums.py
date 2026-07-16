@@ -1,70 +1,65 @@
 #!/usr/bin/env python3
-"""Build or verify checksums for repository artifacts, excluding ignored files."""
+"""Build or verify checksums for regular files represented in the Git index."""
 
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import hashlib
+import re
+import stat
 import subprocess
 from pathlib import Path
+
+from generated_evidence_io import write_regular_repository_file
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_NAME = "checksums.sha256"
 OUTPUT = ROOT / OUTPUT_NAME
 
-FALLBACK_IGNORED_DIRS = {
-    ".git",
-    ".next",
-    ".turbo",
-    "__pycache__",
-    "coverage",
-    "dist",
-    "node_modules",
-    "playwright-report",
-    "test-results",
-}
-FALLBACK_IGNORED_NAMES = {".DS_Store", ".env"}
-FALLBACK_IGNORED_GLOBS = {".env.*", "*.log", "*.py[cod]", "*.tsbuildinfo"}
+UNSAFE_PATH = re.compile(r"[\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069]")
 
 
-def _fallback_files() -> set[str]:
-    files: set[str] = set()
-    for path in ROOT.rglob("*"):
-        if not path.is_file():
-            continue
-        rel = path.relative_to(ROOT)
-        if any(part in FALLBACK_IGNORED_DIRS for part in rel.parts[:-1]):
-            continue
-        if rel.name in FALLBACK_IGNORED_NAMES:
-            continue
-        if rel.name != ".env.example" and any(fnmatch.fnmatch(rel.name, pattern) for pattern in FALLBACK_IGNORED_GLOBS):
-            continue
-        files.add(rel.as_posix())
-    return files
+def _safe_index_path(raw: bytes) -> str:
+    try:
+        rel = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError("Git index contains a non-UTF-8 path") from exc
+    pure = Path(rel)
+    if (
+        not rel
+        or rel.startswith("/")
+        or "\\" in rel
+        or pure.is_absolute()
+        or any(part in {"", ".", ".."} for part in pure.parts)
+        or UNSAFE_PATH.search(rel)
+    ):
+        raise RuntimeError(f"Git index contains an unsafe path: {rel!r}")
+    path = ROOT / rel
+    try:
+        mode = path.lstat().st_mode
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Git-indexed file is missing from worktree: {rel}") from exc
+    if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+        raise RuntimeError(f"Checksum inputs must be regular non-symlink files: {rel}")
+    try:
+        path.resolve(strict=True).relative_to(ROOT.resolve(strict=True))
+    except ValueError as exc:
+        raise RuntimeError(f"Checksum input escapes repository: {rel}") from exc
+    return rel
 
 
 def package_files() -> set[str]:
-    """Return tracked and non-ignored untracked repository files."""
+    """Return regular files represented in the Git index, failing closed on Git/path errors."""
     try:
         result = subprocess.run(
-            ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            ["git", "ls-files", "-z", "--cached"],
             cwd=ROOT,
-            check=False,
+            check=True,
             capture_output=True,
         )
-    except OSError:
-        return _fallback_files()
-
-    if result.returncode != 0:
-        return _fallback_files()
-
-    files = {
-        rel
-        for raw in result.stdout.split(b"\0")
-        if raw and (rel := raw.decode("utf-8")) and (ROOT / rel).is_file()
-    }
-    return files
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("Git index is required to build canonical checksums") from exc
+    return {_safe_index_path(raw) for raw in result.stdout.split(b"\0") if raw}
 
 
 def render_checksums() -> str:
@@ -88,7 +83,7 @@ def main() -> int:
         print(f"Checksums are current ({len(package_files()) - 1} entries)")
         return 0
 
-    OUTPUT.write_text(rendered, encoding="utf-8")
+    write_regular_repository_file(ROOT, OUTPUT, rendered)
     print(f"Wrote {OUTPUT_NAME} with {len(package_files()) - 1} entries")
     return 0
 

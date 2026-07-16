@@ -2,19 +2,20 @@
 
 **Validated:** 2026-07-17
 
-**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-007 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
+**Result:** PASS for the imported instruction pack, repository consistency, and the locally verifiable RIT-001 through RIT-009 engineering foundation. Hosted RIT-004 evidence remains owner-gated.
 
 ## Checks passed
 
 - All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
 - All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
-- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003` and `RIT-005` through `RIT-007` are Done, `RIT-004` is blocked only by `OWN-008`, RIT-008 remains Planned behind it, and exactly one executable item is Ready: `RIT-009`.
+- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003`, `RIT-005` through `RIT-007`, and `RIT-009` are Done, `RIT-004` is blocked only by `OWN-008`, RIT-008 remains Planned behind it, and exactly one executable item is Ready: `RIT-010`.
 - Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
 - Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
 - Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
-- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 87 current text sources; `checksums.sha256` covers every intended repository file except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
+- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 95 current text sources; `checksums.sha256` covers all 213 intended Git-indexed inputs except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
 - Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
-- Root CI/toolchain, architecture, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across six workspaces. One hundred seventy-two unit/contract tests run in 18 files; the build verifier checks 22 emitted artifacts, imports built ESM exports, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
+- Root CI/toolchain, architecture, record, generated-evidence, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, and build gates pass across six workspaces. Two hundred sixteen unit/contract tests run in 20 files; the build verifier checks 22 emitted artifacts, imports built ESM exports, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
+- The durable record workflow enforces four typed grammars, canonical task/decision authority, reciprocal task dossier and decision graph links, contextual task-result semantics, privacy-safe Markdown, Git-index-only regular-file checksums, and staged exact-order synchronization. CI and mutation tests reject stale, dangling, duplicated, unsafe, unreviewed, or locally untracked evidence.
 - The fail-closed architecture gate audits 53 active source files across six modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, exact feature-flag composition, and file/module cycles. Mutation tests cover the reviewed bypass classes, including injected and dead-code-camouflaged feature-flag sources, and CI invokes the exact architecture command as an independent mandatory step.
 - The zero-dependency server-only observability package emits only fixed bounded JSON-line events with service/environment/release/level/correlation/trace fields. Web Crypto creates nonzero server-authoritative IDs; W3C trace validation rejects malformed, uppercase, unsupported, and zero identifiers; spans rotate across JSON-persisted Web → Worker → provider protocol steps; and neither baggage nor tracestate propagates.
 - Adversarial telemetry tests prove that unknown private fields, prompts, journal/prayer/birth text, authorization, URLs, raw `Error`, stack/cause, getters, `toJSON`, coercion hooks, revoked/wide proxies, cycles, symbols, `BigInt`, functions, control characters, oversized UTF-8 records, invalid metadata/carriers, duplicate span end, clock reversal, and failing writers cannot leak canaries or alter application flow.
@@ -32,9 +33,9 @@
 ## Validation commands
 
 ```bash
-python3 scripts/build_compiled_manual.py --check
-python3 scripts/build_checksums.py --check
-python3 scripts/validate_instruction_pack.py
+pnpm check:records
+pnpm check:generated
+python3 -B scripts/sync_generated_evidence.py --check
 shasum -a 256 -c checksums.sha256
 codex execpolicy check --pretty --rules .codex/rules/default.rules -- <command...>
 pnpm install --frozen-lockfile
@@ -54,15 +55,16 @@ pnpm db:stop
 
 ## Limitations
 
-- This validates the specification package and locally executable RIT-001 through RIT-007 foundations. It does not validate a user-facing product flow, payment, AI, accessibility, hosted infrastructure, or a production database.
+- This validates the specification package and locally executable RIT-001 through RIT-009 foundations. It does not validate a user-facing product flow, payment, AI, accessibility, hosted infrastructure, or a production database.
 - The Web proxy handoff is a real local HTTP boundary, but no route wrapper yet measures final downstream status/duration. The Worker continuation subpath and serialized carrier are protocol evidence behind a sealed persistence adapter type; no database outbox, queue, deployed consumer, telemetry vendor, metrics, alerting, sampling, or retention system exists yet.
 - The feature-flag control plane has database-level append-only enforcement but no production credential grant, approval-record service, admin endpoint/UI, cache/invalidation policy, or operator emergency workflow. Enabling any gated capability still requires its explicit owner approval and later product task.
 - Docker and Podman are absent on the verified host. A native fresh PostgreSQL 17 instance reproduced the CI target contract, but the digest-pinned service image and bridge networking still require the first hosted Actions run.
-- The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; critical task-result schema invariants are checked directly.
+- The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; an exact schema fingerprint plus contextual semantic validation locks the critical task-result contract.
+- A durable record status or linked decision does not itself grant approval. Owner gates, qualified review, production actions, and external system evidence remain separately authoritative.
 - Command rules are exact positional prefixes and supplement, rather than replace, the owner-approval boundaries in `AGENTS.md`. Reordered flags, aliases, and opaque wrappers still require human review.
 - Codex GitHub workflow examples remain intentionally inactive outside `.github/workflows`. The active CI workflow is contract-tested, but remote required-check enforcement and workflow-change protection require owner configuration.
 - `RITUVIA` has only a preliminary exact-name web screen; this report does not establish legal clearance, domain availability, or right to use. Payment, crypto, tax, country, astrology-license, content-rights, vendor, and production decisions remain owner- or qualified-reviewer-gated.
 
 ## Acceptance result
 
-The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, and active portable quality, dependency, secret, migration, and build gates. RIT-007 is complete and RIT-009 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.
+The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, a machine-checked durable record workflow, and active portable quality, dependency, secret, migration, and build gates. RIT-009 is complete and RIT-010 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three jobs and workflow changes, and obtains one passing hosted run. Production remains gated by later milestones and explicit owner approvals.

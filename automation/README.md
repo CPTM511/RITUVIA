@@ -22,7 +22,14 @@ Automations may inspect, test, draft, patch branches, update documentation, and 
 
 ## Required result
 
-Every run returns a structured summary compatible with `automation/schemas/task-result.schema.json`, plus human-readable Markdown. It must distinguish facts observed, changes made, tests run, assumptions, blockers, risks, approvals needed, and the next task.
+Every run returns a structured summary compatible with `automation/schemas/task-result.schema.json`,
+plus human-readable Markdown. It includes bounded run/time/revision trace metadata, a RIT task ID,
+typed durable-record references, rollback notes, observed facts, changes, verification, assumptions,
+blockers, risks, owner actions, and the next task. A result describes a run; it cannot change
+`BACKLOG.md`, accept a decision in `DECISIONS.md`, or satisfy an owner gate.
+The JSON Schema enforces portable shape and core completed-state constraints. Before accepting a real
+result, run the repository-context validator (`pnpm check:records` or its `auditTaskResult` policy)
+so task state, dependency readiness, exact record paths, and tracked evidence sources are checked.
 
 ## Scheduling suggestion
 

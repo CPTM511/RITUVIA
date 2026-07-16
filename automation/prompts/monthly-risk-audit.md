@@ -26,3 +26,9 @@ Output:
 6. Remediation backlog proposal.
 7. Owner/qualified-review decisions.
 8. Residual risk statement.
+
+After those sections, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. For this read-only audit use `task_id: null`,
+`status: review_only` or `no_change`, and `record_refs.task: null`; reference only tracked files or
+opaque safe evidence IDs actually inspected. The result cannot update `BACKLOG.md`, accept a
+decision, or satisfy an owner gate.

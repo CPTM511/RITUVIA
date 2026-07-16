@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "run_id": "run-synthetic-contract-example",
+  "as_of": "2026-07-17T00:00:00Z",
+  "repository_revision": "WORKTREE",
+  "branch": "main",
+  "task_id": "RIT-009",
+  "status": "no_change",
+  "summary": "Synthetic RIT-009 contract example only; this file is not execution evidence.",
+  "observed_evidence": [
+    {
+      "claim": "The example contains every required task-result field.",
+      "source": "automation/examples/task-result.example.json",
+      "as_of": null,
+      "confidence": "high"
+    }
+  ],
+  "changes": [],
+  "verification": [
+    {
+      "check": "synthetic schema-shape example",
+      "result": "not_applicable",
+      "details": "The repository record validator checks this local example without claiming a real run."
+    }
+  ],
+  "assumptions": [],
+  "blockers": [],
+  "risks": [],
+  "owner_actions": [],
+  "record_refs": {
+    "task": "records/tasks/RIT-009.md",
+    "decisions": ["records/decisions/D-022.md"],
+    "incidents": [],
+    "experiments": []
+  },
+  "rollback_notes": "No repository or external state changes are represented by this example.",
+  "next_recommended_task": null
+}

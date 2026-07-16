@@ -4,8 +4,9 @@
 `main`, and manual dispatch, with top-level `contents: read` only. Its three independent jobs
 cover:
 
-- formatting, lint, strict type checking, unit/contract tests, the production configuration
-  boundary, migration policy, CI contract, and production builds;
+- durable-record graph and generated-evidence integrity, formatting, lint, strict type checking,
+  unit/contract tests, the production configuration boundary, architecture and migration policy,
+  CI contract, and production builds;
 - Prisma generation, two idempotent migration deployments, two idempotent synthetic seeds,
   migration status/drift, constraints, transactions, and least-privilege attestation against a
   digest-pinned ephemeral PostgreSQL 17 service; and

@@ -16,8 +16,10 @@
 - `ENGINEERING_BASELINE.md` — observed repository reality, setup gaps, and exact M0 plan.
 - `QA_REPORT.md` — local consistency checks, passed assertions, and validation limits.
 - `DECISIONS.md` — persistent decision register.
+- `CONTRIBUTING.md` — one-task workflow, authority boundaries, and generated-evidence order.
+- `records/README.md` and generated `records/INDEX.md` — typed durable-record policy and compact discovery index.
 - `RITUVIA_CODEX_BUILD_MANUAL.md` — generated reading/handoff compilation; individual files remain canonical.
-- `checksums.sha256` — SHA-256 coverage for every tracked or non-ignored package file except the checksum file itself.
+- `checksums.sha256` — SHA-256 coverage for regular files represented in the Git index, except the checksum file itself.
 
 ## Canonical specifications
 
@@ -73,6 +75,7 @@
 - `automation/prompts/monthly-risk-audit.md`
 - `automation/prompts/release-readiness.md`
 - `automation/schemas/task-result.schema.json`
+- `automation/examples/task-result.example.json`
 - `.github/codex/prompts/*.md`
 - `.github/workflows/ci.yml` — active least-privilege quality, database, dependency, and security gates.
 - `.github/codex/workflow-examples/*.yml` — intentionally inactive outside the Actions workflow directory until reviewed, moved, and secured.
@@ -80,11 +83,18 @@
 ## Local validation
 
 - `scripts/build_compiled_manual.py` — deterministically rebuilds/checks the handoff compilation.
-- `scripts/build_checksums.py` — deterministically hashes tracked and non-ignored repository artifacts.
+- `scripts/build_record_index.py` — validates typed records and deterministically renders their compact index.
+- `scripts/sync_generated_evidence.py` — safely renders index, manual, then Git-index-only checksums.
+- `scripts/build_checksums.py` — fail-closed hashing of regular Git-indexed repository artifacts.
+- `scripts/verify-records.ts` — validates record graphs and contextual task-result semantics.
 - `scripts/validate_instruction_pack.py` — verifies syntax, dependency graph, instruction limits, links, generated manual, checksums, and package invariants.
 
 ## Reusable records
 
+- `records/tasks/RIT-NNN.md`
+- `records/decisions/D-NNN.md`
+- `records/incidents/INC-NNN.md`
+- `records/experiments/EXP-NNN.md`
 - `templates/ADR_TEMPLATE.md`
 - `templates/TASK_TEMPLATE.md`
 - `templates/INCIDENT_TEMPLATE.md`

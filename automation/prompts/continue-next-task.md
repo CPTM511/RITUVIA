@@ -14,3 +14,9 @@ Operate as the repository's primary Codex orchestrator.
 10. Return the structured task result and a concise owner summary.
 
 Do not build multiple major backlog items in one run. Do not mark a plan, mock, or unverified generated file as complete.
+
+After the human-readable summary, emit one JSON object conforming exactly to
+`automation/schemas/task-result.schema.json`. Set `task_id` to the selected RIT ID and
+`record_refs.task` to its exact `records/tasks/RIT-NNN.md` path; include only durable records and
+tracked evidence actually used. The result reports this run and cannot update `BACKLOG.md`, accept a
+decision in `DECISIONS.md`, or satisfy an owner gate.
