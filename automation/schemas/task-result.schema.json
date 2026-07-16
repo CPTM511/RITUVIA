@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rituvia.invalid/schemas/codex-task-result.schema.json",
+  "title": "RITUVIA Codex Task Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "status",
+    "summary",
+    "observed_evidence",
+    "changes",
+    "verification",
+    "assumptions",
+    "blockers",
+    "risks",
+    "owner_actions",
+    "next_recommended_task"
+  ],
+  "properties": {
+    "task_id": { "type": ["string", "null"], "pattern": "^(RIT|OWN)-[0-9]{3}$" },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "partial", "blocked", "review_only", "no_change"]
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "observed_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "source"],
+        "properties": {
+          "claim": { "type": "string" },
+          "source": { "type": "string" },
+          "as_of": { "type": ["string", "null"], "format": "date-time" },
+          "confidence": { "type": "string", "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "description"],
+        "properties": {
+          "path": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "result"],
+        "properties": {
+          "check": { "type": "string" },
+          "result": { "type": "string", "enum": ["passed", "failed", "not_run", "not_applicable"] },
+          "details": { "type": "string" }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "evidence_needed"],
+        "properties": {
+          "description": { "type": "string", "minLength": 1 },
+          "evidence_needed": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "description", "mitigation"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+          "description": { "type": "string" },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "owner_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "blocking"],
+        "properties": {
+          "action": { "type": "string" },
+          "blocking": { "type": "boolean" },
+          "evidence_needed": { "type": "string" }
+        }
+      }
+    },
+    "rollback_notes": { "type": "string" },
+    "next_recommended_task": { "type": ["string", "null"], "pattern": "^(RIT|OWN)-[0-9]{3}$" }
+  }
+}

@@ -1,0 +1,68 @@
+# RITUVIA project-scoped Codex configuration.
+# Current strong default as of 2026-07-16. Review model identifiers/config when Codex changes.
+model = "gpt-5.6"
+model_reasoning_effort = "max"
+review_model = "gpt-5.6"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+project_doc_max_bytes = 65536
+
+[features]
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+interrupt_message = true
+
+[agents.product]
+description = "Product strategist for scope, user value, prioritization, requirements, ethics, and acceptance criteria."
+config_file = "agents/product.toml"
+
+[agents.architect]
+description = "System architect for boundaries, data flow, ADRs, migrations, vendor choices, and one-person operability."
+config_file = "agents/architect.toml"
+
+[agents.frontend]
+description = "Frontend, design-system, accessibility, performance, PWA, and responsive/RTL specialist."
+config_file = "agents/frontend.toml"
+
+[agents.backend]
+description = "Backend/domain/data/jobs/API specialist focused on correctness, transactions, idempotency, and maintainability."
+config_file = "agents/backend.toml"
+
+[agents.ai_safety]
+description = "AI interpretation, content grounding, structured output, eval, crisis, dependency, and cultural-safety reviewer."
+config_file = "agents/ai-safety.toml"
+
+[agents.payments_risk]
+description = "Commerce, payments, crypto-hosted checkout, country policy, ledger, refund, fraud, and compliance reviewer."
+config_file = "agents/payments-risk.toml"
+
+[agents.growth_seo]
+description = "Ethical growth, SEO, GEO, content architecture, lifecycle, share, and measurement specialist."
+config_file = "agents/growth-seo.toml"
+
+[agents.localization]
+description = "Internationalization, translation, RTL, locale UX, cultural integrity, and multilingual QA specialist."
+config_file = "agents/localization.toml"
+
+[agents.qa_security]
+description = "Independent correctness, test, security, privacy, accessibility, and release-blocker reviewer."
+config_file = "agents/qa-security.toml"
+
+[agents.operations]
+description = "Reliability, observability, incident, support, reconciliation, automation, and cost-guardrail specialist."
+config_file = "agents/operations.toml"
+
+[profiles.review]
+model = "gpt-5.6"
+model_reasoning_effort = "high"
+approval_policy = "never"
+sandbox_mode = "read-only"
+
+[profiles.automation_review]
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+approval_policy = "never"
+sandbox_mode = "read-only"

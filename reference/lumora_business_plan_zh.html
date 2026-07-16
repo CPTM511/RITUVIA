@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>LUMORA 全球玄学与数字祈愿平台｜商业策划与产品蓝图</title>
+<style>
+:root{
+  --bg:#070711;--bg2:#0f1020;--card:#121425;--card2:#181a31;--ink:#f5f3ee;--muted:#aaa9b8;
+  --gold:#e7c778;--gold2:#f6e5ad;--violet:#9b8cff;--cyan:#75d4d0;--line:rgba(255,255,255,.105);
+  --green:#89d4a8;--amber:#efc66a;--red:#e79b9b;--shadow:0 24px 70px rgba(0,0,0,.28);
+  --radius:22px;--max:1180px;
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:
+radial-gradient(circle at 12% 4%,rgba(155,140,255,.16),transparent 27%),
+radial-gradient(circle at 85% 9%,rgba(231,199,120,.11),transparent 22%),
+linear-gradient(180deg,var(--bg),#0a0b16 38%,#090a13);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.72}
+a{color:var(--gold2);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(var(--max),calc(100% - 40px));margin:auto}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(7,7,17,.78);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.nav{height:68px;display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:11px;font-weight:760;letter-spacing:.13em}.sigil{width:33px;height:33px;border:1px solid rgba(231,199,120,.65);border-radius:50%;display:grid;place-items:center;color:var(--gold);box-shadow:0 0 24px rgba(231,199,120,.16)}
+.navlinks{display:flex;gap:20px;font-size:13px}.navlinks a{color:#d9d7df}.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid rgba(231,199,120,.36);border-radius:999px;color:var(--gold2);font-size:12px}
+.hero{padding:86px 0 60px;position:relative}.hero-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:44px;align-items:end}.eyebrow{text-transform:uppercase;letter-spacing:.18em;font-size:12px;color:var(--gold)}h1{font-size:clamp(42px,6vw,82px);line-height:1.06;letter-spacing:-.048em;margin:17px 0 24px;max-width:900px}.lede{font-size:19px;color:#c5c3cf;max-width:760px}.hero-card{background:linear-gradient(145deg,rgba(24,26,49,.92),rgba(14,15,28,.92));border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:var(--shadow)}.hero-card h3{margin:0 0 15px}.verdict{font-size:30px;line-height:1.28;color:var(--gold2);font-weight:700}.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:25px}.meta span{font-size:12px;padding:8px 11px;border-radius:999px;background:rgba(255,255,255,.055);border:1px solid var(--line);color:#c8c7d2}
+section{padding:58px 0;border-top:1px solid rgba(255,255,255,.055)}.section-head{display:grid;grid-template-columns:.55fr 1.45fr;gap:32px;margin-bottom:28px}.kicker{color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:.17em}.section-head h2{font-size:clamp(29px,4vw,47px);line-height:1.15;margin:5px 0 0;letter-spacing:-.035em}.section-intro{font-size:17px;color:#c2c1cb;margin:4px 0 0;max-width:760px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}.card{background:linear-gradient(180deg,rgba(20,22,40,.94),rgba(14,15,27,.94));border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:0 10px 34px rgba(0,0,0,.13)}.card h3{margin:0 0 10px;font-size:19px}.card p{margin:0;color:#bbb9c5}.metric{font-size:38px;line-height:1;color:var(--gold2);font-weight:760;margin:12px 0 10px}.metric-note{font-size:13px;color:var(--muted)}.tag{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--cyan)}
+.callout{background:linear-gradient(115deg,rgba(155,140,255,.12),rgba(231,199,120,.08));border:1px solid rgba(231,199,120,.22);border-radius:26px;padding:28px 30px;margin:25px 0}.callout strong{color:var(--gold2)}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;counter-reset:flow}.flow-step{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 18px;min-height:150px}.flow-step:before{counter-increment:flow;content:counter(flow);display:grid;place-items:center;width:29px;height:29px;border-radius:50%;border:1px solid rgba(231,199,120,.45);color:var(--gold);font-size:12px;margin-bottom:18px}.flow-step h4{margin:0 0 7px}.flow-step p{font-size:13px;color:var(--muted);margin:0}
+.product-card{position:relative;overflow:hidden}.product-card .icon{font-size:34px;margin-bottom:13px}.product-card .why{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:#c7c5d0}.rank{position:absolute;right:17px;top:15px;color:rgba(231,199,120,.45);font-size:12px;letter-spacing:.1em}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:20px;background:rgba(15,16,30,.8)}table{border-collapse:collapse;width:100%;min-width:760px}th,td{text-align:left;padding:15px 17px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--gold);background:rgba(255,255,255,.025)}td{font-size:14px;color:#d2d0da}tr:last-child td{border-bottom:0}.yes{color:var(--green)}.mid{color:var(--amber)}.no{color:#858390}
+.price{font-size:30px;color:var(--gold2);font-weight:720}.price small{font-size:13px;color:var(--muted);font-weight:400}.list{margin:14px 0 0;padding:0;list-style:none}.list li{position:relative;padding:6px 0 6px 20px;color:#c4c2cc}.list li:before{content:"✦";position:absolute;left:0;color:var(--gold);font-size:11px;top:9px}.warn{border-left:3px solid var(--amber);padding:13px 17px;background:rgba(239,198,106,.07);color:#d6d2c7;border-radius:4px 14px 14px 4px}
+.scenarios{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.scenario{padding:25px;border-radius:22px;background:var(--card);border:1px solid var(--line)}.scenario h3{margin:0}.scenario .mrr{font-size:34px;color:var(--gold2);font-weight:740;margin:13px 0 2px}.bar{height:8px;background:rgba(255,255,255,.07);border-radius:99px;overflow:hidden;margin:17px 0}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--gold));border-radius:99px}.scenario dl{display:grid;grid-template-columns:1fr auto;gap:6px 15px;margin:17px 0 0;font-size:13px}.scenario dt{color:var(--muted)}.scenario dd{margin:0;color:#e3e0e8}
+.arch{display:grid;grid-template-columns:1fr;gap:12px}.arch-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.arch-box{border:1px solid var(--line);border-radius:17px;padding:16px;background:rgba(18,20,37,.9);min-height:82px}.arch-box strong{display:block;color:var(--gold2);margin-bottom:4px}.arch-box span{font-size:12px;color:var(--muted)}.arch-arrow{text-align:center;color:var(--gold);font-size:22px;line-height:1}
+.timeline{position:relative;margin-left:10px}.timeline:before{content:"";position:absolute;left:15px;top:8px;bottom:8px;width:1px;background:linear-gradient(var(--gold),rgba(231,199,120,.08))}.phase{position:relative;padding:0 0 30px 52px}.phase:last-child{padding-bottom:0}.phase:before{content:"";position:absolute;left:7px;top:5px;width:16px;height:16px;border-radius:50%;background:var(--bg);border:4px solid var(--gold)}.phase h3{margin:0 0 5px}.phase .time{font-size:12px;color:var(--cyan);letter-spacing:.08em}.phase p{color:#c0bec8;margin:8px 0 0}
+.risk{display:grid;grid-template-columns:.42fr 1fr 1fr;gap:12px;padding:17px 0;border-bottom:1px solid var(--line)}.risk:last-child{border-bottom:0}.risk b{color:var(--gold2)}.risk span{font-size:14px;color:#c3c1cb}.risk .level{font-size:11px;text-transform:uppercase;letter-spacing:.1em}.critical{color:var(--red)}.high{color:var(--amber)}.med{color:var(--cyan)}
+.quote{font-size:24px;line-height:1.45;color:#eee9df;max-width:900px;margin:0}.quote em{color:var(--gold2);font-style:normal}.footnotes{font-size:13px;color:#aaa8b4}.footnotes li{margin:9px 0}.footer{padding:42px 0 70px;color:#8e8c98;font-size:12px;border-top:1px solid var(--line)}
+.sticky-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:26px}.mini{border:1px solid var(--line);border-radius:16px;padding:15px;background:rgba(255,255,255,.025)}.mini b{display:block;color:var(--gold2)}.mini span{font-size:12px;color:var(--muted)}
+@media(max-width:900px){.hero-grid,.section-head{grid-template-columns:1fr}.grid-4,.grid-3,.scenarios{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr}.arch-row{grid-template-columns:1fr 1fr}.navlinks{display:none}.hero{padding-top:58px}.sticky-summary{grid-template-columns:1fr}.risk{grid-template-columns:1fr}.risk span{margin-top:-5px}}
+@media(max-width:600px){.wrap{width:min(100% - 24px,var(--max))}.grid-4,.grid-3,.grid-2,.scenarios,.flow,.arch-row{grid-template-columns:1fr}.hero-card{padding:22px}.card{padding:20px}section{padding:44px 0}.hero{padding:48px 0 38px}h1{font-size:45px}.nav{height:60px}.pill{display:none}.callout{padding:22px}.quote{font-size:21px}}
+@media print{.topbar{display:none}body{background:#fff;color:#111}.card,.hero-card,.scenario,.flow-step,.arch-box,.table-wrap{box-shadow:none;background:#fff;color:#111;border-color:#ddd}a{color:#333}.lede,.card p,.metric-note,.section-intro,.list li,td,.phase p,.risk span,.footnotes{color:#333}section{break-inside:avoid}.hero{padding-top:30px}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap nav"><div class="brand"><span class="sigil">✦</span>LUMORA</div><nav class="navlinks"><a href="#market">市场</a><a href="#product">产品</a><a href="#business">商业</a><a href="#payments">支付合规</a><a href="#architecture">架构</a><a href="#roadmap">路线图</a></nav><span class="pill">战略蓝图 · 2026-07-16</span></div></header>
+
+<main>
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <div class="eyebrow">Global metaphysical & ritual platform</div>
+    <h1>把“占卜”做成一款全球化的<br><span style="color:var(--gold2)">仪式感与自我反思产品</span></h1>
+    <p class="lede">工作代号 <b>LUMORA</b>：一个 Web-first 的多传统占卜、数字祈愿、个人仪式与反思日志平台。核心不是承诺命运结果，而是把象征、意图和日常回访连接成可持续的用户习惯。</p>
+    <div class="meta"><span>Web / PWA</span><span>全球多语言</span><span>法币 + 数字货币</span><span>AI 自动解释</span><span>隐私优先</span><span>合规分区</span></div>
+  </div>
+  <aside class="hero-card">
+    <div class="tag">Investment verdict</div>
+    <div class="verdict">值得做，但必须先解决支付承保与伦理定位，再写大规模代码。</div>
+    <p style="color:#bbb9c5">最强产品形态不是“万能算命网站”，而是“全球化、自助式、可信任的数字圣所”。先用塔罗建立即时激活，用西方占星形成长期个性化，用数字命理覆盖低门槛传播，再以祈愿仪式和日志构建留存。</p>
+  </aside>
+</div></section>
+
+<section id="summary"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">Executive Summary</div><h2>结论先行</h2></div><div><p class="section-intro">市场有规模、消费频次正在数字化，竞争仍然碎片化；真正的护城河不在“多一个占卜算法”，而在跨文化内容体系、支付韧性、用户信任、个性化记忆和仪式留存。</p></div></div>
+  <div class="grid-3">
+    <article class="card"><h3>产品定位</h3><p><strong>“象征性自我反思 + 数字仪式”</strong>，而非确定性预测。主循环：问题 → 解读 → 设定意图 → 仪式 → 日志 → 回访。</p></article>
+    <article class="card"><h3>MVP 组合</h3><p><strong>塔罗、西方占星、数字命理</strong>。这是基于全球可迁移性、输入门槛、内容扩展性和社交传播，而非声称存在权威的全球绝对排名。</p></article>
+    <article class="card"><h3>变现原则</h3><p>免费基础体验；订阅、深度报告与数字场景道具付费。<strong>首版不做可充值钱包</strong>，避免储值、退款与支付网络风险。</p></article>
+    <article class="card"><h3>支付策略</h3><p>支付编排层 + 多收单机构 + 分国家策略。法币采用托管收银台；加密支付采用合规第三方网关并自动结算，平台不托管客户资产。</p></article>
+    <article class="card"><h3>全球策略</h3><p>“全球架构、分波上线”。先做英语市场和欧澳加，再扩展拉美、印度与地区传统；日本、墨西哥、泰国等需单独支付与法律路径。</p></article>
+    <article class="card"><h3>执行判断</h3><p>可在 <strong>12–16 周</strong>交付可收费 MVP；但“全自动”应定义为 90%+ 自动运营、对退款、欺诈、安全和法律事件保留人工升级。</p></article>
+  </div>
+</div></section>
+
+<section id="market"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">01 · Market</div><h2>需求不是小众，付费行为已经被验证</h2></div><div><p class="section-intro">公开数据无法给出一个完全统一的“玄学市场”口径，因此本方案同时采用消费调查、行业规模、头部公司收入和数字仪式使用量进行交叉判断。</p></div></div>
+  <div class="grid-4">
+    <article class="card"><div class="tag">U.S. demand</div><div class="metric">≈30%</div><p>美国成年人至少每年使用一次占星、塔罗或算命服务。</p><div class="metric-note">Pew 调查经 AP 报道，样本 9,593 人。[1]</div></article>
+    <article class="card"><div class="tag">U.S. revenue proxy</div><div class="metric">$2.3B</div><p>美国 psychic services 行业 2024 年估算收入。</p><div class="metric-note">IBISWorld 数据经 AP 报道；为方向性代理口径。[1]</div></article>
+    <article class="card"><div class="tag">India leader</div><div class="metric">+81%</div><p>Astrotalk FY25 营业收入同比增长至 ₹1,176 crore。</p><div class="metric-note">表明高频数字化服务与重复付费成立。[3]</div></article>
+    <article class="card"><div class="tag">Virtual ritual</div><div class="metric">2.7M</div><p>Sadhana 一年内完成的数字仪式次数。</p><div class="metric-note">证明“虚拟仪式”本身可形成使用行为。[4]</div></article>
+  </div>
+  <div class="callout"><p class="quote">市场机会不是让用户“相信算法知道未来”，而是让用户在不确定时得到一个<em>可理解、可执行、可回访</em>的仪式化空间。近期 AI 塔罗研究也提示：价值来自探索不确定性与替代视角，设计应保留模糊性与用户自主权。[10]</p></div>
+  <div class="grid-2">
+    <article class="card"><h3>方向性 TAM</h3><p>第三方预测称全球占星相关产品与服务消费可能由 2021 年约 130 亿美元增至 2031 年约 230 亿美元。[2] 该数字口径宽、不可直接当作本项目收入预测，但足以支持“全球多十亿美元需求池”的判断。</p></article>
+    <article class="card"><h3>更可信的 SOM 方法</h3><p>以 MAU × 付费率 × 月均付费金额做底层模型，并用留存、退款和获客效率逐月验证。早期董事会不应依赖一个看似精确、实则口径模糊的市场总额。</p></article>
+  </div>
+</div></section>
+
+<section id="product"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">02 · Product</div><h2>首发只做三类，但每一类都要形成完整体验</h2></div><div><p class="section-intro">全球“前三”没有权威统一排名。以下组合是产品决策：覆盖即时性、个性化和低门槛传播，并能通过同一套意图、日志和付费系统复用。</p></div></div>
+  <div class="grid-3">
+    <article class="card product-card"><span class="rank">CORE 01</span><div class="icon">◈</div><h3>塔罗 Tarot</h3><p>一张牌、三张牌、关系牌阵、选择牌阵。用户输入问题，系统随机抽牌，AI 基于审核过的牌义和上下文给出多视角解释。</p><div class="why"><b>角色：</b>最快激活、最易分享、最适合匿名访客。结果必须给“可能性与反思问题”，不做确定性断言。</div></article>
+    <article class="card product-card"><span class="rank">CORE 02</span><div class="icon">✦</div><h3>西方占星 Astrology</h3><p>出生盘、每日行运、关系合盘、年度主题。出生日期、时间和地点形成长期用户画像和复访理由。</p><div class="why"><b>角色：</b>个性化护城河与订阅主引擎。天体计算必须确定性、可复算；AI 只负责解释层。</div></article>
+    <article class="card product-card"><span class="rank">CORE 03</span><div class="icon">∞</div><h3>数字命理 Numerology</h3><p>生命灵数、生日数、姓名主题、关系匹配和年度数字。输入简单，计算透明，适合 SEO 计算器与社交传播。</p><div class="why"><b>角色：</b>低成本获客与国际扩展。不同语言的姓名体系需分别定义，不可简单套用拉丁字母规则。</div></article>
+  </div>
+  <h3 style="margin-top:34px">地区扩展包</h3>
+  <div class="grid-4">
+    <div class="card"><h3>印度 / 南亚</h3><p>Vedic Astrology、Kundli、节日仪式；使用本地顾问、独立合规与支付路线。</p></div>
+    <div class="card"><h3>华语与东亚</h3><p>八字、周易、生肖；严禁把地域传统做成无来源的 AI 拼贴。</p></div>
+    <div class="card"><h3>拉美 / 欧洲</h3><p>塔罗、占星、月相仪式和本地节庆内容；西语、葡语优先。</p></div>
+    <div class="card"><h3>后续视觉玩法</h3><p>手相、面相需要摄像头和生物特征风险评估，建议在 PMF 后再做。</p></div>
+  </div>
+
+  <div class="section-head" style="margin-top:54px"><div><div class="kicker">Core loop</div><h2>用户真正会重复的，是一条闭环</h2></div><div><p class="section-intro">占卜给一次“答案”，仪式和日志把它变成持续关系。每次结果都应落到一个意图、一项小行动和一次未来回访。</p></div></div>
+  <div class="flow">
+    <div class="flow-step"><h4>提出问题</h4><p>匿名可用；提供结构化问题模板，避免医疗、法律、投资确定性预测。</p></div>
+    <div class="flow-step"><h4>获得解读</h4><p>符号、背景、不同可能性、限制条件与反思问题，而非单一神谕。</p></div>
+    <div class="flow-step"><h4>设定意图</h4><p>平静、感恩、关系、事业、勇气、放下等，不把用户恐惧当作付费杠杆。</p></div>
+    <div class="flow-step"><h4>完成仪式</h4><p>免费蜡烛/香始终可用；付费道具提供视觉、声音、时长和收藏价值。</p></div>
+    <div class="flow-step"><h4>记录与回访</h4><p>写下行动、情绪与后续结果；次日/七日回访形成留存与长期洞察。</p></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:26px">
+    <article class="card"><h3>首版关键页面</h3><ul class="list"><li>SEO 落地页与匿名即时体验</li><li>三类占卜入口与结果页</li><li>个人出生资料与偏好档案</li><li>数字圣所 / 祈愿台 / 道具商店</li><li>反思日志、历史记录、每日仪式</li><li>订阅、订单、退款与隐私中心</li><li>内容、国家政策、风控与客服后台</li></ul></article>
+    <article class="card"><h3>首版明确不做</h3><ul class="list"><li>不做真人大师 marketplace，避免运营、分账与欺诈复杂度</li><li>不做可提现、可转让、可交易的积分或 NFT</li><li>不做公开祈祷墙，先规避极端内容与隐私审核成本</li><li>不做“解除诅咒”“保证复合”“保证发财”等高风险产品</li><li>不把医疗、法律、金融建议包装成占卜结论</li></ul></article>
+  </div>
+</div></section>
+
+<section id="experience"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">03 · Experience</div><h2>数字祈愿台要卖“体验”，不能卖“灵验保证”</h2></div><div><p class="section-intro">用户可以上香、点灯、放花、摆放水晶、写祈愿卡、选择环境声和仪式时长。免费入口始终存在，付费只提升表达、沉浸、收藏和个性化。</p></div></div>
+  <div class="grid-3">
+    <article class="card"><h3>免费层</h3><div class="price">$0 <small>/ 永久基础访问</small></div><ul class="list"><li>每日一张塔罗或简短主题</li><li>每日一支蜡烛 / 一炷香</li><li>基础圣所与私密祈愿</li><li>最近 7 天日志</li></ul></article>
+    <article class="card"><h3>订阅层</h3><div class="price">$9.99–19.99 <small>/ 月，规划区间</small></div><ul class="list"><li>更多深度解读与历史</li><li>每日行运 / 周期提醒</li><li>高级圣所主题和环境音</li><li>长期意图追踪与复盘</li><li>跨设备同步</li></ul></article>
+    <article class="card"><h3>单次数字商品</h3><div class="price">$0.99–19.99 <small>/ 次，规划区间</small></div><ul class="list"><li>三张牌 / 关系 / 年度报告</li><li>限时花束、灯阵、香炉、主题场景</li><li>纪念日仪式包和礼赠</li><li>明确标注数字体验、有效期和退款规则</li></ul></article>
+  </div>
+  <div class="warn" style="margin-top:24px"><b>关键设计约束：</b>不要在首版让用户“充值后再消费”。支付网络对储值、虚拟积分和模糊价值商品更敏感；直接购买具体数字商品或订阅，账单更清楚、争议更少。[5]</div>
+</div></section>
+
+<section id="competition"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">04 · Competition</div><h2>现有玩家各自强，但闭环仍然断裂</h2></div><div><p class="section-intro">下表是类别代表的战略比较，不是功能审计。市场目前大致分成占星社交、综合玄学订阅、真人咨询市场和宗教仪式平台。</p></div></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>代表</th><th>强项</th><th>主要收入</th><th>数字仪式</th><th>全球多传统</th><th>主要空白</th></tr></thead>
+    <tbody>
+      <tr><td><b>Co–Star 类</b></td><td>占星个性化、朋友关系、分享</td><td>订阅 / 报告</td><td class="no">弱</td><td class="no">弱</td><td>单一传统；仪式与日志闭环不足</td></tr>
+      <tr><td><b>Nebula 类</b></td><td>多种占卜、内容量、订阅</td><td>订阅 / 咨询</td><td class="no">弱</td><td class="mid">中</td><td>产品容易变成内容目录，差异化有限</td></tr>
+      <tr><td><b>Astrotalk 类</b></td><td>真人咨询、强变现、印度市场</td><td>按分钟 / 电商 / 分成</td><td class="mid">中</td><td class="mid">中</td><td>重运营、供给审核、分账与平台责任</td></tr>
+      <tr><td><b>Sadhana 类</b></td><td>沉浸式 3D 仪式、传统深度</td><td>订阅 / 仪式</td><td class="yes">强</td><td class="no">弱</td><td>集中于特定宗教文化，全球迁移难</td></tr>
+      <tr><td><b>LUMORA</b></td><td>占卜 → 意图 → 仪式 → 日志的一体化闭环</td><td>订阅 + 报告 + 数字道具</td><td class="yes">强</td><td class="yes">分包扩展</td><td>挑战是内容可信度、支付承保与品牌信任</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><strong>真正的产品差异：</strong>不是堆 20 种算命，而是建立一个用户可长期返回的个人象征系统：知道用户过去问过什么、设定过什么意图、做过什么行动，同时不越界声称“预测就是事实”。</div>
+</div></section>
+
+<section id="business"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">05 · Business Model</div><h2>用底层单元经济，而不是虚高 TAM 做预算</h2></div><div><p class="section-intro">以下是可调整的规划模型，不是财务预测。ARPPU 包含订阅和一次性数字商品的混合月均收入，未扣除退款、支付费、税和营销。</p></div></div>
+  <div class="scenarios">
+    <article class="scenario"><div class="tag">Conservative</div><h3>验证期</h3><div class="mrr">$20k</div><div class="metric-note">MRR · 年化 $240k</div><div class="bar"><i style="width:18%"></i></div><dl><dt>MAU</dt><dd>100k</dd><dt>付费率</dt><dd>2.0%</dd><dt>ARPPU / 月</dt><dd>$10</dd></dl></article>
+    <article class="scenario"><div class="tag">Base</div><h3>规模化初期</h3><div class="mrr">$245k</div><div class="metric-note">MRR · 年化 $2.94M</div><div class="bar"><i style="width:54%"></i></div><dl><dt>MAU</dt><dd>500k</dd><dt>付费率</dt><dd>3.5%</dd><dt>ARPPU / 月</dt><dd>$14</dd></dl></article>
+    <article class="scenario"><div class="tag">Upside</div><h3>全球产品成型</h3><div class="mrr">$900k</div><div class="metric-note">MRR · 年化 $10.8M</div><div class="bar"><i style="width:100%"></i></div><dl><dt>MAU</dt><dd>1.0M</dd><dt>付费率</dt><dd>5.0%</dd><dt>ARPPU / 月</dt><dd>$18</dd></dl></article>
+  </div>
+  <div class="grid-2" style="margin-top:24px">
+    <article class="card"><h3>毛利规划</h3><p>数字商品理论毛利高，但该品类的支付费、拒付、退款、内容审核和本地税务高于普通 SaaS。建议以 <b>72%–85%</b> 作为早期规划毛利区间，待真实数据替换。</p></article>
+    <article class="card"><h3>获客飞轮</h3><p>SEO 免费计算器 → 匿名首次解读 → 可分享结果卡 → 免费仪式 → 次日回访 → 订阅。优先验证自然传播和留存，再放大付费投放。</p></article>
+  </div>
+  <h3 style="margin-top:34px">建议的北极星与董事会指标</h3>
+  <div class="grid-4">
+    <div class="card"><div class="tag">North star</div><h3>每周有意义的反思会话</h3><p>完成解读，并设定意图或写下行动，而不是把“消费额”设为核心行为。</p></div>
+    <div class="card"><div class="tag">Activation</div><h3>3 分钟内完成首次解读</h3><p>匿名到结果的摩擦必须极低；要求注册应放在保存和回访之前。</p></div>
+    <div class="card"><div class="tag">Retention</div><h3>D1 / D7 / D30</h3><p>按占卜类型、来源、国家和是否完成仪式分层，寻找真正的留存驱动。</p></div>
+    <div class="card"><div class="tag">Trust</div><h3>退款、拒付、投诉、安全事件</h3><p>与付费率同等重要；高收入但高争议不是健康增长。</p></div>
+  </div>
+</div></section>
+
+<section id="payments"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">06 · Payments & Compliance</div><h2>支付是本项目的第一道产品门槛</h2></div><div><p class="section-intro">此类业务在支付网络中常被视为受限或高风险。不能把“接 Stripe”当作全球方案，也不能在拿到书面承保前假设任何收单机构会接受全部国家、文案和商品。</p></div></div>
+  <div class="grid-2">
+    <article class="card"><h3>法币：多收单编排</h3><ul class="list"><li>建立统一 Payment Orchestrator，不把订单模型绑定单一 PSP</li><li>主通道：经明确承保的全球收单机构或高风险专营收单</li><li>备份通道：PayPal / 其他本地收单，仅在书面批准的地区启用</li><li>Stripe 只在许可国家和明确审核通过后使用</li><li>托管收银台、3DS、地址与设备风控，平台不存卡号</li></ul></article>
+    <article class="card"><h3>数字货币：不托管、不发币</h3><ul class="list"><li>使用持牌第三方托管收银台</li><li>首批只支持少量主流资产，并按国家自动隐藏</li><li>自动结算为法币或稳定币，平台不保管用户私钥</li><li>不发行可提现积分、代币或投资型资产</li><li>退款、汇率锁定、链上确认和税务在购买前透明展示</li></ul></article>
+  </div>
+  <div class="callout"><strong>事实约束：</strong>Stripe 当前规则将“夸张承诺、高压追加销售、隐藏订阅价格”等列为禁止做法；其地区清单还明确将 psychic services / fortune tellers 在日本、墨西哥和泰国列为禁止业务。Adyen 则把 clairvoyance、horoscopes 等“pseudoscience”服务列为 Restricted，需要额外审核。[5][6]</div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>层</th><th>推荐设计</th><th>原因</th><th>禁止做法</th></tr></thead>
+    <tbody>
+      <tr><td><b>订单</b></td><td>直接购买具体报告、订阅或数字道具</td><td>清晰描述交付物、税、退款和有效期</td><td>模糊“充值”、无限期储值、不可解释的扣款</td></tr>
+      <tr><td><b>钱包</b></td><td>MVP 不做；后续仅非转让、不可提现、经 PSP 批准</td><td>降低储值与货币传输风险</td><td>用户间转账、现金兑回、二级交易</td></tr>
+      <tr><td><b>文案</b></td><td>自我反思、娱乐、仪式体验</td><td>符合实际交付和用户自主性</td><td>保证治病、复合、财富、解除诅咒</td></tr>
+      <tr><td><b>国家</b></td><td>Country Policy Engine 动态控制商品、支付、免责声明</td><td>同一产品在不同国家承保与法律条件不同</td><td>一个全球开关同时开放全部市场</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:34px">必须内建的信任与安全规则</h3>
+  <div class="grid-3">
+    <div class="card"><h3>透明性</h3><p>付费前展示数字交付物、价格、续费周期、退款规则；AI 聊天和 AI 生成解释必须清晰标识。欧盟 AI Act 的相关透明义务自 2026 年 8 月生效。[8]</p></div>
+    <div class="card"><h3>隐私</h3><p>祈愿文本可能透露宗教、健康、性取向和关系信息。欧盟明确将宗教或哲学信念等列为敏感数据。[7] 默认私密、单独同意、加密、可删除、不用于广告画像。</p></div>
+    <div class="card"><h3>脆弱用户保护</h3><p>18+ 付费；设置消费提醒、冷静期和自助退款；检测自残、暴力、诈骗与医疗危机内容，转向现实资源而非继续推销。</p></div>
+  </div>
+</div></section>
+
+<section id="architecture"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">07 · Architecture</div><h2>先用模块化单体快速上线，再按负载拆服务</h2></div><div><p class="section-intro">架构目标是：全球低延迟、国家策略可控、占卜结果可复算、支付可替换、敏感数据隔离、内容可版本化。首版不需要为了“高级”而过早微服务化。</p></div></div>
+  <div class="arch">
+    <div class="arch-row">
+      <div class="arch-box"><strong>Web / PWA</strong><span>Next.js + React + TypeScript；SSR/ISR 做 SEO；响应式与可访问性</span></div>
+      <div class="arch-box"><strong>CDN / Edge</strong><span>Cloudflare 或 Vercel；WAF、Bot 管理、国家路由、功能开关</span></div>
+      <div class="arch-box"><strong>BFF / API</strong><span>NestJS 或 Next API；鉴权、限流、国家策略、结构化输出</span></div>
+      <div class="arch-box"><strong>Admin Studio</strong><span>内容版本、翻译、商品、国家规则、退款、审核与实验</span></div>
+      <div class="arch-box"><strong>Observability</strong><span>OpenTelemetry、Sentry、日志、审计轨迹与业务告警</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-row">
+      <div class="arch-box"><strong>Identity & Profile</strong><span>账户、偏好、出生资料、同意记录、删除与导出</span></div>
+      <div class="arch-box"><strong>Divination Engine</strong><span>塔罗随机、占星计算、数字命理；确定性结果与版本号</span></div>
+      <div class="arch-box"><strong>Interpretation AI</strong><span>审核知识库 + RAG + 结构化模板 + 安全分类 + 多语言 QA</span></div>
+      <div class="arch-box"><strong>Ritual & Journal</strong><span>意图、圣所状态、道具、动画事件、日志与回访计划</span></div>
+      <div class="arch-box"><strong>Commerce</strong><span>目录、订单、权益、订阅、税、退款、支付编排与 Webhook</span></div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-row">
+      <div class="arch-box"><strong>PostgreSQL</strong><span>交易与配置主数据；行级权限、审计、加密字段</span></div>
+      <div class="arch-box"><strong>Redis</strong><span>会话、限流、缓存、幂等键和短期队列状态</span></div>
+      <div class="arch-box"><strong>Object Storage</strong><span>音频、场景资源、分享卡、导出文件；签名 URL</span></div>
+      <div class="arch-box"><strong>Queue / Events</strong><span>通知、翻译、AI 任务、支付事件、内容生成和分析事件</span></div>
+      <div class="arch-box"><strong>Analytics Vault</strong><span>去标识化事件；祈愿文本和出生资料不进入营销分析</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:26px">
+    <article class="card"><h3>占星计算的许可证决策</h3><p>Swiss Ephemeris 采用 AGPL 或商业专业许可双轨，公开服务上线前必须选择。若不愿把整个项目置于 AGPL 兼容许可，建议采购专业许可并把计算封装为独立服务。[9]</p></article>
+    <article class="card"><h3>AI 的正确边界</h3><p>AI 负责语义解释、问题改写、个性化和翻译；随机抽牌、天体位置、数字计算、订单金额、权益状态必须由确定性代码生成。每个结果保存引擎版本、内容版本和模型版本。</p></article>
+  </div>
+
+  <h3 style="margin-top:34px">核心数据实体</h3>
+  <div class="table-wrap"><table><thead><tr><th>域</th><th>实体</th><th>关键要求</th></tr></thead><tbody>
+    <tr><td>用户</td><td>users, consents, profiles, birth_profiles</td><td>出生资料独立加密；精确地点与时间最小化保存</td></tr>
+    <tr><td>占卜</td><td>readings, spreads, cards, charts, numerology_runs</td><td>记录随机种子/算法版本、内容版本、用户问题和免责声明版本</td></tr>
+    <tr><td>仪式</td><td>intentions, sanctuaries, rituals, ritual_items, journal_entries</td><td>私密默认、可删除、公开分享必须二次确认并脱敏</td></tr>
+    <tr><td>商业</td><td>products, prices, orders, payment_attempts, entitlements, subscriptions</td><td>幂等、Webhook 签名、账实一致、国家与税务快照</td></tr>
+    <tr><td>治理</td><td>country_policies, safety_events, content_versions, experiments</td><td>所有地区差异、审核动作和实验曝光可审计</td></tr>
+  </tbody></table></div>
+
+  <h3 style="margin-top:34px">自动化运行体系</h3>
+  <div class="grid-4">
+    <div class="card"><h3>内容</h3><p>审核知识库、版本发布、翻译草稿、文化顾问审批、过期内容提醒。</p></div>
+    <div class="card"><h3>增长</h3><p>每日主题、回访提醒、邮件/Push、分享卡、SEO 页面生成与 A/B 测试。</p></div>
+    <div class="card"><h3>商业</h3><p>订阅续费、失败重试、税、发票、风控评分、拒付证据包和退款规则。</p></div>
+    <div class="card"><h3>安全</h3><p>敏感意图检测、诈骗模式、异常消费、内容分级和人工升级队列。</p></div>
+  </div>
+</div></section>
+
+<section id="launch"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">08 · Go-to-Market</div><h2>全球不是一次上线，而是同一内核的分波复制</h2></div><div><p class="section-intro">产品、内容、支付和法律都需要国家级策略。第一波验证跨文化通用核心，后续用传统包和本地支付扩展，而不是在首日同时支持所有宗教与国家。</p></div></div>
+  <div class="grid-3">
+    <article class="card"><div class="tag">Wave 1</div><h3>英语核心市场</h3><p>美国、加拿大、英国、欧盟主要国家、澳大利亚、新西兰；以实际法律和收单书面批准为前提。语言：英语优先，西语/葡语进入测试。</p></article>
+    <article class="card"><div class="tag">Wave 2</div><h3>拉美与印度分线</h3><p>拉美补充本地支付和西葡内容；印度采用独立内容顾问、Vedic 模块、当地实体/税务/支付方案，不直接复制全球文案。</p></article>
+    <article class="card"><div class="tag">Wave 3</div><h3>高复杂度国家</h3><p>日本、墨西哥、泰国及其他高风险地区仅在专门法律评估和替代收单完成后开放；中国大陆与部分中东市场另做内容、支付与访问可行性研究。</p></article>
+  </div>
+  <h3 style="margin-top:35px">高效获客组合</h3>
+  <div class="grid-4">
+    <div class="card"><h3>SEO 工具</h3><p>出生盘、生命灵数、塔罗牌义、关系匹配、月相与年度主题，形成高意图长尾流量。</p></div>
+    <div class="card"><h3>可分享卡片</h3><p>默认隐藏问题和敏感信息；生成美观的符号、关键词和反思句，驱动社交传播。</p></div>
+    <div class="card"><h3>创作者合作</h3><p>塔罗、占星、心理与 wellness 创作者；禁止用虚假见证和保证性效果广告。</p></div>
+    <div class="card"><h3>节律内容</h3><p>新月、满月、季节、生日、年末复盘和关系节点；以用户价值而非恐惧营销驱动回访。</p></div>
+  </div>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">09 · Roadmap</div><h2>先承保，再开发；先留存，再全球扩张</h2></div><div><p class="section-intro">以下时间为拥有一支 7–9 人精干团队时的规划估算。支付承保和法律审查可以改变时间线，必须与产品开发并行、但优先级更高。</p></div></div>
+  <div class="grid-2">
+    <div class="timeline">
+      <div class="phase"><div class="time">第 0–3 周</div><h3>可行性与承保闸门</h3><p>形成实体与国家方案；向至少 3 家 PSP 提交完整业务、文案、商品、退款与风控包；完成品牌与文化顾问初筛。</p></div>
+      <div class="phase"><div class="time">第 2–7 周</div><h3>产品骨架与内容系统</h3><p>设计系统、账户、匿名体验、内容 CMS、塔罗与数字命理引擎、数据分类、事件模型。</p></div>
+      <div class="phase"><div class="time">第 5–11 周</div><h3>占星、AI 与数字圣所</h3><p>出生盘服务、知识库、结构化解释、安全分类、仪式场景、日志与回访。</p></div>
+      <div class="phase"><div class="time">第 9–14 周</div><h3>商业化与封闭测试</h3><p>托管收银台、订阅、订单权益、退款、税务、风控；500–2,000 名封闭用户验证。</p></div>
+      <div class="phase"><div class="time">第 14–16+ 周</div><h3>受控上线</h3><p>先开放已承保国家；逐日观察付费、退款、拒付、安全、内容质量与服务器成本。</p></div>
+    </div>
+    <div>
+      <article class="card"><h3>建议团队</h3><ul class="list"><li>产品负责人 / 创始人</li><li>产品设计师 1</li><li>前端 2</li><li>后端 / 全栈 2</li><li>AI / 内容工程 1</li><li>内容主编 + 塔罗/占星顾问 1–2</li><li>增长 / 生命周期 1</li><li>法律、税务、安全按需顾问</li></ul></article>
+      <article class="card" style="margin-top:18px"><h3>规划资金区间</h3><p><b>可收费 MVP：</b>约 $250k–$500k；<br><b>12 个月全球化 v1：</b>约 $700k–$1.5M。</p><p style="margin-top:11px;font-size:13px;color:var(--muted)">仅作为团队与供应商组合的预算框架，不是外部报价；不含大规模品牌投放。</p></article>
+      <article class="card" style="margin-top:18px"><h3>上线闸门</h3><ul class="list"><li>至少一个主支付通道和一个备份通道书面批准</li><li>隐私影响评估、条款、退款与免责声明完成</li><li>关键内容经过传统顾问与安全审核</li><li>支付/权益/退款账实一致测试通过</li><li>危机内容、未成年人、异常消费有升级流程</li></ul></article>
+    </div>
+  </div>
+</div></section>
+
+<section id="risks"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">10 · Risks</div><h2>最大风险不是技术，而是信任失控</h2></div><div><p class="section-intro">本项目可以高度自动化，但不能把伦理与治理外包给模型。以下风险都应成为产品需求，而不是上线前最后一周的法律清单。</p></div></div>
+  <div class="card">
+    <div class="risk"><div><span class="level critical">Critical</span><br><b>支付账户冻结</b></div><span>品类受限、商品描述不清、拒付和隐藏续费会触发风控。</span><span>多 PSP、书面承保、直接商品、清晰账单描述、实时拒付监控和现金储备。</span></div>
+    <div class="risk"><div><span class="level critical">Critical</span><br><b>利用脆弱用户</b></div><span>恐惧型营销、诅咒解除、健康/财富保证可能伤害用户并引发监管。</span><span>免费基础路径、禁用词与场景、消费保护、结果不确定性、危机升级。</span></div>
+    <div class="risk"><div><span class="level high">High</span><br><b>文化挪用与冒犯</b></div><span>把传统符号混搭、AI 编造仪式、错误翻译会破坏品牌。</span><span>按传统建立独立内容包、顾问署名、来源记录、版本审核和用户纠错。</span></div>
+    <div class="risk"><div><span class="level high">High</span><br><b>敏感数据泄露</b></div><span>出生资料、祈愿、关系和健康文本具有高度隐私风险。</span><span>最小化、字段级加密、私密默认、短保留、访问审计、营销与内容隔离。</span></div>
+    <div class="risk"><div><span class="level med">Medium</span><br><b>AI 内容同质化</b></div><span>纯大模型生成容易空泛、重复、缺少传统深度。</span><span>专家知识库、结构化牌义、风格编辑、长期记忆与人工抽检。</span></div>
+    <div class="risk"><div><span class="level med">Medium</span><br><b>留存依赖通知</b></div><span>仅靠每日推送会造成疲劳和卸载。</span><span>用意图回访、日志进展、周期事件与用户主动选择的节律替代轰炸。</span></div>
+  </div>
+</div></section>
+
+<section id="actions"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">11 · Founder Actions</div><h2>接下来 30 天只做六件事</h2></div><div><p class="section-intro">在这些验证完成前，不建议投入完整的全球开发预算。</p></div></div>
+  <div class="grid-3">
+    <article class="card"><div class="tag">01</div><h3>确定品牌承诺</h3><p>正式选择“自我反思 / wellness”定位，禁止保证性结果；LUMORA 仅为工作代号，需做商标与域名清查。</p></article>
+    <article class="card"><div class="tag">02</div><h3>拿支付预审</h3><p>用真实落地页、商品、价格、条款和退款流程，向 3–5 家收单/加密网关提交预审。</p></article>
+    <article class="card"><div class="tag">03</div><h3>访谈 30 名用户</h3><p>美国/英国/拉美/印度各组样本；验证为什么来、什么会分享、何时愿意付款、何时感到被操纵。</p></article>
+    <article class="card"><div class="tag">04</div><h3>测试核心闭环</h3><p>用本报告附带原型测试：首次解读 → 选择意图 → 点灯/上香 → 写一句日志。</p></article>
+    <article class="card"><div class="tag">05</div><h3>建立内容委员会</h3><p>至少一名塔罗、一名西方占星、一名跨文化编辑和一名安全/伦理顾问。</p></article>
+    <article class="card"><div class="tag">06</div><h3>设定 Kill Criteria</h3><p>若用户完成首次解读后不足 25% 愿意设定意图，或 7 日回访不足 8%，先迭代价值闭环，不扩大开发和投放。</p></article>
+  </div>
+  <div class="sticky-summary">
+    <div class="mini"><b>最值得下注的差异化</b><span>跨传统的“解读—意图—仪式—日志”闭环</span></div>
+    <div class="mini"><b>最先解决的不可逆问题</b><span>支付承保、商品定义、用户保护和敏感数据治理</span></div>
+    <div class="mini"><b>最正确的第一版</b><span>Web/PWA、自助式、三类占卜、私密圣所、直接支付</span></div>
+  </div>
+</div></section>
+
+<section id="sources"><div class="wrap">
+  <div class="section-head"><div><div class="kicker">Sources</div><h2>关键来源与假设</h2></div><div><p class="section-intro">市场数字来自不同口径，只用于方向判断；财务情景、预算、付费率和时间线均为规划假设，必须用预审、用户研究和真实运营数据替换。</p></div></div>
+  <ol class="footnotes">
+    <li><a href="https://apnews.com/article/astrology-tarot-fortune-telling-psychics-41a815371e107ddef503910eaa9d8378" target="_blank" rel="noreferrer">AP News：Pew 调查与美国 psychic services 2024 行业收入</a>，2025。</li>
+    <li><a href="https://www.axios.com/newsletters/axios-finish-line-e4f099a0-372b-11f0-b462-efcba435e836" target="_blank" rel="noreferrer">Axios：占星消费及社交化产品趋势</a>，2025。</li>
+    <li><a href="https://economictimes.indiatimes.com/tech/startups/online-astrology-service-astrotalks-fy25-revenue-surges-81-to-rs-1176-crore/articleshow/127691241.cms" target="_blank" rel="noreferrer">The Economic Times：Astrotalk FY25 收入增长</a>，2026-01-28。</li>
+    <li><a href="https://www.theverge.com/tech/662005/india-spiritual-apps" target="_blank" rel="noreferrer">The Verge：印度 spiritual tech、Sadhana 数字仪式与行业争议</a>，2025-05-08。</li>
+    <li><a href="https://stripe.com/legal/restricted-businesses" target="_blank" rel="noreferrer">Stripe：Prohibited and Restricted Businesses</a>，页面更新至 2026-05-13。</li>
+    <li><a href="https://www.adyen.com/legal/list-restricted-prohibited" target="_blank" rel="noreferrer">Adyen：Restricted / Prohibited Products & Services</a>，访问于 2026-07-16。</li>
+    <li><a href="https://commission.europa.eu/law/law-topic/data-protection/rules-business-and-organisations/legal-grounds-processing-data/sensitive-data/what-personal-data-considered-sensitive_en" target="_blank" rel="noreferrer">European Commission：GDPR sensitive data 范畴</a>。</li>
+    <li><a href="https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai" target="_blank" rel="noreferrer">European Commission：EU AI Act 透明义务</a>。</li>
+    <li><a href="https://www.astro.com/swisseph/swephinfo_e.htm" target="_blank" rel="noreferrer">Astrodienst：Swiss Ephemeris 双重许可说明</a>。</li>
+    <li><a href="https://arxiv.org/abs/2602.11367" target="_blank" rel="noreferrer">Prock et al.：AI-assisted tarot 的解释、模糊性与用户自主性</a>，arXiv 2026。</li>
+  </ol>
+  <p class="warn" style="margin-top:24px">本文件是产品与商业规划，不构成任何国家的法律、税务、支付承保或金融意见。所有上线国家和支付通道均需当地专业顾问与服务商书面批准。</p>
+</div></section>
+</main>
+
+<footer class="footer"><div class="wrap">LUMORA 为内部工作代号，尚未完成商标、域名或文化适配审查。文档版本：2026-07-16。</div></footer>
+</body>
+</html>

@@ -1,0 +1,206 @@
+# RITUVIA command policy. Rules govern commands requested outside the sandbox.
+# Project-local rules load only after the project is trusted.
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Pushing changes affects the remote repository and requires owner awareness.",
+    match = ["git push", "git push origin feature/rit-001"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f", "--force-with-lease"]],
+    decision = "forbidden",
+    justification = "Do not force-push; create a normal commit or prepare a reviewed non-destructive recovery plan.",
+    match = ["git push --force", "git push -f", "git push --force-with-lease"],
+    not_match = ["git push origin feature/rit-001"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["origin", "upstream"], ["--force", "-f", "--force-with-lease"]],
+    decision = "forbidden",
+    justification = "Do not force-push; create a normal commit or prepare a reviewed non-destructive recovery plan.",
+    match = ["git push origin --force", "git push upstream --force-with-lease"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["origin", "upstream"], ["main", "master"], ["--force", "-f", "--force-with-lease"]],
+    decision = "forbidden",
+    justification = "Do not force-push protected branches; create a normal commit or prepare a reviewed non-destructive recovery plan.",
+    match = ["git push origin main --force", "git push upstream master -f"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["origin", "upstream"], ["+main", "+master"]],
+    decision = "forbidden",
+    justification = "Do not use force refspecs on protected branches; create a normal commit or prepare a reviewed non-destructive recovery plan.",
+    match = ["git push origin +main", "git push upstream +master"],
+)
+
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Preserve work and history; use targeted restore/revert after inspecting the diff.",
+    match = ["git reset --hard", "git reset --hard HEAD~1"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", ["-fdx", "-dfx", "-fd", "-df"]],
+    decision = "forbidden",
+    justification = "This can destroy untracked local evidence and secrets/config; clean targeted paths only after review.",
+    match = ["git clean -fdx", "git clean -dfx", "git clean -fd", "git clean -df"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", ["-fxd", "-xfd", "-xdf"]],
+    decision = "forbidden",
+    justification = "This can destroy untracked local evidence and secrets/config; clean targeted paths only after review.",
+    match = ["git clean -fxd", "git clean -xfd", "git clean -xdf"],
+)
+
+prefix_rule(
+    pattern = ["git", "clean", ["-d", "-f"], ["-d", "-f"]],
+    decision = "forbidden",
+    justification = "This can destroy untracked local evidence and secrets/config; clean targeted paths only after review.",
+    match = ["git clean -d -f", "git clean -f -d"],
+)
+
+prefix_rule(
+    pattern = ["rm", ["-rf", "-fr"]],
+    decision = "prompt",
+    justification = "Recursive deletion requires explicit review of the target.",
+    match = ["rm -rf node_modules", "rm -fr /tmp/rituvia-test"],
+)
+
+prefix_rule(
+    pattern = ["npx", "prisma", "migrate", "reset"],
+    decision = "forbidden",
+    justification = "Do not reset databases through Codex; use environment-specific, reviewed reset scripts for local synthetic data only.",
+    match = ["npx prisma migrate reset"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", "prisma", "migrate", "reset"],
+    decision = "forbidden",
+    justification = "Do not reset databases through Codex; use environment-specific, reviewed reset scripts for local synthetic data only.",
+    match = ["pnpm prisma migrate reset"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", "exec", "prisma", "migrate", "reset"],
+    decision = "forbidden",
+    justification = "Do not reset databases through Codex; use environment-specific, reviewed reset scripts for local synthetic data only.",
+    match = ["pnpm exec prisma migrate reset"],
+)
+
+prefix_rule(
+    pattern = ["npx", "prisma", "migrate", "deploy"],
+    decision = "prompt",
+    justification = "Database deployment can affect shared/production data and requires owner/environment confirmation.",
+    match = ["npx prisma migrate deploy"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", "prisma", "migrate", "deploy"],
+    decision = "prompt",
+    justification = "Database deployment can affect shared/production data and requires owner/environment confirmation.",
+    match = ["pnpm prisma migrate deploy"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", "exec", "prisma", "migrate", "deploy"],
+    decision = "prompt",
+    justification = "Database deployment can affect shared/production data and requires owner/environment confirmation.",
+    match = ["pnpm exec prisma migrate deploy"],
+)
+
+prefix_rule(
+    pattern = ["terraform", "destroy"],
+    decision = "forbidden",
+    justification = "Infrastructure destruction is an owner-only reviewed action; prepare a plan instead.",
+    match = ["terraform destroy", "terraform destroy -auto-approve"],
+)
+
+prefix_rule(
+    pattern = ["terraform", "apply"],
+    decision = "prompt",
+    justification = "Infrastructure changes require an inspected plan, exact environment, and owner approval.",
+    match = ["terraform apply", "terraform apply saved.plan"],
+)
+
+prefix_rule(
+    pattern = ["kubectl", "delete"],
+    decision = "prompt",
+    justification = "Cluster deletion can disrupt service or data; require explicit owner review.",
+    match = ["kubectl delete pod web-1", "kubectl delete namespace production"],
+)
+
+prefix_rule(
+    pattern = ["kubectl", "apply"],
+    decision = "prompt",
+    justification = "Cluster changes require explicit environment and owner review.",
+    match = ["kubectl apply -f deployment.yml"],
+)
+
+prefix_rule(
+    pattern = ["vercel", "--prod"],
+    decision = "prompt",
+    justification = "Production deployment is a human approval gate.",
+    match = ["vercel --prod"],
+)
+
+prefix_rule(
+    pattern = ["vercel", "deploy", "--prod"],
+    decision = "prompt",
+    justification = "Production deployment is a human approval gate.",
+    match = ["vercel deploy --prod"],
+)
+
+prefix_rule(
+    pattern = [["fly", "flyctl"], "deploy"],
+    decision = "prompt",
+    justification = "Deployment requires explicit environment and owner approval.",
+    match = ["fly deploy", "flyctl deploy"],
+)
+
+prefix_rule(
+    pattern = ["railway", "up"],
+    decision = "prompt",
+    justification = "Deployment requires explicit environment and owner approval.",
+    match = ["railway up"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", "create"],
+    decision = "prompt",
+    justification = "Opening a remote PR is useful but should be visible to the owner.",
+    match = ["gh pr create --fill"],
+)
+
+prefix_rule(
+    pattern = ["gh", "release", "create"],
+    decision = "prompt",
+    justification = "Publishing a release is a human approval gate.",
+    match = ["gh release create v1.0.0"],
+)
+
+prefix_rule(
+    pattern = ["npm", "publish"],
+    decision = "forbidden",
+    justification = "Do not publish packages from this project automatically; prepare and review a release instead.",
+    match = ["npm publish"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", "publish"],
+    decision = "forbidden",
+    justification = "Do not publish packages from this project automatically; prepare and review a release instead.",
+    match = ["pnpm publish"],
+)
+
+prefix_rule(
+    pattern = ["pnpm", ["--recursive", "-r"], "publish"],
+    decision = "forbidden",
+    justification = "Do not publish workspace packages automatically; prepare and review a release instead.",
+    match = ["pnpm --recursive publish", "pnpm -r publish"],
+)
