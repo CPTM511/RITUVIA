@@ -35,6 +35,17 @@ export type TarotReadingMessages = Readonly<{
     offline: Readonly<{ message: string; retry: string; title: string }>;
     ready: Readonly<{ message: string; reveal: string; title: string }>;
     replayed: string;
+    resume: Readonly<{
+      chooseNew: string;
+      error: Readonly<{ message: string; title: string }>;
+      invalid: Readonly<{ message: string; title: string }>;
+      loading: string;
+      notFound: Readonly<{ message: string; title: string }>;
+      offline: Readonly<{ message: string; title: string }>;
+      ready: string;
+      retry: string;
+      unavailable: Readonly<{ message: string; title: string }>;
+    }>;
     session: string;
     sessionRequired: Readonly<{ message: string; retry: string; title: string }>;
     unavailable: Readonly<{ message: string; retry: string; title: string }>;
@@ -52,12 +63,14 @@ export type TarotReadingMessages = Readonly<{
     methodologySummary: string;
     newReflection: string;
     newReflectionBoundary: string;
+    notStored: string;
     orientation: Readonly<Record<"reversed" | "upright", string>>;
     perspectiveTitle: string;
     previousPreserved: string;
     positionBoundary: string;
     reflectionTitle: string;
     replayed: string;
+    restored: string;
     saved: string;
     tensionLabel: string;
     themesTitle: string;
@@ -108,7 +121,7 @@ const englishTarotOneCardMessages = {
     introduction:
       "Choose one theme. The server fixes a single card before you reveal it, and the result remains useful without an account or payment.",
     privacy:
-      "Only the selected theme is sent with this reading. This flow has no question field and does not place the result in the URL or product analytics.",
+      "Only the selected theme is sent. After a draw is fixed, this tab temporarily stores only its random reading ID for refresh recovery—not the result text, a question, or analytics data.",
     title: "A single perspective for this moment",
   },
   form: {
@@ -156,6 +169,37 @@ const englishTarotOneCardMessages = {
       title: "Your card is ready",
     },
     replayed: "A matching saved attempt returned the same fixed card.",
+    resume: {
+      chooseNew: "Choose a new theme instead",
+      error: {
+        message:
+          "The saved result could not be checked. Nothing will retry or draw another card automatically.",
+        title: "The saved result could not be restored",
+      },
+      invalid: {
+        message:
+          "The saved result did not pass validation and was removed from this tab. No card was redrawn.",
+        title: "The saved result was invalid",
+      },
+      loading: "Restoring the fixed result saved in this tab",
+      notFound: {
+        message:
+          "That saved result is no longer available to this private session. Its reading ID was removed from this tab.",
+        title: "The saved result is no longer available",
+      },
+      offline: {
+        message:
+          "Reconnect to restore the saved result. Its reading ID remains in this tab, and nothing will retry automatically.",
+        title: "You appear to be offline",
+      },
+      ready: "This is the same saved result. Revealing it does not draw another card.",
+      retry: "Try to restore the saved result",
+      unavailable: {
+        message:
+          "The saved result cannot be restored right now. Its reading ID remains in this tab, and nothing will retry automatically.",
+        title: "The reading service is unavailable",
+      },
+    },
     session: "Creating or resuming a private session",
     sessionRequired: {
       message:
@@ -184,6 +228,8 @@ const englishTarotOneCardMessages = {
     newReflection: "Start a new reflection",
     newReflectionBoundary:
       "A new reflection creates a separate server-selected draw. It does not make this result more certain, and you can stop here.",
+    notStored:
+      "This fixed result remains on this page, but no reading ID is currently stored for refresh recovery.",
     orientation: {
       reversed: "Reversed",
       upright: "Upright",
@@ -195,7 +241,10 @@ const englishTarotOneCardMessages = {
       "This symbolic perspective offers something to consider, not a prediction or instruction.",
     reflectionTitle: "A question to reflect on",
     replayed: "This was the same verified result from an earlier matching attempt.",
-    saved: "This fixed draw is linked to the current private browser session.",
+    restored:
+      "This is the same fixed result restored for this private session. No card was redrawn.",
+    saved:
+      "This tab temporarily stores only this reading's random ID so the same fixed result can be restored after a refresh.",
     tensionLabel: "A tension to consider",
     themesTitle: "Core themes",
     title: "Your one-card reflection",

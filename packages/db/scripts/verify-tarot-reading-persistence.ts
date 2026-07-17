@@ -704,10 +704,53 @@ await withLocalPostgresLease(async (lease) => {
         await expectPostgresError(() => runtimeSql.query(statement), "42501");
       }
 
+      const expiredOwner = await createdSession(identity);
+      const expiredReading = await persistence.resolveCreate({
+        prepare: prepare({
+          activeVersion: "test.idempotency-hmac.v2",
+          executionCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        request: request("transition"),
+        token: expiredOwner.token,
+      });
+      assert.deepEqual(
+        await persistence.get({ readingId: expiredReading.reading.id, token: expiredOwner.token }),
+        expiredReading.reading,
+      );
+      await migrator.query(
+        `UPDATE reading
+            SET created_at = CURRENT_TIMESTAMP - interval '2 hours',
+                completed_at = CURRENT_TIMESTAMP - interval '2 hours',
+                expires_at = CURRENT_TIMESTAMP - interval '1 hour'
+          WHERE id = $1::uuid`,
+        [expiredReading.reading.id],
+      );
+      assert.deepEqual(await identity.resolveSession(expiredOwner.token), expiredOwner.context);
+      assert.equal(
+        await persistence.get({ readingId: expiredReading.reading.id, token: expiredOwner.token }),
+        null,
+      );
+
       const revokedOwner = await createdSession(identity);
+      const revokedReading = await persistence.resolveCreate({
+        prepare: prepare({
+          activeVersion: "test.idempotency-hmac.v2",
+          executionCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        request: request("gratitude"),
+        token: revokedOwner.token,
+      });
+      assert.deepEqual(
+        await persistence.get({ readingId: revokedReading.reading.id, token: revokedOwner.token }),
+        revokedReading.reading,
+      );
       assert.equal(await identity.revokeSession(revokedOwner.token), true);
       assert.equal(
-        await persistence.get({ readingId: created.reading.id, token: revokedOwner.token }),
+        await persistence.get({ readingId: revokedReading.reading.id, token: revokedOwner.token }),
         null,
       );
       await assert.rejects(

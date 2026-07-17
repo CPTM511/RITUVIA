@@ -102,6 +102,9 @@ const parseIdentifier = (value: unknown): string => {
   return identifierPattern.test(parsed) ? parsed : invalid();
 };
 
+export const isTarotReadingId = (value: unknown): value is string =>
+  typeof value === "string" && uuidV4Pattern.test(value);
+
 const parseReference = (value: unknown): Readonly<{ id: string; version: string }> => {
   const candidate = record(value);
   if (candidate === null || !hasExactKeys(candidate, ["id", "version"])) return invalid();
@@ -302,9 +305,9 @@ export const parseTarotReadingResponse = (
       candidate.locale !== "en" ||
       candidate.readingType !== expectedReadingType ||
       candidate.status !== "facts_ready" ||
-      typeof candidate.readingId !== "string" ||
-      !uuidV4Pattern.test(candidate.readingId) ||
+      !isTarotReadingId(candidate.readingId) ||
       typeof candidate.readingPolicyVersion !== "string" ||
+      candidate.readingPolicyVersion.length > 100 ||
       !identifierPattern.test(candidate.readingPolicyVersion)
     ) {
       return invalid();

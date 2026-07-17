@@ -162,7 +162,12 @@ describe("public shell request and crawl gate", () => {
     ["POST", "/api/v1/readings/tarot.rsc"],
     ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333?private=canary"],
     ["GET", "/api/v1/readings/not-a-reading"],
+    ["HEAD", "/api/v1/readings/33333333-3333-4333-8333-333333333333"],
+    ["OPTIONS", "/api/v1/readings/33333333-3333-4333-8333-333333333333"],
     ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333/"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333.rsc"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333.segments/private"],
     ["GET", "/api/v1/readings/tarot/33333333-3333-4333-8333-333333333333"],
     ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333/report"],
     ["HEAD", "/api/v1/readings/33333333-3333-4333-8333-333333333333/report"],
@@ -189,18 +194,27 @@ describe("public shell request and crawl gate", () => {
     { "next-router-segment-prefetch": "1" },
     { "next-router-state-tree": "private-canary" },
     { rsc: "1" },
-  ])("rejects a framework-shaped report POST before lookup: %#", async (headers) => {
+  ])("rejects framework-shaped private reading requests before lookup: %#", async (headers) => {
     harness.tarotReadingAvailability = "enabled";
-    const response = await proxy(
-      request("/api/v1/readings/33333333-3333-4333-8333-333333333333/report", {
-        headers,
-        method: "POST",
-      }),
-    );
+    const responses = await Promise.all([
+      proxy(
+        request("/api/v1/readings/33333333-3333-4333-8333-333333333333", {
+          headers,
+        }),
+      ),
+      proxy(
+        request("/api/v1/readings/33333333-3333-4333-8333-333333333333/report", {
+          headers,
+          method: "POST",
+        }),
+      ),
+    ]);
 
-    expect(response.status).toBe(404);
-    expect(await response.text()).toBe("");
-    expect(response.headers.get("cache-control")).toContain("no-store");
+    for (const response of responses) {
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+      expect(response.headers.get("cache-control")).toContain("no-store");
+    }
     expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 

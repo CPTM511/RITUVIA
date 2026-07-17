@@ -28,6 +28,7 @@ const reachRevealedState = () => {
   const ready = reduceTarotOneCardState(drawing, {
     replayed: false,
     response: parseTarotOneCardResponse(createTarotOneCardResponseFixture()),
+    resumeStored: true,
     type: "reading_ready",
   });
   return reduceTarotOneCardState(ready, { type: "reveal" });
@@ -47,6 +48,7 @@ describe("one-card interaction state machine", () => {
     const ready = reduceTarotOneCardState(retriedDrawing, {
       replayed: true,
       response: parseTarotOneCardResponse(createTarotOneCardResponseFixture()),
+      resumeStored: true,
       type: "reading_ready",
     });
     const revealed = reduceTarotOneCardState(ready, { type: "reveal" });
@@ -54,6 +56,87 @@ describe("one-card interaction state machine", () => {
     expect(retrying.operation).toBe(operation);
     expect(ready.phase).toBe("ready_to_reveal");
     expect(revealed).toMatchObject({ operation, phase: "revealed", replayed: true });
+  });
+
+  it("restores a validated saved reading to explicit reveal without creating an operation", () => {
+    const response = parseTarotOneCardResponse(createTarotOneCardResponseFixture());
+    const restoring = reduceTarotOneCardState(initialTarotOneCardState, {
+      readingId: response.readingId,
+      type: "restore_begin",
+    });
+    const ready = reduceTarotOneCardState(restoring, { response, type: "restore_ready" });
+    const revealed = reduceTarotOneCardState(ready, { type: "reveal" });
+
+    expect(restoring).toMatchObject({
+      operation: null,
+      phase: "restoring",
+      resumeReadingId: response.readingId,
+    });
+    expect(ready).toMatchObject({
+      operation: null,
+      phase: "ready_to_reveal",
+      replayed: false,
+      restored: true,
+      resumeStored: true,
+      themeCode: response.themeCode,
+    });
+    expect(revealed).toMatchObject({ operation: null, phase: "revealed", restored: true });
+  });
+
+  it("retains a saved ID through transient restore failure and retries only explicitly", () => {
+    const readingId = createTarotOneCardResponseFixture().readingId;
+    const restoring = reduceTarotOneCardState(initialTarotOneCardState, {
+      readingId,
+      type: "restore_begin",
+    });
+    const failed = reduceTarotOneCardState(restoring, {
+      failure: "offline",
+      type: "restore_fail",
+    });
+
+    expect(failed).toMatchObject({
+      phase: "restore_failed",
+      resumeFailure: "offline",
+      resumeReadingId: readingId,
+      resumeStored: true,
+    });
+    expect(reduceTarotOneCardState(failed, { type: "restore_retry" })).toMatchObject({
+      phase: "restoring",
+      resumeFailure: null,
+      resumeReadingId: readingId,
+    });
+  });
+
+  it.each(["invalid", "not_found"] as const)(
+    "drops a definitively unusable saved ID after %s",
+    (failure) => {
+      const readingId = createTarotOneCardResponseFixture().readingId;
+      const restoring = reduceTarotOneCardState(initialTarotOneCardState, {
+        readingId,
+        type: "restore_begin",
+      });
+      const failed = reduceTarotOneCardState(restoring, { failure, type: "restore_fail" });
+
+      expect(failed).toMatchObject({
+        phase: "restore_failed",
+        resumeFailure: failure,
+        resumeReadingId: null,
+        resumeStored: false,
+      });
+      expect(reduceTarotOneCardState(failed, { type: "restore_retry" })).toBe(failed);
+      expect(reduceTarotOneCardState(failed, { type: "restore_dismiss" })).toBe(
+        initialTarotOneCardState,
+      );
+    },
+  );
+
+  it("rejects an invalid resume identifier before entering the restore state", () => {
+    expect(
+      reduceTarotOneCardState(initialTarotOneCardState, {
+        readingId: "not-a-reading",
+        type: "restore_begin",
+      }),
+    ).toBe(initialTarotOneCardState);
   });
 
   it("requires explicit start-over after a conflict and clears the saved operation", () => {
@@ -105,6 +188,25 @@ describe("one-card interaction state machine", () => {
       previousResult: choosingAgain.previousResult,
     });
     expect(begunAgain.operation).not.toBe(operation);
+
+    const drawingAgain = reduceTarotOneCardState(begunAgain, { type: "session_ready" });
+    const replacement = parseTarotOneCardResponse({
+      ...createTarotOneCardResponseFixture(),
+      readingId: "55555555-5555-4555-8555-555555555555",
+      themeCode: "creativity",
+    });
+    const replacementReady = reduceTarotOneCardState(drawingAgain, {
+      replayed: false,
+      response: replacement,
+      resumeStored: true,
+      type: "reading_ready",
+    });
+    expect(replacementReady).toMatchObject({
+      phase: "ready_to_reveal",
+      previousResult: { resumeStored: false },
+      response: replacement,
+      resumeStored: true,
+    });
   });
 
   it.each([

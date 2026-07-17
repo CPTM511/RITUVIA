@@ -20,7 +20,7 @@ const englishTarotThreeCardMessages = {
     introduction:
       "Choose one theme. The server fixes three different cards for Situation, Action, and Possibility before you reveal them. Possibility is a reflective lens, not a prediction.",
     privacy:
-      "Only the selected theme is sent with this reading. This flow has no question field and does not place the result in the URL or product analytics.",
+      "Only the selected theme is sent. After a draw is fixed, this tab temporarily stores only its random reading ID for refresh recovery—not the result text, a question, or analytics data.",
     title: "Three ordered lenses for the next step",
   },
   form: {
@@ -68,6 +68,38 @@ const englishTarotThreeCardMessages = {
       title: "Your three cards are ready",
     },
     replayed: "A matching saved attempt returned the same three fixed cards in the same order.",
+    resume: {
+      chooseNew: "Choose a new theme instead",
+      error: {
+        message:
+          "The saved result could not be checked. Nothing will retry or draw other cards automatically.",
+        title: "The saved result could not be restored",
+      },
+      invalid: {
+        message:
+          "The saved result did not pass validation and was removed from this tab. No cards were redrawn.",
+        title: "The saved result was invalid",
+      },
+      loading: "Restoring the fixed result saved in this tab",
+      notFound: {
+        message:
+          "That saved result is no longer available to this private session. Its reading ID was removed from this tab.",
+        title: "The saved result is no longer available",
+      },
+      offline: {
+        message:
+          "Reconnect to restore the saved result. Its reading ID remains in this tab, and nothing will retry automatically.",
+        title: "You appear to be offline",
+      },
+      ready:
+        "These are the same saved cards in the same order. Revealing them does not draw again.",
+      retry: "Try to restore the saved result",
+      unavailable: {
+        message:
+          "The saved result cannot be restored right now. Its reading ID remains in this tab, and nothing will retry automatically.",
+        title: "The reading service is unavailable",
+      },
+    },
     session: "Creating or resuming a private session",
     sessionRequired: {
       message:
@@ -97,6 +129,8 @@ const englishTarotThreeCardMessages = {
     newReflection: "Start a new reflection",
     newReflectionBoundary:
       "A new reflection creates a separate server-selected draw. It does not make this result more certain, and you can stop here.",
+    notStored:
+      "This fixed result remains on this page, but no reading ID is currently stored for refresh recovery.",
     orientation: {
       reversed: "Reversed",
       upright: "Upright",
@@ -108,7 +142,10 @@ const englishTarotThreeCardMessages = {
       "Situation and Action are reflective lenses. Possibility is something to consider, not a prediction of what will happen.",
     reflectionTitle: "A question to reflect on",
     replayed: "This was the same verified result from an earlier matching attempt.",
-    saved: "This fixed draw is linked to the current private browser session.",
+    restored:
+      "This is the same fixed result restored for this private session. No cards were redrawn.",
+    saved:
+      "This tab temporarily stores only this reading's random ID so the same fixed result can be restored after a refresh.",
     tensionLabel: "A tension to consider",
     themesTitle: "Core themes",
     title: "Your three-card reflection",

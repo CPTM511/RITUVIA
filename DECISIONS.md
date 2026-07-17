@@ -268,3 +268,14 @@ effective until this register links it. Do not rewrite historical rationale; sup
   silent rerolls, while minimal idempotent report records provide auditable correction input without
   collecting private prose, leaking reading existence, or inventing another retention period.
 - **Date:** 2026-07-17
+
+### [D-036 — Tab-scoped UUID-only tarot result resume boundary](records/decisions/D-036.md)
+
+- **Decision:** Store only one strict UUID V4 per tarot reading type in tab-scoped
+  `sessionStorage`; restore through the exact owner-scoped no-store GET into an explicit reveal
+  state; clear invalid/private-404 IDs, retain transient failures for manual retry, and replace the
+  prior ID only after a new fixed result validates.
+- **Reason:** Same-tab recovery preserves a useful immutable result without redraw, private-text
+  storage, cross-tab tracking, new retention, automatic traffic, or loss of the previous result
+  during a failed new attempt.
+- **Date:** 2026-07-18

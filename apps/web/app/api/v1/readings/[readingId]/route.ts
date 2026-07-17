@@ -6,7 +6,7 @@ import { getWebTarotReading } from "../../../../../server/tarot-reading-runtime"
 import { TarotReadingApplicationError } from "../../../../../server/tarot-reading";
 import {
   applyPrivateHeaders,
-  hasAcceptedPrivateReadOrigin,
+  hasAcceptedPrivateReadRequest,
   problem,
   readingIdPattern,
   tarotReadingResourceApiPath,
@@ -27,7 +27,7 @@ const notFound = (request: NextRequest): NextResponse =>
   });
 
 export const GET = async (request: NextRequest, context: Context): Promise<NextResponse> => {
-  if (!hasAcceptedPrivateReadOrigin(request) || request.nextUrl.search !== "") {
+  if (!hasAcceptedPrivateReadRequest(request) || request.nextUrl.search !== "") {
     return notFound(request);
   }
   const { readingId } = await context.params;
@@ -41,7 +41,10 @@ export const GET = async (request: NextRequest, context: Context): Promise<NextR
       ? notFound(request)
       : applyPrivateHeaders(NextResponse.json(reading, { status: 200 }));
   } catch (error) {
-    if (error instanceof TarotReadingApplicationError && error.code === "session_required") {
+    if (
+      error instanceof TarotReadingApplicationError &&
+      (error.code === "not_found" || error.code === "session_required")
+    ) {
       return notFound(request);
     }
     return problem(request, {

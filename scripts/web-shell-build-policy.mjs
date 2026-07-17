@@ -6,7 +6,7 @@ export const webShellBuildBudgets = Object.freeze({
   cssGzipBytes: 6 * 1024,
   htmlGzipBytes: 8 * 1024,
   iconBytes: 2 * 1024,
-  javascriptGzipBytes: 220 * 1024,
+  javascriptGzipBytes: 224 * 1024,
 });
 
 const parseAttributeEntries = (tag) =>

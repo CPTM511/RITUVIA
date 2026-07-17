@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   executeTarotOneCardOperation,
+  executeTarotReadingResume,
   executeTarotReadingOperation,
 } from "../app/_components/tarot-one-card-transport";
 import {
@@ -207,5 +208,98 @@ describe("three-card browser transport", () => {
         themeCode: "open_reflection",
       }),
     ).rejects.toMatchObject({ failure: "error" });
+  });
+});
+
+describe("same-session tarot resume transport", () => {
+  it.each([
+    ["one_card", createTarotOneCardResponseFixture],
+    ["three_card", createTarotThreeCardResponseFixture],
+  ] as const)("restores one exact %s result with GET only", async (readingType, fixture) => {
+    const body = fixture();
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push([input, init]);
+      return Response.json(body, { status: 200 });
+    }) as unknown as typeof fetch;
+    const signal = new AbortController().signal;
+
+    await expect(
+      executeTarotReadingResume({ fetcher, readingId: body.readingId, readingType, signal }),
+    ).resolves.toEqual(body);
+    expect(calls).toEqual([
+      [
+        `/api/v1/readings/${body.readingId}`,
+        {
+          cache: "no-store",
+          credentials: "same-origin",
+          method: "GET",
+          signal,
+        },
+      ],
+    ]);
+    expect(calls[0]?.[1]).not.toHaveProperty("body");
+    expect(calls[0]?.[1]).not.toHaveProperty("headers");
+    expect(String(calls[0]?.[0])).not.toMatch(/anonymous\/session|readings\/tarot/iu);
+  });
+
+  it.each([
+    [404, "not_found"],
+    [503, "unavailable"],
+    [500, "error"],
+  ] as const)("maps resume status %s to %s", async (status, failure) => {
+    const body = createTarotOneCardResponseFixture();
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status })) as unknown as typeof fetch;
+
+    await expect(
+      executeTarotReadingResume({
+        fetcher,
+        readingId: body.readingId,
+        readingType: "one_card",
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toMatchObject({ failure });
+  });
+
+  it("rejects an invalid saved ID without issuing a request", async () => {
+    const fetcher = vi.fn() as unknown as typeof fetch;
+
+    await expect(
+      executeTarotReadingResume({
+        fetcher,
+        readingId: "not-a-reading",
+        readingType: "one_card",
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toMatchObject({ failure: "invalid" });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed, oversized, ID-mismatched, and type-mismatched restore responses", async () => {
+    const body = createTarotOneCardResponseFixture();
+    const differentId = { ...body, readingId: "55555555-5555-4555-8555-555555555555" };
+    const responses = [
+      new Response("{}", { headers: { "content-type": "text/plain" }, status: 200 }),
+      new Response("{}", {
+        headers: { "content-length": "65537", "content-type": "application/json" },
+        status: 200,
+      }),
+      Response.json(differentId, { status: 200 }),
+      Response.json(createTarotThreeCardResponseFixture(), { status: 200 }),
+    ];
+
+    for (const response of responses) {
+      const fetcher = vi.fn().mockResolvedValue(response) as unknown as typeof fetch;
+      await expect(
+        executeTarotReadingResume({
+          fetcher,
+          readingId: body.readingId,
+          readingType: "one_card",
+          signal: new AbortController().signal,
+        }),
+      ).rejects.toMatchObject({ failure: "invalid" });
+    }
   });
 });

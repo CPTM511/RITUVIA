@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-07-17. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-07-18. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -1026,9 +1026,9 @@ Use this order:
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-17
+**Last reconciled:** 2026-07-18
 
-**Stage:** M2 local implementation is complete through the private, safe-off RIT-027 unified tarot-limit, explicit-new-reflection, and categorical-report slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through the private, safe-off RIT-029 same-session tarot-result-resume slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -1074,17 +1074,21 @@ Use this order:
   with six approved categories, whole/position targets, independent idempotency, empty `204`
   create/replay, indistinguishable private `404`, changed-reuse `409`, no free text, no analytics,
   no reading-quota use, inherited expiry, append-only persistence, and least-privilege runtime access.
+- Tab-scoped one-card and three-card result resume using only per-type strict UUID V4 values,
+  owner-scoped no-store GET, explicit no-redraw reveal, definitive stale-ID clearing, transient
+  manual recovery, storage-denied degradation, previous-result preservation, and database-clock
+  reading-expiry enforcement; no result/question text or analytics payload enters browser storage.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 876 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 904 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
-- A production-available reading flow, accounts, payments, legal terms/policies, rituals, or other complete end-to-end product flows; the reviewed English public pages, private intake, and private one-card flow remain server-side safe-off until their existing gates are explicitly satisfied.
+- A production-available reading flow, accounts, payments, legal terms/policies, rituals, or other complete end-to-end product flows; the reviewed English public pages, private intake, and tarot flows remain server-side safe-off until their existing gates are explicitly satisfied.
 - An approved production anonymous-session retention duration, legal consent notice, consent/privacy-control UI, per-client abuse strategy, account merge, anonymous export/deletion workflow, or private-resource authorization surface; the current session policy is required configuration and safe-off when absent.
 - A country-specific crisis-resource program, nuanced or probabilistic moderation, intake persistence, question-bearing analytics, or an intake-to-reading continuation; the owner-approved English lexical baseline remains safe-off and is not the RIT-032 pre-generation policy.
 - A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
@@ -1126,8 +1130,8 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-027 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
-lint, strict type checking, 876 unit/contract tests in 60 files, configuration-boundary integration,
+The RIT-029 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
+lint, strict type checking, 904 unit/contract tests in 61 files, configuration-boundary integration,
 the 160-file/eight-module architecture gate, and the 59-artifact production build pass. The record-policy
 suite covers the canonical task/decision graph, privacy-safe records, contextual task results, and
 exact staged index-to-manual-to-checksum evidence. RIT-027 PostgreSQL integration passed its
@@ -1139,8 +1143,8 @@ The build verifier checks 59 artifacts and narrowed exports, including exact UI 
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
-and the icon. Maximum Web output is 6,316 B
-gzip HTML, 6,126 B gzip CSS, 224,853 B gzip JavaScript, and 356 B raw icon.
+and the icon. Maximum Web output is 6,622 B
+gzip HTML, 6,126 B gzip CSS, 225,894 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
 The architecture verifier audits 160 active source files across eight modules and keeps module,
@@ -1159,6 +1163,16 @@ found no remaining P0/P1 after the canonical GET route and catalog checksum/appr
 included in the complete execution binding. The synthetic fixture remains intentionally ineligible
 for publication and retrieval, and runtime composition remains hard unavailable rather than
 silently substituting test content.
+
+RIT-029 adds per-type UUID-only tab storage, hydration-safe one-shot owner retrieval, strict
+response/ID/type binding, explicit restored reveal, definitive-clear versus transient-retain
+recovery, and individual reading-expiry enforcement. Focused coverage passes 285 tests in 10 files.
+Playwright production-artifact acceptance restores the same one-card and three-card results after
+refresh, proves reveal produces no API request, clears a stale ID on private `404`, preserves exact
+three-card order, rejects opener-cloned storage without an owner GET, and has no horizontal
+overflow at 320px. A fresh database-script rerun remains
+bounded by the unrelated `IPO.ONE` process occupying fixed port 55432; it was not stopped or
+modified, and no RITUVIA assertion failed.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
@@ -1618,6 +1632,17 @@ effective until this register links it. Do not rewrite historical rationale; sup
   collecting private prose, leaking reading existence, or inventing another retention period.
 - **Date:** 2026-07-17
 
+### [D-036 — Tab-scoped UUID-only tarot result resume boundary](records/decisions/D-036.md)
+
+- **Decision:** Store only one strict UUID V4 per tarot reading type in tab-scoped
+  `sessionStorage`; restore through the exact owner-scoped no-store GET into an explicit reveal
+  state; clear invalid/private-404 IDs, retain transient failures for manual retry, and replace the
+  prior ID only after a new fixed result validates.
+- **Reason:** Same-tab recovery preserves a useful immutable result without redraw, private-text
+  storage, cross-tab tracking, new retention, automatic traffic, or loss of the previous result
+  during a failed new attempt.
+- **Date:** 2026-07-18
+
 ---
 
 # File: `ROADMAP.md`
@@ -1898,8 +1923,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-026 | M2        |       P1 | Done    | Build three-card Situation/Action/Possibility flow                        | RIT-025                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                             |
 | RIT-027 | M2        |       P1 | Done    | Add tarot limits, calm redraw behavior, and report control                | RIT-024,RIT-025,RIT-026,OWN-010         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                             |
 | RIT-028 | M2        |       P1 | Planned | Add deterministic tarot E2E and visual/accessibility tests                | RIT-025,RIT-026,RIT-027,RIT-029         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error/resume/report scenarios.                              |
-| RIT-029 | M2        |       P1 | Ready   | Add private same-session tarot result resume                              | RIT-027                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage. |
-| RIT-030 | M3        |       P0 | Planned | Define AI provider interfaces and typed interpretation schemas            | RIT-001,RIT-023                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                      |
+| RIT-029 | M2        |       P1 | Done   | Add private same-session tarot result resume                              | RIT-027                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage. |
+| RIT-030 | M3        |       P0 | Ready | Define AI provider interfaces and typed interpretation schemas            | RIT-001,RIT-023                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                      |
 | RIT-031 | M3        |       P0 | Planned | Implement curated content retrieval and prompt versioning                 | RIT-022,RIT-030                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                            |
 | RIT-032 | M3        |       P0 | Planned | Implement pre-generation high-stakes and crisis policy                    | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                            |
 | RIT-033 | M3        |       P0 | Planned | Implement structured generation, validation, and fallback                 | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                      |
@@ -2147,6 +2172,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-033 | Owner-bound immutable tarot reading facts and safe-off API | [decisions/D-033.md](./decisions/D-033.md) |
 | Decision | D-034 | Private one-card presentation and idempotent reveal boundary | [decisions/D-034.md](./decisions/D-034.md) |
 | Decision | D-035 | Unified tarot limit, explicit new-reflection, and categorical report boundary | [decisions/D-035.md](./decisions/D-035.md) |
+| Decision | D-036 | Tab-scoped UUID-only tarot result resume boundary | [decisions/D-036.md](./decisions/D-036.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2162,6 +2188,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-025 | Private one-card tarot reflection flow | [tasks/RIT-025.md](./tasks/RIT-025.md) |
 | Task | RIT-026 | Private three-card tarot reflection flow | [tasks/RIT-026.md](./tasks/RIT-026.md) |
 | Task | RIT-027 | Tarot limits, explicit new reflection, and categorical report control | [tasks/RIT-027.md](./tasks/RIT-027.md) |
+| Task | RIT-029 | Private same-session tarot result resume | [tasks/RIT-029.md](./tasks/RIT-029.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 

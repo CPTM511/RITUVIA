@@ -93,10 +93,28 @@ export const hasAcceptedPostOrigin = (request: NextRequest): boolean =>
 export const tarotReadingReportApiPath = (readingId: string): string =>
   `${tarotReadingResourceApiPath}/${readingId}/report`;
 
-export const hasAcceptedPrivateReadOrigin = (request: NextRequest): boolean => {
+const isFrameworkPrivateRead = (request: NextRequest): boolean => {
+  const accept = request.headers.get("accept");
+  return (
+    request.nextUrl.pathname.endsWith(".rsc") ||
+    request.nextUrl.pathname.includes(".segments/") ||
+    request.headers.has("rsc") ||
+    request.headers.has("next-router-prefetch") ||
+    request.headers.has("next-router-segment-prefetch") ||
+    request.headers.has("next-router-state-tree") ||
+    (accept !== null &&
+      accept
+        .toLowerCase()
+        .split(",")
+        .some((value) => value.trim().split(";", 1)[0] === "text/x-component"))
+  );
+};
+
+export const hasAcceptedPrivateReadRequest = (request: NextRequest): boolean => {
   const origin = request.headers.get("origin");
   const fetchSite = request.headers.get("sec-fetch-site");
   return (
+    !isFrameworkPrivateRead(request) &&
     (origin === null || origin === getWebRuntimeConfiguration().brand.canonicalOrigin) &&
     (fetchSite === null || fetchSite === "same-origin")
   );

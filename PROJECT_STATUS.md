@@ -1,8 +1,8 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-17
+**Last reconciled:** 2026-07-18
 
-**Stage:** M2 local implementation is complete through the private, safe-off RIT-027 unified tarot-limit, explicit-new-reflection, and categorical-report slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through the private, safe-off RIT-029 same-session tarot-result-resume slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -48,17 +48,21 @@
   with six approved categories, whole/position targets, independent idempotency, empty `204`
   create/replay, indistinguishable private `404`, changed-reuse `409`, no free text, no analytics,
   no reading-quota use, inherited expiry, append-only persistence, and least-privilege runtime access.
+- Tab-scoped one-card and three-card result resume using only per-type strict UUID V4 values,
+  owner-scoped no-store GET, explicit no-redraw reveal, definitive stale-ID clearing, transient
+  manual recovery, storage-denied degradation, previous-result preservation, and database-clock
+  reading-expiry enforcement; no result/question text or analytics payload enters browser storage.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 876 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 904 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
-- A production-available reading flow, accounts, payments, legal terms/policies, rituals, or other complete end-to-end product flows; the reviewed English public pages, private intake, and private one-card flow remain server-side safe-off until their existing gates are explicitly satisfied.
+- A production-available reading flow, accounts, payments, legal terms/policies, rituals, or other complete end-to-end product flows; the reviewed English public pages, private intake, and tarot flows remain server-side safe-off until their existing gates are explicitly satisfied.
 - An approved production anonymous-session retention duration, legal consent notice, consent/privacy-control UI, per-client abuse strategy, account merge, anonymous export/deletion workflow, or private-resource authorization surface; the current session policy is required configuration and safe-off when absent.
 - A country-specific crisis-resource program, nuanced or probabilistic moderation, intake persistence, question-bearing analytics, or an intake-to-reading continuation; the owner-approved English lexical baseline remains safe-off and is not the RIT-032 pre-generation policy.
 - A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
@@ -100,8 +104,8 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-027 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
-lint, strict type checking, 876 unit/contract tests in 60 files, configuration-boundary integration,
+The RIT-029 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
+lint, strict type checking, 904 unit/contract tests in 61 files, configuration-boundary integration,
 the 160-file/eight-module architecture gate, and the 59-artifact production build pass. The record-policy
 suite covers the canonical task/decision graph, privacy-safe records, contextual task results, and
 exact staged index-to-manual-to-checksum evidence. RIT-027 PostgreSQL integration passed its
@@ -113,8 +117,8 @@ The build verifier checks 59 artifacts and narrowed exports, including exact UI 
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
-and the icon. Maximum Web output is 6,316 B
-gzip HTML, 6,126 B gzip CSS, 224,853 B gzip JavaScript, and 356 B raw icon.
+and the icon. Maximum Web output is 6,622 B
+gzip HTML, 6,126 B gzip CSS, 225,894 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
 The architecture verifier audits 160 active source files across eight modules and keeps module,
@@ -133,6 +137,16 @@ found no remaining P0/P1 after the canonical GET route and catalog checksum/appr
 included in the complete execution binding. The synthetic fixture remains intentionally ineligible
 for publication and retrieval, and runtime composition remains hard unavailable rather than
 silently substituting test content.
+
+RIT-029 adds per-type UUID-only tab storage, hydration-safe one-shot owner retrieval, strict
+response/ID/type binding, explicit restored reveal, definitive-clear versus transient-retain
+recovery, and individual reading-expiry enforcement. Focused coverage passes 285 tests in 10 files.
+Playwright production-artifact acceptance restores the same one-card and three-card results after
+refresh, proves reveal produces no API request, clears a stale ID on private `404`, preserves exact
+three-card order, rejects opener-cloned storage without an owner GET, and has no horizontal
+overflow at 320px. A fresh database-script rerun remains
+bounded by the unrelated `IPO.ONE` process occupying fixed port 55432; it was not stopped or
+modified, and no RITUVIA assertion failed.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary

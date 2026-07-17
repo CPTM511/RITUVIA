@@ -5,10 +5,15 @@ import {
 } from "@rituvia/domain";
 
 import {
+  isTarotReadingId,
   parseTarotReadingResponse,
   type TarotReadingPublicResponseV2,
 } from "../_contracts/tarot-reading-response";
-import type { TarotOneCardFailure, TarotOneCardOperation } from "./tarot-one-card-machine";
+import type {
+  TarotOneCardFailure,
+  TarotOneCardOperation,
+  TarotReadingResumeFailure,
+} from "./tarot-one-card-machine";
 
 export const anonymousSessionEndpoint = "/api/v1/anonymous/session";
 export const tarotReadingEndpoint = "/api/v1/readings/tarot";
@@ -26,8 +31,22 @@ export class TarotReadingTransportError extends Error {
   }
 }
 
+export class TarotReadingResumeTransportError extends Error {
+  public readonly failure: TarotReadingResumeFailure;
+
+  public constructor(failure: TarotReadingResumeFailure) {
+    super("The saved tarot reading could not be restored.");
+    this.name = "TarotReadingResumeTransportError";
+    this.failure = failure;
+  }
+}
+
 const fail = (failure: TarotOneCardFailure, retryAfterSeconds?: number): never => {
   throw new TarotReadingTransportError(failure, retryAfterSeconds);
+};
+
+const failResume = (failure: TarotReadingResumeFailure): never => {
+  throw new TarotReadingResumeTransportError(failure);
 };
 
 const parseRetryAfterSeconds = (response: Response): number | undefined => {
@@ -61,16 +80,16 @@ const parseBoundedResponse = async (response: Response): Promise<unknown> => {
       (!/^(?:0|[1-9][0-9]{0,5})$/u.test(contentLength) ||
         Number(contentLength) > tarotReadingMaximumResponseBytes))
   ) {
-    return fail("error");
+    throw new TypeError("The tarot reading response metadata is invalid.");
   }
   const text = await response.text();
   if (new TextEncoder().encode(text).byteLength > tarotReadingMaximumResponseBytes) {
-    return fail("error");
+    throw new TypeError("The tarot reading response is too large.");
   }
   try {
     return JSON.parse(text) as unknown;
   } catch {
-    return fail("error");
+    throw new TypeError("The tarot reading response is not valid JSON.");
   }
 };
 
@@ -136,3 +155,35 @@ export const executeTarotOneCardOperation = async (
 
 export { TarotReadingTransportError as TarotOneCardTransportError };
 export const tarotOneCardMaximumResponseBytes = tarotReadingMaximumResponseBytes;
+
+export const executeTarotReadingResume = async (
+  input: Readonly<{
+    fetcher: typeof fetch;
+    readingId: string;
+    readingType: TarotReadingType;
+    signal: AbortSignal;
+  }>,
+): Promise<TarotReadingPublicResponseV2> => {
+  if (!isTarotReadingId(input.readingId)) return failResume("invalid");
+  const response = await input.fetcher(`/api/v1/readings/${input.readingId}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+    method: "GET",
+    signal: input.signal,
+  });
+  if (response.status !== 200) {
+    return failResume(
+      response.status === 404 ? "not_found" : response.status === 503 ? "unavailable" : "error",
+    );
+  }
+  try {
+    const reading = parseTarotReadingResponse(
+      await parseBoundedResponse(response),
+      input.readingType,
+    );
+    return reading.readingId === input.readingId ? reading : failResume("invalid");
+  } catch (error) {
+    if (error instanceof TarotReadingResumeTransportError) throw error;
+    return failResume("invalid");
+  }
+};

@@ -803,6 +803,7 @@ export const createTarotReadingPersistence = (
           ${readingSelect}
            WHERE reading.id = ${readingId}::uuid
              AND reading.anonymous_subject_id = ${active.subjectId}::uuid
+             AND reading.expires_at > CURRENT_TIMESTAMP
            LIMIT 2
         `;
         if (rows.length === 0) return null;

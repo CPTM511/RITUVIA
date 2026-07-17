@@ -406,22 +406,34 @@ describe("tarot reading API routes", () => {
     const found = await GET(getRequest(), getContext());
     harness.get.mockResolvedValueOnce(null);
     const unknown = await GET(getRequest(), getContext());
+    harness.get.mockRejectedValueOnce(new TarotReadingApplicationError("not_found"));
+    const expired = await GET(getRequest(), getContext());
     harness.get.mockRejectedValueOnce(new TarotReadingApplicationError("session_required"));
     const crossOwner = await GET(getRequest(), getContext());
 
     expect(found.status).toBe(200);
     expect(await found.json()).toEqual(responseBody);
+    expect(found.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(found.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+    expect(found.headers.get("access-control-allow-origin")).toBeNull();
     expect(unknown.status).toBe(404);
+    expect(expired.status).toBe(404);
     expect(crossOwner.status).toBe(404);
-    expect(await unknown.text()).toContain("TAROT_READING_NOT_FOUND");
-    expect(await crossOwner.text()).toContain("TAROT_READING_NOT_FOUND");
+    const unknownBody = await unknown.text();
+    expect(unknownBody).toContain("TAROT_READING_NOT_FOUND");
+    expect(await expired.text()).toBe(unknownBody);
+    expect(await crossOwner.text()).toBe(unknownBody);
     expect(harness.get).toHaveBeenCalledWith(readingId, token);
   });
 
-  it("rejects invalid, cross-site, query, and cookie-less reads before persistence", async () => {
+  it("rejects invalid, cross-site, query, framework, and cookie-less reads before persistence", async () => {
     const invalid = await GET(getRequest("not-a-reading"), getContext("not-a-reading"));
     const crossSite = await GET(
       getRequest(readingId, { "sec-fetch-site": "cross-site" }),
+      getContext(),
+    );
+    const crossOrigin = await GET(
+      getRequest(readingId, { origin: "https://foreign.example" }),
       getContext(),
     );
     const query = await GET(
@@ -434,12 +446,53 @@ describe("tarot reading API routes", () => {
       new NextRequest(`https://example.test${tarotReadingResourceApiPath}/${readingId}`),
       getContext(),
     );
+    const frameworkHeaders = await Promise.all(
+      [
+        { rsc: "1" },
+        { "next-router-prefetch": "1" },
+        { "next-router-segment-prefetch": "1" },
+        { "next-router-state-tree": "private-canary" },
+        { accept: "text/x-component; charset=utf-8" },
+      ].map((headers) => GET(getRequest(readingId, headers), getContext())),
+    );
+    const frameworkPaths = await Promise.all(
+      [
+        `${tarotReadingResourceApiPath}/${readingId}.rsc`,
+        `${tarotReadingResourceApiPath}/${readingId}.segments/private-canary`,
+      ].map((path) =>
+        GET(
+          new NextRequest(`https://example.test${path}`, {
+            headers: { cookie: `__Host-rituvia-anonymous-session=${token}` },
+          }),
+          getContext(),
+        ),
+      ),
+    );
 
-    for (const response of [invalid, crossSite, query, noCookie]) {
+    for (const response of [
+      invalid,
+      crossSite,
+      crossOrigin,
+      query,
+      noCookie,
+      ...frameworkHeaders,
+      ...frameworkPaths,
+    ]) {
       expect(response.status).toBe(404);
       expect(await response.text()).not.toContain("canary");
     }
     expect(harness.get).not.toHaveBeenCalled();
+  });
+
+  it("maps a damaged or unavailable saved reading to one private 503", async () => {
+    harness.get.mockRejectedValueOnce(new TarotReadingApplicationError("unavailable"));
+
+    const response = await GET(getRequest(), getContext());
+
+    expect(response.status).toBe(503);
+    expect(await response.text()).toContain("TAROT_READING_UNAVAILABLE");
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
   });
 
   it("keeps direct create, read, and report invocation unavailable while activation is absent", async () => {

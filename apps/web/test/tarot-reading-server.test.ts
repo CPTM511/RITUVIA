@@ -689,5 +689,6 @@ describe("tarot reading application service", () => {
       kind: "replayed",
       response: created.response,
     });
+    await expect(rotated.get(created.response.readingId, token)).resolves.toEqual(created.response);
   });
 });

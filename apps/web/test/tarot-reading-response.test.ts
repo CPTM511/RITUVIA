@@ -79,6 +79,13 @@ describe("tarot one-card public response", () => {
         readingId: "not-a-reading",
       }),
     ],
+    [
+      "oversized reading policy version",
+      (value: ReturnType<typeof createTarotOneCardResponseFixture>) => ({
+        ...value,
+        readingPolicyVersion: `a${"b".repeat(100)}`,
+      }),
+    ],
   ])("rejects %s", (_label, mutate) => {
     expect(() => parseTarotOneCardResponse(mutate(createTarotOneCardResponseFixture()))).toThrow(
       TarotReadingResponseError,
