@@ -315,3 +315,15 @@ effective until this register links it. Do not rewrite historical rationale; sup
   that high-stakes and crisis policy ran before divination or generation, while storing sensitive
   moderation data would create unnecessary privacy risk.
 - **Date:** 2026-07-18
+
+### [D-040 — Provider-neutral generation, authorized fallback, and fenced persistence](records/decisions/D-040.md)
+
+- **Decision:** Require exact runtime-issued input, prompt, authorization, provider/model
+  registration, and fallback-template authority; enforce strict structured-result validation,
+  monotonic deadline/cancellation, one safe retry, an exact fallback allowlist, durable no-output
+  failed states, redacted metadata, and owner-scoped PostgreSQL claims with database-clock leases,
+  a 30-second execution buffer, and compare-and-set fencing while the runtime remains safe-off.
+- **Reason:** Generation must tolerate provider failure without trusting caller configuration,
+  persisting unverified prose, leaking sensitive content, duplicating paid inference, or inventing
+  a retention policy before the post-generation verifier and owner-gated runtime exist.
+- **Date:** 2026-07-18

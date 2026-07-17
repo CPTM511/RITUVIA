@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHmac, randomBytes } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
 
 import { Client } from "pg";
 
@@ -9,11 +9,19 @@ import {
 } from "../src/anonymous-identity.js";
 import { createDatabaseClient } from "../src/client.js";
 import {
+  createInterpretationGenerationPersistence,
+  InterpretationGenerationPersistenceError,
+  type InterpretationGenerationClaimProvenanceV1,
+  type InterpretationGenerationProvenanceV1,
+  type PersistedInterpretationGeneration,
+} from "../src/interpretation-generation-persistence.js";
+import {
   assertTarotReadingRuntimeDatabasePrivileges,
   createTarotReadingPersistence,
   TarotReadingPersistenceError,
   type PreparedTarotReadingCreate,
   type PreparedTarotReadingReport,
+  type PersistedTarotReading,
   type TarotReadingPrepareContext,
   type TarotReadingReportPrepareContext,
 } from "../src/tarot-reading-persistence.js";
@@ -243,6 +251,124 @@ const request = (themeCode = "self", readingType = "one_card") =>
     themeCode,
   });
 
+const jsonRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    assert.fail("Expected a JSON object.");
+  }
+  return value as Record<string, unknown>;
+};
+
+const generationClaimProvenance = (
+  reading: PersistedTarotReading,
+): InterpretationGenerationClaimProvenanceV1 => {
+  const facts = jsonRecord(
+    jsonRecord(reading.execution).facts,
+  ) as InterpretationGenerationProvenanceV1["deterministicFacts"];
+  const prompt = Object.freeze({
+    approvalReference: "OWN-TEST:prompt",
+    checksum: `sha256:${"51".repeat(32)}`,
+    id: "test.prompt",
+    version: "1.0.0",
+  });
+  const fallbackTemplate = Object.freeze({
+    approvalReference: "OWN-TEST:fallback",
+    checksum: `sha256:${"52".repeat(32)}`,
+    id: "test.fallback-template",
+    version: "1.0.0",
+  });
+  return Object.freeze({
+    assemblyPolicyVersion: "tarot-prompt-assembly-policy.v1",
+    attemptTimeoutMs: 500,
+    contentVersions: Object.freeze(["1.0.0"]),
+    currencyCode: "USD",
+    deterministicAlgorithmVersion: "partial-fisher-yates-rejection-uint8.v1",
+    deterministicEngineName: "rituvia.tarot-draw",
+    deterministicEngineVersion: "1.0.0",
+    deterministicRulesVersion: "tarot-draw-rules.v1",
+    eligibilityAsOf: "2026-07-18",
+    fallbackTemplate,
+    generationPolicyVersion: "test.interpretation-generation.v1",
+    generationProvenance: Object.freeze({
+      assemblyPolicyVersion: "tarot-prompt-assembly-policy.v1",
+      content: Object.freeze({
+        catalog: Object.freeze({
+          approvalReference: reading.catalog.approvalReference,
+          checksum: reading.catalog.checksumSha256,
+          id: reading.catalog.id,
+          version: reading.catalog.version,
+        }),
+      }),
+      deterministicEngine: Object.freeze({
+        algorithmVersion: "partial-fisher-yates-rejection-uint8.v1",
+        engineName: "rituvia.tarot-draw",
+        engineVersion: "1.0.0",
+        rulesVersion: "tarot-draw-rules.v1",
+      }),
+      deterministicFacts: facts,
+      fallbackTemplate,
+      inputSchemaVersion: "tarot-interpretation-input.v1",
+      locale: "en",
+      modality: "tarot",
+      outputSchema: Object.freeze({
+        checksum: `sha256:${"53".repeat(32)}`,
+        id: "tarot.interpretation-output",
+        version: "1",
+      }),
+      prompt: Object.freeze({
+        ...prompt,
+        evaluationVersion: "test.prompt-eval.v1",
+      }),
+      retrievalPolicyVersion: "tarot-content-retrieval-policy.v1",
+      safetyPolicyVersion: "test.safety.v1",
+      schemaVersion: "interpretation-generation-provenance.v1",
+      themeCode: reading.themeCode,
+      tone: "grounded",
+      tradition: "test.tarot",
+    }),
+    locale: "en",
+    maxAttempts: 2,
+    maxOutputTokens: 800,
+    maximumEstimatedCostMicros: 100_000,
+    modality: "tarot",
+    model: Object.freeze({ id: "test.model", version: "1.0.0" }),
+    outputSchemaVersion: "1",
+    prompt,
+    provider: Object.freeze({
+      approvalReference: "OWN-TEST:provider",
+      id: "test.provider",
+      version: "1.0.0",
+    }),
+    readingType: reading.readingType,
+    retrievalPolicyVersion: "tarot-content-retrieval-policy.v1",
+    retryDelayMs: 50,
+    safetyPolicyVersion: "test.safety.v1",
+    themeCode: reading.themeCode,
+    tone: "grounded",
+    totalTimeoutMs: 1_000,
+  });
+};
+
+const fallbackOutput = Object.freeze({
+  boundaryNote: "This is a symbolic reflection, not a prediction.",
+  perspectives: Object.freeze(["Notice what feels useful and leave the rest."]),
+  reflectionQuestions: Object.freeze(["What small choice is available today?"]),
+  safety: Object.freeze({
+    certaintyLevel: "reflective",
+    containsGuaranteedOutcome: false,
+    containsProfessionalAdvice: false,
+  }),
+  schemaVersion: "1",
+  smallAction: Object.freeze({
+    label: "Write one next step.",
+    rationale: "A concrete step keeps the reflection grounded.",
+    timeHorizon: "today",
+  }),
+  sourceRefs: Object.freeze(["test.source"]),
+  summary: "Use the symbol as one perspective rather than a fixed answer.",
+  symbols: Object.freeze([]),
+  title: "A grounded perspective",
+});
+
 const isPersistenceError = (error: unknown, code: TarotReadingPersistenceError["code"]): boolean =>
   error instanceof TarotReadingPersistenceError && error.code === code;
 
@@ -278,7 +404,17 @@ await withLocalPostgresLease(async (lease) => {
     const controlRuntime = createDatabaseClient(database.controlDatabaseUrl);
     const migratorRuntime = createDatabaseClient(database.migrationDatabaseUrl);
     const runtimeSql = new Client({ connectionString: database.databaseUrl });
-    await Promise.all([migrator.connect(), runtimeSql.connect()]);
+    const adminDatabaseUrl = new URL(database.databaseUrl);
+    adminDatabaseUrl.username = "rituvia_local_admin";
+    const runtimeCredentials = jsonRecord(jsonRecord(lease.runtime).credentials);
+    const adminPassword = runtimeCredentials.adminPassword;
+    if (typeof adminPassword !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(adminPassword)) {
+      assert.fail("Expected a validated local integration administrator credential.");
+    }
+    adminDatabaseUrl.password = adminPassword;
+    adminDatabaseUrl.searchParams.set("application_name", "rituvia_integration_admin");
+    const adminSql = new Client({ connectionString: adminDatabaseUrl.toString() });
+    await Promise.all([adminSql.connect(), migrator.connect(), runtimeSql.connect()]);
     try {
       await assertTarotReadingRuntimeDatabasePrivileges(runtime);
       await assert.rejects(
@@ -655,6 +791,397 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(storedReport.rows[0]?.raw.includes(reportKey), false);
       assert.equal(storedReport.rows[0]?.raw.includes(owner.token), false);
 
+      const interpretation = createInterpretationGenerationPersistence(runtime, {
+        leaseSeconds: 31,
+      });
+      const generationRequestId = randomUUID();
+      const generationIdempotencyDigest = `sha256:${"61".repeat(32)}`;
+      const generationCanonicalDigest = `sha256:${"62".repeat(32)}`;
+      const claimInput = Object.freeze({
+        canonicalRequestDigest: generationCanonicalDigest,
+        generationSchemaVersion: "interpretation-generation.v1" as const,
+        idempotencyKeyDigest: generationIdempotencyDigest,
+        idempotencyKeyVersion: "test.interpretation-idempotency.v1",
+        provenance: generationClaimProvenance(created.reading),
+        readingId: created.reading.id,
+        requestId: generationRequestId,
+        token: owner.token,
+      });
+      const concurrentClaims = await Promise.all(
+        Array.from({ length: 8 }, () => interpretation.claim(claimInput)),
+      );
+      const winningClaim = concurrentClaims.find(({ kind }) => kind === "claimed");
+      assert.ok(winningClaim?.kind === "claimed");
+      assert.equal(winningClaim.providerEligible, true);
+      assert.equal(concurrentClaims.filter(({ kind }) => kind === "claimed").length, 1);
+      assert.equal(concurrentClaims.filter(({ kind }) => kind === "in_progress").length, 7);
+
+      await assert.rejects(
+        interpretation.claim({ ...claimInput, token: otherOwner.token }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_READING_NOT_FOUND",
+      );
+      const completionDigest = `sha256:${"63".repeat(32)}`;
+      const finalized = await interpretation.finalize({
+        claimToken: winningClaim.claimToken,
+        claimVersion: winningClaim.claimVersion,
+        completion: Object.freeze({
+          operational: Object.freeze({
+            attemptCount: 1,
+            costStatus: "reported",
+            currencyCode: "USD",
+            estimatedCostMicros: 1_000,
+            failureCode: null,
+            inputTokens: 50,
+            latencyMs: 120,
+            outputTokens: 60,
+            retryReason: null,
+            tokenStatus: "reported",
+            totalTokens: 110,
+          }),
+          status: "pending_verification",
+        }),
+        completionDigest,
+        interpretationId: winningClaim.interpretationId,
+        token: owner.token,
+      });
+      assert.equal(finalized.kind, "finalized");
+      assert.equal(finalized.interpretation.status, "pending_verification");
+      assert.equal(Object.hasOwn(finalized.interpretation, "output"), false);
+      const replayedFinalization = await interpretation.finalize({
+        claimToken: winningClaim.claimToken,
+        claimVersion: winningClaim.claimVersion,
+        completion: Object.freeze({
+          operational: Object.freeze({
+            attemptCount: 1,
+            costStatus: "reported",
+            currencyCode: "USD",
+            estimatedCostMicros: 1_000,
+            failureCode: null,
+            inputTokens: 50,
+            latencyMs: 120,
+            outputTokens: 60,
+            retryReason: null,
+            tokenStatus: "reported",
+            totalTokens: 110,
+          }),
+          status: "pending_verification",
+        }),
+        completionDigest,
+        interpretationId: winningClaim.interpretationId,
+        token: owner.token,
+      });
+      assert.equal(replayedFinalization.kind, "replayed");
+      const terminalReplay = await interpretation.claim(claimInput);
+      assert.equal(terminalReplay.kind, "replayed");
+      await assert.rejects(
+        interpretation.claim({
+          ...claimInput,
+          canonicalRequestDigest: `sha256:${"64".repeat(32)}`,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_IDEMPOTENCY_CONFLICT",
+      );
+
+      const fenceReading = await persistence.resolveCreate({
+        prepare: prepare({
+          activeVersion: "test.idempotency-hmac.v2",
+          executionCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        request: request("work"),
+        token: owner.token,
+      });
+      const shortLeaseInterpretation = createInterpretationGenerationPersistence(runtime, {
+        leaseSeconds: 31,
+      });
+      const fenceClaimInput = Object.freeze({
+        canonicalRequestDigest: `sha256:${"65".repeat(32)}`,
+        generationSchemaVersion: "interpretation-generation.v1" as const,
+        idempotencyKeyDigest: `sha256:${"66".repeat(32)}`,
+        idempotencyKeyVersion: "test.interpretation-idempotency.v1",
+        provenance: generationClaimProvenance(fenceReading.reading),
+        readingId: fenceReading.reading.id,
+        requestId: randomUUID(),
+        token: owner.token,
+      });
+      const initialFenceClaim = await shortLeaseInterpretation.claim(fenceClaimInput);
+      assert.equal(initialFenceClaim.kind, "claimed");
+      if (initialFenceClaim.kind !== "claimed") assert.fail("Expected a new fenced claim.");
+
+      const failedReading = await persistence.resolveCreate({
+        prepare: prepare({
+          activeVersion: "test.idempotency-hmac.v2",
+          executionCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        request: request("transition"),
+        token: owner.token,
+      });
+      const failedClaimInput = Object.freeze({
+        canonicalRequestDigest: `sha256:${"6a".repeat(32)}`,
+        generationSchemaVersion: "interpretation-generation.v1" as const,
+        idempotencyKeyDigest: `sha256:${"6b".repeat(32)}`,
+        idempotencyKeyVersion: "test.interpretation-idempotency.v1",
+        provenance: generationClaimProvenance(failedReading.reading),
+        readingId: failedReading.reading.id,
+        requestId: randomUUID(),
+        token: owner.token,
+      });
+      const failedCompletion = Object.freeze({
+        operational: Object.freeze({
+          attemptCount: 1 as const,
+          costStatus: "unavailable" as const,
+          currencyCode: null,
+          estimatedCostMicros: null,
+          failureCode: "configuration" as const,
+          inputTokens: null,
+          latencyMs: 20,
+          outputTokens: null,
+          retryReason: null,
+          tokenStatus: "unavailable" as const,
+          totalTokens: null,
+        }),
+        status: "failed" as const,
+      });
+      const failedClaim = await shortLeaseInterpretation.claim(failedClaimInput);
+      assert.equal(failedClaim.kind, "claimed");
+      if (failedClaim.kind !== "claimed") assert.fail("Expected a new failed-terminal claim.");
+      await assert.rejects(
+        shortLeaseInterpretation.finalize({
+          claimToken: failedClaim.claimToken,
+          claimVersion: failedClaim.claimVersion,
+          completion: Object.freeze({
+            operational: Object.freeze({
+              attemptCount: 1,
+              costStatus: "unavailable",
+              currencyCode: null,
+              estimatedCostMicros: null,
+              failureCode: null,
+              inputTokens: 3_000_000_000,
+              latencyMs: 20,
+              outputTokens: 1,
+              retryReason: null,
+              tokenStatus: "reported",
+              totalTokens: 3_000_000_001,
+            }),
+            status: "pending_verification",
+          }),
+          completionDigest: `sha256:${"72".repeat(32)}`,
+          interpretationId: failedClaim.interpretationId,
+          token: owner.token,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_INPUT_INVALID",
+      );
+      await assert.rejects(
+        shortLeaseInterpretation.finalize({
+          claimToken: failedClaim.claimToken,
+          claimVersion: failedClaim.claimVersion,
+          completion: Object.freeze({
+            operational: failedCompletion.operational,
+            output: fallbackOutput,
+            status: "fallback",
+          }),
+          completionDigest: `sha256:${"70".repeat(32)}`,
+          interpretationId: failedClaim.interpretationId,
+          token: owner.token,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_INPUT_INVALID",
+      );
+      const failedCompletionDigest = `sha256:${"6c".repeat(32)}`;
+      const failedFinalized = await shortLeaseInterpretation.finalize({
+        claimToken: failedClaim.claimToken,
+        claimVersion: failedClaim.claimVersion,
+        completion: failedCompletion,
+        completionDigest: failedCompletionDigest,
+        interpretationId: failedClaim.interpretationId,
+        token: owner.token,
+      });
+      assert.equal(failedFinalized.kind, "finalized");
+      assert.equal(failedFinalized.interpretation.status, "failed");
+      assert.equal(Object.hasOwn(failedFinalized.interpretation, "output"), false);
+      assert.equal(failedFinalized.interpretation.operational.failureCode, "configuration");
+
+      const unknownFailureClaimInput = Object.freeze({
+        canonicalRequestDigest: `sha256:${"6d".repeat(32)}`,
+        generationSchemaVersion: "interpretation-generation.v1" as const,
+        idempotencyKeyDigest: `sha256:${"6e".repeat(32)}`,
+        idempotencyKeyVersion: "a".repeat(100),
+        provenance: generationClaimProvenance(threeCardReading),
+        readingId: threeCardReading.id,
+        requestId: randomUUID(),
+        token: otherOwner.token,
+      });
+      const unknownFailureCompletion = Object.freeze({
+        operational: Object.freeze({
+          ...failedCompletion.operational,
+          failureCode: "unknown" as const,
+        }),
+        status: "failed" as const,
+      });
+      const unknownFailureClaim = await shortLeaseInterpretation.claim(unknownFailureClaimInput);
+      assert.equal(unknownFailureClaim.kind, "claimed");
+      if (unknownFailureClaim.kind !== "claimed") {
+        assert.fail("Expected a new normalized-unknown failed claim.");
+      }
+      await assert.rejects(
+        shortLeaseInterpretation.finalize({
+          claimToken: unknownFailureClaim.claimToken,
+          claimVersion: unknownFailureClaim.claimVersion,
+          completion: Object.freeze({
+            operational: unknownFailureCompletion.operational,
+            output: fallbackOutput,
+            status: "fallback",
+          }),
+          completionDigest: `sha256:${"71".repeat(32)}`,
+          interpretationId: unknownFailureClaim.interpretationId,
+          token: otherOwner.token,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_INPUT_INVALID",
+      );
+      const unknownFailureFinalized = await shortLeaseInterpretation.finalize({
+        claimToken: unknownFailureClaim.claimToken,
+        claimVersion: unknownFailureClaim.claimVersion,
+        completion: unknownFailureCompletion,
+        completionDigest: `sha256:${"6f".repeat(32)}`,
+        interpretationId: unknownFailureClaim.interpretationId,
+        token: otherOwner.token,
+      });
+      assert.equal(unknownFailureFinalized.interpretation.status, "failed");
+      assert.equal(unknownFailureFinalized.interpretation.operational.failureCode, "unknown");
+      assert.equal(Object.hasOwn(unknownFailureFinalized.interpretation, "output"), false);
+
+      const expiredLeases = await adminSql.query<{ expired: boolean; id: string }>(
+        `UPDATE interpretation
+            SET lease_expires_at = created_at + interval '1 microsecond'
+          WHERE id = ANY($1::uuid[])
+          RETURNING id::text AS id, lease_expires_at <= clock_timestamp() AS expired`,
+        [[initialFenceClaim.interpretationId, failedClaim.interpretationId]],
+      );
+      assert.equal(expiredLeases.rowCount, 2);
+      assert.equal(
+        expiredLeases.rows.every(({ expired }) => expired),
+        true,
+      );
+      const expiredFailedReplay = await shortLeaseInterpretation.claim(failedClaimInput);
+      assert.equal(expiredFailedReplay.kind, "replayed");
+      if (expiredFailedReplay.kind !== "replayed") {
+        assert.fail("Expected the expired failed terminal to replay without reclaim.");
+      }
+      assert.equal(expiredFailedReplay.interpretation.status, "failed");
+      const expiredFailedFinalizeReplay = await shortLeaseInterpretation.finalize({
+        claimToken: failedClaim.claimToken,
+        claimVersion: failedClaim.claimVersion,
+        completion: failedCompletion,
+        completionDigest: failedCompletionDigest,
+        interpretationId: failedClaim.interpretationId,
+        token: owner.token,
+      });
+      assert.equal(expiredFailedFinalizeReplay.kind, "replayed");
+      assert.equal(expiredFailedFinalizeReplay.interpretation.status, "failed");
+      const reclaimedFenceClaim = await shortLeaseInterpretation.claim(fenceClaimInput);
+      assert.equal(reclaimedFenceClaim.kind, "reclaimed");
+      if (reclaimedFenceClaim.kind !== "reclaimed") assert.fail("Expected an expired reclaim.");
+      assert.equal(reclaimedFenceClaim.providerEligible, false);
+      await assert.rejects(
+        shortLeaseInterpretation.finalize({
+          claimToken: initialFenceClaim.claimToken,
+          claimVersion: initialFenceClaim.claimVersion,
+          completion: Object.freeze({
+            operational: Object.freeze({
+              attemptCount: 0,
+              costStatus: "unavailable",
+              currencyCode: null,
+              estimatedCostMicros: null,
+              failureCode: "aborted",
+              inputTokens: null,
+              latencyMs: 0,
+              outputTokens: null,
+              retryReason: null,
+              tokenStatus: "unavailable",
+              totalTokens: null,
+            }),
+            output: fallbackOutput,
+            status: "fallback",
+          }),
+          completionDigest: `sha256:${"67".repeat(32)}`,
+          interpretationId: initialFenceClaim.interpretationId,
+          token: owner.token,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_CLAIM_LOST",
+      );
+      const fallbackFinalized = await shortLeaseInterpretation.finalize({
+        claimToken: reclaimedFenceClaim.claimToken,
+        claimVersion: reclaimedFenceClaim.claimVersion,
+        completion: Object.freeze({
+          operational: Object.freeze({
+            attemptCount: 0,
+            costStatus: "unavailable",
+            currencyCode: null,
+            estimatedCostMicros: null,
+            failureCode: "aborted",
+            inputTokens: null,
+            latencyMs: 0,
+            outputTokens: null,
+            retryReason: null,
+            tokenStatus: "unavailable",
+            totalTokens: null,
+          }),
+          output: fallbackOutput,
+          status: "fallback",
+        }),
+        completionDigest: `sha256:${"68".repeat(32)}`,
+        interpretationId: reclaimedFenceClaim.interpretationId,
+        token: owner.token,
+      });
+      assert.equal(fallbackFinalized.interpretation.status, "fallback");
+      assert.deepEqual(
+        (
+          fallbackFinalized.interpretation as Extract<
+            PersistedInterpretationGeneration,
+            { status: "fallback" }
+          >
+        ).output,
+        fallbackOutput,
+      );
+
+      const tooShortLease = createInterpretationGenerationPersistence(runtime, {
+        leaseSeconds: 30,
+      });
+      await assert.rejects(
+        tooShortLease.claim({
+          ...fenceClaimInput,
+          idempotencyKeyDigest: `sha256:${"69".repeat(32)}`,
+          requestId: randomUUID(),
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_INPUT_INVALID",
+      );
+      await assert.rejects(
+        shortLeaseInterpretation.claim({
+          ...fenceClaimInput,
+          idempotencyKeyDigest: `sha256:${"73".repeat(32)}`,
+          idempotencyKeyVersion: "a".repeat(101),
+          requestId: randomUUID(),
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_INPUT_INVALID",
+      );
+
       const forgedDigest = (): Buffer => randomBytes(32);
       await expectPostgresError(
         () =>
@@ -797,6 +1324,45 @@ await withLocalPostgresLease(async (lease) => {
           SELECT count(*)::int AS count FROM reading_report
         `;
         assert.equal(restoredReports[0]?.count, 4);
+        const restoredInterpretation = createInterpretationGenerationPersistence(restoredRuntime, {
+          leaseSeconds: 31,
+        });
+        const restoredPending = await restoredInterpretation.claim(claimInput);
+        assert.equal(restoredPending.kind, "replayed");
+        if (restoredPending.kind !== "replayed") {
+          assert.fail("Expected the pending interpretation to survive restore.");
+        }
+        assert.equal(restoredPending.interpretation.status, "pending_verification");
+        const restoredFallback = await restoredInterpretation.claim(fenceClaimInput);
+        assert.equal(restoredFallback.kind, "replayed");
+        if (restoredFallback.kind !== "replayed") {
+          assert.fail("Expected the fallback interpretation to survive restore.");
+        }
+        assert.equal(restoredFallback.interpretation.status, "fallback");
+        const restoredFailed = await restoredInterpretation.claim(failedClaimInput);
+        assert.equal(restoredFailed.kind, "replayed");
+        if (restoredFailed.kind !== "replayed") {
+          assert.fail("Expected the failed interpretation to survive restore.");
+        }
+        assert.equal(restoredFailed.interpretation.status, "failed");
+        assert.equal(restoredFailed.interpretation.operational.failureCode, "configuration");
+        const restoredUnknownFailure = await restoredInterpretation.claim(unknownFailureClaimInput);
+        assert.equal(restoredUnknownFailure.kind, "replayed");
+        if (restoredUnknownFailure.kind !== "replayed") {
+          assert.fail("Expected the normalized-unknown failure to survive restore.");
+        }
+        assert.equal(restoredUnknownFailure.interpretation.status, "failed");
+        assert.equal(restoredUnknownFailure.interpretation.operational.failureCode, "unknown");
+        const restoredInterpretations = await restoredRuntime.$queryRaw<
+          Array<{ count: number; raw: string }>
+        >`
+          SELECT count(*)::int AS count, string_agg(row_to_json(interpretation)::text, '') AS raw
+            FROM interpretation
+        `;
+        assert.equal(restoredInterpretations[0]?.count, 4);
+        assert.equal(restoredInterpretations[0]?.raw.includes(owner.token), false);
+        assert.equal(restoredInterpretations[0]?.raw.includes("promptMessages"), false);
+        assert.equal(restoredInterpretations[0]?.raw.includes("providerOutput"), false);
         await assertTarotReadingRuntimeDatabasePrivileges(restoredRuntime);
       } finally {
         await restoredRuntime.$disconnect();
@@ -806,6 +1372,7 @@ await withLocalPostgresLease(async (lease) => {
         runtime.$disconnect(),
         controlRuntime.$disconnect(),
         migratorRuntime.$disconnect(),
+        adminSql.end(),
         migrator.end(),
         runtimeSql.end(),
       ]);
@@ -834,5 +1401,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 process.stdout.write(
-  "Verified owner-scoped tarot persistence and reporting, position validation, keyed replay/conflict races, quota independence, immutable execution/report rows, least privilege, and logical restore.\n",
+  "Verified owner-scoped tarot persistence and reporting plus interpretation claim/replay/fencing/fallback, position validation, keyed races, quota independence, least privilege, and non-empty logical restore.\n",
 );

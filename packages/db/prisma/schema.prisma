@@ -51,6 +51,7 @@ model AnonymousSubject {
   consentRecords      ConsentRecord[]
   readings            Reading[]
   readingReports      ReadingReport[]
+  interpretations     Interpretation[]
 
   @@index([expiresAt, id], map: "anonymous_subject_expiry_idx")
   @@map("anonymous_subject")
@@ -79,12 +80,92 @@ model Reading {
   anonymousSubject         AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   tarotDraw                TarotDraw?
   reports                  ReadingReport[]
+  interpretations          Interpretation[]
 
   @@unique([anonymousSubjectId, requestSchemaVersion, idempotencyKeyVersion, idempotencyKeyHash], map: "reading_subject_scope_idempotency_key")
   @@unique([id, anonymousSubjectId], map: "reading_subject_identity_key")
+  @@unique([id, anonymousSubjectId, expiresAt], map: "reading_interpretation_owner_expiry_key")
   @@unique([id, readingType, catalogId, catalogVersion], map: "reading_draw_identity_key")
   @@index([anonymousSubjectId, createdAt(sort: Desc), id(sort: Desc)], map: "reading_subject_created_idx")
   @@map("reading")
+}
+
+model Interpretation {
+  id                                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  readingId                         String           @map("reading_id") @db.Uuid
+  anonymousSubjectId                String           @map("anonymous_subject_id") @db.Uuid
+  generationNumber                  Int              @default(1) @map("generation_number") @db.SmallInt
+  requestId                         String           @unique(map: "interpretation_request_id_key") @map("request_id") @db.Uuid
+  status                            String           @default("generating") @db.VarChar(24)
+  generationSchemaVersion           String           @map("generation_schema_version") @db.VarChar(100)
+  generationPolicyVersion           String           @map("generation_policy_version") @db.VarChar(100)
+  eligibilityAsOf                   DateTime         @map("eligibility_as_of") @db.Date
+  idempotencyKeyVersion             String           @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash                Bytes            @map("idempotency_key_hash")
+  canonicalRequestHash              Bytes            @map("canonical_request_hash")
+  locale                            String           @db.VarChar(35)
+  modality                          String           @db.VarChar(16)
+  readingType                       String           @map("reading_type") @db.VarChar(24)
+  themeCode                         String           @map("theme_code") @db.VarChar(40)
+  tone                              String           @db.VarChar(24)
+  providerId                        String           @map("provider_id") @db.VarChar(100)
+  providerVersion                   String           @map("provider_version") @db.VarChar(100)
+  modelId                           String           @map("model_id") @db.VarChar(100)
+  modelVersion                      String           @map("model_version") @db.VarChar(100)
+  providerApprovalReference         String           @map("provider_approval_reference") @db.VarChar(200)
+  promptId                          String           @map("prompt_id") @db.VarChar(100)
+  promptVersion                     String           @map("prompt_version") @db.VarChar(100)
+  promptChecksumSha256              Bytes            @map("prompt_checksum_sha256")
+  promptApprovalReference           String           @map("prompt_approval_reference") @db.VarChar(200)
+  outputSchemaVersion               String           @map("output_schema_version") @db.VarChar(100)
+  safetyPolicyVersion               String           @map("safety_policy_version") @db.VarChar(100)
+  retrievalPolicyVersion            String           @map("retrieval_policy_version") @db.VarChar(100)
+  assemblyPolicyVersion             String           @map("assembly_policy_version") @db.VarChar(100)
+  fallbackTemplateId                String           @map("fallback_template_id") @db.VarChar(100)
+  fallbackTemplateVersion           String           @map("fallback_template_version") @db.VarChar(100)
+  fallbackTemplateChecksumSha256    Bytes            @map("fallback_template_checksum_sha256")
+  fallbackTemplateApprovalReference String           @map("fallback_template_approval_reference") @db.VarChar(200)
+  deterministicEngineName           String           @map("deterministic_engine_name") @db.VarChar(100)
+  deterministicEngineVersion        String           @map("deterministic_engine_version") @db.VarChar(100)
+  deterministicAlgorithmVersion     String           @map("deterministic_algorithm_version") @db.VarChar(100)
+  deterministicRulesVersion         String           @map("deterministic_rules_version") @db.VarChar(100)
+  contentVersions                   String[]         @map("content_versions") @db.VarChar(100)
+  generationProvenance              Json             @map("generation_provenance")
+  maxOutputTokens                   Int              @map("max_output_tokens")
+  attemptTimeoutMs                  Int              @map("attempt_timeout_ms")
+  totalTimeoutMs                    Int              @map("total_timeout_ms")
+  maxAttempts                       Int              @map("max_attempts") @db.SmallInt
+  retryDelayMs                      Int              @map("retry_delay_ms")
+  maximumEstimatedCostMicros        BigInt           @map("maximum_estimated_cost_micros")
+  approvedCurrencyCode              String           @map("approved_currency_code") @db.Char(3)
+  claimVersion                      Int              @default(1) @map("claim_version")
+  claimTokenHash                    Bytes            @map("claim_token_hash")
+  leaseExpiresAt                    DateTime         @map("lease_expires_at") @db.Timestamptz(6)
+  finalizationHash                  Bytes?           @map("finalization_hash")
+  attemptCount                      Int?             @map("attempt_count") @db.SmallInt
+  failureCode                       String?          @map("failure_code") @db.VarChar(32)
+  retryReason                       String?          @map("retry_reason") @db.VarChar(32)
+  latencyMs                         Int?             @map("latency_ms")
+  tokenStatus                       String?          @map("token_status") @db.VarChar(16)
+  inputTokens                       Int?             @map("input_tokens")
+  outputTokens                      Int?             @map("output_tokens")
+  totalTokens                       Int?             @map("total_tokens")
+  costStatus                        String?          @map("cost_status") @db.VarChar(16)
+  estimatedCostMicros               BigInt?          @map("estimated_cost_micros")
+  currencyCode                      String?          @map("currency_code") @db.Char(3)
+  fallbackOutput                    Json?            @map("fallback_output")
+  createdAt                         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt                       DateTime?        @map("completed_at") @db.Timestamptz(6)
+  expiresAt                         DateTime         @map("expires_at") @db.Timestamptz(6)
+  reading                           Reading          @relation(fields: [readingId, anonymousSubjectId, expiresAt], references: [id, anonymousSubjectId, expiresAt], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject                  AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([readingId, generationNumber], map: "interpretation_reading_generation_key")
+  @@unique([anonymousSubjectId, idempotencyKeyVersion, idempotencyKeyHash], map: "interpretation_subject_idempotency_key")
+  @@index([readingId, createdAt(sort: Desc), id(sort: Desc)], map: "interpretation_reading_created_idx")
+  @@index([leaseExpiresAt, id], map: "interpretation_lease_idx")
+  @@index([expiresAt, id], map: "interpretation_expiry_idx")
+  @@map("interpretation")
 }
 
 model ReadingReport {

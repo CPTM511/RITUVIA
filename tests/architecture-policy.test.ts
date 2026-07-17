@@ -92,6 +92,24 @@ describe("package architecture policy", () => {
     expect(auditArchitecture(baseline())).toEqual([]);
   });
 
+  it("allows the reviewed monotonic clock in Web server composition", () => {
+    const files = baseline();
+    files.push({
+      path: "apps/web/server/deadline.ts",
+      source:
+        'import { performance } from "node:perf_hooks"; export const monotonicNow = () => performance.now();',
+    });
+    expect(auditArchitecture(files)).toEqual([]);
+
+    const misplaced = baseline();
+    misplaced.push({
+      path: "packages/ai/src/deadline.ts",
+      source:
+        'import { performance } from "node:perf_hooks"; export const monotonicNow = () => performance.now();',
+    });
+    expect(rules(misplaced)).toContain("node-runtime-dependency");
+  });
+
   it("keeps domain free of runtime packages, environment access, and network access", () => {
     const files = baseline();
     replaceSource(
@@ -139,6 +157,68 @@ describe("package architecture policy", () => {
 
     replaceSource(files, "packages/ai/tsconfig.json", moduleTsconfig("packages/ai").source);
     expect(rules(files)).toContain("pure-module-types");
+  });
+
+  it("keeps interpretation generation in Web server composition without coupling DB to AI", () => {
+    const accepted = baseline();
+    replaceSource(
+      accepted,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/ai": "workspace:*",
+          "@rituvia/config": "workspace:*",
+          "@rituvia/db": "workspace:*",
+          react: "19.2.7",
+          "server-only": "0.0.1",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    accepted.push({
+      path: "apps/web/server/interpretation-generation.ts",
+      source:
+        'import "server-only"; import { generateTarotInterpretationV1 } from "@rituvia/ai"; import { createInterpretationGenerationPersistence } from "@rituvia/db"; export const compose = () => [generateTarotInterpretationV1, createInterpretationGenerationPersistence];',
+    });
+    expect(auditArchitecture(accepted)).toEqual([]);
+
+    const databaseImportsAi = baseline();
+    replaceSource(
+      databaseImportsAi,
+      "packages/db/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/ai": "workspace:*",
+          "@rituvia/domain": "workspace:*",
+        },
+        exports: { ".": "./src/index.ts" },
+        name: "@rituvia/db",
+        private: true,
+      }),
+    );
+    databaseImportsAi.push({
+      path: "packages/db/src/unsafe-generation.ts",
+      source: 'export { generateTarotInterpretationV1 } from "@rituvia/ai";',
+    });
+    expect(rules(databaseImportsAi)).toContain("internal-dependency-direction");
+
+    const aiUsesAmbientRuntime = baseline();
+    aiUsesAmbientRuntime.push({
+      path: "packages/ai/src/unsafe-generation.ts",
+      source:
+        "declare const fetch: (url: string) => Promise<unknown>; export const unsafe = () => fetch(process.env.PROVIDER_URL ?? window.location.href);",
+    });
+    expect(rules(aiUsesAmbientRuntime)).toEqual(
+      expect.arrayContaining(["ai-environment-access", "ai-network-access", "ai-runtime-global"]),
+    );
+
+    replaceSource(
+      aiUsesAmbientRuntime,
+      "packages/ai/tsconfig.json",
+      moduleTsconfig("packages/ai").source,
+    );
+    expect(rules(aiUsesAmbientRuntime)).toContain("pure-module-types");
   });
 
   it("keeps UI free of network, storage, runtime, polymorphic, and dangerous JSX capabilities", () => {

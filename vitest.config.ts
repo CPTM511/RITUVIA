@@ -11,6 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@rituvia/ai": fileURLToPath(new URL("./packages/ai/src/index.ts", import.meta.url)),
       "@rituvia/config/feature-flags": fileURLToPath(
         new URL("./packages/config/src/feature-flags.ts", import.meta.url),
       ),

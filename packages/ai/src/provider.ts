@@ -210,6 +210,22 @@ export type StructuredGenerationSuccessV1 = Readonly<{
 export type StructuredGenerationResultV1 =
   StructuredGenerationFailureV1 | StructuredGenerationSuccessV1;
 
+/**
+ * Provider-neutral cancellation capability. The host owns the real timer and
+ * maps this contract to the vendor SDK without bringing DOM globals into this
+ * framework-independent package.
+ */
+export type StructuredGenerationCancellationV1 = Readonly<{
+  readonly aborted: boolean;
+  subscribe: (listener: () => void) => () => void;
+}>;
+
+export type StructuredGenerationExecutionContextV1 = Readonly<{
+  attempt: 1 | 2;
+  attemptId: string;
+  cancellation: StructuredGenerationCancellationV1;
+}>;
+
 export type StructuredGenerationProviderV1 = Readonly<{
   descriptor: Readonly<{
     capabilities: readonly ("structured_generation" | "usage_reporting")[];
@@ -218,6 +234,7 @@ export type StructuredGenerationProviderV1 = Readonly<{
   }>;
   generateStructured: (
     request: StructuredGenerationRequestV1,
+    executionContext: StructuredGenerationExecutionContextV1,
   ) => Promise<StructuredGenerationResultV1>;
 }>;
 

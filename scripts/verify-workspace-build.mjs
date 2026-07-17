@@ -37,6 +37,8 @@ const requiredArtifacts = [
   "packages/db/dist/feature-flags.js",
   "packages/db/dist/index.d.ts",
   "packages/db/dist/index.js",
+  "packages/db/dist/interpretation-generation-persistence.d.ts",
+  "packages/db/dist/interpretation-generation-persistence.js",
   "packages/db/dist/tarot-reading-persistence.d.ts",
   "packages/db/dist/tarot-reading-persistence.js",
   "packages/domain/dist/index.d.ts",
@@ -59,6 +61,8 @@ const requiredArtifacts = [
   "packages/divination/dist/tarot-publication.js",
   "packages/ai/dist/index.d.ts",
   "packages/ai/dist/index.js",
+  "packages/ai/dist/generation.d.ts",
+  "packages/ai/dist/generation.js",
   "packages/ai/dist/interpretation.d.ts",
   "packages/ai/dist/interpretation.js",
   "packages/ai/dist/provider.d.ts",
@@ -274,7 +278,14 @@ if (
   typeof aiModule.retrieveApprovedTarotContentV1 !== "function" ||
   typeof aiModule.loadApprovedTarotPromptTemplateV1 !== "function" ||
   typeof aiModule.assembleTarotPromptV1 !== "function" ||
+  typeof aiModule.isTarotPromptAssemblyForInputV1 !== "function" ||
+  typeof aiModule.isTarotPromptAssemblyForRetrievedContentV1 !== "function" ||
   typeof aiModule.isTarotPromptAssemblyV1 !== "function" ||
+  typeof aiModule.loadApprovedTarotFallbackTemplateV1 !== "function" ||
+  typeof aiModule.isApprovedTarotFallbackTemplateV1 !== "function" ||
+  typeof aiModule.prepareTarotInterpretationGenerationV1 !== "function" ||
+  typeof aiModule.executePreparedTarotInterpretationGenerationV1 !== "function" ||
+  typeof aiModule.generateTarotInterpretationV1 !== "function" ||
   typeof aiModule.runPreGenerationSafetyGateV1 !== "function" ||
   typeof aiModule.evaluatePreGenerationSafetyV1 !== "function" ||
   typeof aiModule.isPreGenerationSafetyEvaluationV1 !== "function" ||
@@ -284,6 +295,10 @@ if (
   aiModule.tarotInterpretationOutputSchemaVersion !== "1" ||
   aiModule.tarotContentRetrievalPolicyVersion !== "tarot-content-retrieval-policy.v1" ||
   aiModule.tarotPromptAssemblyPolicyVersion !== "tarot-prompt-assembly-policy.v1" ||
+  aiModule.tarotFallbackTemplateSchemaVersion !== "tarot-fallback-template.v1" ||
+  aiModule.tarotGenerationRuntimeSchemaVersion !== "tarot-generation-runtime.v1" ||
+  aiModule.tarotGenerationOperationalMetadataSchemaVersion !==
+    "tarot-generation-operational-metadata.v1" ||
   aiModule.preGenerationSafetyPolicyVersion !== "pre-generation-safety.en.v1" ||
   aiModule.preGenerationSafetyIntakePolicyVersion !== "question-intake.en.v1" ||
   aiModule.preGenerationSafetyPolicyAuthoritySchemaVersion !==
@@ -347,6 +362,251 @@ try {
 }
 if (!rejectedUnpublishedRetrieval || aiModule.isTarotPromptAssemblyV1({})) {
   throw new TypeError("The compiled AI retrieval or prompt trust boundary is invalid.");
+}
+
+const sha256Digest = (value) =>
+  `sha256:${createHash("sha256").update(value, "utf8").digest("hex")}`;
+const isRecursivelyFrozen = (value) =>
+  typeof value !== "object" ||
+  value === null ||
+  (Object.isFrozen(value) && Object.values(value).every(isRecursivelyFrozen));
+const publishSyntheticEditorial = (editorial, suffix) => {
+  editorial.status = "published";
+  editorial.reviewerRole = editorial.requiredApprovalRole;
+  editorial.reviewerId = "test.compiled-content-reviewer";
+  editorial.reviewedDate = "2026-07-17";
+  editorial.approvalReference = `test:rit-033:${suffix}`;
+  editorial.reviewDueDate = "2027-07-18";
+};
+const generationCatalog = structuredClone(tarotPlaceholder);
+generationCatalog.usePolicy = {
+  aiRetrievalAllowed: true,
+  indexingAllowed: false,
+  publicationAllowed: true,
+};
+generationCatalog.supportedThemeCodes = [...domainModule.questionIntakeThemeCodes];
+publishSyntheticEditorial(generationCatalog.editorial, "catalog");
+for (const [index, source] of generationCatalog.sources.entries()) {
+  publishSyntheticEditorial(source.editorial, `source-${index}`);
+  source.rights.status = "owned";
+  source.rights.allowedUses = [
+    "internal_validation",
+    "public_display",
+    "commercial_use",
+    "derivative_use",
+    "translation",
+    "ai_retrieval",
+  ];
+  source.rights.materialTypes = [
+    "structural_data",
+    "spread_definition",
+    "interpretive_text",
+    "artwork",
+  ];
+}
+const generationSource = generationCatalog.sources[0];
+if (generationSource === undefined) {
+  throw new TypeError("The compiled generation catalog source is unavailable.");
+}
+const generationArtworkSource = {
+  id: generationSource.sourceId,
+  version: generationSource.version,
+};
+for (const [index, deck] of generationCatalog.decks.entries()) {
+  publishSyntheticEditorial(deck.editorial, `deck-${index}`);
+  deck.artworkStatus = "assigned";
+  deck.artworkRightsSource = generationArtworkSource;
+  for (const card of deck.cards) {
+    card.artwork = {
+      altText: `Synthetic compiled-build artwork for ${card.title}.`,
+      assetId: `test.compiled.${card.cardId}.artwork`,
+      credit: "Synthetic RIT-033 compiled-build fixture",
+      localizationNotes: "Test-only fixture; never publish.",
+      source: generationArtworkSource,
+      version: "1.0.0",
+    };
+  }
+}
+for (const [index, spread] of generationCatalog.spreads.entries()) {
+  publishSyntheticEditorial(spread.editorial, `spread-${index}`);
+}
+for (const [index, content] of generationCatalog.cardContents.entries()) {
+  publishSyntheticEditorial(content.editorial, `content-${index}`);
+  content.translationStatus = "source_reviewed";
+  content.themeReadings = domainModule.questionIntakeThemeCodes.map((themeCode) => ({
+    text: `A bounded synthetic possibility for the ${themeCode.replaceAll("_", " ")} theme.`,
+    themeCode,
+  }));
+}
+const parsedGenerationCatalog = divinationModule.parseTarotCatalogV1(generationCatalog);
+const generationCatalogChecksum = sha256Digest(JSON.stringify(parsedGenerationCatalog));
+const generationFacts = {
+  algorithmVersion: "partial-fisher-yates-rejection-uint8.v1",
+  catalog: { id: parsedGenerationCatalog.catalogId, version: parsedGenerationCatalog.version },
+  deck: {
+    id: parsedGenerationCatalog.decks[0].deckId,
+    version: parsedGenerationCatalog.decks[0].version,
+  },
+  engineName: "rituvia.tarot-draw",
+  engineVersion: "1.0.0",
+  method: "tarot",
+  orientationPolicy: "upright_and_reversed",
+  positions: [
+    {
+      cardId: "threshold",
+      order: 1,
+      orientation: "reversed",
+      positionId: "perspective",
+    },
+  ],
+  replacementPolicy: "without_replacement",
+  rulesVersion: "tarot-draw-rules.v1",
+  schemaVersion: "tarot-draw-facts.v1",
+  spread: { id: "one-card-perspective", version: "1.0.0" },
+};
+const generationContent = await aiModule.retrieveApprovedTarotContentV1({
+  asOf: "2026-07-18",
+  authorizeRetrieval: () => true,
+  catalogJson: JSON.stringify(generationCatalog),
+  requestJson: JSON.stringify({
+    catalog: {
+      approvalReference: generationCatalog.editorial.approvalReference,
+      checksum: generationCatalogChecksum,
+      id: parsedGenerationCatalog.catalogId,
+      version: parsedGenerationCatalog.version,
+    },
+    deterministicFacts: generationFacts,
+    locale: "en",
+    schemaVersion: aiModule.tarotContentRetrievalRequestSchemaVersion,
+    themeCode: "open_reflection",
+    tradition: "rituvia-original-secular-placeholder",
+  }),
+  verifyIntegrity: (canonicalJson, expectedChecksum) =>
+    sha256Digest(canonicalJson) === expectedChecksum,
+});
+const generationPromptTemplate = {
+  allowedTones: ["concise", "gentle", "grounded", "poetic-light"],
+  approvalReference: "test:rit-033:prompt",
+  authorId: "test.compiled-prompt-author",
+  effectiveDate: "2026-07-18",
+  evaluationVersion: "1.0.0",
+  instructions: [...aiModule.tarotPromptMandatoryInstructions],
+  locale: "en",
+  modality: "tarot",
+  outputSchema: {
+    checksum: sha256Digest("tarot-interpretation-output-schema-v1"),
+    id: "tarot.interpretation.output",
+    version: aiModule.tarotInterpretationOutputSchemaVersion,
+  },
+  promptId: "test.compiled.tarot.reflective.en",
+  requiredApprovalRole: "ai_safety",
+  reviewDueDate: "2027-07-18",
+  reviewedDate: "2026-07-17",
+  reviewerId: "test.compiled-prompt-reviewer",
+  reviewerRole: "ai_safety",
+  schemaVersion: aiModule.tarotPromptTemplateSchemaVersion,
+  status: "approved",
+  toneInstructions: {
+    concise: "Be brief while preserving every required boundary.",
+    gentle: "Use calm, nonjudgmental, autonomy-supporting language.",
+    grounded: "Prefer concrete observations and practical reflection.",
+    "poetic-light": "Use restrained imagery without supernatural authority.",
+  },
+  tradition: "rituvia-original-secular-placeholder",
+  version: "1.0.0",
+};
+const generationPromptRegistration = {
+  approvalReference: generationPromptTemplate.approvalReference,
+  checksum: sha256Digest(JSON.stringify(generationPromptTemplate)),
+  id: generationPromptTemplate.promptId,
+  version: generationPromptTemplate.version,
+};
+const generationPrompt = await aiModule.loadApprovedTarotPromptTemplateV1({
+  asOf: "2026-07-18",
+  authorizePrompt: () => true,
+  registration: generationPromptRegistration,
+  templateJson: JSON.stringify(generationPromptTemplate),
+  verifyIntegrity: (canonicalJson, expectedChecksum) =>
+    sha256Digest(canonicalJson) === expectedChecksum,
+});
+const generationRequestId = "33333333-3333-4333-8333-333333333333";
+const generationInput = aiModule.parseTarotInterpretationInputJsonV1(
+  JSON.stringify({
+    approvedContent: generationContent.approvedContent,
+    approvedRitualTemplateCodes: ["free.candle.v1"],
+    deterministicFacts: generationContent.deterministicFacts,
+    locale: generationContent.locale,
+    modality: "tarot",
+    prompt: {
+      checksum: generationPrompt.checksum,
+      id: generationPrompt.promptId,
+      version: generationPrompt.version,
+    },
+    readingType: generationContent.readingType,
+    requestId: generationRequestId,
+    safetyDecision: {
+      policyVersion: aiModule.preGenerationSafetyPolicyVersion,
+      route: "allowed",
+      schemaVersion: "interpretation-safety-decision.v1",
+    },
+    schemaVersion: aiModule.tarotInterpretationInputSchemaVersion,
+    themeCode: generationContent.themeCode,
+    tone: "grounded",
+  }),
+);
+const generationPromptAssembly = aiModule.assembleTarotPromptV1(
+  generationInput,
+  generationContent,
+  generationPrompt,
+);
+if (
+  !aiModule.isTarotPromptAssemblyForInputV1(generationPromptAssembly, generationInput) ||
+  !aiModule.isTarotPromptAssemblyForRetrievedContentV1(generationPromptAssembly, generationContent)
+) {
+  throw new TypeError("The compiled generation prompt identity binding is invalid.");
+}
+const generationFallbackTemplateJson = JSON.stringify({
+  approvalReference: "test:rit-033:fallback",
+  authorId: "test.compiled-fallback-author",
+  copy: {
+    boundaryNote: "This is a bounded symbolic reflection, not a prediction.",
+    smallActionRationale: "A small reversible action can support reflection without certainty.",
+    summary: "The published symbols offer a bounded perspective for reflection.",
+    timeHorizon: "today",
+    title: "A bounded reflective perspective",
+  },
+  effectiveDate: "2026-07-18",
+  evaluationVersion: "1.0.0",
+  fallbackId: "test.compiled.tarot.fallback.en",
+  locale: "en",
+  modality: "tarot",
+  requiredApprovalRole: "ai_safety",
+  reviewDueDate: "2027-07-18",
+  reviewedDate: "2026-07-17",
+  reviewerId: "test.compiled-fallback-reviewer",
+  reviewerRole: "ai_safety",
+  schemaVersion: aiModule.tarotFallbackTemplateSchemaVersion,
+  status: "approved",
+  tradition: "rituvia-original-secular-placeholder",
+  version: "1.0.0",
+});
+const generationFallbackRegistration = {
+  approvalReference: "test:rit-033:fallback",
+  checksum: sha256Digest(generationFallbackTemplateJson),
+  id: "test.compiled.tarot.fallback.en",
+  version: "1.0.0",
+};
+const generationFallbackTemplate = await aiModule.loadApprovedTarotFallbackTemplateV1({
+  asOf: "2026-07-18",
+  authorizeFallback: () => true,
+  outputSchema: generationPromptAssembly.provenance.outputSchema,
+  registration: generationFallbackRegistration,
+  templateJson: generationFallbackTemplateJson,
+  verifyIntegrity: (canonicalJson, expectedChecksum) =>
+    sha256Digest(canonicalJson) === expectedChecksum,
+});
+if (!aiModule.isApprovedTarotFallbackTemplateV1(generationFallbackTemplate)) {
+  throw new TypeError("The compiled generation fallback trust boundary is invalid.");
 }
 
 let safetyContinuationCalls = 0;
@@ -413,15 +673,495 @@ if (
   throw new TypeError("The compiled pre-generation allowed boundary is invalid.");
 }
 
+const generationSafetyGate = await aiModule.runPreGenerationSafetyGateV1(
+  {
+    asOf: "2026-07-18",
+    authorizePolicy: () => true,
+    policyApprovalReference: "test:rit-033:generation-safety-policy",
+    readingType: generationInput.readingType,
+    requestId: generationRequestId,
+    requestJson: JSON.stringify({
+      locale: generationInput.locale,
+      schemaVersion: "1",
+      themeCode: generationInput.themeCode,
+    }),
+  },
+  (context) => context,
+);
+if (
+  generationSafetyGate.status !== "continued" ||
+  !aiModule.isInterpretationGenerationAuthorizationV1(generationSafetyGate.value.authorization, {
+    intakePolicyVersion: aiModule.preGenerationSafetyIntakePolicyVersion,
+    locale: generationInput.locale,
+    modality: "tarot",
+    policyApprovalReference: "test:rit-033:generation-safety-policy",
+    readingType: generationInput.readingType,
+    requestId: generationRequestId,
+    safetyPolicyVersion: aiModule.preGenerationSafetyPolicyVersion,
+    themeCode: generationInput.themeCode,
+  })
+) {
+  throw new TypeError("The compiled generation authorization binding is invalid.");
+}
+const generationContinuation = generationSafetyGate.value;
+
+const generationRuntime = Object.freeze({
+  approvalReference: "test:rit-033:runtime",
+  attemptTimeoutMs: 500,
+  currencyCode: "USD",
+  eligibilityAsOf: "2026-07-18",
+  fallbackTemplate: Object.freeze({ ...generationFallbackRegistration }),
+  maximumAttempts: 2,
+  maximumEstimatedCostMicros: 1_000,
+  maxOutputTokens: 1_200,
+  model: Object.freeze({ id: "test.compiled.model", version: "1.0.0" }),
+  outputSchema: generationPromptAssembly.provenance.outputSchema,
+  prompt: generationPromptAssembly.prompt,
+  provider: Object.freeze({ id: "test.compiled.provider", version: "1.0.0" }),
+  retryDelayMs: 0,
+  schemaVersion: aiModule.tarotGenerationRuntimeSchemaVersion,
+  totalTimeoutMs: 1_000,
+});
+const authorizeGenerationRuntime = (authority) =>
+  Object.isFrozen(authority) &&
+  authority.schemaVersion === aiModule.tarotGenerationAuthoritySchemaVersion &&
+  isDeepStrictEqual(authority.registration, generationRuntime);
+const generationProviderOutputJson = JSON.stringify({
+  boundaryNote: "This synthetic provider result is a symbolic possibility, not a prediction.",
+  perspectives: generationContent.positions.map(({ themeReading }) => themeReading),
+  reflectionQuestions: generationContent.positions.flatMap(
+    ({ reflectionQuestions }) => reflectionQuestions,
+  ),
+  safety: {
+    certaintyLevel: "reflective",
+    containsGuaranteedOutcome: false,
+    containsProfessionalAdvice: false,
+  },
+  schemaVersion: aiModule.tarotInterpretationOutputSchemaVersion,
+  smallAction: {
+    label: generationContent.positions[0].smallActions[0],
+    rationale: "A reversible observation can support reflection without claiming certainty.",
+    timeHorizon: "today",
+  },
+  sourceRefs: generationInput.approvedContent.map(({ sourceRef }) => sourceRef),
+  summary: "The synthetic provider result offers one bounded lens on the published symbols.",
+  symbols: generationContent.positions.map((position) => ({
+    factRef: position.factRef,
+    limitation: position.cannotDetermine,
+    meaning: position.themeReading,
+    possibility: position.constructivePossibilities[0],
+  })),
+  title: "A synthetic bounded lens",
+});
+const generationProviderSuccess = Object.freeze({
+  finishReason: "stop",
+  outputJson: generationProviderOutputJson,
+  status: "succeeded",
+  usage: Object.freeze({
+    estimatedCost: Object.freeze({ amountMicros: 12, currencyCode: "USD" }),
+    inputTokens: 30,
+    outputTokens: 60,
+    totalTokens: 90,
+  }),
+});
+const createCompiledCancellation = () =>
+  Object.freeze({
+    aborted: false,
+    subscribe: () => () => undefined,
+  });
+const settledGenerationRunner = Object.freeze({
+  run: async ({ attempt, operation }) =>
+    Object.freeze({
+      elapsedMs: 1,
+      status: "settled",
+      value: await operation(
+        Object.freeze({
+          attempt,
+          attemptId: `test.compiled-attempt-${attempt}`,
+          cancellation: createCompiledCancellation(),
+        }),
+      ),
+    }),
+  wait: async () => Object.freeze({ elapsedMs: 0, status: "settled" }),
+});
+const compiledProviderDescriptor = Object.freeze({
+  capabilities: Object.freeze(["structured_generation", "usage_reporting"]),
+  provider: generationRuntime.provider,
+  schemaVersion: aiModule.structuredGenerationProviderSchemaVersion,
+});
+
+let forgedBindingProviderCalls = 0;
+const forgedBindingProvider = Object.freeze({
+  descriptor: compiledProviderDescriptor,
+  generateStructured: async () => {
+    forgedBindingProviderCalls += 1;
+    return generationProviderSuccess;
+  },
+});
+const commonGenerationInput = Object.freeze({
+  authorizeRuntime: authorizeGenerationRuntime,
+  continuation: generationContinuation,
+  fallbackTemplate: generationFallbackTemplate,
+  input: generationInput,
+  prompt: generationPromptAssembly,
+  provider: forgedBindingProvider,
+  retrievedContent: generationContent,
+  runtime: generationRuntime,
+});
+const separatelyParsedGenerationInput = aiModule.parseTarotInterpretationInputJsonV1(
+  JSON.stringify(generationInput),
+);
+let rejectedForgedGenerationBinding = false;
+try {
+  await aiModule.generateTarotInterpretationV1({
+    ...commonGenerationInput,
+    input: separatelyParsedGenerationInput,
+    mode: "provider_with_fallback",
+    provider: forgedBindingProvider,
+    runner: settledGenerationRunner,
+  });
+} catch (error) {
+  rejectedForgedGenerationBinding =
+    error instanceof aiModule.TarotGenerationError &&
+    error.code === "AI_GENERATION_BINDING_MISMATCH";
+}
+if (!rejectedForgedGenerationBinding || forgedBindingProviderCalls !== 0) {
+  throw new TypeError("The compiled generation identity boundary is forgeable.");
+}
+
+let retryProviderCalls = 0;
+const retryProviderRequests = [];
+const retryProviderContexts = [];
+const retryProvider = Object.freeze({
+  descriptor: compiledProviderDescriptor,
+  generateStructured: async (request, context) => {
+    retryProviderCalls += 1;
+    retryProviderRequests.push(request);
+    retryProviderContexts.push(context);
+    return retryProviderCalls === 1
+      ? Object.freeze({
+          code: "rate_limited",
+          retryable: false,
+          status: "failed",
+        })
+      : generationProviderSuccess;
+  },
+});
+const candidateGeneration = await aiModule.generateTarotInterpretationV1({
+  ...commonGenerationInput,
+  mode: "provider_with_fallback",
+  provider: retryProvider,
+  runner: settledGenerationRunner,
+});
+if (
+  retryProviderCalls !== 2 ||
+  retryProviderRequests.length !== 2 ||
+  retryProviderRequests[0] !== retryProviderRequests[1] ||
+  retryProviderRequests[0]?.requestId !== generationRequestId ||
+  !Object.isFrozen(retryProviderRequests[0]) ||
+  retryProviderContexts.map(({ attempt }) => attempt).join(",") !== "1,2" ||
+  candidateGeneration.status !== "pending_verification" ||
+  candidateGeneration.displayable !== false ||
+  candidateGeneration.metadata.attemptCount !== 2 ||
+  candidateGeneration.metadata.retryReason !== "rate_limited" ||
+  candidateGeneration.metadata.failureCode !== null ||
+  !isDeepStrictEqual(
+    aiModule.parseTarotInterpretationOutputForInputV1(
+      generationInput,
+      JSON.stringify(candidateGeneration.output),
+    ),
+    candidateGeneration.output,
+  )
+) {
+  throw new TypeError("The compiled bounded retry or candidate boundary is invalid.");
+}
+
+const runCompiledTerminalProviderFailure = async (code, retryable) => {
+  let providerCalls = 0;
+  const provider = Object.freeze({
+    descriptor: compiledProviderDescriptor,
+    generateStructured: async () => {
+      providerCalls += 1;
+      return Object.freeze({ code, retryable, status: "failed" });
+    },
+  });
+  const result = await aiModule.generateTarotInterpretationV1({
+    ...commonGenerationInput,
+    mode: "provider_with_fallback",
+    provider,
+    runner: settledGenerationRunner,
+  });
+  return Object.freeze({ providerCalls, result });
+};
+const configurationFailure = await runCompiledTerminalProviderFailure("configuration", false);
+const invalidRequestFailure = await runCompiledTerminalProviderFailure("invalid_request", true);
+const unknownFailure = await runCompiledTerminalProviderFailure("unknown", true);
+for (const [expectedCode, failure] of [
+  ["configuration", configurationFailure],
+  ["invalid_request", invalidRequestFailure],
+  ["unknown", unknownFailure],
+]) {
+  if (
+    failure.providerCalls !== 1 ||
+    failure.result.status !== "failed" ||
+    failure.result.displayable !== false ||
+    Object.hasOwn(failure.result, "output") ||
+    failure.result.metadata.result !== "failed" ||
+    failure.result.metadata.failureCode !== expectedCode ||
+    failure.result.metadata.retryReason !== null ||
+    failure.result.metadata.attemptCount !== 1 ||
+    failure.result.metadata.tokenStatus !== "unavailable" ||
+    failure.result.metadata.costStatus !== "unavailable" ||
+    !isRecursivelyFrozen(failure.result) ||
+    JSON.stringify(failure.result).includes(generationFallbackTemplate.copy.title)
+  ) {
+    throw new TypeError("The compiled provider configuration failure was disguised as a fallback.");
+  }
+}
+
+let rejectedProviderCalls = 0;
+const rejectedProvider = Object.freeze({
+  descriptor: compiledProviderDescriptor,
+  generateStructured: async () => {
+    rejectedProviderCalls += 1;
+    throw new Error("private-canary synthetic provider rejection");
+  },
+});
+const rejectedProviderFailure = await aiModule.generateTarotInterpretationV1({
+  ...commonGenerationInput,
+  mode: "provider_with_fallback",
+  provider: rejectedProvider,
+  runner: settledGenerationRunner,
+});
+if (
+  rejectedProviderCalls !== 1 ||
+  rejectedProviderFailure.status !== "failed" ||
+  rejectedProviderFailure.displayable !== false ||
+  Object.hasOwn(rejectedProviderFailure, "output") ||
+  rejectedProviderFailure.metadata.result !== "failed" ||
+  rejectedProviderFailure.metadata.failureCode !== "unknown" ||
+  rejectedProviderFailure.metadata.retryReason !== null ||
+  rejectedProviderFailure.metadata.attemptCount !== 1 ||
+  !isRecursivelyFrozen(rejectedProviderFailure) ||
+  JSON.stringify(rejectedProviderFailure).includes("private-canary") ||
+  JSON.stringify(rejectedProviderFailure).includes(generationFallbackTemplate.copy.title)
+) {
+  throw new TypeError("The compiled rejected provider promise escaped the failed boundary.");
+}
+
+const safeOffPreparedGeneration =
+  await aiModule.prepareTarotInterpretationGenerationV1(commonGenerationInput);
+if (
+  safeOffPreparedGeneration.schemaVersion !== "prepared-tarot-interpretation-generation.v1" ||
+  !Object.isFrozen(safeOffPreparedGeneration) ||
+  /messages|outputJson|providerOutput|question|journal|birth|email|session/iu.test(
+    JSON.stringify(safeOffPreparedGeneration.provenance),
+  )
+) {
+  throw new TypeError("The compiled safe-off preparation boundary is invalid.");
+}
+const fallbackGenerationOne = await aiModule.executePreparedTarotInterpretationGenerationV1({
+  mode: "fallback_only",
+  prepared: safeOffPreparedGeneration,
+});
+const fallbackGenerationTwo = await aiModule.generateTarotInterpretationV1({
+  ...commonGenerationInput,
+  mode: "fallback_only",
+});
+if (
+  fallbackGenerationOne.status !== "fallback" ||
+  fallbackGenerationOne.displayable !== true ||
+  fallbackGenerationOne.metadata.attemptCount !== 0 ||
+  fallbackGenerationOne.metadata.failureCode !== "aborted" ||
+  forgedBindingProviderCalls !== 0 ||
+  !isDeepStrictEqual(fallbackGenerationOne, fallbackGenerationTwo) ||
+  !isDeepStrictEqual(
+    aiModule.parseTarotInterpretationOutputForInputV1(
+      generationInput,
+      JSON.stringify(fallbackGenerationOne.output),
+    ),
+    fallbackGenerationOne.output,
+  )
+) {
+  throw new TypeError("The compiled deterministic fallback boundary is invalid.");
+}
+
+let unavailableProviderCalls = 0;
+const unavailableProvider = Object.freeze({
+  descriptor: compiledProviderDescriptor,
+  generateStructured: async () => {
+    unavailableProviderCalls += 1;
+    return Object.freeze({ code: "unavailable", retryable: false, status: "failed" });
+  },
+});
+const unavailableFallback = await aiModule.generateTarotInterpretationV1({
+  ...commonGenerationInput,
+  mode: "provider_with_fallback",
+  provider: unavailableProvider,
+  runner: settledGenerationRunner,
+});
+if (
+  unavailableProviderCalls !== 2 ||
+  unavailableFallback.status !== "fallback" ||
+  unavailableFallback.displayable !== true ||
+  !Object.hasOwn(unavailableFallback, "output") ||
+  unavailableFallback.metadata.result !== "fallback" ||
+  unavailableFallback.metadata.failureCode !== "unavailable" ||
+  unavailableFallback.metadata.retryReason !== "unavailable" ||
+  unavailableFallback.metadata.attemptCount !== 2 ||
+  !isDeepStrictEqual(unavailableFallback.output, fallbackGenerationOne.output) ||
+  !isDeepStrictEqual(
+    aiModule.parseTarotInterpretationOutputForInputV1(
+      generationInput,
+      JSON.stringify(unavailableFallback.output),
+    ),
+    unavailableFallback.output,
+  )
+) {
+  throw new TypeError("The compiled unavailable-only fallback boundary is invalid.");
+}
+
+let timeoutProviderCalls = 0;
+let timeoutCancellationCalls = 0;
+let timeoutRunnerWaitCalls = 0;
+let lateProviderSettlementConsumed = false;
+let settleLateProvider;
+const timeoutProvider = Object.freeze({
+  descriptor: compiledProviderDescriptor,
+  generateStructured: (_request, context) => {
+    timeoutProviderCalls += 1;
+    context.cancellation.subscribe(() => {
+      timeoutCancellationCalls += 1;
+    });
+    return new Promise((resolve) => {
+      settleLateProvider = resolve;
+    });
+  },
+});
+const timeoutGenerationRunner = Object.freeze({
+  run: async ({ attempt, operation }) => {
+    let aborted = false;
+    const cancellationListeners = new Set();
+    const cancellation = Object.freeze({
+      get aborted() {
+        return aborted;
+      },
+      subscribe(listener) {
+        cancellationListeners.add(listener);
+        return () => cancellationListeners.delete(listener);
+      },
+    });
+    const pending = operation(
+      Object.freeze({
+        attempt,
+        attemptId: `test.compiled-timeout-${attempt}`,
+        cancellation,
+      }),
+    );
+    void pending.then(
+      () => {
+        lateProviderSettlementConsumed = true;
+      },
+      () => {
+        lateProviderSettlementConsumed = true;
+      },
+    );
+    aborted = true;
+    const cancellationAcknowledged = cancellationListeners.size > 0;
+    for (const listener of cancellationListeners) listener();
+    cancellationListeners.clear();
+    return Object.freeze({
+      cancellationAcknowledged,
+      elapsedMs: 5,
+      status: "timeout",
+    });
+  },
+  wait: async () => {
+    timeoutRunnerWaitCalls += 1;
+    return Object.freeze({ elapsedMs: 0, status: "settled" });
+  },
+});
+const timeoutGeneration = await aiModule.generateTarotInterpretationV1({
+  ...commonGenerationInput,
+  mode: "provider_with_fallback",
+  provider: timeoutProvider,
+  runner: timeoutGenerationRunner,
+});
+const timeoutGenerationSnapshot = JSON.stringify(timeoutGeneration);
+settleLateProvider?.(generationProviderSuccess);
+await Promise.resolve();
+await Promise.resolve();
+if (
+  timeoutProviderCalls !== 1 ||
+  timeoutCancellationCalls !== 1 ||
+  timeoutRunnerWaitCalls !== 0 ||
+  !lateProviderSettlementConsumed ||
+  timeoutGeneration.status !== "fallback" ||
+  timeoutGeneration.metadata.failureCode !== "timeout" ||
+  timeoutGeneration.metadata.attemptCount !== 1 ||
+  JSON.stringify(timeoutGeneration) !== timeoutGenerationSnapshot ||
+  !isDeepStrictEqual(timeoutGeneration.output, fallbackGenerationOne.output)
+) {
+  throw new TypeError("The compiled timeout or late-settlement boundary is invalid.");
+}
+
+const generationMetadataKeys = Object.freeze([
+  "attemptCount",
+  "contentVersions",
+  "costStatus",
+  "currencyCode",
+  "estimatedCostMicros",
+  "failureCode",
+  "fallbackTemplateVersion",
+  "inputTokens",
+  "latencyMs",
+  "locale",
+  "modality",
+  "modelId",
+  "modelVersion",
+  "outputSchemaVersion",
+  "outputTokens",
+  "promptId",
+  "promptVersion",
+  "providerId",
+  "providerVersion",
+  "readingType",
+  "result",
+  "retryReason",
+  "safetyPolicyVersion",
+  "schemaVersion",
+  "themeCode",
+  "tokenStatus",
+  "totalTokens",
+]);
+const serializedGenerationMetadata = JSON.stringify(candidateGeneration.metadata);
+if (
+  !isRecursivelyFrozen(candidateGeneration.metadata) ||
+  !isDeepStrictEqual(Object.keys(candidateGeneration.metadata).sort(), generationMetadataKeys) ||
+  serializedGenerationMetadata.includes(generationRequestId) ||
+  serializedGenerationMetadata.includes(generationProviderOutputJson) ||
+  serializedGenerationMetadata.includes(generationPromptAssembly.messages[0]?.content ?? "") ||
+  /private-canary|question|journal|birth|email|session|reading(?:Id|_id)|raw|error|exception/iu.test(
+    serializedGenerationMetadata,
+  )
+) {
+  throw new TypeError("The compiled generation metadata allowlist is not privacy-safe.");
+}
+
 if (
   typeof databaseModule.assertDatabaseUrl !== "function" ||
   typeof databaseModule.assertAnonymousIdentityRuntimeDatabasePrivileges !== "function" ||
   typeof databaseModule.createAnonymousIdentityService !== "function" ||
   typeof databaseModule.assertFeatureFlagRuntimeDatabasePrivileges !== "function" ||
   typeof databaseModule.assertTarotReadingRuntimeDatabasePrivileges !== "function" ||
+  typeof databaseModule.assertInterpretationGenerationRuntimeDatabasePrivileges !== "function" ||
   typeof databaseModule.createDatabaseClient !== "function" ||
+  typeof databaseModule.createInterpretationGenerationPersistence !== "function" ||
   typeof databaseModule.createTarotReadingPersistence !== "function" ||
-  typeof databaseModule.readFeatureFlagVersions !== "function"
+  typeof databaseModule.readFeatureFlagVersions !== "function" ||
+  databaseModule.generationSchemaVersion !== "interpretation-generation.v1" ||
+  databaseModule.generationProvenanceSchemaVersion !== "interpretation-generation-provenance.v1" ||
+  !Array.isArray(databaseModule.interpretationGenerationPersistenceErrorCodes)
 ) {
   throw new TypeError(
     "The database build does not expose its injected, connection-free adapter boundary.",

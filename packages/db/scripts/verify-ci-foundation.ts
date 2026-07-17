@@ -13,6 +13,7 @@ import {
 import { assertCiDatabaseEnvironment, assertCiServiceAddress } from "../src/ci-database-safety.js";
 import { createDatabaseClient } from "../src/client.js";
 import { assertFeatureFlagRuntimeDatabasePrivileges } from "../src/feature-flags.js";
+import { assertInterpretationGenerationRuntimeDatabasePrivileges } from "../src/interpretation-generation-persistence.js";
 import { assertTarotReadingRuntimeDatabasePrivileges } from "../src/tarot-reading-persistence.js";
 
 const APP_ROLE = "rituvia_ci_app";
@@ -24,6 +25,8 @@ const IDENTITY_READER_ROLE = "rituvia_identity_reader";
 const IDENTITY_WRITER_ROLE = "rituvia_identity_writer";
 const READING_READER_ROLE = "rituvia_tarot_reading_reader";
 const READING_WRITER_ROLE = "rituvia_tarot_reading_writer";
+const INTERPRETATION_READER_ROLE = "rituvia_interpretation_reader";
+const INTERPRETATION_WRITER_ROLE = "rituvia_interpretation_writer";
 const DATABASE_NAME = "rituvia_ci";
 const repositoryRoot = path.resolve("../..");
 const prismaEntry = path.resolve("node_modules/prisma/build/index.js");
@@ -174,6 +177,8 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
       IDENTITY_WRITER_ROLE,
       READING_READER_ROLE,
       READING_WRITER_ROLE,
+      INTERPRETATION_READER_ROLE,
+      INTERPRETATION_WRITER_ROLE,
     ]) {
       const formatted = await admin.query<{ statement: string }>(
         "SELECT format('CREATE ROLE %I NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', $1::text) AS statement",
@@ -199,6 +204,9 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(`GRANT ${READING_READER_ROLE}, ${READING_WRITER_ROLE} TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE} TO ${APP_ROLE}`,
+    );
     verificationStage = "CI database ownership transfer";
     await admin.query(`ALTER DATABASE ${DATABASE_NAME} OWNER TO ${MIGRATOR_ROLE}`);
     verificationStage = "public schema privilege revocation";
@@ -230,7 +238,7 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}`,
     );
     await admin.query(`GRANT SELECT ON TABLE "_prisma_migrations", seed_manifest TO ${APP_ROLE}`);
     await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
@@ -259,11 +267,18 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     await admin.query(
       `GRANT INSERT ON TABLE reading, tarot_draw, reading_report TO ${READING_WRITER_ROLE}`,
     );
+    await admin.query(`GRANT SELECT ON TABLE interpretation TO ${INTERPRETATION_READER_ROLE}`);
+    await admin.query(
+      `GRANT INSERT (anonymous_subject_id, approved_currency_code, assembly_policy_version, attempt_timeout_ms, canonical_request_hash, claim_token_hash, content_versions, deterministic_algorithm_version, deterministic_engine_name, deterministic_engine_version, deterministic_rules_version, eligibility_as_of, expires_at, fallback_template_approval_reference, fallback_template_checksum_sha256, fallback_template_id, fallback_template_version, generation_policy_version, generation_provenance, generation_schema_version, idempotency_key_hash, idempotency_key_version, lease_expires_at, locale, max_attempts, max_output_tokens, maximum_estimated_cost_micros, modality, model_id, model_version, output_schema_version, prompt_approval_reference, prompt_checksum_sha256, prompt_id, prompt_version, provider_approval_reference, provider_id, provider_version, reading_id, reading_type, request_id, retrieval_policy_version, retry_delay_ms, safety_policy_version, theme_code, tone, total_timeout_ms) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (attempt_count, claim_token_hash, claim_version, completed_at, cost_status, currency_code, estimated_cost_micros, failure_code, fallback_output, finalization_hash, input_tokens, latency_ms, lease_expires_at, output_tokens, retry_reason, status, token_status, total_tokens) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
+    );
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -325,6 +340,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     await assertFeatureFlagRuntimeDatabasePrivileges(runtimeDatabase);
     await assertAnonymousIdentityRuntimeDatabasePrivileges(runtimeDatabase);
     await assertTarotReadingRuntimeDatabasePrivileges(runtimeDatabase);
+    await assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase);
     await assert.rejects(
       assertFeatureFlagRuntimeDatabasePrivileges(controlDatabase),
       /runtime database privileges are unsafe/u,
@@ -357,6 +373,41 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         /runtime database privileges are unsafe/u,
       );
     }
+    for (const unsafeInterpretationDatabase of [
+      controlDatabase,
+      migratorDatabase,
+      preselectedRuntimeDatabase,
+    ]) {
+      await assert.rejects(
+        assertInterpretationGenerationRuntimeDatabasePrivileges(unsafeInterpretationDatabase),
+        /runtime database privileges are unsafe/u,
+      );
+    }
+    await migrator.query(
+      `GRANT INSERT (status) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
+    );
+    try {
+      await assert.rejects(
+        assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase),
+        /runtime database privileges are unsafe/u,
+      );
+    } finally {
+      await migrator.query(
+        `REVOKE INSERT (status) ON TABLE interpretation FROM ${INTERPRETATION_WRITER_ROLE}`,
+      );
+    }
+    await migrator.query(`GRANT DELETE ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`);
+    try {
+      await assert.rejects(
+        assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase),
+        /runtime database privileges are unsafe/u,
+      );
+    } finally {
+      await migrator.query(
+        `REVOKE DELETE ON TABLE interpretation FROM ${INTERPRETATION_WRITER_ROLE}`,
+      );
+    }
+    await assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase);
     const systemIdentity = await app.query<{
       canCreateInDatabase: boolean;
       canCreateInSchema: boolean;
@@ -430,6 +481,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     const emptyIdentity = await app.query<{
       consents: number;
       draws: number;
+      interpretations: number;
       reports: number;
       readings: number;
       sessions: number;
@@ -439,15 +491,66 @@ const verifyMigratedDatabase = async (): Promise<void> => {
               (SELECT count(*)::int FROM consent_record) AS consents,
               (SELECT count(*)::int FROM reading) AS readings,
               (SELECT count(*)::int FROM tarot_draw) AS draws,
-              (SELECT count(*)::int FROM reading_report) AS reports`);
+              (SELECT count(*)::int FROM reading_report) AS reports,
+              (SELECT count(*)::int FROM interpretation) AS interpretations`);
     assert.deepEqual(emptyIdentity.rows[0], {
       consents: 0,
       draws: 0,
+      interpretations: 0,
       reports: 0,
       readings: 0,
       sessions: 0,
       subjects: 0,
     });
+    await expectPostgresError(
+      () => app.query("INSERT INTO interpretation (status) VALUES ('fallback')"),
+      "42501",
+    );
+    await expectPostgresError(
+      () => app.query("UPDATE interpretation SET generation_provenance = '{}'::jsonb"),
+      "42501",
+    );
+    await expectPostgresError(() => app.query("DELETE FROM interpretation"), "42501");
+    await expectPostgresError(() => app.query("TRUNCATE interpretation"), "42501");
+    const interpretationPolicies = await app.query<{
+      command: string;
+      forceRowSecurity: boolean;
+      policyName: string;
+      roles: string[];
+      rowSecurity: boolean;
+    }>(`
+      SELECT policy.policyname AS "policyName", policy.cmd AS command,
+             to_json(policy.roles) AS roles, relation.relrowsecurity AS "rowSecurity",
+             relation.relforcerowsecurity AS "forceRowSecurity"
+        FROM pg_policies AS policy
+        JOIN pg_class AS relation
+          ON relation.oid = 'public.interpretation'::regclass
+       WHERE policy.schemaname = 'public' AND policy.tablename = 'interpretation'
+       ORDER BY policy.policyname
+    `);
+    assert.deepEqual(interpretationPolicies.rows, [
+      {
+        command: "INSERT",
+        forceRowSecurity: true,
+        policyName: "interpretation_claim_insert",
+        roles: [INTERPRETATION_WRITER_ROLE],
+        rowSecurity: true,
+      },
+      {
+        command: "UPDATE",
+        forceRowSecurity: true,
+        policyName: "interpretation_generating_transition",
+        roles: [INTERPRETATION_WRITER_ROLE],
+        rowSecurity: true,
+      },
+      {
+        command: "SELECT",
+        forceRowSecurity: true,
+        policyName: "interpretation_read",
+        roles: [INTERPRETATION_READER_ROLE],
+        rowSecurity: true,
+      },
+    ]);
 
     const identity = createAnonymousIdentityService(runtimeDatabase, {
       issuanceLimit: 10,

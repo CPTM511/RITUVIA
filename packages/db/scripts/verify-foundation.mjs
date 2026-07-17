@@ -152,6 +152,7 @@ const verifyMigrationState = async (pool) => {
       "202607170002_anonymous_identity_baseline",
       "202607170003_tarot_reading_persistence",
       "202607170004_tarot_reading_report",
+      "202607180001_interpretation_generation",
     ],
   );
   for (const row of result.rows) {
@@ -202,12 +203,14 @@ const verifyIdentityTablesStartEmpty = async (pool) => {
            (SELECT count(*)::int FROM anonymous_session_issuance_gate) AS issuance_gates,
            (SELECT count(*)::int FROM reading) AS readings,
            (SELECT count(*)::int FROM tarot_draw) AS draws,
-           (SELECT count(*)::int FROM reading_report) AS reports
+           (SELECT count(*)::int FROM reading_report) AS reports,
+           (SELECT count(*)::int FROM interpretation) AS interpretations
   `);
   assert.deepEqual(result.rows[0], {
     consents: 0,
     draws: 0,
     issuance_gates: 0,
+    interpretations: 0,
     reports: 0,
     readings: 0,
     sessions: 0,

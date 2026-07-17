@@ -36,3 +36,23 @@ export {
   type TarotReadingReportDigestCandidate,
   type TarotReadingReportPrepareContext,
 } from "./tarot-reading-persistence.js";
+export {
+  assertInterpretationGenerationRuntimeDatabasePrivileges,
+  createInterpretationGenerationPersistence,
+  generationProvenanceSchemaVersion,
+  generationSchemaVersion,
+  interpretationGenerationPersistenceErrorCodes,
+  InterpretationGenerationPersistenceError,
+  type InterpretationGenerationChecksummedReferenceV1,
+  type InterpretationGenerationClaimProvenanceV1,
+  type InterpretationGenerationClaimResult,
+  type InterpretationGenerationCompletionV1,
+  type InterpretationGenerationFinalizeResult,
+  type InterpretationGenerationOperationalMetadataV1,
+  type InterpretationGenerationPersistence,
+  type InterpretationGenerationPersistenceErrorCode,
+  type InterpretationGenerationPersistencePolicy,
+  type InterpretationGenerationProvenanceV1,
+  type InterpretationGenerationVersionReferenceV1,
+  type PersistedInterpretationGeneration,
+} from "./interpretation-generation-persistence.js";

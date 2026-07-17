@@ -189,6 +189,13 @@ export type TarotPromptAssemblyV1 = Readonly<{
 
 declare const tarotPromptAssemblyBrand: unique symbol;
 const issuedTarotPromptAssemblies = new WeakSet<object>();
+const tarotPromptAssemblyInputs = new WeakMap<
+  object,
+  Readonly<{
+    input: TarotInterpretationInputV1;
+    retrievedContent: RetrievedTarotContentBundleV1;
+  }>
+>();
 
 type ParsedTarotPromptTemplateV1 = Omit<
   ApprovedTarotPromptTemplateV1,
@@ -675,8 +682,22 @@ export const assembleTarotPromptV1 = (
     schemaVersion: tarotPromptAssemblySchemaVersion,
   }) as TarotPromptAssemblyV1;
   issuedTarotPromptAssemblies.add(assembly);
+  tarotPromptAssemblyInputs.set(assembly, Object.freeze({ input, retrievedContent }));
   return assembly;
 };
 
 export const isTarotPromptAssemblyV1 = (value: unknown): value is TarotPromptAssemblyV1 =>
   typeof value === "object" && value !== null && issuedTarotPromptAssemblies.has(value);
+
+export const isTarotPromptAssemblyForInputV1 = (
+  value: unknown,
+  input: TarotInterpretationInputV1,
+): value is TarotPromptAssemblyV1 =>
+  isTarotPromptAssemblyV1(value) && tarotPromptAssemblyInputs.get(value)?.input === input;
+
+export const isTarotPromptAssemblyForRetrievedContentV1 = (
+  value: unknown,
+  retrievedContent: RetrievedTarotContentBundleV1,
+): value is TarotPromptAssemblyV1 =>
+  isTarotPromptAssemblyV1(value) &&
+  tarotPromptAssemblyInputs.get(value)?.retrievedContent === retrievedContent;

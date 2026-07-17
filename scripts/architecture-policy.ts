@@ -184,7 +184,7 @@ const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>(
   ["@rituvia/testing", new Set()],
 ]);
 const allowedRuntimeNodeBuiltins = new Map<string, ReadonlySet<string>>([
-  ["@rituvia/web", new Set(["node:crypto", "node:url"])],
+  ["@rituvia/web", new Set(["node:crypto", "node:perf_hooks", "node:url"])],
   ["@rituvia/worker", new Set(["node:url"])],
 ]);
 const dependencySections = Object.freeze([

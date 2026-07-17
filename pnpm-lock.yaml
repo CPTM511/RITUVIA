@@ -54,6 +54,9 @@ importers:
       '@next/env':
         specifier: 16.2.10
         version: 16.2.10
+      '@rituvia/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@rituvia/config':
         specifier: workspace:*
         version: link:../../packages/config
