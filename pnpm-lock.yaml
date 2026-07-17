@@ -104,6 +104,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/observability
 
+  packages/ai:
+    dependencies:
+      '@rituvia/divination':
+        specifier: workspace:*
+        version: link:../divination
+      '@rituvia/domain':
+        specifier: workspace:*
+        version: link:../domain
+
   packages/config:
     dependencies:
       zod:
@@ -132,13 +141,13 @@ importers:
         specifier: 7.8.0
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
 
-  packages/domain: {}
-
   packages/divination:
     dependencies:
       '@rituvia/domain':
         specifier: workspace:*
         version: link:../domain
+
+  packages/domain: {}
 
   packages/observability: {}
 

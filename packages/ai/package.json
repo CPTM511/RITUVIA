@@ -1,0 +1,21 @@
+{
+  "name": "@rituvia/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rituvia/divination": "workspace:*",
+    "@rituvia/domain": "workspace:*"
+  }
+}

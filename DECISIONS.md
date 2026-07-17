@@ -279,3 +279,17 @@ effective until this register links it. Do not rewrite historical rationale; sup
   storage, cross-tab tracking, new retention, automatic traffic, or loss of the previous result
   during a failed new attempt.
 - **Date:** 2026-07-18
+
+### [D-037 — Provider-neutral, public-fact-only AI interpretation contracts](records/decisions/D-037.md)
+
+- **Decision:** Establish a pure Tarot-first AI package that consumes only public deterministic
+  facts and exact versioned provenance, exposes capability-shaped structured generation with
+  opaque allowed authorization, normalized failures, and provisional streams, and validates the
+  canonical reflective output with strict bounded schemas bound to the parsed input's exact facts,
+  sources, and approved ritual codes. Defer retrieval, question safety, orchestration/fallback,
+  prose safety/fabrication verification, provider activation, and other modalities to their
+  sequenced tasks.
+- **Reason:** A narrow provider-neutral boundary prevents private data, internal draw audit,
+  invented modality facts, vendor objects, and structurally unsafe output from becoming accepted
+  contracts before the required retrieval and safety pipeline exists.
+- **Date:** 2026-07-18

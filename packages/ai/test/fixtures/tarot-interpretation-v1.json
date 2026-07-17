@@ -1,0 +1,218 @@
+{
+  "cases": [
+    {
+      "name": "one-card-grounded-without-ritual",
+      "input": {
+        "approvedRitualTemplateCodes": [],
+        "approvedContent": [
+          {
+            "checksum": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "contentId": "test.tarot.lantern",
+            "locale": "en",
+            "sourceRef": "content:lantern:1",
+            "tradition": "secular-reflection",
+            "version": "1.0.0"
+          }
+        ],
+        "deterministicFacts": {
+          "algorithmVersion": "partial-fisher-yates-rejection-uint8.v1",
+          "catalog": { "id": "test.catalog", "version": "1.0.0" },
+          "deck": { "id": "test.deck", "version": "1.0.0" },
+          "engineName": "rituvia.tarot-draw",
+          "engineVersion": "1.0.0",
+          "method": "tarot",
+          "orientationPolicy": "upright_and_reversed",
+          "positions": [
+            {
+              "cardId": "lantern",
+              "order": 1,
+              "orientation": "upright",
+              "positionId": "perspective"
+            }
+          ],
+          "replacementPolicy": "without_replacement",
+          "rulesVersion": "tarot-draw-rules.v1",
+          "schemaVersion": "tarot-draw-facts.v1",
+          "spread": { "id": "one-card-perspective", "version": "1.0.0" }
+        },
+        "locale": "en",
+        "modality": "tarot",
+        "prompt": {
+          "checksum": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "id": "test.prompt.tarot.en",
+          "version": "1.0.0"
+        },
+        "readingType": "one_card",
+        "requestId": "11111111-1111-4111-8111-111111111111",
+        "safetyDecision": {
+          "policyVersion": "safety.tarot.en.v1",
+          "route": "allowed",
+          "schemaVersion": "interpretation-safety-decision.v1"
+        },
+        "schemaVersion": "tarot-interpretation-input.v1",
+        "themeCode": "open_reflection",
+        "tone": "grounded"
+      },
+      "output": {
+        "boundaryNote": "This is a symbolic possibility, not a prediction or professional instruction.",
+        "perspectives": [
+          "Clarity may come from narrowing attention.",
+          "Uncertainty can remain while one detail becomes useful."
+        ],
+        "reflectionQuestions": ["What deserves a little more attention today?"],
+        "safety": {
+          "certaintyLevel": "reflective",
+          "containsGuaranteedOutcome": false,
+          "containsProfessionalAdvice": false
+        },
+        "schemaVersion": "1",
+        "smallAction": {
+          "label": "Name one observable detail.",
+          "rationale": "A concrete observation can support a small next step without claiming certainty.",
+          "timeHorizon": "today"
+        },
+        "sourceRefs": ["content:lantern:1"],
+        "summary": "The Lantern offers a bounded lens on attention and clarity.",
+        "symbols": [
+          {
+            "factRef": "tarot.position.perspective",
+            "limitation": "It cannot determine what will happen.",
+            "meaning": "The Lantern may represent focused attention.",
+            "possibility": "One visible detail may be enough for a useful next step."
+          }
+        ],
+        "title": "A lens on what is visible"
+      }
+    },
+    {
+      "name": "three-card-gentle-with-approved-ritual-reference",
+      "input": {
+        "approvedRitualTemplateCodes": ["free.candle.v1"],
+        "approvedContent": [
+          {
+            "checksum": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "contentId": "test.tarot.lantern",
+            "locale": "en",
+            "sourceRef": "content:lantern:1",
+            "tradition": "secular-reflection",
+            "version": "1.0.0"
+          },
+          {
+            "checksum": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+            "contentId": "test.tarot.mirror",
+            "locale": "en",
+            "sourceRef": "content:mirror:1",
+            "tradition": "secular-reflection",
+            "version": "1.0.0"
+          },
+          {
+            "checksum": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+            "contentId": "test.tarot.threshold",
+            "locale": "en",
+            "sourceRef": "content:threshold:1",
+            "tradition": "secular-reflection",
+            "version": "1.0.0"
+          }
+        ],
+        "deterministicFacts": {
+          "algorithmVersion": "partial-fisher-yates-rejection-uint8.v1",
+          "catalog": { "id": "test.catalog", "version": "1.0.0" },
+          "deck": { "id": "test.deck", "version": "1.0.0" },
+          "engineName": "rituvia.tarot-draw",
+          "engineVersion": "1.0.0",
+          "method": "tarot",
+          "orientationPolicy": "upright_and_reversed",
+          "positions": [
+            {
+              "cardId": "lantern",
+              "order": 1,
+              "orientation": "upright",
+              "positionId": "situation"
+            },
+            {
+              "cardId": "mirror",
+              "order": 2,
+              "orientation": "reversed",
+              "positionId": "action"
+            },
+            {
+              "cardId": "threshold",
+              "order": 3,
+              "orientation": "upright",
+              "positionId": "possibility"
+            }
+          ],
+          "replacementPolicy": "without_replacement",
+          "rulesVersion": "tarot-draw-rules.v1",
+          "schemaVersion": "tarot-draw-facts.v1",
+          "spread": { "id": "situation-action-possibility", "version": "1.0.0" }
+        },
+        "locale": "en",
+        "modality": "tarot",
+        "prompt": {
+          "checksum": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "id": "test.prompt.tarot.en",
+          "version": "1.0.0"
+        },
+        "readingType": "three_card",
+        "requestId": "22222222-2222-4222-8222-222222222222",
+        "safetyDecision": {
+          "policyVersion": "safety.tarot.en.v1",
+          "route": "allowed",
+          "schemaVersion": "interpretation-safety-decision.v1"
+        },
+        "schemaVersion": "tarot-interpretation-input.v1",
+        "themeCode": "transition",
+        "tone": "gentle"
+      },
+      "output": {
+        "boundaryNote": "These symbols offer possibilities to consider and cannot predict an outcome.",
+        "perspectives": [
+          "Attention, reflection, and possibility can be held together without forcing a conclusion."
+        ],
+        "reflectionQuestions": [
+          "Which detail is observable now?",
+          "What small response remains within your control?"
+        ],
+        "ritualSuggestion": {
+          "approvedTemplateCode": "free.candle.v1",
+          "reason": "A brief pause can make space for the chosen reflection question."
+        },
+        "safety": {
+          "certaintyLevel": "reflective",
+          "containsGuaranteedOutcome": false,
+          "containsProfessionalAdvice": false
+        },
+        "schemaVersion": "1",
+        "smallAction": {
+          "label": "Write one reversible next step.",
+          "rationale": "A reversible action preserves choice while you learn more.",
+          "timeHorizon": "this_week"
+        },
+        "sourceRefs": ["content:lantern:1", "content:mirror:1", "content:threshold:1"],
+        "summary": "The three positions frame the present situation, an available action, and one possibility.",
+        "symbols": [
+          {
+            "factRef": "tarot.position.situation",
+            "limitation": "It cannot reveal hidden facts.",
+            "meaning": "The Lantern may focus attention on what is already visible.",
+            "possibility": "A useful detail may emerge through careful observation."
+          },
+          {
+            "factRef": "tarot.position.action",
+            "limitation": "It cannot choose for you.",
+            "meaning": "The reversed Mirror may invite a pause before reacting.",
+            "possibility": "Reflection may clarify one response within your control."
+          },
+          {
+            "factRef": "tarot.position.possibility",
+            "limitation": "It does not promise a future event.",
+            "meaning": "The Threshold may represent an option that can be explored.",
+            "possibility": "A low-risk first step may reveal more information."
+          }
+        ],
+        "title": "Three bounded lenses for a transition"
+      }
+    }
+  ]
+}

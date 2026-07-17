@@ -1,5 +1,6 @@
 import { access, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { isDeepStrictEqual } from "node:util";
 
 import { auditWebShellBuildArtifacts, verifyWebShellBuild } from "./web-shell-build-policy.mjs";
 
@@ -55,6 +56,12 @@ const requiredArtifacts = [
   "packages/divination/dist/tarot-content.js",
   "packages/divination/dist/tarot-publication.d.ts",
   "packages/divination/dist/tarot-publication.js",
+  "packages/ai/dist/index.d.ts",
+  "packages/ai/dist/index.js",
+  "packages/ai/dist/interpretation.d.ts",
+  "packages/ai/dist/interpretation.js",
+  "packages/ai/dist/provider.d.ts",
+  "packages/ai/dist/provider.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
@@ -142,6 +149,7 @@ const databaseModule = await import(pathToFileURL(`${process.cwd()}/packages/db/
 const divinationModule = await import(
   pathToFileURL(`${process.cwd()}/packages/divination/dist/index.js`)
 );
+const aiModule = await import(pathToFileURL(`${process.cwd()}/packages/ai/dist/index.js`));
 const configBrandModule = await import(
   pathToFileURL(`${process.cwd()}/packages/config/dist/brand.js`)
 );
@@ -251,6 +259,37 @@ if (
   /audit|commitment|digest|entropy|idempotency/iu.test(JSON.stringify(tarotDrawFacts))
 ) {
   throw new TypeError("The compiled deterministic tarot draw or public-fact projection drifted.");
+}
+
+if (
+  typeof aiModule.parseTarotInterpretationInputJsonV1 !== "function" ||
+  typeof aiModule.parseTarotInterpretationOutputForInputV1 !== "function" ||
+  typeof aiModule.isInterpretationGenerationAuthorizationV1 !== "function" ||
+  aiModule.structuredGenerationProviderSchemaVersion !== "structured-generation-provider.v1" ||
+  aiModule.tarotInterpretationInputSchemaVersion !== "tarot-interpretation-input.v1" ||
+  aiModule.tarotInterpretationOutputSchemaVersion !== "1"
+) {
+  throw new TypeError("The AI build omitted its versioned provider or tarot contracts.");
+}
+const tarotInterpretationFixture = JSON.parse(
+  await readFile("packages/ai/test/fixtures/tarot-interpretation-v1.json", "utf8"),
+);
+const tarotInterpretationCase = tarotInterpretationFixture.cases[0];
+const parsedTarotInterpretationInput = aiModule.parseTarotInterpretationInputJsonV1(
+  JSON.stringify(tarotInterpretationCase.input),
+);
+const parsedTarotInterpretationOutput = aiModule.parseTarotInterpretationOutputForInputV1(
+  parsedTarotInterpretationInput,
+  JSON.stringify(tarotInterpretationCase.output),
+);
+if (
+  !isDeepStrictEqual(parsedTarotInterpretationInput, tarotInterpretationCase.input) ||
+  !isDeepStrictEqual(parsedTarotInterpretationOutput, tarotInterpretationCase.output) ||
+  /audit|commitment|digest|entropy|question|journal|intention/iu.test(
+    JSON.stringify(parsedTarotInterpretationInput),
+  )
+) {
+  throw new TypeError("The compiled AI tarot contract is invalid or exposes private input.");
 }
 
 if (
