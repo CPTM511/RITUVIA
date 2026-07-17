@@ -156,6 +156,7 @@ describe("source configuration boundaries", () => {
       /legalEntity|supportEmail|transactionalSender|working-brand/,
     );
     expect(nextConfig).not.toMatch(/\benv\s*:/);
+    expect(nextConfig).toContain("skipProxyUrlNormalize: true");
     expect(nextConfig).toContain("skipTrailingSlashRedirect: true");
   });
 

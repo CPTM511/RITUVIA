@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  auditPublicSeoDocument,
   auditWebShellBuildArtifacts,
   auditWebShellRouteArtifacts,
 } from "../scripts/web-shell-build-policy.mjs";
+
+const seoHead = (pathname = "/en", label = "Home") =>
+  `<title>RITUVIA — ${label}</title><meta name="description" content="${label} description"><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="http://localhost:3000${pathname}"><link rel="alternate" hreflang="en" href="http://localhost:3000${pathname}"><link rel="alternate" hreflang="x-default" href="http://localhost:3000${pathname}"><meta property="og:title" content="RITUVIA — ${label}"><meta property="og:description" content="${label} description"><meta property="og:url" content="http://localhost:3000${pathname}"><meta property="og:site_name" content="RITUVIA"><meta property="og:type" content="website">`;
 
 const html = (script = "/_next/static/app.js", stylesheet = "/_next/static/app.css") =>
   `<html><head><link rel="stylesheet" href="${stylesheet}"></head><body><script src="${script}"></script></body></html>`;
@@ -231,8 +235,7 @@ describe("Web shell build policy", () => {
   });
 
   it("locks case-sensitive finite locale routing and a healthy canonical artifact", () => {
-    const canonicalHtml =
-      '<html dir="ltr" lang="en"><head><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="http://localhost:3000/en"></head><body><main id="main-content"></main></body></html>';
+    const canonicalHtml = `<html dir="ltr" lang="en"><head>${seoHead()}</head><body><main id="main-content"></main></body></html>`;
     const valid = {
       html: canonicalHtml,
       prerenderManifest: { dynamicRoutes: { "/[locale]": { fallback: false } } },
@@ -265,8 +268,7 @@ describe("Web shell build policy", () => {
   });
 
   it("audits the nested public-page route and canonical independently", () => {
-    const nestedHtml =
-      '<html dir="ltr" lang="en"><head><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="http://localhost:3000/en/privacy"></head><body><main id="main-content"></main></body></html>';
+    const nestedHtml = `<html dir="ltr" lang="en"><head>${seoHead("/en/privacy", "Privacy")}</head><body><main id="main-content"></main></body></html>`;
     const input = {
       dynamicRoute: "/[locale]/[page]",
       expectedPathname: "/en/privacy",
@@ -283,5 +285,68 @@ describe("Web shell build policy", () => {
         expectedPathname: "/en/safety",
       }),
     ).toEqual(expect.arrayContaining(["canonical-route-metadata", "canonical-shell-html"]));
+  });
+
+  it("requires exact visible SEO parity and defers structured data to RIT-114", () => {
+    const valid = `<html><head>${seoHead()}</head><body></body></html>`;
+
+    expect(auditPublicSeoDocument(valid)).toEqual([]);
+    expect(
+      auditPublicSeoDocument(valid.replace('hreflang="x-default"', 'hreflang="fr"')),
+    ).toContain("public-seo-metadata");
+    expect(
+      auditPublicSeoDocument(
+        valid.replace(
+          'property="og:url" content="http://localhost:3000/en"',
+          'property="og:url" content="https://poison.invalid/en"',
+        ),
+      ),
+    ).toContain("public-seo-metadata");
+    expect(
+      auditPublicSeoDocument(valid.replaceAll("http://localhost:3000", "https://poison.invalid")),
+    ).toContain("public-seo-metadata");
+    expect(
+      auditPublicSeoDocument(valid, "/en", "http://localhost:3000", "index, follow"),
+    ).toContain("public-seo-metadata");
+    expect(
+      auditPublicSeoDocument(
+        valid.replace("</head>", '<script type="application/ld+json">{}</script></head>'),
+      ),
+    ).toContain("structured-data-before-rit-114");
+    expect(
+      auditPublicSeoDocument(
+        valid.replace(
+          "</head>",
+          '<script type=" application/ld+json; charset=utf-8 ">{}</script></head>',
+        ),
+      ),
+    ).toContain("structured-data-before-rit-114");
+    for (const encodedType of [
+      "application/ld&#43;json",
+      "application/ld&#x2b;json",
+      "application/ld&plus;json",
+    ]) {
+      expect(
+        auditPublicSeoDocument(
+          valid.replace("</head>", `<script type="${encodedType}">{}</script></head>`),
+        ),
+      ).toContain("structured-data-before-rit-114");
+    }
+    for (const structuredMarkup of [
+      '<div itemscope="" itemtype="https://schema.org/WebSite"></div>',
+      '<span itemprop="name">RITUVIA</span>',
+      '<div vocab="https://schema.org/" typeof="WebSite"></div>',
+      '<span property="schema:name">RITUVIA</span>',
+      '<div xmlns:schema="https://schema.org/" property="schema:name"></div>',
+      '<meta property="og:ignore https://schema.org/name" content="RITUVIA">',
+      '<meta property="og:title&#32;https://schema.org/name" content="RITUVIA">',
+      '<a rel="https://schema.org/url" href="/en">RITUVIA</a>',
+      '<a rel="schema:url" href="/en">RITUVIA</a>',
+      '<a rel="schema&#58;url" href="/en">RITUVIA</a>',
+    ]) {
+      expect(
+        auditPublicSeoDocument(valid.replace("</body>", `${structuredMarkup}</body>`)),
+      ).toContain("structured-data-before-rit-114");
+    }
   });
 });

@@ -557,6 +557,7 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
 
   const allowedBooleanKeys = new Set([
     "reactStrictMode",
+    "skipProxyUrlNormalize",
     "skipTrailingSlashRedirect",
     "typedRoutes",
   ]);
@@ -591,7 +592,7 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
     }
     if (name === null || !allowedBooleanKeys.has(name)) return false;
     const value = unwrapExpression(property.initializer);
-    return value.kind === ts.SyntaxKind.TrueKeyword || value.kind === ts.SyntaxKind.FalseKeyword;
+    return value.kind === ts.SyntaxKind.TrueKeyword;
   });
 };
 

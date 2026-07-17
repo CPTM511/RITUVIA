@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   defaultLocale,
   getTextDirection,
+  indexablePublicPageIds,
+  indexablePublicPagePathnames,
+  isIndexablePublicPagePathname,
+  isPublicDiscoveryPathname,
   isPublicShellPathname,
   localeHomePath,
   localePublicPagePath,
@@ -10,6 +14,7 @@ import {
   parseLocale,
   parsePublicPageSlug,
   publicPageSlugs,
+  publicDiscoveryPathnames,
   supportedLocales,
 } from "../app/_i18n/routing";
 
@@ -33,6 +38,14 @@ describe("Web locale routing", () => {
     expect(localeSectionPath("en", "practice")).toBe("/en#practice");
     expect(localeSectionPath("en", "principles")).toBe("/en#principles");
     expect(localeSectionPath("en", "trust")).toBe("/en#trust");
+    expect(indexablePublicPageIds).toEqual(["home", "methodology", "safety", "privacy"]);
+    expect(indexablePublicPagePathnames).toEqual([
+      "/en",
+      "/en/methodology",
+      "/en/safety",
+      "/en/privacy",
+    ]);
+    expect(publicDiscoveryPathnames).toEqual(["/robots.txt", "/sitemap.xml"]);
   });
 
   it("accepts only exact public pages and their framework representations", () => {
@@ -66,6 +79,29 @@ describe("Web locale routing", () => {
       "/en/unknown",
     ]) {
       expect(isPublicShellPathname(pathname)).toBe(false);
+    }
+  });
+
+  it("keeps canonical pages and discovery endpoints on exact finite allowlists", () => {
+    for (const pathname of indexablePublicPagePathnames) {
+      expect(isIndexablePublicPagePathname(pathname)).toBe(true);
+    }
+    for (const pathname of [
+      "/",
+      "/en/",
+      "/en.rsc",
+      "/en/account",
+      "/en/journal",
+      "/en/checkout",
+      "/en?question=private",
+    ]) {
+      expect(isIndexablePublicPagePathname(pathname)).toBe(false);
+    }
+
+    expect(isPublicDiscoveryPathname("/robots.txt")).toBe(true);
+    expect(isPublicDiscoveryPathname("/sitemap.xml")).toBe(true);
+    for (const pathname of ["/robots.txt/", "/ROBOTS.TXT", "/sitemap.xml/", "/sitemap.xml.rsc"]) {
+      expect(isPublicDiscoveryPathname(pathname)).toBe(false);
     }
   });
 

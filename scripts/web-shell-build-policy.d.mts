@@ -20,6 +20,13 @@ export type WebShellBuildVerification = WebShellBuildAudit &
 
 export const webShellBuildBudgets: WebShellBuildBudgets;
 
+export function auditPublicSeoDocument(
+  html: string,
+  expectedPathname?: string,
+  expectedCanonicalOrigin?: string,
+  expectedRobots?: "index, follow" | "noindex, nofollow",
+): readonly string[];
+
 export function auditWebShellBuildArtifacts(
   input: Readonly<{
     assets: ReadonlyMap<string, Buffer>;
@@ -33,7 +40,9 @@ export function auditWebShellBuildArtifacts(
 export function auditWebShellRouteArtifacts(
   input: Readonly<{
     dynamicRoute?: string;
+    expectedCanonicalOrigin?: string;
     expectedPathname?: string;
+    expectedRobots?: "index, follow" | "noindex, nofollow";
     html: string;
     prerenderManifest: unknown;
     routeMetadata: unknown;
@@ -41,4 +50,8 @@ export function auditWebShellRouteArtifacts(
   }>,
 ): readonly string[];
 
-export function verifyWebShellBuild(repositoryRoot: string): Promise<WebShellBuildVerification>;
+export function verifyWebShellBuild(
+  repositoryRoot: string,
+  expectedCanonicalOrigin?: string,
+  expectedRobots?: "index, follow" | "noindex, nofollow",
+): Promise<WebShellBuildVerification>;

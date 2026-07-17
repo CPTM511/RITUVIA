@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
     caseSensitiveRoutes: true,
   },
   reactStrictMode: true,
+  skipProxyUrlNormalize: true,
   skipTrailingSlashRedirect: true,
   typedRoutes: true,
 };

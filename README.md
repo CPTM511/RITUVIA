@@ -91,6 +91,16 @@ integration harness reproducibly verifies enabled and disabled behavior without 
 activation bypass or ad hoc SQL. The current shell is an honest foundation, not a claim that
 accounts, readings, legal terms, purchases, rituals, or a public launch exist.
 
+`/robots.txt` and `/sitemap.xml` are generated from the same typed four-page inventory. Local,
+preview, and staging robots disallow the entire site and publish no sitemap. Production publishes
+the four exact, end-anchored document allows, the build-audited `/_next/static/` and icon resources,
+and a four-URL sitemap only while the public-shell flag is enabled; disabled or unavailable state
+returns disallow-all robots and no sitemap. Query, private, unsupported, bare/spoofed RSC, and
+unreviewed Next-internal requests fail closed. Served RSC responses are explicit `noindex` and
+`private, no-store`; Next-owned direct `*.rsc` errors are accepted only as `text/x-component` 404s
+that remain private, non-cacheable, and free of sensitive canaries. Structured data remains deferred
+to RIT-114 rather than being published before its visible-content and rich-result contract exists.
+
 The production build audits all four canonical pages and enforces compressed budgets for localized
 HTML, initial CSS/JavaScript, and the SVG icon while rejecting remote script/style/font/media
 resources. Browser QA remains required for every future behavior change; the current public pages

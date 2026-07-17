@@ -33,8 +33,15 @@ const databaseCanary = `database-secret-${identifier}`;
 const invalidCanary = `invalid-database-${identifier}`;
 const forgedRequestCanary = `forged-request-${identifier}`;
 const forgedTraceCanary = `forged-trace-${identifier}`;
+const privateQueryCanary = `private-query-${identifier}`;
 const databaseUrl = `postgresql://local:${databaseCanary}@127.0.0.1:5432/app`;
-const secretCanaries = [senderCanary, databaseCanary, invalidCanary, databaseUrl];
+const secretCanaries = [
+  senderCanary,
+  databaseCanary,
+  invalidCanary,
+  privateQueryCanary,
+  databaseUrl,
+];
 
 const redact = (value) => {
   let redacted = String(value);
@@ -50,6 +57,14 @@ const fail = (message, output = "") => {
   const details = output.trim();
   throw new Error(redact(details === "" ? message : `${message}\n${details}`));
 };
+
+const isPrivateNoStore = (value) => {
+  const directives = new Set((value ?? "").split(",").map((directive) => directive.trim()));
+  return directives.has("private") && directives.has("no-store");
+};
+
+const hasNoStore = (value) =>
+  new Set((value ?? "").split(",").map((directive) => directive.trim())).has("no-store");
 
 const createEnvironment = (overrides = {}) => {
   const environment = Object.fromEntries(
@@ -219,6 +234,7 @@ const fetchBuiltWeb = async (managed, port, pathname, options = {}) => {
 
     try {
       const response = await fetch(`http://127.0.0.1:${port}${pathname}`, {
+        method: options.method ?? "GET",
         redirect: options.redirect ?? "follow",
         headers: {
           baggage: forgedTraceCanary,
@@ -231,10 +247,12 @@ const fetchBuiltWeb = async (managed, port, pathname, options = {}) => {
       return {
         contentSecurityPolicy: response.headers.get("content-security-policy"),
         contentType: response.headers.get("content-type"),
+        cacheControl: response.headers.get("cache-control"),
         html: await response.text(),
         location: response.headers.get("location"),
         requestId: response.headers.get("x-request-id"),
         status: response.status,
+        xRobotsTag: response.headers.get("x-robots-tag"),
       };
     } catch (error) {
       lastError = error;
@@ -332,14 +350,24 @@ try {
     `import "server-only";
 
 export const loadWebFeatureFlagEvaluator = async () => ({
-  evaluate: (_flagKey: string, _context: unknown) => ({
-    enabled: process.env.RITUVIA_TEST_PUBLIC_SHELL === "on",
-  }),
+  evaluate: (_flagKey: string, _context: unknown) => {
+    if (process.env.RITUVIA_TEST_PUBLIC_SHELL === "error") throw new Error("unavailable");
+    return { enabled: process.env.RITUVIA_TEST_PUBLIC_SHELL === "on" };
+  },
 });
 `,
   );
 
-  const validEnvironment = createEnvironment();
+  const validEnvironment = createEnvironment({
+    APP_ENV: "production",
+    BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+    BRAND_CANONICAL_ORIGIN: "https://example.test",
+    BRAND_LEGAL_ENTITY: "Synthetic Test Entity",
+    BRAND_SHORT_NAME: "Synthetic",
+    BRAND_SOCIAL_HANDLES: "{}",
+    BRAND_SUPPORT_EMAIL: "support@example.test",
+    BRAND_TAGLINE: "Synthetic test tagline",
+  });
   await assertSuccessfulCommand(
     process.execPath,
     [nextCli, "build"],
@@ -365,7 +393,10 @@ export const loadWebFeatureFlagEvaluator = async () => ({
   const publicPaths = ["/en", "/en/methodology", "/en/safety", "/en/privacy"];
   const publicPages = await Promise.all(
     publicPaths.map((pathname) =>
-      fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" }),
+      fetchBuiltWeb(webProcess, port, pathname, {
+        headers: { accept: "text/html" },
+        redirect: "manual",
+      }),
     ),
   );
   if (publicPages.some(({ status }) => status !== 200)) {
@@ -376,61 +407,214 @@ export const loadWebFeatureFlagEvaluator = async () => ({
     );
   }
   for (const publicPage of publicPages) assertHttpBoundary(publicPage, webProcess.getOutput());
+  if (publicPages.some(({ xRobotsTag }) => xRobotsTag !== null)) {
+    fail("A production canonical HTML response was incorrectly blocked from indexing.");
+  }
+  const robots = await fetchBuiltWeb(webProcess, port, "/robots.txt", { redirect: "manual" });
+  const sitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
+    redirect: "manual",
+  });
+  const expectedSitemapUrls = publicPaths.map(
+    (pathname) => `<loc>https://example.test${pathname}</loc>`,
+  );
+  if (
+    robots.status !== 200 ||
+    !robots.contentType?.startsWith("text/plain") ||
+    robots.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    robots.cacheControl !== "no-store, max-age=0" ||
+    !robots.html.includes("Allow: /en$") ||
+    !robots.html.includes("Allow: /en/privacy$") ||
+    !robots.html.includes("Allow: /_next/static/") ||
+    !robots.html.includes("Allow: /icon.svg$") ||
+    !robots.html.includes("Disallow: /") ||
+    !robots.html.includes("Sitemap: https://example.test/sitemap.xml") ||
+    sitemap.status !== 200 ||
+    !sitemap.contentType?.startsWith("application/xml") ||
+    sitemap.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    sitemap.cacheControl !== "no-store, max-age=0" ||
+    !expectedSitemapUrls.every((url) => sitemap.html.includes(url)) ||
+    sitemap.html.match(/<loc>/gu)?.length !== expectedSitemapUrls.length ||
+    /(?:\.rsc|\.segments|<lastmod>|\/account|\/journal|\/checkout)/u.test(sitemap.html)
+  ) {
+    fail("Production robots or sitemap violated the finite crawl inventory.");
+  }
   const uppercaseAfterCanonical = await fetchBuiltWeb(webProcess, port, "/EN", {
     redirect: "manual",
   });
-  const canonicalAgain = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
+  const canonicalAgain = await fetchBuiltWeb(webProcess, port, "/en", {
+    headers: { accept: "text/html" },
+    redirect: "manual",
+  });
   const rootRedirect = await fetchBuiltWeb(webProcess, port, "/", { redirect: "manual" });
-  const directRscStatuses = await Promise.all(
+  const directRscResponses = await Promise.all(
     publicPaths
       .flatMap((pathname) => [`${pathname}.rsc`, `${pathname}.segments/_full.segment.rsc`])
-      .map(
-        async (pathname) =>
-          (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
-      ),
+      .map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
   );
+  const rscRequestVariants = [
+    { expectedStatus: 404, headers: { rsc: "1" } },
+    { expectedStatus: 200, headers: { "next-router-prefetch": "1", rsc: "1" } },
+    { expectedStatus: 404, headers: { accept: "text/html", rsc: "1" } },
+    { expectedStatus: 404, headers: { accept: "text/html;q=0, */*", rsc: "1" } },
+  ];
   const rscRepresentations = await Promise.all(
     publicPaths.flatMap((pathname) =>
-      [{ rsc: "1" }, { "next-router-prefetch": "1", rsc: "1" }].map((headers) =>
-        fetchBuiltWeb(webProcess, port, pathname, { headers, redirect: "manual" }),
-      ),
+      rscRequestVariants.map(async ({ expectedStatus, headers }) => ({
+        expectedStatus,
+        response: await fetchBuiltWeb(webProcess, port, pathname, {
+          headers,
+          redirect: "manual",
+        }),
+      })),
     ),
   );
-  const unsupportedStatuses = await Promise.all(
-    ["/fr", "/en-US", "/en/other", "/en/privacy/", "/en/Privacy", "/en/unknown"].map(
-      async (pathname) =>
-        (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
+  const internalRscQuery = await fetchBuiltWeb(webProcess, port, "/en?_rsc=reviewed_123", {
+    headers: { rsc: "1" },
+    redirect: "manual",
+  });
+  const genericCanonical = await fetchBuiltWeb(webProcess, port, "/en", {
+    redirect: "manual",
+  });
+  const queryVariant = await fetchBuiltWeb(
+    webProcess,
+    port,
+    `/en/privacy?birthTime=${privateQueryCanary}`,
+    { redirect: "manual" },
+  );
+  const privatePaths = ["/en/account", "/en/journal", "/en/checkout", "/en/reading/private-id"];
+  const privateResponses = await Promise.all(
+    privatePaths.map((pathname) =>
+      fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" }),
     ),
   );
+  const unsupportedResponses = await Promise.all(
+    [
+      "/fr",
+      "/en-US",
+      "/en/other",
+      "/en/privacy/",
+      "/en/Privacy",
+      "/en/unknown",
+      "/_next/data/fake/en.json",
+    ].map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
+  );
+  // Next normalizes direct `*.rsc` paths before Proxy and replaces their response headers with a
+  // private, non-cacheable `text/x-component` 404 error stream. Every successful, segment, or
+  // header/query-driven framework representation must retain explicit noindex.
   if (
     uppercaseAfterCanonical.status !== 404 ||
     canonicalAgain.status !== 200 ||
     rootRedirect.status !== 308 ||
     rootRedirect.location !== "/en" ||
-    directRscStatuses.some((status, index) => status !== (index === 1 ? 200 : 404)) ||
-    rscRepresentations.some(
-      ({ contentType, status }) => status !== 200 || !contentType?.startsWith("text/x-component"),
+    rootRedirect.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    directRscResponses.some(
+      ({ cacheControl, contentType, status, xRobotsTag }, index) =>
+        status !== (index === 1 ? 200 : 404) ||
+        !contentType?.startsWith("text/x-component") ||
+        !isPrivateNoStore(cacheControl) ||
+        (status === 200 && xRobotsTag !== "noindex, nofollow, noarchive") ||
+        (status === 404 &&
+          (index % 2 === 0
+            ? ![null, "noindex, nofollow, noarchive"].includes(xRobotsTag)
+            : xRobotsTag !== "noindex, nofollow, noarchive")),
     ) ||
-    unsupportedStatuses.some((status) => status !== 404)
+    rscRepresentations.some(
+      ({ expectedStatus, response: { cacheControl, contentType, html, status, xRobotsTag } }) =>
+        status !== expectedStatus ||
+        xRobotsTag !== "noindex, nofollow, noarchive" ||
+        !hasNoStore(cacheControl) ||
+        (status === 200 &&
+          (!contentType?.startsWith("text/x-component") || !isPrivateNoStore(cacheControl))) ||
+        (status === 404 && html !== ""),
+    ) ||
+    internalRscQuery.status !== 200 ||
+    !internalRscQuery.contentType?.startsWith("text/x-component") ||
+    internalRscQuery.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    internalRscQuery.cacheControl !== "private, no-store, max-age=0" ||
+    genericCanonical.status !== 200 ||
+    genericCanonical.xRobotsTag !== null ||
+    unsupportedResponses.some(
+      ({ status, xRobotsTag }) => status !== 404 || xRobotsTag !== "noindex, nofollow, noarchive",
+    ) ||
+    queryVariant.status !== 404 ||
+    queryVariant.html !== "" ||
+    queryVariant.location !== null ||
+    queryVariant.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    privateResponses.some(
+      ({ html, status, xRobotsTag }) =>
+        status !== 404 || html !== "" || xRobotsTag !== "noindex, nofollow, noarchive",
+    ) ||
+    secretCanaries.some(
+      (canary) =>
+        directRscResponses.some(({ html }) => html.includes(canary)) ||
+        internalRscQuery.html.includes(canary) ||
+        rscRepresentations.some(({ response }) => response.html.includes(canary)),
+    )
   ) {
     fail(
       `The built Web application violated its finite, case-sensitive locale route contract: ${JSON.stringify(
         {
           canonicalAgain: canonicalAgain.status,
-          directRscStatuses,
+          directRscResponses: directRscResponses.map(
+            ({ cacheControl, contentType, html, status, xRobotsTag }) => ({
+              bodyLength: html.length,
+              cacheControl,
+              contentType,
+              status,
+              xRobotsTag,
+            }),
+          ),
+          genericCanonical: {
+            status: genericCanonical.status,
+            xRobotsTag: genericCanonical.xRobotsTag,
+          },
+          internalRscQuery: {
+            cacheControl: internalRscQuery.cacheControl,
+            contentType: internalRscQuery.contentType,
+            status: internalRscQuery.status,
+            xRobotsTag: internalRscQuery.xRobotsTag,
+          },
           rootLocation: rootRedirect.location,
           rootStatus: rootRedirect.status,
-          rscRepresentations: rscRepresentations.map(({ contentType, status }) => ({
-            contentType,
-            status,
+          rscRepresentations: rscRepresentations.map(({ expectedStatus, response }) => ({
+            cacheControl: response.cacheControl,
+            contentType: response.contentType,
+            expectedStatus,
+            status: response.status,
+            xRobotsTag: response.xRobotsTag,
           })),
-          unsupportedStatuses,
+          privateStatuses: privateResponses.map(({ status, xRobotsTag }) => ({
+            status,
+            xRobotsTag,
+          })),
+          query: {
+            bodyLength: queryVariant.html.length,
+            location: queryVariant.location,
+            status: queryVariant.status,
+            xRobotsTag: queryVariant.xRobotsTag,
+          },
+          unsupportedResponses: unsupportedResponses.map(({ status, xRobotsTag }) => ({
+            status,
+            xRobotsTag,
+          })),
           uppercaseAfterCanonical: uppercaseAfterCanonical.status,
         },
       )}.`,
     );
   }
-  await verifyWebShellBuild(temporaryRoot);
+  await verifyWebShellBuild(
+    temporaryRoot,
+    validEnvironment.BRAND_CANONICAL_ORIGIN,
+    "index, follow",
+  );
+  const postMatrixOutput = webProcess.getOutput();
+  if (
+    [...secretCanaries, forgedRequestCanary, forgedTraceCanary].some((canary) =>
+      postMatrixOutput.includes(canary),
+    )
+  ) {
+    fail("A private query or forged correlation canary entered post-request observability output.");
+  }
   await stopManagedProcess(webProcess);
   webProcess = undefined;
 
@@ -463,11 +647,61 @@ export const loadWebFeatureFlagEvaluator = async () => ({
   );
   if (
     disabledRepresentations.some(
-      ({ contentSecurityPolicy, html, status }) =>
-        status !== 404 || html !== "" || !contentSecurityPolicy?.includes("default-src 'self'"),
+      ({ contentSecurityPolicy, html, status, xRobotsTag }) =>
+        status !== 404 ||
+        html !== "" ||
+        !contentSecurityPolicy?.includes("default-src 'self'") ||
+        xRobotsTag !== "noindex, nofollow, noarchive",
     )
   ) {
     fail("The public-shell activation gate exposed a disabled HTML or RSC representation.");
+  }
+  const disabledRobots = await fetchBuiltWeb(webProcess, port, "/robots.txt", {
+    redirect: "manual",
+  });
+  const disabledSitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
+    redirect: "manual",
+  });
+  if (
+    disabledRobots.status !== 200 ||
+    disabledRobots.html !== "User-agent: *\nDisallow: /\n" ||
+    disabledRobots.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    disabledSitemap.status !== 404 ||
+    disabledSitemap.html !== "" ||
+    disabledSitemap.xRobotsTag !== "noindex, nofollow, noarchive"
+  ) {
+    fail("The disabled public shell exposed a crawl inventory.");
+  }
+  await stopManagedProcess(webProcess);
+  webProcess = undefined;
+
+  webProcess = startManagedProcess(
+    process.execPath,
+    [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
+    {
+      cwd: temporaryWebRoot,
+      env: { ...validEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "error" },
+    },
+  );
+  const unavailablePage = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
+  const unavailableRobots = await fetchBuiltWeb(webProcess, port, "/robots.txt", {
+    redirect: "manual",
+  });
+  const unavailableSitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
+    redirect: "manual",
+  });
+  if (
+    unavailablePage.status !== 404 ||
+    unavailablePage.html !== "" ||
+    unavailablePage.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    unavailableRobots.status !== 200 ||
+    unavailableRobots.html !== "User-agent: *\nDisallow: /\n" ||
+    unavailableRobots.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    unavailableSitemap.status !== 404 ||
+    unavailableSitemap.html !== "" ||
+    unavailableSitemap.xRobotsTag !== "noindex, nofollow, noarchive"
+  ) {
+    fail("A feature dependency failure exposed a page or crawl inventory.");
   }
   await stopManagedProcess(webProcess);
   webProcess = undefined;

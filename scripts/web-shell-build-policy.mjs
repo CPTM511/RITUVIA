@@ -28,6 +28,35 @@ const cssResourceSyntax = /(?:@font-face|@import|(?:-webkit-)?image-set\s*\(|url
 const htmlWhitespace = /[\t\n\f\r ]/u;
 const htmlNameStart = /[A-Za-z_:]/u;
 const htmlNameContinuation = /[A-Za-z0-9_.:-]/u;
+const structuredDataAttributes = new Set([
+  "about",
+  "datatype",
+  "inlist",
+  "itemid",
+  "itemprop",
+  "itemref",
+  "itemscope",
+  "itemtype",
+  "prefix",
+  "resource",
+  "rev",
+  "typeof",
+  "vocab",
+]);
+const reviewedOpenGraphProperties = new Set([
+  "og:description",
+  "og:site_name",
+  "og:title",
+  "og:type",
+  "og:url",
+]);
+const reviewedDocumentRelations = new Set([
+  "alternate",
+  "canonical",
+  "icon",
+  "preload",
+  "stylesheet",
+]);
 
 const canonicalStartTagSyntax = (tag) => {
   let position = 1;
@@ -149,6 +178,123 @@ const canonicalDocumentUrl = (value) => {
   } catch {
     return null;
   }
+};
+
+const metadataValues = (tags, attributeName, attributeValue) =>
+  tags
+    .filter(
+      ({ attributes, name }) => name === "meta" && attributes.get(attributeName) === attributeValue,
+    )
+    .map(({ attributes }) => attributes.get("content") ?? "");
+
+const documentTitle = (html) => {
+  const matches = [...html.matchAll(/<title>([^<]*)<\/title>/gu)];
+  return matches.length === 1 ? matches[0][1] : null;
+};
+
+export const auditPublicSeoDocument = (
+  html,
+  expectedPathname = "/en",
+  expectedCanonicalOrigin = "http://localhost:3000",
+  expectedRobots = "noindex, nofollow",
+) => {
+  const findings = [];
+  const tags = documentTags(html).tags;
+  const title = documentTitle(html);
+  const descriptions = metadataValues(tags, "name", "description");
+  const robots = metadataValues(tags, "name", "robots");
+  const canonicalTags = tags.filter(
+    ({ attributes, name }) => name === "link" && attributes.get("rel") === "canonical",
+  );
+  const canonical =
+    canonicalTags.length === 1
+      ? canonicalDocumentUrl(canonicalTags[0].attributes.get("href") ?? "")
+      : null;
+  const expectedOrigin = canonicalDocumentUrl(expectedCanonicalOrigin)?.origin ?? null;
+  const alternates = tags
+    .filter(({ attributes, name }) => name === "link" && attributes.get("rel") === "alternate")
+    .map(({ attributes }) => ({
+      href: attributes.get("href") ?? "",
+      language: attributes.get("hreflang") ?? "",
+    }));
+  const openGraphTitle = metadataValues(tags, "property", "og:title");
+  const openGraphDescription = metadataValues(tags, "property", "og:description");
+  const openGraphUrl = metadataValues(tags, "property", "og:url");
+  const openGraphSiteName = metadataValues(tags, "property", "og:site_name");
+  const openGraphType = metadataValues(tags, "property", "og:type");
+
+  if (
+    title === null ||
+    title.trim() === "" ||
+    descriptions.length !== 1 ||
+    descriptions[0].trim() === "" ||
+    robots.length !== 1 ||
+    !["index, follow", "noindex, nofollow"].includes(expectedRobots) ||
+    robots[0] !== expectedRobots ||
+    canonical === null ||
+    expectedOrigin === null ||
+    canonical.origin !== expectedOrigin ||
+    canonical.username !== "" ||
+    canonical.password !== "" ||
+    canonical.pathname !== expectedPathname ||
+    canonical.search !== "" ||
+    canonical.hash !== "" ||
+    alternates.length !== 2 ||
+    !["en", "x-default"].every(
+      (language) =>
+        alternates.filter(
+          (alternate) =>
+            alternate.language === language && alternate.href === canonical?.toString(),
+        ).length === 1,
+    ) ||
+    openGraphTitle.length !== 1 ||
+    openGraphTitle[0] !== title ||
+    openGraphDescription.length !== 1 ||
+    openGraphDescription[0] !== descriptions[0] ||
+    openGraphUrl.length !== 1 ||
+    openGraphUrl[0] !== canonical.toString() ||
+    openGraphSiteName.length !== 1 ||
+    openGraphSiteName[0].trim() === "" ||
+    openGraphType.length !== 1 ||
+    openGraphType[0] !== "website"
+  ) {
+    findings.push("public-seo-metadata");
+  }
+
+  if (
+    tags.some(({ attributes, name }) => {
+      if (name !== "script") return false;
+      const rawType = attributes.get("type") ?? "";
+      if (rawType.includes("&")) return true;
+      const type = rawType.trim().toLowerCase();
+      return type === "application/ld+json" || type.startsWith("application/ld+json;");
+    }) ||
+    tags.some(({ attributes, name }) => {
+      const property = attributes.get("property");
+      const relation = attributes.get("rel");
+      return (
+        [...attributes.keys()].some(
+          (attributeName) =>
+            structuredDataAttributes.has(attributeName) ||
+            attributeName === "xmlns" ||
+            attributeName.startsWith("xmlns:"),
+        ) ||
+        (property !== undefined &&
+          !(name === "meta" && reviewedOpenGraphProperties.has(property))) ||
+        (relation !== undefined &&
+          (relation.includes("&") ||
+            relation
+              .trim()
+              .toLowerCase()
+              .split(/\s+/u)
+              .some((token) => !reviewedDocumentRelations.has(token))))
+      );
+    })
+  ) {
+    findings.push("structured-data-before-rit-114");
+  }
+
+  return Object.freeze(findings);
 };
 
 const auditDocumentResources = (html, expectedPathname = "/en") => {
@@ -384,13 +530,17 @@ export const auditWebShellBuildArtifacts = ({
 
 export const auditWebShellRouteArtifacts = ({
   dynamicRoute = "/[locale]",
+  expectedCanonicalOrigin = "http://localhost:3000",
   expectedPathname = "/en",
+  expectedRobots = "noindex, nofollow",
   html,
   prerenderManifest,
   routeMetadata,
   routesManifest,
 }) => {
-  const findings = [];
+  const findings = [
+    ...auditPublicSeoDocument(html, expectedPathname, expectedCanonicalOrigin, expectedRobots),
+  ];
   if (routesManifest?.caseSensitive !== true) findings.push("case-insensitive-routes");
   if (prerenderManifest?.dynamicRoutes?.[dynamicRoute]?.fallback !== false) {
     findings.push("dynamic-locale-fallback");
@@ -423,7 +573,11 @@ export const auditWebShellRouteArtifacts = ({
   return Object.freeze([...new Set(findings)].sort());
 };
 
-export const verifyWebShellBuild = async (repositoryRoot) => {
+export const verifyWebShellBuild = async (
+  repositoryRoot,
+  expectedCanonicalOrigin = process.env.BRAND_CANONICAL_ORIGIN ?? "http://localhost:3000",
+  expectedRobots = process.env.APP_ENV === "production" ? "index, follow" : "noindex, nofollow",
+) => {
   const nextRoot = path.join(repositoryRoot, "apps/web/.next");
   const icon = await readFile(path.join(nextRoot, "server/app/icon.svg.body"));
   const [prerenderManifest, routesManifest] = await Promise.all(
@@ -478,7 +632,9 @@ export const verifyWebShellBuild = async (repositoryRoot) => {
     });
     const routeFindings = auditWebShellRouteArtifacts({
       dynamicRoute,
+      expectedCanonicalOrigin,
       expectedPathname: pathname,
+      expectedRobots,
       html,
       prerenderManifest,
       routeMetadata,
@@ -491,6 +647,18 @@ export const verifyWebShellBuild = async (repositoryRoot) => {
       results.flatMap(({ result, routeFindings }) => [...result.findings, ...routeFindings]),
     ),
   ].sort();
+  const titles = routeInputs.map(({ html }) => documentTitle(html));
+  const descriptions = routeInputs.map(({ html }) => {
+    const values = metadataValues(documentTags(html).tags, "name", "description");
+    return values.length === 1 ? values[0] : null;
+  });
+  if (
+    new Set(titles).size !== routeInputs.length ||
+    new Set(descriptions).size !== routeInputs.length
+  ) {
+    findings.push("duplicate-public-seo-metadata");
+    findings.sort();
+  }
   if (findings.length > 0) {
     throw new Error(`Web shell build policy failed: ${findings.join(", ")}`);
   }

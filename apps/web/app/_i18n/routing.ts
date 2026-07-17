@@ -3,8 +3,13 @@ import { createLocalActionHref, type LocalActionHref } from "@rituvia/ui";
 import { publicPagePathname, type PublicPageId, type PublicPageSlug } from "./public-routes";
 
 export {
+  indexablePublicPageIds,
+  indexablePublicPagePathnames,
+  isIndexablePublicPagePathname,
+  isPublicDiscoveryPathname,
   isPublicShellPathname,
   parsePublicPageSlug,
+  publicDiscoveryPathnames,
   publicPageSlugs,
   type PublicPageId,
   type PublicPageSlug,

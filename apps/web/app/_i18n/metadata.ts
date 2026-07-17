@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 
 import { getPublicPageMessages, type ShellMessages } from "./messages";
 import { localePublicPagePath, type Locale, type PublicPageId } from "./routing";
-
-type DeploymentEnvironment = "local" | "preview" | "production" | "staging";
+import type { DeploymentEnvironment } from "./seo";
 
 type PublicPageMetadataInput = Readonly<{
   brandName: string;

@@ -737,7 +737,7 @@ describe("package architecture policy", () => {
     accepted.push({
       path: "apps/web/next.config.ts",
       source:
-        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, skipProxyUrlNormalize: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
     });
     expect(rules(accepted)).not.toContain("framework-config-dynamic");
 
@@ -756,6 +756,14 @@ describe("package architecture policy", () => {
         "const nextConfig = { experimental: { caseSensitiveRoutes: false }, reactStrictMode: true, skipTrailingSlashRedirect: true }; export default nextConfig;",
     });
     expect(rules(caseInsensitive)).toContain("framework-config-dynamic");
+
+    const normalizedProxyUrl = baseline();
+    normalizedProxyUrl.push({
+      path: "apps/web/next.config.ts",
+      source:
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, skipProxyUrlNormalize: false, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
+    });
+    expect(rules(normalizedProxyUrl)).toContain("framework-config-dynamic");
   });
 
   it("rejects private test traversal and runtime code-loading escape hatches", () => {
