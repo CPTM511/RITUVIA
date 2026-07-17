@@ -3,7 +3,7 @@ import type { QuestionIntakeThemeCode } from "@rituvia/domain";
 import type { Locale } from "./routing";
 import { getQuestionIntakeMessages } from "./question-intake-messages";
 
-export type TarotOneCardMessages = Readonly<{
+export type TarotReadingMessages = Readonly<{
   metadata: Readonly<{ description: string; title: string }>;
   page: Readonly<{
     boundary: string;
@@ -39,6 +39,7 @@ export type TarotOneCardMessages = Readonly<{
     aiBoundary: string;
     alternativeTitle: string;
     cannotDetermineTitle: string;
+    cardsLabel: string;
     completion: string;
     constructiveLabel: string;
     engineVersionLabel: string;
@@ -46,6 +47,7 @@ export type TarotOneCardMessages = Readonly<{
     methodologySummary: string;
     orientation: Readonly<Record<"reversed" | "upright", string>>;
     perspectiveTitle: string;
+    positionBoundary: string;
     reflectionTitle: string;
     replayed: string;
     saved: string;
@@ -55,6 +57,8 @@ export type TarotOneCardMessages = Readonly<{
     versionLabel: string;
   }>;
 }>;
+
+export type TarotOneCardMessages = TarotReadingMessages;
 
 const questionIntakeMessages = getQuestionIntakeMessages("en");
 
@@ -136,6 +140,7 @@ const englishTarotOneCardMessages = {
     aiBoundary: "This result uses reviewed canonical content, not an AI-generated interpretation.",
     alternativeTitle: "Other lenses to hold beside it",
     cannotDetermineTitle: "What this cannot determine",
+    cardsLabel: "Ordered reading positions",
     completion: "You can stop here with one question and one small action.",
     constructiveLabel: "A constructive possibility",
     engineVersionLabel: "Draw engine",
@@ -146,6 +151,8 @@ const englishTarotOneCardMessages = {
       upright: "Upright",
     },
     perspectiveTitle: "What this may invite you to notice",
+    positionBoundary:
+      "This symbolic perspective offers something to consider, not a prediction or instruction.",
     reflectionTitle: "A question to reflect on",
     replayed: "This was the same verified result from an earlier matching attempt.",
     saved: "This fixed draw is linked to the current private browser session.",

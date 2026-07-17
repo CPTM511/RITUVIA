@@ -11,6 +11,7 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/en/safety.html",
   "apps/web/.next/server/app/en/intake.html",
   "apps/web/.next/server/app/en/tarot/one-card.html",
+  "apps/web/.next/server/app/en/tarot/three-card.html",
   "apps/web/.next/server/app/icon.svg.body",
   "apps/web/.next/server/app/api/v1/anonymous/session/route.js",
   "apps/web/.next/server/app/api/v1/intake/evaluate/route.js",
@@ -104,29 +105,34 @@ if (
   );
 }
 
-const privateTarot = await auditPrivatePage(
-  "apps/web/.next/server/app/en/tarot/one-card.html",
-  "/en/tarot/one-card",
+const privateTarotPages = await Promise.all(
+  ["one-card", "three-card"].map(async (mode) => {
+    const privateTarot = await auditPrivatePage(
+      `apps/web/.next/server/app/en/tarot/${mode}.html`,
+      `/en/tarot/${mode}`,
+    );
+    const { audit, html } = privateTarot;
+    if (
+      audit.findings.length > 0 ||
+      !/<meta\b[^>]*name="robots"[^>]*content="noindex, nofollow"/u.test(html) ||
+      /<link\b[^>]*rel="canonical"|<meta\b[^>]*property="og:/u.test(html) ||
+      !/<main\b[^>]*id="main-content"/u.test(html) ||
+      !/<form\b[^>]*action="\/api\/v1\/readings\/tarot"[^>]*method="post"/u.test(html) ||
+      [...html.matchAll(/<input\b[^>]*name="tarot-theme-code"/gu)].length !== 10 ||
+      !/<fieldset\b[^>]*disabled/u.test(html) ||
+      /rituvia-placeholder|internal-only|auditDigest|entropyDigest|question(?:-|_)text/iu.test(
+        html,
+      ) ||
+      html.includes("__next_error__")
+    ) {
+      throw new TypeError(
+        `Private ${mode} tarot build policy failed: ${audit.findings.join(", ") || "private-contract"}`,
+      );
+    }
+    return privateTarot;
+  }),
 );
-const privateTarotAudit = privateTarot.audit;
-const privateTarotHtml = privateTarot.html;
-if (
-  privateTarotAudit.findings.length > 0 ||
-  !/<meta\b[^>]*name="robots"[^>]*content="noindex, nofollow"/u.test(privateTarotHtml) ||
-  /<link\b[^>]*rel="canonical"|<meta\b[^>]*property="og:/u.test(privateTarotHtml) ||
-  !/<main\b[^>]*id="main-content"/u.test(privateTarotHtml) ||
-  !/<form\b[^>]*action="\/api\/v1\/readings\/tarot"[^>]*method="post"/u.test(privateTarotHtml) ||
-  [...privateTarotHtml.matchAll(/<input\b[^>]*name="tarot-theme-code"/gu)].length !== 10 ||
-  !/<fieldset\b[^>]*disabled/u.test(privateTarotHtml) ||
-  /rituvia-placeholder|internal-only|auditDigest|entropyDigest|question(?:-|_)text/iu.test(
-    privateTarotHtml,
-  ) ||
-  privateTarotHtml.includes("__next_error__")
-) {
-  throw new TypeError(
-    `Private tarot build policy failed: ${privateTarotAudit.findings.join(", ") || "private-contract"}`,
-  );
-}
+const privateTarotAudits = privateTarotPages.map(({ audit }) => audit);
 
 const domainModule = await import(pathToFileURL(`${process.cwd()}/packages/domain/dist/index.js`));
 const databaseModule = await import(pathToFileURL(`${process.cwd()}/packages/db/dist/index.js`));
@@ -319,6 +325,7 @@ if (
   throw new TypeError("The client configuration build exposed server-side feature flags.");
 }
 
+const privateAudits = [privateIntakeAudit, ...privateTarotAudits];
 console.log(
-  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and two private experience pages; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, privateIntakeAudit.htmlGzipBytes, privateTarotAudit.htmlGzipBytes)} B, CSS ${Math.max(webShellBuild.cssGzipBytes, privateIntakeAudit.cssGzipBytes, privateTarotAudit.cssGzipBytes)} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, privateIntakeAudit.javascriptGzipBytes, privateTarotAudit.javascriptGzipBytes)} B.`,
+  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and three private experience pages; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, ...privateAudits.map(({ htmlGzipBytes }) => htmlGzipBytes))} B, CSS ${Math.max(webShellBuild.cssGzipBytes, ...privateAudits.map(({ cssGzipBytes }) => cssGzipBytes))} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, ...privateAudits.map(({ javascriptGzipBytes }) => javascriptGzipBytes))} B.`,
 );

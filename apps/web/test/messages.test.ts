@@ -4,6 +4,7 @@ import { getMessages } from "../app/_i18n/messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
 import { getTarotOneCardMessages } from "../app/_i18n/tarot-one-card-messages";
+import { getTarotThreeCardMessages } from "../app/_i18n/tarot-three-card-messages";
 
 const collectStrings = (value: unknown): string[] => {
   if (typeof value === "string") return [value];
@@ -48,6 +49,17 @@ describe("English shell messages", () => {
     expect(copy).toContain("reviewed canonical content, not an AI-generated interpretation");
     expect(copy).toContain("does not draw again");
     expect(copy).toContain("without an account or payment");
+    expect(copy).not.toMatch(
+      /\b(?:guaranteed|destined|curse removal|stronger ritual|act now|buy|upgrade)\b/iu,
+    );
+  });
+
+  it("keeps three-card copy ordered, non-predictive, private, and free of pressure", () => {
+    const copy = collectStrings(getTarotThreeCardMessages("en")).join(" ");
+
+    expect(copy).toContain("Situation, Action, and Possibility");
+    expect(copy).toContain("not a prediction");
+    expect(copy).toContain("does not draw again");
     expect(copy).not.toMatch(
       /\b(?:guaranteed|destined|curse removal|stronger ritual|act now|buy|upgrade)\b/iu,
     );

@@ -154,6 +154,10 @@ const request = Object.freeze({
   schemaVersion: "tarot-reading-create.v1" as const,
   themeCode: "open_reflection" as const,
 });
+const threeCardRequest = Object.freeze({
+  ...request,
+  readingType: "three_card" as const,
+});
 
 const createFakePersistence = (maximumReadingsPerWindow = 2) => {
   const readings: PersistedTarotReading[] = [];
@@ -315,6 +319,35 @@ describe("tarot reading application service", () => {
     expect(created.response.presentation.cards[0]?.invitation).toBe(
       "A bounded reflective possibility for open_reflection.",
     );
+    expect(JSON.stringify(created.response)).not.toMatch(
+      /audit|commitment|digest|entropy|subject|session/iu,
+    );
+  });
+
+  it("creates and replays one ordered three-card presentation matched to immutable facts", async () => {
+    const { fake, service } = serviceFixture();
+    const created = await service.create(threeCardRequest, idempotencyKey, token);
+    const replayed = await service.create(threeCardRequest, idempotencyKey, token);
+
+    expect(created.kind).toBe("created");
+    expect(replayed).toEqual({ kind: "replayed", response: created.response });
+    expect(fake.createCalls()).toBe(1);
+    expect(created.response.readingType).toBe("three_card");
+    expect(created.response.facts.positions.map(({ positionId }) => positionId)).toEqual([
+      "situation",
+      "action",
+      "possibility",
+    ]);
+    expect(created.response.presentation.cards).toHaveLength(3);
+    expect(
+      created.response.presentation.cards.map(({ cardId, order, orientation, positionId }) => ({
+        cardId,
+        order,
+        orientation,
+        positionId,
+      })),
+    ).toEqual(created.response.facts.positions);
+    expect(new Set(created.response.facts.positions.map(({ cardId }) => cardId)).size).toBe(3);
     expect(JSON.stringify(created.response)).not.toMatch(
       /audit|commitment|digest|entropy|subject|session/iu,
     );

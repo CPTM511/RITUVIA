@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { PublicSiteFrame } from "../../../_components/public-site-frame";
-import { TarotOneCardFlow } from "../../../_components/tarot-one-card-flow";
-import { createTarotOneCardMetadata } from "../../../_i18n/metadata";
+import { TarotThreeCardFlow } from "../../../_components/tarot-three-card-flow";
+import { createTarotThreeCardMetadata } from "../../../_i18n/metadata";
 import { getMessages } from "../../../_i18n/messages";
-import { getTarotOneCardMessages } from "../../../_i18n/tarot-one-card-messages";
+import { getTarotThreeCardMessages } from "../../../_i18n/tarot-three-card-messages";
 import {
   localePublicPagePath,
   parseLocale,
@@ -14,13 +14,13 @@ import {
 } from "../../../_i18n/routing";
 import { getWebRuntimeConfiguration } from "../../../../config/server";
 
-type TarotOneCardPageProps = Readonly<{
+type TarotThreeCardPageProps = Readonly<{
   params: Promise<Readonly<{ locale: string }>>;
 }>;
 
 export const dynamicParams = false;
 
-const resolveLocale = async (params: TarotOneCardPageProps["params"]): Promise<Locale> => {
+const resolveLocale = async (params: TarotThreeCardPageProps["params"]): Promise<Locale> => {
   const locale = parseLocale((await params).locale);
   if (locale === null) notFound();
   return locale;
@@ -28,16 +28,16 @@ const resolveLocale = async (params: TarotOneCardPageProps["params"]): Promise<L
 
 export const generateStaticParams = () => supportedLocales.map((locale) => ({ locale }));
 
-export async function generateMetadata({ params }: TarotOneCardPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: TarotThreeCardPageProps): Promise<Metadata> {
   const locale = await resolveLocale(params);
   const configuration = getWebRuntimeConfiguration();
-  return createTarotOneCardMetadata(configuration.brand.name, getTarotOneCardMessages(locale));
+  return createTarotThreeCardMetadata(configuration.brand.name, getTarotThreeCardMessages(locale));
 }
 
-export default async function TarotOneCardPage({ params }: TarotOneCardPageProps) {
+export default async function TarotThreeCardPage({ params }: TarotThreeCardPageProps) {
   const locale = await resolveLocale(params);
   const configuration = getWebRuntimeConfiguration();
-  const messages = getTarotOneCardMessages(locale);
+  const messages = getTarotThreeCardMessages(locale);
 
   return (
     <PublicSiteFrame
@@ -50,12 +50,12 @@ export default async function TarotOneCardPage({ params }: TarotOneCardPageProps
       <main className="tarot-reading-main" id="main-content" tabIndex={-1}>
         <header className="tarot-reading-heading">
           <p className="eyebrow">{messages.page.eyebrow}</p>
-          <h1 id="tarot-one-card-heading">{messages.page.title}</h1>
+          <h1 id="tarot-three-card-heading">{messages.page.title}</h1>
           <p className="tarot-reading-introduction">{messages.page.introduction}</p>
           <p className="tarot-reading-boundary">{messages.page.boundary}</p>
           <p className="tarot-reading-privacy">{messages.page.privacy}</p>
         </header>
-        <TarotOneCardFlow
+        <TarotThreeCardFlow
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}
         />

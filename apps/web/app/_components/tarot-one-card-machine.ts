@@ -53,7 +53,13 @@ export const reduceTarotOneCardState = (
 ): TarotOneCardState => {
   switch (event.type) {
     case "select_theme":
-      if (state.phase === "ready_to_reveal" || state.phase === "revealed") return unchanged(state);
+      if (
+        state.phase === "ready_to_reveal" ||
+        state.phase === "revealed" ||
+        (state.phase === "failed" && state.failure === "conflict")
+      ) {
+        return unchanged(state);
+      }
       return Object.freeze({
         ...initialTarotOneCardState,
         themeCode: event.themeCode,

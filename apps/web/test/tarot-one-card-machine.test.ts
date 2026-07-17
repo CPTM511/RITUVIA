@@ -45,6 +45,9 @@ describe("one-card interaction state machine", () => {
     const failed = reduceTarotOneCardState(begun, { failure: "conflict", type: "fail" });
 
     expect(reduceTarotOneCardState(failed, { type: "retry" })).toBe(failed);
+    expect(reduceTarotOneCardState(failed, { themeCode: "creativity", type: "select_theme" })).toBe(
+      failed,
+    );
     expect(reduceTarotOneCardState(failed, { type: "start_over" })).toBe(initialTarotOneCardState);
   });
 

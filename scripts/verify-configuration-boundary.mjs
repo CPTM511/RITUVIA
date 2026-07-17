@@ -460,15 +460,22 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   ) {
     fail("The production private intake page violated its noindex/no-store contract.");
   }
-  const disabledTarotPage = await fetchBuiltWeb(webProcess, port, "/en/tarot/one-card", {
-    headers: { accept: "text/html" },
-    redirect: "manual",
-  });
+  const disabledTarotPages = await Promise.all(
+    ["/en/tarot/one-card", "/en/tarot/three-card"].map((pathname) =>
+      fetchBuiltWeb(webProcess, port, pathname, {
+        headers: { accept: "text/html" },
+        redirect: "manual",
+      }),
+    ),
+  );
   if (
-    disabledTarotPage.status !== 404 ||
-    disabledTarotPage.html !== "" ||
-    disabledTarotPage.xRobotsTag !== "noindex, nofollow, noarchive" ||
-    !hasNoStore(disabledTarotPage.cacheControl)
+    disabledTarotPages.some(
+      (page) =>
+        page.status !== 404 ||
+        page.html !== "" ||
+        page.xRobotsTag !== "noindex, nofollow, noarchive" ||
+        !hasNoStore(page.cacheControl),
+    )
   ) {
     fail("The production tarot page did not fail closed without an approved catalog.");
   }
@@ -864,6 +871,9 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
       "/en/tarot/one-card",
       "/en/tarot/one-card.rsc",
       "/en/tarot/one-card.segments/_full.segment.rsc",
+      "/en/tarot/three-card",
+      "/en/tarot/three-card.rsc",
+      "/en/tarot/three-card.segments/_full.segment.rsc",
     ].map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
   );
   if (

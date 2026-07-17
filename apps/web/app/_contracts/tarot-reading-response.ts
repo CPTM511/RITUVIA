@@ -261,9 +261,29 @@ const parseInstant = (value: unknown): string => {
   return Number.isFinite(time) && new Date(time).toISOString() === value ? value : invalid();
 };
 
-export const parseTarotOneCardResponse = (value: unknown): TarotReadingPublicResponseV2 => {
+const expectedReadingShape = Object.freeze({
+  one_card: Object.freeze({
+    positionIds: Object.freeze(["perspective"]),
+    positionTitles: Object.freeze(["Perspective"]),
+    spreadId: "one-card-perspective",
+  }),
+  three_card: Object.freeze({
+    positionIds: Object.freeze(["situation", "action", "possibility"]),
+    positionTitles: Object.freeze(["Situation", "Action", "Possibility"]),
+    spreadId: "situation-action-possibility",
+  }),
+} as const);
+
+export const parseTarotReadingResponse = (
+  value: unknown,
+  expectedReadingType: "one_card" | "three_card",
+): TarotReadingPublicResponseV2 => {
   try {
     const candidate = record(value);
+    const expected =
+      expectedReadingType === "one_card"
+        ? expectedReadingShape.one_card
+        : expectedReadingShape.three_card;
     if (
       candidate === null ||
       !hasExactKeys(candidate, [
@@ -280,7 +300,7 @@ export const parseTarotOneCardResponse = (value: unknown): TarotReadingPublicRes
       ]) ||
       candidate.schemaVersion !== tarotReadingResponseSchemaVersion ||
       candidate.locale !== "en" ||
-      candidate.readingType !== "one_card" ||
+      candidate.readingType !== expectedReadingType ||
       candidate.status !== "facts_ready" ||
       typeof candidate.readingId !== "string" ||
       !uuidV4Pattern.test(candidate.readingId) ||
@@ -292,18 +312,27 @@ export const parseTarotOneCardResponse = (value: unknown): TarotReadingPublicRes
     const themeCode = parseQuestionIntakeThemeCode(candidate.themeCode);
     const facts = parseFacts(candidate.facts);
     const presentation = parsePresentation(candidate.presentation);
-    const [fact] = facts.positions;
-    const [card] = presentation.cards;
     if (
-      facts.positions.length !== 1 ||
-      presentation.cards.length !== 1 ||
-      fact === undefined ||
-      card === undefined ||
-      fact.order !== 1 ||
-      card.order !== fact.order ||
-      card.cardId !== fact.cardId ||
-      card.orientation !== fact.orientation ||
-      card.positionId !== fact.positionId
+      facts.spread.id !== expected.spreadId ||
+      facts.positions.length !== expected.positionIds.length ||
+      presentation.cards.length !== expected.positionIds.length ||
+      facts.positions.some((fact, index) => {
+        const card = presentation.cards.at(index);
+        const expectedPositionId = expected.positionIds.at(index);
+        const expectedPositionTitle = expected.positionTitles.at(index);
+        return (
+          card === undefined ||
+          expectedPositionId === undefined ||
+          expectedPositionTitle === undefined ||
+          fact.order !== index + 1 ||
+          fact.positionId !== expectedPositionId ||
+          card.order !== fact.order ||
+          card.cardId !== fact.cardId ||
+          card.orientation !== fact.orientation ||
+          card.positionId !== fact.positionId ||
+          card.positionTitle !== expectedPositionTitle
+        );
+      })
     ) {
       return invalid();
     }
@@ -314,7 +343,7 @@ export const parseTarotOneCardResponse = (value: unknown): TarotReadingPublicRes
       presentation,
       readingId: candidate.readingId,
       readingPolicyVersion: candidate.readingPolicyVersion,
-      readingType: "one_card",
+      readingType: expectedReadingType,
       schemaVersion: tarotReadingResponseSchemaVersion,
       status: "facts_ready",
       themeCode,
@@ -324,3 +353,9 @@ export const parseTarotOneCardResponse = (value: unknown): TarotReadingPublicRes
     return invalid();
   }
 };
+
+export const parseTarotOneCardResponse = (value: unknown): TarotReadingPublicResponseV2 =>
+  parseTarotReadingResponse(value, "one_card");
+
+export const parseTarotThreeCardResponse = (value: unknown): TarotReadingPublicResponseV2 =>
+  parseTarotReadingResponse(value, "three_card");

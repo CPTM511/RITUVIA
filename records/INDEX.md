@@ -30,5 +30,6 @@
 | Task | RIT-023 | Deterministic server-authoritative tarot draw engine | [tasks/RIT-023.md](./tasks/RIT-023.md) |
 | Task | RIT-024 | Tarot reading application service and API | [tasks/RIT-024.md](./tasks/RIT-024.md) |
 | Task | RIT-025 | Private one-card tarot reflection flow | [tasks/RIT-025.md](./tasks/RIT-025.md) |
+| Task | RIT-026 | Private three-card tarot reflection flow | [tasks/RIT-026.md](./tasks/RIT-026.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.

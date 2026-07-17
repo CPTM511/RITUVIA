@@ -183,29 +183,37 @@ describe("public shell request and crawl gate", () => {
     expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
   });
 
-  it("allows the private one-card page only with the same approved tarot activation", async () => {
-    harness.tarotReadingAvailability = "enabled";
+  it.each(["one-card", "three-card"] as const)(
+    "allows the private %s page only with the same approved tarot activation",
+    async (mode) => {
+      harness.tarotReadingAvailability = "enabled";
+      const pathname = `/en/tarot/${mode}`;
 
-    const page = await proxy(request("/en/tarot/one-card"));
-    const reviewedRsc = await proxy(
-      request("/en/tarot/one-card?_rsc=abc_123", { headers: { rsc: "1" } }),
-    );
+      const page = await proxy(request(pathname));
+      const reviewedRsc = await proxy(
+        request(`${pathname}?_rsc=abc_123`, { headers: { rsc: "1" } }),
+      );
 
-    for (const response of [page, reviewedRsc]) {
-      expect(response.status).toBe(200);
-      expect(response.headers.get("x-middleware-next")).toBe("1");
-      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
-      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    }
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
-  });
+      for (const response of [page, reviewedRsc]) {
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-middleware-next")).toBe("1");
+        expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+        expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      }
+      expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it.each([
     ["POST", "/en/tarot/one-card"],
     ["GET", "/en/tarot/one-card/"],
     ["GET", "/en/tarot/one-card?question=private-canary"],
     ["GET", "/en/tarot/one-card.rsc"],
-  ])("rejects unreviewed one-card page variant %s %s before lookup", async (method, pathname) => {
+    ["POST", "/en/tarot/three-card"],
+    ["GET", "/en/tarot/three-card/"],
+    ["GET", "/en/tarot/three-card?question=private-canary"],
+    ["GET", "/en/tarot/three-card.rsc"],
+  ])("rejects unreviewed tarot page variant %s %s before lookup", async (method, pathname) => {
     harness.tarotReadingAvailability = "enabled";
     const response = await proxy(request(pathname, { method }));
 
@@ -216,26 +224,31 @@ describe("public shell request and crawl gate", () => {
     expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
-  it.each(["disabled", "unavailable"] as const)(
-    "keeps the one-card page closed when the public shell is %s",
-    async (state) => {
-      harness.tarotReadingAvailability = "enabled";
-      harness.loadPublicShellState.mockResolvedValue(state);
+  it.each([
+    ["disabled", "one-card"],
+    ["disabled", "three-card"],
+    ["unavailable", "one-card"],
+    ["unavailable", "three-card"],
+  ] as const)("keeps the %s shell tarot %s page closed", async (state, mode) => {
+    harness.tarotReadingAvailability = "enabled";
+    harness.loadPublicShellState.mockResolvedValue(state);
 
-      const response = await proxy(request("/en/tarot/one-card"));
-
-      expect(response.status).toBe(404);
-      expect(response.headers.get("cache-control")).toContain("no-store");
-    },
-  );
-
-  it("keeps the one-card page closed while approved tarot activation is absent", async () => {
-    const response = await proxy(request("/en/tarot/one-card"));
+    const response = await proxy(request(`/en/tarot/${mode}`));
 
     expect(response.status).toBe(404);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
+
+  it.each(["one-card", "three-card"] as const)(
+    "keeps the %s page closed while approved tarot activation is absent",
+    async (mode) => {
+      const response = await proxy(request(`/en/tarot/${mode}`));
+
+      expect(response.status).toBe(404);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+    },
+  );
 
   it("allows only the independently enabled private intake page and API", async () => {
     harness.intakeAvailability = "enabled";

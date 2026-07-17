@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getPublicPageMessages, type ShellMessages } from "./messages";
 import type { QuestionIntakeMessages } from "./question-intake-messages";
 import type { TarotOneCardMessages } from "./tarot-one-card-messages";
+import type { TarotThreeCardMessages } from "./tarot-three-card-messages";
 import { localePublicPagePath, type Locale, type PublicPageId } from "./routing";
 import type { DeploymentEnvironment } from "./seo";
 
@@ -66,6 +67,15 @@ export const createQuestionIntakeMetadata = (
 export const createTarotOneCardMetadata = (
   brandName: string,
   messages: TarotOneCardMessages,
+): Metadata => ({
+  description: messages.metadata.description,
+  robots: { follow: false, index: false },
+  title: `${brandName} — ${messages.metadata.title}`,
+});
+
+export const createTarotThreeCardMetadata = (
+  brandName: string,
+  messages: TarotThreeCardMessages,
 ): Metadata => ({
   description: messages.metadata.description,
   robots: { follow: false, index: false },

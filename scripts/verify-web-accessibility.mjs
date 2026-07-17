@@ -92,19 +92,20 @@ const intakeContrastTargets = Object.freeze([
   Object.freeze([".question-intake-boundary"]),
   Object.freeze([".question-intake-privacy"]),
 ]);
-const tarotOneCardContrastTargets = Object.freeze([
-  Object.freeze([".brand-link"]),
-  Object.freeze(['.navigation-link[href="/en"]']),
-  Object.freeze(['.navigation-link[href$="methodology"]']),
-  Object.freeze(['.navigation-link[href$="safety"]']),
-  Object.freeze(['.navigation-link[href$="privacy"]']),
-  Object.freeze([".locale-label"]),
-  Object.freeze([".eyebrow"]),
-  Object.freeze(["#tarot-one-card-heading"]),
-  Object.freeze([".tarot-one-card-introduction"]),
-  Object.freeze([".tarot-one-card-boundary"]),
-  Object.freeze([".tarot-one-card-privacy"]),
-]);
+const tarotReadingContrastTargets = (headingSelector) =>
+  Object.freeze([
+    Object.freeze([".brand-link"]),
+    Object.freeze(['.navigation-link[href="/en"]']),
+    Object.freeze(['.navigation-link[href$="methodology"]']),
+    Object.freeze(['.navigation-link[href$="safety"]']),
+    Object.freeze(['.navigation-link[href$="privacy"]']),
+    Object.freeze([".locale-label"]),
+    Object.freeze([".eyebrow"]),
+    Object.freeze([headingSelector]),
+    Object.freeze([".tarot-reading-introduction"]),
+    Object.freeze([".tarot-reading-boundary"]),
+    Object.freeze([".tarot-reading-privacy"]),
+  ]);
 const contrastScanStates = Object.freeze(["dark", "english", "expanded", "rtl"]);
 const reviewedContrastTargetsByScan = new Map([
   ...contrastScanStates.map((state) => [`${state}:/en`, homeContrastTargets]),
@@ -115,7 +116,11 @@ const reviewedContrastTargetsByScan = new Map([
   ...contrastScanStates.map((state) => [`${state}:/en/intake`, intakeContrastTargets]),
   ...contrastScanStates.map((state) => [
     `${state}:/en/tarot/one-card`,
-    tarotOneCardContrastTargets,
+    tarotReadingContrastTargets("#tarot-one-card-heading"),
+  ]),
+  ...contrastScanStates.map((state) => [
+    `${state}:/en/tarot/three-card`,
+    tarotReadingContrastTargets("#tarot-three-card-heading"),
   ]),
 ]);
 
@@ -550,7 +555,7 @@ const assertRtlGeometry = async (page, label) => {
     const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
     const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
     const boundary = document.querySelector(
-      ".hero-boundary, .information-status, .question-intake-boundary, .tarot-one-card-boundary",
+      ".hero-boundary, .information-status, .question-intake-boundary, .tarot-reading-boundary",
     );
     const boundaryStyle = boundary === null ? null : getComputedStyle(boundary);
     return {
@@ -688,7 +693,7 @@ const run = async () => {
       scans += 1;
       await assertKeyboard(page, label);
       if (pathname === "/en/intake") await assertRadioKeyboard(page, label, "theme-code");
-      if (pathname === "/en/tarot/one-card") {
+      if (pathname === "/en/tarot/one-card" || pathname === "/en/tarot/three-card") {
         await assertRadioKeyboard(page, label, "tarot-theme-code");
       }
 

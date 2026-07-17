@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { executeTarotOneCardOperation } from "../app/_components/tarot-one-card-transport";
-import { createTarotOneCardResponseFixture } from "./fixtures/tarot-reading-response";
+import {
+  executeTarotOneCardOperation,
+  executeTarotReadingOperation,
+} from "../app/_components/tarot-one-card-transport";
+import {
+  createTarotOneCardResponseFixture,
+  createTarotThreeCardResponseFixture,
+} from "./fixtures/tarot-reading-response";
 
 const operation = Object.freeze({
   readingIdempotencyKey: "22222222-2222-4222-8222-222222222222",
@@ -93,5 +99,59 @@ describe("one-card browser transport", () => {
         .mockResolvedValueOnce(response) as unknown as typeof fetch;
       await expect(execute(fetcher)).rejects.toMatchObject({ failure: "error" });
     }
+  });
+});
+
+describe("three-card browser transport", () => {
+  it("sends one exact three-card command and accepts only a three-card response", async () => {
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push([input, init]);
+      return calls.length === 1
+        ? new Response(null, { status: 204 })
+        : Response.json(createTarotThreeCardResponseFixture(), { status: 201 });
+    }) as unknown as typeof fetch;
+
+    const result = await executeTarotReadingOperation({
+      fetcher,
+      onSessionReady: vi.fn(),
+      operation,
+      readingType: "three_card",
+      signal: new AbortController().signal,
+      themeCode: "open_reflection",
+    });
+
+    expect(result.response.presentation.cards.map(({ positionId }) => positionId)).toEqual([
+      "situation",
+      "action",
+      "possibility",
+    ]);
+    expect(JSON.parse(String(calls[1]?.[1]?.body))).toEqual({
+      locale: "en",
+      readingType: "three_card",
+      schemaVersion: "tarot-reading-create.v1",
+      themeCode: "open_reflection",
+    });
+    expect(calls).toHaveLength(2);
+  });
+
+  it("rejects a one-card response for a three-card command", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        Response.json(createTarotOneCardResponseFixture(), { status: 201 }),
+      ) as unknown as typeof fetch;
+
+    await expect(
+      executeTarotReadingOperation({
+        fetcher,
+        onSessionReady: vi.fn(),
+        operation,
+        readingType: "three_card",
+        signal: new AbortController().signal,
+        themeCode: "open_reflection",
+      }),
+    ).rejects.toMatchObject({ failure: "error" });
   });
 });

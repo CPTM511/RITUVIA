@@ -1,27 +1,31 @@
-import { tarotReadingCreateSchemaVersion, type QuestionIntakeThemeCode } from "@rituvia/domain";
+import {
+  tarotReadingCreateSchemaVersion,
+  type QuestionIntakeThemeCode,
+  type TarotReadingType,
+} from "@rituvia/domain";
 
 import {
-  parseTarotOneCardResponse,
+  parseTarotReadingResponse,
   type TarotReadingPublicResponseV2,
 } from "../_contracts/tarot-reading-response";
 import type { TarotOneCardFailure, TarotOneCardOperation } from "./tarot-one-card-machine";
 
 export const anonymousSessionEndpoint = "/api/v1/anonymous/session";
 export const tarotReadingEndpoint = "/api/v1/readings/tarot";
-export const tarotOneCardMaximumResponseBytes = 65_536;
+export const tarotReadingMaximumResponseBytes = 65_536;
 
-export class TarotOneCardTransportError extends Error {
+export class TarotReadingTransportError extends Error {
   public readonly failure: TarotOneCardFailure;
 
   public constructor(failure: TarotOneCardFailure) {
-    super("The one-card request did not complete.");
-    this.name = "TarotOneCardTransportError";
+    super("The tarot reading request did not complete.");
+    this.name = "TarotReadingTransportError";
     this.failure = failure;
   }
 }
 
 const fail = (failure: TarotOneCardFailure): never => {
-  throw new TarotOneCardTransportError(failure);
+  throw new TarotReadingTransportError(failure);
 };
 
 const failureForStatus = (status: number): TarotOneCardFailure => {
@@ -39,33 +43,34 @@ const failureForStatus = (status: number): TarotOneCardFailure => {
   }
 };
 
-const parseBoundedResponse = async (response: Response): Promise<TarotReadingPublicResponseV2> => {
+const parseBoundedResponse = async (response: Response): Promise<unknown> => {
   const contentType = response.headers.get("content-type")?.split(";", 1)[0];
   const contentLength = response.headers.get("content-length");
   if (
     contentType !== "application/json" ||
     (contentLength !== null &&
       (!/^(?:0|[1-9][0-9]{0,5})$/u.test(contentLength) ||
-        Number(contentLength) > tarotOneCardMaximumResponseBytes))
+        Number(contentLength) > tarotReadingMaximumResponseBytes))
   ) {
     return fail("error");
   }
   const text = await response.text();
-  if (new TextEncoder().encode(text).byteLength > tarotOneCardMaximumResponseBytes) {
+  if (new TextEncoder().encode(text).byteLength > tarotReadingMaximumResponseBytes) {
     return fail("error");
   }
   try {
-    return parseTarotOneCardResponse(JSON.parse(text) as unknown);
+    return JSON.parse(text) as unknown;
   } catch {
     return fail("error");
   }
 };
 
-export const executeTarotOneCardOperation = async (
+export const executeTarotReadingOperation = async (
   input: Readonly<{
     fetcher: typeof fetch;
     onSessionReady: () => void;
     operation: TarotOneCardOperation;
+    readingType: TarotReadingType;
     signal: AbortSignal;
     themeCode: QuestionIntakeThemeCode;
   }>,
@@ -84,7 +89,7 @@ export const executeTarotOneCardOperation = async (
   const reading = await fetcher(tarotReadingEndpoint, {
     body: JSON.stringify({
       locale: "en",
-      readingType: "one_card",
+      readingType: input.readingType,
       schemaVersion: tarotReadingCreateSchemaVersion,
       themeCode: input.themeCode,
     }),
@@ -100,7 +105,20 @@ export const executeTarotOneCardOperation = async (
   if (reading.status !== 200 && reading.status !== 201) {
     return fail(failureForStatus(reading.status));
   }
-  const response = await parseBoundedResponse(reading);
+  let response: TarotReadingPublicResponseV2;
+  try {
+    response = parseTarotReadingResponse(await parseBoundedResponse(reading), input.readingType);
+  } catch {
+    return fail("error");
+  }
   if (response.themeCode !== input.themeCode) return fail("error");
   return Object.freeze({ replayed: reading.status === 200, response });
 };
+
+export const executeTarotOneCardOperation = async (
+  input: Omit<Parameters<typeof executeTarotReadingOperation>[0], "readingType">,
+): ReturnType<typeof executeTarotReadingOperation> =>
+  executeTarotReadingOperation({ ...input, readingType: "one_card" });
+
+export { TarotReadingTransportError as TarotOneCardTransportError };
+export const tarotOneCardMaximumResponseBytes = tarotReadingMaximumResponseBytes;

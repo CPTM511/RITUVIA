@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   parseTarotOneCardResponse,
+  parseTarotThreeCardResponse,
   TarotReadingResponseError,
 } from "../app/_contracts/tarot-reading-response";
-import { createTarotOneCardResponseFixture } from "./fixtures/tarot-reading-response";
+import {
+  createTarotOneCardResponseFixture,
+  createTarotThreeCardResponseFixture,
+} from "./fixtures/tarot-reading-response";
 
 describe("tarot one-card public response", () => {
   it("accepts and freezes one exact presentation matched to deterministic facts", () => {
@@ -79,5 +83,88 @@ describe("tarot one-card public response", () => {
     expect(() => parseTarotOneCardResponse(mutate(createTarotOneCardResponseFixture()))).toThrow(
       TarotReadingResponseError,
     );
+  });
+});
+
+describe("tarot three-card public response", () => {
+  it("accepts exactly three ordered positions matched to deterministic facts", () => {
+    const parsed = parseTarotThreeCardResponse(createTarotThreeCardResponseFixture());
+
+    expect(
+      parsed.presentation.cards.map(({ cardId, order, positionId }) => ({
+        cardId,
+        order,
+        positionId,
+      })),
+    ).toEqual([
+      { cardId: "lantern", order: 1, positionId: "situation" },
+      { cardId: "mirror", order: 2, positionId: "action" },
+      { cardId: "threshold", order: 3, positionId: "possibility" },
+    ]);
+    expect(Object.isFrozen(parsed.presentation.cards)).toBe(true);
+  });
+
+  it.each([
+    [
+      "one-card type",
+      (value: ReturnType<typeof createTarotThreeCardResponseFixture>) => ({
+        ...value,
+        readingType: "one_card",
+      }),
+    ],
+    [
+      "wrong spread",
+      (value: ReturnType<typeof createTarotThreeCardResponseFixture>) => ({
+        ...value,
+        facts: { ...value.facts, spread: { id: "other-spread", version: "1.0.0" } },
+      }),
+    ],
+    [
+      "reordered facts",
+      (value: ReturnType<typeof createTarotThreeCardResponseFixture>) => ({
+        ...value,
+        facts: { ...value.facts, positions: [...value.facts.positions].reverse() },
+      }),
+    ],
+    [
+      "mismatched presentation position",
+      (value: ReturnType<typeof createTarotThreeCardResponseFixture>) => ({
+        ...value,
+        presentation: {
+          ...value.presentation,
+          cards: value.presentation.cards.map((card, index) =>
+            index === 1 ? { ...card, positionId: "possibility" } : card,
+          ),
+        },
+      }),
+    ],
+    [
+      "swapped position title",
+      (value: ReturnType<typeof createTarotThreeCardResponseFixture>) => ({
+        ...value,
+        presentation: {
+          ...value.presentation,
+          cards: value.presentation.cards.map((card, index) =>
+            index === 0 ? { ...card, positionTitle: "Possibility" } : card,
+          ),
+        },
+      }),
+    ],
+    [
+      "duplicate card",
+      (value: ReturnType<typeof createTarotThreeCardResponseFixture>) => ({
+        ...value,
+        facts: {
+          ...value.facts,
+          positions: value.facts.positions.map((position, index) =>
+            index === 1 ? { ...position, cardId: "lantern" } : position,
+          ),
+        },
+      }),
+    ],
+  ])("rejects %s", (_label, mutate) => {
+    expect(() =>
+      parseTarotThreeCardResponse(mutate(createTarotThreeCardResponseFixture())),
+    ).toThrow(TarotReadingResponseError);
   });
 });

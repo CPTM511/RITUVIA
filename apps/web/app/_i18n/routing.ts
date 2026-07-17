@@ -39,6 +39,9 @@ export const localeQuestionIntakePath = (locale: Locale): LocalActionHref =>
 export const localeTarotOneCardPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/tarot/one-card`);
 
+export const localeTarotThreeCardPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/tarot/three-card`);
+
 export const localePublicPagePath = (
   locale: Locale,
   page: PublicPageId | PublicPageSlug,

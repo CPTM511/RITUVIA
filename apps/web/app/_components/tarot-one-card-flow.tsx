@@ -4,6 +4,7 @@ import {
   parseQuestionIntakeThemeCode,
   questionIntakeThemeCodes,
   type QuestionIntakeThemeCode,
+  type TarotReadingType,
 } from "@rituvia/domain";
 import {
   ActionLink,
@@ -18,7 +19,7 @@ import {
 import type { FormEvent } from "react";
 import { useEffect, useReducer, useRef, useSyncExternalStore } from "react";
 
-import type { TarotOneCardMessages } from "../_i18n/tarot-one-card-messages";
+import type { TarotReadingMessages } from "../_i18n/tarot-one-card-messages";
 import {
   createTarotOneCardOperation,
   initialTarotOneCardState,
@@ -27,15 +28,14 @@ import {
   type TarotOneCardOperation,
 } from "./tarot-one-card-machine";
 import {
-  executeTarotOneCardOperation,
-  TarotOneCardTransportError,
+  executeTarotReadingOperation,
+  TarotReadingTransportError,
 } from "./tarot-one-card-transport";
 
-const themeGroupId = createUiControlId("tarot-one-card-theme");
 const themeGroupName = createUiControlName("tarot-theme-code");
 const subscribeToHydration = (): (() => void) => () => undefined;
 
-const themeLabel = (code: QuestionIntakeThemeCode, messages: TarotOneCardMessages): string => {
+const themeLabel = (code: QuestionIntakeThemeCode, messages: TarotReadingMessages): string => {
   switch (code) {
     case "open_reflection":
       return messages.themes.open_reflection;
@@ -62,13 +62,13 @@ const themeLabel = (code: QuestionIntakeThemeCode, messages: TarotOneCardMessage
 
 const orientationLabel = (
   orientation: "reversed" | "upright",
-  messages: TarotOneCardMessages,
+  messages: TarotReadingMessages,
 ): string =>
   orientation === "upright"
     ? messages.result.orientation.upright
     : messages.result.orientation.reversed;
 
-const failureMessages = (failure: TarotOneCardFailure, messages: TarotOneCardMessages) => {
+const failureMessages = (failure: TarotOneCardFailure, messages: TarotReadingMessages) => {
   switch (failure) {
     case "conflict":
       return messages.states.conflict;
@@ -85,12 +85,21 @@ const failureMessages = (failure: TarotOneCardFailure, messages: TarotOneCardMes
   }
 };
 
-type TarotOneCardFlowProps = Readonly<{
-  messages: TarotOneCardMessages;
+export type TarotReadingFlowProps = Readonly<{
+  messages: TarotReadingMessages;
   methodologyHref: LocalActionHref;
+  readingType: TarotReadingType;
 }>;
 
-export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlowProps) {
+export function TarotReadingFlow({
+  messages,
+  methodologyHref,
+  readingType,
+}: TarotReadingFlowProps) {
+  const flowSlug = readingType === "one_card" ? "one-card" : "three-card";
+  const flowId = `tarot-${flowSlug}`;
+  const themeGroupId = createUiControlId(`${flowId}-theme`);
+  const expectedCardCount = readingType === "one_card" ? 1 : 3;
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
     () => true,
@@ -144,12 +153,13 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
     abortController.current?.abort();
     abortController.current = controller;
     try {
-      const result = await executeTarotOneCardOperation({
+      const result = await executeTarotReadingOperation({
         fetcher: fetch,
         onSessionReady: () => {
           if (sequence === requestSequence.current) dispatch({ type: "session_ready" });
         },
         operation,
+        readingType,
         signal: controller.signal,
         themeCode,
       });
@@ -164,7 +174,7 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
       if (controller.signal.aborted || sequence !== requestSequence.current) return;
       dispatch({
         failure:
-          error instanceof TarotOneCardTransportError
+          error instanceof TarotReadingTransportError
             ? error.failure
             : navigator.onLine
               ? "error"
@@ -182,7 +192,7 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
     if (!hydrated || inFlight.current) return;
     if (state.themeCode === null) {
       dispatch({ type: "validate" });
-      document.getElementById("tarot-one-card-theme-option-1")?.focus();
+      document.getElementById(`${flowId}-theme-option-1`)?.focus();
       return;
     }
     try {
@@ -203,22 +213,26 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
   };
 
   const retry = (): void => {
-    const form = document.getElementById("tarot-one-card-form");
+    const form = document.getElementById(`${flowId}-form`);
     if (form instanceof HTMLFormElement) form.requestSubmit();
   };
 
   const startOver = (): void => {
     cancelCurrentRequest();
     dispatch({ type: "start_over" });
-    requestAnimationFrame(() => document.getElementById("tarot-one-card-theme-option-1")?.focus());
+    requestAnimationFrame(() => document.getElementById(`${flowId}-theme-option-1`)?.focus());
   };
 
   const busy = state.phase === "ensuring_session" || state.phase === "drawing";
   const controlsLocked =
-    !hydrated || busy || state.phase === "ready_to_reveal" || state.phase === "revealed";
+    !hydrated ||
+    busy ||
+    state.phase === "ready_to_reveal" ||
+    state.phase === "revealed" ||
+    (state.phase === "failed" && state.failure === "conflict");
   const failure = state.failure === null ? null : failureMessages(state.failure, messages);
   const response = state.response;
-  const card = response?.presentation.cards[0];
+  const cards = response?.presentation.cards ?? [];
 
   return (
     <div className="tarot-flow">
@@ -226,7 +240,7 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
         action="/api/v1/readings/tarot"
         aria-busy={busy || undefined}
         className="tarot-panel tarot-form"
-        id="tarot-one-card-form"
+        id={`${flowId}-form`}
         method="post"
         onSubmit={submit}
       >
@@ -303,16 +317,20 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
 
       {state.phase === "ready_to_reveal" ? (
         <section
-          aria-labelledby="tarot-ready-title"
+          aria-labelledby={`${flowId}-ready-title`}
           className="tarot-panel tarot-reveal"
           ref={revealButtonRegion}
           tabIndex={-1}
         >
-          <div aria-hidden="true" className="tarot-card tarot-card-back">
-            <span className="tarot-card-mark" />
+          <div aria-hidden="true" className="tarot-card-stack">
+            {Array.from({ length: expectedCardCount }, (_, index) => (
+              <div className="tarot-card tarot-card-back" key={index}>
+                <span className="tarot-card-mark" />
+              </div>
+            ))}
           </div>
           <div>
-            <h2 id="tarot-ready-title">{messages.states.ready.title}</h2>
+            <h2 id={`${flowId}-ready-title`}>{messages.states.ready.title}</h2>
             <p>{messages.states.ready.message}</p>
             {state.replayed ? <p>{messages.states.replayed}</p> : null}
             <Button
@@ -323,69 +341,111 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
         </section>
       ) : null}
 
-      {state.phase === "revealed" && response !== null && card !== undefined ? (
+      {state.phase === "revealed" &&
+      response !== null &&
+      response.readingType === readingType &&
+      cards.length === expectedCardCount ? (
         <section
-          aria-labelledby="tarot-result-title"
+          aria-labelledby={`${flowId}-result-title`}
           className="tarot-panel tarot-result"
           ref={responseRegion}
           tabIndex={-1}
         >
           <header className="tarot-result-heading">
-            <p className="tarot-result-eyebrow">{card.positionTitle}</p>
-            <h2 id="tarot-result-title">{messages.result.title}</h2>
+            <h2 id={`${flowId}-result-title`}>{messages.result.title}</h2>
             <p aria-live="polite" className="tarot-result-eyebrow" role="status">
-              {card.cardTitle}, {orientationLabel(card.orientation, messages)}
+              {messages.result.cardsLabel}
             </p>
           </header>
 
-          <figure className="tarot-card tarot-card-face">
-            <span aria-hidden="true" className="tarot-card-mark" />
-            <figcaption>
-              <strong>{card.cardTitle}</strong>
-              <span>{orientationLabel(card.orientation, messages)}</span>
-            </figcaption>
-          </figure>
-
+          <p className="tarot-position-boundary">{messages.result.positionBoundary}</p>
           <p className="tarot-ai-boundary">{messages.result.aiBoundary}</p>
-          <section aria-labelledby="tarot-perspective-title" className="tarot-result-section">
-            <h3 id="tarot-perspective-title">{messages.result.perspectiveTitle}</h3>
-            <p>{card.invitation}</p>
-          </section>
-          <section aria-labelledby="tarot-themes-title" className="tarot-result-section">
-            <h3 id="tarot-themes-title">{messages.result.themesTitle}</h3>
-            <ul className="tarot-theme-list">
-              {card.coreThemes.map((theme) => (
-                <li key={theme}>{theme}</li>
-              ))}
-            </ul>
-          </section>
-          <section aria-labelledby="tarot-alternatives-title" className="tarot-result-section">
-            <h3 id="tarot-alternatives-title">{messages.result.alternativeTitle}</h3>
-            <dl className="tarot-lenses">
-              <div>
-                <dt>{messages.result.constructiveLabel}</dt>
-                <dd>{card.constructivePossibility}</dd>
-              </div>
-              <div>
-                <dt>{messages.result.tensionLabel}</dt>
-                <dd>{card.tension}</dd>
-              </div>
-            </dl>
-          </section>
-          <section aria-labelledby="tarot-limit-title" className="tarot-result-section">
-            <h3 id="tarot-limit-title">{messages.result.cannotDetermineTitle}</h3>
-            <p>{card.cannotDetermine}</p>
-          </section>
-          <div className="tarot-reflection-grid">
-            <section aria-labelledby="tarot-question-title" className="tarot-prompt-card">
-              <h3 id="tarot-question-title">{messages.result.reflectionTitle}</h3>
-              <p>{card.reflectionQuestion}</p>
-            </section>
-            <section aria-labelledby="tarot-action-title" className="tarot-prompt-card">
-              <h3 id="tarot-action-title">{messages.result.actionTitle}</h3>
-              <p>{card.smallAction}</p>
-            </section>
-          </div>
+          <ol aria-label={messages.result.cardsLabel} className="tarot-result-cards">
+            {cards.map((card) => {
+              const cardId = `${flowId}-card-${card.order}`;
+              return (
+                <li className="tarot-result-card" key={card.positionId}>
+                  <article aria-labelledby={`${cardId}-title`}>
+                    <header className="tarot-result-heading">
+                      <p className="tarot-result-eyebrow">{card.positionTitle}</p>
+                      <h3 id={`${cardId}-title`}>{card.cardTitle}</h3>
+                      <p className="tarot-result-eyebrow">
+                        {orientationLabel(card.orientation, messages)}
+                      </p>
+                    </header>
+
+                    <figure className="tarot-card tarot-card-face">
+                      <span aria-hidden="true" className="tarot-card-mark" />
+                      <figcaption>
+                        <strong>{card.cardTitle}</strong>
+                        <span>{orientationLabel(card.orientation, messages)}</span>
+                      </figcaption>
+                    </figure>
+
+                    <section
+                      aria-labelledby={`${cardId}-perspective-title`}
+                      className="tarot-result-section"
+                    >
+                      <h4 id={`${cardId}-perspective-title`}>{messages.result.perspectiveTitle}</h4>
+                      <p>{card.invitation}</p>
+                    </section>
+                    <section
+                      aria-labelledby={`${cardId}-themes-title`}
+                      className="tarot-result-section"
+                    >
+                      <h4 id={`${cardId}-themes-title`}>{messages.result.themesTitle}</h4>
+                      <ul className="tarot-theme-list">
+                        {card.coreThemes.map((theme) => (
+                          <li key={theme}>{theme}</li>
+                        ))}
+                      </ul>
+                    </section>
+                    <section
+                      aria-labelledby={`${cardId}-alternatives-title`}
+                      className="tarot-result-section"
+                    >
+                      <h4 id={`${cardId}-alternatives-title`}>
+                        {messages.result.alternativeTitle}
+                      </h4>
+                      <dl className="tarot-lenses">
+                        <div>
+                          <dt>{messages.result.constructiveLabel}</dt>
+                          <dd>{card.constructivePossibility}</dd>
+                        </div>
+                        <div>
+                          <dt>{messages.result.tensionLabel}</dt>
+                          <dd>{card.tension}</dd>
+                        </div>
+                      </dl>
+                    </section>
+                    <section
+                      aria-labelledby={`${cardId}-limit-title`}
+                      className="tarot-result-section"
+                    >
+                      <h4 id={`${cardId}-limit-title`}>{messages.result.cannotDetermineTitle}</h4>
+                      <p>{card.cannotDetermine}</p>
+                    </section>
+                    <div className="tarot-reflection-grid">
+                      <section
+                        aria-labelledby={`${cardId}-question-title`}
+                        className="tarot-prompt-card"
+                      >
+                        <h4 id={`${cardId}-question-title`}>{messages.result.reflectionTitle}</h4>
+                        <p>{card.reflectionQuestion}</p>
+                      </section>
+                      <section
+                        aria-labelledby={`${cardId}-action-title`}
+                        className="tarot-prompt-card"
+                      >
+                        <h4 id={`${cardId}-action-title`}>{messages.result.actionTitle}</h4>
+                        <p>{card.smallAction}</p>
+                      </section>
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
+          </ol>
           <p>{messages.result.saved}</p>
           {state.replayed ? <p>{messages.result.replayed}</p> : null}
           <details className="tarot-methodology">
@@ -411,4 +471,8 @@ export function TarotOneCardFlow({ messages, methodologyHref }: TarotOneCardFlow
       ) : null}
     </div>
   );
+}
+
+export function TarotOneCardFlow(props: Omit<TarotReadingFlowProps, "readingType">) {
+  return <TarotReadingFlow {...props} readingType="one_card" />;
 }

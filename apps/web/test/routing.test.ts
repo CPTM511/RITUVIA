@@ -13,6 +13,7 @@ import {
   localeQuestionIntakePath,
   localeSectionPath,
   localeTarotOneCardPath,
+  localeTarotThreeCardPath,
   parseLocale,
   parsePublicPageSlug,
   publicPageSlugs,
@@ -35,6 +36,7 @@ describe("Web locale routing", () => {
     expect(localeHomePath("en")).toBe("/en");
     expect(localeQuestionIntakePath("en")).toBe("/en/intake");
     expect(localeTarotOneCardPath("en")).toBe("/en/tarot/one-card");
+    expect(localeTarotThreeCardPath("en")).toBe("/en/tarot/three-card");
     expect(publicPageSlugs).toEqual(["methodology", "safety", "privacy"]);
     expect(localePublicPagePath("en", "methodology")).toBe("/en/methodology");
     expect(localePublicPagePath("en", "safety")).toBe("/en/safety");

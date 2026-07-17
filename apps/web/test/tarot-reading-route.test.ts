@@ -23,7 +23,10 @@ import {
 } from "../app/api/v1/readings/tarot/route";
 import { tarotReadingResourceApiPath } from "../app/api/v1/readings/tarot/_http";
 import { TarotReadingApplicationError } from "../server/tarot-reading";
-import { createTarotOneCardResponseFixture } from "./fixtures/tarot-reading-response";
+import {
+  createTarotOneCardResponseFixture,
+  createTarotThreeCardResponseFixture,
+} from "./fixtures/tarot-reading-response";
 
 const readingId = "33333333-3333-4333-8333-333333333333";
 const idempotencyKey = "abcdefghijklmnopqrstuv";
@@ -93,6 +96,18 @@ describe("tarot reading API routes", () => {
     expect(created.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(created.headers.get("access-control-allow-origin")).toBeNull();
     expect(harness.create).toHaveBeenCalledWith(requestBody, idempotencyKey, token);
+  });
+
+  it("passes the exact theme-only three-card command to the shared application service", async () => {
+    const threeCardRequest = { ...requestBody, readingType: "three_card" };
+    const threeCardResponse = createTarotThreeCardResponseFixture();
+    harness.create.mockResolvedValueOnce({ kind: "created", response: threeCardResponse });
+
+    const response = await POST(postRequest(JSON.stringify(threeCardRequest)));
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual(threeCardResponse);
+    expect(harness.create).toHaveBeenCalledWith(threeCardRequest, idempotencyKey, token);
   });
 
   it.each([
