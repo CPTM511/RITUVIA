@@ -171,6 +171,24 @@ const isLocalDocumentUrl = (value, allowFragment) => {
   return value.startsWith("/") && !value.startsWith("//");
 };
 
+const isCanonicalNextStaticUrl = (value) => {
+  if (
+    !value.startsWith("/_next/static/") ||
+    value.includes("\\") ||
+    value.includes("%") ||
+    value.includes("?") ||
+    value.includes("#") ||
+    /[\u0000-\u0020\u007f]/u.test(value)
+  ) {
+    return false;
+  }
+  const segments = value.slice("/_next/static/".length).split("/");
+  return (
+    segments.length > 0 &&
+    segments.every((segment) => segment !== "" && segment !== "." && segment !== "..")
+  );
+};
+
 const canonicalDocumentUrl = (value) => {
   try {
     const parsed = new URL(value);
@@ -450,6 +468,9 @@ const auditDocumentResources = (html, expectedPathname = "/en") => {
       ) {
         findings.push("nonlocal-or-ambiguous-resource-url");
       }
+      if (value.startsWith("/_next/static/") && !isCanonicalNextStaticUrl(value)) {
+        findings.push("noncanonical-next-static-url");
+      }
     }
     if (name === "object" && attributes.has("data")) {
       findings.push("nonlocal-or-ambiguous-resource-url");
@@ -489,7 +510,7 @@ export const auditWebShellBuildArtifacts = ({
   if (icon.byteLength > budgets.iconBytes) findings.push("icon-budget");
   let javascriptGzipBytes = 0;
   for (const source of scriptSources) {
-    if (!source.startsWith("/_next/static/") || source.includes("\\")) {
+    if (!isCanonicalNextStaticUrl(source)) {
       findings.push("nonlocal-javascript");
       continue;
     }
@@ -504,7 +525,7 @@ export const auditWebShellBuildArtifacts = ({
 
   let cssGzipBytes = 0;
   for (const source of stylesheetSources) {
-    if (!source.startsWith("/_next/static/") || source.includes("\\")) {
+    if (!isCanonicalNextStaticUrl(source)) {
       findings.push("nonlocal-stylesheet");
       continue;
     }
@@ -615,6 +636,9 @@ export const verifyWebShellBuild = async (
         .filter((value) => value !== null),
     ]),
   ]);
+  if (references.some((reference) => !isCanonicalNextStaticUrl(reference))) {
+    throw new Error("Web shell build policy failed: noncanonical-next-static-url");
+  }
   const assets = new Map(
     await Promise.all(
       references.map(async (reference) => [

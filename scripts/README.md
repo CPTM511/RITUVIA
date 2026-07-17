@@ -45,6 +45,14 @@ loading, and unexpected media elements, and enforces gzip budgets for HTML, CSS,
 a raw SVG icon limit. Budget changes require measured evidence and review; increasing a number only
 to make a build pass is not an acceptable fix.
 
+`scripts/verify-web-accessibility.mjs` consumes a fresh reviewed production build, serves only the
+four exact public documents and their preloaded local artifacts from an in-memory loopback allowlist,
+and runs pinned Chromium plus axe. It blocks WCAG/best-practice violations and unexpected incomplete
+results; verifies forward/reverse keyboard order, focus visibility, 44px targets, reduced motion,
+dark mode, no-JavaScript content, mobile reflow, at-least-40% test-only text expansion, and RTL
+mirroring; and rejects nonlocal, failed, or error responses. Build first, then run
+`pnpm test:accessibility`; CI enforces that ordering and installs only the Chromium headless shell.
+
 `scripts/copy-ui-styles.mjs` is the UI package prebuild step. It copies the statically reviewed
 source stylesheet byte-for-byte into `packages/ui/dist`; `scripts/verify-workspace-build.mjs` checks
 that parity, imports the built UI module, and includes the CSS and style entry points in the required

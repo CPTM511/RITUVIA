@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M1 local public-shell foundation in progress while M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI foundation, the finite SEO crawl/index contract, and the server-side safe-off delivery boundary are implemented and locally verified. Production activation and actual indexing remain separately gated.
+**Stage:** M1 local public-shell foundation in progress while M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI foundation, the finite SEO crawl/index contract, the accessibility/pseudolocale browser gate, and the server-side safe-off delivery boundary are implemented and locally verified. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -26,6 +26,7 @@
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
 - One typed four-page crawl inventory drives unique canonical/Open Graph metadata, production-only index polarity, exact end-anchored robots document allows, reviewed render-asset access, and a deterministic sitemap without fabricated `lastmod`; non-production, disabled, unavailable, private, query, spoofed/bare RSC, and unreviewed internal paths remain noindex, private/non-cacheable 404, disallow-all, or absent as appropriate.
 - Fail-closed Web build policy for all four canonical route artifacts, bounded compressed HTML/CSS/JavaScript/icon output, and HTML/CSS fetch surfaces including remote, ambiguous, duplicated, escaped, entity-obfuscated, and unbudgeted resources.
+- A production-artifact Chromium/axe gate for all four public routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete forward/reverse keyboard order, 44px targets, 40% text expansion, test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow, and same-origin-only requests; exact gradient-background contrast incompletes are compensated by token-level worst-case contrast tests.
 - Cancellable Worker runtime and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
@@ -50,7 +51,7 @@
 - Astrology calculation commercial-license decision.
 - Production content corpus and expert-reviewed localized traditions.
 - Production credentials or vendor accounts.
-- Automated screen-reader coverage beyond the semantic accessibility-tree and browser checks completed for the shared UI catalog; broader automated accessibility and pseudolocale smoke is owned by RIT-014.
+- Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
 ## Current blockers and owner decisions
 
@@ -75,7 +76,38 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across seven workspaces, 432 unit/contract tests in 35 files, configuration-boundary integration, real PostgreSQL integration, and production builds pass. The record-policy mutation suite covers typed filenames and headings, authority duplication, task/decision graphs, incident and experiment gates, privacy-safe Markdown, contextual task-result semantics, schema drift, and bounded Next dynamic-path syntax; generated evidence is staged and verified in the exact index-to-manual-to-checksums order. The build verifier checks 31 emitted artifacts and narrowed runtime exports, including exact UI stylesheet parity, all four canonical English pages, the icon, and maximum Web output of 5,549 B gzip HTML, 4,963 B gzip CSS, 208,048 B gzip JavaScript, and 356 B raw icon. The reviewed 6 KiB CSS ceiling leaves 1,181 B headroom. Its mutation suite rejects remote or unbudgeted HTML/CSS fetch surfaces, every inline style attribute, duplicate or executable attributes, comment/raw-text parser ambiguity, entity/escape obfuscation, non-canonical preload/icon relations, canonical-origin poisoning, incorrect production robots polarity, premature structured data, case-insensitive routing, dynamic route fallback, and trailing-slash normalization outside the fail-closed proxy. The architecture verifier audits 84 active source files across seven modules, and its mutation suite additionally locks the static Next proxy-normalization contract and makes UI network/resource hosts and attributes, storage, runtime-global, direct JSX-runtime, polymorphic-host, JSX-spread, inline-style, unsafe-HTML, and external-adapter capabilities fail closed. UI contract tests verify bounded local links and public control values, native semantics and label/description/error relationships, Server Component-safe static output, controlled/default-state exclusivity, disabled/loading/checked/mixed/live behavior, light/dark contrast pairs, 44px controls, forced colors, reduced motion, computed-direction RTL mirroring with nested LTR overrides, CJK/Devanagari/Arabic/German fixtures, and narrow effective-width reflow rules. Feature-flag tests prove strict typed registry metadata, safe-off evaluation, owner-gate and canonical-scope validation, scheduled activation, emergency off, expiry/removal behavior, version-qualified rolling upgrade/rollback, and fail-closed live database privilege attestation. The real production Web boundary test proves a restrictive shell content-security policy, server-generated correlation, cold case/trailing-slash rejection, exact canonical metadata host and production robots polarity, four-page robots/sitemap output only while enabled, disallow/absent discovery while disabled or unavailable, query/private/internal-path rejection, spoofed/bare RSC rejection, reviewed RSC `noindex` plus `private, no-store`, direct RSC private non-cacheable 404 behavior, and post-request sensitive-canary isolation. Dependency failure is observable through fixed non-sensitive fields without changing the public response. Retained RIT-010 and RIT-011 browser evidence continues to cover semantic landmarks, native controls, themes, forced colors, reduced motion, RTL, keyboard behavior, and narrow reflow. RIT-012 Playwright checks verify all four content routes, unique H1/current navigation, accessibility states, no-JavaScript content, and same-origin requests. Fresh RIT-013 Playwright acceptance verifies four unique 200 pages with exact canonical/Open Graph/en/x-default metadata, local meta/header noindex, zero JSON-LD, local disallow-all robots and absent sitemap, empty private/query/bare-spoof RSC 404s, reviewed RSC cache/index headers, 320px zero-overflow reflow, 44px targets, visible 3px skip-link focus, complete no-JavaScript content, zero console messages, and 81 same-origin requests. Redaction tests cover fixed metadata, private unknown fields, `Error`, accessors, `toJSON`, proxies, cycles, control characters, UTF-8 byte bounds, invalid trace IDs, untrusted carriers, writer failures, and serialization-safe Web-to-Worker propagation. The local database suite proves clean/idempotent migration and seed, separated non-superuser migrator/read-only runtime/append-only control roles, forced RLS, exact activation constraints, guarded reset, non-empty logical dump/restore with exact row comparison, transaction/race behavior, lifecycle locking, managed configuration, and log privacy. A second fresh PostgreSQL 17 run at the exact CI target proves run-derived target guards, least privilege, data checksums, deterministic generation, migration deployment/status/drift, exact migration inventory, activation and append-only constraints, registry-version coexistence, DDL denial, and rollback. The repository architecture, CI/toolchain, historical migration, current-tree/full-history secret, actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent architecture, safety/privacy, and product/accessibility review found no remaining runtime P0/P1/P2 after remediation. Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or owner-side required-check protection is claimed.
+The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and
+pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across seven workspaces,
+460 unit/contract tests in 37 files, configuration-boundary integration, real PostgreSQL integration,
+and production builds pass. The record-policy suite covers the canonical task/decision graph,
+privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum evidence.
+
+The build verifier checks 31 artifacts and narrowed exports, including exact UI stylesheet parity,
+all four canonical pages, the icon, and maximum Web output of 5,545 B gzip HTML, 4,960 B gzip CSS,
+208,048 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 1,184 B headroom.
+Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
+traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
+The architecture verifier audits 88 active source files across seven modules and keeps module,
+runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
+
+The production Web matrix proves restrictive browser headers, server correlation, safe-off behavior,
+exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
+isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
+mobile, and same-origin coverage. Fresh RIT-014 production-artifact acceptance passes all four routes
+with 16 blocking axe scans, exact selector-level review for 143 gradient-background
+`color-contrast` incomplete nodes plus independent worst-case contrast math, complete forward/reverse
+focus, skip-link transfer, 44px targets, 40% expansion, desktop/mobile RTL, dark/reduced-motion/no-JS
+states, and local-only requests.
+
+The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
+seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,
+guarded reset, non-empty dump/restore, transaction/race behavior, migration drift checks, and DDL
+denial. Repository architecture, CI/toolchain, historical migration, current-tree/full-history secret,
+actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent
+accessibility, architecture, localization, and security review found no remaining runtime P0/P1/P2.
+Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and
+Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or
+owner-side required-check protection is claimed.
 
 ## Update rules
 

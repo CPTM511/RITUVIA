@@ -6,7 +6,7 @@ cover:
 
 - durable-record graph and generated-evidence integrity, formatting, lint, strict type checking,
   unit/contract tests, the production configuration boundary, architecture and migration policy,
-  CI contract, and production builds;
+  CI contract, production builds, and a pinned Chromium/axe accessibility plus pseudolocale smoke;
 - Prisma generation, two idempotent migration deployments, two idempotent synthetic seeds,
   migration status/drift, constraints, transactions, and least-privilege attestation against a
   digest-pinned ephemeral PostgreSQL 17 service; and
@@ -21,7 +21,9 @@ or deploys an environment.
 
 The repository-owned contract tests fail on mutable action references, credential persistence,
 dangerous triggers, write permissions, event-data shell interpolation, a mutable database image,
-or removal of a required gate. GitHub repository settings must still make the three jobs required
+removal or broadening of the exact Chromium install, or removal/reordering of a required gate. The
+accessibility smoke consumes the production artifacts built immediately before it and does not
+activate a second locale or contact a remote origin. GitHub repository settings must still make the three jobs required
 checks and restrict changes to this workflow; that owner-controlled configuration cannot be proven
 until a remote repository exists.
 

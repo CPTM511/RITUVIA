@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import {
   auditActiveWorkflowFileNames,
+  auditBrowserTestDependencies,
   auditCiScripts,
   auditCiWorkflow,
   auditToolchainVersions,
@@ -50,6 +51,18 @@ describe("active CI workflow contract", () => {
     ]);
   });
 
+  it("pins the browser scanner and browser library versions", () => {
+    const valid = { "@axe-core/playwright": "4.12.1", playwright: "1.61.1" };
+    expect(auditBrowserTestDependencies(valid)).toEqual([]);
+    expect(auditBrowserTestDependencies({ ...valid, playwright: "latest" })).toEqual([
+      {
+        location: "package.json#devDependencies",
+        rule: "browser-test-dependencies",
+      },
+    ]);
+    expect(auditBrowserTestDependencies(undefined)).toHaveLength(1);
+  });
+
   it("rejects attempts to remove explicit repository evidence gates from scripts", () => {
     const valid = {
       "check:architecture": "node --import tsx scripts/verify-architecture.ts",
@@ -60,6 +73,7 @@ describe("active CI workflow contract", () => {
       "check:evidence":
         "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
+      "test:accessibility": "node scripts/verify-web-accessibility.mjs",
     };
     expect(auditCiScripts(valid)).toEqual([]);
     expect(auditCiScripts({ ...valid, "check:architecture": "node -e 'process.exit(0)'" })).toEqual(
@@ -137,6 +151,36 @@ describe("active CI workflow contract", () => {
     if (index < 0) throw new Error("architecture fixture step missing");
     steps.splice(index, 1);
     expect(auditCiWorkflow(candidate)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.quality", rule: "run-command-sequence" },
+        { location: "jobs.quality", rule: "step-sequence" },
+      ]),
+    );
+  });
+
+  it("locks the browser install and accessibility smoke after the reviewed Quality build", () => {
+    const removed = cloneWorkflow();
+    const quality = record(record(removed.jobs).quality);
+    const steps = quality.steps as unknown[];
+    const smokeIndex = steps.findIndex((step) => record(step).run === "pnpm test:accessibility");
+    if (smokeIndex < 0) throw new Error("accessibility smoke fixture step missing");
+    steps.splice(smokeIndex, 1);
+    expect(auditCiWorkflow(removed)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.quality", rule: "run-command-sequence" },
+        { location: "jobs.quality", rule: "step-sequence" },
+      ]),
+    );
+
+    const broadened = cloneWorkflow();
+    const broadenedSteps = record(record(broadened.jobs).quality).steps as unknown[];
+    const install = broadenedSteps.findIndex(
+      (step) =>
+        record(step).run === "pnpm exec playwright install --with-deps --only-shell chromium",
+    );
+    if (install < 0) throw new Error("Playwright install fixture step missing");
+    record(broadenedSteps[install]).run = "pnpm exec playwright install --with-deps";
+    expect(auditCiWorkflow(broadened)).toEqual(
       expect.arrayContaining([
         { location: "jobs.quality", rule: "run-command-sequence" },
         { location: "jobs.quality", rule: "step-sequence" },

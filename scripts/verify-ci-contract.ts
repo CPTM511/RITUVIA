@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { parse } from "yaml";
 
 import {
+  auditBrowserTestDependencies,
   auditCiScripts,
   auditToolchainVersions,
   verifyCiWorkflowDirectory,
@@ -17,6 +18,7 @@ const packageJson = JSON.parse(
   await readFile(path.join(repositoryRoot, "package.json"), "utf8"),
 ) as {
   engines?: { node?: unknown; pnpm?: unknown };
+  devDependencies?: unknown;
   packageManager?: unknown;
   scripts?: unknown;
 };
@@ -33,11 +35,20 @@ const toolchainFindings = auditToolchainVersions({
   workspaceNodeVersion: workspace.nodeVersion,
 });
 const scriptFindings = auditCiScripts(packageJson.scripts);
+const browserDependencyFindings = auditBrowserTestDependencies(packageJson.devDependencies);
 if (toolchainFindings.length > 0) {
   process.stderr.write("CI contract failure: toolchain versions are not synchronized.\n");
 }
 if (scriptFindings.length > 0) {
   process.stderr.write("CI contract failure: repository gate scripts are not exact.\n");
 }
+if (browserDependencyFindings.length > 0) {
+  process.stderr.write("CI contract failure: browser test dependencies are not exact.\n");
+}
 process.exitCode =
-  workflowResult === 0 && toolchainFindings.length === 0 && scriptFindings.length === 0 ? 0 : 1;
+  workflowResult === 0 &&
+  toolchainFindings.length === 0 &&
+  scriptFindings.length === 0 &&
+  browserDependencyFindings.length === 0
+    ? 0
+    : 1;

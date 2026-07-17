@@ -140,7 +140,7 @@ a:hover {
 
 .locale-select {
   min-block-size: 2.75rem;
-  max-inline-size: 8rem;
+  max-inline-size: 100%;
   padding-inline: 0.7rem 2rem;
   border: 1px solid var(--line-subtle);
   border-radius: 0.65rem;
@@ -575,6 +575,7 @@ h3 {
   }
 
   .header-actions {
+    flex-wrap: wrap;
     justify-content: space-between;
   }
 

@@ -107,6 +107,22 @@ resources. Browser QA remains required for every future behavior change; the cur
 have passed keyboard/focus, 320px/400%-equivalent reflow, dark mode, reduced motion, forced colors,
 no-JavaScript, console, and local-only network checks.
 
+After a fresh production build, run the committed accessibility/pseudolocale browser gate with the
+pinned Chromium headless shell:
+
+```bash
+npm exec --yes --package=pnpm@11.13.1 -- pnpm exec playwright install --only-shell chromium
+npm exec --yes --package=pnpm@11.13.1 -- pnpm build
+npm exec --yes --package=pnpm@11.13.1 -- pnpm test:accessibility
+```
+
+The gate serves only audited build artifacts on loopback and covers all four English routes with
+blocking axe scans, complete forward/reverse keyboard focus, 44px targets, 40% test-only text
+expansion, desktop/mobile RTL scaffolding, dark/reduced-motion/no-JavaScript states, and local-only
+requests. `en-XA` and `ar-XB` exist only as in-browser test transforms; they are not supported,
+published, canonical, crawlable, or added to the production locale catalog. CI performs the build
+immediately before this smoke and installs Linux browser dependencies with `--with-deps`.
+
 ### Shared UI foundation
 
 `@rituvia/ui` provides the private semantic-token stylesheet and native-first React primitives used

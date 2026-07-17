@@ -46,6 +46,27 @@ describe("Web shell build policy", () => {
     );
   });
 
+  it.each([
+    "/_next/static/../../escape.js",
+    "/_next/static/%2e%2e/escape.js",
+    "/_next/static//chunks/escape.js",
+    "/_next/static/./escape.js",
+    "/_next/static/chunks/escape.js?query=true",
+    "/_next/static/chunks/escape.js#fragment",
+    "/_next/static/chunks\\escape.js",
+  ])("rejects a non-canonical Next static path before file access: %s", (source) => {
+    const result = audit(
+      html(source),
+      new Map([
+        [source, Buffer.from("export{}")],
+        ["/_next/static/app.css", Buffer.from("body{color:#111}")],
+      ]),
+    );
+    expect(result.findings).toEqual(
+      expect.arrayContaining(["noncanonical-next-static-url", "nonlocal-javascript"]),
+    );
+  });
+
   it("rejects unreviewed CSS resources and media elements", () => {
     const assets = new Map([
       ["/_next/static/app.js", Buffer.from("export{}")],

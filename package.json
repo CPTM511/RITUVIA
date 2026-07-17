@@ -29,6 +29,7 @@
     "lint": "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
     "scan:secrets": "node --import tsx scripts/scan-secrets.ts",
     "test": "pnpm test:unit && pnpm test:configuration-boundary && pnpm test:database-foundation",
+    "test:accessibility": "node scripts/verify-web-accessibility.mjs",
     "test:configuration-boundary": "node scripts/verify-configuration-boundary.mjs",
     "test:ci-database": "pnpm --filter @rituvia/db test:ci",
     "test:database-foundation": "pnpm --filter @rituvia/db test:integration",
@@ -37,10 +38,12 @@
     "typecheck": "turbo run typecheck && tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@types/node": "24.13.3",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.10",
     "eslint-config-prettier": "10.1.8",
+    "playwright": "1.61.1",
     "prettier": "3.9.5",
     "tsx": "4.23.1",
     "turbo": "2.10.5",

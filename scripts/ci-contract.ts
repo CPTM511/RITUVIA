@@ -12,7 +12,7 @@ const actionPins = Object.freeze({
   "actions/setup-node": "820762786026740c76f36085b0efc47a31fe5020",
   "pnpm/action-setup": "0ebf47130e4866e96fce0953f49152a61190b271",
 });
-const expectedJobs = Object.freeze({ database: 20, quality: 20, security: 15 });
+const expectedJobs = Object.freeze({ database: 20, quality: 30, security: 15 });
 const expectedRunCommands = Object.freeze({
   database: Object.freeze(["pnpm install --frozen-lockfile", "pnpm test:ci-database"]),
   quality: Object.freeze([
@@ -28,6 +28,8 @@ const expectedRunCommands = Object.freeze({
     "pnpm test:unit",
     "pnpm test:configuration-boundary",
     "pnpm build",
+    "pnpm exec playwright install --with-deps --only-shell chromium",
+    "pnpm test:accessibility",
   ]),
   security: Object.freeze([
     "node scripts/run-pinned-ci-tool.mjs actionlint .github/workflows/ci.yml",
@@ -125,6 +127,7 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
     "check:evidence":
       "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
+    "test:accessibility": "node scripts/verify-web-accessibility.mjs",
   });
   if (!isRecord(scripts)) return [{ location: "package.json#scripts", rule: "ci-scripts" }];
   return Object.entries(expected).flatMap(([name, command]) =>
@@ -132,6 +135,19 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
       ? []
       : [{ location: `package.json#scripts.${name}`, rule: "ci-script-command" }],
   );
+};
+
+export const auditBrowserTestDependencies = (
+  developmentDependencies: unknown,
+): readonly WorkflowFinding[] => {
+  if (
+    !isRecord(developmentDependencies) ||
+    developmentDependencies["@axe-core/playwright"] !== "4.12.1" ||
+    developmentDependencies.playwright !== "1.61.1"
+  ) {
+    return [{ location: "package.json#devDependencies", rule: "browser-test-dependencies" }];
+  }
+  return [];
 };
 
 const auditCheckout = (findings: WorkflowFinding[], jobName: string, withValue: unknown): void => {
