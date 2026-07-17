@@ -322,6 +322,23 @@ h3 {
   scroll-margin-block-start: 2rem;
 }
 
+.availability-section {
+  padding-block-end: 0;
+}
+
+.connection-notice {
+  padding-block: var(--space-4) 0;
+}
+
+.route-state-main {
+  display: grid;
+  min-block-size: 100vh;
+  inline-size: min(100% - 2rem, 52rem);
+  margin-inline: auto;
+  padding-block: clamp(var(--space-8), 12vh, var(--space-16));
+  place-items: start stretch;
+}
+
 .path-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

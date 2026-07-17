@@ -20,6 +20,11 @@ describe("synthetic UI verification preview", () => {
       "هذا نص تجريبي",
       "日本語の表示確認",
       "देवनागरी प्रदर्शन जाँच",
+      'data-kind="empty"',
+      'data-kind="error"',
+      'data-kind="offline"',
+      'data-kind="provider-unavailable"',
+      "synthetic verification states",
     ]) {
       expect(html).toContain(fixture);
     }
@@ -30,6 +35,7 @@ describe("synthetic UI verification preview", () => {
     expect(previewStyles).toContain("@media (width <= 40rem)");
     expect(previewStyles).toContain("grid-template-columns: minmax(0, 1fr)");
     expect(previewStyles).toContain("overflow-wrap: anywhere");
+    expect(previewStyles).toContain(".preview-state-grid");
     expect(previewStyles).not.toMatch(/min-width|white-space:\s*nowrap|overflow-x/iu);
   });
 });

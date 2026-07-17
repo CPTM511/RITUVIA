@@ -9,6 +9,7 @@ import {
   resolveAccessibilityArtifactRequest,
 } from "./accessibility-policy.mjs";
 import { getMessages } from "../app/_i18n/messages";
+import { getStateMessages } from "../app/_i18n/state-messages";
 
 const collectStrings = (value: unknown): string[] => {
   if (typeof value === "string") return [value];
@@ -84,7 +85,7 @@ describe("Web accessibility smoke policy", () => {
   });
 
   it("expands every transformable string by at least forty percent", () => {
-    const messages = collectStrings(getMessages("en"));
+    const messages = collectStrings([getMessages("en"), getStateMessages("en")]);
     expect(messages.length).toBeGreaterThan(100);
     for (const source of messages) {
       const localized = pseudoLocalizeText(source);

@@ -118,10 +118,11 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm test:accessibility
 
 The gate serves only audited build artifacts on loopback and covers all four English routes with
 blocking axe scans, complete forward/reverse keyboard focus, 44px targets, 40% test-only text
-expansion, desktop/mobile RTL scaffolding, dark/reduced-motion/no-JavaScript states, and local-only
-requests. `en-XA` and `ar-XB` exist only as in-browser test transforms; they are not supported,
-published, canonical, crawlable, or added to the production locale catalog. CI performs the build
-immediately before this smoke and installs Linux browser dependencies with `--with-deps`.
+expansion, desktop/mobile RTL scaffolding, dark/reduced-motion/no-JavaScript states, a persistent
+online/offline/online connection-state advisory announcement, and local-only requests. `en-XA` and `ar-XB` exist only as
+in-browser test transforms; they are not supported, published, canonical, crawlable, or added to
+the production locale catalog. CI performs the build immediately before this smoke and installs
+Linux browser dependencies with `--with-deps`.
 
 ### Shared UI foundation
 
@@ -132,6 +133,13 @@ focus, disabled/loading/invalid/selection state presentation, system/light/dark 
 motion, forced colors, logical-direction behavior, and closed local-action/control-value contracts;
 the consuming application still owns every localized label, route, validation rule, mutation, and
 idempotency boundary. See `packages/ui/README.md` for the exact catalog and review matrix.
+
+The same package provides presentation-only empty, error, offline, and provider-unavailable page
+patterns. Web owns their localized English copy, state classification, announcement/focus timing,
+and caller-controlled retry action. The public shell truthfully consumes empty, advisory offline, and route-error
+states; provider-unavailable remains a dependency-neutral synthetic pattern until a real adapter and
+typed safe classifier exist. This does not add PWA caching, synchronization, provider health, or an
+automatic retry capability, and the server-side safe-off flag still returns an empty private 404.
 
 ### Local PostgreSQL and Prisma
 

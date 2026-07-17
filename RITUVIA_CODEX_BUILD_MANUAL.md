@@ -275,10 +275,11 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm test:accessibility
 
 The gate serves only audited build artifacts on loopback and covers all four English routes with
 blocking axe scans, complete forward/reverse keyboard focus, 44px targets, 40% test-only text
-expansion, desktop/mobile RTL scaffolding, dark/reduced-motion/no-JavaScript states, and local-only
-requests. `en-XA` and `ar-XB` exist only as in-browser test transforms; they are not supported,
-published, canonical, crawlable, or added to the production locale catalog. CI performs the build
-immediately before this smoke and installs Linux browser dependencies with `--with-deps`.
+expansion, desktop/mobile RTL scaffolding, dark/reduced-motion/no-JavaScript states, a persistent
+online/offline/online connection-state advisory announcement, and local-only requests. `en-XA` and `ar-XB` exist only as
+in-browser test transforms; they are not supported, published, canonical, crawlable, or added to
+the production locale catalog. CI performs the build immediately before this smoke and installs
+Linux browser dependencies with `--with-deps`.
 
 ### Shared UI foundation
 
@@ -289,6 +290,13 @@ focus, disabled/loading/invalid/selection state presentation, system/light/dark 
 motion, forced colors, logical-direction behavior, and closed local-action/control-value contracts;
 the consuming application still owns every localized label, route, validation rule, mutation, and
 idempotency boundary. See `packages/ui/README.md` for the exact catalog and review matrix.
+
+The same package provides presentation-only empty, error, offline, and provider-unavailable page
+patterns. Web owns their localized English copy, state classification, announcement/focus timing,
+and caller-controlled retry action. The public shell truthfully consumes empty, advisory offline, and route-error
+states; provider-unavailable remains a dependency-neutral synthetic pattern until a real adapter and
+typed safe classifier exist. This does not add PWA caching, synchronization, provider health, or an
+automatic retry capability, and the server-side safe-off flag still returns an empty private 404.
 
 ### Local PostgreSQL and Prisma
 
@@ -497,21 +505,21 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 
 **Validated:** 2026-07-17
 
-**Result:** PASS for the imported instruction pack, repository consistency, and locally executable RIT-001 through RIT-014. The owner approved the exact RIT-012 safety/privacy-design copy and current local completion/browser work; hosted RIT-004 evidence, production deployment, public-shell activation, canonical-domain changes, and actual indexing remain separately gated.
+**Result:** PASS for the imported instruction pack, repository consistency, and locally executable RIT-001 through RIT-015. The owner approved the exact RIT-012 safety/privacy-design copy and current local completion/browser work; hosted RIT-004 evidence, production deployment, public-shell activation, canonical-domain changes, and actual indexing remain separately gated.
 
 ## Checks passed
 
 - All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
 - All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
-- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003`, `RIT-005` through `RIT-007`, and `RIT-009` through `RIT-014` are Done; `RIT-004` is blocked only by `OWN-008`; RIT-008 remains Planned behind it; and RIT-015 is the sole Ready item.
+- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003`, `RIT-005` through `RIT-007`, and `RIT-009` through `RIT-015` are Done; `RIT-004` is blocked only by `OWN-008`; RIT-008 remains Planned behind it; and RIT-020 is the sole Ready item.
 - Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
 - Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
 - Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
-- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 95 current text sources; `checksums.sha256` covers all 272 intended Git-indexed inputs except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
+- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 95 current text sources; `checksums.sha256` covers all 283 intended Git-indexed inputs except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
 - Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
-- Root CI/toolchain, architecture, record, generated-evidence, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, accessibility/pseudolocale browser, and build gates pass across seven workspaces. Four hundred sixty unit/contract tests run in 37 files; the build verifier checks 31 emitted artifacts, imports built ESM exports, verifies UI stylesheet parity and all four public pages, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
+- Root CI/toolchain, architecture, record, generated-evidence, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, accessibility/pseudolocale browser, and build gates pass across seven workspaces. Four hundred seventy-nine unit/contract tests run in 41 files; the build verifier checks 31 emitted artifacts, imports built ESM exports, verifies UI stylesheet parity and all four public pages, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
 - The durable record workflow enforces four typed grammars, canonical task/decision authority, reciprocal task dossier and decision graph links, contextual task-result semantics, privacy-safe Markdown, Git-index-only regular-file checksums, and staged exact-order synchronization. CI and mutation tests reject stale, dangling, duplicated, unsafe, unreviewed, or locally untracked evidence.
-- The fail-closed architecture gate audits 88 active source files across seven modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, exact feature-flag composition, static case-sensitive Next proxy-normalization configuration, and file/module cycles. UI-specific mutation tests reject network/resource hosts and attributes, storage/runtime capabilities, direct JSX-runtime factories, polymorphic hosts, unsafe HTML/style/spreads, and unreviewed adapters. CI invokes the exact architecture command as an independent mandatory step.
+- The fail-closed architecture gate audits 97 active source files across seven modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, exact feature-flag composition, static case-sensitive Next proxy-normalization configuration, and file/module cycles. UI-specific mutation tests reject network/resource hosts and attributes, storage/runtime capabilities, direct JSX-runtime factories, polymorphic hosts, unsafe HTML/style/spreads, and unreviewed adapters. CI invokes the exact architecture command as an independent mandatory step.
 - The zero-dependency server-only observability package emits only fixed bounded JSON-line events with service/environment/release/level/correlation/trace fields. Web Crypto creates nonzero server-authoritative IDs; W3C trace validation rejects malformed, uppercase, unsupported, and zero identifiers; spans rotate across JSON-persisted Web → Worker → provider protocol steps; and neither baggage nor tracestate propagates.
 - Adversarial telemetry tests prove that unknown private fields, prompts, journal/prayer/birth text, authorization, URLs, raw `Error`, stack/cause, getters, `toJSON`, coercion hooks, revoked/wide proxies, cycles, symbols, `BigInt`, functions, control characters, oversized UTF-8 records, invalid metadata/carriers, duplicate span end, clock reversal, and failing writers cannot leak canaries or alter application flow.
 - The typed feature-flag registry is immutable, version-qualified, bounded, server-authoritative, and literal safe-off. Tests cover unknown keys/fields, non-canonical scope, missing approval, scheduled activation, immediate emergency off, expiry/removal, retired tombstones, cleanup-task integrity, and rolling v1/v2 coexistence plus rollback isolation.
@@ -522,7 +530,8 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - `@rituvia/ui` now provides semantic color/type/spacing/radius/elevation/motion/control tokens and closed native-first action, field, selection, alert, spinner, and skeleton primitives. Tests cover safe local targets, strict public identifiers/enums, runtime-bounded text-control attributes, unsafe input-type exclusion, Server Component-safe static output, caller-owned client callbacks, controlled/default exclusivity, loading/disabled/error/required/mixed/live semantics, contrast, light/dark/system cascade, forced colors, reduced motion, RTL and text direction, 44px sizing, long German/Arabic/Japanese/Devanagari fixtures, and narrow effective-width reflow.
 - Retained RIT-010 real-browser evidence covers desktop and 320px views, keyboard skip/focus transfer, 44px targets, no-JavaScript readability, 200%-equivalent reflow, a 120-character configured brand, RTL-assisted layout, dark/reduced-motion/forced-color foundations, zero console warnings/errors, and ten local-only requests. Fresh RIT-011 Codex Browser evidence covers its accessibility tree, native pointer/form interactions and states, 44px controls, 1,280px and 320px/400%-equivalent reflow without clipping or overflow, light/dark/system themes, root RTL plus nested LTR icon/switch overrides, zero console warnings/errors, and local-only resources. The owner-authorized RIT-011 Playwright pass completes twelve-stop Tab and reverse Shift+Tab order with 3px focus outlines, disabled-control skipping, Enter/Space/radio-arrow/select-typeahead behavior, active reduced motion with 0.01ms single-iteration animation and transition collapse, and active forced colors with CanvasText boundaries plus distinguishable Highlight/HighlightText focus and selected states. RIT-012 Playwright checks cover all four content pages and accessibility/theme states. RIT-013 Playwright checks cover four unique 200 pages with exact canonical/Open Graph/en/x-default metadata, local meta/header noindex, zero JSON-LD, robots disallow-all, absent sitemap, private/query/bare-spoof RSC 404s, reviewed RSC cache/index headers, 320px no-overflow reflow, 44px targets, visible 3px skip-link focus, no-JavaScript readability, zero console messages, and 81 same-origin requests.
 - RIT-014 production-artifact Playwright/axe checks cover all four public routes with 16 blocking WCAG/best-practice scans, exact selector review for 143 gradient-background contrast incompletes plus independent worst-case token contrast math, complete forward/reverse Tab order, 3px unclipped focus, skip-link transfer, 44px targets, native locale-option fit, 40% text expansion, desktop/mobile RTL mirroring, dark/reduced-motion/no-JavaScript states, and local-only requests. Test-only `en-XA`/`ar-XB` markers never become public routes, links, canonical metadata, or supported locales.
-- The Web build policy enforces maximum output of 5,545 B gzip HTML, 4,960 B gzip CSS, 208,048 B gzip JavaScript, and 356 B raw icon across all four public pages. The reviewed 6 KiB CSS ceiling leaves 1,184 B headroom. Mutation tests reject remote, ambiguous, duplicated, inline-style, executable-attribute, comment/raw-text-confused, entity-obfuscated, escaped, image-set, side-channel, SVG/media, non-canonical preload/icon, unbudgeted local, traversal-capable static paths before file access, poisoned canonical origin, wrong production robots polarity, premature structured data, case-insensitive routing, dynamic fallback, and trailing-slash bypass variants.
+- RIT-015 adds closed, localized empty/error/offline/provider-unavailable presentation contracts, a truthful public-shell empty consumer, a dynamic advisory connection consumer, and a raw-error-isolated route boundary without changing the safe-off empty 404. Fresh Playwright/axe covers four routes with 17 scans and 156 exact token-reviewed gradient/background contrast incompletes, a persistent online/offline/online advisory announcement, and all prior RIT-014 states. A runtime component test executes the actual route boundary's focus, reset, loading, offline, and raw-error contracts. CLI Playwright confirms all four synthetic variants at 320px, RTL, and dark mode with no overflow, sub-44px enabled target, remote request, or console error; the provider variant is explicitly not a provider integration or E2E claim.
+- The Web build policy enforces maximum output of 6,055 B gzip HTML, 5,284 B gzip CSS, 214,217 B gzip JavaScript, and 356 B raw icon across all four public pages. The reviewed 6 KiB CSS ceiling leaves 860 B headroom. Mutation tests reject remote, ambiguous, duplicated, inline-style, executable-attribute, comment/raw-text-confused, entity-obfuscated, escaped, image-set, side-channel, SVG/media, non-canonical preload/icon, unbudgeted local, traversal-capable static paths before file access, poisoned canonical origin, wrong production robots polarity, premature structured data, case-insensitive routing, dynamic fallback, and trailing-slash bypass variants.
 - `.env.example` exactly matches the typed server inventory. Production source limits environment reads to reviewed adapters, rejects all `NEXT_PUBLIC_*` variables, excludes secrets from client artifacts and HTTP, and proves sanitized nonzero Web/Worker startup failure plus a real `server-only` negative build.
 - The repository-owned PostgreSQL 17 runtime is bound to `127.0.0.1:55432`, uses random mode-0600 SCRAM credentials, data checksums, exact managed HBA/configuration files, an attested cluster fingerprint, and separate non-superuser migrator, read-only runtime, and append-only feature-control roles. Lifecycle operations are directory-lock serialized, including a two-contender stale-lock recovery test.
 - Prisma 7.8 generation and `migrate deploy` pass against isolated real databases. The suite proves clean/idempotent migrations and seed, database constraints, forced RLS, exact approved activation, runtime DDL/TRUNCATE denial, control update/delete denial, registry coexistence, transaction rollback, concurrent uniqueness, guarded isolated reset, and a row-security-aware non-empty custom-format dump/restore with exact row comparison and post-restore privilege attestation.
@@ -559,7 +568,7 @@ pnpm db:stop
 
 ## Limitations
 
-- This validates the specification package and locally implemented RIT-001 through RIT-014 code. The owner approved the exact RIT-012 safety/privacy-design copy and current local completion/browser work; this still does not validate an implemented reading/account/payment/AI flow, legal text, a second locale, current screen-reader/Firefox/WebKit/manual WCAG coverage, hosted infrastructure, production deployment, public-shell activation, canonical-domain changes, actual indexing, Search Console, or a production database.
+- This validates the specification package and locally implemented RIT-001 through RIT-015 code. The owner approved the exact RIT-012 safety/privacy-design copy and current local completion/browser work; this still does not validate an implemented reading/account/payment/AI/provider flow, PWA cache/synchronization, legal text, a second locale, current screen-reader/Firefox/WebKit/manual WCAG coverage, hosted infrastructure, production deployment, public-shell activation, canonical-domain changes, actual indexing, Search Console, or a production database.
 - The Web proxy handoff is a real local HTTP boundary, but no route wrapper yet measures final downstream status/duration. The Worker continuation subpath and serialized carrier are protocol evidence behind a sealed persistence adapter type; no database outbox, queue, deployed consumer, telemetry vendor, metrics, alerting, sampling, or retention system exists yet.
 - The feature-flag control plane has database-level append-only enforcement but no production credential grant, approval-record service, admin endpoint/UI, cache/invalidation policy, or operator emergency workflow. No public-shell activation record was created by RIT-010: without an explicit valid record and attested read-only runtime database, the shell deliberately returns 404.
 - Docker and Podman are absent on the verified host. A native fresh PostgreSQL 17 instance reproduced the CI target contract, but the digest-pinned service image and bridge networking still require the first hosted Actions run.
@@ -571,7 +580,7 @@ pnpm db:stop
 
 ## Acceptance result
 
-The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, a machine-checked durable record workflow, four accessible locale-prefixed English public pages, a completed shared UI implementation, a finite environment-safe crawl inventory, and active portable quality, dependency, secret, migration, accessibility/pseudolocale browser, and build gates. RIT-011 through RIT-014 are Done; RIT-015 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves a GitHub remote, protects all three CI jobs and workflow changes, and obtains one passing hosted run. Production deployment, shell activation, canonical-domain/DNS changes, actual indexing, and Search Console remain gated by later milestones and explicit owner decisions.
+The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, a machine-checked durable record workflow, four accessible locale-prefixed English public pages, closed resilient state patterns with truthful first-shell consumers, a finite environment-safe crawl inventory, and active portable quality, dependency, secret, migration, accessibility/pseudolocale/offline browser, and build gates. RIT-011 through RIT-015 are Done; RIT-020 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves the GitHub remote, protects all three CI jobs and workflow changes, and obtains one passing hosted run. Production deployment, shell activation, canonical-domain/DNS changes, actual indexing, and Search Console remain gated by later milestones and explicit owner decisions.
 
 ---
 
@@ -1019,7 +1028,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M1 local public-shell foundation in progress while M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI foundation, the finite SEO crawl/index contract, the accessibility/pseudolocale browser gate, and the server-side safe-off delivery boundary are implemented and locally verified. Production activation and actual indexing remain separately gated.
+**Stage:** M1 local implementation is complete through RIT-015 while RIT-016 and manual assistive-technology exit evidence remain outstanding and M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI and resilient-state foundations, the finite SEO crawl/index contract, the accessibility/pseudolocale/connection-state browser gate, and the server-side safe-off delivery boundary are locally verified. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -1039,11 +1048,11 @@ Use this order:
 - Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
-- Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, and skeleton primitives; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
+- Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
 - One typed four-page crawl inventory drives unique canonical/Open Graph metadata, production-only index polarity, exact end-anchored robots document allows, reviewed render-asset access, and a deterministic sitemap without fabricated `lastmod`; non-production, disabled, unavailable, private, query, spoofed/bare RSC, and unreviewed internal paths remain noindex, private/non-cacheable 404, disallow-all, or absent as appropriate.
 - Fail-closed Web build policy for all four canonical route artifacts, bounded compressed HTML/CSS/JavaScript/icon output, and HTML/CSS fetch surfaces including remote, ambiguous, duplicated, escaped, entity-obfuscated, and unbudgeted resources.
-- A production-artifact Chromium/axe gate for all four public routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete forward/reverse keyboard order, 44px targets, 40% text expansion, test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow, and same-origin-only requests; exact gradient-background contrast incompletes are compensated by token-level worst-case contrast tests.
+- A production-artifact Chromium/axe gate for all four public routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete forward/reverse keyboard order, 44px targets, 40% text expansion, test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow, a persistent online/offline/online advisory announcement, and same-origin-only requests; exact gradient/background contrast incompletes are compensated by token-level contrast tests.
 - Cancellable Worker runtime and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
@@ -1054,11 +1063,12 @@ Use this order:
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 432 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 479 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
 
 ## What does not exist yet
 
 - Implemented readings, accounts, payments, legal terms/policies, rituals, or other end-to-end product flows; the reviewed English public pages are product explanations and remain server-side safe-off until explicitly activated through the existing control plane.
+- A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Production metrics, alerts, retention/sampling policy, vendor exporters, and a real persisted outbox/queue consumer; the current Worker carrier path is a reviewed protocol and sealed adapter boundary, not a deployed queue.
@@ -1095,26 +1105,27 @@ remains above and task history stays in Git and durable records.
 
 The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and
 pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across seven workspaces,
-460 unit/contract tests in 37 files, configuration-boundary integration, real PostgreSQL integration,
+479 unit/contract tests in 41 files, configuration-boundary integration, real PostgreSQL integration,
 and production builds pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum evidence.
 
 The build verifier checks 31 artifacts and narrowed exports, including exact UI stylesheet parity,
-all four canonical pages, the icon, and maximum Web output of 5,545 B gzip HTML, 4,960 B gzip CSS,
-208,048 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 1,184 B headroom.
+all four canonical pages, the icon, and maximum Web output of 6,055 B gzip HTML, 5,284 B gzip CSS,
+214,217 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 860 B headroom.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 88 active source files across seven modules and keeps module,
+The architecture verifier audits 97 active source files across seven modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 The production Web matrix proves restrictive browser headers, server correlation, safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
 isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
-mobile, and same-origin coverage. Fresh RIT-014 production-artifact acceptance passes all four routes
-with 16 blocking axe scans, exact selector-level review for 143 gradient-background
-`color-contrast` incomplete nodes plus independent worst-case contrast math, complete forward/reverse
+mobile, and same-origin coverage. Fresh RIT-015 production-artifact acceptance passes all four routes
+with 17 blocking axe scans, exact selector-level review for 156 gradient/background
+`color-contrast` incomplete nodes plus independent token contrast tests, complete forward/reverse
 focus, skip-link transfer, 44px targets, 40% expansion, desktop/mobile RTL, dark/reduced-motion/no-JS
-states, and local-only requests.
+states, a persistent online/offline/online advisory announcement, and local-only requests. CLI Playwright also
+verifies all four synthetic state variants at 320px, RTL, and dark mode with zero console errors.
 
 The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
 seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,
@@ -1464,6 +1475,12 @@ effective until this register links it. Do not rewrite historical rationale; sup
 - **Reason:** A deterministic local-artifact gate catches shell regressions without remote traffic, production activation, public pseudolocale routes, a fourth required CI job, or a broad axe suppression that could hide real accessibility failures.
 - **Date:** 2026-07-17
 
+### [D-028 — Presentation-only resilient state boundary](records/decisions/D-028.md)
+
+- **Decision:** Keep closed empty, error, offline, and provider-unavailable presentation patterns in `@rituvia/ui`, while applications own localized copy, truthful classification, announcement/focus timing, and idempotent recovery. Use the existing public shell as the first real consumer without changing its empty safe-off 404 contract or inventing a provider/PWA capability.
+- **Reason:** Separating presentation from operational classification prevents raw error/private-data leakage, false availability claims, unsafe automatic retries, public debug surfaces, and component-library coupling to providers or domains.
+- **Date:** 2026-07-17
+
 ---
 
 # File: `ROADMAP.md`
@@ -1733,9 +1750,9 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-012 | M1        |       P0 | Done    | Build product positioning, methodology, safety, and privacy public pages  | RIT-010,RIT-011                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                  |
 | RIT-013 | M1        |       P1 | Done    | Add SEO metadata, canonical, robots, and sitemap foundation               | RIT-010                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                         |
 | RIT-014 | M1        |       P1 | Done    | Add accessibility and pseudolocale CI smoke                               | RIT-010,RIT-011                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                   |
-| RIT-015 | M1        |       P1 | Ready   | Create error, empty, offline, and provider-unavailable patterns           | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                              |
+| RIT-015 | M1        |       P1 | Done    | Create error, empty, offline, and provider-unavailable patterns           | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                              |
 | RIT-016 | M1        |       P2 | Planned | Clean up the public-shell rollout flag                                    | RIT-010,RIT-014                         | backend       | Flag is retired safe-off for one registry compatibility window, then removed with old history ignored.       |
-| RIT-020 | M2        |       P0 | Planned | Implement anonymous subject/session and consent baseline                  | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                 |
+| RIT-020 | M2        |       P0 | Ready   | Implement anonymous subject/session and consent baseline                  | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                 |
 | RIT-021 | M2        |       P0 | Planned | Implement safe question/theme intake rules and UX                         | RIT-020,RIT-012                         | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                      |
 | RIT-022 | M2        |       P0 | Planned | Create versioned tarot deck, spread, and content schema                   | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.             |
 | RIT-023 | M2        |       P0 | Planned | Implement deterministic server-authoritative tarot engine                 | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                         |
@@ -1982,12 +1999,14 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-025 | Finite public trust-content boundary | [decisions/D-025.md](./decisions/D-025.md) |
 | Decision | D-026 | Finite environment-safe crawl inventory | [decisions/D-026.md](./decisions/D-026.md) |
 | Decision | D-027 | Production-artifact accessibility and pseudolocale gate | [decisions/D-027.md](./decisions/D-027.md) |
+| Decision | D-028 | Presentation-only resilient state boundary | [decisions/D-028.md](./decisions/D-028.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
 | Task | RIT-012 | Public positioning, methodology, safety, and privacy pages | [tasks/RIT-012.md](./tasks/RIT-012.md) |
 | Task | RIT-013 | SEO metadata, canonical, robots, and sitemap foundation | [tasks/RIT-013.md](./tasks/RIT-013.md) |
 | Task | RIT-014 | Accessibility and pseudolocale CI smoke | [tasks/RIT-014.md](./tasks/RIT-014.md) |
+| Task | RIT-015 | Resilient page-level state patterns | [tasks/RIT-015.md](./tasks/RIT-015.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
@@ -8635,7 +8654,8 @@ four exact public documents and their preloaded local artifacts from an in-memor
 and runs pinned Chromium plus axe. It blocks WCAG/best-practice violations and unexpected incomplete
 results; verifies forward/reverse keyboard order, focus visibility, 44px targets, reduced motion,
 dark mode, no-JavaScript content, mobile reflow, at-least-40% test-only text expansion, and RTL
-mirroring; and rejects nonlocal, failed, or error responses. Build first, then run
+mirroring; verifies a persistent live region through an online/offline/online advisory transition
+while retaining the already-loaded server content; and rejects nonlocal, failed, or error responses. Build first, then run
 `pnpm test:accessibility`; CI enforces that ordering and installs only the Chromium headless shell.
 
 `scripts/copy-ui-styles.mjs` is the UI package prebuild step. It copies the statically reviewed

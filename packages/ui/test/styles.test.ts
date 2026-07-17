@@ -101,6 +101,9 @@ describe("UI stylesheet contract", () => {
       ["state-success", "state-success-surface", 4.5],
       ["state-warning", "state-warning-surface", 4.5],
       ["state-error", "state-error-surface", 4.5],
+      ["state-info", "surface-panel", 3],
+      ["state-warning", "surface-panel", 3],
+      ["state-error", "surface-panel", 3],
       ["line-strong", "surface-panel", 3],
       ["focus-ring", "surface-canvas", 3],
     ] as const;
@@ -127,8 +130,25 @@ describe("UI stylesheet contract", () => {
       ":disabled",
       '[data-state="loading"]',
       ".rvt-alert--error",
+      ".rvt-state-pattern--error",
+      ".rvt-state-pattern--offline",
+      ".rvt-state-pattern--provider-unavailable",
     ]) {
       expect(styles).toContain(selector);
+    }
+  });
+
+  it("keeps state patterns reflow-safe and their programmatic focus target visible", () => {
+    for (const contract of [
+      ".rvt-state-pattern__announcement",
+      "grid-template-columns: auto minmax(0, 1fr)",
+      "min-inline-size: 0",
+      "flex-wrap: wrap",
+      "overflow-wrap: anywhere",
+      "width <= 24rem",
+      ".rvt-state-pattern__title:focus",
+    ]) {
+      expect(styles).toContain(contract);
     }
   });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getMessages } from "../app/_i18n/messages";
+import { getStateMessages } from "../app/_i18n/state-messages";
 
 const collectStrings = (value: unknown): string[] => {
   if (typeof value === "string") return [value];
@@ -16,6 +17,14 @@ describe("English shell messages", () => {
     const strings = collectStrings(getMessages("en"));
 
     expect(strings.length).toBeGreaterThan(80);
+    expect(strings.every((value) => value.trim() === value && value.length > 0)).toBe(true);
+    expect(strings.join(" ")).not.toMatch(/\b(?:TODO|TBD|lorem ipsum)\b/iu);
+  });
+
+  it("provides a complete client-safe state and connection slice for every active locale", () => {
+    const strings = collectStrings(getStateMessages("en"));
+
+    expect(strings).toHaveLength(17);
     expect(strings.every((value) => value.trim() === value && value.length > 0)).toBe(true);
     expect(strings.join(" ")).not.toMatch(/\b(?:TODO|TBD|lorem ipsum)\b/iu);
   });

@@ -1,8 +1,11 @@
-import { ActionLink } from "@rituvia/ui";
+import { ActionLink, createUiControlId } from "@rituvia/ui";
 
 import type { ShellMessages } from "../_i18n/messages";
 import { localePublicPagePath, localeSectionPath, type Locale } from "../_i18n/routing";
 import { PublicSiteFrame } from "./public-site-frame";
+import { ResilientState } from "./resilient-state";
+
+const availabilityTitleId = createUiControlId("availability-title");
 
 type SiteShellProps = Readonly<{
   brandName: string;
@@ -56,6 +59,26 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
             ))}
           </ul>
         </aside>
+
+        <div className="shell content-section availability-section">
+          <ResilientState
+            kind="empty"
+            message={content.availability.message}
+            primaryAction={{
+              href: localePublicPagePath(locale, "methodology"),
+              kind: "link",
+              label: content.availability.primaryAction,
+            }}
+            secondaryAction={{
+              href: localePublicPagePath(locale, "safety"),
+              kind: "link",
+              label: content.availability.secondaryAction,
+            }}
+            title={content.availability.title}
+            titleAs="h2"
+            titleId={availabilityTitleId}
+          />
+        </div>
 
         <section aria-labelledby="practice-heading" className="shell content-section" id="practice">
           <div className="section-heading">

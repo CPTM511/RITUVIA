@@ -32,6 +32,9 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('<label class="locale-label" for="locale-select">');
     expect(html).toContain('aria-describedby="locale-hint"');
     expect(html).toContain("<noscript>");
+    expect(html).toContain('data-kind="empty"');
+    expect(html).toContain("Personal reflection experiences are not open in this foundation yet.");
+    expect(html).not.toContain('data-connection-state="offline"');
   });
 
   it("renders only locale-safe internal targets and no unfinished feature route", () => {

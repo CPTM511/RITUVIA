@@ -34,6 +34,16 @@ Private, native-first UI foundations for RITUVIA applications. Import components
   display, so browser checked/form state cannot diverge from its visual and ARIA state.
 - `InlineAlert` is static by default. Use `live="polite"` only for a newly inserted status and
   `live="assertive"` only for a newly inserted urgent error.
+- `EmptyState`, `ErrorState`, `OfflineState`, and `ProviderUnavailableState` are presentation-only
+  page patterns. The consuming application owns localized copy, truthful state classification,
+  focus timing, and retry behavior. Static states are quiet by default; use polite announcements for
+  newly inserted advisory states and assertive announcements only for a newly inserted error.
+  Actions are either bounded local links or caller-owned buttons. Never pass raw errors, provider
+  payloads, request IDs, questions, journals, or other private text. Retry is permitted only when the
+  caller has established that the operation is safe and idempotent.
+  `StatePattern` is the lower-level discriminated renderer for a consumer that must change between
+  reviewed variants without replacing a focused host subtree; prefer the named wrappers for static
+  states.
 - `Spinner` is decorative unless a localized label is supplied. `Skeleton` is always decorative;
   set `aria-busy="true"` on the affected region and retain meaningful fallback content.
 - `system` is the default theme. Set only `data-theme="light"`, `"dark"`, or `"system"` on the
@@ -47,6 +57,9 @@ CJK wrapping, Devanagari shaping, light/dark/system, forced colors, reduced moti
 and 44px targets. Directional icons and switch travel follow each element's computed direction so
 nested `dir="ltr"`/`dir="rtl"` overrides remain isolated; other symbols keep their orientation.
 
-The package intentionally excludes dialogs, comboboxes, date/location controls, complete page-level
-empty/offline/provider patterns, domain cards, and theme persistence until a real consuming task can
-prove their interaction contracts.
+The package intentionally excludes dialogs, comboboxes, date/location controls, domain cards, theme
+persistence, service-worker caching, offline synchronization, provider adapters, and a generic
+partial/degraded state machine until real consuming tasks can prove their interaction contracts.
+Loading remains composed from the reviewed `Button`, `Spinner`, and `Skeleton` primitives. The
+provider-unavailable presentation pattern does not prove that an application has a provider
+integration or a provider-failure classifier.

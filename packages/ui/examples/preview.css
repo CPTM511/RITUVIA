@@ -66,6 +66,12 @@ h2 {
   margin-block-start: var(--space-6);
 }
 
+.preview-state-grid {
+  display: grid;
+  gap: var(--space-6);
+  margin-block-start: var(--space-6);
+}
+
 @media (width <= 40rem) {
   main {
     inline-size: min(100% - 1.25rem, 64rem);

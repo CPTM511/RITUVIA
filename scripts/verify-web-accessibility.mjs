@@ -30,6 +30,17 @@ const homeContrastTargets = Object.freeze([
   Object.freeze(["#practice > .section-heading > .eyebrow"]),
   Object.freeze(["#practice-heading"]),
   Object.freeze(["#practice > .section-heading > .section-introduction"]),
+  Object.freeze(["#availability-title"]),
+  Object.freeze([".availability-section .rvt-state-pattern__message"]),
+  Object.freeze([".availability-section .rvt-state-pattern__icon"]),
+  Object.freeze(['.availability-section .rvt-action[href="/en/methodology"]']),
+  Object.freeze(['.availability-section .rvt-action[href="/en/safety"]']),
+]);
+const offlineContrastTargets = Object.freeze([
+  ...homeContrastTargets,
+  Object.freeze(["#connection-notice-title"]),
+  Object.freeze([".connection-notice .rvt-state-pattern__message"]),
+  Object.freeze([".connection-notice .rvt-state-pattern__icon"]),
 ]);
 const informationContrastTargets = Object.freeze({
   "/en/methodology": Object.freeze([
@@ -69,6 +80,7 @@ const informationContrastTargets = Object.freeze({
 const contrastScanStates = Object.freeze(["dark", "english", "expanded", "rtl"]);
 const reviewedContrastTargetsByScan = new Map([
   ...contrastScanStates.map((state) => [`${state}:/en`, homeContrastTargets]),
+  ["offline:/en", offlineContrastTargets],
   ...Object.entries(informationContrastTargets).flatMap(([pathname, targets]) =>
     contrastScanStates.map((state) => [`${state}:${pathname}`, targets]),
   ),
@@ -650,6 +662,65 @@ const run = async () => {
       reviewedContrastNodes += await assertAxe(page, `dark:${pathname}`);
       scans += 1;
     }
+
+    await context.setOffline(false);
+    await page.setViewportSize({ height: 900, width: 320 });
+    await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
+    await gotoReviewedPage(page, `${artifactServer.origin}/en`, "offline:/en");
+    const connectionAnnouncement = page.locator("[data-connection-announcement]");
+    const connectedAnnouncement = await connectionAnnouncement.evaluate((node) => ({
+      atomic: node.getAttribute("aria-atomic"),
+      live: node.getAttribute("aria-live"),
+      role: node.getAttribute("role"),
+      text: node.textContent?.trim() ?? "",
+    }));
+    if (
+      connectedAnnouncement.atomic !== "true" ||
+      connectedAnnouncement.live !== "polite" ||
+      connectedAnnouncement.role !== "status" ||
+      connectedAnnouncement.text !== ""
+    ) {
+      throw new Error(
+        `offline:/en did not mount an empty connection live region: ${JSON.stringify(connectedAnnouncement)}`,
+      );
+    }
+    if ((await page.locator('[data-connection-state="offline"]').count()) !== 0) {
+      throw new Error("offline:/en rendered a false offline state while connected.");
+    }
+    await context.setOffline(true);
+    const offlineNotice = page.locator('[data-connection-state="offline"]');
+    await offlineNotice.waitFor({ state: "visible" });
+    const expectedOfflineAnnouncement =
+      "Your device appears to be offline. This page remains readable, but links or new content may need a connection.";
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelector("[data-connection-announcement]")?.textContent?.trim() === expected,
+      expectedOfflineAnnouncement,
+    );
+    const offlineSemantics = await offlineNotice.evaluate((notice) => ({
+      mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
+      pathname: location.pathname,
+      roleCount: notice.querySelectorAll('[role="status"]').length,
+    }));
+    if (
+      offlineSemantics.roleCount !== 0 ||
+      offlineSemantics.pathname !== "/en" ||
+      offlineSemantics.mainTextLength < 200
+    ) {
+      throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+    }
+    await assertLayout(page, "offline:/en");
+    await assertTouchTargets(page, "offline:/en");
+    reviewedContrastNodes += await assertAxe(page, "offline:/en");
+    scans += 1;
+    await context.setOffline(false);
+    await offlineNotice.waitFor({ state: "detached" });
+    const expectedOnlineAnnouncement = "Your device appears to be back online.";
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelector("[data-connection-announcement]")?.textContent?.trim() === expected,
+      expectedOnlineAnnouncement,
+    );
     await context.close();
 
     const noJavaScriptContext = await browser.newContext({
@@ -690,7 +761,7 @@ const run = async () => {
     throw new Error(`Accessibility browser boundary failed: ${[...new Set(failures)].join(", ")}`);
   }
   console.log(
-    `Verified ${accessibilitySmokeRoutes.length} public routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
+    `Verified ${accessibilitySmokeRoutes.length} public routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
   );
 };
 

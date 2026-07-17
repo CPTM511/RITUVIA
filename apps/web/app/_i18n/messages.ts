@@ -77,6 +77,12 @@ export type HomeMessages = Readonly<{
     note: string;
     action: string;
   }>;
+  availability: Readonly<{
+    title: string;
+    message: string;
+    primaryAction: string;
+    secondaryAction: string;
+  }>;
 }>;
 
 export type PublicPageMessages = Readonly<{
@@ -211,6 +217,13 @@ const englishMessages = {
         "These public pages explain the planned method, safety limits, and privacy design. This foundation asks for no personal question, journal entry, prayer, birth detail, account, or payment.",
       note: "Only the minimum operational request metadata needed to serve and protect this site may be processed.",
       action: "Review the privacy design",
+    },
+    availability: {
+      title: "Personal reflection experiences are not open in this foundation yet.",
+      message:
+        "The public methodology and safety boundaries are available now. Read them without creating an account or sharing personal information.",
+      primaryAction: "Read the methodology",
+      secondaryAction: "Review safety boundaries",
     },
   },
   pages: {

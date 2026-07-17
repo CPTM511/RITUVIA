@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M1 local public-shell foundation in progress while M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI foundation, the finite SEO crawl/index contract, the accessibility/pseudolocale browser gate, and the server-side safe-off delivery boundary are implemented and locally verified. Production activation and actual indexing remain separately gated.
+**Stage:** M1 local implementation is complete through RIT-015 while RIT-016 and manual assistive-technology exit evidence remain outstanding and M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI and resilient-state foundations, the finite SEO crawl/index contract, the accessibility/pseudolocale/connection-state browser gate, and the server-side safe-off delivery boundary are locally verified. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -22,11 +22,11 @@
 - Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
 - Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
-- Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, and skeleton primitives; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
+- Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
 - One typed four-page crawl inventory drives unique canonical/Open Graph metadata, production-only index polarity, exact end-anchored robots document allows, reviewed render-asset access, and a deterministic sitemap without fabricated `lastmod`; non-production, disabled, unavailable, private, query, spoofed/bare RSC, and unreviewed internal paths remain noindex, private/non-cacheable 404, disallow-all, or absent as appropriate.
 - Fail-closed Web build policy for all four canonical route artifacts, bounded compressed HTML/CSS/JavaScript/icon output, and HTML/CSS fetch surfaces including remote, ambiguous, duplicated, escaped, entity-obfuscated, and unbudgeted resources.
-- A production-artifact Chromium/axe gate for all four public routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete forward/reverse keyboard order, 44px targets, 40% text expansion, test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow, and same-origin-only requests; exact gradient-background contrast incompletes are compensated by token-level worst-case contrast tests.
+- A production-artifact Chromium/axe gate for all four public routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete forward/reverse keyboard order, 44px targets, 40% text expansion, test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow, a persistent online/offline/online advisory announcement, and same-origin-only requests; exact gradient/background contrast incompletes are compensated by token-level contrast tests.
 - Cancellable Worker runtime and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
@@ -37,11 +37,12 @@
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 432 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 479 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
 
 ## What does not exist yet
 
 - Implemented readings, accounts, payments, legal terms/policies, rituals, or other end-to-end product flows; the reviewed English public pages are product explanations and remain server-side safe-off until explicitly activated through the existing control plane.
+- A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Production metrics, alerts, retention/sampling policy, vendor exporters, and a real persisted outbox/queue consumer; the current Worker carrier path is a reviewed protocol and sealed adapter boundary, not a deployed queue.
@@ -78,26 +79,27 @@ remains above and task history stays in Git and durable records.
 
 The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and
 pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across seven workspaces,
-460 unit/contract tests in 37 files, configuration-boundary integration, real PostgreSQL integration,
+479 unit/contract tests in 41 files, configuration-boundary integration, real PostgreSQL integration,
 and production builds pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum evidence.
 
 The build verifier checks 31 artifacts and narrowed exports, including exact UI stylesheet parity,
-all four canonical pages, the icon, and maximum Web output of 5,545 B gzip HTML, 4,960 B gzip CSS,
-208,048 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 1,184 B headroom.
+all four canonical pages, the icon, and maximum Web output of 6,055 B gzip HTML, 5,284 B gzip CSS,
+214,217 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 860 B headroom.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 88 active source files across seven modules and keeps module,
+The architecture verifier audits 97 active source files across seven modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 The production Web matrix proves restrictive browser headers, server correlation, safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
 isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
-mobile, and same-origin coverage. Fresh RIT-014 production-artifact acceptance passes all four routes
-with 16 blocking axe scans, exact selector-level review for 143 gradient-background
-`color-contrast` incomplete nodes plus independent worst-case contrast math, complete forward/reverse
+mobile, and same-origin coverage. Fresh RIT-015 production-artifact acceptance passes all four routes
+with 17 blocking axe scans, exact selector-level review for 156 gradient/background
+`color-contrast` incomplete nodes plus independent token contrast tests, complete forward/reverse
 focus, skip-link transfer, 44px targets, 40% expansion, desktop/mobile RTL, dark/reduced-motion/no-JS
-states, and local-only requests.
+states, a persistent online/offline/online advisory announcement, and local-only requests. CLI Playwright also
+verifies all four synthetic state variants at 320px, RTL, and dark mode with zero console errors.
 
 The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
 seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,

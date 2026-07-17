@@ -50,7 +50,8 @@ four exact public documents and their preloaded local artifacts from an in-memor
 and runs pinned Chromium plus axe. It blocks WCAG/best-practice violations and unexpected incomplete
 results; verifies forward/reverse keyboard order, focus visibility, 44px targets, reduced motion,
 dark mode, no-JavaScript content, mobile reflow, at-least-40% test-only text expansion, and RTL
-mirroring; and rejects nonlocal, failed, or error responses. Build first, then run
+mirroring; verifies a persistent live region through an online/offline/online advisory transition
+while retaining the already-loaded server content; and rejects nonlocal, failed, or error responses. Build first, then run
 `pnpm test:accessibility`; CI enforces that ordering and installs only the Chromium headless shell.
 
 `scripts/copy-ui-styles.mjs` is the UI package prebuild step. It copies the statically reviewed

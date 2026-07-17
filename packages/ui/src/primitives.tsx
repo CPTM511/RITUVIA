@@ -989,3 +989,238 @@ export function VisuallyHidden({ children }: VisuallyHiddenProps): ReactNode {
   assertAccessibleLabel(children, "Visually hidden text");
   return <span className="rvt-visually-hidden">{children}</span>;
 }
+
+export type StatePatternKind = "empty" | "error" | "offline" | "provider-unavailable";
+export type StatePatternTitleElement = "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p";
+
+type StateButtonAction =
+  | Readonly<{
+      kind: "button";
+      label: string;
+      loading?: false;
+      loadingLabel?: never;
+      onPress: () => void;
+    }>
+  | Readonly<{
+      kind: "button";
+      label: string;
+      loading: true;
+      loadingLabel: string;
+      onPress: () => void;
+    }>;
+
+export type StatePatternAction =
+  | Readonly<{
+      href: LocalActionHref;
+      kind: "link";
+      label: string;
+    }>
+  | StateButtonAction;
+
+type StatePatternActions =
+  | Readonly<{
+      primaryAction?: never;
+      secondaryAction?: never;
+    }>
+  | Readonly<{
+      primaryAction: StatePatternAction;
+      secondaryAction?: StatePatternAction;
+    }>;
+
+type StatePatternContent = Readonly<{
+  message: string;
+  title: string;
+  titleAs?: StatePatternTitleElement;
+  titleId: UiControlId;
+}> &
+  StatePatternActions;
+
+export type StatePatternProps = StatePatternContent &
+  Readonly<{ live?: Exclude<LiveMode, "assertive"> }>;
+export type ErrorStateProps = StatePatternContent & Readonly<{ live?: LiveMode }>;
+export type StatePatternComponentProps =
+  | (StatePatternProps &
+      Readonly<{
+        kind: Exclude<StatePatternKind, "error">;
+      }>)
+  | (ErrorStateProps & Readonly<{ kind: "error" }>);
+
+const statePatternKinds = new Set<string>(["empty", "error", "offline", "provider-unavailable"]);
+const statePatternTitleElements = new Set<string>(["h1", "h2", "h3", "h4", "h5", "h6", "p"]);
+
+const assertStatePatternKind = (value: StatePatternKind): StatePatternKind => {
+  if (typeof value !== "string" || !statePatternKinds.has(value)) {
+    throw new TypeError("State pattern kind is outside the reviewed value set.");
+  }
+  return value;
+};
+
+const assertStatePatternTitleElement = (
+  value: StatePatternTitleElement,
+): StatePatternTitleElement => {
+  if (typeof value !== "string" || !statePatternTitleElements.has(value)) {
+    throw new TypeError("State pattern title element is outside the reviewed value set.");
+  }
+  return value;
+};
+
+const statePatternIcon = (kind: StatePatternKind): IconName => {
+  switch (kind) {
+    case "empty":
+      return "info";
+    case "error":
+      return "error";
+    case "offline":
+    case "provider-unavailable":
+      return "warning";
+  }
+};
+
+const statePatternTitle = (
+  children: string,
+  id: UiControlId,
+  titleAs: StatePatternTitleElement,
+): ReactNode => {
+  if (titleAs === "h1") {
+    return (
+      <h1 className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+        {children}
+      </h1>
+    );
+  }
+  if (titleAs === "h2") {
+    return (
+      <h2 className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+        {children}
+      </h2>
+    );
+  }
+  if (titleAs === "h3") {
+    return (
+      <h3 className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+        {children}
+      </h3>
+    );
+  }
+  if (titleAs === "h4") {
+    return (
+      <h4 className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+        {children}
+      </h4>
+    );
+  }
+  if (titleAs === "h5") {
+    return (
+      <h5 className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+        {children}
+      </h5>
+    );
+  }
+  if (titleAs === "h6") {
+    return (
+      <h6 className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+        {children}
+      </h6>
+    );
+  }
+  return (
+    <p className="rvt-state-pattern__title" id={id} tabIndex={-1}>
+      {children}
+    </p>
+  );
+};
+
+const statePatternAction = (
+  action: StatePatternAction,
+  variant: "primary" | "secondary",
+): ReactNode => {
+  assertAccessibleLabel(action.label, "State pattern action label");
+  if (action.kind === "link") {
+    return ActionLink({
+      children: action.label,
+      href: createLocalActionHref(action.href),
+      variant,
+    });
+  }
+  if (action.kind !== "button" || typeof action.onPress !== "function") {
+    throw new TypeError("State pattern actions must be reviewed links or buttons.");
+  }
+  return action.loading === true
+    ? Button({
+        label: action.label,
+        loading: true,
+        loadingLabel: action.loadingLabel,
+        onPress: action.onPress,
+        tone: variant,
+      })
+    : Button({ label: action.label, onPress: action.onPress, tone: variant });
+};
+
+const statePattern = ({
+  kind,
+  live = "off",
+  message,
+  primaryAction,
+  secondaryAction,
+  title,
+  titleAs = "h2",
+  titleId,
+}: StatePatternComponentProps): ReactNode => {
+  const reviewedKind = assertStatePatternKind(kind);
+  const reviewedLive = assertClosedValue(live, liveModes, "State pattern live mode");
+  const reviewedTitleElement = assertStatePatternTitleElement(titleAs);
+  const reviewedTitleId = createUiControlId(titleId);
+  assertAccessibleLabel(title, "State pattern title");
+  assertAccessibleLabel(message, "State pattern message");
+  if (reviewedLive === "assertive" && reviewedKind !== "error") {
+    throw new TypeError("Only error state patterns may use assertive announcements.");
+  }
+  if (secondaryAction !== undefined && primaryAction === undefined) {
+    throw new TypeError("State pattern secondary actions require a primary action.");
+  }
+  const role =
+    reviewedLive === "assertive" ? "alert" : reviewedLive === "polite" ? "status" : undefined;
+
+  return (
+    <section
+      aria-labelledby={reviewedTitleId}
+      className={`rvt-state-pattern rvt-state-pattern--${reviewedKind}`}
+      data-kind={reviewedKind}
+    >
+      <div
+        aria-atomic={role === undefined ? undefined : "true"}
+        aria-live={reviewedLive === "off" ? undefined : reviewedLive}
+        className="rvt-state-pattern__announcement"
+        role={role}
+      >
+        <div aria-hidden="true" className="rvt-state-pattern__icon">
+          {Icon({ name: statePatternIcon(reviewedKind) })}
+        </div>
+        <div className="rvt-state-pattern__body">
+          {statePatternTitle(title, reviewedTitleId, reviewedTitleElement)}
+          <p className="rvt-state-pattern__message">{message}</p>
+        </div>
+      </div>
+      {primaryAction === undefined && secondaryAction === undefined ? null : (
+        <div className="rvt-state-pattern__actions">
+          {primaryAction === undefined ? null : statePatternAction(primaryAction, "primary")}
+          {secondaryAction === undefined ? null : statePatternAction(secondaryAction, "secondary")}
+        </div>
+      )}
+    </section>
+  );
+};
+
+export const StatePattern = (props: StatePatternComponentProps): ReactNode => statePattern(props);
+
+export const EmptyState = (props: StatePatternProps): ReactNode =>
+  statePattern({ ...props, kind: "empty" });
+
+export const ErrorState = (props: ErrorStateProps): ReactNode =>
+  statePattern({ ...props, kind: "error" });
+
+export const OfflineState = (props: StatePatternProps): ReactNode =>
+  statePattern({ ...props, kind: "offline" });
+
+export const ProviderUnavailableState = (props: StatePatternProps): ReactNode =>
+  statePattern({ ...props, kind: "provider-unavailable" });

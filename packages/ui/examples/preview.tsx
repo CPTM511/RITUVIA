@@ -6,8 +6,12 @@ import {
   Button,
   Checkbox,
   DirectionalIcon,
+  EmptyState,
+  ErrorState,
   IconButton,
   InlineAlert,
+  OfflineState,
+  ProviderUnavailableState,
   RadioGroup,
   SelectField,
   Skeleton,
@@ -127,6 +131,55 @@ export function UiPreview(): ReactNode {
               { label: "First option", value: firstValue },
               { label: "Second option", value: secondValue },
             ]}
+          />
+        </div>
+      </section>
+
+      <section aria-labelledby="states-title" className="preview-section">
+        <h2 id="states-title">Page-level state patterns</h2>
+        <p>
+          These are synthetic verification states, not production incidents, provider status, or
+          product availability claims.
+        </p>
+        <div className="preview-state-grid">
+          <EmptyState
+            message="No synthetic examples are in this bounded collection. Choose a local section to continue."
+            primaryAction={{
+              href: createLocalActionHref("#fields"),
+              kind: "link",
+              label: "Review synthetic fields",
+            }}
+            title="Nothing here yet"
+            titleAs="h3"
+            titleId={createUiControlId("preview-empty-title")}
+          />
+          <ErrorState
+            message="A synthetic interruption prevents this example from continuing. No private or raw error details are shown."
+            primaryAction={{
+              href: createLocalActionHref("#actions-title"),
+              kind: "link",
+              label: "Return to actions",
+            }}
+            title="Unable to show this example"
+            titleAs="h3"
+            titleId={createUiControlId("preview-error-state-title")}
+          />
+          <OfflineState
+            message="This synthetic example represents an apparent connection loss without promising caching, saving, or synchronization."
+            title="The device appears offline"
+            titleAs="h3"
+            titleId={createUiControlId("preview-offline-title")}
+          />
+          <ProviderUnavailableState
+            message="A generic supporting service did not respond in this synthetic example. No provider or internal detail is exposed."
+            primaryAction={{
+              href: createLocalActionHref("#preview-title"),
+              kind: "link",
+              label: "Return to preview start",
+            }}
+            title="This example is temporarily unavailable"
+            titleAs="h3"
+            titleId={createUiControlId("preview-provider-title")}
           />
         </div>
       </section>

@@ -143,6 +143,17 @@ describe("package architecture policy", () => {
     );
   });
 
+  it("permits the reviewed semantic state-pattern hosts without widening UI capabilities", () => {
+    const files = baseline();
+    files.push({
+      path: "packages/ui/src/safe-state.tsx",
+      source:
+        "export const safeState = () => <section><h1>One</h1><h2>Two</h2><h3>Three</h3><h4>Four</h4><h5>Five</h5><h6>Six</h6><p>Message</p></section>;",
+    });
+
+    expect(auditArchitecture(files)).toEqual([]);
+  });
+
   it.each([
     ['export const Unsafe = () => <img src="https://tracker.invalid/pixel" />;', false, true],
     [

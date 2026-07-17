@@ -9,6 +9,7 @@ import {
   type Locale,
   type PublicPageId,
 } from "../_i18n/routing";
+import { ConnectionNotice } from "./connection-notice";
 
 type PublicSiteFrameProps = Readonly<{
   brandName: string;
@@ -99,6 +100,8 @@ export function PublicSiteFrame({
       <noscript>
         <p className="no-script-note">{messages.accessibility.noScript}</p>
       </noscript>
+
+      <ConnectionNotice locale={locale} />
 
       {children}
 
