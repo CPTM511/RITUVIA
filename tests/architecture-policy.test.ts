@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   auditArchitecture,
+  expectedWebDatabaseCompositionSource,
   expectedWebFeatureFlagCompositionSource,
   type RepositoryArchitectureFile,
 } from "../scripts/architecture-policy.js";
@@ -426,6 +427,10 @@ describe("package architecture policy", () => {
         source: "export const getWebRuntimeConfiguration = () => ({ databaseUrl: 'db' });",
       },
       {
+        path: "apps/web/server/database.ts",
+        source: expectedWebDatabaseCompositionSource,
+      },
+      {
         path: "apps/web/server/feature-flags.ts",
         source: expectedWebFeatureFlagCompositionSource,
       },
@@ -462,6 +467,7 @@ describe("package architecture policy", () => {
       ),
     ).toBe(false);
     expect(findings.some(({ rule }) => rule === "feature-flag-composition-boundary")).toBe(false);
+    expect(findings.some(({ rule }) => rule === "web-database-composition-boundary")).toBe(false);
 
     replaceSource(
       files,
@@ -469,6 +475,13 @@ describe("package architecture policy", () => {
       'import "server-only"; import { createFeatureFlagEvaluator as create } from "@rituvia/config/feature-flags"; export const loadWebFeatureFlagEvaluator = async (database: unknown) => create(database);',
     );
     expect(rules(files)).toContain("feature-flag-composition-boundary");
+
+    replaceSource(
+      files,
+      "apps/web/server/database.ts",
+      `${expectedWebDatabaseCompositionSource}\nexport const callerSupplied = (database: unknown) => database;\n`,
+    );
+    expect(rules(files)).toContain("web-database-composition-boundary");
 
     replaceSource(
       files,

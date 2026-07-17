@@ -135,7 +135,8 @@ effective until this register links it. Do not rewrite historical rationale; sup
   cleanup task, required country/locale scope, approval gate where applicable, and literal `off`
   default. Evaluation uses a server-owned clock and the highest effective version; a later-created
   emergency version may take effect before an already scheduled lower version. PostgreSQL objects
-  belong to a non-superuser migrator, runtime is read-only and non-owner, and a separate control
+  belong to a non-superuser migrator, runtime access to `feature_flag_version` is read-only and
+  non-owner, and a separate control
   login can only read and append versions through forced RLS. Enabled rows require the exact
   registry key, gate prefix, and scope shape; no migration seeds one, and control access remains an
   owner-governed capability rather than an application endpoint. Registry-version-qualified reads
@@ -198,4 +199,10 @@ effective until this register links it. Do not rewrite historical rationale; sup
 
 - **Decision:** Keep closed empty, error, offline, and provider-unavailable presentation patterns in `@rituvia/ui`, while applications own localized copy, truthful classification, announcement/focus timing, and idempotent recovery. Use the existing public shell as the first real consumer without changing its empty safe-off 404 contract or inventing a provider/PWA capability.
 - **Reason:** Separating presentation from operational classification prevents raw error/private-data leakage, false availability claims, unsafe automatic retries, public debug surfaces, and component-library coupling to providers or domains.
+- **Date:** 2026-07-17
+
+### [D-029 — Privacy-minimal anonymous identity and per-purpose consent ledger](records/decisions/D-029.md)
+
+- **Decision:** Issue a 256-bit opaque anonymous-session cookie whose database representation is only a versioned digest; use database-clock fixed expiry from required owner-policy configuration, bounded full-ledger validation of append-only consent history independently per purpose and notice version, exact same-origin/idempotent empty-body HTTP issuance, a privacy-minimal global capacity gate, runtime revocation, and runtime-attested least-privilege identity persistence. D-021's read-only runtime scope applies to `feature_flag_version`; identity uses a separate exact writer capability.
+- **Reason:** Same-device anonymous continuity must not become fingerprinting, sliding indefinite retention, optional-consent coercion, mutable audit history, token leakage, or a privileged generic database capability.
 - **Date:** 2026-07-17

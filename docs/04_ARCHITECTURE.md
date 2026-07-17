@@ -227,9 +227,10 @@ Flags must have:
 The M0 raw registry capability lives only on `@rituvia/config/feature-flags`; architecture policy
 allows that subpath only in `apps/web/server/feature-flags.ts`. The general server configuration
 entry and client projection expose no raw parser, factory, flag key, state, evaluator, or persisted
-version. The zero-argument Web loader obtains the reviewed runtime URL internally, creates and
-closes the database client itself, and therefore cannot accept a caller-supplied snapshot or
-Prisma-like object. Before reading, it performs a live privilege attestation and fails closed unless
+version. The zero-argument Web loader obtains a process-level bounded database client from the
+reviewed server-only composition boundary and therefore cannot accept a caller-supplied snapshot or
+Prisma-like object. Feature-flag and anonymous-identity access share that client; neither creates or
+disconnects a pool per request. Before reading, the loader performs a live privilege attestation and fails closed unless
 the connected role is a read-only, non-owner, non-DDL, non-superuser identity for the registry
 table with the same authenticated session/current identity and no role-membership path to an owner,
 writer, or privileged identity. The attestation follows all role-membership paths, including

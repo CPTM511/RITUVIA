@@ -33,9 +33,10 @@ there are no blanket exceptions.
 The active CI database job starts a fresh digest-pinned PostgreSQL 17 service with data checksums and
 SCRAM host authentication. A repository script accepts only the exact GitHub Actions run identity,
 derived ephemeral password, loopback host, port 5432, database name, and roles. The service bootstrap
-administrator creates a non-superuser migrator owner, a read-only runtime login, and an append-only
-feature-flag control login. Prisma migration/seed/status/drift use the migrator; runtime and control
-receive only explicit post-migration grants. This isolated CI path does not
+administrator creates a non-superuser migrator owner, a runtime login, and an append-only
+feature-flag control login. Prisma migration/seed/status/drift use the migrator; runtime receives
+read-only feature-flag access plus exact identity insert/lifecycle-column capabilities, and control
+receives only explicit feature-flag post-migration grants. This isolated CI path does not
 accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
 `DATABASE_URL`.
 
@@ -68,7 +69,38 @@ v1/v2 history to coexist during rolling upgrade and rollback. A key remains a fo
 until its cleanup task is Done; only a later registry version removes it. Dropping the table or
 policies remains a destructive migration requiring backup evidence and owner approval.
 
-Logical dumps run as read-only runtime with explicit row security and INSERT-form data. Restore runs
+Logical dumps run through the runtime's exact table-read capability with explicit row security and
+INSERT-form data. Restore runs
 as migrator into an empty isolated database and reapplies grants. The local test preserves non-empty
 off, approved-on, and cross-registry history; compares restored rows exactly; and reruns policy,
 constraint, owner, DDL/TRUNCATE, and append-only checks.
+
+## RIT-020 anonymous identity classification
+
+The expand-only identity migration creates `anonymous_subject`, `anonymous_session`,
+`consent_record`, and the singleton `anonymous_session_issuance_gate`. It creates no user row, token,
+consent, enabled feature, or legal-policy value.
+
+| Data | Classification | Baseline handling |
+| --- | --- | --- |
+| Anonymous subject/session UUIDs and timestamps | Personal pseudonymous | Fixed configured expiry; no email, IP, user-agent, device ID, or fingerprint |
+| Token hash and hash version | Security | SHA-256 of 32 random bytes; plaintext token exists only at the cookie boundary |
+| Issuance/idempotency and canonical request hashes | Security/internal | Fixed-size digests only; no raw idempotency key or request body |
+| Expiry policy version | Internal policy provenance | Required and immutable for issued subject/session |
+| Consent purpose, notice version, locale, decision, source, sequence, time | Personal compliance record | Append-only per purpose; no notice copy or private/free text |
+| Withdrawal link | Personal compliance record | Restricted to the same subject and purpose; historical row is not mutated |
+| Global issuance window/count | Internal security | Singleton aggregate with no subject, network, device, or content dimension |
+
+The anonymous-session TTL is required runtime configuration and intentionally absent from the
+migration. Missing configuration disables issuance. Selecting a production retention period,
+legal notice, or deletion policy remains an owner/legal gate; the database schema does not imply
+that approval.
+
+The application runtime receives exact reads and inserts plus only `last_seen_at`, `revoked_at`, and
+issuance-window/count updates. It cannot mutate expiry, subject ownership, token hashes, consent
+history, or use delete/truncate/DDL. The migration uses restrictive foreign keys and no cascade.
+
+Rollback is expand-only: disable the route/configuration and revert application/grant usage while
+leaving additive tables intact. Removing tables or records requires a later destructive migration,
+backup/restore evidence, retention review, and explicit owner approval. Logical backup/restore tests
+preserve non-empty session and consent history and re-attest the restored runtime privileges.

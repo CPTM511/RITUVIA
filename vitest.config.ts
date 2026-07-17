@@ -15,6 +15,7 @@ export default defineConfig({
         new URL("./packages/config/src/feature-flags.ts", import.meta.url),
       ),
       "@rituvia/db": fileURLToPath(new URL("./packages/db/src/index.ts", import.meta.url)),
+      "@rituvia/domain": fileURLToPath(new URL("./packages/domain/src/index.ts", import.meta.url)),
       "@rituvia/ui": fileURLToPath(new URL("./packages/ui/src/index.ts", import.meta.url)),
       "server-only": fileURLToPath(new URL("./tests/server-only-stub.ts", import.meta.url)),
     },

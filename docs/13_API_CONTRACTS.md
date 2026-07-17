@@ -43,6 +43,15 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 ### Session/account
 
 - `POST /api/v1/anonymous/session`
+  - Exact same-origin POST with no query, body, content type, or alternate framework
+    representation; requires a high-entropy `Idempotency-Key`.
+  - Returns `204` and creates or resumes only through the host-only
+    `__Host-rituvia-anonymous-session` cookie. It never returns subject/session IDs or token
+    material in a body.
+  - A created cookie is `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, has no `Domain`, and uses
+    the database-authoritative absolute expiry. Resume does not rotate or extend it.
+  - Disabled/unconfigured storage fails closed; rejected, conflicting, capacity-limited, and
+    unavailable requests use bounded no-store/noindex responses and never leak persistence detail.
 - `POST /api/v1/auth/account-merge`
 - `GET /api/v1/me`
 - `GET /api/v1/me/sessions`

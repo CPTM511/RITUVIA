@@ -10,6 +10,7 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/en/privacy.html",
   "apps/web/.next/server/app/en/safety.html",
   "apps/web/.next/server/app/icon.svg.body",
+  "apps/web/.next/server/app/api/v1/anonymous/session/route.js",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
@@ -21,12 +22,16 @@ const requiredArtifacts = [
   "packages/config/dist/server.js",
   "packages/db/dist/client.d.ts",
   "packages/db/dist/client.js",
+  "packages/db/dist/anonymous-identity.d.ts",
+  "packages/db/dist/anonymous-identity.js",
   "packages/db/dist/feature-flags.d.ts",
   "packages/db/dist/feature-flags.js",
   "packages/db/dist/index.d.ts",
   "packages/db/dist/index.js",
   "packages/domain/dist/index.d.ts",
   "packages/domain/dist/index.js",
+  "packages/domain/dist/identity.d.ts",
+  "packages/domain/dist/identity.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
@@ -63,12 +68,19 @@ const observabilityWorkerModule = await import(
 );
 const uiModule = await import(pathToFileURL(`${process.cwd()}/packages/ui/dist/index.js`));
 
-if (Object.keys(domainModule).length !== 0) {
-  throw new Error("The empty domain boundary emitted unexpected runtime exports.");
+if (
+  typeof domainModule.parseAnonymousSubjectId !== "function" ||
+  typeof domainModule.parsePersistedAnonymousSessionV1 !== "function" ||
+  typeof domainModule.resolveAnonymousSessionState !== "function" ||
+  typeof domainModule.allowsConsentPurpose !== "function"
+) {
+  throw new Error("The domain build omitted its anonymous identity and consent contracts.");
 }
 
 if (
   typeof databaseModule.assertDatabaseUrl !== "function" ||
+  typeof databaseModule.assertAnonymousIdentityRuntimeDatabasePrivileges !== "function" ||
+  typeof databaseModule.createAnonymousIdentityService !== "function" ||
   typeof databaseModule.assertFeatureFlagRuntimeDatabasePrivileges !== "function" ||
   typeof databaseModule.createDatabaseClient !== "function" ||
   typeof databaseModule.readFeatureFlagVersions !== "function"

@@ -43,7 +43,7 @@ vi.mock("../apps/web/config/server", () => ({
 import { loadWebFeatureFlagEvaluator } from "../apps/web/server/feature-flags.js";
 
 describe("Web feature-flag composition boundary", () => {
-  it("owns its runtime database source and evaluates a control-plane-approved scope", async () => {
+  it("reuses its runtime database source and evaluates a control-plane-approved scope", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-17T12:00:00.000Z"));
     try {
@@ -55,7 +55,7 @@ describe("Web feature-flag composition boundary", () => {
         harness.database,
       );
       expect(harness.readFeatureFlagVersions).toHaveBeenCalledWith(harness.database, 1);
-      expect(harness.database.$disconnect).toHaveBeenCalledOnce();
+      expect(harness.database.$disconnect).not.toHaveBeenCalled();
       expect(evaluator.evaluate("payments.fiat_checkout", { countryCode: "US" })).toMatchObject({
         enabled: true,
         reason: "enabled",

@@ -31,9 +31,17 @@ export const buildEnvironmentVariables = Object.freeze([
   ...brandEnvironmentVariables,
 ] as const);
 
+const anonymousSessionEnvironmentVariables = Object.freeze([
+  "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
+  "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
+  "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
+  "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+] as const);
+
 export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
+  ...anonymousSessionEnvironmentVariables,
 ] as const);
 
 export type DeploymentEnvironment = "local" | "preview" | "production" | "staging";
@@ -46,10 +54,18 @@ export type BuildConfiguration = Readonly<{
 }>;
 
 export type ServerConfiguration = Readonly<{
+  anonymousSessionPolicy: AnonymousSessionPolicyConfiguration | undefined;
   brand: BuildConfiguration["brand"];
   client: ClientConfiguration;
   databaseUrl: string | undefined;
   deploymentEnvironment: DeploymentEnvironment;
+}>;
+
+export type AnonymousSessionPolicyConfiguration = Readonly<{
+  issuanceLimit: number;
+  issuanceWindowSeconds: number;
+  policyVersion: string;
+  ttlSeconds: number;
 }>;
 
 const normalizeEnvironmentValue = (value: string | undefined) => {
@@ -92,7 +108,80 @@ const databaseUrlSchema = z
 
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
+  RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: z
+    .string()
+    .regex(/^[1-9][0-9]{0,5}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100_000))
+    .optional(),
+  RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: z
+    .string()
+    .regex(/^[1-9][0-9]{0,3}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(3_600))
+    .optional(),
+  RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: z
+    .string()
+    .regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u)
+    .max(100)
+    .optional(),
+  RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: z
+    .string()
+    .regex(/^[1-9][0-9]{0,7}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(34_560_000))
+    .optional(),
 });
+
+const parseAnonymousSessionPolicy = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): AnonymousSessionPolicyConfiguration | undefined => {
+  const values = {
+    RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: parsed.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT,
+    RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS:
+      parsed.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS,
+    RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: parsed.RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION,
+    RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: parsed.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS,
+  } as const;
+  const present = Object.values(values).filter((value) => value !== undefined).length;
+  if (present === 0) return undefined;
+  if (present !== anonymousSessionEnvironmentVariables.length) {
+    const missing = [
+      ...(values.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT === undefined
+        ? ["RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT"]
+        : []),
+      ...(values.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS === undefined
+        ? ["RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS"]
+        : []),
+      ...(values.RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION === undefined
+        ? ["RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION"]
+        : []),
+      ...(values.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS === undefined
+        ? ["RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS"]
+        : []),
+    ];
+    throw new ConfigurationError(
+      "server",
+      missing.map((key) => ({ code: "missing", key })),
+    );
+  }
+  const policyVersion = values.RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION;
+  if (
+    policyVersion === undefined ||
+    (deploymentEnvironment === "production" && !policyVersion.startsWith("own-004."))
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION" },
+    ]);
+  }
+  return Object.freeze({
+    issuanceLimit: values.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT!,
+    issuanceWindowSeconds: values.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS!,
+    policyVersion,
+    ttlSeconds: values.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS!,
+  });
+};
 
 const assertNoUnexpectedPublicEnvironment = (environment: RawEnvironment) => {
   const publicKeys = Object.keys(environment)
@@ -206,9 +295,22 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const build = parseBuildConfiguration(environment);
   const server = parseConfiguration("server", serverEnvironmentSchema, {
     DATABASE_URL: normalizeEnvironmentValue(environment.DATABASE_URL),
+    RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: normalizeEnvironmentValue(
+      environment.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT,
+    ),
+    RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS,
+    ),
+    RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: normalizeEnvironmentValue(
+      environment.RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION,
+    ),
+    RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS,
+    ),
   });
 
   return Object.freeze({
+    anonymousSessionPolicy: parseAnonymousSessionPolicy(server, build.deploymentEnvironment),
     brand: build.brand,
     client: build.client,
     databaseUrl: server.DATABASE_URL,

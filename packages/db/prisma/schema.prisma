@@ -40,3 +40,67 @@ model FeatureFlagVersion {
   @@index([registryVersion, flagKey, effectiveAt], map: "feature_flag_version_lookup_idx")
   @@map("feature_flag_version")
 }
+
+model AnonymousSubject {
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiryPolicyVersion String             @map("expiry_policy_version") @db.VarChar(100)
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt           DateTime           @map("expires_at") @db.Timestamptz(6)
+  lastSeenAt          DateTime           @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  sessions            AnonymousSession[]
+  consentRecords      ConsentRecord[]
+
+  @@index([expiresAt, id], map: "anonymous_subject_expiry_idx")
+  @@map("anonymous_subject")
+}
+
+model AnonymousSession {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId   String           @map("anonymous_subject_id") @db.Uuid
+  tokenHash            Bytes            @unique(map: "anonymous_session_token_hash_key") @map("token_hash")
+  tokenHashVersion     Int              @default(1) @map("token_hash_version") @db.SmallInt
+  issuanceKeyHash      Bytes            @unique(map: "anonymous_session_issuance_key_hash_key") @map("issuance_key_hash")
+  canonicalRequestHash Bytes            @map("canonical_request_hash")
+  expiryPolicyVersion  String           @map("expiry_policy_version") @db.VarChar(100)
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt            DateTime         @map("expires_at") @db.Timestamptz(6)
+  lastSeenAt           DateTime         @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  revokedAt            DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  anonymousSubject     AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([anonymousSubjectId, expiresAt, id], map: "anonymous_session_subject_expiry_idx")
+  @@index([expiresAt, id], map: "anonymous_session_expiry_idx")
+  @@map("anonymous_session")
+}
+
+model ConsentRecord {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId   String           @map("anonymous_subject_id") @db.Uuid
+  purpose              String           @db.VarChar(64)
+  sequence             Int
+  noticeVersion        String           @map("notice_version") @db.VarChar(100)
+  locale               String           @db.VarChar(35)
+  decision             String           @db.VarChar(16)
+  source               String           @db.VarChar(40)
+  recordedAt           DateTime         @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  withdrawsRecordId    String?          @map("withdraws_record_id") @db.Uuid
+  idempotencyKeyHash   Bytes            @map("idempotency_key_hash")
+  canonicalRequestHash Bytes            @map("canonical_request_hash")
+  anonymousSubject     AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  withdrawsRecord      ConsentRecord?   @relation("ConsentWithdrawal", fields: [withdrawsRecordId, anonymousSubjectId, purpose], references: [id, anonymousSubjectId, purpose], onDelete: Restrict, onUpdate: Restrict)
+  withdrawnByRecords   ConsentRecord[]  @relation("ConsentWithdrawal")
+
+  @@unique([id, anonymousSubjectId, purpose], map: "consent_record_identity_key")
+  @@unique([anonymousSubjectId, purpose, sequence], map: "consent_record_subject_purpose_sequence_key")
+  @@unique([anonymousSubjectId, idempotencyKeyHash], map: "consent_record_subject_idempotency_key")
+  @@index([anonymousSubjectId, purpose, sequence(sort: Desc)], map: "consent_record_current_idx")
+  @@map("consent_record")
+}
+
+model AnonymousSessionIssuanceGate {
+  id              Int      @id @default(1) @db.SmallInt
+  windowStartedAt DateTime @map("window_started_at") @db.Timestamptz(6)
+  issuedCount     Int      @map("issued_count")
+
+  @@map("anonymous_session_issuance_gate")
+}

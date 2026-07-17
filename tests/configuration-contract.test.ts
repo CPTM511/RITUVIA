@@ -135,6 +135,7 @@ describe("source configuration boundaries", () => {
       path.join(root, "apps/web/server/feature-flags.ts"),
       "utf8",
     );
+    const databaseAdapter = await readFile(path.join(root, "apps/web/server/database.ts"), "utf8");
 
     expect(serverEntry.startsWith('import "server-only";')).toBe(true);
     expect(clientEntry).not.toMatch(/process\.env|config\/server/);
@@ -145,9 +146,12 @@ describe("source configuration boundaries", () => {
     );
     expect(featureFlagAdapter).toContain('from "@rituvia/config/feature-flags"');
     expect(featureFlagAdapter).toContain("assertFeatureFlagRuntimeDatabasePrivileges");
-    expect(featureFlagAdapter).toContain("createDatabaseClient");
-    expect(featureFlagAdapter).toContain("getWebRuntimeConfiguration");
-    expect(featureFlagAdapter).toContain("database.$disconnect()");
+    expect(featureFlagAdapter).toContain("loadWebDatabase");
+    expect(featureFlagAdapter).not.toContain("createDatabaseClient");
+    expect(featureFlagAdapter).not.toContain("database.$disconnect()");
+    expect(databaseAdapter).toContain("createDatabaseClient");
+    expect(databaseAdapter).toContain("getWebRuntimeConfiguration");
+    expect(databaseAdapter).toContain("let webDatabase");
     expect(featureFlagAdapter).toMatch(
       /export const loadWebFeatureFlagEvaluator\s*=\s*async\s*\(\s*\)/,
     );

@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M1 local implementation is complete through RIT-015 while RIT-016 and manual assistive-technology exit evidence remain outstanding and M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI and resilient-state foundations, the finite SEO crawl/index contract, the accessibility/pseudolocale/connection-state browser gate, and the server-side safe-off delivery boundary are locally verified. Production activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through RIT-020 while M1 RIT-016 and manual assistive-technology exit evidence remain outstanding and M0 hosted CI evidence remains owner-gated; the privacy-minimal anonymous subject/session and per-purpose consent baseline now joins the locally verified English shell, shared UI/resilient states, finite crawl contract, browser gate, and server-side safe-off delivery boundary. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -31,17 +31,20 @@
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
 - Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
+- Expand-only anonymous identity persistence with fixed-expiry subjects/sessions, SHA-256-only bearer-token storage, request-digest idempotency, append-only per-purpose consent and withdrawal history, a privacy-minimal database-atomic global issuance gate, restrictive foreign keys, exact runtime column privileges, and non-empty logical restore evidence.
+- Exact same-origin `POST /api/v1/anonymous/session` with empty request/body response, safe Problem Details, server-side safe-off routing, high-entropy idempotency, and a host-only Secure/HttpOnly/SameSite=Strict fixed-expiry cookie; missing policy/database configuration refuses issuance.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 479 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 522 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
 
 ## What does not exist yet
 
 - Implemented readings, accounts, payments, legal terms/policies, rituals, or other end-to-end product flows; the reviewed English public pages are product explanations and remain server-side safe-off until explicitly activated through the existing control plane.
+- An approved production anonymous-session retention duration, legal consent notice, consent/privacy-control UI, per-client abuse strategy, account merge, anonymous export/deletion workflow, or private-resource authorization surface; the current session policy is required configuration and safe-off when absent.
 - A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
@@ -79,16 +82,17 @@ remains above and task history stays in Git and durable records.
 
 The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and
 pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across seven workspaces,
-479 unit/contract tests in 41 files, configuration-boundary integration, real PostgreSQL integration,
+522 unit/contract tests in 44 files, configuration-boundary integration, real PostgreSQL integration,
 and production builds pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum evidence.
 
-The build verifier checks 31 artifacts and narrowed exports, including exact UI stylesheet parity,
-all four canonical pages, the icon, and maximum Web output of 6,055 B gzip HTML, 5,284 B gzip CSS,
-214,217 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 860 B headroom.
+The build verifier checks 36 artifacts and narrowed exports, including exact UI stylesheet parity,
+all four canonical pages, the anonymous-session route, identity domain/database exports, the icon,
+and maximum Web output of 6,060 B gzip HTML, 5,284 B gzip CSS, 214,267 B gzip JavaScript, and 356 B
+raw icon. The 6 KiB CSS ceiling leaves 860 B headroom.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 97 active source files across seven modules and keeps module,
+The architecture verifier audits 107 active source files across seven modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 The production Web matrix proves restrictive browser headers, server correlation, safe-off behavior,
@@ -104,9 +108,21 @@ verifies all four synthetic state variants at 320px, RTL, and dark mode with zer
 The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
 seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,
 guarded reset, non-empty dump/restore, transaction/race behavior, migration drift checks, and DDL
-denial. Repository architecture, CI/toolchain, historical migration, current-tree/full-history secret,
+denial. The RIT-020 path additionally proves no plaintext token storage/logging, fixed
+expiry/runtime revocation, bounded full-ledger consent validation and withdrawal, eight-way
+idempotency races, privacy-minimal global capacity, injected privilege-drift denial, exact identity
+column privileges, and exact restored-history behavior and attestation. Repository architecture,
+CI/toolchain, historical migration, current-tree/full-history secret,
 actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent
-accessibility, architecture, localization, and security review found no remaining runtime P0/P1/P2.
+accessibility, architecture, localization, and security review found no remaining local-slice P0/P1;
+the intentionally global issuance gate and required pre-gate catalog attestation remain explicit
+production-abuse/load P2 release risks and are not accepted as complete production admission
+controls. Feature-flag and anonymous-identity access now share one bounded database pool per Web
+process instead of either path creating one per request.
+Playwright CLI against the local production artifact verifies 204 create/resume, redacted exact
+cookie attributes, empty/no-store/noindex responses, query rejection, public navigation, 320px
+reflow, and skip-link focus; its temporary local shell activation was appended safe-off afterward
+and the token-bearing network trace was removed.
 Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and
 Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or
 owner-side required-check protection is claimed.

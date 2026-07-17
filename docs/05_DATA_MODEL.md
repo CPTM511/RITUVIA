@@ -28,11 +28,14 @@
 #### `anonymous_subject`
 
 - `id` UUID.
-- `created_at`, `expires_at`, `last_seen_at`.
+- `created_at`, fixed `expires_at`, `last_seen_at`, and the approved expiry-policy version.
 - `country_policy_version_id` nullable.
-- `consent_state_id`.
 - `merged_user_id` nullable.
 - `merge_idempotency_key` nullable unique.
+
+Current optional-consent state is derived independently for each purpose from the highest valid
+append-only `consent_record` sequence. There is no singular mutable consent pointer on the
+anonymous subject; absence, a stale notice version, denial, or withdrawal is not consent.
 
 Do not store fingerprinting data beyond narrowly justified abuse controls.
 
@@ -53,7 +56,10 @@ Store provider subject references, session hashes/metadata, and roles. Never sto
 
 #### `consent_record`
 
-Append-only record of purpose, versioned copy, locale, state, source, timestamp, and withdrawal.
+Append-only record of purpose, versioned notice, locale, decision, source, sequence, timestamp,
+idempotency digest, canonical request digest, and same-subject/same-purpose withdrawal reference.
+The baseline never stores notice copy or treats the strictly necessary session cookie as optional
+consent.
 
 ### profile
 

@@ -24,6 +24,10 @@ const knownEnvironmentVariables = [
   "BRAND_SOCIAL_HANDLES",
   "BRAND_ASSET_MANIFEST",
   "DATABASE_URL",
+  "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
+  "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
+  "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
+  "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
 ];
 
 const identifier = randomUUID().replaceAll("-", "");
@@ -34,6 +38,7 @@ const invalidCanary = `invalid-database-${identifier}`;
 const forgedRequestCanary = `forged-request-${identifier}`;
 const forgedTraceCanary = `forged-trace-${identifier}`;
 const privateQueryCanary = `private-query-${identifier}`;
+const anonymousSessionTokenCanary = "a".repeat(43);
 const databaseUrl = `postgresql://local:${databaseCanary}@127.0.0.1:5432/app`;
 const secretCanaries = [
   senderCanary,
@@ -251,6 +256,7 @@ const fetchBuiltWeb = async (managed, port, pathname, options = {}) => {
         html: await response.text(),
         location: response.headers.get("location"),
         requestId: response.headers.get("x-request-id"),
+        setCookie: response.headers.get("set-cookie"),
         status: response.status,
         xRobotsTag: response.headers.get("x-robots-tag"),
       };
@@ -357,6 +363,26 @@ export const loadWebFeatureFlagEvaluator = async () => ({
 });
 `,
   );
+  await writeFile(
+    path.join(temporaryWebRoot, "server/anonymous-session.ts"),
+    `import "server-only";
+
+export class WebAnonymousSessionError extends Error {
+  readonly code: "conflict" | "rate_limited" | "unavailable" = "unavailable";
+  readonly retryAfterSeconds: number | undefined = undefined;
+}
+
+export const ensureWebAnonymousSession = async (_input: unknown) => ({
+  context: {
+    expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    sessionId: "synthetic-session-id",
+    subjectId: "synthetic-subject-id",
+  },
+  kind: "created",
+  token: "${anonymousSessionTokenCanary}",
+});
+`,
+  );
 
   const validEnvironment = createEnvironment({
     APP_ENV: "production",
@@ -367,6 +393,10 @@ export const loadWebFeatureFlagEvaluator = async () => ({
     BRAND_SOCIAL_HANDLES: "{}",
     BRAND_SUPPORT_EMAIL: "support@example.test",
     BRAND_TAGLINE: "Synthetic test tagline",
+    RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "100",
+    RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
+    RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.synthetic-session-policy.v1",
+    RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "3600",
   });
   await assertSuccessfulCommand(
     process.execPath,
@@ -409,6 +439,66 @@ export const loadWebFeatureFlagEvaluator = async () => ({
   for (const publicPage of publicPages) assertHttpBoundary(publicPage, webProcess.getOutput());
   if (publicPages.some(({ xRobotsTag }) => xRobotsTag !== null)) {
     fail("A production canonical HTML response was incorrectly blocked from indexing.");
+  }
+  const anonymousSession = await fetchBuiltWeb(webProcess, port, "/api/v1/anonymous/session", {
+    headers: {
+      "idempotency-key": "synthetic_browser_request_key_1234",
+      origin: "https://example.test",
+      "sec-fetch-site": "same-origin",
+    },
+    method: "POST",
+    redirect: "manual",
+  });
+  if (
+    anonymousSession.status !== 204 ||
+    anonymousSession.html !== "" ||
+    anonymousSession.cacheControl !== "private, no-store, max-age=0" ||
+    anonymousSession.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    !anonymousSession.setCookie?.includes(
+      `__Host-rituvia-anonymous-session=${anonymousSessionTokenCanary}`,
+    ) ||
+    !anonymousSession.setCookie.includes("Path=/") ||
+    !anonymousSession.setCookie.includes("HttpOnly") ||
+    !anonymousSession.setCookie.includes("Secure") ||
+    !anonymousSession.setCookie.includes("SameSite=strict") ||
+    anonymousSession.setCookie.includes("Domain=") ||
+    webProcess.getOutput().includes(anonymousSessionTokenCanary)
+  ) {
+    fail("The production anonymous-session HTTP boundary violated its private cookie contract.");
+  }
+  const rejectedAnonymousSessionRequests = await Promise.all([
+    fetchBuiltWeb(webProcess, port, "/api/v1/anonymous/session", {
+      headers: {
+        "idempotency-key": "synthetic_browser_request_key_5678",
+        origin: "https://foreign.example",
+      },
+      method: "POST",
+      redirect: "manual",
+    }),
+    fetchBuiltWeb(webProcess, port, "/api/v1/anonymous/session?private=canary", {
+      headers: {
+        "idempotency-key": "synthetic_browser_request_key_9012",
+        origin: "https://example.test",
+      },
+      method: "POST",
+      redirect: "manual",
+    }),
+    fetchBuiltWeb(webProcess, port, "/api/v1/anonymous/session", {
+      method: "OPTIONS",
+      redirect: "manual",
+    }),
+  ]);
+  if (
+    rejectedAnonymousSessionRequests[0]?.status !== 403 ||
+    rejectedAnonymousSessionRequests
+      .slice(1)
+      .some(({ html, status }) => status !== 404 || html !== "") ||
+    rejectedAnonymousSessionRequests.some(
+      ({ cacheControl, xRobotsTag }) =>
+        !hasNoStore(cacheControl) || xRobotsTag !== "noindex, nofollow, noarchive",
+    )
+  ) {
+    fail("The production anonymous-session HTTP boundary accepted an unreviewed request variant.");
   }
   const robots = await fetchBuiltWeb(webProcess, port, "/robots.txt", { redirect: "manual" });
   const sitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
@@ -662,13 +752,30 @@ export const loadWebFeatureFlagEvaluator = async () => ({
   const disabledSitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
     redirect: "manual",
   });
+  const disabledAnonymousSession = await fetchBuiltWeb(
+    webProcess,
+    port,
+    "/api/v1/anonymous/session",
+    {
+      headers: {
+        "idempotency-key": "synthetic_disabled_request_key_1234",
+        origin: "https://example.test",
+      },
+      method: "POST",
+      redirect: "manual",
+    },
+  );
   if (
     disabledRobots.status !== 200 ||
     disabledRobots.html !== "User-agent: *\nDisallow: /\n" ||
     disabledRobots.xRobotsTag !== "noindex, nofollow, noarchive" ||
     disabledSitemap.status !== 404 ||
     disabledSitemap.html !== "" ||
-    disabledSitemap.xRobotsTag !== "noindex, nofollow, noarchive"
+    disabledSitemap.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    disabledAnonymousSession.status !== 404 ||
+    disabledAnonymousSession.html !== "" ||
+    disabledAnonymousSession.setCookie !== null ||
+    !hasNoStore(disabledAnonymousSession.cacheControl)
   ) {
     fail("The disabled public shell exposed a crawl inventory.");
   }

@@ -38,6 +38,8 @@ const CONTROL_ROLE = "rituvia_config_writer";
 const MIGRATOR_ROLE = "rituvia_migrator";
 const FLAG_READER_ROLE = "rituvia_feature_flag_reader";
 const FLAG_WRITER_ROLE = "rituvia_feature_flag_writer";
+const IDENTITY_READER_ROLE = "rituvia_identity_reader";
+const IDENTITY_WRITER_ROLE = "rituvia_identity_writer";
 const DEVELOPMENT_DATABASE = "rituvia_local";
 const SUPPORTED_POSTGRES_MAJORS = new Set([17, 18]);
 const TEST_DATABASE_PATTERN = /^rituvia_test_[a-f0-9]{24}$/;
@@ -796,9 +798,18 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}`,
     );
-    await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${APP_ROLE}`);
+    const foundationTables = await admin.query(
+      `SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS migrations,
+              to_regclass('public.seed_manifest') IS NOT NULL AS seed_manifest`,
+    );
+    if (
+      foundationTables.rows[0]?.migrations === true &&
+      foundationTables.rows[0]?.seed_manifest === true
+    ) {
+      await admin.query(`GRANT SELECT ON TABLE "_prisma_migrations", seed_manifest TO ${APP_ROLE}`);
+    }
     const featureFlagTable = await admin.query(
       "SELECT to_regclass('public.feature_flag_version') IS NOT NULL AS present",
     );
@@ -806,11 +817,34 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
       await admin.query(`GRANT INSERT ON TABLE feature_flag_version TO ${FLAG_WRITER_ROLE}`);
     }
+    const identityTables = await admin.query(
+      "SELECT to_regclass('public.anonymous_subject') IS NOT NULL AS present",
+    );
+    if (identityTables.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT ON TABLE anonymous_subject, anonymous_session, consent_record, anonymous_session_issuance_gate TO ${IDENTITY_READER_ROLE}`,
+      );
+      await admin.query(`GRANT INSERT ON TABLE anonymous_subject TO ${IDENTITY_WRITER_ROLE}`);
+      await admin.query(
+        `GRANT UPDATE (last_seen_at) ON TABLE anonymous_subject TO ${IDENTITY_WRITER_ROLE}`,
+      );
+      await admin.query(`GRANT INSERT ON TABLE anonymous_session TO ${IDENTITY_WRITER_ROLE}`);
+      await admin.query(
+        `GRANT UPDATE (last_seen_at, revoked_at) ON TABLE anonymous_session TO ${IDENTITY_WRITER_ROLE}`,
+      );
+      await admin.query(`GRANT INSERT ON TABLE consent_record TO ${IDENTITY_WRITER_ROLE}`);
+      await admin.query(
+        `GRANT INSERT ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (window_started_at, issued_count) ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
+      );
+    }
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public GRANT SELECT ON TABLES TO ${APP_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -824,12 +858,18 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
   try {
     await ensureGroupRole(admin, FLAG_READER_ROLE);
     await ensureGroupRole(admin, FLAG_WRITER_ROLE);
+    await ensureGroupRole(admin, IDENTITY_READER_ROLE);
+    await ensureGroupRole(admin, IDENTITY_WRITER_ROLE);
     await ensureLoginRole(admin, APP_ROLE, runtime.credentials.appPassword);
     await ensureLoginRole(admin, CONTROL_ROLE, runtime.credentials.controlPassword);
     await ensureLoginRole(admin, MIGRATOR_ROLE, runtime.credentials.migratorPassword);
     await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
     await admin.query(`REVOKE ${FLAG_WRITER_ROLE} FROM ${APP_ROLE}`);
+    await admin.query(`GRANT ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} TO ${APP_ROLE}`);
+    await admin.query(
+      `REVOKE ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} FROM ${CONTROL_ROLE}`,
+    );
 
     const databaseResult = await admin.query(
       "SELECT pg_get_userbyid(datdba) AS owner FROM pg_database WHERE datname = $1",

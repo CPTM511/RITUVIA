@@ -39,6 +39,7 @@ const shellContentSecurityPolicy = [
 ].join("; ");
 
 const noIndexDirective = "noindex, nofollow, noarchive";
+const anonymousSessionApiPathname = "/api/v1/anonymous/session";
 
 const isSafeReadMethod = (method: string): boolean => method === "GET" || method === "HEAD";
 
@@ -114,25 +115,36 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const publicDocument = isPublicShellPathname(pathname);
   const discovery = isPublicDiscoveryPathname(pathname);
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
+  const anonymousSessionApi = pathname === anonymousSessionApiPathname;
+  const reviewedAnonymousSessionRequest =
+    anonymousSessionApi &&
+    request.method === "POST" &&
+    request.nextUrl.search === "" &&
+    !frameworkRepresentation;
   const unreviewedFrameworkRepresentation =
     frameworkRepresentation && !hasReviewedFrameworkNavigationSignal(request);
   const invalidRequest =
     !infrastructure &&
+    !reviewedAnonymousSessionRequest &&
     (unreviewedFrameworkRepresentation ||
       !isSafeReadMethod(request.method) ||
       (request.nextUrl.search !== "" && !hasOnlyReviewedFrameworkQuery(request)));
   const shouldLoadShellState =
     !invalidRequest &&
-    (publicDocument || (discovery && configuration.deploymentEnvironment === "production"));
+    (publicDocument ||
+      reviewedAnonymousSessionRequest ||
+      (discovery && configuration.deploymentEnvironment === "production"));
   const shellState = shouldLoadShellState ? await loadPublicShellState() : null;
-  const unsupported = !infrastructure && !publicDocument && !discovery;
+  const unsupported = !infrastructure && !publicDocument && !discovery && !anonymousSessionApi;
   const enabledDocument = publicDocument && shellState === "enabled";
   const response =
     invalidRequest || unsupported
       ? new NextResponse(null, { status: 404 })
       : discovery
         ? discoveryResponse(request, shellState ?? "disabled")
-        : infrastructure || enabledDocument
+        : infrastructure ||
+            enabledDocument ||
+            (reviewedAnonymousSessionRequest && shellState === "enabled")
           ? NextResponse.next({ request: { headers: downstreamHeaders } })
           : new NextResponse(null, { status: 404 });
   response.headers.set("content-security-policy", shellContentSecurityPolicy);
@@ -153,7 +165,9 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   if (!indexableRepresentation) {
     response.headers.set("x-robots-tag", noIndexDirective);
   }
-  if (discovery || response.status === 404) {
+  if (anonymousSessionApi) {
+    response.headers.set("cache-control", "private, no-store, max-age=0");
+  } else if (discovery || response.status === 404) {
     response.headers.set("cache-control", "no-store, max-age=0");
   } else if (frameworkRepresentation) {
     response.headers.set("cache-control", "private, no-store, max-age=0");

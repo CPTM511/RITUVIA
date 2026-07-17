@@ -35,6 +35,28 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Test every object endpoint for cross-user access.
 - Provide session/device revocation.
 
+### Anonymous-session baseline
+
+- Generate 256-bit random bearer tokens and store only a versioned SHA-256 digest. Send the raw
+  token only in a `Secure`, `HttpOnly`, `SameSite=Strict`, host-only cookie with `Path=/`.
+- Use a database-clock-derived absolute expiry. Activity may update bounded last-seen metadata but
+  must not extend expiry. Missing expiry policy configuration disables issuance rather than
+  inventing a legal retention period.
+- Treat the cookie as strictly necessary for the user-requested anonymous flow, never as evidence
+  of optional analytics, personalization, marketing, or model-improvement consent.
+- Keep optional consent append-only per purpose and notice version. Absence, denial, withdrawal,
+  malformed history, an expired subject/session, or a stale notice fails closed.
+- Require exact same-origin request evidence, an empty request body, and a high-entropy idempotency
+  key at the only anonymous-session endpoint. Do not expose subject/session IDs or the token in the
+  response body, URLs, logs, analytics, or public error details.
+- Use one database-atomic global issuance-capacity gate as the privacy-minimal baseline. It stores
+  no IP address, user-agent, device fingerprint, or free text and is not claimed to be a complete
+  production abuse-control system.
+- Before each identity operation, attest that runtime is a non-owner, non-privileged role with
+  exact table reads, exact inserts, and only lifecycle-column updates; reject DDL, delete,
+  consent mutation, expiry/hash/ownership mutation, role switching, and reachable privileged
+  membership.
+
 ## 4. Application security
 
 - Validate inputs/outputs at every boundary with shared schemas.
@@ -177,8 +199,8 @@ update denial. It never disables RLS or gives the runtime ownership/bypass privi
   identifiers, private text, secrets, provider payloads, or arbitrary JSON.
 - The database reader is bounded one record beyond the parser maximum so oversized state fails
   closed instead of being silently truncated.
-- The runtime database role is read-only. The separate append-only control identity and policies are
-  modeled and exercised locally/CI, but a production credential grant, approval-record system,
+- Runtime access to `feature_flag_version` is read-only. The separate append-only control identity
+  and policies are modeled and exercised locally/CI, but a production credential grant, approval-record system,
   change workflow, cache/invalidation strategy, and emergency operator UX do not yet exist and must
   not be claimed.
 

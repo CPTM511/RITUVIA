@@ -227,31 +227,39 @@ import {
   featureFlagRegistryVersion,
   type FeatureFlagEvaluator,
 } from "@rituvia/config/feature-flags";
-import {
-  assertFeatureFlagRuntimeDatabasePrivileges,
-  createDatabaseClient,
-  readFeatureFlagVersions,
-} from "@rituvia/db";
+import { assertFeatureFlagRuntimeDatabasePrivileges, readFeatureFlagVersions } from "@rituvia/db";
+
+import { loadWebDatabase } from "./database";
+
+export const loadWebFeatureFlagEvaluator = async (): Promise<FeatureFlagEvaluator> => {
+  const database = loadWebDatabase();
+  await assertFeatureFlagRuntimeDatabasePrivileges(database);
+  const records = await readFeatureFlagVersions(database, featureFlagRegistryVersion);
+
+  return createFeatureFlagEvaluator({
+    records,
+    registryVersion: featureFlagRegistryVersion,
+  });
+};
+`;
+export const expectedWebDatabaseCompositionSource = `import "server-only";
+
+import { createDatabaseClient } from "@rituvia/db";
 
 import { getWebRuntimeConfiguration } from "../config/server";
 
-export const loadWebFeatureFlagEvaluator = async (): Promise<FeatureFlagEvaluator> => {
+let webDatabase: ReturnType<typeof createDatabaseClient> | undefined;
+
+export const loadWebDatabase = (): ReturnType<typeof createDatabaseClient> => {
+  if (webDatabase !== undefined) return webDatabase;
+
   const databaseUrl = getWebRuntimeConfiguration().databaseUrl;
   if (databaseUrl === undefined) {
     throw new TypeError("Web database configuration is unavailable.");
   }
-  const database = createDatabaseClient(databaseUrl);
-  try {
-    await assertFeatureFlagRuntimeDatabasePrivileges(database);
-    const records = await readFeatureFlagVersions(database, featureFlagRegistryVersion);
 
-    return createFeatureFlagEvaluator({
-      records,
-      registryVersion: featureFlagRegistryVersion,
-    });
-  } finally {
-    await database.$disconnect();
-  }
+  webDatabase = createDatabaseClient(databaseUrl);
+  return webDatabase;
 };
 `;
 const unsafeRuntimeIdentifiers = new Set([
@@ -1733,6 +1741,13 @@ export const auditArchitecture = (
       file.source !== expectedWebFeatureFlagCompositionSource
     ) {
       add(findings, "feature-flag-composition-boundary", file.path);
+      serverTaintedFiles.add(file.path);
+    }
+    if (
+      file.path === "apps/web/server/database.ts" &&
+      file.source !== expectedWebDatabaseCompositionSource
+    ) {
+      add(findings, "web-database-composition-boundary", file.path);
       serverTaintedFiles.add(file.path);
     }
     if (sourceModule.root === "packages/domain" && isProductionFile(file.path)) {

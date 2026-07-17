@@ -6,6 +6,10 @@ import path from "node:path";
 
 import { Client } from "pg";
 
+import {
+  assertAnonymousIdentityRuntimeDatabasePrivileges,
+  createAnonymousIdentityService,
+} from "../src/anonymous-identity.js";
 import { assertCiDatabaseEnvironment, assertCiServiceAddress } from "../src/ci-database-safety.js";
 import { createDatabaseClient } from "../src/client.js";
 import { assertFeatureFlagRuntimeDatabasePrivileges } from "../src/feature-flags.js";
@@ -15,6 +19,8 @@ const CONTROL_ROLE = "rituvia_ci_config_writer";
 const MIGRATOR_ROLE = "rituvia_ci_migrator";
 const FLAG_READER_ROLE = "rituvia_feature_flag_reader";
 const FLAG_WRITER_ROLE = "rituvia_feature_flag_writer";
+const IDENTITY_READER_ROLE = "rituvia_identity_reader";
+const IDENTITY_WRITER_ROLE = "rituvia_identity_writer";
 const DATABASE_NAME = "rituvia_ci";
 const repositoryRoot = path.resolve("../..");
 const prismaEntry = path.resolve("node_modules/prisma/build/index.js");
@@ -158,7 +164,12 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     assert.equal(tables.rows[0]?.count, 0);
 
     verificationStage = "least-privilege role statement formatting";
-    for (const roleName of [FLAG_READER_ROLE, FLAG_WRITER_ROLE]) {
+    for (const roleName of [
+      FLAG_READER_ROLE,
+      FLAG_WRITER_ROLE,
+      IDENTITY_READER_ROLE,
+      IDENTITY_WRITER_ROLE,
+    ]) {
       const formatted = await admin.query<{ statement: string }>(
         "SELECT format('CREATE ROLE %I NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', $1::text) AS statement",
         [roleName],
@@ -181,6 +192,7 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     verificationStage = "least-privilege role membership";
     await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} TO ${APP_ROLE}`);
     verificationStage = "CI database ownership transfer";
     await admin.query(`ALTER DATABASE ${DATABASE_NAME} OWNER TO ${MIGRATOR_ROLE}`);
     verificationStage = "public schema privilege revocation";
@@ -212,16 +224,34 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}`,
     );
-    await admin.query(`GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${APP_ROLE}`);
+    await admin.query(`GRANT SELECT ON TABLE "_prisma_migrations", seed_manifest TO ${APP_ROLE}`);
     await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
     await admin.query(`GRANT INSERT ON TABLE feature_flag_version TO ${FLAG_WRITER_ROLE}`);
+    await admin.query(
+      `GRANT SELECT ON TABLE anonymous_subject, anonymous_session, consent_record, anonymous_session_issuance_gate TO ${IDENTITY_READER_ROLE}`,
+    );
+    await admin.query(`GRANT INSERT ON TABLE anonymous_subject TO ${IDENTITY_WRITER_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (last_seen_at) ON TABLE anonymous_subject TO ${IDENTITY_WRITER_ROLE}`,
+    );
+    await admin.query(`GRANT INSERT ON TABLE anonymous_session TO ${IDENTITY_WRITER_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (last_seen_at, revoked_at) ON TABLE anonymous_session TO ${IDENTITY_WRITER_ROLE}`,
+    );
+    await admin.query(`GRANT INSERT ON TABLE consent_record TO ${IDENTITY_WRITER_ROLE}`);
+    await admin.query(
+      `GRANT INSERT ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (window_started_at, issued_count) ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
+    );
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public GRANT SELECT ON TABLES TO ${APP_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -281,6 +311,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
   try {
     verificationStage = "migrated database invariants";
     await assertFeatureFlagRuntimeDatabasePrivileges(runtimeDatabase);
+    await assertAnonymousIdentityRuntimeDatabasePrivileges(runtimeDatabase);
     await assert.rejects(
       assertFeatureFlagRuntimeDatabasePrivileges(controlDatabase),
       /runtime database privileges are unsafe/u,
@@ -293,7 +324,17 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       assertFeatureFlagRuntimeDatabasePrivileges(preselectedRuntimeDatabase),
       /runtime database privileges are unsafe/u,
     );
-    const identity = await app.query<{
+    for (const unsafeIdentityDatabase of [
+      controlDatabase,
+      migratorDatabase,
+      preselectedRuntimeDatabase,
+    ]) {
+      await assert.rejects(
+        assertAnonymousIdentityRuntimeDatabasePrivileges(unsafeIdentityDatabase),
+        /runtime database privileges are unsafe/u,
+      );
+    }
+    const systemIdentity = await app.query<{
       canCreateInDatabase: boolean;
       canCreateInSchema: boolean;
       databaseOwner: string;
@@ -306,7 +347,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
               has_database_privilege(current_user, current_database(), 'CREATE') AS "canCreateInDatabase",
               has_schema_privilege(current_user, 'public', 'CREATE') AS "canCreateInSchema",
               (SELECT system_identifier::text FROM pg_control_system()) AS "systemIdentifier"`);
-    assert.deepEqual(identity.rows[0], {
+    assert.deepEqual(systemIdentity.rows[0], {
       canCreateInDatabase: false,
       canCreateInSchema: false,
       databaseOwner: MIGRATOR_ROLE,
@@ -363,6 +404,50 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       "SELECT count(*)::int AS count FROM feature_flag_version",
     );
     assert.equal(featureFlags.rows[0]?.count, 0);
+    const emptyIdentity = await app.query<{
+      consents: number;
+      sessions: number;
+      subjects: number;
+    }>(`SELECT (SELECT count(*)::int FROM anonymous_subject) AS subjects,
+              (SELECT count(*)::int FROM anonymous_session) AS sessions,
+              (SELECT count(*)::int FROM consent_record) AS consents`);
+    assert.deepEqual(emptyIdentity.rows[0], { consents: 0, sessions: 0, subjects: 0 });
+
+    const identity = createAnonymousIdentityService(runtimeDatabase, {
+      issuanceLimit: 10,
+      issuanceWindowSeconds: 60,
+      policyVersion: "test.ci-anonymous-session.v1",
+      ttlSeconds: 3_600,
+    });
+    const issued = await identity.ensureSession({
+      idempotencyKey: "ci_anonymous_identity_key_1234",
+    });
+    assert.equal(issued.kind, "created");
+    assert.match(issued.token, /^[A-Za-z0-9_-]{43}$/u);
+    assert.deepEqual(await identity.resolveSession(issued.token), issued.context);
+    assert.equal(
+      await identity.allowsConsent({
+        noticeVersion: "test.ci-notice.v1",
+        purpose: "optional_product_analytics",
+        token: issued.token,
+      }),
+      false,
+    );
+    assert.equal(await identity.revokeSession(issued.token), true);
+    assert.equal(await identity.resolveSession(issued.token), null);
+    await expectPostgresError(() => control.query("SELECT * FROM anonymous_subject"), "42501");
+    await expectPostgresError(
+      () =>
+        app.query(
+          "UPDATE anonymous_subject SET expires_at = expires_at + interval '1 hour' WHERE id = $1::uuid",
+          [issued.context.subjectId],
+        ),
+      "42501",
+    );
+    await expectPostgresError(
+      () => app.query("UPDATE consent_record SET decision = 'denied'"),
+      "42501",
+    );
     const appendOnlyPolicies = await app.query<{
       commands: string[];
       forceRowSecurity: boolean;

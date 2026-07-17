@@ -227,6 +227,54 @@ describe("public shell request and crawl gate", () => {
     expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
+  it("allows only the exact enabled anonymous-session POST as a private API handoff", async () => {
+    const response = await proxy(
+      request("/api/v1/anonymous/session", {
+        headers: { origin: "https://example.test" },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["GET", "/api/v1/anonymous/session"],
+    ["OPTIONS", "/api/v1/anonymous/session"],
+    ["POST", "/api/v1/anonymous/session/"],
+    ["POST", "/api/v1/anonymous/session?private=canary"],
+    ["POST", "/api/v1/anonymous/session.rsc"],
+  ])(
+    "rejects unreviewed anonymous-session variant %s %s before lookup",
+    async (method, pathname) => {
+      const response = await proxy(request(pathname, { method }));
+
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+      expect(response.headers.get("cache-control")).toContain("no-store");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(harness.loadPublicShellState).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["disabled", "unavailable"] as const)(
+    "keeps the anonymous-session endpoint private and closed while the shell is %s",
+    async (state) => {
+      harness.loadPublicShellState.mockResolvedValue(state);
+      const response = await proxy(request("/api/v1/anonymous/session", { method: "POST" }));
+
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+    },
+  );
+
   it("serves fail-closed non-production discovery without a database lookup", async () => {
     const robots = await proxy(request("/robots.txt"));
     const sitemap = await proxy(request("/sitemap.xml"));

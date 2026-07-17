@@ -1028,7 +1028,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M1 local implementation is complete through RIT-015 while RIT-016 and manual assistive-technology exit evidence remain outstanding and M0 hosted CI evidence remains owner-gated; four accessible English public pages, the shared UI and resilient-state foundations, the finite SEO crawl/index contract, the accessibility/pseudolocale/connection-state browser gate, and the server-side safe-off delivery boundary are locally verified. Production activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through RIT-020 while M1 RIT-016 and manual assistive-technology exit evidence remain outstanding and M0 hosted CI evidence remains owner-gated; the privacy-minimal anonymous subject/session and per-purpose consent baseline now joins the locally verified English shell, shared UI/resilient states, finite crawl contract, browser gate, and server-side safe-off delivery boundary. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -1057,17 +1057,20 @@ Use this order:
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
 - Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
+- Expand-only anonymous identity persistence with fixed-expiry subjects/sessions, SHA-256-only bearer-token storage, request-digest idempotency, append-only per-purpose consent and withdrawal history, a privacy-minimal database-atomic global issuance gate, restrictive foreign keys, exact runtime column privileges, and non-empty logical restore evidence.
+- Exact same-origin `POST /api/v1/anonymous/session` with empty request/body response, safe Problem Details, server-side safe-off routing, high-entropy idempotency, and a host-only Secure/HttpOnly/SameSite=Strict fixed-expiry cookie; missing policy/database configuration refuses issuance.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 479 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 522 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
 
 ## What does not exist yet
 
 - Implemented readings, accounts, payments, legal terms/policies, rituals, or other end-to-end product flows; the reviewed English public pages are product explanations and remain server-side safe-off until explicitly activated through the existing control plane.
+- An approved production anonymous-session retention duration, legal consent notice, consent/privacy-control UI, per-client abuse strategy, account merge, anonymous export/deletion workflow, or private-resource authorization surface; the current session policy is required configuration and safe-off when absent.
 - A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
@@ -1105,16 +1108,17 @@ remains above and task history stays in Git and durable records.
 
 The instruction pack and generated evidence pass local validation. On exact Node.js 24.18.0 and
 pnpm 11.13.1, frozen installation, formatting, ESLint, strict type checking across seven workspaces,
-479 unit/contract tests in 41 files, configuration-boundary integration, real PostgreSQL integration,
+522 unit/contract tests in 44 files, configuration-boundary integration, real PostgreSQL integration,
 and production builds pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum evidence.
 
-The build verifier checks 31 artifacts and narrowed exports, including exact UI stylesheet parity,
-all four canonical pages, the icon, and maximum Web output of 6,055 B gzip HTML, 5,284 B gzip CSS,
-214,217 B gzip JavaScript, and 356 B raw icon. The 6 KiB CSS ceiling leaves 860 B headroom.
+The build verifier checks 36 artifacts and narrowed exports, including exact UI stylesheet parity,
+all four canonical pages, the anonymous-session route, identity domain/database exports, the icon,
+and maximum Web output of 6,060 B gzip HTML, 5,284 B gzip CSS, 214,267 B gzip JavaScript, and 356 B
+raw icon. The 6 KiB CSS ceiling leaves 860 B headroom.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 97 active source files across seven modules and keeps module,
+The architecture verifier audits 107 active source files across seven modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 The production Web matrix proves restrictive browser headers, server correlation, safe-off behavior,
@@ -1130,9 +1134,21 @@ verifies all four synthetic state variants at 320px, RTL, and dark mode with zer
 The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
 seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,
 guarded reset, non-empty dump/restore, transaction/race behavior, migration drift checks, and DDL
-denial. Repository architecture, CI/toolchain, historical migration, current-tree/full-history secret,
+denial. The RIT-020 path additionally proves no plaintext token storage/logging, fixed
+expiry/runtime revocation, bounded full-ledger consent validation and withdrawal, eight-way
+idempotency races, privacy-minimal global capacity, injected privilege-drift denial, exact identity
+column privileges, and exact restored-history behavior and attestation. Repository architecture,
+CI/toolchain, historical migration, current-tree/full-history secret,
 actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent
-accessibility, architecture, localization, and security review found no remaining runtime P0/P1/P2.
+accessibility, architecture, localization, and security review found no remaining local-slice P0/P1;
+the intentionally global issuance gate and required pre-gate catalog attestation remain explicit
+production-abuse/load P2 release risks and are not accepted as complete production admission
+controls. Feature-flag and anonymous-identity access now share one bounded database pool per Web
+process instead of either path creating one per request.
+Playwright CLI against the local production artifact verifies 204 create/resume, redacted exact
+cookie attributes, empty/no-store/noindex responses, query rejection, public navigation, 320px
+reflow, and skip-link focus; its temporary local shell activation was appended safe-off afterward
+and the token-bearing network trace was removed.
 Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and
 Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or
 owner-side required-check protection is claimed.
@@ -1416,7 +1432,8 @@ effective until this register links it. Do not rewrite historical rationale; sup
   cleanup task, required country/locale scope, approval gate where applicable, and literal `off`
   default. Evaluation uses a server-owned clock and the highest effective version; a later-created
   emergency version may take effect before an already scheduled lower version. PostgreSQL objects
-  belong to a non-superuser migrator, runtime is read-only and non-owner, and a separate control
+  belong to a non-superuser migrator, runtime access to `feature_flag_version` is read-only and
+  non-owner, and a separate control
   login can only read and append versions through forced RLS. Enabled rows require the exact
   registry key, gate prefix, and scope shape; no migration seeds one, and control access remains an
   owner-governed capability rather than an application endpoint. Registry-version-qualified reads
@@ -1479,6 +1496,12 @@ effective until this register links it. Do not rewrite historical rationale; sup
 
 - **Decision:** Keep closed empty, error, offline, and provider-unavailable presentation patterns in `@rituvia/ui`, while applications own localized copy, truthful classification, announcement/focus timing, and idempotent recovery. Use the existing public shell as the first real consumer without changing its empty safe-off 404 contract or inventing a provider/PWA capability.
 - **Reason:** Separating presentation from operational classification prevents raw error/private-data leakage, false availability claims, unsafe automatic retries, public debug surfaces, and component-library coupling to providers or domains.
+- **Date:** 2026-07-17
+
+### [D-029 — Privacy-minimal anonymous identity and per-purpose consent ledger](records/decisions/D-029.md)
+
+- **Decision:** Issue a 256-bit opaque anonymous-session cookie whose database representation is only a versioned digest; use database-clock fixed expiry from required owner-policy configuration, bounded full-ledger validation of append-only consent history independently per purpose and notice version, exact same-origin/idempotent empty-body HTTP issuance, a privacy-minimal global capacity gate, runtime revocation, and runtime-attested least-privilege identity persistence. D-021's read-only runtime scope applies to `feature_flag_version`; identity uses a separate exact writer capability.
+- **Reason:** Same-device anonymous continuity must not become fingerprinting, sliding indefinite retention, optional-consent coercion, mutable audit history, token leakage, or a privileged generic database capability.
 - **Date:** 2026-07-17
 
 ---
@@ -1752,8 +1775,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-014 | M1        |       P1 | Done    | Add accessibility and pseudolocale CI smoke                               | RIT-010,RIT-011                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                   |
 | RIT-015 | M1        |       P1 | Done    | Create error, empty, offline, and provider-unavailable patterns           | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                              |
 | RIT-016 | M1        |       P2 | Planned | Clean up the public-shell rollout flag                                    | RIT-010,RIT-014                         | backend       | Flag is retired safe-off for one registry compatibility window, then removed with old history ignored.       |
-| RIT-020 | M2        |       P0 | Ready   | Implement anonymous subject/session and consent baseline                  | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                 |
-| RIT-021 | M2        |       P0 | Planned | Implement safe question/theme intake rules and UX                         | RIT-020,RIT-012                         | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                      |
+| RIT-020 | M2        |       P0 | Done    | Implement anonymous subject/session and consent baseline              | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                 |
+| RIT-021 | M2        |       P0 | Ready   | Implement safe question/theme intake rules and UX                         | RIT-020,RIT-012                         | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                      |
 | RIT-022 | M2        |       P0 | Planned | Create versioned tarot deck, spread, and content schema                   | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.             |
 | RIT-023 | M2        |       P0 | Planned | Implement deterministic server-authoritative tarot engine                 | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                         |
 | RIT-024 | M2        |       P0 | Planned | Implement tarot reading application service and API                       | RIT-020,RIT-021,RIT-023                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                          |
@@ -2000,6 +2023,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-026 | Finite environment-safe crawl inventory | [decisions/D-026.md](./decisions/D-026.md) |
 | Decision | D-027 | Production-artifact accessibility and pseudolocale gate | [decisions/D-027.md](./decisions/D-027.md) |
 | Decision | D-028 | Presentation-only resilient state boundary | [decisions/D-028.md](./decisions/D-028.md) |
+| Decision | D-029 | Privacy-minimal anonymous identity and per-purpose consent ledger | [decisions/D-029.md](./decisions/D-029.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2007,6 +2031,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-013 | SEO metadata, canonical, robots, and sitemap foundation | [tasks/RIT-013.md](./tasks/RIT-013.md) |
 | Task | RIT-014 | Accessibility and pseudolocale CI smoke | [tasks/RIT-014.md](./tasks/RIT-014.md) |
 | Task | RIT-015 | Resilient page-level state patterns | [tasks/RIT-015.md](./tasks/RIT-015.md) |
+| Task | RIT-020 | Anonymous subject, session, and consent baseline | [tasks/RIT-020.md](./tasks/RIT-020.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
@@ -3105,9 +3130,10 @@ Flags must have:
 The M0 raw registry capability lives only on `@rituvia/config/feature-flags`; architecture policy
 allows that subpath only in `apps/web/server/feature-flags.ts`. The general server configuration
 entry and client projection expose no raw parser, factory, flag key, state, evaluator, or persisted
-version. The zero-argument Web loader obtains the reviewed runtime URL internally, creates and
-closes the database client itself, and therefore cannot accept a caller-supplied snapshot or
-Prisma-like object. Before reading, it performs a live privilege attestation and fails closed unless
+version. The zero-argument Web loader obtains a process-level bounded database client from the
+reviewed server-only composition boundary and therefore cannot accept a caller-supplied snapshot or
+Prisma-like object. Feature-flag and anonymous-identity access share that client; neither creates or
+disconnects a pool per request. Before reading, the loader performs a live privilege attestation and fails closed unless
 the connected role is a read-only, non-owner, non-DDL, non-superuser identity for the registry
 table with the same authenticated session/current identity and no role-membership path to an owner,
 writer, or privileged identity. The attestation follows all role-membership paths, including
@@ -3215,11 +3241,14 @@ Use a managed Web platform plus managed PostgreSQL, Redis-compatible queue/cache
 #### `anonymous_subject`
 
 - `id` UUID.
-- `created_at`, `expires_at`, `last_seen_at`.
+- `created_at`, fixed `expires_at`, `last_seen_at`, and the approved expiry-policy version.
 - `country_policy_version_id` nullable.
-- `consent_state_id`.
 - `merged_user_id` nullable.
 - `merge_idempotency_key` nullable unique.
+
+Current optional-consent state is derived independently for each purpose from the highest valid
+append-only `consent_record` sequence. There is no singular mutable consent pointer on the
+anonymous subject; absence, a stale notice version, denial, or withdrawal is not consent.
 
 Do not store fingerprinting data beyond narrowly justified abuse controls.
 
@@ -3240,7 +3269,10 @@ Store provider subject references, session hashes/metadata, and roles. Never sto
 
 #### `consent_record`
 
-Append-only record of purpose, versioned copy, locale, state, source, timestamp, and withdrawal.
+Append-only record of purpose, versioned notice, locale, decision, source, sequence, timestamp,
+idempotency digest, canonical request digest, and same-subject/same-purpose withdrawal reference.
+The baseline never stores notice copy or treats the strictly necessary session cookie as optional
+consent.
 
 ### profile
 
@@ -4462,6 +4494,28 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Test every object endpoint for cross-user access.
 - Provide session/device revocation.
 
+### Anonymous-session baseline
+
+- Generate 256-bit random bearer tokens and store only a versioned SHA-256 digest. Send the raw
+  token only in a `Secure`, `HttpOnly`, `SameSite=Strict`, host-only cookie with `Path=/`.
+- Use a database-clock-derived absolute expiry. Activity may update bounded last-seen metadata but
+  must not extend expiry. Missing expiry policy configuration disables issuance rather than
+  inventing a legal retention period.
+- Treat the cookie as strictly necessary for the user-requested anonymous flow, never as evidence
+  of optional analytics, personalization, marketing, or model-improvement consent.
+- Keep optional consent append-only per purpose and notice version. Absence, denial, withdrawal,
+  malformed history, an expired subject/session, or a stale notice fails closed.
+- Require exact same-origin request evidence, an empty request body, and a high-entropy idempotency
+  key at the only anonymous-session endpoint. Do not expose subject/session IDs or the token in the
+  response body, URLs, logs, analytics, or public error details.
+- Use one database-atomic global issuance-capacity gate as the privacy-minimal baseline. It stores
+  no IP address, user-agent, device fingerprint, or free text and is not claimed to be a complete
+  production abuse-control system.
+- Before each identity operation, attest that runtime is a non-owner, non-privileged role with
+  exact table reads, exact inserts, and only lifecycle-column updates; reject DDL, delete,
+  consent mutation, expiry/hash/ownership mutation, role switching, and reachable privileged
+  membership.
+
 ## 4. Application security
 
 - Validate inputs/outputs at every boundary with shared schemas.
@@ -4604,8 +4658,8 @@ update denial. It never disables RLS or gives the runtime ownership/bypass privi
   identifiers, private text, secrets, provider payloads, or arbitrary JSON.
 - The database reader is bounded one record beyond the parser maximum so oversized state fails
   closed instead of being silently truncated.
-- The runtime database role is read-only. The separate append-only control identity and policies are
-  modeled and exercised locally/CI, but a production credential grant, approval-record system,
+- Runtime access to `feature_flag_version` is read-only. The separate append-only control identity
+  and policies are modeled and exercised locally/CI, but a production credential grant, approval-record system,
   change workflow, cache/invalidation strategy, and emergency operator UX do not yet exist and must
   not be claimed.
 
@@ -5091,6 +5145,15 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 ### Session/account
 
 - `POST /api/v1/anonymous/session`
+  - Exact same-origin POST with no query, body, content type, or alternate framework
+    representation; requires a high-entropy `Idempotency-Key`.
+  - Returns `204` and creates or resumes only through the host-only
+    `__Host-rituvia-anonymous-session` cookie. It never returns subject/session IDs or token
+    material in a body.
+  - A created cookie is `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, has no `Domain`, and uses
+    the database-authoritative absolute expiry. Resume does not rotate or extend it.
+  - Disabled/unconfigured storage fails closed; rejected, conflicting, capacity-limited, and
+    unavailable requests use bounded no-store/noindex responses and never leak persistence detail.
 - `POST /api/v1/auth/account-merge`
 - `GET /api/v1/me`
 - `GET /api/v1/me/sessions`
@@ -6738,9 +6801,10 @@ there are no blanket exceptions.
 The active CI database job starts a fresh digest-pinned PostgreSQL 17 service with data checksums and
 SCRAM host authentication. A repository script accepts only the exact GitHub Actions run identity,
 derived ephemeral password, loopback host, port 5432, database name, and roles. The service bootstrap
-administrator creates a non-superuser migrator owner, a read-only runtime login, and an append-only
-feature-flag control login. Prisma migration/seed/status/drift use the migrator; runtime and control
-receive only explicit post-migration grants. This isolated CI path does not
+administrator creates a non-superuser migrator owner, a runtime login, and an append-only
+feature-flag control login. Prisma migration/seed/status/drift use the migrator; runtime receives
+read-only feature-flag access plus exact identity insert/lifecycle-column capabilities, and control
+receives only explicit feature-flag post-migration grants. This isolated CI path does not
 accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
 `DATABASE_URL`.
 
@@ -6773,10 +6837,41 @@ v1/v2 history to coexist during rolling upgrade and rollback. A key remains a fo
 until its cleanup task is Done; only a later registry version removes it. Dropping the table or
 policies remains a destructive migration requiring backup evidence and owner approval.
 
-Logical dumps run as read-only runtime with explicit row security and INSERT-form data. Restore runs
+Logical dumps run through the runtime's exact table-read capability with explicit row security and
+INSERT-form data. Restore runs
 as migrator into an empty isolated database and reapplies grants. The local test preserves non-empty
 off, approved-on, and cross-registry history; compares restored rows exactly; and reruns policy,
 constraint, owner, DDL/TRUNCATE, and append-only checks.
+
+## RIT-020 anonymous identity classification
+
+The expand-only identity migration creates `anonymous_subject`, `anonymous_session`,
+`consent_record`, and the singleton `anonymous_session_issuance_gate`. It creates no user row, token,
+consent, enabled feature, or legal-policy value.
+
+| Data | Classification | Baseline handling |
+| --- | --- | --- |
+| Anonymous subject/session UUIDs and timestamps | Personal pseudonymous | Fixed configured expiry; no email, IP, user-agent, device ID, or fingerprint |
+| Token hash and hash version | Security | SHA-256 of 32 random bytes; plaintext token exists only at the cookie boundary |
+| Issuance/idempotency and canonical request hashes | Security/internal | Fixed-size digests only; no raw idempotency key or request body |
+| Expiry policy version | Internal policy provenance | Required and immutable for issued subject/session |
+| Consent purpose, notice version, locale, decision, source, sequence, time | Personal compliance record | Append-only per purpose; no notice copy or private/free text |
+| Withdrawal link | Personal compliance record | Restricted to the same subject and purpose; historical row is not mutated |
+| Global issuance window/count | Internal security | Singleton aggregate with no subject, network, device, or content dimension |
+
+The anonymous-session TTL is required runtime configuration and intentionally absent from the
+migration. Missing configuration disables issuance. Selecting a production retention period,
+legal notice, or deletion policy remains an owner/legal gate; the database schema does not imply
+that approval.
+
+The application runtime receives exact reads and inserts plus only `last_seen_at`, `revoked_at`, and
+issuance-window/count updates. It cannot mutate expiry, subject ownership, token hashes, consent
+history, or use delete/truncate/DDL. The migration uses restrictive foreign keys and no cascade.
+
+Rollback is expand-only: disable the route/configuration and revert application/grant usage while
+leaving additive tables intact. Removing tables or records requires a later destructive migration,
+backup/restore evidence, retention review, and explicit owner approval. Logical backup/restore tests
+preserve non-empty session and consent history and re-attest the restored runtime privileges.
 
 ---
 

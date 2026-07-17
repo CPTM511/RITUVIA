@@ -146,7 +146,11 @@ const verifyMigrationState = async (pool) => {
   `);
   assert.deepEqual(
     result.rows.map(({ migrationName }) => migrationName),
-    ["202607160001_foundation", "202607170001_feature_flag_registry"],
+    [
+      "202607160001_foundation",
+      "202607170001_feature_flag_registry",
+      "202607170002_anonymous_identity_baseline",
+    ],
   );
   for (const row of result.rows) {
     assert.ok(row.finishedAt instanceof Date);
@@ -186,6 +190,21 @@ const verifyMigrationState = async (pool) => {
       roles: ["rituvia_feature_flag_reader"],
     },
   ]);
+};
+
+const verifyIdentityTablesStartEmpty = async (pool) => {
+  const result = await pool.query(`
+    SELECT (SELECT count(*)::int FROM anonymous_subject) AS subjects,
+           (SELECT count(*)::int FROM anonymous_session) AS sessions,
+           (SELECT count(*)::int FROM consent_record) AS consents,
+           (SELECT count(*)::int FROM anonymous_session_issuance_gate) AS issuance_gates
+  `);
+  assert.deepEqual(result.rows[0], {
+    consents: 0,
+    issuance_gates: 0,
+    sessions: 0,
+    subjects: 0,
+  });
 };
 
 const verifyRoleRestrictions = async (databaseUrl) => {
@@ -570,6 +589,7 @@ await withLocalPostgresLease(async (lease) => {
     let controlPool = createTrackedPool(database.controlDatabaseUrl, 10);
     await verifyMigrationState(pool);
     await verifySeed(pool);
+    await verifyIdentityTablesStartEmpty(pool);
     await verifyRoleRestrictions(database.databaseUrl);
     await verifyConstraintsAndTransactions(migrationPool);
     await verifyFeatureFlagVersions(pool, controlPool);
@@ -588,6 +608,7 @@ await withLocalPostgresLease(async (lease) => {
     controlPool = createTrackedPool(database.controlDatabaseUrl);
     await verifyMigrationState(pool);
     await verifySeed(pool);
+    await verifyIdentityTablesStartEmpty(pool);
     const resetMarker = await pool.query(
       "SELECT count(*)::int AS count FROM seed_manifest WHERE dataset_key = 'reset-marker'",
     );

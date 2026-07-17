@@ -20,12 +20,13 @@
     "db:local:url": "node scripts/local-postgres.mjs url",
     "generate": "prisma generate",
     "test:ci": "node --import tsx scripts/verify-ci-foundation.ts",
-    "test:integration": "node scripts/verify-foundation.mjs",
+    "test:integration": "node scripts/verify-foundation.mjs && node --import tsx scripts/verify-anonymous-identity.ts",
     "typecheck": "pnpm generate && tsc --noEmit"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
+    "@rituvia/domain": "workspace:*",
     "pg": "8.22.0"
   },
   "devDependencies": {

@@ -77,7 +77,14 @@ describe("server and client configuration boundary", () => {
   it("uses explicit environment inventories and keeps database configuration out of builds", () => {
     expect(brandEnvironmentVariables).toHaveLength(9);
     expect(buildEnvironmentVariables).not.toContain("DATABASE_URL");
-    expect(serverEnvironmentVariables).toEqual([...buildEnvironmentVariables, "DATABASE_URL"]);
+    expect(serverEnvironmentVariables).toEqual([
+      ...buildEnvironmentVariables,
+      "DATABASE_URL",
+      "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
+      "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
+      "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
+      "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+    ]);
   });
 
   it("parses valid overrides and projects only the client allowlist", () => {
@@ -112,6 +119,66 @@ describe("server and client configuration boundary", () => {
     expect(Object.isFrozen(configuration)).toBe(true);
     expect(Object.isFrozen(configuration.client)).toBe(true);
     expect(Object.isFrozen(configuration.client.brand.socialHandles)).toBe(true);
+  });
+
+  it("keeps anonymous sessions safe-off until one complete explicit policy is supplied", () => {
+    expect(parseServerConfiguration({}).anonymousSessionPolicy).toBeUndefined();
+    expect(() =>
+      parseServerConfiguration({ RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400" }),
+    ).toThrowError(
+      "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT:missing, RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS:missing, RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION:missing",
+    );
+
+    const configuration = parseServerConfiguration({
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "100",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
+      RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "test.anonymous-session.v1",
+      RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400",
+    });
+    expect(configuration.anonymousSessionPolicy).toEqual({
+      issuanceLimit: 100,
+      issuanceWindowSeconds: 60,
+      policyVersion: "test.anonymous-session.v1",
+      ttlSeconds: 86_400,
+    });
+    expect(Object.isFrozen(configuration.anonymousSessionPolicy)).toBe(true);
+  });
+
+  it("requires an owner-decision policy reference in production and rejects unsafe bounds", () => {
+    const base = {
+      APP_ENV: "production",
+      BRAND_NAME: "Brand",
+      BRAND_SHORT_NAME: "Brand",
+      BRAND_LEGAL_ENTITY: "Entity",
+      BRAND_TAGLINE: "Tagline",
+      BRAND_CANONICAL_ORIGIN: "https://example.com",
+      BRAND_SUPPORT_EMAIL: "support@example.com",
+      BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      BRAND_SOCIAL_HANDLES: "{}",
+      BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "100",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
+      RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400",
+    } as const;
+    expect(() =>
+      parseServerConfiguration({
+        ...base,
+        RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "test.anonymous-session.v1",
+      }),
+    ).toThrowError("RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION:invalid");
+    expect(
+      parseServerConfiguration({
+        ...base,
+        RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.anonymous-session.v1",
+      }).anonymousSessionPolicy,
+    ).toMatchObject({ policyVersion: "own-004.anonymous-session.v1", ttlSeconds: 86_400 });
+    expect(() =>
+      parseServerConfiguration({
+        ...base,
+        RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "0",
+        RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.anonymous-session.v1",
+      }),
+    ).toThrowError("RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT:invalid");
   });
 
   it("rejects public environment variables because the client uses a server projection", () => {
