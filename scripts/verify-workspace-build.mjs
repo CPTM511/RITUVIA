@@ -1,4 +1,5 @@
 import { access, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
@@ -62,6 +63,10 @@ const requiredArtifacts = [
   "packages/ai/dist/interpretation.js",
   "packages/ai/dist/provider.d.ts",
   "packages/ai/dist/provider.js",
+  "packages/ai/dist/prompt.d.ts",
+  "packages/ai/dist/prompt.js",
+  "packages/ai/dist/retrieval.d.ts",
+  "packages/ai/dist/retrieval.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
@@ -264,10 +269,16 @@ if (
 if (
   typeof aiModule.parseTarotInterpretationInputJsonV1 !== "function" ||
   typeof aiModule.parseTarotInterpretationOutputForInputV1 !== "function" ||
+  typeof aiModule.retrieveApprovedTarotContentV1 !== "function" ||
+  typeof aiModule.loadApprovedTarotPromptTemplateV1 !== "function" ||
+  typeof aiModule.assembleTarotPromptV1 !== "function" ||
+  typeof aiModule.isTarotPromptAssemblyV1 !== "function" ||
   typeof aiModule.isInterpretationGenerationAuthorizationV1 !== "function" ||
   aiModule.structuredGenerationProviderSchemaVersion !== "structured-generation-provider.v1" ||
   aiModule.tarotInterpretationInputSchemaVersion !== "tarot-interpretation-input.v1" ||
-  aiModule.tarotInterpretationOutputSchemaVersion !== "1"
+  aiModule.tarotInterpretationOutputSchemaVersion !== "1" ||
+  aiModule.tarotContentRetrievalPolicyVersion !== "tarot-content-retrieval-policy.v1" ||
+  aiModule.tarotPromptAssemblyPolicyVersion !== "tarot-prompt-assembly-policy.v1"
 ) {
   throw new TypeError("The AI build omitted its versioned provider or tarot contracts.");
 }
@@ -290,6 +301,41 @@ if (
   )
 ) {
   throw new TypeError("The compiled AI tarot contract is invalid or exposes private input.");
+}
+
+const placeholderChecksum = `sha256:${createHash("sha256")
+  .update(JSON.stringify(parsedTarotPlaceholder), "utf8")
+  .digest("hex")}`;
+let rejectedUnpublishedRetrieval = false;
+try {
+  await aiModule.retrieveApprovedTarotContentV1({
+    asOf: "2026-07-18",
+    authorizeRetrieval: () => true,
+    catalogJson: JSON.stringify(tarotPlaceholder),
+    requestJson: JSON.stringify({
+      catalog: {
+        approvalReference: "test.placeholder.not-approved",
+        checksum: placeholderChecksum,
+        id: parsedTarotPlaceholder.catalogId,
+        version: parsedTarotPlaceholder.version,
+      },
+      deterministicFacts: tarotDrawFacts,
+      locale: "en",
+      schemaVersion: "tarot-content-retrieval-request.v1",
+      themeCode: "open_reflection",
+      tradition: "rituvia-original-secular-placeholder",
+    }),
+    verifyIntegrity: (canonicalJson, expectedChecksum) =>
+      `sha256:${createHash("sha256").update(canonicalJson, "utf8").digest("hex")}` ===
+      expectedChecksum,
+  });
+} catch (error) {
+  rejectedUnpublishedRetrieval =
+    error instanceof aiModule.TarotContentRetrievalError &&
+    ["AI_CONTENT_NOT_APPROVED", "AI_CONTENT_REFERENCE_MISMATCH"].includes(error.code);
+}
+if (!rejectedUnpublishedRetrieval || aiModule.isTarotPromptAssemblyV1({})) {
+  throw new TypeError("The compiled AI retrieval or prompt trust boundary is invalid.");
 }
 
 if (

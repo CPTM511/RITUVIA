@@ -293,3 +293,15 @@ effective until this register links it. Do not rewrite historical rationale; sup
   invented modality facts, vendor objects, and structurally unsafe output from becoming accepted
   contracts before the required retrieval and safety pipeline exists.
 - **Date:** 2026-07-18
+
+### [D-038 — Exact published-content retrieval and checksummed prompt artifacts](records/decisions/D-038.md)
+
+- **Decision:** Require independent checksum and server-owned allowlist verification before exact
+  published Tarot content or an approved prompt can become a runtime-issued prompt artifact;
+  separate checksummed system instructions from bounded JSON data and attach complete immutable,
+  persistable provenance without performing generation or persistence.
+- **Reason:** Structural approval fields and caller-provided digests cannot authenticate content,
+  unpublished or cross-version material must never reach a model, and later orchestration needs an
+  unforgeable artifact that reconstructs exactly which facts, sources, prompt, schemas, and policies
+  were used.
+- **Date:** 2026-07-18

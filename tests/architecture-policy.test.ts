@@ -46,7 +46,7 @@ const baseline = (): RepositoryArchitectureFile[] => [
     source: 'export type { domain as Domain } from "@rituvia/domain";',
   },
   manifest("packages/ai", "@rituvia/ai", { "@rituvia/divination": "workspace:*" }),
-  moduleTsconfig("packages/ai"),
+  moduleTsconfig("packages/ai", true),
   {
     path: "packages/ai/src/index.ts",
     source: 'import type { Domain } from "@rituvia/divination"; export type Input = Domain;',
@@ -123,6 +123,22 @@ describe("package architecture policy", () => {
         "domain-runtime-dependency",
       ]),
     );
+  });
+
+  it("keeps AI provider-neutral and free of ambient runtime capabilities", () => {
+    const files = baseline();
+    files.push({
+      path: "packages/ai/src/unsafe.ts",
+      source:
+        'declare const fetch: (url: string) => Promise<unknown>; const runtime = globalThis as { fetch: typeof fetch }; export const unsafe = () => runtime.fetch(process.env.PROVIDER_URL ?? "https://example.invalid");',
+    });
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining(["ai-environment-access", "ai-network-access", "ai-runtime-global"]),
+    );
+
+    replaceSource(files, "packages/ai/tsconfig.json", moduleTsconfig("packages/ai").source);
+    expect(rules(files)).toContain("pure-module-types");
   });
 
   it("keeps UI free of network, storage, runtime, polymorphic, and dangerous JSX capabilities", () => {

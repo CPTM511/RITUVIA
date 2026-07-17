@@ -1488,7 +1488,9 @@ export const auditArchitecture = (
     const sourceModule = definitionForPath(file.path);
     if (
       file.path.endsWith("/tsconfig.json") &&
-      (sourceModule?.root === "packages/domain" || sourceModule?.root === "packages/divination") &&
+      (sourceModule?.root === "packages/domain" ||
+        sourceModule?.root === "packages/divination" ||
+        sourceModule?.root === "packages/ai") &&
       (!isRecord(compilerOptions) ||
         !Array.isArray(compilerOptions.types) ||
         compilerOptions.types.length !== 0 ||
@@ -1759,6 +1761,11 @@ export const auditArchitecture = (
       if (parsed.environmentAccess) add(findings, "divination-environment-access", file.path);
       if (parsed.networkAccess) add(findings, "divination-network-access", file.path);
       if (parsed.runtimeGlobalAccess) add(findings, "divination-runtime-global", file.path);
+    }
+    if (sourceModule.root === "packages/ai" && isProductionFile(file.path)) {
+      if (parsed.environmentAccess) add(findings, "ai-environment-access", file.path);
+      if (parsed.networkAccess) add(findings, "ai-network-access", file.path);
+      if (parsed.runtimeGlobalAccess) add(findings, "ai-runtime-global", file.path);
     }
     if (sourceModule.root === "packages/ui" && isRuntimeDependencyFile(file.path)) {
       if (parsed.networkAccess) add(findings, "ui-network-access", file.path);

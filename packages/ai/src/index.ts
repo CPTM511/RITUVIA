@@ -22,6 +22,62 @@ export type {
 } from "./interpretation.js";
 
 export {
+  TarotContentRetrievalError,
+  isRetrievedTarotContentBundleV1,
+  retrieveApprovedTarotContentV1,
+  tarotCatalogChecksumScope,
+  tarotContentRetrievalErrorCodes,
+  tarotContentRetrievalLimits,
+  tarotContentRetrievalPolicyVersion,
+  tarotContentRetrievalRequestSchemaVersion,
+  tarotRetrievalAuthoritySchemaVersion,
+  tarotRetrievedContentSchemaVersion,
+} from "./retrieval.js";
+export type {
+  ApprovedTarotCatalogReferenceV1,
+  RetrievedTarotContentBundleV1,
+  RetrieveApprovedTarotContentInputV1,
+  Sha256IntegrityVerifierV1,
+  TarotContentProvenanceV1,
+  TarotContentRetrievalErrorCode,
+  TarotContentRetrievalRequestV1,
+  TarotContentSourceProvenanceV1,
+  TarotRetrievalAuthorityV1,
+  TarotRetrievalAuthorityVerifierV1,
+  TarotRetrievedPositionV1,
+} from "./retrieval.js";
+
+export {
+  TarotPromptError,
+  assembleTarotPromptV1,
+  isApprovedTarotPromptTemplateV1,
+  isTarotPromptAssemblyV1,
+  loadApprovedTarotPromptTemplateV1,
+  tarotPromptAssemblyPolicyVersion,
+  tarotPromptAssemblySchemaVersion,
+  tarotPromptAuthoritySchemaVersion,
+  tarotPromptChecksumScope,
+  tarotPromptDataSchemaVersion,
+  tarotPromptErrorCodes,
+  tarotPromptLimits,
+  tarotPromptMandatoryInstructions,
+  tarotPromptProvenanceSchemaVersion,
+  tarotPromptTemplateSchemaVersion,
+} from "./prompt.js";
+export type {
+  ApprovedTarotPromptReferenceV1,
+  ApprovedTarotPromptTemplateV1,
+  LoadApprovedTarotPromptTemplateInputV1,
+  TarotPromptAssemblyV1,
+  TarotPromptAuthorityV1,
+  TarotPromptAuthorityVerifierV1,
+  TarotPromptErrorCode,
+  TarotPromptOutputSchemaReferenceV1,
+  TarotPromptProvenanceV1,
+  TarotPromptToneInstructionsV1,
+} from "./prompt.js";
+
+export {
   isInterpretationGenerationAuthorizationV1,
   structuredGenerationFailureCodes,
   structuredGenerationFinishReasons,

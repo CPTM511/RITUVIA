@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the provider-neutral, public-fact-only RIT-030 AI contract slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation, AI provider/model activation, and actual indexing remain separately gated.
+**Stage:** M3 local implementation is complete through the exact published-content retrieval and checksummed prompt-artifact RIT-031 slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog/prompt approval and activation, AI provider/model activation, and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -57,13 +57,19 @@
   bounded reflective output, normalized provider results/failures/usage, provisional streaming,
   and privacy-safe operational metadata; strict parsers and synthetic fixtures reject private draw
   audit, question/journal/identity/payment data, unsafe literals, hostile text, and schema drift.
+- Pure published-only Tarot retrieval and prompt assembly with independent injected SHA-256 and
+  server-owned allowlist authorization, exact catalog/deck/spread/card/orientation/position/reading
+  type/locale/tradition/theme binding, bounded selected excerpts, checksummed mandatory safety and
+  tone instructions, system-versus-JSON-data separation, runtime-issued trust artifacts, and
+  immutable provenance ready for later persistence; no permissive catalog, prompt, provider, or
+  network default exists.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 904 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 945 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -109,25 +115,26 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-030 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
-lint, strict type checking, 920 unit/contract tests in 63 files, configuration-boundary integration,
-the 167-file/nine-module architecture gate, and the 65-artifact production build pass. The record-policy
+The RIT-031 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
+lint, strict type checking, 945 unit/contract tests in 64 files, configuration-boundary integration,
+the 170-file/nine-module architecture gate, and the 69-artifact production build pass. The record-policy
 suite covers the canonical task/decision graph, privacy-safe records, contextual task results, and
 exact staged index-to-manual-to-checksum evidence. RIT-027 PostgreSQL integration passed its
 expand-only report migration, ownership, idempotency, quota-independence, append-only privilege,
 and restore matrix; a later rerun stopped at preflight because the unrelated active `IPO.ONE`
 database occupied fixed port 55432 and was not stopped or modified.
 
-The build verifier checks 65 artifacts and narrowed exports, including exact UI stylesheet parity,
+The build verifier checks 69 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
-the compiled AI Tarot input/output fixture and provider/version exports,
+the compiled AI Tarot input/output fixture, provider/version exports, published-content retrieval,
+prompt artifacts, and placeholder rejection,
 and the icon. Maximum Web output is 6,622 B
 gzip HTML, 6,126 B gzip CSS, 225,894 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 167 active source files across nine modules and keeps module,
+The architecture verifier audits 170 active source files across nine modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
@@ -164,6 +171,17 @@ unsafe claims, fake providers, categorical failures, and metadata isolation. No 
 network call, secret, raw question, production model/content, persistence, UI, or activation is
 introduced. The database suite was not rerun because the unrelated `IPO.ONE` PostgreSQL process
 still owns the repository-fixed port 55432; it was inspected only and not stopped or modified.
+
+RIT-031 adds a second fail-closed trust boundary before generation: checksums prove exact canonical
+bytes, separate server-owned authority callbacks prove allowlist approval, and only selected
+published content with valid review, rights, locale, tradition, theme, draw, and spread evidence can
+enter a runtime-issued prompt artifact. Every substantive system/tone instruction is inside the
+approved prompt checksum; facts and excerpts stay in bounded JSON data, and exact content,
+source/rights, deterministic-engine, prompt, schema, retrieval, assembly, and safety provenance is
+serializable without retaining private questions or internal draw audit. The canonical placeholder
+remains a negative fixture. No provider request, model call, persistence, production content,
+network, credential, API, UI, or activation is introduced; RIT-033 must wire the approved mappings,
+accept only the branded artifact, and persist its provenance.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
