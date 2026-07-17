@@ -7,8 +7,10 @@
 | Decision | D-022 | Canonical repository record workflow | [decisions/D-022.md](./decisions/D-022.md) |
 | Decision | D-023 | English-first locale-prefixed public shell | [decisions/D-023.md](./decisions/D-023.md) |
 | Decision | D-024 | Semantic-token and native-first UI primitive boundary | [decisions/D-024.md](./decisions/D-024.md) |
+| Decision | D-025 | Finite public trust-content boundary | [decisions/D-025.md](./decisions/D-025.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
+| Task | RIT-012 | Public positioning, methodology, safety, and privacy pages | [tasks/RIT-012.md](./tasks/RIT-012.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.

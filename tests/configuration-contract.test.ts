@@ -156,6 +156,7 @@ describe("source configuration boundaries", () => {
       /legalEntity|supportEmail|transactionalSender|working-brand/,
     );
     expect(nextConfig).not.toMatch(/\benv\s*:/);
+    expect(nextConfig).toContain("skipTrailingSlashRedirect: true");
   });
 
   it("loads the same repository-root environment set in Web and Worker adapters", async () => {

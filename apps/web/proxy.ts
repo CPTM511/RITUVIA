@@ -3,14 +3,7 @@ import { NextResponse } from "next/server";
 
 import { loadWebFeatureFlagEvaluator } from "./server/feature-flags";
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
-
-const isPublicShellRequest = (pathname: string): boolean =>
-  pathname === "/" ||
-  pathname === "/index.rsc" ||
-  pathname.startsWith("/index.segments/") ||
-  pathname === "/en" ||
-  pathname === "/en.rsc" ||
-  pathname.startsWith("/en.segments/");
+import { isPublicShellPathname } from "./app/_i18n/public-routes";
 
 const isUngatedInfrastructureRequest = (pathname: string): boolean =>
   pathname === "/icon.svg" || pathname.startsWith("/_next/");
@@ -55,7 +48,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   downstreamHeaders.delete("x-request-id");
   downstreamHeaders.set("x-rituvia-correlation-id", operation.context.correlationId);
   downstreamHeaders.set("traceparent", operation.toTraceHeaders().traceparent);
-  const shellState = isPublicShellRequest(request.nextUrl.pathname)
+  const shellState = isPublicShellPathname(request.nextUrl.pathname)
     ? await publicShellState()
     : null;
   const unsupported =

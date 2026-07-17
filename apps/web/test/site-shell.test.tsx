@@ -22,6 +22,10 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('<a class="skip-link" href="#main-content">');
     expect(html).toContain("<header");
     expect(html).toContain('<nav aria-label="Primary navigation"');
+    expect(html).toContain('href="/en/methodology"');
+    expect(html).toContain('href="/en/safety"');
+    expect(html).toContain('href="/en/privacy"');
+    expect(html).toContain('aria-current="page"');
     expect(html).toContain('<main id="main-content" tabindex="-1">');
     expect(html).toContain("<footer");
     expect(html.match(/<h1\b/gu)).toHaveLength(1);
@@ -42,6 +46,7 @@ describe("server-rendered public shell", () => {
     );
     expect(html).not.toMatch(/href="https?:/u);
     expect(html).not.toMatch(/href="\/en\/(?:account|tarot|astrology|numerology|pricing)/u);
+    expect(html).not.toMatch(/<(?:form|input|textarea)\b/u);
   });
 
   it("uses configured brand values without exposing a server-only configuration surface", () => {

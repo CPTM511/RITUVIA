@@ -402,6 +402,83 @@ h3 {
   font-weight: 700;
 }
 
+.information-main {
+  padding-block-end: clamp(4rem, 8vw, 7rem);
+}
+
+.information-hero {
+  max-inline-size: 72rem;
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.information-hero h1 {
+  max-inline-size: 18ch;
+}
+
+.information-introduction {
+  max-inline-size: 66ch;
+  color: var(--ink-secondary);
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+}
+
+.information-status {
+  max-inline-size: 64ch;
+  padding: 1rem 1.25rem;
+  border-inline-start: 0.2rem solid var(--accent-gold);
+  background: var(--surface-panel);
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+.information-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.information-section {
+  min-inline-size: 0;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-panel);
+}
+
+.information-section h2,
+.information-next h2 {
+  font-family: inherit;
+  font-size: clamp(1.25rem, 2vw, 1.6rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.information-section p,
+.information-section li,
+.information-next p {
+  color: var(--ink-secondary);
+}
+
+.information-section ul {
+  padding-inline-start: 1.25rem;
+}
+
+.information-next {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2rem;
+  align-items: center;
+  margin-block-start: clamp(3rem, 7vw, 5rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-radius: 1.5rem;
+  background: var(--brand-deep);
+  color: var(--ink-on-brand);
+}
+
+.information-next p {
+  max-inline-size: 58ch;
+  color: var(--ink-on-brand-secondary);
+}
+
 .no-script-note {
   margin-block: 0;
   padding: 0.75rem 1rem;
@@ -479,7 +556,8 @@ h3 {
   }
 
   .path-list,
-  .principles-grid {
+  .principles-grid,
+  .information-sections {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -491,7 +569,8 @@ h3 {
 
   .header-inner,
   .footer-inner,
-  .privacy-panel {
+  .privacy-panel,
+  .information-next {
     grid-template-columns: 1fr;
   }
 
@@ -520,7 +599,8 @@ h3 {
 
   .trust-list,
   .path-list,
-  .principles-grid {
+  .principles-grid,
+  .information-sections {
     grid-template-columns: 1fr;
   }
 
@@ -543,7 +623,10 @@ h3 {
   .hero-art,
   .path-card,
   .principle-card,
-  .privacy-panel {
+  .privacy-panel,
+  .information-section,
+  .information-status,
+  .information-next {
     border: 1px solid CanvasText;
   }
 }

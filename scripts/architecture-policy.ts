@@ -555,7 +555,11 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
     return false;
   }
 
-  const allowedBooleanKeys = new Set(["reactStrictMode", "typedRoutes"]);
+  const allowedBooleanKeys = new Set([
+    "reactStrictMode",
+    "skipTrailingSlashRedirect",
+    "typedRoutes",
+  ]);
   return objectLiteral.properties.every((property) => {
     if (!ts.isPropertyAssignment(property) || ts.isComputedPropertyName(property.name))
       return false;

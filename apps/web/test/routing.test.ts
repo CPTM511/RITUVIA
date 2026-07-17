@@ -3,9 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   defaultLocale,
   getTextDirection,
+  isPublicShellPathname,
   localeHomePath,
+  localePublicPagePath,
   localeSectionPath,
   parseLocale,
+  parsePublicPageSlug,
+  publicPageSlugs,
   supportedLocales,
 } from "../app/_i18n/routing";
 
@@ -20,11 +24,49 @@ describe("Web locale routing", () => {
     }
   });
 
-  it("creates stable locale-prefixed home and in-page paths", () => {
+  it("creates stable locale-prefixed public and in-page paths", () => {
     expect(localeHomePath("en")).toBe("/en");
+    expect(publicPageSlugs).toEqual(["methodology", "safety", "privacy"]);
+    expect(localePublicPagePath("en", "methodology")).toBe("/en/methodology");
+    expect(localePublicPagePath("en", "safety")).toBe("/en/safety");
+    expect(localePublicPagePath("en", "privacy")).toBe("/en/privacy");
     expect(localeSectionPath("en", "practice")).toBe("/en#practice");
     expect(localeSectionPath("en", "principles")).toBe("/en#principles");
-    expect(localeSectionPath("en", "privacy")).toBe("/en#privacy");
+    expect(localeSectionPath("en", "trust")).toBe("/en#trust");
+  });
+
+  it("accepts only exact public pages and their framework representations", () => {
+    for (const page of publicPageSlugs) expect(parsePublicPageSlug(page)).toBe(page);
+    for (const value of [undefined, null, "", "Privacy", "method", "privacy/extra"]) {
+      expect(parsePublicPageSlug(value)).toBeNull();
+    }
+
+    for (const pathname of [
+      "/",
+      "/index.rsc",
+      "/index.segments/_full.segment.rsc",
+      "/en",
+      "/en.rsc",
+      "/en.segments/_full.segment.rsc",
+      "/en/methodology",
+      "/en/methodology.rsc",
+      "/en/methodology.segments/_full.segment.rsc",
+      "/en/safety",
+      "/en/privacy",
+    ]) {
+      expect(isPublicShellPathname(pathname)).toBe(true);
+    }
+    for (const pathname of [
+      "/EN",
+      "/en/Privacy",
+      "/en/privacy/",
+      "/en/privacy/extra",
+      "/en/privacy.rsc/extra",
+      "/en/privacy.segments",
+      "/en/unknown",
+    ]) {
+      expect(isPublicShellPathname(pathname)).toBe(false);
+    }
   });
 
   it("recognizes future RTL language subtags without activating them", () => {

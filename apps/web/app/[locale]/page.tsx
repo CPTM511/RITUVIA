@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { SiteShell } from "../_components/site-shell";
 import { getWebRuntimeConfiguration } from "../../config/server";
-import { createHomeMetadata } from "../_i18n/metadata";
+import { createPublicPageMetadata } from "../_i18n/metadata";
 import { getMessages } from "../_i18n/messages";
 import { parseLocale, supportedLocales, type Locale } from "../_i18n/routing";
 
@@ -25,12 +25,13 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   const locale = await resolvePageLocale(params);
   const configuration = getWebRuntimeConfiguration();
 
-  return createHomeMetadata({
+  return createPublicPageMetadata({
     brandName: configuration.brand.name,
     canonicalOrigin: configuration.brand.canonicalOrigin,
     deploymentEnvironment: configuration.deploymentEnvironment,
     locale,
     messages: getMessages(locale),
+    page: "home",
   });
 }
 

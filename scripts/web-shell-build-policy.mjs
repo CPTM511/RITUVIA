@@ -151,7 +151,7 @@ const canonicalDocumentUrl = (value) => {
   }
 };
 
-const auditDocumentResources = (html) => {
+const auditDocumentResources = (html, expectedPathname = "/en") => {
   const findings = [];
   const documentWithoutReviewedDeclarations = html
     .replace(/^<!DOCTYPE html>/iu, "")
@@ -176,7 +176,7 @@ const auditDocumentResources = (html) => {
     canonicalTags.length > 0 &&
     (canonicalTags.length !== 1 ||
       canonical === null ||
-      canonical.pathname !== "/en" ||
+      canonical.pathname !== expectedPathname ||
       canonical.search !== "" ||
       canonical.hash !== "")
   ) {
@@ -189,7 +189,7 @@ const auditDocumentResources = (html) => {
       canonical === null ||
       alternate === null ||
       alternate.origin !== canonical.origin ||
-      alternate.pathname !== "/en" ||
+      alternate.pathname !== expectedPathname ||
       !["en", "x-default"].includes(attributes.get("hreflang") ?? "")
     ) {
       findings.push("invalid-canonical-alternate");
@@ -320,10 +320,11 @@ const auditDocumentResources = (html) => {
 export const auditWebShellBuildArtifacts = ({
   assets,
   budgets = webShellBuildBudgets,
+  expectedPathname = "/en",
   html,
   icon,
 }) => {
-  const findings = [...auditDocumentResources(html)];
+  const findings = [...auditDocumentResources(html, expectedPathname)];
   const scriptSources = unique(
     [...html.matchAll(/<script\b[^>]*>/gu)]
       .map(([tag]) => attribute(tag, "src"))
@@ -382,6 +383,8 @@ export const auditWebShellBuildArtifacts = ({
 };
 
 export const auditWebShellRouteArtifacts = ({
+  dynamicRoute = "/[locale]",
+  expectedPathname = "/en",
   html,
   prerenderManifest,
   routeMetadata,
@@ -389,23 +392,27 @@ export const auditWebShellRouteArtifacts = ({
 }) => {
   const findings = [];
   if (routesManifest?.caseSensitive !== true) findings.push("case-insensitive-routes");
-  if (prerenderManifest?.dynamicRoutes?.["/[locale]"]?.fallback !== false) {
+  if (prerenderManifest?.dynamicRoutes?.[dynamicRoute]?.fallback !== false) {
     findings.push("dynamic-locale-fallback");
   }
   const cacheTags = routeMetadata?.headers?.["x-next-cache-tags"];
   if (
     (routeMetadata?.status !== undefined && routeMetadata.status !== 200) ||
     typeof cacheTags !== "string" ||
-    !cacheTags.split(",").includes("_N_T_/en")
+    !cacheTags.split(",").includes(`_N_T_${expectedPathname}`)
   ) {
     findings.push("canonical-route-metadata");
   }
+  const canonicalTag = documentTags(html).tags.find(
+    ({ attributes, name }) => name === "link" && attributes.get("rel") === "canonical",
+  );
+  const canonical = canonicalDocumentUrl(canonicalTag?.attributes.get("href") ?? "");
   if (
     !/<html\b[^>]*\bdir="ltr"[^>]*\blang="en"|<html\b[^>]*\blang="en"[^>]*\bdir="ltr"/u.test(
       html,
     ) ||
     !/<main\b[^>]*\bid="main-content"/u.test(html) ||
-    !/<link\b[^>]*\brel="canonical"[^>]*\bhref="[^"]+\/en"/u.test(html) ||
+    canonical?.pathname !== expectedPathname ||
     !/<meta\b[^>]*\bname="robots"[^>]*\bcontent="(?:index, follow|noindex, nofollow)"/u.test(
       html,
     ) ||
@@ -418,21 +425,41 @@ export const auditWebShellRouteArtifacts = ({
 
 export const verifyWebShellBuild = async (repositoryRoot) => {
   const nextRoot = path.join(repositoryRoot, "apps/web/.next");
-  const html = await readFile(path.join(nextRoot, "server/app/en.html"), "utf8");
   const icon = await readFile(path.join(nextRoot, "server/app/icon.svg.body"));
-  const [prerenderManifest, routeMetadata, routesManifest] = await Promise.all(
-    ["prerender-manifest.json", "server/app/en.meta", "routes-manifest.json"].map(async (file) =>
+  const [prerenderManifest, routesManifest] = await Promise.all(
+    ["prerender-manifest.json", "routes-manifest.json"].map(async (file) =>
       JSON.parse(await readFile(path.join(nextRoot, file), "utf8")),
     ),
   );
+  const routes = [
+    { artifact: "en", dynamicRoute: "/[locale]", pathname: "/en" },
+    {
+      artifact: "en/methodology",
+      dynamicRoute: "/[locale]/[page]",
+      pathname: "/en/methodology",
+    },
+    { artifact: "en/safety", dynamicRoute: "/[locale]/[page]", pathname: "/en/safety" },
+    { artifact: "en/privacy", dynamicRoute: "/[locale]/[page]", pathname: "/en/privacy" },
+  ];
+  const routeInputs = await Promise.all(
+    routes.map(async (route) => ({
+      ...route,
+      html: await readFile(path.join(nextRoot, `server/app/${route.artifact}.html`), "utf8"),
+      routeMetadata: JSON.parse(
+        await readFile(path.join(nextRoot, `server/app/${route.artifact}.meta`), "utf8"),
+      ),
+    })),
+  );
   const references = unique([
-    ...[...html.matchAll(/<script\b[^>]*>/gu)]
-      .map(([tag]) => attribute(tag, "src"))
-      .filter((value) => value !== null),
-    ...[...html.matchAll(/<link\b[^>]*>/gu)]
-      .filter(([tag]) => attribute(tag, "rel") === "stylesheet")
-      .map(([tag]) => attribute(tag, "href"))
-      .filter((value) => value !== null),
+    ...routeInputs.flatMap(({ html }) => [
+      ...[...html.matchAll(/<script\b[^>]*>/gu)]
+        .map(([tag]) => attribute(tag, "src"))
+        .filter((value) => value !== null),
+      ...[...html.matchAll(/<link\b[^>]*>/gu)]
+        .filter(([tag]) => attribute(tag, "rel") === "stylesheet")
+        .map(([tag]) => attribute(tag, "href"))
+        .filter((value) => value !== null),
+    ]),
   ]);
   const assets = new Map(
     await Promise.all(
@@ -442,16 +469,37 @@ export const verifyWebShellBuild = async (repositoryRoot) => {
       ]),
     ),
   );
-  const result = auditWebShellBuildArtifacts({ assets, html, icon });
-  const routeFindings = auditWebShellRouteArtifacts({
-    html,
-    prerenderManifest,
-    routeMetadata,
-    routesManifest,
+  const results = routeInputs.map(({ dynamicRoute, html, pathname, routeMetadata }) => {
+    const result = auditWebShellBuildArtifacts({
+      assets,
+      expectedPathname: pathname,
+      html,
+      icon,
+    });
+    const routeFindings = auditWebShellRouteArtifacts({
+      dynamicRoute,
+      expectedPathname: pathname,
+      html,
+      prerenderManifest,
+      routeMetadata,
+      routesManifest,
+    });
+    return { pathname, result, routeFindings };
   });
-  const findings = [...new Set([...result.findings, ...routeFindings])].sort();
+  const findings = [
+    ...new Set(
+      results.flatMap(({ result, routeFindings }) => [...result.findings, ...routeFindings]),
+    ),
+  ].sort();
   if (findings.length > 0) {
     throw new Error(`Web shell build policy failed: ${findings.join(", ")}`);
   }
-  return result;
+  return Object.freeze({
+    cssGzipBytes: Math.max(...results.map(({ result }) => result.cssGzipBytes)),
+    findings: Object.freeze([]),
+    htmlGzipBytes: Math.max(...results.map(({ result }) => result.htmlGzipBytes)),
+    iconBytes: icon.byteLength,
+    javascriptGzipBytes: Math.max(...results.map(({ result }) => result.javascriptGzipBytes)),
+    routes: Object.freeze(results.map(({ pathname }) => pathname)),
+  });
 };

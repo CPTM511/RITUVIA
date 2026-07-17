@@ -362,27 +362,42 @@ export const loadWebFeatureFlagEvaluator = async () => ({
   if (uppercaseCold.status !== 404) {
     fail(`Cold non-canonical locale request returned HTTP ${uppercaseCold.status}, expected 404.`);
   }
-  const page = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
-  if (page.status !== 200) fail(`Canonical locale returned HTTP ${page.status}, expected 200.`);
-  assertHttpBoundary(page, webProcess.getOutput());
+  const publicPaths = ["/en", "/en/methodology", "/en/safety", "/en/privacy"];
+  const publicPages = await Promise.all(
+    publicPaths.map((pathname) =>
+      fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" }),
+    ),
+  );
+  if (publicPages.some(({ status }) => status !== 200)) {
+    fail(
+      `Canonical public pages returned unexpected statuses: ${JSON.stringify(
+        publicPages.map(({ status }, index) => ({ pathname: publicPaths[index], status })),
+      )}.`,
+    );
+  }
+  for (const publicPage of publicPages) assertHttpBoundary(publicPage, webProcess.getOutput());
   const uppercaseAfterCanonical = await fetchBuiltWeb(webProcess, port, "/EN", {
     redirect: "manual",
   });
   const canonicalAgain = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
   const rootRedirect = await fetchBuiltWeb(webProcess, port, "/", { redirect: "manual" });
   const directRscStatuses = await Promise.all(
-    ["/en.rsc", "/en.segments/_full.segment.rsc"].map(
-      async (pathname) =>
-        (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
-    ),
+    publicPaths
+      .flatMap((pathname) => [`${pathname}.rsc`, `${pathname}.segments/_full.segment.rsc`])
+      .map(
+        async (pathname) =>
+          (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
+      ),
   );
   const rscRepresentations = await Promise.all(
-    [{ rsc: "1" }, { "next-router-prefetch": "1", rsc: "1" }].map((headers) =>
-      fetchBuiltWeb(webProcess, port, "/en", { headers, redirect: "manual" }),
+    publicPaths.flatMap((pathname) =>
+      [{ rsc: "1" }, { "next-router-prefetch": "1", rsc: "1" }].map((headers) =>
+        fetchBuiltWeb(webProcess, port, pathname, { headers, redirect: "manual" }),
+      ),
     ),
   );
   const unsupportedStatuses = await Promise.all(
-    ["/fr", "/en-US", "/en/other"].map(
+    ["/fr", "/en-US", "/en/other", "/en/privacy/", "/en/Privacy", "/en/unknown"].map(
       async (pathname) =>
         (await fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })).status,
     ),
@@ -392,7 +407,7 @@ export const loadWebFeatureFlagEvaluator = async () => ({
     canonicalAgain.status !== 200 ||
     rootRedirect.status !== 308 ||
     rootRedirect.location !== "/en" ||
-    directRscStatuses.some((status) => status !== 404) ||
+    directRscStatuses.some((status, index) => status !== (index === 1 ? 200 : 404)) ||
     rscRepresentations.some(
       ({ contentType, status }) => status !== 200 || !contentType?.startsWith("text/x-component"),
     ) ||
@@ -435,6 +450,15 @@ export const loadWebFeatureFlagEvaluator = async () => ({
       "/en",
       "/en.rsc",
       "/en.segments/_full.segment.rsc",
+      "/en/methodology",
+      "/en/methodology.rsc",
+      "/en/methodology.segments/_full.segment.rsc",
+      "/en/safety",
+      "/en/safety.rsc",
+      "/en/safety.segments/_full.segment.rsc",
+      "/en/privacy",
+      "/en/privacy.rsc",
+      "/en/privacy.segments/_full.segment.rsc",
     ].map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
   );
   if (

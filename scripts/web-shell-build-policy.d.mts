@@ -13,12 +13,18 @@ export type WebShellBuildAudit = Readonly<{
   javascriptGzipBytes: number;
 }>;
 
+export type WebShellBuildVerification = WebShellBuildAudit &
+  Readonly<{
+    routes: readonly string[];
+  }>;
+
 export const webShellBuildBudgets: WebShellBuildBudgets;
 
 export function auditWebShellBuildArtifacts(
   input: Readonly<{
     assets: ReadonlyMap<string, Buffer>;
     budgets?: WebShellBuildBudgets;
+    expectedPathname?: string;
     html: string;
     icon: Buffer;
   }>,
@@ -26,6 +32,8 @@ export function auditWebShellBuildArtifacts(
 
 export function auditWebShellRouteArtifacts(
   input: Readonly<{
+    dynamicRoute?: string;
+    expectedPathname?: string;
     html: string;
     prerenderManifest: unknown;
     routeMetadata: unknown;
@@ -33,4 +41,4 @@ export function auditWebShellRouteArtifacts(
   }>,
 ): readonly string[];
 
-export function verifyWebShellBuild(repositoryRoot: string): Promise<WebShellBuildAudit>;
+export function verifyWebShellBuild(repositoryRoot: string): Promise<WebShellBuildVerification>;

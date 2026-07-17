@@ -90,6 +90,15 @@ describe("public shell request gate", () => {
     "/en",
     "/en.rsc",
     "/en.segments/_full.segment.rsc",
+    "/en/methodology",
+    "/en/methodology.rsc",
+    "/en/methodology.segments/_full.segment.rsc",
+    "/en/safety",
+    "/en/safety.rsc",
+    "/en/safety.segments/_full.segment.rsc",
+    "/en/privacy",
+    "/en/privacy.rsc",
+    "/en/privacy.segments/_full.segment.rsc",
   ])("applies the same safe-off gate to the shell representation %s", async (pathname) => {
     harness.evaluate.mockReturnValue({ enabled: false, reason: "default-off", version: null });
 
@@ -97,16 +106,25 @@ describe("public shell request gate", () => {
     expect(harness.loadWebFeatureFlagEvaluator).toHaveBeenCalledOnce();
   });
 
-  it.each(["/EN", "/fr", "/en-US", "/en/other", "/EN.rsc", "/EN.segments/_full.segment.rsc"])(
-    "rejects unsupported public paths before the filesystem router: %s",
-    async (pathname) => {
-      const response = await proxy(request(pathname));
+  it.each([
+    "/EN",
+    "/fr",
+    "/en-US",
+    "/en/other",
+    "/en/privacy/",
+    "/en/Privacy",
+    "/en/privacy/other",
+    "/en/unknown",
+    "/EN.rsc",
+    "/EN.segments/_full.segment.rsc",
+    "/en/privacy.segments",
+  ])("rejects unsupported public paths before the filesystem router: %s", async (pathname) => {
+    const response = await proxy(request(pathname));
 
-      expect(response.status).toBe(404);
-      expect(await response.text()).toBe("");
-      expect(harness.loadWebFeatureFlagEvaluator).not.toHaveBeenCalled();
-    },
-  );
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(harness.loadWebFeatureFlagEvaluator).not.toHaveBeenCalled();
+  });
 
   it.each(["/icon.svg", "/_next/static/app.js"])(
     "leaves reviewed infrastructure paths outside the activation query: %s",

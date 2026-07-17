@@ -732,12 +732,12 @@ describe("package architecture policy", () => {
     expect(rules(files)).toContain("framework-config-dynamic");
   });
 
-  it("allows only the reviewed static case-sensitive route experiment", () => {
+  it("allows only the reviewed static finite-route configuration", () => {
     const accepted = baseline();
     accepted.push({
       path: "apps/web/next.config.ts",
       source:
-        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, typedRoutes: true }; export default nextConfig;",
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
     });
     expect(rules(accepted)).not.toContain("framework-config-dynamic");
 
@@ -745,7 +745,7 @@ describe("package architecture policy", () => {
     unreviewed.push({
       path: "apps/web/next.config.ts",
       source:
-        "const nextConfig = { experimental: { caseSensitiveRoutes: true, typedEnv: true }, reactStrictMode: true }; export default nextConfig;",
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true, typedEnv: true }, reactStrictMode: true, skipTrailingSlashRedirect: true }; export default nextConfig;",
     });
     expect(rules(unreviewed)).toContain("framework-config-dynamic");
 
@@ -753,7 +753,7 @@ describe("package architecture policy", () => {
     caseInsensitive.push({
       path: "apps/web/next.config.ts",
       source:
-        "const nextConfig = { experimental: { caseSensitiveRoutes: false }, reactStrictMode: true }; export default nextConfig;",
+        "const nextConfig = { experimental: { caseSensitiveRoutes: false }, reactStrictMode: true, skipTrailingSlashRedirect: true }; export default nextConfig;",
     });
     expect(rules(caseInsensitive)).toContain("framework-config-dynamic");
   });

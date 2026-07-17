@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createHomeMetadata } from "../app/_i18n/metadata";
+import { createHomeMetadata, createPublicPageMetadata } from "../app/_i18n/metadata";
 import { getMessages } from "../app/_i18n/messages";
 
 const input = {
@@ -14,8 +14,8 @@ describe("localized home metadata", () => {
   it("binds title, canonical, Open Graph, and alternates to configured brand and locale", () => {
     const metadata = createHomeMetadata({ ...input, deploymentEnvironment: "production" });
 
-    expect(metadata.title).toBe(`Configured Brand — ${input.messages.metadata.title}`);
-    expect(metadata.description).toBe(input.messages.metadata.description);
+    expect(metadata.title).toBe(`Configured Brand — ${input.messages.home.metadata.title}`);
+    expect(metadata.description).toBe(input.messages.home.metadata.description);
     expect(metadata.alternates).toEqual({
       canonical: "https://example.test/en",
       languages: {
@@ -27,6 +27,25 @@ describe("localized home metadata", () => {
       siteName: "Configured Brand",
       url: "https://example.test/en",
     });
+  });
+
+  it("emits unique exact metadata for every finite public page", () => {
+    const records = (["home", "methodology", "safety", "privacy"] as const).map((page) =>
+      createPublicPageMetadata({
+        ...input,
+        deploymentEnvironment: "production",
+        page,
+      }),
+    );
+
+    expect(records.map((metadata) => metadata.alternates?.canonical)).toEqual([
+      "https://example.test/en",
+      "https://example.test/en/methodology",
+      "https://example.test/en/safety",
+      "https://example.test/en/privacy",
+    ]);
+    expect(new Set(records.map((metadata) => metadata.title))).toHaveLength(4);
+    expect(new Set(records.map((metadata) => metadata.description))).toHaveLength(4);
   });
 
   it("allows indexing only for the production environment", () => {

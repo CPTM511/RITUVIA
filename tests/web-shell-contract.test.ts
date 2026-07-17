@@ -6,8 +6,16 @@ const read = (path: string): string => readFileSync(path, "utf8");
 
 describe("Web shell repository contract", () => {
   it("keeps production copy out of route and component JSX literals", () => {
-    const component = read("apps/web/app/_components/site-shell.tsx");
-    const route = read("apps/web/app/[locale]/page.tsx");
+    const component = [
+      "apps/web/app/_components/site-shell.tsx",
+      "apps/web/app/_components/public-site-frame.tsx",
+      "apps/web/app/_components/public-information-page.tsx",
+    ]
+      .map(read)
+      .join("\n");
+    const route = ["apps/web/app/[locale]/page.tsx", "apps/web/app/[locale]/[page]/page.tsx"]
+      .map(read)
+      .join("\n");
 
     expect(component).not.toMatch(/>\s*[A-Za-z][^<{]*</u);
     expect(component).not.toMatch(/\b(?:aria-label|placeholder|title)="[^"]+"/u);
@@ -18,12 +26,17 @@ describe("Web shell repository contract", () => {
   it("locks explicit redirect, unsupported-locale failure, and server rendering", () => {
     const root = read("apps/web/app/page.tsx");
     const route = read("apps/web/app/[locale]/page.tsx");
+    const publicRoute = read("apps/web/app/[locale]/[page]/page.tsx");
 
     expect(root).toContain("permanentRedirect(localeHomePath(defaultLocale) as Route)");
     expect(route).toContain("parseLocale");
     expect(route).toContain("notFound()");
     expect(route).toContain("export const dynamicParams = false");
     expect(route).not.toContain('"use client"');
+    expect(publicRoute).toContain("parsePublicPageSlug");
+    expect(publicRoute).toContain("notFound()");
+    expect(publicRoute).toContain("export const dynamicParams = false");
+    expect(publicRoute).not.toContain('"use client"');
   });
 
   it("locks reflow, focus, touch, dark, reduced-motion, and forced-color foundations", () => {

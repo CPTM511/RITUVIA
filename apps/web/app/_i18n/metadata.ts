@@ -1,31 +1,34 @@
 import type { Metadata } from "next";
 
-import type { ShellMessages } from "./messages";
-import { localeHomePath, type Locale } from "./routing";
+import { getPublicPageMessages, type ShellMessages } from "./messages";
+import { localePublicPagePath, type Locale, type PublicPageId } from "./routing";
 
 type DeploymentEnvironment = "local" | "preview" | "production" | "staging";
 
-type HomeMetadataInput = Readonly<{
+type PublicPageMetadataInput = Readonly<{
   brandName: string;
   canonicalOrigin: string;
   deploymentEnvironment: DeploymentEnvironment;
   locale: Locale;
   messages: ShellMessages;
+  page: PublicPageId;
 }>;
 
-export const createHomeMetadata = ({
+export const createPublicPageMetadata = ({
   brandName,
   canonicalOrigin,
   deploymentEnvironment,
   locale,
   messages,
-}: HomeMetadataInput): Metadata => {
-  const canonical = new URL(localeHomePath(locale), canonicalOrigin).toString();
+  page,
+}: PublicPageMetadataInput): Metadata => {
+  const pageMessages = page === "home" ? messages.home : getPublicPageMessages(messages, page);
+  const canonical = new URL(localePublicPagePath(locale, page), canonicalOrigin).toString();
   const indexable = deploymentEnvironment === "production";
 
   return {
-    title: `${brandName} — ${messages.metadata.title}`,
-    description: messages.metadata.description,
+    title: `${brandName} — ${pageMessages.metadata.title}`,
+    description: pageMessages.metadata.description,
     alternates: {
       canonical,
       languages: {
@@ -36,8 +39,8 @@ export const createHomeMetadata = ({
     openGraph: {
       type: "website",
       siteName: brandName,
-      title: `${brandName} — ${messages.metadata.title}`,
-      description: messages.metadata.description,
+      title: `${brandName} — ${pageMessages.metadata.title}`,
+      description: pageMessages.metadata.description,
       url: canonical,
     },
     robots: {
@@ -46,3 +49,6 @@ export const createHomeMetadata = ({
     },
   };
 };
+
+export const createHomeMetadata = (input: Omit<PublicPageMetadataInput, "page">): Metadata =>
+  createPublicPageMetadata({ ...input, page: "home" });

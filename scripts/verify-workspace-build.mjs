@@ -6,6 +6,9 @@ import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
 const requiredArtifacts = [
   "apps/web/.next/BUILD_ID",
   "apps/web/.next/server/app/en.html",
+  "apps/web/.next/server/app/en/methodology.html",
+  "apps/web/.next/server/app/en/privacy.html",
+  "apps/web/.next/server/app/en/safety.html",
   "apps/web/.next/server/app/icon.svg.body",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
@@ -138,5 +141,5 @@ if (
 }
 
 console.log(
-  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; Web shell gzip budgets: HTML ${webShellBuild.htmlGzipBytes} B, CSS ${webShellBuild.cssGzipBytes} B, JS ${webShellBuild.javascriptGzipBytes} B.`,
+  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages; maximum gzip: HTML ${webShellBuild.htmlGzipBytes} B, CSS ${webShellBuild.cssGzipBytes} B, JS ${webShellBuild.javascriptGzipBytes} B.`,
 );

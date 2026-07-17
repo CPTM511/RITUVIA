@@ -81,18 +81,21 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web dev
 ```
 
 When explicitly enabled, opening `http://localhost:3000` returns a permanent redirect to the only
-active, reviewed locale at `/en`. Unsupported or non-canonical locale segments return 404 rather
-than silently falling back or generating caches. The page is server rendered and remains readable
-without JavaScript. Local, preview, and staging metadata is `noindex`; a production environment
-must provide the approved HTTPS canonical origin before it may emit indexable metadata. The
-configuration-boundary integration harness reproducibly verifies enabled and disabled behavior
-without documenting an activation bypass or ad hoc SQL. The current shell is an honest foundation,
-not a claim that accounts, readings, legal pages, purchases, or a public launch exist.
+active, reviewed locale at `/en`. The finite public surface is `/en`, `/en/methodology`,
+`/en/safety`, and `/en/privacy`; the privacy route is a product-design overview, not a legal privacy
+policy. Unsupported or non-canonical locale/page segments return 404 rather than silently falling
+back or generating caches. Every page is server rendered and remains readable without JavaScript.
+Local, preview, and staging metadata is `noindex`; a production environment must provide the
+approved HTTPS canonical origin before it may emit indexable metadata. The configuration-boundary
+integration harness reproducibly verifies enabled and disabled behavior without documenting an
+activation bypass or ad hoc SQL. The current shell is an honest foundation, not a claim that
+accounts, readings, legal terms, purchases, rituals, or a public launch exist.
 
-The production build enforces compressed budgets for the localized HTML, initial CSS/JavaScript,
-and SVG icon and rejects remote script/style/font/media resources on the home route. Browser QA
-still remains required for keyboard, screen reader, zoom/reflow, reduced motion, RTL, contrast, and
-Core Web Vitals behavior.
+The production build audits all four canonical pages and enforces compressed budgets for localized
+HTML, initial CSS/JavaScript, and the SVG icon while rejecting remote script/style/font/media
+resources. Browser QA remains required for every future behavior change; the current public pages
+have passed keyboard/focus, 320px/400%-equivalent reflow, dark mode, reduced motion, forced colors,
+no-JavaScript, console, and local-only network checks.
 
 ### Shared UI foundation
 

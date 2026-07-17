@@ -88,7 +88,7 @@
 - `scripts/build_checksums.py` — fail-closed hashing of regular Git-indexed repository artifacts.
 - `scripts/verify-records.ts` — validates record graphs and contextual task-result semantics.
 - `scripts/validate_instruction_pack.py` — verifies syntax, dependency graph, instruction limits, links, generated manual, checksums, and package invariants.
-- `scripts/web-shell-build-policy.mjs` — enforces bounded compressed home-route assets and rejects unreviewed remote resources.
+- `scripts/web-shell-build-policy.mjs` — enforces bounded compressed assets and exact route artifacts across every finite public page and rejects unreviewed remote resources.
 - `scripts/copy-ui-styles.mjs` — copies the reviewed UI stylesheet into the package build without runtime generation.
 - `scripts/verify-workspace-build.mjs` — verifies workspace exports, UI stylesheet parity, build artifacts, and the Web shell build policy.
 
@@ -102,9 +102,9 @@
 
 ## Active Web foundation
 
-- `apps/web/app/[locale]/page.tsx` — exact locale allowlist, localized metadata, and server-rendered home entry.
-- `apps/web/app/_components/site-shell.tsx` — semantic accessible public header, navigation, main content, and footer.
-- `apps/web/app/_i18n/` — typed English source messages, locale paths/direction, and canonical metadata.
+- `apps/web/app/[locale]/page.tsx` and `apps/web/app/[locale]/[page]/page.tsx` — exact locale/page allowlists, localized metadata, and server-rendered public entries.
+- `apps/web/app/_components/` — shared semantic public frame plus home and information-page content.
+- `apps/web/app/_i18n/` — typed English source messages, pure finite-route contract, locale paths/direction, and per-page canonical metadata.
 - `apps/web/proxy.ts` — server-side safe-off enforcement for every public-shell HTML and RSC representation.
 - `packages/ui/src/styles.css`, `apps/web/app/styles.css`, and `apps/web/app/icon.svg` — shared semantic tokens, responsive shell presentation, and local icon.
 - `apps/web/test/` plus `tests/web-shell*.test.ts` — activation, finite route, message, metadata, semantic HTML, source boundary, and build/resource-budget contracts.

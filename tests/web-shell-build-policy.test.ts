@@ -263,4 +263,25 @@ describe("Web shell build policy", () => {
       ]),
     );
   });
+
+  it("audits the nested public-page route and canonical independently", () => {
+    const nestedHtml =
+      '<html dir="ltr" lang="en"><head><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="http://localhost:3000/en/privacy"></head><body><main id="main-content"></main></body></html>';
+    const input = {
+      dynamicRoute: "/[locale]/[page]",
+      expectedPathname: "/en/privacy",
+      html: nestedHtml,
+      prerenderManifest: { dynamicRoutes: { "/[locale]/[page]": { fallback: false } } },
+      routeMetadata: { headers: { "x-next-cache-tags": "_N_T_/layout,_N_T_/en/privacy" } },
+      routesManifest: { caseSensitive: true },
+    };
+
+    expect(auditWebShellRouteArtifacts(input)).toEqual([]);
+    expect(
+      auditWebShellRouteArtifacts({
+        ...input,
+        expectedPathname: "/en/safety",
+      }),
+    ).toEqual(expect.arrayContaining(["canonical-route-metadata", "canonical-shell-html"]));
+  });
 });
