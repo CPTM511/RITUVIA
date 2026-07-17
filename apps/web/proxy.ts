@@ -28,7 +28,9 @@ const shellContentSecurityPolicy = [
   "media-src 'none'",
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline'",
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
+  "style-src-attr 'none'",
   "worker-src 'none'",
 ].join("; ");
 

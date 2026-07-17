@@ -86,6 +86,12 @@ describe("Web shell build policy", () => {
     );
   });
 
+  it("rejects every inline style attribute so CSP can disable style attributes", () => {
+    expect(audit(`${html()}<main style="color:inherit"></main>`).findings).toContain(
+      "inline-style-attribute",
+    );
+  });
+
   it.each([
     '<link rel="preconnect" href="https://tracker.invalid">',
     '<link rel="dns-prefetch" href="//tracker.invalid">',

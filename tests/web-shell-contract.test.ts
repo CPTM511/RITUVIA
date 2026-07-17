@@ -27,7 +27,9 @@ describe("Web shell repository contract", () => {
   });
 
   it("locks reflow, focus, touch, dark, reduced-motion, and forced-color foundations", () => {
-    const styles = read("apps/web/app/styles.css");
+    const applicationStyles = read("apps/web/app/styles.css");
+    const sharedStyles = read("packages/ui/src/styles.css");
+    const styles = `${sharedStyles}\n${applicationStyles}`;
 
     for (const rule of [
       ":focus-visible",
@@ -41,6 +43,8 @@ describe("Web shell repository contract", () => {
       expect(styles).toContain(rule);
     }
     expect(styles).toContain("border-inline-start");
+    expect(applicationStyles).not.toContain("--surface-canvas:");
+    expect(applicationStyles).not.toContain("--motion-fast:");
     expect(styles).toMatch(
       /\.brand-link\s*\{[^}]*max-inline-size:\s*100%[^}]*overflow-wrap:\s*anywhere/su,
     );

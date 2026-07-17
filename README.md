@@ -40,7 +40,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, and `packages/domain`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, `packages/domain`, `packages/observability`, and `packages/ui`; other planned directories remain instruction-only until their backlog task begins.
 
 ### Continuous integration
 
@@ -93,6 +93,16 @@ The production build enforces compressed budgets for the localized HTML, initial
 and SVG icon and rejects remote script/style/font/media resources on the home route. Browser QA
 still remains required for keyboard, screen reader, zoom/reflow, reduced motion, RTL, contrast, and
 Core Web Vitals behavior.
+
+### Shared UI foundation
+
+`@rituvia/ui` provides the private semantic-token stylesheet and native-first React primitives used
+by Web and future applications. Import components from `@rituvia/ui` and import
+`@rituvia/ui/styles` once at the application root before application-specific CSS. The package owns
+focus, disabled/loading/invalid/selection state presentation, system/light/dark tokens, reduced
+motion, forced colors, logical-direction behavior, and closed local-action/control-value contracts;
+the consuming application still owns every localized label, route, validation rule, mutation, and
+idempotency boundary. See `packages/ui/README.md` for the exact catalog and review matrix.
 
 ### Local PostgreSQL and Prisma
 

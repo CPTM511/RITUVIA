@@ -3,7 +3,7 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 
 export const webShellBuildBudgets = Object.freeze({
-  cssGzipBytes: 4 * 1024,
+  cssGzipBytes: 6 * 1024,
   htmlGzipBytes: 8 * 1024,
   iconBytes: 2 * 1024,
   javascriptGzipBytes: 220 * 1024,
@@ -254,6 +254,7 @@ const auditDocumentResources = (html) => {
       findings.push("meta-refresh-url");
     }
     const inlineStyle = attributes.get("style") ?? "";
+    if (attributes.has("style")) findings.push("inline-style-attribute");
     if (cssResourceSyntax.test(inlineStyle)) {
       findings.push("inline-style-resource");
     }

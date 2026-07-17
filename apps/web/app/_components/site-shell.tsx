@@ -1,3 +1,5 @@
+import { ActionLink } from "@rituvia/ui";
+
 import type { ShellMessages } from "../_i18n/messages";
 import {
   localeHomePath,
@@ -79,9 +81,9 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
                 {messages.navigation.localeHint}
               </span>
             </div>
-            <a className="button-link" href={localeSectionPath(locale, "practice")}>
+            <ActionLink href={localeSectionPath(locale, "practice")}>
               {messages.navigation.primaryAction}
-            </a>
+            </ActionLink>
           </div>
         </div>
       </header>
@@ -99,15 +101,12 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
             <p className="hero-introduction">{messages.hero.introduction}</p>
             <p className="hero-boundary">{messages.hero.boundary}</p>
             <div className="hero-actions">
-              <a className="button-link" href={localeSectionPath(locale, "practice")}>
+              <ActionLink href={localeSectionPath(locale, "practice")}>
                 {messages.hero.primaryAction}
-              </a>
-              <a
-                className="button-link button-link--secondary"
-                href={localeSectionPath(locale, "privacy")}
-              >
+              </ActionLink>
+              <ActionLink href={localeSectionPath(locale, "privacy")} variant="secondary">
                 {messages.hero.secondaryAction}
-              </a>
+              </ActionLink>
             </div>
           </div>
           <div aria-hidden="true" className="hero-art">

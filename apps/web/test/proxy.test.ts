@@ -43,6 +43,8 @@ describe("public shell request gate", () => {
     expect(response.headers.get("content-security-policy")).toContain("connect-src 'self'");
     expect(response.headers.get("content-security-policy")).toContain("font-src 'none'");
     expect(response.headers.get("content-security-policy")).toContain("object-src 'none'");
+    expect(response.headers.get("content-security-policy")).toContain("script-src-attr 'none'");
+    expect(response.headers.get("content-security-policy")).toContain("style-src-attr 'none'");
     expect(response.headers.get("permissions-policy")).toContain("payment=()");
     expect(response.headers.get("referrer-policy")).toBe("no-referrer");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");

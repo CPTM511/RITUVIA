@@ -48,6 +48,9 @@ type ParsedSource = Readonly<{
   trustedJobContinuation: boolean;
   unsafeConsoleAccess: boolean;
   unsafeCodeLoading: boolean;
+  unsafeUiComposition: boolean;
+  unsafeUiJsxSurface: boolean;
+  uiStorageAccess: boolean;
 }>;
 
 const moduleDefinitions = Object.freeze([
@@ -269,19 +272,89 @@ const unsafeRuntimeIdentifiers = new Set([
 ]);
 const descriptorReflectionIdentifiers = new Set(["getOwnPropertyDescriptor"]);
 const networkRuntimeIdentifiers = new Set([
+  "Audio",
   "SharedWorker",
   "EventSource",
+  "Image",
   "Worker",
   "WebSocket",
+  "WebSocketStream",
   "WebTransport",
   "XMLHttpRequest",
+  "RTCPeerConnection",
   "document",
   "fetch",
   "importScripts",
   "location",
   "navigator",
+  "open",
+  "fetchLater",
   "self",
   "window",
+]);
+const uiStorageIdentifiers = new Set(["caches", "indexedDB", "localStorage", "sessionStorage"]);
+const unsafeUiJsxAttributes = new Set([
+  "as",
+  "aschild",
+  "attributionsrc",
+  "dangerouslysetinnerhtml",
+  "formaction",
+  "ping",
+  "rel",
+  "srcdoc",
+  "style",
+  "target",
+]);
+const unsafeUiNetworkAttributes = new Set([
+  "action",
+  "attributionsrc",
+  "cite",
+  "formaction",
+  "href",
+  "imagesrcset",
+  "ping",
+  "poster",
+  "src",
+  "srcdoc",
+  "srcset",
+  "xlinkhref",
+]);
+const allowedUiIntrinsicElements = new Set([
+  "a",
+  "button",
+  "div",
+  "fieldset",
+  "input",
+  "label",
+  "legend",
+  "option",
+  "p",
+  "select",
+  "span",
+  "textarea",
+]);
+const allowedUiComponentElements = new Set([
+  "Field",
+  "FieldDescription",
+  "FieldErrorMessage",
+  "FieldLabel",
+  "FieldSupport",
+  "Icon",
+  "Spinner",
+]);
+const uiNetworkIntrinsicElements = new Set([
+  "audio",
+  "embed",
+  "form",
+  "iframe",
+  "img",
+  "link",
+  "object",
+  "picture",
+  "script",
+  "source",
+  "track",
+  "video",
 ]);
 const unsafeNodeBuiltins = new Set([
   "child_process",
@@ -552,6 +625,9 @@ const parseSource = (
   let trustedJobContinuation = false;
   let unsafeConsoleAccess = false;
   let unsafeCodeLoading = false;
+  let unsafeUiComposition = false;
+  let unsafeUiJsxSurface = false;
+  let uiStorageAccess = false;
   let buildPathAlias = false;
   const addImport = (node: ts.Node, specifier: string | null): void => {
     const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
@@ -592,6 +668,305 @@ const parseSource = (
     };
     collectUnsafeBindings(sourceFile);
   }
+
+  const unsafeUiHostBindings = new Set<string>();
+  let discoveredUiBinding = true;
+  while (discoveredUiBinding) {
+    discoveredUiBinding = false;
+    const collectUiBindings = (node: ts.Node): void => {
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+        const initializer = unwrapExpression(node.initializer);
+        const unsafeHost =
+          ts.isStringLiteralLike(initializer) ||
+          (ts.isIdentifier(initializer) && unsafeUiHostBindings.has(initializer.text));
+        if (unsafeHost && !unsafeUiHostBindings.has(node.name.text)) {
+          unsafeUiHostBindings.add(node.name.text);
+          discoveredUiBinding = true;
+        }
+      }
+      ts.forEachChild(node, collectUiBindings);
+    };
+    collectUiBindings(sourceFile);
+  }
+
+  const trustedLocalHrefImport = sourceFile.statements.some(
+    (statement) =>
+      ts.isImportDeclaration(statement) &&
+      stringArgument(statement.moduleSpecifier) === "./contracts.js" &&
+      statement.importClause?.namedBindings !== undefined &&
+      ts.isNamedImports(statement.importClause.namedBindings) &&
+      statement.importClause.namedBindings.elements.some(
+        (element) =>
+          element.name.text === "createLocalActionHref" &&
+          (element.propertyName?.text ?? element.name.text) === "createLocalActionHref",
+      ),
+  );
+  const reactNamespaceBindings = new Set<string>();
+  let unsafeReactFactoryImport = false;
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      stringArgument(statement.moduleSpecifier) !== "react" ||
+      !statement.importClause?.namedBindings
+    ) {
+      continue;
+    }
+    if (ts.isNamespaceImport(statement.importClause.namedBindings)) {
+      reactNamespaceBindings.add(statement.importClause.namedBindings.name.text);
+    } else {
+      unsafeReactFactoryImport = statement.importClause.namedBindings.elements.some((element) =>
+        ["cloneElement", "createElement"].includes(element.propertyName?.text ?? element.name.text),
+      );
+    }
+  }
+  if (unsafeReactFactoryImport) {
+    networkAccess = true;
+    unsafeUiComposition = true;
+    unsafeUiJsxSurface = true;
+  }
+
+  const trustedUiComponentBindings = new Set<string>();
+  const trustedComponentDeclaration = (node: ts.Node): boolean => {
+    if (
+      ts.isFunctionDeclaration(node) &&
+      node.parent === sourceFile &&
+      node.name &&
+      allowedUiComponentElements.has(node.name.text)
+    ) {
+      return true;
+    }
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      allowedUiComponentElements.has(node.name.text) &&
+      node.initializer &&
+      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer)) &&
+      ts.isVariableDeclarationList(node.parent) &&
+      (node.parent.flags & ts.NodeFlags.Const) !== 0 &&
+      ts.isVariableStatement(node.parent.parent) &&
+      node.parent.parent.parent === sourceFile
+    ) {
+      return true;
+    }
+    return false;
+  };
+  for (const statement of sourceFile.statements) {
+    if (trustedComponentDeclaration(statement) && ts.isFunctionDeclaration(statement)) {
+      trustedUiComponentBindings.add(statement.name?.text ?? "");
+    }
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (trustedComponentDeclaration(declaration) && ts.isIdentifier(declaration.name)) {
+          trustedUiComponentBindings.add(declaration.name.text);
+        }
+      }
+    }
+  }
+  const shadowedUiComponentBindings = new Set<string>();
+  const collectBindingNames = (name: ts.BindingName): readonly string[] => {
+    if (ts.isIdentifier(name)) return [name.text];
+    return name.elements.flatMap((element) =>
+      ts.isOmittedExpression(element) ? [] : collectBindingNames(element.name),
+    );
+  };
+  const collectAssignedNames = (expression: ts.Expression): readonly string[] => {
+    const target = unwrapExpression(expression);
+    if (ts.isIdentifier(target)) return [target.text];
+    if (ts.isArrayLiteralExpression(target)) {
+      return target.elements.flatMap((element) => {
+        if (ts.isOmittedExpression(element)) return [];
+        return collectAssignedNames(ts.isSpreadElement(element) ? element.expression : element);
+      });
+    }
+    if (ts.isObjectLiteralExpression(target)) {
+      return target.properties.flatMap((property) => {
+        if (ts.isShorthandPropertyAssignment(property)) return [property.name.text];
+        if (ts.isPropertyAssignment(property)) return collectAssignedNames(property.initializer);
+        if (ts.isSpreadAssignment(property)) return collectAssignedNames(property.expression);
+        return [];
+      });
+    }
+    return [];
+  };
+  const collectUiComponentShadows = (node: ts.Node): void => {
+    let names: readonly string[] = [];
+    let trusted = false;
+    if (ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node)) {
+      names = collectBindingNames(node.name);
+      trusted = ts.isVariableDeclaration(node) && trustedComponentDeclaration(node);
+    } else if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name) {
+      names = [node.name.text];
+      trusted = trustedComponentDeclaration(node);
+    } else if (ts.isImportSpecifier(node) || ts.isNamespaceImport(node)) {
+      names = [node.name.text];
+    }
+    if (!trusted) {
+      for (const name of names) {
+        if (allowedUiComponentElements.has(name)) shadowedUiComponentBindings.add(name);
+      }
+    }
+    if (
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+      node.operatorToken.kind <= ts.SyntaxKind.LastAssignment
+    ) {
+      for (const name of collectAssignedNames(node.left)) {
+        if (allowedUiComponentElements.has(name)) shadowedUiComponentBindings.add(name);
+      }
+    }
+    if (
+      (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+      ts.isIdentifier(node.operand) &&
+      allowedUiComponentElements.has(node.operand.text)
+    ) {
+      shadowedUiComponentBindings.add(node.operand.text);
+    }
+    if (
+      (ts.isForInStatement(node) || ts.isForOfStatement(node)) &&
+      !ts.isVariableDeclarationList(node.initializer)
+    ) {
+      for (const name of collectAssignedNames(node.initializer)) {
+        if (allowedUiComponentElements.has(name)) shadowedUiComponentBindings.add(name);
+      }
+    }
+    ts.forEachChild(node, collectUiComponentShadows);
+  };
+  collectUiComponentShadows(sourceFile);
+
+  const jsxTagName = (node: ts.JsxOpeningLikeElement): string | null =>
+    ts.isIdentifier(node.tagName) ? node.tagName.text : null;
+
+  const isSafeLocalHrefAttribute = (node: ts.JsxAttribute): boolean => {
+    const opening = node.parent.parent;
+    if (
+      (!ts.isJsxOpeningElement(opening) && !ts.isJsxSelfClosingElement(opening)) ||
+      jsxTagName(opening) !== "a" ||
+      !node.initializer ||
+      !ts.isJsxExpression(node.initializer) ||
+      !node.initializer.expression
+    ) {
+      return false;
+    }
+    const expression = unwrapExpression(node.initializer.expression);
+    if (
+      file.path !== "packages/ui/src/primitives.tsx" ||
+      !trustedLocalHrefImport ||
+      !ts.isIdentifier(expression)
+    ) {
+      return false;
+    }
+    let nearestFunction: ts.Node | undefined = node;
+    while (nearestFunction && !ts.isFunctionLike(nearestFunction)) {
+      nearestFunction = nearestFunction.parent;
+    }
+    if (
+      !nearestFunction ||
+      !ts.isFunctionDeclaration(nearestFunction) ||
+      nearestFunction.name?.text !== "ActionLink"
+    ) {
+      return false;
+    }
+    const owner = nearestFunction;
+    const ownerBody = owner.body;
+    if (!ownerBody) return false;
+    const hrefParameterCount = owner.parameters.reduce(
+      (count, parameter) =>
+        count + collectBindingNames(parameter.name).filter((name) => name === "href").length,
+      0,
+    );
+    if (hrefParameterCount !== 1) return false;
+
+    let targetDeclarations = 0;
+    let trustedTargetDeclaration = false;
+    let targetReassigned = false;
+    let constructorShadowed = false;
+    let hrefShadowedOrReassigned = false;
+    const targetName = expression.text;
+    const inspectActionLink = (candidate: ts.Node): void => {
+      if (ts.isVariableDeclaration(candidate) && ts.isIdentifier(candidate.name)) {
+        if (candidate.name.text === targetName) {
+          targetDeclarations += 1;
+          const initializer = candidate.initializer
+            ? unwrapExpression(candidate.initializer)
+            : undefined;
+          const hrefArgument =
+            initializer && ts.isCallExpression(initializer) ? initializer.arguments[0] : undefined;
+          trustedTargetDeclaration =
+            trustedTargetDeclaration ||
+            Boolean(
+              initializer &&
+              ts.isCallExpression(initializer) &&
+              ts.isIdentifier(initializer.expression) &&
+              initializer.expression.text === "createLocalActionHref" &&
+              initializer.arguments.length === 1 &&
+              hrefArgument !== undefined &&
+              ts.isIdentifier(hrefArgument) &&
+              hrefArgument.text === "href" &&
+              ts.isVariableDeclarationList(candidate.parent) &&
+              (candidate.parent.flags & ts.NodeFlags.Const) !== 0 &&
+              candidate.parent.declarations.length === 1 &&
+              ts.isVariableStatement(candidate.parent.parent) &&
+              candidate.parent.parent.parent === ownerBody,
+            );
+        }
+        if (candidate.name.text === "createLocalActionHref") constructorShadowed = true;
+        if (candidate.name.text === "href") hrefShadowedOrReassigned = true;
+      }
+      if (
+        ts.isParameter(candidate) &&
+        collectBindingNames(candidate.name).includes("createLocalActionHref")
+      ) {
+        constructorShadowed = true;
+      }
+      if (ts.isParameter(candidate) && collectBindingNames(candidate.name).includes("href")) {
+        hrefShadowedOrReassigned = true;
+      }
+      if (
+        ts.isFunctionDeclaration(candidate) &&
+        candidate !== owner &&
+        candidate.name?.text === "createLocalActionHref"
+      ) {
+        constructorShadowed = true;
+      }
+      if (
+        ts.isBinaryExpression(candidate) &&
+        candidate.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+        candidate.operatorToken.kind <= ts.SyntaxKind.LastAssignment
+      ) {
+        const assignedNames = collectAssignedNames(candidate.left);
+        if (assignedNames.includes(targetName)) targetReassigned = true;
+        if (assignedNames.includes("createLocalActionHref")) constructorShadowed = true;
+        if (assignedNames.includes("href")) hrefShadowedOrReassigned = true;
+      }
+      if (
+        (ts.isPrefixUnaryExpression(candidate) || ts.isPostfixUnaryExpression(candidate)) &&
+        ts.isIdentifier(candidate.operand) &&
+        [targetName, "createLocalActionHref", "href"].includes(candidate.operand.text)
+      ) {
+        if (candidate.operand.text === targetName) targetReassigned = true;
+        if (candidate.operand.text === "createLocalActionHref") constructorShadowed = true;
+        if (candidate.operand.text === "href") hrefShadowedOrReassigned = true;
+      }
+      if (
+        (ts.isForInStatement(candidate) || ts.isForOfStatement(candidate)) &&
+        !ts.isVariableDeclarationList(candidate.initializer)
+      ) {
+        const assignedNames = collectAssignedNames(candidate.initializer);
+        if (assignedNames.includes(targetName)) targetReassigned = true;
+        if (assignedNames.includes("createLocalActionHref")) constructorShadowed = true;
+        if (assignedNames.includes("href")) hrefShadowedOrReassigned = true;
+      }
+      ts.forEachChild(candidate, inspectActionLink);
+    };
+    inspectActionLink(ownerBody);
+    return (
+      targetDeclarations === 1 &&
+      trustedTargetDeclaration &&
+      !targetReassigned &&
+      !constructorShadowed &&
+      !hrefShadowedOrReassigned
+    );
+  };
 
   const visit = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
@@ -634,7 +1009,11 @@ const parseSource = (
       ) {
         addImport(node, stringArgument(node.arguments[0]));
       }
-      if (callChain?.at(-1) === "fetch") {
+      if (
+        callChain?.at(-1) === "fetch" ||
+        callChain?.at(-1) === "fetchLater" ||
+        (ts.isIdentifier(unwrappedCallee) && unwrappedCallee.text === "open")
+      ) {
         networkAccess = true;
       }
       if (callChain?.at(-1) === "continueTrustedJob") {
@@ -665,7 +1044,13 @@ const parseSource = (
     } else if (
       ts.isNewExpression(node) &&
       ts.isIdentifier(node.expression) &&
-      ["EventSource", "WebSocket", "XMLHttpRequest"].includes(node.expression.text)
+      [
+        "EventSource",
+        "RTCPeerConnection",
+        "WebSocket",
+        "WebSocketStream",
+        "XMLHttpRequest",
+      ].includes(node.expression.text)
     ) {
       networkAccess = true;
     }
@@ -678,6 +1063,8 @@ const parseSource = (
     }
 
     if (ts.isIdentifier(node)) {
+      if (uiStorageIdentifiers.has(node.text)) uiStorageAccess = true;
+      if (["cloneElement", "createElement"].includes(node.text)) unsafeUiComposition = true;
       if (node.text === "console") {
         consoleAccess = true;
         const property = node.parent;
@@ -726,6 +1113,43 @@ const parseSource = (
       if (descriptorReflectionIdentifiers.has(node.text)) descriptorReflection = true;
       if (networkRuntimeIdentifiers.has(node.text)) networkAccess = true;
     }
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const tagName = jsxTagName(node);
+      if (tagName === null) {
+        unsafeUiComposition = true;
+        unsafeUiJsxSurface = true;
+      } else if (tagName[0] === tagName[0]?.toLowerCase()) {
+        if (!allowedUiIntrinsicElements.has(tagName)) unsafeUiJsxSurface = true;
+        if (uiNetworkIntrinsicElements.has(tagName)) networkAccess = true;
+      } else if (
+        unsafeUiHostBindings.has(tagName) ||
+        !trustedUiComponentBindings.has(tagName) ||
+        shadowedUiComponentBindings.has(tagName)
+      ) {
+        networkAccess = true;
+        unsafeUiComposition = true;
+        unsafeUiJsxSurface = true;
+      }
+    }
+    if (ts.isJsxSpreadAttribute(node)) unsafeUiJsxSurface = true;
+    if (ts.isJsxAttribute(node)) {
+      if (!ts.isIdentifier(node.name)) {
+        unsafeUiJsxSurface = true;
+      } else {
+        const attributeName = node.name.text.toLowerCase();
+        const safeLocalHref = attributeName === "href" && isSafeLocalHrefAttribute(node);
+        if (unsafeUiJsxAttributes.has(attributeName) && !safeLocalHref) {
+          unsafeUiJsxSurface = true;
+          if (attributeName === "as" || attributeName === "aschild") {
+            unsafeUiComposition = true;
+          }
+        }
+        if (unsafeUiNetworkAttributes.has(attributeName) && !safeLocalHref) {
+          networkAccess = true;
+          unsafeUiJsxSurface = true;
+        }
+      }
+    }
 
     if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
       const chain = propertyChain(node);
@@ -738,6 +1162,17 @@ const parseSource = (
       const staticProperty = ts.isElementAccessExpression(node)
         ? staticPropertyArgument(node.argumentExpression)
         : null;
+      if (
+        staticProperty === "cloneElement" ||
+        staticProperty === "createElement" ||
+        (ts.isElementAccessExpression(node) &&
+          ts.isIdentifier(node.expression) &&
+          reactNamespaceBindings.has(node.expression.text))
+      ) {
+        networkAccess = true;
+        unsafeUiComposition = true;
+        unsafeUiJsxSurface = true;
+      }
       if (
         staticProperty !== null &&
         [
@@ -826,6 +1261,9 @@ const parseSource = (
     trustedJobContinuation,
     unsafeConsoleAccess,
     unsafeCodeLoading,
+    unsafeUiComposition,
+    unsafeUiJsxSurface,
+    uiStorageAccess,
   });
 };
 
@@ -1294,6 +1732,23 @@ export const auditArchitecture = (
       if (parsed.environmentAccess) add(findings, "divination-environment-access", file.path);
       if (parsed.networkAccess) add(findings, "divination-network-access", file.path);
       if (parsed.runtimeGlobalAccess) add(findings, "divination-runtime-global", file.path);
+    }
+    if (sourceModule.root === "packages/ui" && isRuntimeDependencyFile(file.path)) {
+      if (parsed.networkAccess) add(findings, "ui-network-access", file.path);
+      if (parsed.environmentAccess || parsed.runtimeGlobalAccess) {
+        add(findings, "ui-runtime-capability", file.path);
+      }
+      if (parsed.uiStorageAccess) add(findings, "ui-storage-access", file.path);
+      if (parsed.unsafeUiComposition) add(findings, "ui-polymorphic-host", file.path);
+      if (parsed.unsafeUiJsxSurface) add(findings, "ui-dangerous-jsx-surface", file.path);
+      if (
+        parsed.imports.some(({ specifier }) =>
+          ["react/jsx-dev-runtime", "react/jsx-runtime"].includes(specifier ?? ""),
+        )
+      ) {
+        add(findings, "ui-dangerous-jsx-surface", file.path);
+        add(findings, "ui-polymorphic-host", file.path);
+      }
     }
     if (parsed.environmentAccess || parsed.runtimeGlobalAccess) serverTaintedFiles.add(file.path);
 

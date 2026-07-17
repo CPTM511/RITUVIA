@@ -45,6 +45,11 @@ loading, and unexpected media elements, and enforces gzip budgets for HTML, CSS,
 a raw SVG icon limit. Budget changes require measured evidence and review; increasing a number only
 to make a build pass is not an acceptable fix.
 
+`scripts/copy-ui-styles.mjs` is the UI package prebuild step. It copies the statically reviewed
+source stylesheet byte-for-byte into `packages/ui/dist`; `scripts/verify-workspace-build.mjs` checks
+that parity, imports the built UI module, and includes the CSS and style entry points in the required
+artifact inventory before auditing the Web shell.
+
 It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
 inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server
 closure taint, provider ownership, dependency direction, and cycles against one registered policy.

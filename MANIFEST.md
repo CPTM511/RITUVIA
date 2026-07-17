@@ -89,7 +89,16 @@
 - `scripts/verify-records.ts` — validates record graphs and contextual task-result semantics.
 - `scripts/validate_instruction_pack.py` — verifies syntax, dependency graph, instruction limits, links, generated manual, checksums, and package invariants.
 - `scripts/web-shell-build-policy.mjs` — enforces bounded compressed home-route assets and rejects unreviewed remote resources.
-- `scripts/verify-workspace-build.mjs` — verifies workspace exports, build artifacts, and the Web shell build policy.
+- `scripts/copy-ui-styles.mjs` — copies the reviewed UI stylesheet into the package build without runtime generation.
+- `scripts/verify-workspace-build.mjs` — verifies workspace exports, UI stylesheet parity, build artifacts, and the Web shell build policy.
+
+## Active UI foundation
+
+- `packages/ui/src/contracts.ts` — bounded local-action, control-identifier, and closed theme values.
+- `packages/ui/src/primitives.tsx` — native-first action, field, selection, alert, and loading primitives.
+- `packages/ui/src/styles.css` — semantic light/dark/system tokens, focus/state, motion, forced-color, and RTL behavior.
+- `packages/ui/test/` and `packages/ui/examples/` — server-rendered semantic, contrast, state, long-text, writing-system, and narrow-reflow evidence.
+- `packages/ui/README.md` and `records/decisions/D-024.md` — usage boundaries and the durable architecture decision.
 
 ## Active Web foundation
 
@@ -97,7 +106,7 @@
 - `apps/web/app/_components/site-shell.tsx` — semantic accessible public header, navigation, main content, and footer.
 - `apps/web/app/_i18n/` — typed English source messages, locale paths/direction, and canonical metadata.
 - `apps/web/proxy.ts` — server-side safe-off enforcement for every public-shell HTML and RSC representation.
-- `apps/web/app/styles.css` and `apps/web/app/icon.svg` — responsive light/dark/reduced-motion shell presentation and local icon.
+- `packages/ui/src/styles.css`, `apps/web/app/styles.css`, and `apps/web/app/icon.svg` — shared semantic tokens, responsive shell presentation, and local icon.
 - `apps/web/test/` plus `tests/web-shell*.test.ts` — activation, finite route, message, metadata, semantic HTML, source boundary, and build/resource-budget contracts.
 
 ## Reusable records

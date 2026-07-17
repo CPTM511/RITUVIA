@@ -264,7 +264,9 @@ const assertHttpBoundary = ({ contentSecurityPolicy, html, requestId }, processO
   if (
     !contentSecurityPolicy?.includes("default-src 'self'") ||
     !contentSecurityPolicy.includes("connect-src 'self'") ||
-    !contentSecurityPolicy.includes("object-src 'none'")
+    !contentSecurityPolicy.includes("object-src 'none'") ||
+    !contentSecurityPolicy.includes("script-src-attr 'none'") ||
+    !contentSecurityPolicy.includes("style-src-attr 'none'")
   ) {
     fail("The Web request boundary did not return its restrictive shell security policy.");
   }
@@ -308,7 +310,7 @@ let webProcess;
 try {
   await assertSuccessfulCommand(
     turboCli,
-    ["run", "build", "--filter=@rituvia/worker", "--force"],
+    ["run", "build", "--filter=@rituvia/ui", "--filter=@rituvia/worker", "--force"],
     { env: createEnvironment() },
     "Configuration and Worker prerequisite build",
   );

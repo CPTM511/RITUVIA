@@ -1,4 +1,4 @@
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
@@ -28,6 +28,10 @@ const requiredArtifacts = [
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
   "packages/observability/dist/worker.js",
+  "packages/ui/dist/index.d.ts",
+  "packages/ui/dist/index.js",
+  "packages/ui/dist/styles.css",
+  "packages/ui/dist/styles.js",
 ];
 
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
@@ -54,6 +58,7 @@ const observabilityModule = await import(
 const observabilityWorkerModule = await import(
   pathToFileURL(`${process.cwd()}/packages/observability/dist/worker.js`)
 );
+const uiModule = await import(pathToFileURL(`${process.cwd()}/packages/ui/dist/index.js`));
 
 if (Object.keys(domainModule).length !== 0) {
   throw new Error("The empty domain boundary emitted unexpected runtime exports.");
@@ -89,6 +94,21 @@ if (
 }
 if (typeof observabilityWorkerModule.continueTrustedJob !== "function") {
   throw new TypeError("The observability worker build omitted its isolated continuation boundary.");
+}
+
+if (
+  typeof uiModule.ActionLink !== "function" ||
+  typeof uiModule.Button !== "function" ||
+  typeof uiModule.createLocalActionHref !== "function" ||
+  typeof uiModule.resolveThemeMode !== "function"
+) {
+  throw new TypeError("The UI build does not expose its reviewed primitive and theme contracts.");
+}
+if (
+  (await readFile("packages/ui/dist/styles.css", "utf8")) !==
+  (await readFile("packages/ui/src/styles.css", "utf8"))
+) {
+  throw new TypeError("The UI build stylesheet is absent or differs from its reviewed source.");
 }
 
 if (

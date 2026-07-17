@@ -124,6 +124,157 @@ describe("package architecture policy", () => {
     );
   });
 
+  it("keeps UI free of network, storage, runtime, polymorphic, and dangerous JSX capabilities", () => {
+    const files = baseline();
+    files.push({
+      path: "packages/ui/src/unsafe.tsx",
+      source:
+        'import { cloneElement } from "react"; export const unsafe = (props: Record<string, unknown>) => { localStorage.setItem("theme", "dark"); fetch("https://example.invalid"); return <div {...props} style={{}} dangerouslySetInnerHTML={{ __html: String(process.env.VALUE) }}>{cloneElement(<span />)}</div>; };',
+    });
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "ui-dangerous-jsx-surface",
+        "ui-network-access",
+        "ui-polymorphic-host",
+        "ui-runtime-capability",
+        "ui-storage-access",
+      ]),
+    );
+  });
+
+  it.each([
+    ['export const Unsafe = () => <img src="https://tracker.invalid/pixel" />;', false, true],
+    [
+      'const Host = "script"; export const Unsafe = () => <Host src="https://tracker.invalid/x.js" />;',
+      true,
+      true,
+    ],
+    [
+      'export const Unsafe = () => <form action="https://tracker.invalid/collect"></form>;',
+      false,
+      true,
+    ],
+    [
+      'export const Unsafe = () => <a href="https://tracker.invalid/collect">Leave</a>;',
+      false,
+      true,
+    ],
+    [
+      'export const unsafe = () => { const pixel = new Image(); pixel.src = "https://tracker.invalid/pixel"; return pixel; };',
+      false,
+      false,
+    ],
+  ])("rejects a UI resource or host escape: %#", (source, polymorphic, dangerousJsx) => {
+    const files = baseline();
+    files.push({ path: "packages/ui/src/resource-escape.tsx", source });
+
+    const result = rules(files);
+    expect(result).toContain("ui-network-access");
+    if (dangerousJsx) expect(result).toContain("ui-dangerous-jsx-surface");
+    if (polymorphic) expect(result).toContain("ui-polymorphic-host");
+  });
+
+  it("rejects direct JSX-runtime factories that bypass source-level host inspection", () => {
+    const files = baseline();
+    files.push({
+      path: "packages/ui/src/jsx-runtime-escape.ts",
+      source:
+        'import { jsx } from "react/jsx-runtime"; export const Unsafe = () => jsx("img", { src: "https://tracker.invalid/pixel" });',
+    });
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining(["ui-dangerous-jsx-surface", "ui-polymorphic-host"]),
+    );
+  });
+
+  it.each([
+    {
+      path: "packages/ui/src/fake-href.tsx",
+      source:
+        'const createLocalActionHref = (value: string) => value; const target = createLocalActionHref("https://tracker.invalid"); export const Unsafe = () => <a href={target}>Leave</a>;',
+    },
+    {
+      path: "packages/ui/src/primitives.tsx",
+      source:
+        'import { createLocalActionHref } from "./contracts.js"; export function ActionLink({ href }: { href: string }) { let target = createLocalActionHref(href); target = "https://tracker.invalid"; return <a href={target}>Leave</a>; }',
+    },
+    {
+      path: "packages/ui/src/primitives.tsx",
+      source:
+        'import { createLocalActionHref } from "./contracts.js"; export function ActionLink({ href }: { href: string }) { const target = createLocalActionHref(href); { const target = "https://tracker.invalid"; void target; } return <a href={target}>Leave</a>; }',
+    },
+    {
+      path: "packages/ui/src/primitives.tsx",
+      source:
+        'import { createLocalActionHref } from "./contracts.js"; export function ActionLink({ href }: { href: string }) { const target = createLocalActionHref(href); const inner = (target: string) => <a href={target}>Leave</a>; return inner("https://tracker.invalid"); }',
+    },
+    {
+      path: "packages/ui/src/primitives.tsx",
+      source:
+        'import { createLocalActionHref } from "./contracts.js"; export function ActionLink({ href }: { href: string }) { const target = createLocalActionHref(href); class Inner { render(target: string) { return <a href={target}>Leave</a>; } } return new Inner().render("https://tracker.invalid"); }',
+    },
+  ])("rejects an untrusted, reassigned, or shadowed local-href binding: %#", (fixture) => {
+    const files = baseline();
+    files.push({
+      path: "packages/ui/src/contracts.ts",
+      source: "export const createLocalActionHref = (value: string) => value;",
+    });
+    const existing = files.findIndex(({ path }) => path === fixture.path);
+    if (existing >= 0) files[existing] = fixture;
+    else files.push(fixture);
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining(["ui-dangerous-jsx-surface", "ui-network-access"]),
+    );
+  });
+
+  it.each([
+    'export const Unsafe = ({ Field }: { Field: "form" }) => <Field><button type="submit">Submit</button></Field>;',
+    'const condition = true; const Field = condition ? "form" : "div"; export const Unsafe = () => <Field><button type="submit">Submit</button></Field>;',
+    'const Field = ["form"][0]; export const Unsafe = () => <Field><button type="submit">Submit</button></Field>;',
+    'export function Field({ children }: { children: unknown }) { return <div>{children}</div>; } Field = "form" as never; export const Unsafe = () => <Field><button type="submit">Submit</button></Field>;',
+    'export function Field({ children }: { children: unknown }) { return <div>{children}</div>; } ({ Field } = { Field: "form" as never }); export const Unsafe = () => <Field><button type="submit">Submit</button></Field>;',
+    'export function Field({ children }: { children: unknown }) { return <div>{children}</div>; } [Field] = ["form" as never]; export const Unsafe = () => <Field><button type="submit">Submit</button></Field>;',
+  ])("rejects a component-name host binding escape: %#", (source) => {
+    const files = baseline();
+    files.push({ path: "packages/ui/src/host-binding-escape.tsx", source });
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining(["ui-dangerous-jsx-surface", "ui-polymorphic-host"]),
+    );
+  });
+
+  it("rejects React namespace element factories", () => {
+    const files = baseline();
+    files.push({
+      path: "packages/ui/src/react-factory-escape.tsx",
+      source:
+        'import * as React from "react"; export const Unsafe = () => React["createElement"]("img", { src: "https://tracker.invalid/pixel" });',
+    });
+
+    expect(rules(files)).toEqual(
+      expect.arrayContaining([
+        "ui-dangerous-jsx-surface",
+        "ui-network-access",
+        "ui-polymorphic-host",
+      ]),
+    );
+  });
+
+  it.each([
+    'export const unsafe = () => open("https://tracker.invalid");',
+    'const launch = open; export const unsafe = () => launch("https://tracker.invalid");',
+    'export const unsafe = () => fetchLater("https://tracker.invalid");',
+    'export const unsafe = () => new RTCPeerConnection({ iceServers: [{ urls: "stun:tracker.invalid" }] });',
+    'export const unsafe = () => new WebSocketStream("https://tracker.invalid");',
+  ])("rejects a direct browser-network runtime escape: %#", (source) => {
+    const files = baseline();
+    files.push({ path: "packages/ui/src/network-runtime-escape.ts", source });
+
+    expect(rules(files)).toContain("ui-network-access");
+  });
+
   it("blocks UI access to the database and every unreviewed external adapter", () => {
     const files = baseline();
     replaceSource(
