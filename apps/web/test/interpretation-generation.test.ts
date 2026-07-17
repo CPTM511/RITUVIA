@@ -1,25 +1,34 @@
-import type {
-  PreparedTarotInterpretationGenerationV1,
-  TarotGenerationOperationalMetadataV1,
-  TarotInterpretationOutputV1,
+import {
+  parseTarotInterpretationInputJsonV1,
+  type PreparedTarotInterpretationGenerationV1,
+  type PreparedTarotInterpretationVerifierV1,
+  type TarotGenerationOperationalMetadataV1,
+  type TarotInterpretationOutputV1,
+  type TarotInterpretationVerificationResultV1,
 } from "@rituvia/ai";
+import { createHmac } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const aiHarness = vi.hoisted(() => ({
   execute: vi.fn(),
   prepare: vi.fn(),
+  prepareVerifier: vi.fn(),
+  verify: vi.fn(),
 }));
 
 vi.mock("@rituvia/ai", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@rituvia/ai")>()),
   executePreparedTarotInterpretationGenerationV1: aiHarness.execute,
   prepareTarotInterpretationGenerationV1: aiHarness.prepare,
+  prepareTarotInterpretationVerifierV1: aiHarness.prepareVerifier,
+  verifyTarotInterpretationCandidateV1: aiHarness.verify,
 }));
 
 import {
   createInterpretationGenerationApplicationService,
   createWebGenerationDeadlineRunnerV1,
+  createWebTarotVerificationDeadlineRunnerV1,
   WebInterpretationGenerationError,
   type InterpretationGenerationApplicationDependenciesV1,
   type WebInterpretationGenerationRequestV1,
@@ -35,6 +44,11 @@ type PersistedInterpretation = Extract<
 beforeEach(() => {
   aiHarness.execute.mockReset();
   aiHarness.prepare.mockReset();
+  aiHarness.prepareVerifier.mockReset();
+  aiHarness.verify.mockReset();
+  aiHarness.prepareVerifier.mockReturnValue(preparedVerifier);
+  aiHarness.verify.mockResolvedValue(verificationResult());
+  semanticReviewer.review.mockReset();
 });
 
 afterEach(() => {
@@ -49,12 +63,53 @@ const subjectId = "44444444-4444-4444-8444-444444444444";
 const sessionToken = "a".repeat(43);
 const checksum = `sha256:${"a".repeat(64)}`;
 const outputSchemaChecksum = `sha256:${"b".repeat(64)}`;
+const verificationDigestFor = (canonical: string): string =>
+  `hmac-sha256:${createHmac("sha256", Buffer.alloc(32, 7))
+    .update("rituvia.ai.verification.v1", "utf8")
+    .update("\0", "utf8")
+    .update(canonical, "utf8")
+    .digest("hex")}`;
+const canonicalJsonForTest = (value: unknown): string => {
+  const visit = (candidate: unknown): string => {
+    if (candidate === null || typeof candidate === "boolean" || typeof candidate === "string") {
+      return JSON.stringify(candidate);
+    }
+    if (typeof candidate === "number" && Number.isSafeInteger(candidate)) {
+      return JSON.stringify(candidate);
+    }
+    if (Array.isArray(candidate)) return `[${candidate.map(visit).join(",")}]`;
+    if (typeof candidate !== "object" || candidate === null) {
+      throw new TypeError("Synthetic completion fixture is not canonical JSON.");
+    }
+    return `{${Object.entries(candidate)
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([key, child]) => `${JSON.stringify(key)}:${visit(child)}`)
+      .join(",")}}`;
+  };
+  return visit(value);
+};
+const completionDigestFor = (
+  completion: object,
+  boundInterpretationId = interpretationId,
+): string =>
+  `sha256:${createHmac("sha256", Buffer.alloc(32, 7))
+    .update("rituvia.interpretation-generation.completion.v1", "utf8")
+    .update("\0", "utf8")
+    .update(
+      canonicalJsonForTest({
+        completion,
+        interpretationId: boundInterpretationId,
+        schemaVersion: "interpretation-generation-digest.v1",
+      }),
+      "utf8",
+    )
+    .digest("hex")}`;
 
 const deterministicFacts = Object.freeze({
-  algorithmVersion: "test.algorithm.v1",
+  algorithmVersion: "partial-fisher-yates-rejection-uint8.v1",
   catalog: Object.freeze({ id: "test_catalog", version: "1.0.0" }),
   deck: Object.freeze({ id: "test_deck", version: "1.0.0" }),
-  engineName: "test_engine",
+  engineName: "rituvia.tarot-draw",
   engineVersion: "1.0.0",
   method: "tarot" as const,
   orientationPolicy: "upright_only" as const,
@@ -67,7 +122,7 @@ const deterministicFacts = Object.freeze({
     }),
   ]),
   replacementPolicy: "without_replacement" as const,
-  rulesVersion: "test.rules.v1",
+  rulesVersion: "tarot-draw-rules.v1",
   schemaVersion: "tarot-draw-facts.v1" as const,
   spread: Object.freeze({ id: "one_card", version: "1.0.0" }),
 });
@@ -230,13 +285,105 @@ const output = Object.freeze({
   summary: "A bounded synthetic interpretation.",
   symbols: Object.freeze([
     Object.freeze({
-      factRef: "position:focus:card:test_card:upright",
+      factRef: "tarot.position.focus",
       meaning: "A synthetic grounded meaning.",
       possibility: "You might pause before choosing.",
     }),
   ]),
   title: "Synthetic reflection",
 }) satisfies TarotInterpretationOutputV1;
+
+const verificationPolicyReference = Object.freeze({
+  approvalReference: "test:verification-policy-approved",
+  checksum,
+  id: "test_verification_policy",
+  version: "1.0.0",
+});
+const verificationRuntimeReference = Object.freeze({
+  approvalReference: "test:verification-runtime-approved",
+  checksum,
+  id: "test_verification_runtime",
+  version: "1.0.0",
+});
+const verificationReviewerReference = Object.freeze({
+  approvalReference: "test:verification-reviewer-approved",
+  checksum,
+  id: "test_verification_reviewer",
+  version: "1.0.0",
+});
+const verificationReviewerPolicyReference = Object.freeze({
+  approvalReference: "test:verification-reviewer-policy-approved",
+  checksum,
+  id: "test_verification_reviewer_policy",
+  version: "1.0.0",
+});
+const verificationReviewerProvider = Object.freeze({
+  id: "test_verification_provider",
+  version: "1.0.0",
+});
+const verificationReviewerModel = Object.freeze({
+  id: "test_verification_model",
+  version: "1.0.0",
+});
+const preparedVerifier = Object.freeze({
+  policy: verificationPolicyReference,
+  reviewer: verificationReviewerReference,
+  reviewerModel: verificationReviewerModel,
+  reviewerPolicy: verificationReviewerPolicyReference,
+  reviewerProvider: verificationReviewerProvider,
+  runtime: verificationRuntimeReference,
+  schemaVersion: "prepared-tarot-interpretation-verifier.v1",
+}) as unknown as PreparedTarotInterpretationVerifierV1;
+
+const verificationResult = (
+  status: "safe_replacement" | "verified" = "verified",
+  verifiedOutput: TarotInterpretationOutputV1 = output,
+  outputDigest = verificationDigestFor(
+    JSON.stringify({
+      digestScope: "canonical-tarot-verification-output-json.v1",
+      output: verifiedOutput,
+    }),
+  ),
+): TarotInterpretationVerificationResultV1 =>
+  Object.freeze({
+    displayable: true,
+    metadata: Object.freeze({
+      deterministicChecksVersion: "tarot-post-generation-checks.v1",
+      outcome: status,
+      policyVersion: verificationPolicyReference.version,
+      reviewerModelVersion: verificationReviewerModel.version,
+      reviewerPolicyVersion: verificationReviewerPolicyReference.version,
+      reviewerProviderVersion: verificationReviewerProvider.version,
+      reviewerVersion: verificationReviewerReference.version,
+      runtimeVersion: verificationRuntimeReference.version,
+      schemaVersion: "tarot-verification-operational-metadata.v1",
+    }),
+    output: verifiedOutput,
+    provenance: Object.freeze({
+      candidateDigest: `hmac-sha256:${"c".repeat(64)}`,
+      candidateDigestScope: "canonical-tarot-verification-candidate-json.v1",
+      deterministicChecksVersion: "tarot-post-generation-checks.v1",
+      outputDigest,
+      outputDigestScope: "canonical-tarot-verification-output-json.v1",
+      policy: verificationPolicyReference,
+      reviewer: verificationReviewerReference,
+      reviewerModel: verificationReviewerModel,
+      reviewerPolicy: verificationReviewerPolicyReference,
+      reviewerProvider: verificationReviewerProvider,
+      runtime: verificationRuntimeReference,
+      schemaVersion: "tarot-verification-provenance.v1",
+      verificationTimeoutMs: 1_000,
+    }),
+    schemaVersion: "tarot-interpretation-verification-result.v1",
+    status,
+  }) as TarotInterpretationVerificationResultV1;
+
+const verificationPolicy = Object.freeze({}) as never;
+const verificationRuntime = Object.freeze({ reviewerTimeoutMs: 1_000 }) as never;
+const semanticReviewer = Object.freeze({
+  descriptor: Object.freeze({}),
+  review: vi.fn(),
+});
 
 const metadata = (
   status: "failed" | "fallback" | "pending_verification",
@@ -280,33 +427,35 @@ const metadata = (
 const request = Object.freeze({
   continuation: Object.freeze({ policyApprovalReference: "test:safety-approved" }),
   idempotencyKey: "abcdefghijklmnopqrstuv",
-  input: Object.freeze({
-    approvedContent: Object.freeze([
-      Object.freeze({
-        checksum,
-        contentId: "test_content",
-        locale: "en",
-        sourceRef: "source:test",
-        tradition: "tarot",
-        version: "1.0.0",
+  input: parseTarotInterpretationInputJsonV1(
+    JSON.stringify({
+      approvedContent: Object.freeze([
+        Object.freeze({
+          checksum,
+          contentId: "test_content",
+          locale: "en",
+          sourceRef: "source:test",
+          tradition: "tarot",
+          version: "1.0.0",
+        }),
+      ]),
+      approvedRitualTemplateCodes: Object.freeze(["free_candle"]),
+      deterministicFacts,
+      locale: "en",
+      modality: "tarot",
+      prompt: runtime.prompt,
+      readingType: "one_card",
+      requestId,
+      safetyDecision: Object.freeze({
+        policyVersion: "pre-generation-safety.en.v1",
+        route: "allowed",
+        schemaVersion: "interpretation-safety-decision.v1",
       }),
-    ]),
-    approvedRitualTemplateCodes: Object.freeze(["free_candle"]),
-    deterministicFacts,
-    locale: "en",
-    modality: "tarot",
-    prompt: runtime.prompt,
-    readingType: "one_card",
-    requestId,
-    safetyDecision: Object.freeze({
-      policyVersion: "pre-generation-safety.en.v1",
-      route: "allowed",
-      schemaVersion: "interpretation-safety-decision.v1",
+      schemaVersion: "tarot-interpretation-input.v1",
+      themeCode: "open_reflection",
+      tone: "grounded",
     }),
-    schemaVersion: "tarot-interpretation-input.v1",
-    themeCode: "open_reflection",
-    tone: "grounded",
-  }),
+  ),
   prompt: Object.freeze({}),
   readingId,
   retrievedContent: Object.freeze({}),
@@ -330,34 +479,57 @@ const persisted = (
     : status === "failed"
       ? "configuration"
       : null,
-): PersistedInterpretation =>
-  ({
+  verification: TarotInterpretationVerificationResultV1 | null = null,
+): PersistedInterpretation => {
+  const operational = {
+    attemptCount: status === "fallback" ? (0 as const) : (1 as const),
+    costStatus: "unavailable" as const,
+    currencyCode: null,
+    estimatedCostMicros: null,
+    failureCode,
+    inputTokens: null,
+    latencyMs: 0,
+    outputTokens: null,
+    retryReason: null,
+    tokenStatus: "unavailable" as const,
+    totalTokens: null,
+  };
+  const persistedVerification =
+    verification === null
+      ? null
+      : {
+          ...verification,
+          createdAt: "2026-07-18T00:00:01.000Z",
+          expiresAt: "2026-07-19T00:00:00.000Z",
+          finalizationDigest: completionDigestFor({
+            operational,
+            status: "pending_verification",
+            verification,
+          }),
+          interpretationId,
+          subjectId,
+        };
+  return {
     completedAt: "2026-07-18T00:00:01.000Z",
     createdAt: "2026-07-18T00:00:00.000Z",
     expiresAt: "2026-07-19T00:00:00.000Z",
     generationNumber: 1,
     generationSchemaVersion: "interpretation-generation.v1",
     id: interpretationId,
-    operational: {
-      attemptCount: status === "fallback" ? 0 : 1,
-      costStatus: "unavailable",
-      currencyCode: null,
-      estimatedCostMicros: null,
-      failureCode,
-      inputTokens: null,
-      latencyMs: 0,
-      outputTokens: null,
-      retryReason: null,
-      tokenStatus: "unavailable",
-      totalTokens: null,
-    },
+    operational,
     ...(status === "fallback" ? { output } : {}),
+    ...(status === "pending_verification"
+      ? {
+          verification: persistedVerification,
+        }
+      : {}),
     provenance,
     readingId,
     requestId,
     status,
     subjectId,
-  }) as PersistedInterpretation;
+  } as PersistedInterpretation;
+};
 
 const createHarness = (
   claim: WebPersistence["claim"],
@@ -369,7 +541,9 @@ const createHarness = (
     finalize: vi.fn(finalize),
   });
   const providerCall = vi.fn();
+  const authorizeCandidate = vi.fn(() => true);
   const service = createInterpretationGenerationApplicationService({
+    authorizeCandidate,
     authorizeRuntime: vi.fn(() => true),
     digestKey: Object.freeze({
       encodedKey: Buffer.alloc(32, 7).toString("base64url"),
@@ -386,8 +560,11 @@ const createHarness = (
       generateStructured: providerCall,
     }),
     runtime,
+    verificationPolicy,
+    verificationReviewer: semanticReviewer as never,
+    verificationRuntime,
   });
-  return { persistence, providerCall, service };
+  return { authorizeCandidate, persistence, providerCall, service };
 };
 
 describe("web interpretation generation composition", () => {
@@ -425,12 +602,18 @@ describe("web interpretation generation composition", () => {
     expect(harness.providerCall).not.toHaveBeenCalled();
   });
 
-  it("preflights before claiming, then finalizes only redacted pending metadata", async () => {
+  it("preflights verification before claim and atomically finalizes a verified output", async () => {
     const order: string[] = [];
     let claimProvenance: ClaimProvenance | undefined;
-    aiHarness.prepare.mockImplementation(async (input) => {
-      order.push("prepare");
-      expect(input.provider.descriptor.provider).toEqual(runtime.provider);
+    let claimInput: Parameters<WebPersistence["claim"]>[0] | undefined;
+    let finalizeInput: Parameters<WebPersistence["finalize"]>[0] | undefined;
+    let persistedFinalizationDigest: string | undefined;
+    aiHarness.prepareVerifier.mockImplementation(() => {
+      order.push("prepare-verifier");
+      return preparedVerifier;
+    });
+    aiHarness.prepare.mockImplementation(async () => {
+      order.push("prepare-generation");
       return prepared;
     });
     aiHarness.execute.mockImplementation(async () => {
@@ -438,20 +621,18 @@ describe("web interpretation generation composition", () => {
       return {
         displayable: false,
         metadata: metadata("pending_verification"),
-        output,
         status: "pending_verification",
       };
+    });
+    aiHarness.verify.mockImplementation(async () => {
+      order.push("verify");
+      return verificationResult();
     });
     const harness = createHarness(
       async (input) => {
         order.push("claim");
+        claimInput = input;
         claimProvenance = input.provenance;
-        expect(input.canonicalRequestDigest).toMatch(/^sha256:[0-9a-f]{64}$/u);
-        expect(input.idempotencyKeyDigest).toMatch(/^sha256:[0-9a-f]{64}$/u);
-        const serialized = JSON.stringify(input);
-        expect(serialized).not.toContain('"messages"');
-        expect(serialized).not.toContain('"question"');
-        expect(serialized).not.toContain('"authorization"');
         return {
           claimToken: "b".repeat(43),
           claimVersion: 1,
@@ -463,11 +644,20 @@ describe("web interpretation generation composition", () => {
       },
       async (input) => {
         order.push("finalize");
-        expect(input.completion).not.toHaveProperty("output");
-        expect(JSON.stringify(input.completion)).not.toContain(output.title);
+        finalizeInput = input;
         if (claimProvenance === undefined) throw new Error("missing claim provenance");
+        const interpretation = persisted(
+          claimProvenance,
+          "pending_verification",
+          null,
+          verificationResult(),
+        );
+        if (interpretation.status !== "pending_verification") {
+          throw new Error("missing pending verification fixture");
+        }
+        persistedFinalizationDigest = interpretation.verification?.finalizationDigest;
         return {
-          interpretation: persisted(claimProvenance, "pending_verification"),
+          interpretation,
           kind: "finalized",
         };
       },
@@ -475,19 +665,180 @@ describe("web interpretation generation composition", () => {
 
     const result = await harness.service.generate(request);
 
-    expect(order).toEqual(["prepare", "claim", "execute", "finalize"]);
+    expect(order).toEqual([
+      "prepare-verifier",
+      "prepare-generation",
+      "claim",
+      "execute",
+      "verify",
+      "finalize",
+    ]);
     expect(result).toMatchObject({
-      displayable: false,
+      displayable: true,
       interpretationId,
       kind: "finalized",
-      status: "pending_verification",
+      status: "verified",
     });
     expect(claimProvenance).toMatchObject({
       currencyCode: "USD",
       eligibilityAsOf: "2026-07-18",
       maximumEstimatedCostMicros: 100_000,
       retryDelayMs: 25,
+      verificationTimeoutMs: 1_000,
     });
+    expect(aiHarness.prepareVerifier.mock.calls[0]?.[0].generationProvider).toEqual(
+      runtime.provider,
+    );
+    expect(aiHarness.prepare.mock.calls[0]?.[0].provider.descriptor.provider).toEqual(
+      runtime.provider,
+    );
+    expect(claimInput?.canonicalRequestDigest).toMatch(/^sha256:[0-9a-f]{64}$/u);
+    expect(claimInput?.idempotencyKeyDigest).toMatch(/^sha256:[0-9a-f]{64}$/u);
+    const serializedClaim = JSON.stringify(claimInput);
+    expect(serializedClaim).not.toContain('"messages"');
+    expect(serializedClaim).not.toContain('"question"');
+    expect(serializedClaim).not.toContain('"authorization"');
+    expect(finalizeInput?.completion).not.toHaveProperty("output");
+    expect(finalizeInput?.completion).toMatchObject({
+      status: "pending_verification",
+      verification: {
+        displayable: true,
+        status: "verified",
+      },
+    });
+    expect(persistedFinalizationDigest).toBe(finalizeInput?.completionDigest);
+    expect(aiHarness.verify).toHaveBeenCalledTimes(1);
+    expect(harness.providerCall).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["verified", "none", true],
+    ["tampered finalization digest", "finalization_digest", false],
+    ["cross-row child", "cross_row", false],
+    ["tampered status", "status", false],
+    ["tampered provenance", "provenance", false],
+    ["tampered candidate binding", "candidate", false],
+    ["tampered output", "output", false],
+  ] as const)(
+    "replays persisted %s without provider, reviewer, verification, or finalization work",
+    async (_caseName, tamper, displayable) => {
+      aiHarness.prepare.mockResolvedValue(prepared);
+      const harness = createHarness(
+        async (input) => {
+          const interpretation = structuredClone(
+            persisted(input.provenance, "pending_verification", null, verificationResult()),
+          ) as PersistedInterpretation;
+          if (
+            interpretation.status !== "pending_verification" ||
+            interpretation.verification === null
+          ) {
+            throw new Error("missing persisted verification fixture");
+          }
+          const mutable = interpretation.verification as unknown as {
+            finalizationDigest: string;
+            interpretationId: string;
+            output: { title: string };
+            provenance: {
+              candidateDigest: string;
+              runtime: { version: string };
+            };
+            status: "safe_replacement" | "verified";
+          };
+          switch (tamper) {
+            case "none":
+              break;
+            case "finalization_digest":
+              mutable.finalizationDigest = `sha256:${"d".repeat(64)}`;
+              break;
+            case "cross_row":
+              mutable.interpretationId = "55555555-5555-4555-8555-555555555555";
+              break;
+            case "status":
+              mutable.status = "safe_replacement";
+              break;
+            case "provenance":
+              mutable.provenance.runtime.version = "1.0.1";
+              break;
+            case "candidate":
+              mutable.provenance.candidateDigest = `hmac-sha256:${"d".repeat(64)}`;
+              break;
+            case "output":
+              mutable.output.title = "Tampered reflection";
+              break;
+          }
+          return { interpretation, kind: "replayed" };
+        },
+        async () => {
+          throw new Error("replay must not finalize");
+        },
+      );
+
+      if (displayable) {
+        await expect(harness.service.generate(request)).resolves.toMatchObject({
+          displayable: true,
+          kind: "replayed",
+          status: "verified",
+        });
+      } else {
+        await expect(harness.service.generate(request)).rejects.toMatchObject({
+          code: "unavailable",
+        } satisfies Partial<WebInterpretationGenerationError>);
+      }
+      expect(aiHarness.execute).not.toHaveBeenCalled();
+      expect(aiHarness.verify).not.toHaveBeenCalled();
+      expect(harness.authorizeCandidate).not.toHaveBeenCalled();
+      expect(harness.persistence.finalize).not.toHaveBeenCalled();
+      expect(harness.providerCall).not.toHaveBeenCalled();
+      expect(semanticReviewer.review).not.toHaveBeenCalled();
+    },
+  );
+
+  it("seals verifier trust rejection as a no-output failed result without fallback", async () => {
+    aiHarness.prepare.mockResolvedValue(prepared);
+    aiHarness.execute.mockResolvedValue({
+      displayable: false,
+      metadata: metadata("pending_verification"),
+      status: "pending_verification",
+    });
+    aiHarness.verify.mockRejectedValue(new Error("synthetic candidate authority rejection"));
+    let claimProvenance: ClaimProvenance | undefined;
+    let finalizationInput: Parameters<WebPersistence["finalize"]>[0] | undefined;
+    const harness = createHarness(
+      async (input) => {
+        claimProvenance = input.provenance;
+        return {
+          claimToken: "b".repeat(43),
+          claimVersion: 1,
+          interpretationId,
+          kind: "claimed",
+          leaseExpiresAt: "2026-07-18T00:01:00.000Z",
+          providerEligible: true,
+        };
+      },
+      async (input) => {
+        finalizationInput = input;
+        if (claimProvenance === undefined) throw new Error("missing claim provenance");
+        return {
+          interpretation: persisted(claimProvenance, "failed", "unknown"),
+          kind: "finalized",
+        };
+      },
+    );
+
+    await expect(harness.service.generate(request)).rejects.toMatchObject({
+      code: "unavailable",
+    } satisfies Partial<WebInterpretationGenerationError>);
+    expect(harness.persistence.finalize).toHaveBeenCalledTimes(1);
+    expect(finalizationInput?.completion).toMatchObject({
+      operational: { failureCode: "unknown" },
+      status: "failed",
+    });
+    expect(finalizationInput?.completion).not.toHaveProperty("output");
+    expect(finalizationInput?.completion).not.toHaveProperty("verification");
+    expect(JSON.stringify(finalizationInput)).not.toContain(output.title);
+    expect(aiHarness.verify).toHaveBeenCalledTimes(1);
+    expect(harness.providerCall).not.toHaveBeenCalled();
+    expect(semanticReviewer.review).not.toHaveBeenCalled();
   });
 
   it("durably finalizes provider configuration failure and replays it without fallback", async () => {
@@ -822,7 +1173,6 @@ describe("web interpretation generation composition", () => {
     aiHarness.execute.mockResolvedValue({
       displayable: false,
       metadata: metadata("pending_verification"),
-      output,
       status: "pending_verification",
     });
     const failedFinalize = createHarness(
@@ -943,5 +1293,46 @@ describe("web interpretation generation deadline runner", () => {
       elapsedMs: 30,
       status: "timeout",
     });
+  });
+});
+
+describe("web tarot verification deadline runner", () => {
+  it("enforces the 30 second monotonic deadline, signals cancellation, and consumes late rejection", async () => {
+    vi.useFakeTimers();
+    const advance = useFakeMonotonicClock();
+    const runner = createWebTarotVerificationDeadlineRunnerV1();
+    let rejectLate: ((error: Error) => void) | undefined;
+    let attemptId = "";
+    let cancellationDescriptor: PropertyDescriptor | undefined;
+    let contextKeys: string[] = [];
+    const cancel = vi.fn();
+    const operation = vi.fn(
+      (context) =>
+        new Promise<never>((_resolve, reject) => {
+          rejectLate = reject;
+          contextKeys = Object.keys(context).sort();
+          attemptId = context.attemptId;
+          cancellationDescriptor = Object.getOwnPropertyDescriptor(context.cancellation, "aborted");
+          context.cancellation.subscribe(cancel);
+        }),
+    );
+
+    const pending = runner.run({ operation, timeoutMs: 30_000 });
+    await advance(30_000);
+    await expect(pending).resolves.toEqual({
+      cancellationAcknowledged: false,
+      elapsedMs: 30_000,
+      status: "timeout",
+    });
+    expect(operation).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(contextKeys).toEqual(["attemptId", "cancellation"]);
+    expect(attemptId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u,
+    );
+    expect(cancellationDescriptor?.value).toBe(false);
+    expect(cancellationDescriptor).not.toHaveProperty("get");
+    rejectLate?.(new Error("synthetic private reviewer failure"));
+    await Promise.resolve();
   });
 });

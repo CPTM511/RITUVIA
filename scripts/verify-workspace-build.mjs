@@ -1,5 +1,5 @@
 import { access, readFile } from "node:fs/promises";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
@@ -73,8 +73,12 @@ const requiredArtifacts = [
   "packages/ai/dist/retrieval.js",
   "packages/ai/dist/safety.d.ts",
   "packages/ai/dist/safety.js",
+  "packages/ai/dist/verification.d.ts",
+  "packages/ai/dist/verification.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
+  "packages/observability/dist/redaction.d.ts",
+  "packages/observability/dist/redaction.js",
   "packages/observability/dist/worker.d.ts",
   "packages/observability/dist/worker.js",
   "packages/ui/dist/index.d.ts",
@@ -286,6 +290,11 @@ if (
   typeof aiModule.prepareTarotInterpretationGenerationV1 !== "function" ||
   typeof aiModule.executePreparedTarotInterpretationGenerationV1 !== "function" ||
   typeof aiModule.generateTarotInterpretationV1 !== "function" ||
+  typeof aiModule.loadApprovedTarotVerificationPolicyV1 !== "function" ||
+  typeof aiModule.loadApprovedTarotVerificationRuntimeV1 !== "function" ||
+  typeof aiModule.prepareTarotInterpretationVerifierV1 !== "function" ||
+  typeof aiModule.verifyTarotInterpretationCandidateV1 !== "function" ||
+  typeof aiModule.isTarotInterpretationVerificationResultV1 !== "function" ||
   typeof aiModule.runPreGenerationSafetyGateV1 !== "function" ||
   typeof aiModule.evaluatePreGenerationSafetyV1 !== "function" ||
   typeof aiModule.isPreGenerationSafetyEvaluationV1 !== "function" ||
@@ -299,6 +308,10 @@ if (
   aiModule.tarotGenerationRuntimeSchemaVersion !== "tarot-generation-runtime.v1" ||
   aiModule.tarotGenerationOperationalMetadataSchemaVersion !==
     "tarot-generation-operational-metadata.v1" ||
+  aiModule.tarotVerificationPolicySchemaVersion !== "tarot-verification-policy.v1" ||
+  aiModule.tarotVerificationRuntimeSchemaVersion !== "tarot-verification-runtime.v1" ||
+  aiModule.tarotInterpretationVerificationResultSchemaVersion !==
+    "tarot-interpretation-verification-result.v1" ||
   aiModule.preGenerationSafetyPolicyVersion !== "pre-generation-safety.en.v1" ||
   aiModule.preGenerationSafetyIntakePolicyVersion !== "question-intake.en.v1" ||
   aiModule.preGenerationSafetyPolicyAuthoritySchemaVersion !==
@@ -865,13 +878,7 @@ if (
   candidateGeneration.metadata.attemptCount !== 2 ||
   candidateGeneration.metadata.retryReason !== "rate_limited" ||
   candidateGeneration.metadata.failureCode !== null ||
-  !isDeepStrictEqual(
-    aiModule.parseTarotInterpretationOutputForInputV1(
-      generationInput,
-      JSON.stringify(candidateGeneration.output),
-    ),
-    candidateGeneration.output,
-  )
+  Object.hasOwn(candidateGeneration, "output")
 ) {
   throw new TypeError("The compiled bounded retry or candidate boundary is invalid.");
 }
@@ -984,6 +991,225 @@ if (
   )
 ) {
   throw new TypeError("The compiled deterministic fallback boundary is invalid.");
+}
+
+const verificationHmac = (canonicalJson) =>
+  `hmac-sha256:${createHmac("sha256", "rit-034-compiled-build-only-key")
+    .update(canonicalJson, "utf8")
+    .digest("hex")}`;
+const verificationPolicyRaw = Object.freeze({
+  approvalReference: "test:rit-034:compiled-verification-policy",
+  authorId: "test.compiled-verification-policy-author",
+  checks: Object.freeze([...aiModule.tarotVerificationCheckCodes]),
+  effectiveDate: "2026-07-18",
+  evaluationVersion: "1.0.0",
+  locale: "en",
+  maximumAggregateTextBytes: 65_536,
+  modality: "tarot",
+  normalization: "NFKC",
+  policyId: "test.compiled.tarot.verification.en",
+  requiredApprovalRole: "ai_safety",
+  reviewDueDate: "2027-07-18",
+  reviewedDate: "2026-07-17",
+  reviewerId: "test.compiled-verification-policy-reviewer",
+  reviewerRole: "ai_safety",
+  schemaVersion: aiModule.tarotVerificationPolicySchemaVersion,
+  status: "approved",
+  tradition: generationContent.tradition,
+  version: "1.0.0",
+});
+const verificationPolicyRegistration = Object.freeze({
+  approvalReference: verificationPolicyRaw.approvalReference,
+  checksum: sha256Digest(JSON.stringify(verificationPolicyRaw)),
+  id: verificationPolicyRaw.policyId,
+  version: verificationPolicyRaw.version,
+});
+const verificationPolicy = await aiModule.loadApprovedTarotVerificationPolicyV1({
+  asOf: "2026-07-18",
+  authorizePolicy: () => true,
+  policyJson: JSON.stringify(verificationPolicyRaw),
+  registration: verificationPolicyRegistration,
+  verifyIntegrity: (canonicalJson, checksum) => sha256Digest(canonicalJson) === checksum,
+});
+const verificationReviewerRegistration = Object.freeze({
+  approvalReference: "test:rit-034:compiled-semantic-reviewer",
+  checksum: sha256Digest("compiled-semantic-reviewer-v1"),
+  id: "test.compiled.tarot.semantic-reviewer",
+  version: "1.0.0",
+});
+const verificationReviewerPolicyRegistration = Object.freeze({
+  approvalReference: "test:rit-034:compiled-semantic-review-policy",
+  checksum: sha256Digest("compiled-semantic-review-policy-v1"),
+  id: "test.compiled.tarot.semantic-review-policy",
+  version: "1.0.0",
+});
+const verificationReviewerProvider = Object.freeze({
+  id: "test.compiled.reviewer-provider",
+  version: "1.0.0",
+});
+const verificationReviewerModel = Object.freeze({
+  id: "test.compiled.reviewer-model",
+  version: "1.0.0",
+});
+const verificationRuntimeRaw = Object.freeze({
+  approvalReference: "test:rit-034:compiled-verification-runtime",
+  authorId: "test.compiled-verification-runtime-author",
+  effectiveDate: "2026-07-18",
+  evaluationVersion: "1.0.0",
+  locale: "en",
+  modality: "tarot",
+  model: verificationReviewerModel,
+  policy: verificationPolicyRegistration,
+  provider: verificationReviewerProvider,
+  requiredApprovalRole: "ai_safety",
+  reviewDueDate: "2027-07-18",
+  reviewedDate: "2026-07-17",
+  reviewer: verificationReviewerRegistration,
+  reviewerId: "test.compiled-verification-runtime-reviewer",
+  reviewerPolicy: verificationReviewerPolicyRegistration,
+  reviewerResultMaximumBytes: 8_192,
+  reviewerRole: "ai_safety",
+  reviewerTimeoutMs: 1_000,
+  runtimeId: "test.compiled.tarot.verification-runtime.en",
+  schemaVersion: aiModule.tarotVerificationRuntimeSchemaVersion,
+  status: "approved",
+  tradition: generationContent.tradition,
+  version: "1.0.0",
+});
+const verificationRuntimeRegistration = Object.freeze({
+  approvalReference: verificationRuntimeRaw.approvalReference,
+  checksum: sha256Digest(JSON.stringify(verificationRuntimeRaw)),
+  id: verificationRuntimeRaw.runtimeId,
+  version: verificationRuntimeRaw.version,
+});
+const verificationRuntime = await aiModule.loadApprovedTarotVerificationRuntimeV1({
+  asOf: "2026-07-18",
+  authorizeRuntime: () => true,
+  policy: verificationPolicy,
+  registration: verificationRuntimeRegistration,
+  runtimeJson: JSON.stringify(verificationRuntimeRaw),
+  verifyIntegrity: (canonicalJson, checksum) => sha256Digest(canonicalJson) === checksum,
+});
+let verificationReviewerCalls = 0;
+const verificationReviewer = Object.freeze({
+  descriptor: Object.freeze({
+    model: verificationReviewerModel,
+    policy: Object.freeze({
+      checksum: verificationReviewerPolicyRegistration.checksum,
+      id: verificationReviewerPolicyRegistration.id,
+      version: verificationReviewerPolicyRegistration.version,
+    }),
+    provider: verificationReviewerProvider,
+    reviewer: Object.freeze({
+      checksum: verificationReviewerRegistration.checksum,
+      id: verificationReviewerRegistration.id,
+      version: verificationReviewerRegistration.version,
+    }),
+    schemaVersion: aiModule.tarotSemanticReviewerSchemaVersion,
+  }),
+  review: async (reviewRequest) => {
+    verificationReviewerCalls += 1;
+    return JSON.stringify({
+      candidateDigest: reviewRequest.candidateDigest,
+      checks: aiModule.tarotVerificationCheckCodes.map((code) => ({ code, status: "safe" })),
+      schemaVersion: aiModule.tarotSemanticReviewResultSchemaVersion,
+      verdict: "safe",
+    });
+  },
+});
+const settledVerificationRunner = Object.freeze({
+  run: async ({ operation }) =>
+    Object.freeze({
+      elapsedMs: 1,
+      status: "settled",
+      value: await operation(
+        Object.freeze({
+          attemptId: "test.compiled-verification-attempt-1",
+          cancellation: createCompiledCancellation(),
+        }),
+      ),
+    }),
+});
+const preparedVerifier = aiModule.prepareTarotInterpretationVerifierV1({
+  digest: verificationHmac,
+  generationProvider: generationRuntime.provider,
+  policy: verificationPolicy,
+  reviewer: verificationReviewer,
+  runner: settledVerificationRunner,
+  runtime: verificationRuntime,
+  verifyDigest: (canonicalJson, digest) => verificationHmac(canonicalJson) === digest,
+});
+const authorizeVerificationCandidate = (authority) =>
+  Object.isFrozen(authority) &&
+  authority.schemaVersion === aiModule.tarotVerificationCandidateAuthoritySchemaVersion &&
+  isDeepStrictEqual(authority.policy, preparedVerifier.policy) &&
+  isDeepStrictEqual(authority.runtime, preparedVerifier.runtime);
+const generationCallsBeforeSafeVerification = retryProviderCalls;
+const expectedSafeVerificationOutput = aiModule.parseTarotInterpretationOutputForInputV1(
+  generationInput,
+  generationProviderOutputJson,
+);
+const safeVerification = await aiModule.verifyTarotInterpretationCandidateV1({
+  authorizeCandidate: authorizeVerificationCandidate,
+  candidate: candidateGeneration,
+  verifier: preparedVerifier,
+});
+
+const unsafeOutput = JSON.parse(generationProviderOutputJson);
+unsafeOutput.summary = "This guarantees a wealthy outcome.";
+let unsafeProviderCalls = 0;
+const unsafeProvider = Object.freeze({
+  descriptor: compiledProviderDescriptor,
+  generateStructured: async () => {
+    unsafeProviderCalls += 1;
+    return Object.freeze({
+      ...generationProviderSuccess,
+      outputJson: JSON.stringify(unsafeOutput),
+    });
+  },
+});
+const unsafeCandidate = await aiModule.generateTarotInterpretationV1({
+  ...commonGenerationInput,
+  mode: "provider_with_fallback",
+  provider: unsafeProvider,
+  runner: settledGenerationRunner,
+});
+if (unsafeCandidate.status !== "pending_verification" || Object.hasOwn(unsafeCandidate, "output")) {
+  throw new TypeError("The compiled unsafe candidate was not issued for verification.");
+}
+const unsafeVerification = await aiModule.verifyTarotInterpretationCandidateV1({
+  authorizeCandidate: authorizeVerificationCandidate,
+  candidate: unsafeCandidate,
+  verifier: preparedVerifier,
+});
+const serializedVerificationEvidence = JSON.stringify({
+  safe: { metadata: safeVerification.metadata, provenance: safeVerification.provenance },
+  unsafe: { metadata: unsafeVerification.metadata, provenance: unsafeVerification.provenance },
+});
+if (
+  safeVerification.status !== "verified" ||
+  unsafeVerification.status !== "safe_replacement" ||
+  !safeVerification.displayable ||
+  !unsafeVerification.displayable ||
+  !aiModule.isTarotInterpretationVerificationResultV1(safeVerification) ||
+  !aiModule.isTarotInterpretationVerificationResultV1(unsafeVerification) ||
+  !isRecursivelyFrozen(safeVerification) ||
+  !isRecursivelyFrozen(unsafeVerification) ||
+  !isDeepStrictEqual(safeVerification.output, expectedSafeVerificationOutput) ||
+  !isDeepStrictEqual(unsafeVerification.output, fallbackGenerationOne.output) ||
+  retryProviderCalls !== generationCallsBeforeSafeVerification ||
+  unsafeProviderCalls !== 1 ||
+  verificationReviewerCalls !== 1 ||
+  safeVerification.provenance.candidateDigest === unsafeVerification.provenance.candidateDigest ||
+  !/^hmac-sha256:[0-9a-f]{64}$/u.test(safeVerification.provenance.candidateDigest) ||
+  !/^hmac-sha256:[0-9a-f]{64}$/u.test(safeVerification.provenance.outputDigest) ||
+  serializedVerificationEvidence.includes(generationRequestId) ||
+  serializedVerificationEvidence.includes(generationProviderOutputJson) ||
+  /private-canary|question|journal|birth|email|session|reading(?:Id|_id)|raw|error|exception/iu.test(
+    serializedVerificationEvidence,
+  )
+) {
+  throw new TypeError("The compiled post-generation verification boundary is invalid.");
 }
 
 let unavailableProviderCalls = 0;

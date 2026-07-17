@@ -9,23 +9,57 @@ export const REDACTED = "[REDACTED]" as const;
 
 type DataFields = ReadonlyMap<string, unknown>;
 
-const readDataFields = (input: unknown, allowedKeys: ReadonlySet<string>): DataFields => {
+export type OwnEnumerableDataSnapshot = ReadonlyMap<string, unknown>;
+
+/**
+ * Copies data properties without invoking getters, coercion, or toJSON.
+ * With an allowlist it reads only those fixed keys; without one it requires a
+ * small exact data-only record and rejects symbols, accessors, and hidden keys.
+ */
+export const snapshotOwnEnumerableData = (
+  input: unknown,
+  allowedKeys?: ReadonlySet<string>,
+): OwnEnumerableDataSnapshot | null => {
   if ((typeof input !== "object" && typeof input !== "function") || input === null) {
-    return new Map();
+    return null;
   }
 
   try {
-    const fields = new Map<string, unknown>();
-    for (const key of allowedKeys) {
-      const descriptor = Object.getOwnPropertyDescriptor(input, key);
-      if (descriptor?.enumerable && "value" in descriptor) {
-        fields.set(key, descriptor.value);
+    const snapshot = new Map<string, unknown>();
+    if (allowedKeys !== undefined) {
+      for (const key of allowedKeys) {
+        const descriptor = Object.getOwnPropertyDescriptor(input, key);
+        if (descriptor?.enumerable === true && "value" in descriptor) {
+          snapshot.set(key, descriptor.value);
+        }
       }
+      return Object.freeze(snapshot);
     }
-    return fields;
+
+    const names = Object.getOwnPropertyNames(input);
+    if (names.length > 128 || Object.getOwnPropertySymbols(input).length !== 0) return null;
+    for (const key of names) {
+      const descriptor = Object.getOwnPropertyDescriptor(input, key);
+      if (
+        descriptor === undefined ||
+        descriptor.enumerable !== true ||
+        descriptor.get !== undefined ||
+        descriptor.set !== undefined ||
+        !("value" in descriptor)
+      ) {
+        return null;
+      }
+      snapshot.set(key, descriptor.value);
+    }
+    return Object.freeze(snapshot);
   } catch {
-    return new Map();
+    return null;
   }
+};
+
+const readDataFields = (input: unknown, allowedKeys: ReadonlySet<string>): DataFields => {
+  const snapshot = snapshotOwnEnumerableData(input, allowedKeys);
+  return snapshot ?? new Map();
 };
 
 const operationKeys = new Set([

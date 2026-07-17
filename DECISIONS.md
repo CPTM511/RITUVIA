@@ -327,3 +327,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   persisting unverified prose, leaking sensitive content, duplicating paid inference, or inventing
   a retention policy before the post-generation verifier and owner-gated runtime exist.
 - **Date:** 2026-07-18
+
+### [D-041 — Monotonic post-generation verification and append-only safe results](records/decisions/D-041.md)
+
+- **Decision:** Accept only a runtime-issued single-use provider candidate bound to exact
+  generation context and an approved verification runtime; apply whole-output deterministic and
+  independent semantic checks monotonically; replace unsafe or uncertain candidates with the
+  already-authorized deterministic fallback; and atomically persist only a verified or safe-
+  replacement output in a one-to-one append-only owner-scoped verification record with keyed replay
+  validation, while a historical pending row without a child remains non-displayable.
+- **Reason:** Structurally valid prose and self-reported safety flags do not prove factual or safety
+  integrity, while mutating the immutable RIT-033 terminal row or storing rejected prose would
+  weaken fencing, authenticated replay, privacy, and append-only guarantees.
+- **Date:** 2026-07-18

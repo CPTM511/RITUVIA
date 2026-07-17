@@ -7,6 +7,7 @@
     "migrations/202607170003_tarot_reading_persistence/migration.sql": "df1e1cae320eeab471cc06aad32ef5fc2abf63dcd2168b0d53f5b31b614f03c3",
     "migrations/202607170004_tarot_reading_report/migration.sql": "e8af7f61f57b59c5905ffa8795cdffa79f4974d32dfe1fec072fdbb397d37b87",
     "migrations/202607180001_interpretation_generation/migration.sql": "75d43a41ee32b84d5ff3081ee7ce9bced54c652b6e3afa03bf8caf8ce0505716",
+    "migrations/202607180002_interpretation_verification/migration.sql": "296b60e92eb582453510db448fe0b35c7f30ba6b7784330f71757129371b4592",
     "migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900"
   }
 }

@@ -23,6 +23,7 @@
 | Decision | D-038 | Exact published-content retrieval and checksummed prompt artifacts | [decisions/D-038.md](./decisions/D-038.md) |
 | Decision | D-039 | Fail-closed pre-generation safety and request-bound authorization | [decisions/D-039.md](./decisions/D-039.md) |
 | Decision | D-040 | Provider-neutral generation, authorized fallback, and fenced persistence | [decisions/D-040.md](./decisions/D-040.md) |
+| Decision | D-041 | Monotonic post-generation verification and append-only safe results | [decisions/D-041.md](./decisions/D-041.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -43,5 +44,6 @@
 | Task | RIT-031 | Curated content retrieval and prompt versioning | [tasks/RIT-031.md](./tasks/RIT-031.md) |
 | Task | RIT-032 | Pre-generation high-stakes and crisis policy | [tasks/RIT-032.md](./tasks/RIT-032.md) |
 | Task | RIT-033 | Structured generation, validation, fallback, and persistence | [tasks/RIT-033.md](./tasks/RIT-033.md) |
+| Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.

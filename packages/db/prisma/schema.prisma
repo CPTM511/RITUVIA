@@ -52,6 +52,7 @@ model AnonymousSubject {
   readings            Reading[]
   readingReports      ReadingReport[]
   interpretations     Interpretation[]
+  interpretationVerifications InterpretationVerification[]
 
   @@index([expiresAt, id], map: "anonymous_subject_expiry_idx")
   @@map("anonymous_subject")
@@ -134,6 +135,7 @@ model Interpretation {
   maxOutputTokens                   Int              @map("max_output_tokens")
   attemptTimeoutMs                  Int              @map("attempt_timeout_ms")
   totalTimeoutMs                    Int              @map("total_timeout_ms")
+  verificationTimeoutMs             Int              @default(0) @map("verification_timeout_ms")
   maxAttempts                       Int              @map("max_attempts") @db.SmallInt
   retryDelayMs                      Int              @map("retry_delay_ms")
   maximumEstimatedCostMicros        BigInt           @map("maximum_estimated_cost_micros")
@@ -159,13 +161,62 @@ model Interpretation {
   expiresAt                         DateTime         @map("expires_at") @db.Timestamptz(6)
   reading                           Reading          @relation(fields: [readingId, anonymousSubjectId, expiresAt], references: [id, anonymousSubjectId, expiresAt], onDelete: Restrict, onUpdate: Restrict)
   anonymousSubject                  AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  verification                     InterpretationVerification?
 
   @@unique([readingId, generationNumber], map: "interpretation_reading_generation_key")
   @@unique([anonymousSubjectId, idempotencyKeyVersion, idempotencyKeyHash], map: "interpretation_subject_idempotency_key")
+  @@unique([id, anonymousSubjectId, expiresAt, status], map: "interpretation_verification_owner_expiry_status_key")
   @@index([readingId, createdAt(sort: Desc), id(sort: Desc)], map: "interpretation_reading_created_idx")
   @@index([leaseExpiresAt, id], map: "interpretation_lease_idx")
   @@index([expiresAt, id], map: "interpretation_expiry_idx")
   @@map("interpretation")
+}
+
+model InterpretationVerification {
+  interpretationId                String           @id @map("interpretation_id") @db.Uuid
+  anonymousSubjectId              String           @map("anonymous_subject_id") @db.Uuid
+  parentStatus                    String           @default("pending_verification") @map("parent_status") @db.VarChar(24)
+  status                          String           @db.VarChar(24)
+  resultSchemaVersion             String           @map("result_schema_version") @db.VarChar(100)
+  metadataSchemaVersion           String           @map("metadata_schema_version") @db.VarChar(100)
+  deterministicChecksVersion      String           @map("deterministic_checks_version") @db.VarChar(100)
+  candidateDigest                 Bytes            @map("candidate_digest")
+  candidateDigestScope            String           @map("candidate_digest_scope") @db.VarChar(100)
+  outputDigest                    Bytes            @map("output_digest")
+  outputDigestScope               String           @map("output_digest_scope") @db.VarChar(100)
+  policyId                        String           @map("policy_id") @db.VarChar(100)
+  policyVersion                   String           @map("policy_version") @db.VarChar(100)
+  policyChecksumSha256            Bytes            @map("policy_checksum_sha256")
+  policyApprovalReference         String           @map("policy_approval_reference") @db.VarChar(200)
+  runtimeId                       String           @map("runtime_id") @db.VarChar(100)
+  runtimeVersion                  String           @map("runtime_version") @db.VarChar(100)
+  runtimeChecksumSha256           Bytes            @map("runtime_checksum_sha256")
+  runtimeApprovalReference        String           @map("runtime_approval_reference") @db.VarChar(200)
+  reviewerId                      String           @map("reviewer_id") @db.VarChar(100)
+  reviewerVersion                 String           @map("reviewer_version") @db.VarChar(100)
+  reviewerChecksumSha256          Bytes            @map("reviewer_checksum_sha256")
+  reviewerApprovalReference       String           @map("reviewer_approval_reference") @db.VarChar(200)
+  reviewerPolicyId                String           @map("reviewer_policy_id") @db.VarChar(100)
+  reviewerPolicyVersion           String           @map("reviewer_policy_version") @db.VarChar(100)
+  reviewerPolicyChecksumSha256    Bytes            @map("reviewer_policy_checksum_sha256")
+  reviewerPolicyApprovalReference String           @map("reviewer_policy_approval_reference") @db.VarChar(200)
+  reviewerProviderId              String           @map("reviewer_provider_id") @db.VarChar(100)
+  reviewerProviderVersion         String           @map("reviewer_provider_version") @db.VarChar(100)
+  reviewerModelId                 String           @map("reviewer_model_id") @db.VarChar(100)
+  reviewerModelVersion            String           @map("reviewer_model_version") @db.VarChar(100)
+  verificationTimeoutMs           Int              @map("verification_timeout_ms")
+  outputSchemaVersion             String           @map("output_schema_version") @db.VarChar(100)
+  finalizationDigest              Bytes            @map("finalization_digest")
+  output                          Json
+  createdAt                       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt                       DateTime         @map("expires_at") @db.Timestamptz(6)
+  interpretation                 Interpretation   @relation(fields: [interpretationId, anonymousSubjectId, expiresAt, parentStatus], references: [id, anonymousSubjectId, expiresAt, status], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject               AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([interpretationId, anonymousSubjectId, expiresAt, parentStatus], map: "interpretation_verification_parent_key")
+  @@index([anonymousSubjectId, createdAt(sort: Desc), interpretationId(sort: Desc)], map: "interpretation_verification_subject_created_idx")
+  @@index([expiresAt, interpretationId], map: "interpretation_verification_expiry_idx")
+  @@map("interpretation_verification")
 }
 
 model ReadingReport {

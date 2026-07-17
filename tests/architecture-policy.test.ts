@@ -45,7 +45,10 @@ const baseline = (): RepositoryArchitectureFile[] => [
     path: "packages/divination/src/index.ts",
     source: 'export type { domain as Domain } from "@rituvia/domain";',
   },
-  manifest("packages/ai", "@rituvia/ai", { "@rituvia/divination": "workspace:*" }),
+  manifest("packages/ai", "@rituvia/ai", {
+    "@rituvia/divination": "workspace:*",
+    "@rituvia/observability": "workspace:*",
+  }),
   moduleTsconfig("packages/ai", true),
   {
     path: "packages/ai/src/index.ts",

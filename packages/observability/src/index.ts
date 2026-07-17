@@ -16,5 +16,6 @@ export type {
   TraceContext,
 } from "./contracts.js";
 export { telemetryEnvironments } from "./contracts.js";
-export { REDACTED } from "./redaction.js";
+export { REDACTED, snapshotOwnEnumerableData } from "./redaction.js";
+export type { OwnEnumerableDataSnapshot } from "./redaction.js";
 export { createObservability } from "./runtime.js";

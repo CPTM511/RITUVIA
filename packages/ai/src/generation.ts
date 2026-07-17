@@ -228,13 +228,17 @@ export type TarotGenerationOperationalMetadataV1 = Readonly<{
   totalTokens: number | null;
 }>;
 
+declare const pendingTarotInterpretationCandidateBrand: unique symbol;
+
+export type PendingTarotInterpretationCandidateV1 = Readonly<{
+  displayable: false;
+  metadata: TarotGenerationOperationalMetadataV1;
+  status: "pending_verification";
+  [pendingTarotInterpretationCandidateBrand]: true;
+}>;
+
 export type TarotInterpretationGenerationResultV1 =
-  | Readonly<{
-      displayable: false;
-      metadata: TarotGenerationOperationalMetadataV1;
-      output: TarotInterpretationOutputV1;
-      status: "pending_verification";
-    }>
+  | PendingTarotInterpretationCandidateV1
   | Readonly<{
       displayable: true;
       metadata: TarotGenerationOperationalMetadataV1;
@@ -329,6 +333,42 @@ const preparedGenerationState = new WeakMap<
     runtime: TarotGenerationRuntimeRegistrationV1;
   }>
 >();
+
+/** @internal Consumed only by the same-package post-generation verifier. */
+export type PendingTarotInterpretationVerificationContextV1 = Readonly<{
+  candidate: PendingTarotInterpretationCandidateV1;
+  candidateOutput: TarotInterpretationOutputV1;
+  fallbackOutput: TarotInterpretationOutputV1;
+  fallbackTemplate: ApprovedTarotFallbackTemplateV1;
+  generationProvenance: PreparedTarotInterpretationGenerationProvenanceV1;
+  input: TarotInterpretationInputV1;
+  retrievedContent: RetrievedTarotContentBundleV1;
+}>;
+
+const issuedPendingTarotCandidates = new WeakSet<object>();
+const consumedPendingTarotCandidates = new WeakSet<object>();
+const pendingTarotCandidateState = new WeakMap<
+  object,
+  PendingTarotInterpretationVerificationContextV1
+>();
+
+/** @internal Do not export from the package root. */
+export const consumePendingTarotInterpretationCandidateForVerificationV1 = (
+  candidate: unknown,
+): PendingTarotInterpretationVerificationContextV1 => {
+  if (
+    typeof candidate !== "object" ||
+    candidate === null ||
+    !issuedPendingTarotCandidates.has(candidate) ||
+    consumedPendingTarotCandidates.has(candidate)
+  ) {
+    return fail("AI_GENERATION_BINDING_MISMATCH");
+  }
+  const context = pendingTarotCandidateState.get(candidate);
+  if (context === undefined) return fail("AI_GENERATION_BINDING_MISMATCH");
+  consumedPendingTarotCandidates.add(candidate);
+  return context;
+};
 
 const identifierPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const semanticVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u;
@@ -1231,6 +1271,44 @@ const failedResult = (
     status: "failed" as const,
   });
 
+const issuePendingTarotInterpretationCandidateV1 = (
+  input: GenerateTarotInterpretationInputV1,
+  generationProvenance: PreparedTarotInterpretationGenerationProvenanceV1,
+  runtime: TarotGenerationRuntimeRegistrationV1,
+  output: TarotInterpretationOutputV1,
+  retryReason: TarotGenerationRetryReasonV1 | null,
+  attemptCount: number,
+  latencyMs: number,
+  usages: readonly ParsedUsageV1[],
+): PendingTarotInterpretationCandidateV1 => {
+  const candidate = deepFreeze({
+    displayable: false as const,
+    metadata: metadata(
+      input.input,
+      runtime,
+      "pending_verification",
+      null,
+      retryReason,
+      attemptCount,
+      latencyMs,
+      usages,
+    ),
+    status: "pending_verification" as const,
+  }) as PendingTarotInterpretationCandidateV1;
+  const context = Object.freeze({
+    candidate,
+    candidateOutput: output,
+    fallbackOutput: renderFallback(input.input, input.retrievedContent, input.fallbackTemplate),
+    fallbackTemplate: input.fallbackTemplate,
+    generationProvenance,
+    input: input.input,
+    retrievedContent: input.retrievedContent,
+  });
+  issuedPendingTarotCandidates.add(candidate);
+  pendingTarotCandidateState.set(candidate, context);
+  return candidate;
+};
+
 export const prepareTarotInterpretationGenerationV1 = async (
   input: PrepareTarotInterpretationGenerationInputV1,
 ): Promise<PreparedTarotInterpretationGenerationV1> => {
@@ -1469,21 +1547,16 @@ export const executePreparedTarotInterpretationGenerationV1 = async (
       if (result.finishReason === "stop") {
         try {
           const output = parseTarotInterpretationOutputForInputV1(input.input, result.outputJson);
-          return deepFreeze({
-            displayable: false as const,
-            metadata: metadata(
-              input.input,
-              runtime,
-              "pending_verification",
-              null,
-              retryReason,
-              attemptCount,
-              latencyMs,
-              usages,
-            ),
+          return issuePendingTarotInterpretationCandidateV1(
+            input,
+            execution.prepared.provenance,
+            runtime,
             output,
-            status: "pending_verification" as const,
-          });
+            retryReason,
+            attemptCount,
+            latencyMs,
+            usages,
+          );
         } catch {
           retry = result.usage.estimatedCostMicros === 0 ? "invalid_response" : null;
         }

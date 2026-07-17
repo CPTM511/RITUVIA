@@ -9,10 +9,12 @@ import {
 } from "../src/anonymous-identity.js";
 import { createDatabaseClient } from "../src/client.js";
 import {
+  assertInterpretationGenerationRuntimeDatabasePrivileges,
   createInterpretationGenerationPersistence,
   InterpretationGenerationPersistenceError,
   type InterpretationGenerationClaimProvenanceV1,
   type InterpretationGenerationProvenanceV1,
+  type InterpretationVerificationCompletionV1,
   type PersistedInterpretationGeneration,
 } from "../src/interpretation-generation-persistence.js";
 import {
@@ -345,6 +347,7 @@ const generationClaimProvenance = (
     themeCode: reading.themeCode,
     tone: "grounded",
     totalTimeoutMs: 1_000,
+    verificationTimeoutMs: 500,
   });
 };
 
@@ -368,6 +371,63 @@ const fallbackOutput = Object.freeze({
   symbols: Object.freeze([]),
   title: "A grounded perspective",
 });
+
+const verificationOutput = Object.freeze({
+  ...fallbackOutput,
+  symbols: Object.freeze([
+    Object.freeze({
+      factRef: "tarot.position.perspective",
+      limitation: "A symbol cannot determine an outcome.",
+      meaning: "The lantern can suggest patient attention.",
+      possibility: "You might pause before choosing one small next step.",
+    }),
+  ]),
+});
+
+const verificationReference = (id: string, byte: string) =>
+  Object.freeze({
+    approvalReference: `OWN-TEST:${id}`,
+    checksum: `sha256:${byte.repeat(32)}`,
+    id,
+    version: "1.0.0",
+  });
+
+const verificationResult = (
+  status: "safe_replacement" | "verified",
+  byte = "81",
+): InterpretationVerificationCompletionV1 =>
+  Object.freeze({
+    displayable: true,
+    metadata: Object.freeze({
+      deterministicChecksVersion: "tarot-post-generation-checks.v1",
+      outcome: status,
+      policyVersion: "1.0.0",
+      reviewerModelVersion: "1.0.0",
+      reviewerPolicyVersion: "1.0.0",
+      reviewerProviderVersion: "1.0.0",
+      reviewerVersion: "1.0.0",
+      runtimeVersion: "1.0.0",
+      schemaVersion: "tarot-verification-operational-metadata.v1",
+    }),
+    output: verificationOutput,
+    provenance: Object.freeze({
+      candidateDigest: `hmac-sha256:${byte.repeat(32)}`,
+      candidateDigestScope: "canonical-tarot-verification-candidate-json.v1",
+      deterministicChecksVersion: "tarot-post-generation-checks.v1",
+      outputDigest: `hmac-sha256:${"82".repeat(32)}`,
+      outputDigestScope: "canonical-tarot-verification-output-json.v1",
+      policy: verificationReference("test.verification-policy", "83"),
+      reviewer: verificationReference("test.verification-reviewer", "84"),
+      reviewerModel: Object.freeze({ id: "test.reviewer-model", version: "1.0.0" }),
+      reviewerPolicy: verificationReference("test.reviewer-policy", "85"),
+      reviewerProvider: Object.freeze({ id: "test.reviewer-provider", version: "1.0.0" }),
+      runtime: verificationReference("test.verification-runtime", "86"),
+      schemaVersion: "tarot-verification-provenance.v1",
+      verificationTimeoutMs: 500,
+    }),
+    schemaVersion: "tarot-interpretation-verification-result.v1",
+    status,
+  });
 
 const isPersistenceError = (error: unknown, code: TarotReadingPersistenceError["code"]): boolean =>
   error instanceof TarotReadingPersistenceError && error.code === code;
@@ -792,7 +852,7 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(storedReport.rows[0]?.raw.includes(owner.token), false);
 
       const interpretation = createInterpretationGenerationPersistence(runtime, {
-        leaseSeconds: 31,
+        leaseSeconds: 32,
       });
       const generationRequestId = randomUUID();
       const generationIdempotencyDigest = `sha256:${"61".repeat(32)}`;
@@ -823,25 +883,58 @@ await withLocalPostgresLease(async (lease) => {
           error.code === "INTERPRETATION_GENERATION_READING_NOT_FOUND",
       );
       const completionDigest = `sha256:${"63".repeat(32)}`;
+      const completedVerification = verificationResult("verified");
+      const pendingCompletion = Object.freeze({
+        operational: Object.freeze({
+          attemptCount: 1 as const,
+          costStatus: "reported" as const,
+          currencyCode: "USD",
+          estimatedCostMicros: 1_000,
+          failureCode: null,
+          inputTokens: 50,
+          latencyMs: 120,
+          outputTokens: 60,
+          retryReason: null,
+          tokenStatus: "reported" as const,
+          totalTokens: 110,
+        }),
+        status: "pending_verification" as const,
+        verification: completedVerification,
+      });
+      await assert.rejects(
+        interpretation.finalize({
+          claimToken: winningClaim.claimToken,
+          claimVersion: winningClaim.claimVersion,
+          completion: Object.freeze({
+            ...pendingCompletion,
+            verification: Object.freeze({
+              ...completedVerification,
+              provenance: Object.freeze({
+                ...completedVerification.provenance,
+                verificationTimeoutMs: 501,
+              }),
+            }),
+          }),
+          completionDigest: `sha256:${"73".repeat(32)}`,
+          interpretationId: winningClaim.interpretationId,
+          token: owner.token,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_GENERATION_INPUT_INVALID",
+      );
+      const atomicRollback = await adminSql.query<{ children: number; status: string }>(
+        `SELECT interpretation.status,
+                (SELECT count(*)::int FROM interpretation_verification AS verification
+                  WHERE verification.interpretation_id = interpretation.id) AS children
+           FROM interpretation WHERE interpretation.id = $1::uuid`,
+        [winningClaim.interpretationId],
+      );
+      assert.deepEqual(atomicRollback.rows, [{ children: 0, status: "generating" }]);
       const finalized = await interpretation.finalize({
         claimToken: winningClaim.claimToken,
         claimVersion: winningClaim.claimVersion,
-        completion: Object.freeze({
-          operational: Object.freeze({
-            attemptCount: 1,
-            costStatus: "reported",
-            currencyCode: "USD",
-            estimatedCostMicros: 1_000,
-            failureCode: null,
-            inputTokens: 50,
-            latencyMs: 120,
-            outputTokens: 60,
-            retryReason: null,
-            tokenStatus: "reported",
-            totalTokens: 110,
-          }),
-          status: "pending_verification",
-        }),
+        completion: pendingCompletion,
         completionDigest,
         interpretationId: winningClaim.interpretationId,
         token: owner.token,
@@ -849,25 +942,15 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(finalized.kind, "finalized");
       assert.equal(finalized.interpretation.status, "pending_verification");
       assert.equal(Object.hasOwn(finalized.interpretation, "output"), false);
+      assert.equal(finalized.interpretation.verification?.status, "verified");
+      assert.equal(
+        finalized.interpretation.verification?.provenance.candidateDigest,
+        completedVerification.provenance.candidateDigest,
+      );
       const replayedFinalization = await interpretation.finalize({
         claimToken: winningClaim.claimToken,
         claimVersion: winningClaim.claimVersion,
-        completion: Object.freeze({
-          operational: Object.freeze({
-            attemptCount: 1,
-            costStatus: "reported",
-            currencyCode: "USD",
-            estimatedCostMicros: 1_000,
-            failureCode: null,
-            inputTokens: 50,
-            latencyMs: 120,
-            outputTokens: 60,
-            retryReason: null,
-            tokenStatus: "reported",
-            totalTokens: 110,
-          }),
-          status: "pending_verification",
-        }),
+        completion: pendingCompletion,
         completionDigest,
         interpretationId: winningClaim.interpretationId,
         token: owner.token,
@@ -884,6 +967,42 @@ await withLocalPostgresLease(async (lease) => {
           error instanceof InterpretationGenerationPersistenceError &&
           error.code === "INTERPRETATION_GENERATION_IDEMPOTENCY_CONFLICT",
       );
+      const normalVerificationRaw = await adminSql.query<{ raw: string }>(
+        "SELECT row_to_json(verification)::text AS raw FROM interpretation_verification AS verification WHERE interpretation_id = $1::uuid",
+        [winningClaim.interpretationId],
+      );
+      assert.equal(normalVerificationRaw.rows.length, 1);
+      assert.equal(normalVerificationRaw.rows[0]?.raw.includes("riskCategories"), false);
+      assert.equal(normalVerificationRaw.rows[0]?.raw.includes("providerOutput"), false);
+
+      await adminSql.query(
+        "UPDATE interpretation_verification SET finalization_digest = $2::bytea WHERE interpretation_id = $1::uuid",
+        [winningClaim.interpretationId, Buffer.from("90".repeat(32), "hex")],
+      );
+      await assert.rejects(
+        interpretation.claim(claimInput),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_VERIFICATION_UNAVAILABLE",
+      );
+      await assert.rejects(
+        interpretation.finalize({
+          claimToken: winningClaim.claimToken,
+          claimVersion: winningClaim.claimVersion,
+          completion: pendingCompletion,
+          completionDigest,
+          interpretationId: winningClaim.interpretationId,
+          token: owner.token,
+        }),
+        (error: unknown) =>
+          error instanceof InterpretationGenerationPersistenceError &&
+          error.code === "INTERPRETATION_VERIFICATION_UNAVAILABLE",
+      );
+      await adminSql.query(
+        "UPDATE interpretation_verification SET finalization_digest = $2::bytea WHERE interpretation_id = $1::uuid",
+        [winningClaim.interpretationId, Buffer.from("63".repeat(32), "hex")],
+      );
+      assert.equal((await interpretation.claim(claimInput)).kind, "replayed");
 
       const fenceReading = await persistence.resolveCreate({
         prepare: prepare({
@@ -896,7 +1015,7 @@ await withLocalPostgresLease(async (lease) => {
         token: owner.token,
       });
       const shortLeaseInterpretation = createInterpretationGenerationPersistence(runtime, {
-        leaseSeconds: 31,
+        leaseSeconds: 32,
       });
       const fenceClaimInput = Object.freeze({
         canonicalRequestDigest: `sha256:${"65".repeat(32)}`,
@@ -970,6 +1089,7 @@ await withLocalPostgresLease(async (lease) => {
               totalTokens: 3_000_000_001,
             }),
             status: "pending_verification",
+            verification: completedVerification,
           }),
           completionDigest: `sha256:${"72".repeat(32)}`,
           interpretationId: failedClaim.interpretationId,
@@ -1158,7 +1278,7 @@ await withLocalPostgresLease(async (lease) => {
       );
 
       const tooShortLease = createInterpretationGenerationPersistence(runtime, {
-        leaseSeconds: 30,
+        leaseSeconds: 31,
       });
       await assert.rejects(
         tooShortLease.claim({
@@ -1225,6 +1345,9 @@ await withLocalPostgresLease(async (lease) => {
         "DELETE FROM tarot_draw",
         "UPDATE reading_report SET category = 'safety'",
         "DELETE FROM reading_report",
+        "UPDATE interpretation_verification SET status = 'safe_replacement'",
+        "DELETE FROM interpretation_verification",
+        "TRUNCATE interpretation_verification",
         "TRUNCATE reading_report",
         "TRUNCATE reading",
       ]) {
@@ -1325,7 +1448,7 @@ await withLocalPostgresLease(async (lease) => {
         `;
         assert.equal(restoredReports[0]?.count, 4);
         const restoredInterpretation = createInterpretationGenerationPersistence(restoredRuntime, {
-          leaseSeconds: 31,
+          leaseSeconds: 32,
         });
         const restoredPending = await restoredInterpretation.claim(claimInput);
         assert.equal(restoredPending.kind, "replayed");
@@ -1333,6 +1456,7 @@ await withLocalPostgresLease(async (lease) => {
           assert.fail("Expected the pending interpretation to survive restore.");
         }
         assert.equal(restoredPending.interpretation.status, "pending_verification");
+        assert.equal(restoredPending.interpretation.verification?.status, "verified");
         const restoredFallback = await restoredInterpretation.claim(fenceClaimInput);
         assert.equal(restoredFallback.kind, "replayed");
         if (restoredFallback.kind !== "replayed") {
@@ -1363,10 +1487,41 @@ await withLocalPostgresLease(async (lease) => {
         assert.equal(restoredInterpretations[0]?.raw.includes(owner.token), false);
         assert.equal(restoredInterpretations[0]?.raw.includes("promptMessages"), false);
         assert.equal(restoredInterpretations[0]?.raw.includes("providerOutput"), false);
+        const restoredVerifications = await restoredRuntime.$queryRaw<
+          Array<{ count: number; raw: string }>
+        >`
+          SELECT count(*)::int AS count,
+                 string_agg(row_to_json(verification)::text, '') AS raw
+            FROM interpretation_verification AS verification
+        `;
+        assert.equal(restoredVerifications[0]?.count, 1);
+        assert.equal(restoredVerifications[0]?.raw.includes("riskCategories"), false);
+        assert.equal(restoredVerifications[0]?.raw.includes("providerOutput"), false);
         await assertTarotReadingRuntimeDatabasePrivileges(restoredRuntime);
+        await assertInterpretationGenerationRuntimeDatabasePrivileges(restoredRuntime);
       } finally {
         await restoredRuntime.$disconnect();
       }
+      await adminSql.query(
+        "DELETE FROM interpretation_verification WHERE interpretation_id = $1::uuid",
+        [winningClaim.interpretationId],
+      );
+      await adminSql.query(
+        "UPDATE interpretation SET verification_timeout_ms = 0 WHERE id = $1::uuid",
+        [winningClaim.interpretationId],
+      );
+      const historicalZeroTimeoutReplay = await interpretation.claim(claimInput);
+      assert.equal(historicalZeroTimeoutReplay.kind, "replayed");
+      if (historicalZeroTimeoutReplay.kind !== "replayed") {
+        assert.fail("Expected the pre-verification terminal row to replay without display output.");
+      }
+      assert.equal(historicalZeroTimeoutReplay.interpretation.status, "pending_verification");
+      if (historicalZeroTimeoutReplay.interpretation.status !== "pending_verification") {
+        assert.fail("Expected a pending-verification replay.");
+      }
+      assert.equal(historicalZeroTimeoutReplay.interpretation.provenance.verificationTimeoutMs, 0);
+      assert.equal(historicalZeroTimeoutReplay.interpretation.verification, null);
+      assert.equal(Object.hasOwn(historicalZeroTimeoutReplay.interpretation, "output"), false);
     } finally {
       await Promise.all([
         runtime.$disconnect(),

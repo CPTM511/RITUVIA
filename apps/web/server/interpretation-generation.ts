@@ -1,19 +1,24 @@
 import "server-only";
 
-import { createHmac, randomUUID } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { performance } from "node:perf_hooks";
 
 import {
   executePreparedTarotInterpretationGenerationV1,
   parseTarotInterpretationOutputForInputV1,
   prepareTarotInterpretationGenerationV1,
+  prepareTarotInterpretationVerifierV1,
   tarotGenerationOperationalMetadataSchemaVersion,
+  verifyTarotInterpretationCandidateV1,
   type ApprovedTarotFallbackTemplateV1,
+  type ApprovedTarotVerificationPolicyV1,
+  type ApprovedTarotVerificationRuntimeV1,
   type GenerationDeadlineRunnerV1,
   type GenerationDeadlineRunInputV1,
   type GenerationDeadlineRunResultV1,
   type PreGenerationSafetyContinuationContextV1,
   type PreparedTarotInterpretationGenerationV1,
+  type PreparedTarotInterpretationVerifierV1,
   type RetrievedTarotContentBundleV1,
   type StructuredGenerationCancellationV1,
   type StructuredGenerationFailureCode,
@@ -24,7 +29,16 @@ import {
   type TarotInterpretationGenerationResultV1,
   type TarotInterpretationInputV1,
   type TarotInterpretationOutputV1,
+  type TarotInterpretationVerificationResultV1,
   type TarotPromptAssemblyV1,
+  type TarotSemanticReviewerExecutionContextV1,
+  type TarotSemanticReviewerV1,
+  type TarotVerificationCandidateAuthorityVerifierV1,
+  type TarotVerificationDeadlineRunInputV1,
+  type TarotVerificationDeadlineRunResultV1,
+  type TarotVerificationDeadlineRunnerV1,
+  type TarotVerificationOperationalMetadataV1,
+  type TarotVerificationProvenanceV1,
 } from "@rituvia/ai";
 import {
   InterpretationGenerationPersistenceError,
@@ -112,6 +126,37 @@ const keyedDigest = (key: Buffer, domain: string, value: CanonicalJson): string 
     .update("\0", "utf8")
     .update(canonicalJson(value), "utf8")
     .digest("hex")}`;
+
+const verificationDigest = (key: Buffer, canonical: string): string =>
+  `hmac-sha256:${createHmac("sha256", key)
+    .update("rituvia.ai.verification.v1", "utf8")
+    .update("\0", "utf8")
+    // The AI-owned canonical bytes include the exact candidate/output digestScope.
+    // Web treats them as opaque bytes so an untrusted field cannot select a domain.
+    .update(canonical, "utf8")
+    .digest("hex")}`;
+
+const verifyVerificationDigest = (key: Buffer, canonical: string, digest: string): boolean => {
+  if (typeof canonical !== "string" || !/^hmac-sha256:[0-9a-f]{64}$/u.test(digest)) return false;
+  const expected = Buffer.from(
+    verificationDigest(key, canonical).slice("hmac-sha256:".length),
+    "hex",
+  );
+  const received = Buffer.from(digest.slice("hmac-sha256:".length), "hex");
+  return expected.byteLength === received.byteLength && timingSafeEqual(expected, received);
+};
+
+const equalCompletionDigest = (expected: string, received: string): boolean => {
+  if (!/^sha256:[0-9a-f]{64}$/u.test(expected) || !/^sha256:[0-9a-f]{64}$/u.test(received)) {
+    return false;
+  }
+  const expectedBytes = Buffer.from(expected.slice("sha256:".length), "hex");
+  const receivedBytes = Buffer.from(received.slice("sha256:".length), "hex");
+  return (
+    expectedBytes.byteLength === receivedBytes.byteLength &&
+    timingSafeEqual(expectedBytes, receivedBytes)
+  );
+};
 
 const elapsedMilliseconds = (startedAt: number): number =>
   Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.ceil(performance.now() - startedAt)));
@@ -258,6 +303,106 @@ export const createWebGenerationDeadlineRunnerV1 = (): GenerationDeadlineRunnerV
     },
   });
 
+export const createWebTarotVerificationDeadlineRunnerV1 = (): TarotVerificationDeadlineRunnerV1 =>
+  Object.freeze({
+    run: async <Value>({
+      operation,
+      timeoutMs,
+    }: TarotVerificationDeadlineRunInputV1<Value>): Promise<
+      TarotVerificationDeadlineRunResultV1<Value>
+    > => {
+      if (
+        typeof operation !== "function" ||
+        !Number.isSafeInteger(timeoutMs) ||
+        timeoutMs < 100 ||
+        timeoutMs > 30_000
+      ) {
+        return invalidConfiguration();
+      }
+
+      const startedAt = performance.now();
+      let completed = false;
+      const controller = new AbortController();
+      const listeners = new Set<() => void>();
+      const clearListeners = (): void => {
+        for (const listener of listeners) {
+          controller.signal.removeEventListener("abort", listener);
+        }
+        listeners.clear();
+      };
+      const cancellation = Object.freeze({
+        // Keep the reviewer context descriptor-safe: cancellation is observed
+        // through subscribe(), while this immutable snapshot remains data-only.
+        aborted: false,
+        subscribe(listener: () => void): () => void {
+          if (typeof listener !== "function") return invalidConfiguration();
+          const safeListener = (): void => {
+            try {
+              listener();
+            } catch {
+              // A reviewer cancellation hook cannot weaken the host deadline.
+            }
+          };
+          if (controller.signal.aborted) {
+            safeListener();
+            return () => undefined;
+          }
+          listeners.add(safeListener);
+          controller.signal.addEventListener("abort", safeListener, { once: true });
+          return () => {
+            listeners.delete(safeListener);
+            controller.signal.removeEventListener("abort", safeListener);
+          };
+        },
+      }) satisfies StructuredGenerationCancellationV1;
+
+      return await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          if (completed) return;
+          completed = true;
+          controller.abort();
+          clearListeners();
+          resolve(
+            Object.freeze({
+              cancellationAcknowledged: false,
+              elapsedMs: elapsedMilliseconds(startedAt),
+              status: "timeout" as const,
+            }),
+          );
+        }, timeoutMs);
+
+        const context = Object.freeze({
+          attemptId: randomUUID(),
+          cancellation,
+        }) satisfies TarotSemanticReviewerExecutionContextV1;
+        const pending = Promise.resolve().then(() => operation(context));
+        // Both branches stay attached after timeout, consuming any late settlement.
+        void pending.then(
+          (value) => {
+            if (completed) return;
+            completed = true;
+            clearTimeout(timer);
+            clearListeners();
+            resolve(
+              Object.freeze({
+                elapsedMs: elapsedMilliseconds(startedAt),
+                status: "settled" as const,
+                value,
+              }),
+            );
+          },
+          (error: unknown) => {
+            if (completed) return;
+            completed = true;
+            clearTimeout(timer);
+            clearListeners();
+            reject(error);
+          },
+        );
+      });
+    },
+  });
+
 const createDigestFactory = (input: InterpretationGenerationDigestKeyV1) => {
   const parsed = parseDigestKey(input);
   return Object.freeze({
@@ -280,6 +425,15 @@ const createDigestFactory = (input: InterpretationGenerationDigestKeyV1) => {
         readingId,
         schemaVersion: interpretationGenerationDigestSchemaVersion,
       });
+    },
+    verification(canonical: string): string {
+      if (typeof canonical !== "string" || Buffer.byteLength(canonical, "utf8") > 262_144) {
+        return invalidConfiguration();
+      }
+      return verificationDigest(parsed.key, canonical);
+    },
+    verifyVerification(canonical: string, candidate: string): boolean {
+      return verifyVerificationDigest(parsed.key, canonical, candidate);
     },
     version: parsed.version,
   });
@@ -312,6 +466,15 @@ export type WebInterpretationGenerationRequestV1 = Readonly<{
   sessionToken: string;
 }>;
 
+type WebTarotInterpretationVerificationProjectionV1 = Readonly<{
+  displayable: true;
+  metadata: TarotVerificationOperationalMetadataV1;
+  output: TarotInterpretationOutputV1;
+  provenance: TarotVerificationProvenanceV1;
+  schemaVersion: TarotInterpretationVerificationResultV1["schemaVersion"];
+  status: TarotInterpretationVerificationResultV1["status"];
+}>;
+
 export type WebInterpretationGenerationResultV1 =
   | Readonly<{
       displayable: false;
@@ -320,10 +483,20 @@ export type WebInterpretationGenerationResultV1 =
       leaseExpiresAt: string;
       status: "in_progress";
     }>
-  | (TarotInterpretationGenerationResultV1 &
+  | (Extract<TarotInterpretationGenerationResultV1, { status: "failed" | "fallback" }> &
       Readonly<{
         interpretationId: string;
         kind: "finalized";
+      }>)
+  | (WebTarotInterpretationVerificationProjectionV1 &
+      Readonly<{
+        interpretationId: string;
+        kind: "finalized";
+      }>)
+  | (WebTarotInterpretationVerificationProjectionV1 &
+      Readonly<{
+        interpretationId: string;
+        kind: "replayed";
       }>)
   | Readonly<{
       displayable: false;
@@ -349,12 +522,16 @@ export type WebInterpretationGenerationResultV1 =
     }>;
 
 export type InterpretationGenerationApplicationDependenciesV1 = Readonly<{
+  authorizeCandidate: TarotVerificationCandidateAuthorityVerifierV1;
   authorizeRuntime: TarotGenerationAuthorityVerifierV1;
   digestKey: InterpretationGenerationDigestKeyV1;
   fallbackTemplate: ApprovedTarotFallbackTemplateV1;
-  persistence: InterpretationGenerationPersistence;
+  persistence: Pick<InterpretationGenerationPersistence, "claim" | "finalize">;
   provider: StructuredGenerationProviderV1;
   runtime: TarotGenerationRuntimeRegistrationV1;
+  verificationPolicy: ApprovedTarotVerificationPolicyV1;
+  verificationReviewer: TarotSemanticReviewerV1;
+  verificationRuntime: ApprovedTarotVerificationRuntimeV1;
 }>;
 
 const contentVersionsFor = (prepared: PreparedTarotInterpretationGenerationV1): readonly string[] =>
@@ -369,9 +546,16 @@ const persistenceJson = <Value extends object>(
 
 const createClaimProvenance = (
   prepared: PreparedTarotInterpretationGenerationV1,
+  verificationTimeoutMs: number,
 ): InterpretationGenerationClaimProvenanceV1 => {
   const { fallbackTemplate, prompt, request, runtime } = prepared.provenance;
-  if (request.locale !== "en" || prompt.locale !== "en") {
+  if (
+    request.locale !== "en" ||
+    prompt.locale !== "en" ||
+    !Number.isSafeInteger(verificationTimeoutMs) ||
+    verificationTimeoutMs < 100 ||
+    verificationTimeoutMs > 30_000
+  ) {
     return invalidConfiguration();
   }
   const fallbackReference = Object.freeze({
@@ -435,6 +619,7 @@ const createClaimProvenance = (
     themeCode: request.themeCode,
     tone: prompt.tone,
     totalTimeoutMs: runtime.totalTimeoutMs,
+    verificationTimeoutMs,
     currencyCode: runtime.currencyCode,
   });
 };
@@ -457,6 +642,25 @@ const operationalForPersistence = (
     retryReason: metadata.retryReason,
     tokenStatus: metadata.tokenStatus,
     totalTokens: metadata.totalTokens,
+  });
+};
+
+const verificationTrustFailureForPersistence = (
+  metadata: TarotGenerationOperationalMetadataV1,
+): InterpretationGenerationOperationalMetadataV1 => {
+  if (metadata.attemptCount !== 1 && metadata.attemptCount !== 2) return invalidConfiguration();
+  return Object.freeze({
+    attemptCount: metadata.attemptCount,
+    costStatus: "unavailable" as const,
+    currencyCode: null,
+    estimatedCostMicros: null,
+    failureCode: "unknown" as const,
+    inputTokens: null,
+    latencyMs: metadata.latencyMs,
+    outputTokens: null,
+    retryReason: null,
+    tokenStatus: "unavailable" as const,
+    totalTokens: null,
   });
 };
 
@@ -483,10 +687,119 @@ const metadataFromPersisted = (
     themeCode: interpretation.provenance.themeCode,
   });
 
+const projectPersistedVerification = (
+  interpretation: Extract<PersistedInterpretationGeneration, { status: "pending_verification" }>,
+  request: WebInterpretationGenerationRequestV1,
+  verifier: PreparedTarotInterpretationVerifierV1,
+  completionDigest: (value: CanonicalJson) => string,
+  verifyOutputDigest: (canonical: string, digest: string) => boolean,
+): WebTarotInterpretationVerificationProjectionV1 | null => {
+  const verification = interpretation.verification;
+  if (verification == null) return null;
+  if (
+    verification.interpretationId !== interpretation.id ||
+    verification.subjectId !== interpretation.subjectId ||
+    verification.expiresAt !== interpretation.expiresAt
+  ) {
+    throw new WebInterpretationGenerationError("unavailable");
+  }
+  const persistedCompletion = Object.freeze({
+    operational: interpretation.operational,
+    status: "pending_verification" as const,
+    verification: Object.freeze({
+      displayable: verification.displayable,
+      metadata: verification.metadata,
+      output: verification.output,
+      provenance: verification.provenance,
+      schemaVersion: verification.schemaVersion,
+      status: verification.status,
+    }),
+  }) satisfies InterpretationGenerationCompletionV1;
+  const expectedFinalizationDigest = completionDigest({
+    completion: persistedCompletion,
+    interpretationId: interpretation.id,
+    schemaVersion: interpretationGenerationDigestSchemaVersion,
+  });
+  if (!equalCompletionDigest(expectedFinalizationDigest, verification.finalizationDigest)) {
+    throw new WebInterpretationGenerationError("unavailable");
+  }
+  const candidateBindingValid =
+    verification.provenance.candidateDigestScope ===
+      "canonical-tarot-verification-candidate-json.v1" &&
+    typeof verification.provenance.candidateDigest === "string" &&
+    /^hmac-sha256:[0-9a-f]{64}$/u.test(verification.provenance.candidateDigest);
+  if (
+    !candidateBindingValid ||
+    verification.displayable !== true ||
+    verification.schemaVersion !== "tarot-interpretation-verification-result.v1" ||
+    (verification.status !== "verified" && verification.status !== "safe_replacement") ||
+    verification.metadata.outcome !== verification.status ||
+    verification.metadata.deterministicChecksVersion !== "tarot-post-generation-checks.v1" ||
+    verification.metadata.schemaVersion !== "tarot-verification-operational-metadata.v1" ||
+    verification.metadata.policyVersion !== verifier.policy.version ||
+    verification.metadata.runtimeVersion !== verifier.runtime.version ||
+    verification.metadata.reviewerVersion !== verifier.reviewer.version ||
+    verification.metadata.reviewerPolicyVersion !== verifier.reviewerPolicy.version ||
+    verification.metadata.reviewerProviderVersion !== verifier.reviewerProvider.version ||
+    verification.metadata.reviewerModelVersion !== verifier.reviewerModel.version ||
+    verification.provenance.schemaVersion !== "tarot-verification-provenance.v1" ||
+    verification.provenance.deterministicChecksVersion !== "tarot-post-generation-checks.v1" ||
+    verification.provenance.outputDigestScope !== "canonical-tarot-verification-output-json.v1" ||
+    !/^hmac-sha256:[0-9a-f]{64}$/u.test(verification.provenance.outputDigest) ||
+    canonicalJson(verification.provenance.policy) !== canonicalJson(verifier.policy) ||
+    canonicalJson(verification.provenance.runtime) !== canonicalJson(verifier.runtime) ||
+    canonicalJson(verification.provenance.reviewer) !== canonicalJson(verifier.reviewer) ||
+    canonicalJson(verification.provenance.reviewerPolicy) !==
+      canonicalJson(verifier.reviewerPolicy) ||
+    canonicalJson(verification.provenance.reviewerProvider) !==
+      canonicalJson(verifier.reviewerProvider) ||
+    canonicalJson(verification.provenance.reviewerModel) !==
+      canonicalJson(verifier.reviewerModel) ||
+    verification.provenance.verificationTimeoutMs !==
+      interpretation.provenance.verificationTimeoutMs
+  ) {
+    throw new WebInterpretationGenerationError("unavailable");
+  }
+  const output = parseTarotInterpretationOutputForInputV1(
+    request.input,
+    JSON.stringify(verification.output),
+  );
+  if (
+    !verifyOutputDigest(
+      JSON.stringify({
+        digestScope: "canonical-tarot-verification-output-json.v1",
+        output,
+      }),
+      verification.provenance.outputDigest,
+    )
+  ) {
+    throw new WebInterpretationGenerationError("unavailable");
+  }
+  return Object.freeze({
+    displayable: true,
+    metadata: Object.freeze({ ...verification.metadata }),
+    output,
+    provenance: Object.freeze({
+      ...verification.provenance,
+      policy: Object.freeze({ ...verification.provenance.policy }),
+      reviewer: Object.freeze({ ...verification.provenance.reviewer }),
+      reviewerModel: Object.freeze({ ...verification.provenance.reviewerModel }),
+      reviewerPolicy: Object.freeze({ ...verification.provenance.reviewerPolicy }),
+      reviewerProvider: Object.freeze({ ...verification.provenance.reviewerProvider }),
+      runtime: Object.freeze({ ...verification.provenance.runtime }),
+    }),
+    schemaVersion: verification.schemaVersion,
+    status: verification.status,
+  });
+};
+
 const projectPersisted = (
   interpretation: PersistedInterpretationGeneration,
   request: WebInterpretationGenerationRequestV1,
   expectedProvenance: InterpretationGenerationClaimProvenanceV1,
+  verifier: PreparedTarotInterpretationVerifierV1,
+  completionDigest: (value: CanonicalJson) => string,
+  verifyOutputDigest: (canonical: string, digest: string) => boolean,
 ): Extract<WebInterpretationGenerationResultV1, { kind: "replayed" }> => {
   if (
     interpretation.readingId !== request.readingId ||
@@ -497,6 +810,20 @@ const projectPersisted = (
   }
   const metadata = metadataFromPersisted(interpretation);
   if (interpretation.status === "pending_verification") {
+    const verified = projectPersistedVerification(
+      interpretation,
+      request,
+      verifier,
+      completionDigest,
+      verifyOutputDigest,
+    );
+    if (verified !== null) {
+      return Object.freeze({
+        ...verified,
+        interpretationId: interpretation.id,
+        kind: "replayed" as const,
+      });
+    }
     return Object.freeze({
       displayable: false,
       interpretationId: interpretation.id,
@@ -533,6 +860,7 @@ const mapPersistenceError = (error: unknown): WebInterpretationGenerationError =
   if (error instanceof InterpretationGenerationPersistenceError) {
     switch (error.code) {
       case "INTERPRETATION_GENERATION_IDEMPOTENCY_CONFLICT":
+      case "INTERPRETATION_VERIFICATION_CONFLICT":
         return new WebInterpretationGenerationError("conflict");
       case "INTERPRETATION_GENERATION_READING_NOT_FOUND":
         return new WebInterpretationGenerationError("not_found");
@@ -541,6 +869,7 @@ const mapPersistenceError = (error: unknown): WebInterpretationGenerationError =
       case "INTERPRETATION_GENERATION_CLAIM_LOST":
       case "INTERPRETATION_GENERATION_INPUT_INVALID":
       case "INTERPRETATION_GENERATION_PERSISTENCE_UNAVAILABLE":
+      case "INTERPRETATION_VERIFICATION_UNAVAILABLE":
         return new WebInterpretationGenerationError("unavailable");
     }
   }
@@ -553,6 +882,7 @@ export const createInterpretationGenerationApplicationService = (
   if (
     typeof dependencies !== "object" ||
     dependencies === null ||
+    typeof dependencies.authorizeCandidate !== "function" ||
     typeof dependencies.authorizeRuntime !== "function" ||
     typeof dependencies.provider !== "object" ||
     dependencies.provider === null ||
@@ -560,12 +890,21 @@ export const createInterpretationGenerationApplicationService = (
     typeof dependencies.persistence !== "object" ||
     dependencies.persistence === null ||
     typeof dependencies.persistence.claim !== "function" ||
-    typeof dependencies.persistence.finalize !== "function"
+    typeof dependencies.persistence.finalize !== "function" ||
+    typeof dependencies.verificationPolicy !== "object" ||
+    dependencies.verificationPolicy === null ||
+    typeof dependencies.verificationRuntime !== "object" ||
+    dependencies.verificationRuntime === null ||
+    typeof dependencies.verificationRuntime.reviewerTimeoutMs !== "number" ||
+    typeof dependencies.verificationReviewer !== "object" ||
+    dependencies.verificationReviewer === null ||
+    typeof dependencies.verificationReviewer.review !== "function"
   ) {
     return invalidConfiguration();
   }
   const digest = createDigestFactory(dependencies.digestKey);
   const runner = createWebGenerationDeadlineRunnerV1();
+  const verificationRunner = createWebTarotVerificationDeadlineRunnerV1();
   const runtime = Object.freeze({
     ...dependencies.runtime,
     fallbackTemplate: Object.freeze({ ...dependencies.runtime.fallbackTemplate }),
@@ -599,6 +938,17 @@ export const createInterpretationGenerationApplicationService = (
       request: WebInterpretationGenerationRequestV1,
     ): Promise<WebInterpretationGenerationResultV1> => {
       try {
+        // Static verification policy/runtime/reviewer trust must fail before a claim
+        // exists and before any generation provider capability can execute.
+        const verifier = prepareTarotInterpretationVerifierV1({
+          digest: digest.verification,
+          generationProvider: stableDependencies.runtime.provider,
+          policy: stableDependencies.verificationPolicy,
+          reviewer: stableDependencies.verificationReviewer,
+          runner: verificationRunner,
+          runtime: stableDependencies.verificationRuntime,
+          verifyDigest: digest.verifyVerification,
+        });
         const commonGenerationInput = Object.freeze({
           authorizeRuntime: stableDependencies.authorizeRuntime,
           continuation: request.continuation,
@@ -612,7 +962,10 @@ export const createInterpretationGenerationApplicationService = (
         // Trust, exact binding, fallback-template integrity, and runtime authority
         // must all succeed before a durable claim is allowed to exist.
         const prepared = await prepareTarotInterpretationGenerationV1(commonGenerationInput);
-        const provenance = createClaimProvenance(prepared);
+        const provenance = createClaimProvenance(
+          prepared,
+          stableDependencies.verificationRuntime.reviewerTimeoutMs,
+        );
         const canonicalRequestDigest = digest.canonicalRequest({
           approvedContent: request.input.approvedContent,
           approvedRitualTemplateCodes: request.input.approvedRitualTemplateCodes,
@@ -623,6 +976,7 @@ export const createInterpretationGenerationApplicationService = (
           readingId: request.readingId,
           requestId: prepared.provenance.request.requestId,
           schemaVersion: interpretationGenerationDigestSchemaVersion,
+          verifier,
         });
         const claimed = await stableDependencies.persistence.claim({
           canonicalRequestDigest,
@@ -645,7 +999,14 @@ export const createInterpretationGenerationApplicationService = (
           });
         }
         if (claimed.kind === "replayed") {
-          return projectPersisted(claimed.interpretation, request, provenance);
+          return projectPersisted(
+            claimed.interpretation,
+            request,
+            provenance,
+            verifier,
+            digest.completion,
+            digest.verifyVerification,
+          );
         }
         if (
           (claimed.kind === "claimed" && !claimed.providerEligible) ||
@@ -688,6 +1049,37 @@ export const createInterpretationGenerationApplicationService = (
         ) {
           return invalidConfiguration();
         }
+        let verification: TarotInterpretationVerificationResultV1 | undefined;
+        if (generated.status === "pending_verification") {
+          try {
+            verification = await verifyTarotInterpretationCandidateV1({
+              authorizeCandidate: stableDependencies.authorizeCandidate,
+              candidate: generated,
+              verifier,
+            });
+          } catch {
+            // Candidate authorization, binding, or digest ambiguity is not an
+            // eligible content fallback. Seal a no-output terminal failure so a
+            // reclaimed lease cannot later disguise it as a safe replacement.
+            const failedCompletion = Object.freeze({
+              operational: verificationTrustFailureForPersistence(generated.metadata),
+              status: "failed" as const,
+            }) satisfies InterpretationGenerationCompletionV1;
+            await stableDependencies.persistence.finalize({
+              claimToken: claimed.claimToken,
+              claimVersion: claimed.claimVersion,
+              completion: failedCompletion,
+              completionDigest: digest.completion({
+                completion: failedCompletion,
+                interpretationId: claimed.interpretationId,
+                schemaVersion: interpretationGenerationDigestSchemaVersion,
+              }),
+              interpretationId: claimed.interpretationId,
+              token: request.sessionToken,
+            });
+            throw new WebInterpretationGenerationError("unavailable");
+          }
+        }
         const operational = operationalForPersistence(generated.metadata);
         const completion: InterpretationGenerationCompletionV1 =
           generated.status === "fallback"
@@ -701,6 +1093,11 @@ export const createInterpretationGenerationApplicationService = (
               : Object.freeze({
                   operational,
                   status: "pending_verification" as const,
+                  verification:
+                    verification ??
+                    // This branch is unreachable unless the AI result union or
+                    // verifier contract drifted underneath Web composition.
+                    invalidConfiguration(),
                 });
         const finalized = await stableDependencies.persistence.finalize({
           claimToken: claimed.claimToken,
@@ -715,13 +1112,38 @@ export const createInterpretationGenerationApplicationService = (
           token: request.sessionToken,
         });
         if (finalized.kind === "replayed") {
-          return projectPersisted(finalized.interpretation, request, provenance);
+          return projectPersisted(
+            finalized.interpretation,
+            request,
+            provenance,
+            verifier,
+            digest.completion,
+            digest.verifyVerification,
+          );
         }
         if (
           finalized.interpretation.id !== claimed.interpretationId ||
           finalized.interpretation.status !== generated.status
         ) {
           return invalidConfiguration();
+        }
+        if (generated.status === "pending_verification") {
+          if (finalized.interpretation.status !== "pending_verification") {
+            return invalidConfiguration();
+          }
+          const projected = projectPersistedVerification(
+            finalized.interpretation,
+            request,
+            verifier,
+            digest.completion,
+            digest.verifyVerification,
+          );
+          if (projected === null) return invalidConfiguration();
+          return Object.freeze({
+            ...projected,
+            interpretationId: claimed.interpretationId,
+            kind: "finalized" as const,
+          });
         }
         return Object.freeze({
           ...generated,

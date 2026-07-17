@@ -551,16 +551,22 @@ describe("RIT-033 bounded provider-neutral generation", () => {
 
   it("returns valid provider prose as non-displayable pending verification", async () => {
     const outputJson = await fallbackOutputJson();
+    const privateProviderProseCanary = "private-unsafe-provider-prose-canary";
+    const providerOutput = JSON.parse(outputJson) as Record<string, unknown>;
+    providerOutput.title = privateProviderProseCanary;
     const { common } = await buildCommon();
     const calls = { value: 0 };
     const result = await generateTarotInterpretationV1({
       ...common,
       mode: "provider_with_fallback",
-      provider: providerFrom([success(outputJson)], calls),
+      provider: providerFrom([success(JSON.stringify(providerOutput))], calls),
       runner: defaultRunner,
     });
     expect(calls.value).toBe(1);
     expect(result).toMatchObject({ displayable: false, status: "pending_verification" });
+    expect(Object.keys(result).sort()).toEqual(["displayable", "metadata", "status"]);
+    expect(JSON.stringify(result)).not.toContain('"output":');
+    expect(JSON.stringify(result)).not.toContain(privateProviderProseCanary);
     expect(result.metadata).toMatchObject({
       attemptCount: 1,
       costStatus: "reported",

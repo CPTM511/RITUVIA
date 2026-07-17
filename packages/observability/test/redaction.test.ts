@@ -8,10 +8,36 @@ import {
   sanitizeOperationStart,
   sanitizeReleaseVersion,
 } from "../src/redaction.js";
+import { snapshotOwnEnumerableData } from "../src/index.js";
 
 const canary = "private-canary-8675309";
 
 describe("telemetry redaction boundary", () => {
+  it("creates a bounded exact own-enumerable-data snapshot without invoking code", () => {
+    const input = Object.create(null) as Record<string, unknown>;
+    input.safe = "value";
+    input.count = 2;
+    const snapshot = snapshotOwnEnumerableData(input);
+
+    expect(Object.fromEntries(snapshot ?? [])).toEqual({ count: 2, safe: "value" });
+    expect(Object.isFrozen(snapshot)).toBe(true);
+
+    let getterCalls = 0;
+    const accessor = {
+      get safe() {
+        getterCalls += 1;
+        return canary;
+      },
+    };
+    expect(snapshotOwnEnumerableData(accessor)).toBeNull();
+    expect(getterCalls).toBe(0);
+
+    const hidden = { safe: "value" };
+    Object.defineProperty(hidden, "secret", { enumerable: false, value: canary });
+    expect(snapshotOwnEnumerableData(hidden)).toBeNull();
+    expect(snapshotOwnEnumerableData({ safe: "value", [Symbol(canary)]: canary })).toBeNull();
+  });
+
   it("copies only fixed scalar data fields and drops every unknown sensitive field", () => {
     const cyclic: Record<string, unknown> = {};
     cyclic.self = cyclic;

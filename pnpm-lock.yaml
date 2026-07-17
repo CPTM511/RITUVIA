@@ -115,6 +115,9 @@ importers:
       '@rituvia/domain':
         specifier: workspace:*
         version: link:../domain
+      '@rituvia/observability':
+        specifier: workspace:*
+        version: link:../observability
 
   packages/config:
     dependencies:

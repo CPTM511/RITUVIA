@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@rituvia/divination": "workspace:*",
-    "@rituvia/domain": "workspace:*"
+    "@rituvia/domain": "workspace:*",
+    "@rituvia/observability": "workspace:*"
   }
 }

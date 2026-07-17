@@ -4,17 +4,25 @@ import { assertTarotReadingRuntimeDatabasePrivileges } from "./tarot-reading-per
 
 const generationSchemaVersion = "interpretation-generation.v1" as const;
 const generationProvenanceSchemaVersion = "interpretation-generation-provenance.v1" as const;
+const verificationResultSchemaVersion = "tarot-interpretation-verification-result.v1" as const;
+const verificationMetadataSchemaVersion = "tarot-verification-operational-metadata.v1" as const;
+const verificationProvenanceSchemaVersion = "tarot-verification-provenance.v1" as const;
+const verificationCandidateDigestScope = "canonical-tarot-verification-candidate-json.v1" as const;
+const verificationOutputDigestScope = "canonical-tarot-verification-output-json.v1" as const;
+const deterministicVerificationChecksVersion = "tarot-post-generation-checks.v1" as const;
 const maximumJsonBytes = 65_536;
 const maximumJsonDepth = 24;
 const maximumJsonNodes = 8_192;
 const maximumPostgresInteger = 2_147_483_647;
 const minimumFinalizeLeaseBufferMs = 30_000;
+const maximumVerificationTimeoutMs = 30_000;
 
 const identifierPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const looseVersionPattern = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/u;
 const semanticVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u;
 const approvalReferencePattern = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/u;
 const sha256DigestPattern = /^sha256:[0-9a-f]{64}$/u;
+const hmacSha256DigestPattern = /^hmac-sha256:[0-9a-f]{64}$/u;
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const sessionTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 const currencyCodePattern = /^[A-Z]{3}$/u;
@@ -68,6 +76,8 @@ export const interpretationGenerationPersistenceErrorCodes = Object.freeze([
   "INTERPRETATION_GENERATION_CLAIM_LOST",
   "INTERPRETATION_GENERATION_INPUT_INVALID",
   "INTERPRETATION_GENERATION_PERSISTENCE_UNAVAILABLE",
+  "INTERPRETATION_VERIFICATION_CONFLICT",
+  "INTERPRETATION_VERIFICATION_UNAVAILABLE",
 ] as const);
 
 export type InterpretationGenerationPersistenceErrorCode =
@@ -87,6 +97,10 @@ const persistenceMessage = (code: InterpretationGenerationPersistenceErrorCode):
       return "The interpretation generation persistence input is invalid.";
     case "INTERPRETATION_GENERATION_PERSISTENCE_UNAVAILABLE":
       return "Interpretation generation storage is unavailable.";
+    case "INTERPRETATION_VERIFICATION_CONFLICT":
+      return "The interpretation verification result conflicts.";
+    case "INTERPRETATION_VERIFICATION_UNAVAILABLE":
+      return "Interpretation verification storage is unavailable.";
   }
 };
 
@@ -171,7 +185,45 @@ export type InterpretationGenerationClaimProvenanceV1 = Readonly<{
   themeCode: string;
   tone: "concise" | "gentle" | "grounded" | "poetic-light";
   totalTimeoutMs: number;
+  verificationTimeoutMs: number;
   currencyCode: string;
+}>;
+
+export type InterpretationVerificationProvenanceV1 = Readonly<{
+  candidateDigest: string;
+  candidateDigestScope: typeof verificationCandidateDigestScope;
+  deterministicChecksVersion: typeof deterministicVerificationChecksVersion;
+  outputDigest: string;
+  outputDigestScope: typeof verificationOutputDigestScope;
+  policy: InterpretationGenerationChecksummedReferenceV1;
+  reviewer: InterpretationGenerationChecksummedReferenceV1;
+  reviewerModel: InterpretationGenerationVersionReferenceV1;
+  reviewerPolicy: InterpretationGenerationChecksummedReferenceV1;
+  reviewerProvider: InterpretationGenerationVersionReferenceV1;
+  runtime: InterpretationGenerationChecksummedReferenceV1;
+  schemaVersion: typeof verificationProvenanceSchemaVersion;
+  verificationTimeoutMs: number;
+}>;
+
+export type InterpretationVerificationOperationalMetadataV1 = Readonly<{
+  deterministicChecksVersion: typeof deterministicVerificationChecksVersion;
+  outcome: "safe_replacement" | "verified";
+  policyVersion: string;
+  reviewerModelVersion: string;
+  reviewerPolicyVersion: string;
+  reviewerProviderVersion: string;
+  reviewerVersion: string;
+  runtimeVersion: string;
+  schemaVersion: typeof verificationMetadataSchemaVersion;
+}>;
+
+export type InterpretationVerificationCompletionV1 = Readonly<{
+  displayable: true;
+  metadata: InterpretationVerificationOperationalMetadataV1;
+  output: JsonValue;
+  provenance: InterpretationVerificationProvenanceV1;
+  schemaVersion: typeof verificationResultSchemaVersion;
+  status: "safe_replacement" | "verified";
 }>;
 
 export type InterpretationGenerationOperationalMetadataV1 = Readonly<{
@@ -192,6 +244,7 @@ export type InterpretationGenerationCompletionV1 =
   | Readonly<{
       operational: InterpretationGenerationOperationalMetadataV1;
       status: "pending_verification";
+      verification: InterpretationVerificationCompletionV1;
     }>
   | Readonly<{
       operational: InterpretationGenerationOperationalMetadataV1;
@@ -217,8 +270,26 @@ type PersistedInterpretationBase = Readonly<{
   subjectId: string;
 }>;
 
+export type PersistedInterpretationVerification = Readonly<{
+  createdAt: string;
+  displayable: true;
+  expiresAt: string;
+  finalizationDigest: string;
+  interpretationId: string;
+  metadata: InterpretationVerificationOperationalMetadataV1;
+  output: JsonValue;
+  provenance: InterpretationVerificationProvenanceV1;
+  schemaVersion: typeof verificationResultSchemaVersion;
+  status: "safe_replacement" | "verified";
+  subjectId: string;
+}>;
+
 export type PersistedInterpretationGeneration =
-  | (PersistedInterpretationBase & Readonly<{ status: "pending_verification" }>)
+  | (PersistedInterpretationBase &
+      Readonly<{
+        status: "pending_verification";
+        verification: PersistedInterpretationVerification | null;
+      }>)
   | (PersistedInterpretationBase & Readonly<{ status: "failed" }>)
   | (PersistedInterpretationBase & Readonly<{ output: JsonValue; status: "fallback" }>);
 
@@ -343,6 +414,43 @@ type GenerationRow = Readonly<{
   totalTimeoutMs: number;
   totalTokens: number | null;
   approvedCurrencyCode: string;
+  verificationTimeoutMs: number;
+  verificationAnonymousSubjectId: string | null;
+  verificationCandidateDigest: Uint8Array | null;
+  verificationCandidateDigestScope: string | null;
+  verificationCreatedAt: Date | null;
+  verificationDeterministicChecksVersion: string | null;
+  verificationExpiresAt: Date | null;
+  verificationFinalizationDigest: Uint8Array | null;
+  verificationMetadataSchemaVersion: string | null;
+  verificationOutput: unknown | null;
+  verificationOutputDigest: Uint8Array | null;
+  verificationOutputDigestScope: string | null;
+  verificationOutputSchemaVersion: string | null;
+  verificationParentStatus: string | null;
+  verificationPolicyApprovalReference: string | null;
+  verificationPolicyChecksumSha256: Uint8Array | null;
+  verificationPolicyId: string | null;
+  verificationPolicyVersion: string | null;
+  verificationReviewerApprovalReference: string | null;
+  verificationReviewerChecksumSha256: Uint8Array | null;
+  verificationReviewerId: string | null;
+  verificationReviewerModelId: string | null;
+  verificationReviewerModelVersion: string | null;
+  verificationReviewerPolicyApprovalReference: string | null;
+  verificationReviewerPolicyChecksumSha256: Uint8Array | null;
+  verificationReviewerPolicyId: string | null;
+  verificationReviewerPolicyVersion: string | null;
+  verificationReviewerProviderId: string | null;
+  verificationReviewerProviderVersion: string | null;
+  verificationReviewerVersion: string | null;
+  verificationResultSchemaVersion: string | null;
+  verificationRuntimeApprovalReference: string | null;
+  verificationRuntimeChecksumSha256: Uint8Array | null;
+  verificationRuntimeId: string | null;
+  verificationRuntimeVersion: string | null;
+  verificationStatus: string | null;
+  verificationVerificationTimeoutMs: number | null;
 }>;
 
 type ActiveSessionRow = Readonly<{
@@ -443,6 +551,9 @@ const parseApprovalReference = (value: unknown): string =>
 
 const parseDigest = (value: unknown): string =>
   typeof value === "string" && sha256DigestPattern.test(value) ? value : invalid();
+
+const parseKeyedDigest = (value: unknown): string =>
+  typeof value === "string" && hmacSha256DigestPattern.test(value) ? value : invalid();
 
 const parseDate = (value: unknown): string => {
   if (typeof value !== "string" || !datePattern.test(value)) return invalid();
@@ -555,6 +666,7 @@ const parseGenerationProvenance = (
 
 const parseClaimProvenance = (
   value: unknown,
+  allowHistoricalZeroVerificationTimeout = false,
 ): Readonly<{
   generationProvenanceSerialized: string;
   value: InterpretationGenerationClaimProvenanceV1;
@@ -590,6 +702,7 @@ const parseClaimProvenance = (
       "themeCode",
       "tone",
       "totalTimeoutMs",
+      "verificationTimeoutMs",
       "currencyCode",
     ])
   ) {
@@ -626,6 +739,11 @@ const parseClaimProvenance = (
     !Number.isSafeInteger(candidate.totalTimeoutMs) ||
     (candidate.totalTimeoutMs as number) < (candidate.attemptTimeoutMs as number) ||
     (candidate.totalTimeoutMs as number) > 240_000 ||
+    !Number.isSafeInteger(candidate.verificationTimeoutMs) ||
+    ((candidate.verificationTimeoutMs as number) === 0
+      ? !allowHistoricalZeroVerificationTimeout
+      : (candidate.verificationTimeoutMs as number) < 100) ||
+    (candidate.verificationTimeoutMs as number) > maximumVerificationTimeoutMs ||
     (candidate.maxAttempts !== 1 && candidate.maxAttempts !== 2) ||
     !Number.isSafeInteger(candidate.retryDelayMs) ||
     (candidate.retryDelayMs as number) < 0 ||
@@ -669,6 +787,7 @@ const parseClaimProvenance = (
     themeCode: parseIdentifier(candidate.themeCode),
     tone: candidate.tone as "concise" | "gentle" | "grounded" | "poetic-light",
     totalTimeoutMs: candidate.totalTimeoutMs as number,
+    verificationTimeoutMs: candidate.verificationTimeoutMs as number,
     currencyCode: candidate.currencyCode,
   });
   const nested = generationProvenance.value;
@@ -830,6 +949,281 @@ const parseFallbackOutput = (value: unknown): JsonSnapshot => {
   return snapshot;
 };
 
+const forbiddenVerificationTextPattern =
+  /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ufeff<>]/u;
+const sourceReferencePattern = /^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$/u;
+
+const parseVerificationText = (value: unknown, maximum: number): string => {
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value.length > maximum ||
+    value !== value.trim() ||
+    value !== value.normalize("NFC") ||
+    forbiddenVerificationTextPattern.test(value)
+  ) {
+    return invalid();
+  }
+  return value;
+};
+
+const parseUniqueVerificationTexts = (
+  value: unknown,
+  maximumItems: number,
+  maximumText: number,
+): readonly string[] => {
+  if (!Array.isArray(value) || value.length < 1 || value.length > maximumItems) return invalid();
+  const parsed = value.map((entry) => parseVerificationText(entry, maximumText));
+  if (new Set(parsed).size !== parsed.length) return invalid();
+  return Object.freeze(parsed);
+};
+
+const parseVerificationOutput = (value: unknown): JsonSnapshot => {
+  const snapshot = snapshotJson(value, true);
+  const candidate = record(snapshot.value);
+  if (candidate === null || candidate.schemaVersion !== "1") return invalid();
+  const hasRitualSuggestion = Object.hasOwn(candidate, "ritualSuggestion");
+  if (
+    !exactKeys(
+      candidate,
+      hasRitualSuggestion
+        ? [
+            "boundaryNote",
+            "perspectives",
+            "reflectionQuestions",
+            "ritualSuggestion",
+            "safety",
+            "schemaVersion",
+            "smallAction",
+            "sourceRefs",
+            "summary",
+            "symbols",
+            "title",
+          ]
+        : [
+            "boundaryNote",
+            "perspectives",
+            "reflectionQuestions",
+            "safety",
+            "schemaVersion",
+            "smallAction",
+            "sourceRefs",
+            "summary",
+            "symbols",
+            "title",
+          ],
+    )
+  ) {
+    return invalid();
+  }
+  parseVerificationText(candidate.boundaryNote, 800);
+  parseUniqueVerificationTexts(candidate.perspectives, 6, 800);
+  parseUniqueVerificationTexts(candidate.reflectionQuestions, 4, 500);
+  parseVerificationText(candidate.summary, 1_200);
+  parseVerificationText(candidate.title, 120);
+
+  const sourceRefs = parseUniqueVerificationTexts(candidate.sourceRefs, 24, 160);
+  if (sourceRefs.some((sourceRef) => !sourceReferencePattern.test(sourceRef))) return invalid();
+
+  const safety = record(candidate.safety);
+  if (
+    safety === null ||
+    !exactKeys(safety, [
+      "certaintyLevel",
+      "containsGuaranteedOutcome",
+      "containsProfessionalAdvice",
+    ]) ||
+    safety.certaintyLevel !== "reflective" ||
+    safety.containsGuaranteedOutcome !== false ||
+    safety.containsProfessionalAdvice !== false
+  ) {
+    return invalid();
+  }
+
+  const action = record(candidate.smallAction);
+  if (
+    action === null ||
+    !exactKeys(action, ["label", "rationale", "timeHorizon"]) ||
+    !["open", "this_week", "today"].includes(String(action.timeHorizon))
+  ) {
+    return invalid();
+  }
+  parseVerificationText(action.label, 240);
+  parseVerificationText(action.rationale, 600);
+
+  if (
+    !Array.isArray(candidate.symbols) ||
+    candidate.symbols.length < 1 ||
+    candidate.symbols.length > 12
+  ) {
+    return invalid();
+  }
+  const factRefs = new Set<string>();
+  for (const entry of candidate.symbols) {
+    const symbol = record(entry);
+    if (symbol === null) return invalid();
+    const hasLimitation = Object.hasOwn(symbol, "limitation");
+    if (
+      !exactKeys(
+        symbol,
+        hasLimitation
+          ? ["factRef", "limitation", "meaning", "possibility"]
+          : ["factRef", "meaning", "possibility"],
+      )
+    ) {
+      return invalid();
+    }
+    const factRef = parseVerificationText(symbol.factRef, 160);
+    if (!sourceReferencePattern.test(factRef) || !factRef.startsWith("tarot.position.")) {
+      return invalid();
+    }
+    if (factRefs.has(factRef)) return invalid();
+    factRefs.add(factRef);
+    parseVerificationText(symbol.meaning, 800);
+    parseVerificationText(symbol.possibility, 800);
+    if (hasLimitation) parseVerificationText(symbol.limitation, 800);
+  }
+
+  if (hasRitualSuggestion) {
+    const ritual = record(candidate.ritualSuggestion);
+    if (ritual === null || !exactKeys(ritual, ["approvedTemplateCode", "reason"])) {
+      return invalid();
+    }
+    parseIdentifier(ritual.approvedTemplateCode);
+    parseVerificationText(ritual.reason, 600);
+  }
+  return snapshot;
+};
+
+const parseVerificationMetadata = (
+  value: unknown,
+  status: "safe_replacement" | "verified",
+): InterpretationVerificationOperationalMetadataV1 => {
+  const candidate = record(value);
+  if (
+    candidate === null ||
+    !exactKeys(candidate, [
+      "outcome",
+      "deterministicChecksVersion",
+      "policyVersion",
+      "reviewerModelVersion",
+      "reviewerPolicyVersion",
+      "reviewerProviderVersion",
+      "reviewerVersion",
+      "runtimeVersion",
+      "schemaVersion",
+    ]) ||
+    candidate.schemaVersion !== verificationMetadataSchemaVersion ||
+    candidate.deterministicChecksVersion !== deterministicVerificationChecksVersion ||
+    candidate.outcome !== status
+  ) {
+    return invalid();
+  }
+  return Object.freeze({
+    deterministicChecksVersion: deterministicVerificationChecksVersion,
+    outcome: status,
+    policyVersion: parseVersion(candidate.policyVersion),
+    reviewerModelVersion: parseVersion(candidate.reviewerModelVersion),
+    reviewerPolicyVersion: parseVersion(candidate.reviewerPolicyVersion),
+    reviewerProviderVersion: parseVersion(candidate.reviewerProviderVersion),
+    reviewerVersion: parseVersion(candidate.reviewerVersion),
+    runtimeVersion: parseVersion(candidate.runtimeVersion),
+    schemaVersion: verificationMetadataSchemaVersion,
+  });
+};
+
+type ParsedVerification = Readonly<{
+  output: JsonSnapshot;
+  value: InterpretationVerificationCompletionV1;
+}>;
+
+const parseVerification = (value: unknown): ParsedVerification => {
+  const candidate = record(value);
+  if (
+    candidate === null ||
+    !exactKeys(candidate, [
+      "displayable",
+      "metadata",
+      "output",
+      "provenance",
+      "schemaVersion",
+      "status",
+    ]) ||
+    candidate.displayable !== true ||
+    candidate.schemaVersion !== verificationResultSchemaVersion ||
+    (candidate.status !== "verified" && candidate.status !== "safe_replacement")
+  ) {
+    return invalid();
+  }
+  const status = candidate.status;
+  const metadata = parseVerificationMetadata(candidate.metadata, status);
+  const source = record(candidate.provenance);
+  if (
+    source === null ||
+    !exactKeys(source, [
+      "candidateDigest",
+      "candidateDigestScope",
+      "deterministicChecksVersion",
+      "outputDigest",
+      "outputDigestScope",
+      "policy",
+      "reviewer",
+      "reviewerModel",
+      "reviewerPolicy",
+      "reviewerProvider",
+      "runtime",
+      "schemaVersion",
+      "verificationTimeoutMs",
+    ]) ||
+    source.schemaVersion !== verificationProvenanceSchemaVersion ||
+    source.deterministicChecksVersion !== deterministicVerificationChecksVersion ||
+    source.candidateDigestScope !== verificationCandidateDigestScope ||
+    source.outputDigestScope !== verificationOutputDigestScope ||
+    !Number.isSafeInteger(source.verificationTimeoutMs) ||
+    (source.verificationTimeoutMs as number) < 100 ||
+    (source.verificationTimeoutMs as number) > maximumVerificationTimeoutMs
+  ) {
+    return invalid();
+  }
+  const provenance = Object.freeze({
+    candidateDigest: parseKeyedDigest(source.candidateDigest),
+    candidateDigestScope: verificationCandidateDigestScope,
+    deterministicChecksVersion: deterministicVerificationChecksVersion,
+    outputDigest: parseKeyedDigest(source.outputDigest),
+    outputDigestScope: verificationOutputDigestScope,
+    policy: parseChecksummedReference(source.policy),
+    reviewer: parseChecksummedReference(source.reviewer),
+    reviewerModel: parseVersionReference(source.reviewerModel),
+    reviewerPolicy: parseChecksummedReference(source.reviewerPolicy),
+    reviewerProvider: parseVersionReference(source.reviewerProvider),
+    runtime: parseChecksummedReference(source.runtime),
+    schemaVersion: verificationProvenanceSchemaVersion,
+    verificationTimeoutMs: source.verificationTimeoutMs as number,
+  });
+  if (
+    metadata.policyVersion !== provenance.policy.version ||
+    metadata.runtimeVersion !== provenance.runtime.version ||
+    metadata.reviewerVersion !== provenance.reviewer.version ||
+    metadata.reviewerPolicyVersion !== provenance.reviewerPolicy.version ||
+    metadata.reviewerProviderVersion !== provenance.reviewerProvider.version ||
+    metadata.reviewerModelVersion !== provenance.reviewerModel.version
+  ) {
+    return invalid();
+  }
+  const output = parseVerificationOutput(candidate.output);
+  return Object.freeze({
+    output,
+    value: Object.freeze({
+      displayable: true,
+      metadata,
+      output: output.value,
+      provenance,
+      schemaVersion: verificationResultSchemaVersion,
+      status,
+    }),
+  });
+};
+
 const parseCompletion = (
   value: unknown,
   maximumAttempts: number,
@@ -840,6 +1234,7 @@ const parseCompletion = (
   operational: InterpretationGenerationOperationalMetadataV1;
   output: JsonSnapshot | null;
   status: "failed" | "fallback" | "pending_verification";
+  verification: ParsedVerification | null;
 }> => {
   const candidate = record(value);
   if (
@@ -855,7 +1250,9 @@ const parseCompletion = (
       candidate,
       candidate.status === "fallback"
         ? ["operational", "output", "status"]
-        : ["operational", "status"],
+        : candidate.status === "pending_verification"
+          ? ["operational", "status", "verification"]
+          : ["operational", "status"],
     )
   ) {
     return invalid();
@@ -892,14 +1289,23 @@ const parseCompletion = (
     operational,
     output: candidate.status === "fallback" ? parseFallbackOutput(candidate.output) : null,
     status: candidate.status,
+    verification:
+      candidate.status === "pending_verification"
+        ? parseVerification(candidate.verification)
+        : null,
   });
 };
 
 const digestBytes = (digest: string): Uint8Array<ArrayBuffer> =>
-  Uint8Array.from(Buffer.from(digest.slice("sha256:".length), "hex")) as Uint8Array<ArrayBuffer>;
+  Uint8Array.from(
+    Buffer.from(digest.slice(digest.indexOf(":") + 1), "hex"),
+  ) as Uint8Array<ArrayBuffer>;
 
 const digestFromBytes = (bytes: Uint8Array): string =>
   `sha256:${Buffer.from(bytes).toString("hex")}`;
+
+const keyedDigestFromBytes = (bytes: Uint8Array): string =>
+  `hmac-sha256:${Buffer.from(bytes).toString("hex")}`;
 
 const bytesEqual = (left: Uint8Array, right: Uint8Array): boolean =>
   Buffer.from(left).equals(Buffer.from(right));
@@ -977,6 +1383,7 @@ const generationSelect = Prisma.sql`
          interpretation.max_output_tokens AS "maxOutputTokens",
          interpretation.attempt_timeout_ms AS "attemptTimeoutMs",
          interpretation.total_timeout_ms AS "totalTimeoutMs",
+         interpretation.verification_timeout_ms AS "verificationTimeoutMs",
          interpretation.max_attempts AS "maxAttempts",
          interpretation.retry_delay_ms AS "retryDelayMs",
          interpretation.maximum_estimated_cost_micros AS "maximumEstimatedCostMicros",
@@ -1000,8 +1407,46 @@ const generationSelect = Prisma.sql`
          interpretation.created_at AS "createdAt",
          interpretation.completed_at AS "completedAt",
          interpretation.expires_at AS "expiresAt",
+         verification.anonymous_subject_id AS "verificationAnonymousSubjectId",
+         verification.parent_status AS "verificationParentStatus",
+         verification.status AS "verificationStatus",
+         verification.result_schema_version AS "verificationResultSchemaVersion",
+         verification.metadata_schema_version AS "verificationMetadataSchemaVersion",
+         verification.deterministic_checks_version AS "verificationDeterministicChecksVersion",
+         verification.candidate_digest AS "verificationCandidateDigest",
+         verification.candidate_digest_scope AS "verificationCandidateDigestScope",
+         verification.output_digest AS "verificationOutputDigest",
+         verification.output_digest_scope AS "verificationOutputDigestScope",
+         verification.policy_id AS "verificationPolicyId",
+         verification.policy_version AS "verificationPolicyVersion",
+         verification.policy_checksum_sha256 AS "verificationPolicyChecksumSha256",
+         verification.policy_approval_reference AS "verificationPolicyApprovalReference",
+         verification.runtime_id AS "verificationRuntimeId",
+         verification.runtime_version AS "verificationRuntimeVersion",
+         verification.runtime_checksum_sha256 AS "verificationRuntimeChecksumSha256",
+         verification.runtime_approval_reference AS "verificationRuntimeApprovalReference",
+         verification.reviewer_id AS "verificationReviewerId",
+         verification.reviewer_version AS "verificationReviewerVersion",
+         verification.reviewer_checksum_sha256 AS "verificationReviewerChecksumSha256",
+         verification.reviewer_approval_reference AS "verificationReviewerApprovalReference",
+         verification.reviewer_policy_id AS "verificationReviewerPolicyId",
+         verification.reviewer_policy_version AS "verificationReviewerPolicyVersion",
+         verification.reviewer_policy_checksum_sha256 AS "verificationReviewerPolicyChecksumSha256",
+         verification.reviewer_policy_approval_reference AS "verificationReviewerPolicyApprovalReference",
+         verification.reviewer_provider_id AS "verificationReviewerProviderId",
+         verification.reviewer_provider_version AS "verificationReviewerProviderVersion",
+         verification.reviewer_model_id AS "verificationReviewerModelId",
+         verification.reviewer_model_version AS "verificationReviewerModelVersion",
+         verification.verification_timeout_ms AS "verificationVerificationTimeoutMs",
+         verification.output_schema_version AS "verificationOutputSchemaVersion",
+         verification.finalization_digest AS "verificationFinalizationDigest",
+         verification.output AS "verificationOutput",
+         verification.created_at AS "verificationCreatedAt",
+         verification.expires_at AS "verificationExpiresAt",
          clock_timestamp() AS "observedAt"
     FROM interpretation
+    LEFT JOIN interpretation_verification AS verification
+      ON verification.interpretation_id = interpretation.id
 `;
 
 const resolveActiveSession = async (
@@ -1046,6 +1491,126 @@ const operationalFromRow = (row: GenerationRow): InterpretationGenerationOperati
     row.approvedCurrencyCode.trim(),
   );
 
+const verificationFromRow = (row: GenerationRow): PersistedInterpretationVerification | null => {
+  if (row.verificationStatus === null) return null;
+  if (
+    row.status !== "pending_verification" ||
+    row.verificationAnonymousSubjectId !== row.anonymousSubjectId ||
+    row.verificationParentStatus !== "pending_verification" ||
+    (row.verificationStatus !== "verified" && row.verificationStatus !== "safe_replacement") ||
+    row.verificationResultSchemaVersion !== verificationResultSchemaVersion ||
+    row.verificationMetadataSchemaVersion !== verificationMetadataSchemaVersion ||
+    row.verificationDeterministicChecksVersion !== deterministicVerificationChecksVersion ||
+    row.verificationCandidateDigest === null ||
+    row.verificationCandidateDigestScope !== verificationCandidateDigestScope ||
+    row.verificationOutputDigest === null ||
+    row.verificationOutputDigestScope !== verificationOutputDigestScope ||
+    row.verificationPolicyApprovalReference === null ||
+    row.verificationPolicyChecksumSha256 === null ||
+    row.verificationPolicyId === null ||
+    row.verificationPolicyVersion === null ||
+    row.verificationRuntimeApprovalReference === null ||
+    row.verificationRuntimeChecksumSha256 === null ||
+    row.verificationRuntimeId === null ||
+    row.verificationRuntimeVersion === null ||
+    row.verificationReviewerApprovalReference === null ||
+    row.verificationReviewerChecksumSha256 === null ||
+    row.verificationReviewerId === null ||
+    row.verificationReviewerVersion === null ||
+    row.verificationReviewerPolicyApprovalReference === null ||
+    row.verificationReviewerPolicyChecksumSha256 === null ||
+    row.verificationReviewerPolicyId === null ||
+    row.verificationReviewerPolicyVersion === null ||
+    row.verificationReviewerProviderId === null ||
+    row.verificationReviewerProviderVersion === null ||
+    row.verificationReviewerModelId === null ||
+    row.verificationReviewerModelVersion === null ||
+    row.verificationVerificationTimeoutMs === null ||
+    row.verificationOutputSchemaVersion !== "1" ||
+    row.verificationFinalizationDigest === null ||
+    row.finalizationHash === null ||
+    !bytesEqual(row.verificationFinalizationDigest, row.finalizationHash) ||
+    row.verificationOutput === null ||
+    !(row.verificationCreatedAt instanceof Date) ||
+    !(row.verificationExpiresAt instanceof Date) ||
+    row.verificationExpiresAt.getTime() !== row.expiresAt.getTime() ||
+    row.verificationCreatedAt.getTime() > row.verificationExpiresAt.getTime()
+  ) {
+    throw new InterpretationGenerationPersistenceError("INTERPRETATION_VERIFICATION_UNAVAILABLE");
+  }
+  const status = row.verificationStatus;
+  const common = {
+    displayable: true as const,
+    metadata: {
+      deterministicChecksVersion: deterministicVerificationChecksVersion,
+      outcome: status,
+      policyVersion: row.verificationPolicyVersion,
+      reviewerModelVersion: row.verificationReviewerModelVersion,
+      reviewerPolicyVersion: row.verificationReviewerPolicyVersion,
+      reviewerProviderVersion: row.verificationReviewerProviderVersion,
+      reviewerVersion: row.verificationReviewerVersion,
+      runtimeVersion: row.verificationRuntimeVersion,
+      schemaVersion: verificationMetadataSchemaVersion,
+    },
+    output: row.verificationOutput,
+    provenance: {
+      candidateDigest: keyedDigestFromBytes(row.verificationCandidateDigest),
+      candidateDigestScope: verificationCandidateDigestScope,
+      deterministicChecksVersion: deterministicVerificationChecksVersion,
+      outputDigest: keyedDigestFromBytes(row.verificationOutputDigest),
+      outputDigestScope: verificationOutputDigestScope,
+      policy: {
+        approvalReference: row.verificationPolicyApprovalReference,
+        checksum: digestFromBytes(row.verificationPolicyChecksumSha256),
+        id: row.verificationPolicyId,
+        version: row.verificationPolicyVersion,
+      },
+      reviewer: {
+        approvalReference: row.verificationReviewerApprovalReference,
+        checksum: digestFromBytes(row.verificationReviewerChecksumSha256),
+        id: row.verificationReviewerId,
+        version: row.verificationReviewerVersion,
+      },
+      reviewerModel: {
+        id: row.verificationReviewerModelId,
+        version: row.verificationReviewerModelVersion,
+      },
+      reviewerPolicy: {
+        approvalReference: row.verificationReviewerPolicyApprovalReference,
+        checksum: digestFromBytes(row.verificationReviewerPolicyChecksumSha256),
+        id: row.verificationReviewerPolicyId,
+        version: row.verificationReviewerPolicyVersion,
+      },
+      reviewerProvider: {
+        id: row.verificationReviewerProviderId,
+        version: row.verificationReviewerProviderVersion,
+      },
+      runtime: {
+        approvalReference: row.verificationRuntimeApprovalReference,
+        checksum: digestFromBytes(row.verificationRuntimeChecksumSha256),
+        id: row.verificationRuntimeId,
+        version: row.verificationRuntimeVersion,
+      },
+      schemaVersion: verificationProvenanceSchemaVersion,
+      verificationTimeoutMs: row.verificationVerificationTimeoutMs,
+    },
+    schemaVersion: verificationResultSchemaVersion,
+    status,
+  };
+  const parsed = parseVerification(common);
+  if (row.verificationVerificationTimeoutMs !== row.verificationTimeoutMs) {
+    throw new InterpretationGenerationPersistenceError("INTERPRETATION_VERIFICATION_UNAVAILABLE");
+  }
+  return Object.freeze({
+    ...parsed.value,
+    createdAt: row.verificationCreatedAt.toISOString(),
+    expiresAt: row.verificationExpiresAt.toISOString(),
+    finalizationDigest: digestFromBytes(row.verificationFinalizationDigest),
+    interpretationId: row.id,
+    subjectId: row.anonymousSubjectId,
+  });
+};
+
 const persistedFromRow = (row: GenerationRow): PersistedInterpretationGeneration => {
   if (
     !uuidV4Pattern.test(row.id) ||
@@ -1067,50 +1632,58 @@ const persistedFromRow = (row: GenerationRow): PersistedInterpretationGeneration
     );
   }
   const parsedProvenance = parseGenerationProvenance(row.generationProvenance).value;
-  const provenance = parseClaimProvenance({
-    assemblyPolicyVersion: row.assemblyPolicyVersion,
-    attemptTimeoutMs: row.attemptTimeoutMs,
-    contentVersions: row.contentVersions,
-    deterministicAlgorithmVersion: row.deterministicAlgorithmVersion,
-    deterministicEngineName: row.deterministicEngineName,
-    deterministicEngineVersion: row.deterministicEngineVersion,
-    deterministicRulesVersion: row.deterministicRulesVersion,
-    eligibilityAsOf: row.eligibilityAsOf.toISOString().slice(0, 10),
-    fallbackTemplate: {
-      approvalReference: row.fallbackTemplateApprovalReference,
-      checksum: digestFromBytes(row.fallbackTemplateChecksumSha256),
-      id: row.fallbackTemplateId,
-      version: row.fallbackTemplateVersion,
+  const historicalPendingWithoutVerification =
+    row.status === "pending_verification" &&
+    row.verificationStatus === null &&
+    row.verificationTimeoutMs === 0;
+  const provenance = parseClaimProvenance(
+    {
+      assemblyPolicyVersion: row.assemblyPolicyVersion,
+      attemptTimeoutMs: row.attemptTimeoutMs,
+      contentVersions: row.contentVersions,
+      deterministicAlgorithmVersion: row.deterministicAlgorithmVersion,
+      deterministicEngineName: row.deterministicEngineName,
+      deterministicEngineVersion: row.deterministicEngineVersion,
+      deterministicRulesVersion: row.deterministicRulesVersion,
+      eligibilityAsOf: row.eligibilityAsOf.toISOString().slice(0, 10),
+      fallbackTemplate: {
+        approvalReference: row.fallbackTemplateApprovalReference,
+        checksum: digestFromBytes(row.fallbackTemplateChecksumSha256),
+        id: row.fallbackTemplateId,
+        version: row.fallbackTemplateVersion,
+      },
+      generationPolicyVersion: row.generationPolicyVersion,
+      generationProvenance: parsedProvenance,
+      locale: row.locale,
+      maxAttempts: row.maxAttempts,
+      maxOutputTokens: row.maxOutputTokens,
+      maximumEstimatedCostMicros: Number(row.maximumEstimatedCostMicros),
+      modality: row.modality,
+      model: { id: row.modelId, version: row.modelVersion },
+      outputSchemaVersion: row.outputSchemaVersion,
+      prompt: {
+        approvalReference: row.promptApprovalReference,
+        checksum: digestFromBytes(row.promptChecksumSha256),
+        id: row.promptId,
+        version: row.promptVersion,
+      },
+      provider: {
+        approvalReference: row.providerApprovalReference,
+        id: row.providerId,
+        version: row.providerVersion,
+      },
+      readingType: row.readingType,
+      retryDelayMs: row.retryDelayMs,
+      retrievalPolicyVersion: row.retrievalPolicyVersion,
+      safetyPolicyVersion: row.safetyPolicyVersion,
+      themeCode: row.themeCode,
+      tone: row.tone,
+      totalTimeoutMs: row.totalTimeoutMs,
+      verificationTimeoutMs: row.verificationTimeoutMs,
+      currencyCode: row.approvedCurrencyCode.trim(),
     },
-    generationPolicyVersion: row.generationPolicyVersion,
-    generationProvenance: parsedProvenance,
-    locale: row.locale,
-    maxAttempts: row.maxAttempts,
-    maxOutputTokens: row.maxOutputTokens,
-    maximumEstimatedCostMicros: Number(row.maximumEstimatedCostMicros),
-    modality: row.modality,
-    model: { id: row.modelId, version: row.modelVersion },
-    outputSchemaVersion: row.outputSchemaVersion,
-    prompt: {
-      approvalReference: row.promptApprovalReference,
-      checksum: digestFromBytes(row.promptChecksumSha256),
-      id: row.promptId,
-      version: row.promptVersion,
-    },
-    provider: {
-      approvalReference: row.providerApprovalReference,
-      id: row.providerId,
-      version: row.providerVersion,
-    },
-    readingType: row.readingType,
-    retryDelayMs: row.retryDelayMs,
-    retrievalPolicyVersion: row.retrievalPolicyVersion,
-    safetyPolicyVersion: row.safetyPolicyVersion,
-    themeCode: row.themeCode,
-    tone: row.tone,
-    totalTimeoutMs: row.totalTimeoutMs,
-    currencyCode: row.approvedCurrencyCode.trim(),
-  }).value;
+    historicalPendingWithoutVerification,
+  ).value;
   const base = Object.freeze({
     completedAt: row.completedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
@@ -1125,7 +1698,15 @@ const persistedFromRow = (row: GenerationRow): PersistedInterpretationGeneration
     subjectId: row.anonymousSubjectId,
   });
   if (row.status === "pending_verification" && row.fallbackOutput === null) {
-    return Object.freeze({ ...base, status: "pending_verification" as const });
+    const verification = verificationFromRow(row);
+    if (verification === null && !historicalPendingWithoutVerification) {
+      throw new InterpretationGenerationPersistenceError("INTERPRETATION_VERIFICATION_UNAVAILABLE");
+    }
+    return Object.freeze({
+      ...base,
+      status: "pending_verification" as const,
+      verification,
+    });
   }
   if (row.status === "failed" && row.fallbackOutput === null) {
     return Object.freeze({ ...base, status: "failed" as const });
@@ -1142,12 +1723,62 @@ const persistedFromRow = (row: GenerationRow): PersistedInterpretationGeneration
   );
 };
 
+const insertVerificationRow = async (
+  transaction: Prisma.TransactionClient,
+  input: Readonly<{
+    completionHash: Uint8Array;
+    expiresAt: Date;
+    interpretationId: string;
+    output: JsonSnapshot;
+    subjectId: string;
+    verification: InterpretationVerificationCompletionV1;
+  }>,
+): Promise<boolean> => {
+  const provenance = input.verification.provenance;
+  const rows = await transaction.$queryRaw<Array<{ interpretationId: string }>>`
+    INSERT INTO interpretation_verification (
+      interpretation_id, anonymous_subject_id, status,
+      result_schema_version, metadata_schema_version, deterministic_checks_version,
+      candidate_digest, candidate_digest_scope, output_digest, output_digest_scope,
+      policy_id, policy_version, policy_checksum_sha256, policy_approval_reference,
+      runtime_id, runtime_version, runtime_checksum_sha256, runtime_approval_reference,
+      reviewer_id, reviewer_version, reviewer_checksum_sha256, reviewer_approval_reference,
+      reviewer_policy_id, reviewer_policy_version, reviewer_policy_checksum_sha256,
+      reviewer_policy_approval_reference, reviewer_provider_id, reviewer_provider_version,
+      reviewer_model_id, reviewer_model_version, verification_timeout_ms,
+      output_schema_version, finalization_digest, output, expires_at
+    ) VALUES (
+      ${input.interpretationId}::uuid, ${input.subjectId}::uuid, ${input.verification.status},
+      ${verificationResultSchemaVersion}, ${verificationMetadataSchemaVersion},
+      ${deterministicVerificationChecksVersion}, ${digestBytes(provenance.candidateDigest)},
+      ${verificationCandidateDigestScope}, ${digestBytes(provenance.outputDigest)},
+      ${verificationOutputDigestScope}, ${provenance.policy.id}, ${provenance.policy.version},
+      ${digestBytes(provenance.policy.checksum)}, ${provenance.policy.approvalReference},
+      ${provenance.runtime.id}, ${provenance.runtime.version},
+      ${digestBytes(provenance.runtime.checksum)}, ${provenance.runtime.approvalReference},
+      ${provenance.reviewer.id}, ${provenance.reviewer.version},
+      ${digestBytes(provenance.reviewer.checksum)}, ${provenance.reviewer.approvalReference},
+      ${provenance.reviewerPolicy.id}, ${provenance.reviewerPolicy.version},
+      ${digestBytes(provenance.reviewerPolicy.checksum)},
+      ${provenance.reviewerPolicy.approvalReference}, ${provenance.reviewerProvider.id},
+      ${provenance.reviewerProvider.version}, ${provenance.reviewerModel.id},
+      ${provenance.reviewerModel.version}, ${provenance.verificationTimeoutMs}, '1',
+      ${input.completionHash}, CAST(${input.output.serialized} AS JSONB), ${input.expiresAt}
+    )
+    RETURNING interpretation_id AS "interpretationId"
+  `;
+  return rows.length === 1 && rows[0]?.interpretationId === input.interpretationId;
+};
+
 type InterpretationPrivilegeAttestation = Readonly<{
   canCreateInDatabase: boolean;
   canCreateInSchema: boolean;
   exactInsertColumns: boolean;
   exactUpdateColumns: boolean;
+  exactVerificationInsertColumns: boolean;
+  exactVerificationSelectColumns: boolean;
   canMutateInterpretationBroadly: boolean;
+  canMutateVerificationBroadly: boolean;
   canReadIdentity: boolean;
   canReadInterpretation: boolean;
   canReadReading: boolean;
@@ -1157,6 +1788,7 @@ type InterpretationPrivilegeAttestation = Readonly<{
   roleName: string;
   schemaOwner: string;
   sessionRoleName: string;
+  zeroVerificationUpdateColumns: boolean;
 }>;
 
 export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
@@ -1166,7 +1798,8 @@ export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
     WITH owners AS (
       SELECT (SELECT datdba FROM pg_database WHERE datname = current_database()) AS database_owner_oid,
              (SELECT nspowner FROM pg_namespace WHERE nspname = 'public') AS schema_owner_oid,
-             (SELECT relowner FROM pg_class WHERE oid = 'public.interpretation'::regclass) AS table_owner_oid
+             (SELECT relowner FROM pg_class WHERE oid = 'public.interpretation'::regclass) AS table_owner_oid,
+             (SELECT relowner FROM pg_class WHERE oid = 'public.interpretation_verification'::regclass) AS verification_owner_oid
     ), reachable_roles AS (
       SELECT role.*
         FROM pg_roles AS role
@@ -1190,6 +1823,13 @@ export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
              OR has_table_privilege(current_user, 'public.interpretation', 'REFERENCES')
              OR has_table_privilege(current_user, 'public.interpretation', 'TRIGGER')
              OR has_table_privilege(current_user, 'public.interpretation', 'MAINTAIN')) AS "canMutateInterpretationBroadly",
+           (has_table_privilege(current_user, 'public.interpretation_verification', 'INSERT')
+             OR has_table_privilege(current_user, 'public.interpretation_verification', 'UPDATE')
+             OR has_table_privilege(current_user, 'public.interpretation_verification', 'DELETE')
+             OR has_table_privilege(current_user, 'public.interpretation_verification', 'TRUNCATE')
+             OR has_table_privilege(current_user, 'public.interpretation_verification', 'REFERENCES')
+             OR has_table_privilege(current_user, 'public.interpretation_verification', 'TRIGGER')
+             OR has_table_privilege(current_user, 'public.interpretation_verification', 'MAINTAIN')) AS "canMutateVerificationBroadly",
            ARRAY(
              SELECT attribute.attname::text
                FROM pg_attribute AS attribute
@@ -1215,7 +1855,7 @@ export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
              'prompt_id', 'prompt_version', 'provider_approval_reference', 'provider_id',
              'provider_version', 'reading_id', 'reading_type', 'request_id',
              'retrieval_policy_version', 'retry_delay_ms', 'safety_policy_version',
-             'theme_code', 'tone', 'total_timeout_ms'
+             'theme_code', 'tone', 'total_timeout_ms', 'verification_timeout_ms'
            ]::text[] AS "exactInsertColumns",
            ARRAY(
              SELECT attribute.attname::text
@@ -1234,6 +1874,65 @@ export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
              'lease_expires_at', 'output_tokens', 'retry_reason', 'status', 'token_status',
              'total_tokens'
            ]::text[] AS "exactUpdateColumns",
+           ARRAY(
+             SELECT attribute.attname::text
+               FROM pg_attribute AS attribute
+              WHERE attribute.attrelid = 'public.interpretation_verification'::regclass
+                AND attribute.attnum > 0
+                AND NOT attribute.attisdropped
+                AND has_column_privilege(
+                  current_user, 'public.interpretation_verification', attribute.attname, 'SELECT'
+                )
+              ORDER BY attribute.attname
+           ) = ARRAY[
+             'anonymous_subject_id', 'candidate_digest', 'candidate_digest_scope', 'created_at',
+             'deterministic_checks_version', 'expires_at', 'finalization_digest',
+             'interpretation_id', 'metadata_schema_version', 'output', 'output_digest',
+             'output_digest_scope', 'output_schema_version', 'parent_status',
+             'policy_approval_reference', 'policy_checksum_sha256', 'policy_id',
+             'policy_version', 'result_schema_version',
+             'reviewer_approval_reference', 'reviewer_checksum_sha256', 'reviewer_id',
+             'reviewer_model_id', 'reviewer_model_version',
+             'reviewer_policy_approval_reference', 'reviewer_policy_checksum_sha256',
+             'reviewer_policy_id', 'reviewer_policy_version', 'reviewer_provider_id',
+             'reviewer_provider_version', 'reviewer_version', 'runtime_approval_reference',
+             'runtime_checksum_sha256', 'runtime_id', 'runtime_version', 'status',
+             'verification_timeout_ms'
+           ]::text[] AS "exactVerificationSelectColumns",
+           ARRAY(
+             SELECT attribute.attname::text
+               FROM pg_attribute AS attribute
+              WHERE attribute.attrelid = 'public.interpretation_verification'::regclass
+                AND attribute.attnum > 0
+                AND NOT attribute.attisdropped
+                AND has_column_privilege(
+                  current_user, 'public.interpretation_verification', attribute.attname, 'INSERT'
+                )
+              ORDER BY attribute.attname
+           ) = ARRAY[
+             'anonymous_subject_id', 'candidate_digest', 'candidate_digest_scope',
+             'deterministic_checks_version', 'expires_at', 'finalization_digest',
+             'interpretation_id', 'metadata_schema_version', 'output', 'output_digest',
+             'output_digest_scope', 'output_schema_version', 'policy_approval_reference',
+             'policy_checksum_sha256', 'policy_id', 'policy_version',
+             'result_schema_version', 'reviewer_approval_reference',
+             'reviewer_checksum_sha256', 'reviewer_id', 'reviewer_model_id',
+             'reviewer_model_version', 'reviewer_policy_approval_reference',
+             'reviewer_policy_checksum_sha256', 'reviewer_policy_id',
+             'reviewer_policy_version', 'reviewer_provider_id', 'reviewer_provider_version',
+             'reviewer_version', 'runtime_approval_reference', 'runtime_checksum_sha256',
+             'runtime_id', 'runtime_version', 'status', 'verification_timeout_ms'
+           ]::text[] AS "exactVerificationInsertColumns",
+           NOT EXISTS (
+             SELECT 1
+               FROM pg_attribute AS attribute
+              WHERE attribute.attrelid = 'public.interpretation_verification'::regclass
+                AND attribute.attnum > 0
+                AND NOT attribute.attisdropped
+                AND has_column_privilege(
+                  current_user, 'public.interpretation_verification', attribute.attname, 'UPDATE'
+                )
+           ) AS "zeroVerificationUpdateColumns",
            (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
               FROM pg_roles WHERE rolname = current_user) AS "privilegedRole",
            EXISTS (
@@ -1243,6 +1942,7 @@ export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
                  OR role.oid = owners.database_owner_oid
                  OR role.oid = owners.schema_owner_oid
                  OR role.oid = owners.table_owner_oid
+                 OR role.oid = owners.verification_owner_oid
                  OR has_database_privilege(role.oid, current_database(), 'CREATE')
                  OR has_schema_privilege(role.oid, 'public', 'CREATE')
            ) AS "reachableOwnerOrPrivilegedRole"
@@ -1261,8 +1961,12 @@ export const assertInterpretationGenerationRuntimeDatabasePrivileges = async (
     !row.canReadReading ||
     !row.canReadInterpretation ||
     row.canMutateInterpretationBroadly ||
+    row.canMutateVerificationBroadly ||
     !row.exactInsertColumns ||
     !row.exactUpdateColumns ||
+    !row.exactVerificationInsertColumns ||
+    !row.exactVerificationSelectColumns ||
+    !row.zeroVerificationUpdateColumns ||
     row.privilegedRole ||
     row.reachableOwnerOrPrivilegedRole
   ) {
@@ -1296,7 +2000,9 @@ export const createInterpretationGenerationPersistence = (
     const prepared = parseClaimProvenance(input.provenance);
     if (
       policy.leaseSeconds * 1_000 <
-      prepared.value.totalTimeoutMs + minimumFinalizeLeaseBufferMs
+      prepared.value.totalTimeoutMs +
+        prepared.value.verificationTimeoutMs +
+        minimumFinalizeLeaseBufferMs
     ) {
       return invalid();
     }
@@ -1492,7 +2198,8 @@ export const createInterpretationGenerationPersistence = (
               fallback_template_approval_reference, deterministic_engine_name,
               deterministic_engine_version, deterministic_algorithm_version,
               deterministic_rules_version, content_versions, generation_provenance,
-              max_output_tokens, attempt_timeout_ms, total_timeout_ms, max_attempts,
+              max_output_tokens, attempt_timeout_ms, total_timeout_ms, verification_timeout_ms,
+              max_attempts,
               retry_delay_ms, maximum_estimated_cost_micros, approved_currency_code,
               claim_token_hash, lease_expires_at, expires_at
             ) VALUES (
@@ -1510,7 +2217,8 @@ export const createInterpretationGenerationPersistence = (
               ${p.deterministicEngineName}, ${p.deterministicEngineVersion},
               ${p.deterministicAlgorithmVersion}, ${p.deterministicRulesVersion},
               ${p.contentVersions}, CAST(${prepared.generationProvenanceSerialized} AS JSONB),
-              ${p.maxOutputTokens}, ${p.attemptTimeoutMs}, ${p.totalTimeoutMs}, ${p.maxAttempts},
+              ${p.maxOutputTokens}, ${p.attemptTimeoutMs}, ${p.totalTimeoutMs},
+              ${p.verificationTimeoutMs}, ${p.maxAttempts},
               ${p.retryDelayMs}, ${p.maximumEstimatedCostMicros}, ${p.currencyCode},
               ${claimTokenHash},
               LEAST(
@@ -1608,8 +2316,15 @@ export const createInterpretationGenerationPersistence = (
             Number(row.maximumEstimatedCostMicros),
             row.approvedCurrencyCode.trim(),
           );
+          if (
+            completion.verification !== null &&
+            completion.verification.value.provenance.verificationTimeoutMs !==
+              row.verificationTimeoutMs
+          ) {
+            return invalid();
+          }
           const metadata = completion.operational;
-          const updated = await transaction.$queryRaw<GenerationRow[]>`
+          const updated = await transaction.$queryRaw<Array<{ id: string }>>`
             UPDATE interpretation
                SET status = ${completion.status},
                    finalization_hash = ${completionHash},
@@ -1635,58 +2350,42 @@ export const createInterpretationGenerationPersistence = (
                AND claim_version = ${input.claimVersion}
                AND claim_token_hash = ${claimTokenHash}
                AND lease_expires_at > clock_timestamp()
-            RETURNING *, clock_timestamp() AS "observedAt",
-                      anonymous_subject_id AS "anonymousSubjectId",
-                      reading_id AS "readingId", generation_number AS "generationNumber",
-                      request_id AS "requestId", generation_schema_version AS "generationSchemaVersion",
-                      generation_policy_version AS "generationPolicyVersion",
-                      eligibility_as_of AS "eligibilityAsOf",
-                      idempotency_key_version AS "idempotencyKeyVersion",
-                      idempotency_key_hash AS "idempotencyKeyHash",
-                      canonical_request_hash AS "canonicalRequestHash",
-                      reading_type AS "readingType", theme_code AS "themeCode",
-                      provider_id AS "providerId", provider_version AS "providerVersion",
-                      model_id AS "modelId", model_version AS "modelVersion",
-                      provider_approval_reference AS "providerApprovalReference",
-                      prompt_id AS "promptId", prompt_version AS "promptVersion",
-                      prompt_checksum_sha256 AS "promptChecksumSha256",
-                      prompt_approval_reference AS "promptApprovalReference",
-                      output_schema_version AS "outputSchemaVersion",
-                      safety_policy_version AS "safetyPolicyVersion",
-                      retrieval_policy_version AS "retrievalPolicyVersion",
-                      assembly_policy_version AS "assemblyPolicyVersion",
-                      fallback_template_id AS "fallbackTemplateId",
-                      fallback_template_version AS "fallbackTemplateVersion",
-                      fallback_template_checksum_sha256 AS "fallbackTemplateChecksumSha256",
-                      fallback_template_approval_reference AS "fallbackTemplateApprovalReference",
-                      deterministic_engine_name AS "deterministicEngineName",
-                      deterministic_engine_version AS "deterministicEngineVersion",
-                      deterministic_algorithm_version AS "deterministicAlgorithmVersion",
-                      deterministic_rules_version AS "deterministicRulesVersion",
-                      content_versions AS "contentVersions", generation_provenance AS "generationProvenance",
-                      max_output_tokens AS "maxOutputTokens", attempt_timeout_ms AS "attemptTimeoutMs",
-                      total_timeout_ms AS "totalTimeoutMs", max_attempts AS "maxAttempts",
-                      retry_delay_ms AS "retryDelayMs",
-                      maximum_estimated_cost_micros AS "maximumEstimatedCostMicros",
-                      approved_currency_code AS "approvedCurrencyCode",
-                      claim_version AS "claimVersion", claim_token_hash AS "claimTokenHash",
-                      lease_expires_at AS "leaseExpiresAt", finalization_hash AS "finalizationHash",
-                      attempt_count AS "attemptCount", failure_code AS "failureCode",
-                      retry_reason AS "retryReason", latency_ms AS "latencyMs",
-                      token_status AS "tokenStatus", input_tokens AS "inputTokens",
-                      output_tokens AS "outputTokens", total_tokens AS "totalTokens",
-                      cost_status AS "costStatus", estimated_cost_micros AS "estimatedCostMicros",
-                      currency_code AS "currencyCode", fallback_output AS "fallbackOutput",
-                      created_at AS "createdAt", completed_at AS "completedAt", expires_at AS "expiresAt"
+            RETURNING id
           `;
           const finalized = updated[0];
-          if (updated.length !== 1 || finalized === undefined) {
+          if (updated.length !== 1 || finalized?.id !== row.id) {
             throw new InterpretationGenerationPersistenceError(
               "INTERPRETATION_GENERATION_CLAIM_LOST",
             );
           }
+          if (completion.verification !== null) {
+            const inserted = await insertVerificationRow(transaction, {
+              completionHash,
+              expiresAt: row.expiresAt,
+              interpretationId: row.id,
+              output: completion.verification.output,
+              subjectId: row.anonymousSubjectId,
+              verification: completion.verification.value,
+            });
+            if (!inserted) {
+              throw new InterpretationGenerationPersistenceError(
+                "INTERPRETATION_VERIFICATION_CONFLICT",
+              );
+            }
+          }
+          const persistedRows = await transaction.$queryRaw<GenerationRow[]>`
+            ${generationSelect}
+             WHERE interpretation.id = ${row.id}::uuid
+               AND interpretation.anonymous_subject_id = ${row.anonymousSubjectId}::uuid
+          `;
+          const persisted = persistedRows[0];
+          if (persistedRows.length !== 1 || persisted === undefined) {
+            throw new InterpretationGenerationPersistenceError(
+              "INTERPRETATION_GENERATION_PERSISTENCE_UNAVAILABLE",
+            );
+          }
           return Object.freeze({
-            interpretation: persistedFromRow(finalized),
+            interpretation: persistedFromRow(persisted),
             kind: "finalized" as const,
           });
         },
@@ -1703,4 +2402,13 @@ export const createInterpretationGenerationPersistence = (
   return Object.freeze({ claim, finalize });
 };
 
-export { generationProvenanceSchemaVersion, generationSchemaVersion };
+export {
+  deterministicVerificationChecksVersion,
+  generationProvenanceSchemaVersion,
+  generationSchemaVersion,
+  verificationCandidateDigestScope,
+  verificationMetadataSchemaVersion,
+  verificationOutputDigestScope,
+  verificationProvenanceSchemaVersion,
+  verificationResultSchemaVersion,
+};

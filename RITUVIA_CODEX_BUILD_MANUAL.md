@@ -1028,8 +1028,8 @@ Use this order:
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the safe-off structured-generation,
-authorized-fallback, and owner-fenced persistence RIT-033 slice. M1 RIT-016 and manual
+**Stage:** M3 local implementation is complete through the safe-off post-generation fact/safety
+verification and append-only owner-scoped persistence RIT-034 slice. M1 RIT-016 and manual
 assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains
 owner-gated. Production catalog/prompt/classifier/safety-policy approval and activation, AI
 provider/model activation, and actual indexing remain separately gated.
@@ -1104,21 +1104,29 @@ provider/model activation, and actual indexing remain separately gated.
   immutable bounded request; enforces strict normalized-result and output validation, monotonic
   host deadlines, cancellation and consumed late settlement, at most one allowlisted retry,
   deterministic authorized fallback, and closed privacy-safe operational metadata. Provider prose
-  remains an in-memory non-displayable candidate for RIT-034, and no provider, SDK, key, network
-  adapter, paid inference, API, UI, or production activation is included.
+  remains an in-memory non-displayable candidate until post-generation verification succeeds, and
+  no provider, SDK, key, network adapter, paid inference, API, UI, or production activation is
+  included.
+- Pure provider-neutral post-generation verification that accepts only exact runtime-issued,
+  single-use candidates and exact generation context; checks all displayable text leaves for
+  deterministic fact/source/orientation drift and fixed safety/dependency/injection categories;
+  requires an independently authorized bounded semantic verdict; and returns only a recursively
+  immutable verified result, exact authorized safe replacement, or no-output trust failure.
 - Owner-scoped interpretation persistence with canonical request and idempotency hashes, inherited
   reading expiry, database-clock leases with a 30-second execution buffer, exact replay/conflict
   behavior, fallback-only reclaim, secret claim material, lease-version compare-and-set fencing,
   immutable terminal rows, durable no-output `failed` states for trust/configuration failures,
-  forced RLS, and exact least-privilege runtime columns. Only independently authorized validated
-  fallback output may be stored before RIT-034.
+  forced RLS, and exact least-privilege runtime columns. A one-to-one append-only verification child
+  is inserted atomically with parent finalization; keyed-HMAC replay validation and pending-output
+  non-disclosure fail closed, and a historical pending row without a child remains non-displayable
+  with no recovery API.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 1,048 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 1,079 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -1136,8 +1144,8 @@ provider/model activation, and actual indexing remain separately gated.
 - Payment-provider written underwriting approval.
 - Astrology calculation commercial-license decision.
 - A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
-- An approved production tarot catalog, production runtime activation, AI provider/model generation
-  activation, post-generation fact/safety verification, interpretation API/UI,
+- An approved production tarot catalog, production runtime activation, AI provider/model/reviewer
+  activation, interpretation API/UI,
   intention/ritual continuation, report triage/admin workflow, or separate creation-versus-history
   operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
   cannot activate the RIT-024/RIT-027 runtime.
@@ -1167,34 +1175,35 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-033 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
-lint, strict type checking, 1,048 unit/contract tests in 67 files, 34 focused AI/Web orchestration
-tests, configuration-boundary integration, the 177-file/nine-module architecture gate, the seven
-immutable-migration gate, a 406-file tracked/unignored secret scan, and the 75-artifact production
-build pass. The record-policy suite covers the canonical task/decision graph, privacy-safe records,
-contextual task results, and exact staged index-to-manual-to-checksum evidence.
+The RIT-034 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
+with zero warnings, strict type checking across all nine workspace tasks, 1,079 unit/contract tests
+in 68 files, 149 focused AI assertions, 27 focused Web-composition tests, the 179-file/nine-module
+architecture gate, all eight immutable-migration checks, a 411-file tracked/unignored secret scan,
+and all nine build tasks pass. The record-policy suite covers the canonical task/decision graph,
+privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum
+evidence.
 
-RIT-033's PostgreSQL matrix passed against an isolated local PostgreSQL 17 instance on port 55434.
-A temporary uncommitted loader changed only the local data root and port, leaving repository guards
-unchanged; all six current migrations applied and the suite proved an eight-way single-winner claim
-race, exact replay and conflict, database-clock lease reclaim, fallback-only recovery, lease-version
-fencing and stale-writer rejection, durable no-output configuration/unknown failures, illegal
-fallback and token-overflow rejection, exact least privilege, and non-empty dump/restore. The
-unrelated active `IPO.ONE` database on fixed port 55432 was not connected to, stopped, or modified.
+RIT-034's PostgreSQL matrix passed against an isolated local PostgreSQL 17 instance. All seven
+current migrations and an idempotent redeploy passed. The suite proves atomic fenced parent
+compare-and-set plus verification-child insertion and full rollback, exact replay, keyed
+finalization tamper rejection, eight-way claim concurrency, conflict and owner isolation, hidden
+pending provider output, historical timeout-zero pending non-displayability without a child or
+recovery API, exact least privilege, privacy canaries, and non-empty logical dump/restore. The
+unrelated PostgreSQL instances on ports 55432 and 55439 were not connected to, stopped, or modified.
 
-The build verifier checks 75 artifacts and narrowed exports, including exact UI stylesheet parity,
+The build verifier checks 79 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
 the compiled AI Tarot input/output fixture, provider/version exports, published-content retrieval,
 prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation, exact allowed
 authorization binding, non-exported authorization issuers, provider-neutral generation and
-authorized-fallback exports, and interpretation claim/finalization persistence,
-and the icon. Maximum Web output is 6,622 B
+authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
+atomic interpretation claim/finalization/verification persistence, and the icon. Maximum Web output is 6,622 B
 gzip HTML, 6,126 B gzip CSS, 225,894 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 177 active source files across nine modules and keeps module,
+The architecture verifier audits 179 active source files across nine modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
@@ -1260,11 +1269,22 @@ strict result/fact/source validation, monotonic timeout/cancellation, single bou
 authorized deterministic fallback, and redacted fixed metadata fail closed. Idempotent replay and
 in-progress responses execute zero provider work, reclaimed work is fallback-only, configuration,
 invalid-request, and unknown failures become durable no-output terminal rows, and a provider
-candidate remains transient and non-displayable for RIT-034. Focused AI/Web coverage passes 34
-tests; the isolated real-PostgreSQL matrix proves the claim, fencing, retention, privilege, and
-restore properties described above. No real provider/model, provider SDK, API key, network call,
-paid inference, production prompt/content/template activation, API/UI, payment, deployment, or
-public launch is added.
+candidate remains transient and non-displayable until RIT-034 verifies or replaces it. Focused
+AI/Web coverage passes 34 tests; the isolated real-PostgreSQL matrix proves the claim, fencing,
+retention, privilege, and restore properties described above. No real provider/model, provider SDK,
+API key, network call, paid inference, production prompt/content/template activation, API/UI,
+payment, deployment, or public launch is added.
+
+RIT-034 closes the post-generation boundary while remaining safe-off: exact runtime-issued
+single-use candidates and context undergo deterministic whole-output fact, source, orientation,
+safety, dependency, and injection checks before an independent bounded reviewer can approve.
+Uncertainty uses only the already-authorized exact safe replacement; trust failure produces no
+output. Atomic parent finalization and append-only verification persistence expose only a durable
+verified/replacement child, authenticate replay with a keyed HMAC, hide pending provider prose, and
+leave historical childless pending rows non-displayable. Focused coverage passes 149 AI assertions
+and 27 Web-composition tests, with the PostgreSQL and full repository evidence described above. No
+production provider, reviewer, model, SDK, key, network request, paid inference, API/UI, payment,
+deployment, or public launch is added.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
@@ -1783,6 +1803,19 @@ effective until this register links it. Do not rewrite historical rationale; sup
   a retention policy before the post-generation verifier and owner-gated runtime exist.
 - **Date:** 2026-07-18
 
+### [D-041 — Monotonic post-generation verification and append-only safe results](records/decisions/D-041.md)
+
+- **Decision:** Accept only a runtime-issued single-use provider candidate bound to exact
+  generation context and an approved verification runtime; apply whole-output deterministic and
+  independent semantic checks monotonically; replace unsafe or uncertain candidates with the
+  already-authorized deterministic fallback; and atomically persist only a verified or safe-
+  replacement output in a one-to-one append-only owner-scoped verification record with keyed replay
+  validation, while a historical pending row without a child remains non-displayable.
+- **Reason:** Structurally valid prose and self-reported safety flags do not prove factual or safety
+  integrity, while mutating the immutable RIT-033 terminal row or storing rejected prose would
+  weaken fencing, authenticated replay, privacy, and append-only guarantees.
+- **Date:** 2026-07-18
+
 ---
 
 # File: `ROADMAP.md`
@@ -2068,8 +2101,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-031 | M3        |       P0 | Done    | Implement curated content retrieval and prompt versioning                 | RIT-022,RIT-030                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                            |
 | RIT-032 | M3        |       P0 | Done    | Implement pre-generation high-stakes and crisis policy                   | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                            |
 | RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                 | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                      |
-| RIT-034 | M3        |       P0 | Ready   | Implement post-generation fact and safety verifier                        | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.            |
-| RIT-035 | M3        |       P0 | Planned | Build tarot AI interpretation streaming/polling UX                        | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                             |
+| RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                        | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.            |
+| RIT-035 | M3        |       P0 | Ready   | Build tarot AI interpretation streaming/polling UX                        | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                             |
 | RIT-036 | M3        |       P0 | Planned | Create AI fixed regression and adversarial eval suite                     | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                |
 | RIT-037 | M3        |       P1 | Planned | Add interpretation regeneration/report/version history                    | RIT-035,RIT-036                         | backend       | Regeneration is limited, version-linked, reportable, and does not alter facts.                                    |
 | RIT-038 | M3        |       P1 | Planned | Add AI cost, latency, fallback, and safety dashboards                     | RIT-006,RIT-033                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                    |
@@ -2317,6 +2350,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-038 | Exact published-content retrieval and checksummed prompt artifacts | [decisions/D-038.md](./decisions/D-038.md) |
 | Decision | D-039 | Fail-closed pre-generation safety and request-bound authorization | [decisions/D-039.md](./decisions/D-039.md) |
 | Decision | D-040 | Provider-neutral generation, authorized fallback, and fenced persistence | [decisions/D-040.md](./decisions/D-040.md) |
+| Decision | D-041 | Monotonic post-generation verification and append-only safe results | [decisions/D-041.md](./decisions/D-041.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2337,6 +2371,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-031 | Curated content retrieval and prompt versioning | [tasks/RIT-031.md](./tasks/RIT-031.md) |
 | Task | RIT-032 | Pre-generation high-stakes and crisis policy | [tasks/RIT-032.md](./tasks/RIT-032.md) |
 | Task | RIT-033 | Structured generation, validation, fallback, and persistence | [tasks/RIT-033.md](./tasks/RIT-033.md) |
+| Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 

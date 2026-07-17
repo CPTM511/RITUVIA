@@ -44,6 +44,8 @@ const READING_READER_ROLE = "rituvia_tarot_reading_reader";
 const READING_WRITER_ROLE = "rituvia_tarot_reading_writer";
 const INTERPRETATION_READER_ROLE = "rituvia_interpretation_reader";
 const INTERPRETATION_WRITER_ROLE = "rituvia_interpretation_writer";
+const VERIFICATION_READER_ROLE = "rituvia_interpretation_verification_reader";
+const VERIFICATION_WRITER_ROLE = "rituvia_interpretation_verification_writer";
 const DEVELOPMENT_DATABASE = "rituvia_local";
 const SUPPORTED_POSTGRES_MAJORS = new Set([17, 18]);
 const TEST_DATABASE_PATTERN = /^rituvia_test_[a-f0-9]{24}$/;
@@ -802,7 +804,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
     const foundationTables = await admin.query(
       `SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS migrations,
@@ -864,17 +866,28 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     if (interpretationTable.rows[0]?.present === true) {
       await admin.query(`GRANT SELECT ON TABLE interpretation TO ${INTERPRETATION_READER_ROLE}`);
       await admin.query(
-        `GRANT INSERT (anonymous_subject_id, approved_currency_code, assembly_policy_version, attempt_timeout_ms, canonical_request_hash, claim_token_hash, content_versions, deterministic_algorithm_version, deterministic_engine_name, deterministic_engine_version, deterministic_rules_version, eligibility_as_of, expires_at, fallback_template_approval_reference, fallback_template_checksum_sha256, fallback_template_id, fallback_template_version, generation_policy_version, generation_provenance, generation_schema_version, idempotency_key_hash, idempotency_key_version, lease_expires_at, locale, max_attempts, max_output_tokens, maximum_estimated_cost_micros, modality, model_id, model_version, output_schema_version, prompt_approval_reference, prompt_checksum_sha256, prompt_id, prompt_version, provider_approval_reference, provider_id, provider_version, reading_id, reading_type, request_id, retrieval_policy_version, retry_delay_ms, safety_policy_version, theme_code, tone, total_timeout_ms) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
+        `GRANT INSERT (anonymous_subject_id, approved_currency_code, assembly_policy_version, attempt_timeout_ms, canonical_request_hash, claim_token_hash, content_versions, deterministic_algorithm_version, deterministic_engine_name, deterministic_engine_version, deterministic_rules_version, eligibility_as_of, expires_at, fallback_template_approval_reference, fallback_template_checksum_sha256, fallback_template_id, fallback_template_version, generation_policy_version, generation_provenance, generation_schema_version, idempotency_key_hash, idempotency_key_version, lease_expires_at, locale, max_attempts, max_output_tokens, maximum_estimated_cost_micros, modality, model_id, model_version, output_schema_version, prompt_approval_reference, prompt_checksum_sha256, prompt_id, prompt_version, provider_approval_reference, provider_id, provider_version, reading_id, reading_type, request_id, retrieval_policy_version, retry_delay_ms, safety_policy_version, theme_code, tone, total_timeout_ms, verification_timeout_ms) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
       );
       await admin.query(
         `GRANT UPDATE (attempt_count, claim_token_hash, claim_version, completed_at, cost_status, currency_code, estimated_cost_micros, failure_code, fallback_output, finalization_hash, input_tokens, latency_ms, lease_expires_at, output_tokens, retry_reason, status, token_status, total_tokens) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
+      );
+    }
+    const verificationTable = await admin.query(
+      "SELECT to_regclass('public.interpretation_verification') IS NOT NULL AS present",
+    );
+    if (verificationTable.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT (anonymous_subject_id, candidate_digest, candidate_digest_scope, created_at, deterministic_checks_version, expires_at, finalization_digest, interpretation_id, metadata_schema_version, output, output_digest, output_digest_scope, output_schema_version, parent_status, policy_approval_reference, policy_checksum_sha256, policy_id, policy_version, result_schema_version, reviewer_approval_reference, reviewer_checksum_sha256, reviewer_id, reviewer_model_id, reviewer_model_version, reviewer_policy_approval_reference, reviewer_policy_checksum_sha256, reviewer_policy_id, reviewer_policy_version, reviewer_provider_id, reviewer_provider_version, reviewer_version, runtime_approval_reference, runtime_checksum_sha256, runtime_id, runtime_version, status, verification_timeout_ms) ON TABLE interpretation_verification TO ${VERIFICATION_READER_ROLE}`,
+      );
+      await admin.query(
+        `GRANT INSERT (anonymous_subject_id, candidate_digest, candidate_digest_scope, deterministic_checks_version, expires_at, finalization_digest, interpretation_id, metadata_schema_version, output, output_digest, output_digest_scope, output_schema_version, policy_approval_reference, policy_checksum_sha256, policy_id, policy_version, result_schema_version, reviewer_approval_reference, reviewer_checksum_sha256, reviewer_id, reviewer_model_id, reviewer_model_version, reviewer_policy_approval_reference, reviewer_policy_checksum_sha256, reviewer_policy_id, reviewer_policy_version, reviewer_provider_id, reviewer_provider_version, reviewer_version, runtime_approval_reference, runtime_checksum_sha256, runtime_id, runtime_version, status, verification_timeout_ms) ON TABLE interpretation_verification TO ${VERIFICATION_WRITER_ROLE}`,
       );
     }
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -894,6 +907,8 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
     await ensureGroupRole(admin, READING_WRITER_ROLE);
     await ensureGroupRole(admin, INTERPRETATION_READER_ROLE);
     await ensureGroupRole(admin, INTERPRETATION_WRITER_ROLE);
+    await ensureGroupRole(admin, VERIFICATION_READER_ROLE);
+    await ensureGroupRole(admin, VERIFICATION_WRITER_ROLE);
     await ensureLoginRole(admin, APP_ROLE, runtime.credentials.appPassword);
     await ensureLoginRole(admin, CONTROL_ROLE, runtime.credentials.controlPassword);
     await ensureLoginRole(admin, MIGRATOR_ROLE, runtime.credentials.migratorPassword);
@@ -906,7 +921,10 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
       `GRANT ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE} TO ${APP_ROLE}`,
     );
     await admin.query(
-      `REVOKE ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE} FROM ${CONTROL_ROLE}`,
+      `GRANT ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE} TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE} FROM ${CONTROL_ROLE}`,
     );
 
     const databaseResult = await admin.query(
@@ -1421,7 +1439,7 @@ export const verifyLogicalDumpRestore = async (runtime, sourceHandle, targetHand
   await chmod(dumpDirectory, 0o700);
   const dumpPath = path.join(dumpDirectory, `${sourceDatabase}-${targetDatabase}.dump`);
   await assertNotSymlink(dumpPath, "Local PostgreSQL logical dump");
-  const dumpEnvironment = { PGPASSWORD: runtime.credentials.appPassword };
+  const dumpEnvironment = { PGPASSWORD: runtime.credentials.adminPassword };
   const restoreEnvironment = { PGPASSWORD: runtime.credentials.migratorPassword };
 
   try {
@@ -1464,7 +1482,7 @@ export const verifyLogicalDumpRestore = async (runtime, sourceHandle, targetHand
         "--port",
         String(PORT),
         "--username",
-        APP_ROLE,
+        ADMIN_ROLE,
         "--dbname",
         sourceDatabase,
         "--format",
