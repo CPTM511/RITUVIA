@@ -8,13 +8,11 @@ import {
   resolveTarotDrawV1,
   tarotDrawRulesVersion,
   type TarotCatalogV1,
-  type TarotDrawFactsV1,
   type TarotOrientationPolicy,
 } from "@rituvia/divination";
 import {
   parseTarotReadingCreateRequestV1,
   tarotReadingCreateSchemaVersion,
-  type TarotReadingCreateRequestV1,
   type TarotReadingType,
 } from "@rituvia/domain";
 import type {
@@ -28,9 +26,13 @@ import {
   tarotReadingDigestsEqual,
   type TarotReadingIntegrityKeyringInput,
 } from "./tarot-reading-crypto";
+import {
+  tarotReadingResponseSchemaVersion,
+  type TarotReadingPublicResponseV2,
+} from "../app/_contracts/tarot-reading-response";
+import { projectTarotReadingPresentationV1 } from "./tarot-reading-presentation";
 
 export const tarotReadingPolicySchemaVersion = "tarot-reading-policy.v1" as const;
-export const tarotReadingResponseSchemaVersion = "tarot-reading-response.v1" as const;
 
 const identifierPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const versionPattern = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/u;
@@ -64,18 +66,6 @@ export type TarotReadingCatalogProvider = Readonly<{
 
 export type PersistedTarotReading = DatabasePersistedTarotReading;
 export type TarotReadingPersistence = DatabaseTarotReadingPersistence;
-
-export type TarotReadingPublicResponseV1 = Readonly<{
-  createdAt: string;
-  facts: TarotDrawFactsV1;
-  locale: "en";
-  readingId: string;
-  readingPolicyVersion: string;
-  readingType: TarotReadingType;
-  schemaVersion: typeof tarotReadingResponseSchemaVersion;
-  status: "facts_ready";
-  themeCode: TarotReadingCreateRequestV1["themeCode"];
-}>;
 
 export type TarotReadingApplicationErrorCode =
   "conflict" | "limit_reached" | "session_required" | "unavailable";
@@ -220,7 +210,7 @@ export const createTarotReadingApplicationService = (
 
   const verifyReading = async (
     reading: PersistedTarotReading,
-  ): Promise<TarotReadingPublicResponseV1> => {
+  ): Promise<TarotReadingPublicResponseV2> => {
     if (
       !uuidV4Pattern.test(reading.id) ||
       !uuidV4Pattern.test(reading.subjectId) ||
@@ -320,10 +310,12 @@ export const createTarotReadingApplicationService = (
       },
     });
     const facts = projectTarotDrawFactsV1(verifiedExecution, verifier);
+    const presentation = projectTarotReadingPresentationV1(catalog, facts, request.themeCode);
     return Object.freeze({
       createdAt: reading.createdAt,
       facts,
       locale: request.locale,
+      presentation,
       readingId: reading.id,
       readingPolicyVersion: reading.readingPolicyVersion,
       readingType: request.readingType,
@@ -398,6 +390,9 @@ export const createTarotReadingApplicationService = (
                 return invalidConfiguration();
               }
               const catalog = await loadCatalog(policy.catalog, true);
+              if (!catalog.supportedThemeCodes.includes(request.themeCode)) {
+                throw new TarotReadingApplicationError("unavailable");
+              }
               const deckCardCount = resolveDeckCardCount(catalog, policy.deck);
               const requestDigest = cryptography.deriveRequestDigest(
                 activeCandidate.idempotencyKeyVersion,

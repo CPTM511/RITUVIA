@@ -13,6 +13,7 @@ import {
 import { getMessages } from "../app/_i18n/messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
+import { getTarotOneCardMessages } from "../app/_i18n/tarot-one-card-messages";
 
 const collectStrings = (value: unknown): string[] => {
   if (typeof value === "string") return [value];
@@ -31,13 +32,14 @@ describe("Web accessibility smoke policy", () => {
       "/en/safety",
       "/en/privacy",
     ]);
-    expect(privateAccessibilitySmokeRoutes).toEqual(["/en/intake"]);
+    expect(privateAccessibilitySmokeRoutes).toEqual(["/en/intake", "/en/tarot/one-card"]);
     expect(accessibilitySmokeRoutes).toEqual([
       "/en",
       "/en/methodology",
       "/en/safety",
       "/en/privacy",
       "/en/intake",
+      "/en/tarot/one-card",
     ]);
     expect(accessibilityAxeTags).toEqual([
       "wcag2a",
@@ -62,6 +64,11 @@ describe("Web accessibility smoke policy", () => {
     expect(resolveAccessibilityArtifactRequest("/en/intake")).toEqual({
       contentType: "text/html; charset=utf-8",
       relativePath: "server/app/en/intake.html",
+      type: "document",
+    });
+    expect(resolveAccessibilityArtifactRequest("/en/tarot/one-card")).toEqual({
+      contentType: "text/html; charset=utf-8",
+      relativePath: "server/app/en/tarot/one-card.html",
       type: "document",
     });
     expect(resolveAccessibilityArtifactRequest("/icon.svg?icon.reviewed.svg")).toEqual({
@@ -107,6 +114,7 @@ describe("Web accessibility smoke policy", () => {
       getMessages("en"),
       getQuestionIntakeMessages("en"),
       getStateMessages("en"),
+      getTarotOneCardMessages("en"),
     ]);
     expect(messages.length).toBeGreaterThan(100);
     for (const source of messages) {

@@ -295,7 +295,7 @@ const serviceFixture = (input?: { limit?: number; rawCatalog?: unknown }) => {
 describe("tarot reading application service", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("creates and replays one immutable public fact response without exposing audit data", async () => {
+  it("creates and replays one immutable public presentation without exposing audit data", async () => {
     const { fake, service } = serviceFixture();
     const created = await service.create(request, idempotencyKey, token);
     const replayed = await service.create(request, idempotencyKey, token);
@@ -305,9 +305,36 @@ describe("tarot reading application service", () => {
     expect(fake.createCalls()).toBe(1);
     expect(fake.readings).toHaveLength(1);
     expect(created.response.facts.positions).toHaveLength(1);
+    expect(created.response.schemaVersion).toBe("tarot-reading-response.v2");
+    expect(created.response.presentation.cards).toHaveLength(1);
+    expect(created.response.presentation.cards[0]).toMatchObject({
+      cardId: created.response.facts.positions[0]?.cardId,
+      orientation: created.response.facts.positions[0]?.orientation,
+      positionId: created.response.facts.positions[0]?.positionId,
+    });
+    expect(created.response.presentation.cards[0]?.invitation).toBe(
+      "A bounded reflective possibility for open_reflection.",
+    );
     expect(JSON.stringify(created.response)).not.toMatch(
       /audit|commitment|digest|entropy|subject|session/iu,
     );
+  });
+
+  it("projects reviewed theme-specific content for every accepted theme", async () => {
+    const { fake, service } = serviceFixture({ limit: questionIntakeThemeCodes.length });
+
+    for (const [index, themeCode] of questionIntakeThemeCodes.entries()) {
+      const created = await service.create(
+        { ...request, themeCode },
+        `abcdefghijklmnopqrst${String(index).padStart(2, "0")}`,
+        token,
+      );
+      expect(created.response.presentation.cards[0]?.invitation).toBe(
+        `A bounded reflective possibility for ${themeCode}.`,
+      );
+    }
+
+    expect(fake.createCalls()).toBe(questionIntakeThemeCodes.length);
   });
 
   it("returns an owner-scoped saved reading and makes cross-owner lookup indistinguishable", async () => {
@@ -350,6 +377,21 @@ describe("tarot reading application service", () => {
 
   it("fails before persistence for the canonical unpublished placeholder", async () => {
     const { fake, service } = serviceFixture({ rawCatalog });
+
+    await expect(service.create(request, idempotencyKey, token)).rejects.toMatchObject({
+      code: "unavailable",
+    });
+    expect(fake.createCalls()).toBe(0);
+    expect(fake.readings).toHaveLength(0);
+  });
+
+  it("fails before draw persistence when the approved catalog does not support the theme", async () => {
+    const catalog = eligibleCatalog() as CatalogFixture;
+    catalog.supportedThemeCodes = ["work"];
+    for (const content of catalog.cardContents) {
+      content.themeReadings = content.themeReadings.filter(({ themeCode }) => themeCode === "work");
+    }
+    const { fake, service } = serviceFixture({ rawCatalog: catalog });
 
     await expect(service.create(request, idempotencyKey, token)).rejects.toMatchObject({
       code: "unavailable",

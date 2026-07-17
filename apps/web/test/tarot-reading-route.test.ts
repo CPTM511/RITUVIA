@@ -23,6 +23,7 @@ import {
 } from "../app/api/v1/readings/tarot/route";
 import { tarotReadingResourceApiPath } from "../app/api/v1/readings/tarot/_http";
 import { TarotReadingApplicationError } from "../server/tarot-reading";
+import { createTarotOneCardResponseFixture } from "./fixtures/tarot-reading-response";
 
 const readingId = "33333333-3333-4333-8333-333333333333";
 const idempotencyKey = "abcdefghijklmnopqrstuv";
@@ -33,26 +34,7 @@ const requestBody = Object.freeze({
   schemaVersion: "tarot-reading-create.v1",
   themeCode: "open_reflection",
 });
-const responseBody = Object.freeze({
-  createdAt: "2026-07-17T12:00:00.000Z",
-  facts: Object.freeze({
-    positions: Object.freeze([
-      Object.freeze({
-        cardId: "the-star",
-        order: 1,
-        orientation: "upright",
-        positionId: "perspective",
-      }),
-    ]),
-  }),
-  locale: "en",
-  readingId,
-  readingPolicyVersion: "test.tarot-reading.v1",
-  readingType: "one_card",
-  schemaVersion: "tarot-reading-response.v1",
-  status: "facts_ready",
-  themeCode: "open_reflection",
-});
+const responseBody = Object.freeze(createTarotOneCardResponseFixture());
 
 const postRequest = (
   body: BodyInit | null = JSON.stringify(requestBody),
@@ -98,7 +80,7 @@ describe("tarot reading API routes", () => {
     harness.get.mockResolvedValue(responseBody);
   });
 
-  it("creates and replays one private facts-only response with stable status codes", async () => {
+  it("creates and replays one private presentation response with stable status codes", async () => {
     const created = await POST(postRequest());
     harness.create.mockResolvedValueOnce({ kind: "replayed", response: responseBody });
     const replayed = await POST(postRequest());

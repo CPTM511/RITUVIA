@@ -12,6 +12,7 @@ import {
   localePublicPagePath,
   localeQuestionIntakePath,
   localeSectionPath,
+  localeTarotOneCardPath,
   parseLocale,
   parsePublicPageSlug,
   publicPageSlugs,
@@ -33,6 +34,7 @@ describe("Web locale routing", () => {
   it("creates stable locale-prefixed public and in-page paths", () => {
     expect(localeHomePath("en")).toBe("/en");
     expect(localeQuestionIntakePath("en")).toBe("/en/intake");
+    expect(localeTarotOneCardPath("en")).toBe("/en/tarot/one-card");
     expect(publicPageSlugs).toEqual(["methodology", "safety", "privacy"]);
     expect(localePublicPagePath("en", "methodology")).toBe("/en/methodology");
     expect(localePublicPagePath("en", "safety")).toBe("/en/safety");

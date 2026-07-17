@@ -4,9 +4,11 @@ import {
   createHomeMetadata,
   createPublicPageMetadata,
   createQuestionIntakeMetadata,
+  createTarotOneCardMetadata,
 } from "../app/_i18n/metadata";
 import { getMessages } from "../app/_i18n/messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
+import { getTarotOneCardMessages } from "../app/_i18n/tarot-one-card-messages";
 
 const input = {
   brandName: "Configured Brand",
@@ -75,6 +77,15 @@ describe("localized home metadata", () => {
 
     expect(metadata.robots).toEqual({ index: false, follow: false });
     expect(metadata.title).toContain("Private reflection intake");
+    expect(metadata.alternates).toBeUndefined();
+    expect(metadata.openGraph).toBeUndefined();
+  });
+
+  it("keeps the private one-card result noindex without canonical or social URLs", () => {
+    const metadata = createTarotOneCardMetadata("Configured Brand", getTarotOneCardMessages("en"));
+
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(metadata.title).toContain("Private one-card reflection");
     expect(metadata.alternates).toBeUndefined();
     expect(metadata.openGraph).toBeUndefined();
   });

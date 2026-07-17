@@ -7,6 +7,7 @@ const publicRouteArtifacts = Object.freeze([
 
 const privateRouteArtifacts = Object.freeze([
   Object.freeze({ artifact: "en/intake", pathname: "/en/intake" }),
+  Object.freeze({ artifact: "en/tarot/one-card", pathname: "/en/tarot/one-card" }),
 ]);
 
 const routeArtifacts = Object.freeze([...publicRouteArtifacts, ...privateRouteArtifacts]);

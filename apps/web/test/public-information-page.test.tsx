@@ -26,7 +26,9 @@ describe("server-rendered public information pages", () => {
       expect(html).toContain('<main class="information-main" id="main-content" tabindex="-1">');
       expect(html.match(/<h1\b/gu)).toHaveLength(1);
       expect(html).toContain(`aria-current="page" class="navigation-link" href="/en/${page}"`);
-      expect(html).toContain("No readings, AI interpretations, accounts, purchases, or rituals");
+      expect(html).toContain(
+        "No public readings, AI interpretations, accounts, purchases, or rituals",
+      );
       expect(html).not.toMatch(/<(?:form|input|textarea)\b/u);
       expect(html).not.toMatch(/href="https?:/u);
     },

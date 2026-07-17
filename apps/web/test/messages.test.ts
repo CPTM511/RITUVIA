@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getMessages } from "../app/_i18n/messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
+import { getTarotOneCardMessages } from "../app/_i18n/tarot-one-card-messages";
 
 const collectStrings = (value: unknown): string[] => {
   if (typeof value === "string") return [value];
@@ -41,6 +42,17 @@ describe("English shell messages", () => {
     expect(copy).not.toMatch(/\b(?:guaranteed|destined|curse removal|stronger ritual)\b/iu);
   });
 
+  it("keeps one-card copy non-deterministic, private, and free of pressure", () => {
+    const copy = collectStrings(getTarotOneCardMessages("en")).join(" ");
+
+    expect(copy).toContain("reviewed canonical content, not an AI-generated interpretation");
+    expect(copy).toContain("does not draw again");
+    expect(copy).toContain("without an account or payment");
+    expect(copy).not.toMatch(
+      /\b(?:guaranteed|destined|curse removal|stronger ritual|act now|buy|upgrade)\b/iu,
+    );
+  });
+
   it("avoids deterministic, coercive, and professional-advice claims", () => {
     const copy = collectStrings(getMessages("en")).join(" ");
 
@@ -58,7 +70,7 @@ describe("English shell messages", () => {
     expect(copy).toContain("exclude raw sensitive prompts from routine logs");
     expect(copy).toContain("purpose-limited, authorized, and audited");
     expect(copy).toContain(
-      "No readings, AI interpretations, accounts, purchases, or rituals are available",
+      "No public readings, AI interpretations, accounts, purchases, or rituals are available",
     );
     expect(copy).not.toMatch(/(?:encrypted at rest|delete your account|export your data)/iu);
   });

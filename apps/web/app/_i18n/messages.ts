@@ -130,7 +130,7 @@ const englishMessages = {
     footer: {
       navigationLabel: "Public information navigation",
       foundationNote:
-        "No readings, AI interpretations, accounts, purchases, or rituals are available yet. A separately gated intake preview does not create or save a reading.",
+        "No public readings, AI interpretations, accounts, purchases, or rituals are available. Separately gated private experiences do not imply public launch or catalog approval.",
     },
   },
   home: {

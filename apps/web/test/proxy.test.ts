@@ -183,6 +183,60 @@ describe("public shell request and crawl gate", () => {
     expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
   });
 
+  it("allows the private one-card page only with the same approved tarot activation", async () => {
+    harness.tarotReadingAvailability = "enabled";
+
+    const page = await proxy(request("/en/tarot/one-card"));
+    const reviewedRsc = await proxy(
+      request("/en/tarot/one-card?_rsc=abc_123", { headers: { rsc: "1" } }),
+    );
+
+    for (const response of [page, reviewedRsc]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    }
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["POST", "/en/tarot/one-card"],
+    ["GET", "/en/tarot/one-card/"],
+    ["GET", "/en/tarot/one-card?question=private-canary"],
+    ["GET", "/en/tarot/one-card.rsc"],
+  ])("rejects unreviewed one-card page variant %s %s before lookup", async (method, pathname) => {
+    harness.tarotReadingAvailability = "enabled";
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
+  });
+
+  it.each(["disabled", "unavailable"] as const)(
+    "keeps the one-card page closed when the public shell is %s",
+    async (state) => {
+      harness.tarotReadingAvailability = "enabled";
+      harness.loadPublicShellState.mockResolvedValue(state);
+
+      const response = await proxy(request("/en/tarot/one-card"));
+
+      expect(response.status).toBe(404);
+      expect(response.headers.get("cache-control")).toContain("no-store");
+    },
+  );
+
+  it("keeps the one-card page closed while approved tarot activation is absent", async () => {
+    const response = await proxy(request("/en/tarot/one-card"));
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+  });
+
   it("allows only the independently enabled private intake page and API", async () => {
     harness.intakeAvailability = "enabled";
 

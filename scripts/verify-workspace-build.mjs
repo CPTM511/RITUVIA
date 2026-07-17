@@ -10,6 +10,7 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/en/privacy.html",
   "apps/web/.next/server/app/en/safety.html",
   "apps/web/.next/server/app/en/intake.html",
+  "apps/web/.next/server/app/en/tarot/one-card.html",
   "apps/web/.next/server/app/icon.svg.body",
   "apps/web/.next/server/app/api/v1/anonymous/session/route.js",
   "apps/web/.next/server/app/api/v1/intake/evaluate/route.js",
@@ -62,28 +63,33 @@ const requiredArtifacts = [
 
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
 const webShellBuild = await verifyWebShellBuild(process.cwd());
-const privateIntakeHtml = await readFile("apps/web/.next/server/app/en/intake.html", "utf8");
-const privateIntakeReferences = [
-  ...new Set(
-    [...privateIntakeHtml.matchAll(/\b(?:href|src)="(\/_next\/static\/[^"?#]+)"/gu)].map(
-      (match) => match[1],
+const icon = await readFile("apps/web/.next/server/app/icon.svg.body");
+const auditPrivatePage = async (artifact, expectedPathname) => {
+  const html = await readFile(artifact, "utf8");
+  const references = [
+    ...new Set(
+      [...html.matchAll(/\b(?:href|src)="(\/_next\/static\/[^"?#]+)"/gu)].map((match) => match[1]),
     ),
-  ),
-];
-const privateIntakeAssets = new Map(
-  await Promise.all(
-    privateIntakeReferences.map(async (reference) => [
-      reference,
-      await readFile(`apps/web/.next/${reference.replace(/^\/_next\//u, "")}`),
-    ]),
-  ),
+  ];
+  const assets = new Map(
+    await Promise.all(
+      references.map(async (reference) => [
+        reference,
+        await readFile(`apps/web/.next/${reference.replace(/^\/_next\//u, "")}`),
+      ]),
+    ),
+  );
+  return {
+    audit: auditWebShellBuildArtifacts({ assets, expectedPathname, html, icon }),
+    html,
+  };
+};
+const privateIntake = await auditPrivatePage(
+  "apps/web/.next/server/app/en/intake.html",
+  "/en/intake",
 );
-const privateIntakeAudit = auditWebShellBuildArtifacts({
-  assets: privateIntakeAssets,
-  expectedPathname: "/en/intake",
-  html: privateIntakeHtml,
-  icon: await readFile("apps/web/.next/server/app/icon.svg.body"),
-});
+const privateIntakeAudit = privateIntake.audit;
+const privateIntakeHtml = privateIntake.html;
 if (
   privateIntakeAudit.findings.length > 0 ||
   !/<meta\b[^>]*name="robots"[^>]*content="noindex, nofollow"/u.test(privateIntakeHtml) ||
@@ -95,6 +101,30 @@ if (
 ) {
   throw new TypeError(
     `Private intake build policy failed: ${privateIntakeAudit.findings.join(", ") || "private-contract"}`,
+  );
+}
+
+const privateTarot = await auditPrivatePage(
+  "apps/web/.next/server/app/en/tarot/one-card.html",
+  "/en/tarot/one-card",
+);
+const privateTarotAudit = privateTarot.audit;
+const privateTarotHtml = privateTarot.html;
+if (
+  privateTarotAudit.findings.length > 0 ||
+  !/<meta\b[^>]*name="robots"[^>]*content="noindex, nofollow"/u.test(privateTarotHtml) ||
+  /<link\b[^>]*rel="canonical"|<meta\b[^>]*property="og:/u.test(privateTarotHtml) ||
+  !/<main\b[^>]*id="main-content"/u.test(privateTarotHtml) ||
+  !/<form\b[^>]*action="\/api\/v1\/readings\/tarot"[^>]*method="post"/u.test(privateTarotHtml) ||
+  [...privateTarotHtml.matchAll(/<input\b[^>]*name="tarot-theme-code"/gu)].length !== 10 ||
+  !/<fieldset\b[^>]*disabled/u.test(privateTarotHtml) ||
+  /rituvia-placeholder|internal-only|auditDigest|entropyDigest|question(?:-|_)text/iu.test(
+    privateTarotHtml,
+  ) ||
+  privateTarotHtml.includes("__next_error__")
+) {
+  throw new TypeError(
+    `Private tarot build policy failed: ${privateTarotAudit.findings.join(", ") || "private-contract"}`,
   );
 }
 
@@ -290,5 +320,5 @@ if (
 }
 
 console.log(
-  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and one private intake page; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, privateIntakeAudit.htmlGzipBytes)} B, CSS ${Math.max(webShellBuild.cssGzipBytes, privateIntakeAudit.cssGzipBytes)} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, privateIntakeAudit.javascriptGzipBytes)} B.`,
+  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and two private experience pages; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, privateIntakeAudit.htmlGzipBytes, privateTarotAudit.htmlGzipBytes)} B, CSS ${Math.max(webShellBuild.cssGzipBytes, privateIntakeAudit.cssGzipBytes, privateTarotAudit.cssGzipBytes)} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, privateIntakeAudit.javascriptGzipBytes, privateTarotAudit.javascriptGzipBytes)} B.`,
 );

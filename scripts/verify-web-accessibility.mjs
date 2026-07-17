@@ -10,6 +10,7 @@ import {
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
+  privateAccessibilitySmokeRoutes,
   publicAccessibilitySmokeRoutes,
   resolveAccessibilityArtifactRequest,
 } from "../apps/web/test/accessibility-policy.mjs";
@@ -91,6 +92,19 @@ const intakeContrastTargets = Object.freeze([
   Object.freeze([".question-intake-boundary"]),
   Object.freeze([".question-intake-privacy"]),
 ]);
+const tarotOneCardContrastTargets = Object.freeze([
+  Object.freeze([".brand-link"]),
+  Object.freeze(['.navigation-link[href="/en"]']),
+  Object.freeze(['.navigation-link[href$="methodology"]']),
+  Object.freeze(['.navigation-link[href$="safety"]']),
+  Object.freeze(['.navigation-link[href$="privacy"]']),
+  Object.freeze([".locale-label"]),
+  Object.freeze([".eyebrow"]),
+  Object.freeze(["#tarot-one-card-heading"]),
+  Object.freeze([".tarot-one-card-introduction"]),
+  Object.freeze([".tarot-one-card-boundary"]),
+  Object.freeze([".tarot-one-card-privacy"]),
+]);
 const contrastScanStates = Object.freeze(["dark", "english", "expanded", "rtl"]);
 const reviewedContrastTargetsByScan = new Map([
   ...contrastScanStates.map((state) => [`${state}:/en`, homeContrastTargets]),
@@ -99,6 +113,10 @@ const reviewedContrastTargetsByScan = new Map([
     contrastScanStates.map((state) => [`${state}:${pathname}`, targets]),
   ),
   ...contrastScanStates.map((state) => [`${state}:/en/intake`, intakeContrastTargets]),
+  ...contrastScanStates.map((state) => [
+    `${state}:/en/tarot/one-card`,
+    tarotOneCardContrastTargets,
+  ]),
 ]);
 
 const loadReviewedArtifacts = async () => {
@@ -532,7 +550,7 @@ const assertRtlGeometry = async (page, label) => {
     const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
     const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
     const boundary = document.querySelector(
-      ".hero-boundary, .information-status, .question-intake-boundary",
+      ".hero-boundary, .information-status, .question-intake-boundary, .tarot-one-card-boundary",
     );
     const boundaryStyle = boundary === null ? null : getComputedStyle(boundary);
     return {
@@ -563,23 +581,23 @@ const assertRtlGeometry = async (page, label) => {
   }
 };
 
-const assertQuestionIntakeRadioKeyboard = async (page) => {
-  const first = page.locator('input[name="theme-code"]').first();
-  const second = page.locator('input[name="theme-code"]').nth(1);
+const assertRadioKeyboard = async (page, label, name) => {
+  const first = page.locator(`input[name="${name}"]`).first();
+  const second = page.locator(`input[name="${name}"]`).nth(1);
   await first.focus();
   await page.keyboard.press("ArrowDown");
   if (
     !(await second.isChecked()) ||
     !(await second.evaluate((input) => input === document.activeElement))
   ) {
-    throw new Error("english:/en/intake did not preserve native radio arrow-key behavior.");
+    throw new Error(`${label} did not preserve native radio arrow-key behavior.`);
   }
   await page.keyboard.press("ArrowUp");
   if (
     !(await first.isChecked()) ||
     !(await first.evaluate((input) => input === document.activeElement))
   ) {
-    throw new Error("english:/en/intake did not restore the previous radio with ArrowUp.");
+    throw new Error(`${label} did not restore the previous radio with ArrowUp.`);
   }
 };
 
@@ -669,7 +687,10 @@ const run = async () => {
       reviewedContrastNodes += await assertAxe(page, label);
       scans += 1;
       await assertKeyboard(page, label);
-      if (pathname === "/en/intake") await assertQuestionIntakeRadioKeyboard(page);
+      if (pathname === "/en/intake") await assertRadioKeyboard(page, label, "theme-code");
+      if (pathname === "/en/tarot/one-card") {
+        await assertRadioKeyboard(page, label, "tarot-theme-code");
+      }
 
       await page.setViewportSize({ height: 900, width: 320 });
       await gotoReviewedPage(page, `${artifactServer.origin}${pathname}`, `mobile:${pathname}`);
@@ -808,7 +829,7 @@ const run = async () => {
     throw new Error(`Accessibility browser boundary failed: ${[...new Set(failures)].join(", ")}`);
   }
   console.log(
-    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and one private intake route with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
+    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and ${privateAccessibilitySmokeRoutes.length} private routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
   );
 };
 

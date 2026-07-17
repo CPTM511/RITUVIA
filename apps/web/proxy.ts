@@ -12,7 +12,7 @@ import {
   isPublicShellPathname,
 } from "./app/_i18n/public-routes";
 import { createRobotsText, createSitemapXml, type PublicShellState } from "./app/_i18n/seo";
-import { localeQuestionIntakePath } from "./app/_i18n/routing";
+import { localeQuestionIntakePath, localeTarotOneCardPath } from "./app/_i18n/routing";
 
 const isUngatedInfrastructureRequest = (
   pathname: string,
@@ -48,6 +48,7 @@ const tarotReadingApiPathname = "/api/v1/readings/tarot";
 const tarotReadingPathPattern =
   /^\/api\/v1\/readings\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const questionIntakePagePathname = localeQuestionIntakePath("en");
+const tarotOneCardPagePathname = localeTarotOneCardPath("en");
 
 const isSafeReadMethod = (method: string): boolean => method === "GET" || method === "HEAD";
 
@@ -83,6 +84,11 @@ const isQuestionIntakePagePathname = (pathname: string): boolean =>
   pathname === questionIntakePagePathname ||
   pathname === `${questionIntakePagePathname}.rsc` ||
   pathname.startsWith(`${questionIntakePagePathname}.segments/`);
+
+const isTarotOneCardPagePathname = (pathname: string): boolean =>
+  pathname === tarotOneCardPagePathname ||
+  pathname === `${tarotOneCardPagePathname}.rsc` ||
+  pathname.startsWith(`${tarotOneCardPagePathname}.segments/`);
 
 const discoveryResponse = (
   request: NextRequest,
@@ -134,6 +140,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const tarotReadingReadApi = tarotReadingPathPattern.test(pathname);
   const tarotReadingApi = tarotReadingCreateApi || tarotReadingReadApi;
   const questionIntakeDocument = isQuestionIntakePagePathname(pathname);
+  const tarotOneCardDocument = isTarotOneCardPagePathname(pathname);
   const reviewedAnonymousSessionRequest =
     anonymousSessionApi &&
     request.method === "POST" &&
@@ -167,6 +174,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
       reviewedQuestionIntakeRequest ||
       reviewedTarotReadingRequest ||
       questionIntakeDocument ||
+      tarotOneCardDocument ||
       (discovery && configuration.deploymentEnvironment === "production"));
   const shellState = shouldLoadShellState ? await loadPublicShellState() : null;
   const intakeAvailability =
@@ -174,7 +182,9 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
       ? loadQuestionIntakeAvailability()
       : "disabled";
   const tarotReadingAvailability =
-    !invalidRequest && reviewedTarotReadingRequest ? loadTarotReadingAvailability() : "disabled";
+    !invalidRequest && (reviewedTarotReadingRequest || tarotOneCardDocument)
+      ? loadTarotReadingAvailability()
+      : "disabled";
   const unsupported =
     !infrastructure &&
     !publicDocument &&
@@ -182,7 +192,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !anonymousSessionApi &&
     !questionIntakeApi &&
     !tarotReadingApi &&
-    !questionIntakeDocument;
+    !questionIntakeDocument &&
+    !tarotOneCardDocument;
   const enabledDocument = publicDocument && shellState === "enabled";
   const enabledQuestionIntake = shellState === "enabled" && intakeAvailability === "enabled";
   const enabledTarotReading = shellState === "enabled" && tarotReadingAvailability === "enabled";
@@ -194,6 +205,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
         : infrastructure ||
             enabledDocument ||
             (questionIntakeDocument && enabledQuestionIntake) ||
+            (tarotOneCardDocument && enabledTarotReading) ||
             (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
             (reviewedTarotReadingRequest && enabledTarotReading) ||
             (reviewedAnonymousSessionRequest && shellState === "enabled")
@@ -217,7 +229,13 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   if (!indexableRepresentation) {
     response.headers.set("x-robots-tag", noIndexDirective);
   }
-  if (anonymousSessionApi || questionIntakeApi || questionIntakeDocument || tarotReadingApi) {
+  if (
+    anonymousSessionApi ||
+    questionIntakeApi ||
+    questionIntakeDocument ||
+    tarotReadingApi ||
+    tarotOneCardDocument
+  ) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   } else if (discovery || response.status === 404) {
     response.headers.set("cache-control", "no-store, max-age=0");

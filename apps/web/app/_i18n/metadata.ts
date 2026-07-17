@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { getPublicPageMessages, type ShellMessages } from "./messages";
 import type { QuestionIntakeMessages } from "./question-intake-messages";
+import type { TarotOneCardMessages } from "./tarot-one-card-messages";
 import { localePublicPagePath, type Locale, type PublicPageId } from "./routing";
 import type { DeploymentEnvironment } from "./seo";
 
@@ -56,6 +57,15 @@ export const createHomeMetadata = (input: Omit<PublicPageMetadataInput, "page">)
 export const createQuestionIntakeMetadata = (
   brandName: string,
   messages: QuestionIntakeMessages,
+): Metadata => ({
+  description: messages.metadata.description,
+  robots: { follow: false, index: false },
+  title: `${brandName} — ${messages.metadata.title}`,
+});
+
+export const createTarotOneCardMetadata = (
+  brandName: string,
+  messages: TarotOneCardMessages,
 ): Metadata => ({
   description: messages.metadata.description,
   robots: { follow: false, index: false },

@@ -244,3 +244,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   raw questions, entropy, keys, or client-controlled facts. A hard safe-off runtime prevents the
   synthetic internal fixture from becoming publishable by implementation accident.
 - **Date:** 2026-07-17
+
+### [D-034 — Private one-card presentation and idempotent reveal boundary](records/decisions/D-034.md)
+
+- **Decision:** Project exact reviewed catalog content beside verified one-card facts in a strict V2
+  response; render it on one private theme-only page; and keep session creation, draw creation, and
+  visual reveal as separate state transitions. Generate distinct browser idempotency keys, reuse
+  the same keys only on explicit retry, never redraw on reveal, and expose the page through the same
+  safe-off catalog gate as its API.
+- **Reason:** A useful anonymous result needs server-owned meaning, limitations, reflection, and one
+  small action without sending raw questions or trusting the browser to choose content. Separate
+  idempotency and reveal transitions make retries stable and prevent accidental or compulsive
+  redraws, while the shared gate prevents the synthetic test fixture from becoming public content.
+- **Date:** 2026-07-17
