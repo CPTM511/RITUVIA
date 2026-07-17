@@ -1,0 +1,77 @@
+{
+  "entropyBytes": [2, 1, 0, 0, 1],
+  "request": {
+    "catalog": {
+      "id": "rituvia.placeholder-catalog",
+      "version": "1.0.0"
+    },
+    "deck": {
+      "id": "rituvia.placeholder-deck",
+      "version": "1.0.0"
+    },
+    "idempotencyKeyDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "method": "tarot",
+    "orientationPolicy": "upright_and_reversed",
+    "requestDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "rulesVersion": "tarot-draw-rules.v1",
+    "schemaVersion": "tarot-draw-request.v1",
+    "spread": {
+      "id": "situation-action-possibility",
+      "version": "1.0.0"
+    }
+  },
+  "execution": {
+    "audit": {
+      "entropy": {
+        "bytesConsumed": 5,
+        "commitment": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "rejectedSamples": 0
+      },
+      "idempotencyKeyDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "requestDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    "facts": {
+      "algorithmVersion": "partial-fisher-yates-rejection-uint8.v1",
+      "catalog": {
+        "id": "rituvia.placeholder-catalog",
+        "version": "1.0.0"
+      },
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "engineName": "rituvia.tarot-draw",
+      "engineVersion": "1.0.0",
+      "method": "tarot",
+      "orientationPolicy": "upright_and_reversed",
+      "positions": [
+        {
+          "cardId": "lantern",
+          "order": 1,
+          "orientation": "reversed",
+          "positionId": "situation"
+        },
+        {
+          "cardId": "mirror",
+          "order": 2,
+          "orientation": "upright",
+          "positionId": "action"
+        },
+        {
+          "cardId": "threshold",
+          "order": 3,
+          "orientation": "reversed",
+          "positionId": "possibility"
+        }
+      ],
+      "replacementPolicy": "without_replacement",
+      "rulesVersion": "tarot-draw-rules.v1",
+      "schemaVersion": "tarot-draw-facts.v1",
+      "spread": {
+        "id": "situation-action-possibility",
+        "version": "1.0.0"
+      }
+    },
+    "schemaVersion": "tarot-draw-execution.v1"
+  }
+}

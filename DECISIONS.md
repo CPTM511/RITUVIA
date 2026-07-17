@@ -218,3 +218,14 @@ effective until this register links it. Do not rewrite historical rationale; sup
 - **Decision:** Keep authored tarot source/deck/spread/card-orientation snapshots in `content/**`; validate exact independently versioned references through pure `@rituvia/divination` contracts; and require an explicit dated, rights-aware structural eligibility assessment while the synthetic placeholder remains complete but unpublishable.
 - **Reason:** This separates editorial provenance from draw logic and operational reading facts, prevents draft or rights-incomplete material from leaking, and avoids a premature database/content service before runtime reading persistence exists.
 - **Date:** 2026-07-17
+
+### [D-032 — Versioned unbiased tarot draw and internal audit boundary](records/decisions/D-032.md)
+
+- **Decision:** Keep the V1 tarot draw as a pure, exact-version, without-replacement partial
+  Fisher–Yates transition with bounded uint8 rejection sampling and caller-injected entropy. Split
+  public deterministic facts from the server-internal idempotency and entropy-audit envelope; replay
+  matching existing execution without entropy and reject every conflicting or damaged execution.
+- **Reason:** Historical draws require stable byte-to-fact behavior and safe idempotent replay, while
+  client selection, predictable randomness, modulo bias, internal digest leakage, or database/AI
+  coupling would undermine server authority, privacy, and future concurrent persistence.
+- **Date:** 2026-07-17

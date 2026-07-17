@@ -38,6 +38,8 @@ const requiredArtifacts = [
   "packages/domain/dist/question-intake.js",
   "packages/divination/dist/index.d.ts",
   "packages/divination/dist/index.js",
+  "packages/divination/dist/tarot-draw.d.ts",
+  "packages/divination/dist/tarot-draw.js",
   "packages/divination/dist/tarot-content.d.ts",
   "packages/divination/dist/tarot-content.js",
   "packages/divination/dist/tarot-publication.d.ts",
@@ -131,9 +133,18 @@ if (
   typeof divinationModule.parseTarotCatalogV1 !== "function" ||
   typeof divinationModule.assessTarotCatalogPublication !== "function" ||
   typeof divinationModule.assertTarotCatalogPublicationEligible !== "function" ||
+  typeof divinationModule.parseTarotDrawExecutionV1 !== "function" ||
+  typeof divinationModule.parseTarotDrawFactsV1 !== "function" ||
+  typeof divinationModule.parseTarotDrawRequestV1 !== "function" ||
+  typeof divinationModule.projectTarotDrawFactsV1 !== "function" ||
+  typeof divinationModule.resolveTarotDrawV1 !== "function" ||
+  divinationModule.tarotDrawAlgorithmVersion !== "partial-fisher-yates-rejection-uint8.v1" ||
+  divinationModule.tarotDrawEngineVersion !== "1.0.0" ||
   divinationModule.tarotCatalogSchemaVersion !== "tarot-catalog.v1"
 ) {
-  throw new TypeError("The divination build omitted its versioned tarot content boundaries.");
+  throw new TypeError(
+    "The divination build omitted its versioned tarot content or draw boundaries.",
+  );
 }
 const tarotPlaceholder = JSON.parse(
   await readFile("content/traditions/tarot/rituvia-placeholder.v1.json", "utf8"),
@@ -151,6 +162,46 @@ if (
   !tarotPublicationAssessment.reasons.includes("PUBLICATION_POLICY_DISABLED")
 ) {
   throw new TypeError("The rights-safe tarot placeholder build contract is invalid.");
+}
+const tarotDrawFixture = JSON.parse(
+  await readFile("packages/divination/test/fixtures/tarot-draw-v1.json", "utf8"),
+);
+let tarotEntropyOffset = 0;
+const tarotDrawExecution = divinationModule.resolveTarotDrawV1({
+  catalog: tarotPlaceholder,
+  entropy: {
+    auditCommitment: () => tarotDrawFixture.execution.audit.entropy.commitment,
+    readBytes: (length) => {
+      if (length !== 1) throw new TypeError("The compiled draw requested an invalid byte count.");
+      const value = tarotDrawFixture.entropyBytes[tarotEntropyOffset];
+      tarotEntropyOffset += 1;
+      if (!Number.isInteger(value)) {
+        throw new TypeError("The compiled draw consumed beyond its fixed entropy vector.");
+      }
+      return Uint8Array.of(value);
+    },
+  },
+  request: tarotDrawFixture.request,
+});
+const verifyTarotDrawExecution = (execution) =>
+  JSON.stringify(execution) === JSON.stringify(tarotDrawFixture.execution);
+const tarotDrawReplay = divinationModule.resolveTarotDrawV1({
+  catalog: tarotPlaceholder,
+  existingExecution: tarotDrawExecution,
+  existingExecutionVerifier: verifyTarotDrawExecution,
+  request: tarotDrawFixture.request,
+});
+const tarotDrawFacts = divinationModule.projectTarotDrawFactsV1(
+  tarotDrawExecution,
+  verifyTarotDrawExecution,
+);
+if (
+  JSON.stringify(tarotDrawExecution) !== JSON.stringify(tarotDrawFixture.execution) ||
+  JSON.stringify(tarotDrawReplay) !== JSON.stringify(tarotDrawExecution) ||
+  JSON.stringify(tarotDrawFacts) !== JSON.stringify(tarotDrawFixture.execution.facts) ||
+  /audit|commitment|digest|entropy|idempotency/iu.test(JSON.stringify(tarotDrawFacts))
+) {
+  throw new TypeError("The compiled deterministic tarot draw or public-fact projection drifted.");
 }
 
 if (
