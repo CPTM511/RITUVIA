@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M2 local implementation is complete through the owner-approved, safe-off RIT-021 question-intake slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through the safe-off, unpublished RIT-022 tarot content-schema slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -35,13 +35,14 @@
 - Exact same-origin `POST /api/v1/anonymous/session` with empty request/body response, safe Problem Details, server-side safe-off routing, high-entropy idempotency, and a host-only Secure/HttpOnly/SameSite=Strict fixed-expiry cookie; missing policy/database configuration refuses issuance.
 - Deterministic English question-intake policy with ten fixed reflection themes, strict normalized input, ordered crisis/blocked/reframed/allowed classification, agency-preserving suggestions, and a public result DTO that excludes raw questions and internal risk categories.
 - Separately gated private `/en/intake` and exact same-origin `POST /api/v1/intake/evaluate` surfaces with noindex/no-store isolation, in-memory-only optional text, explicit safer-question choice, cancellation and offline/error states, crisis stop behavior, and no intake persistence or analytics emitter. Production configuration accepts only an OWN-009-qualified activation reference.
+- Pure `@rituvia/divination` contracts for strict immutable V1 tarot catalogs, sources, rights, decks, cards, spreads, orientation content, translation/editorial evidence, exact version references, tradition consistency, and explicit dated structural publication eligibility. The Git-authored three-card/six-content English fixture is original, internal-validation-only, art-free, non-publishable, non-indexable, and unavailable to AI retrieval.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 594 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 614 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -56,7 +57,7 @@
 - Formal trademark clearance or secured canonical domain.
 - Payment-provider written underwriting approval.
 - Astrology calculation commercial-license decision.
-- Production content corpus and expert-reviewed localized traditions.
+- A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
 - Production credentials or vendor accounts.
 - Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
@@ -83,23 +84,31 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The staged RIT-021 source, records, compiled manual, and checksums pass local validation. On exact
-Node.js 24.18.0 and pnpm 11.13.1, formatting, ESLint, strict type checking across seven workspaces,
-594 unit/contract tests in 47 files, configuration-boundary integration, real PostgreSQL integration,
-the 118-file architecture gate, and the 40-artifact production build pass. The record-policy suite
+The RIT-022 source, records, compiled manual, and checksums pass local validation. On exact
+Node.js 24.18.0 and pnpm 11.13.1, formatting, ESLint, strict type checking across eight workspaces,
+614 unit/contract tests in 48 files, configuration-boundary integration, real PostgreSQL integration,
+the 122-file architecture gate, and the 46-artifact production build pass. The record-policy suite
 covers the canonical task/decision graph, privacy-safe records, contextual task results, and exact
-staged index-to-manual-to-checksum evidence. Final RIT-021 bytes also pass the Chromium/axe gate.
+staged index-to-manual-to-checksum evidence. The last applicable UI change, RIT-021, also passed the
+Chromium/axe gate; RIT-022 adds no UI or browser behavior.
 The local database gate was restored by removing one verified stale, unattached 56-byte PostgreSQL
 System V segment whose creator no longer existed; no live segment or external process was touched.
 
-The build verifier checks 40 artifacts and narrowed exports, including exact UI stylesheet parity,
+The build verifier checks 46 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, the private intake page and API, the anonymous-session route, identity and
-question-intake domain/database exports, and the icon. Maximum Web output is 6,069 B gzip HTML,
+question-intake domain/database exports, the divination parser and safe-off fixture assessment, and
+the icon. Maximum Web output is 6,069 B gzip HTML,
 5,492 B gzip CSS, 219,874 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 118 active source files across seven modules and keeps module,
+The architecture verifier audits 122 active source files across eight modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
+
+RIT-022 focused evidence covers 20 strict catalog and structural-eligibility tests. Independent
+review found no remaining completion blocker after permissions, territory, translation, approval,
+supersession, and tradition boundaries were made fail-closed. The fixture remains intentionally
+ineligible for publication and retrieval, and no migration, API, UI, analytics, or runtime draw path
+was introduced.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary

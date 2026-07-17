@@ -36,6 +36,12 @@ const requiredArtifacts = [
   "packages/domain/dist/identity.js",
   "packages/domain/dist/question-intake.d.ts",
   "packages/domain/dist/question-intake.js",
+  "packages/divination/dist/index.d.ts",
+  "packages/divination/dist/index.js",
+  "packages/divination/dist/tarot-content.d.ts",
+  "packages/divination/dist/tarot-content.js",
+  "packages/divination/dist/tarot-publication.d.ts",
+  "packages/divination/dist/tarot-publication.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
@@ -86,6 +92,9 @@ if (
 
 const domainModule = await import(pathToFileURL(`${process.cwd()}/packages/domain/dist/index.js`));
 const databaseModule = await import(pathToFileURL(`${process.cwd()}/packages/db/dist/index.js`));
+const divinationModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/divination/dist/index.js`)
+);
 const configBrandModule = await import(
   pathToFileURL(`${process.cwd()}/packages/config/dist/brand.js`)
 );
@@ -116,6 +125,32 @@ if (
   typeof domainModule.parseQuestionIntakeResponse !== "function"
 ) {
   throw new Error("The domain build omitted its anonymous identity and consent contracts.");
+}
+
+if (
+  typeof divinationModule.parseTarotCatalogV1 !== "function" ||
+  typeof divinationModule.assessTarotCatalogPublication !== "function" ||
+  typeof divinationModule.assertTarotCatalogPublicationEligible !== "function" ||
+  divinationModule.tarotCatalogSchemaVersion !== "tarot-catalog.v1"
+) {
+  throw new TypeError("The divination build omitted its versioned tarot content boundaries.");
+}
+const tarotPlaceholder = JSON.parse(
+  await readFile("content/traditions/tarot/rituvia-placeholder.v1.json", "utf8"),
+);
+const parsedTarotPlaceholder = divinationModule.parseTarotCatalogV1(tarotPlaceholder);
+const tarotPublicationAssessment = divinationModule.assessTarotCatalogPublication(
+  parsedTarotPlaceholder,
+  "2026-07-17",
+);
+if (
+  parsedTarotPlaceholder.decks.length !== 1 ||
+  parsedTarotPlaceholder.decks[0]?.cards.length !== 3 ||
+  parsedTarotPlaceholder.cardContents.length !== 6 ||
+  tarotPublicationAssessment.eligible ||
+  !tarotPublicationAssessment.reasons.includes("PUBLICATION_POLICY_DISABLED")
+) {
+  throw new TypeError("The rights-safe tarot placeholder build contract is invalid.");
 }
 
 if (

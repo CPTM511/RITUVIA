@@ -1028,7 +1028,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M2 local implementation is complete through the owner-approved, safe-off RIT-021 question-intake slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through the safe-off, unpublished RIT-022 tarot content-schema slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -1061,13 +1061,14 @@ Use this order:
 - Exact same-origin `POST /api/v1/anonymous/session` with empty request/body response, safe Problem Details, server-side safe-off routing, high-entropy idempotency, and a host-only Secure/HttpOnly/SameSite=Strict fixed-expiry cookie; missing policy/database configuration refuses issuance.
 - Deterministic English question-intake policy with ten fixed reflection themes, strict normalized input, ordered crisis/blocked/reframed/allowed classification, agency-preserving suggestions, and a public result DTO that excludes raw questions and internal risk categories.
 - Separately gated private `/en/intake` and exact same-origin `POST /api/v1/intake/evaluate` surfaces with noindex/no-store isolation, in-memory-only optional text, explicit safer-question choice, cancellation and offline/error states, crisis stop behavior, and no intake persistence or analytics emitter. Production configuration accepts only an OWN-009-qualified activation reference.
+- Pure `@rituvia/divination` contracts for strict immutable V1 tarot catalogs, sources, rights, decks, cards, spreads, orientation content, translation/editorial evidence, exact version references, tradition consistency, and explicit dated structural publication eligibility. The Git-authored three-card/six-content English fixture is original, internal-validation-only, art-free, non-publishable, non-indexable, and unavailable to AI retrieval.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 594 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 614 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, retained shell-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -1082,7 +1083,7 @@ Use this order:
 - Formal trademark clearance or secured canonical domain.
 - Payment-provider written underwriting approval.
 - Astrology calculation commercial-license decision.
-- Production content corpus and expert-reviewed localized traditions.
+- A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
 - Production credentials or vendor accounts.
 - Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
@@ -1109,23 +1110,31 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The staged RIT-021 source, records, compiled manual, and checksums pass local validation. On exact
-Node.js 24.18.0 and pnpm 11.13.1, formatting, ESLint, strict type checking across seven workspaces,
-594 unit/contract tests in 47 files, configuration-boundary integration, real PostgreSQL integration,
-the 118-file architecture gate, and the 40-artifact production build pass. The record-policy suite
+The RIT-022 source, records, compiled manual, and checksums pass local validation. On exact
+Node.js 24.18.0 and pnpm 11.13.1, formatting, ESLint, strict type checking across eight workspaces,
+614 unit/contract tests in 48 files, configuration-boundary integration, real PostgreSQL integration,
+the 122-file architecture gate, and the 46-artifact production build pass. The record-policy suite
 covers the canonical task/decision graph, privacy-safe records, contextual task results, and exact
-staged index-to-manual-to-checksum evidence. Final RIT-021 bytes also pass the Chromium/axe gate.
+staged index-to-manual-to-checksum evidence. The last applicable UI change, RIT-021, also passed the
+Chromium/axe gate; RIT-022 adds no UI or browser behavior.
 The local database gate was restored by removing one verified stale, unattached 56-byte PostgreSQL
 System V segment whose creator no longer existed; no live segment or external process was touched.
 
-The build verifier checks 40 artifacts and narrowed exports, including exact UI stylesheet parity,
+The build verifier checks 46 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, the private intake page and API, the anonymous-session route, identity and
-question-intake domain/database exports, and the icon. Maximum Web output is 6,069 B gzip HTML,
+question-intake domain/database exports, the divination parser and safe-off fixture assessment, and
+the icon. Maximum Web output is 6,069 B gzip HTML,
 5,492 B gzip CSS, 219,874 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 118 active source files across seven modules and keeps module,
+The architecture verifier audits 122 active source files across eight modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
+
+RIT-022 focused evidence covers 20 strict catalog and structural-eligibility tests. Independent
+review found no remaining completion blocker after permissions, territory, translation, approval,
+supersession, and tradition boundaries were made fail-closed. The fixture remains intentionally
+ineligible for publication and retrieval, and no migration, API, UI, analytics, or runtime draw path
+was introduced.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
@@ -1522,6 +1531,12 @@ effective until this register links it. Do not rewrite historical rationale; sup
 - **Reason:** A global English-first intake needs direct, agency-preserving safety language and fail-closed activation provenance without inventing a universal hotline, persisting private questions, or treating copy approval as a production launch.
 - **Date:** 2026-07-17
 
+### [D-031 — Git-authored tarot snapshot and structural publication eligibility](records/decisions/D-031.md)
+
+- **Decision:** Keep authored tarot source/deck/spread/card-orientation snapshots in `content/**`; validate exact independently versioned references through pure `@rituvia/divination` contracts; and require an explicit dated, rights-aware structural eligibility assessment while the synthetic placeholder remains complete but unpublishable.
+- **Reason:** This separates editorial provenance from draw logic and operational reading facts, prevents draft or rights-incomplete material from leaking, and avoids a premature database/content service before runtime reading persistence exists.
+- **Date:** 2026-07-17
+
 ---
 
 # File: `ROADMAP.md`
@@ -1795,8 +1810,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-016 | M1        |       P2 | Planned | Clean up the public-shell rollout flag                                    | RIT-010,RIT-014                         | backend       | Flag is retired safe-off for one registry compatibility window, then removed with old history ignored.       |
 | RIT-020 | M2        |       P0 | Done    | Implement anonymous subject/session and consent baseline              | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                 |
 | RIT-021 | M2        |       P0 | Done    | Implement safe question/theme intake rules and UX                         | RIT-020,RIT-012,OWN-009                 | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                      |
-| RIT-022 | M2        |       P0 | Ready   | Create versioned tarot deck, spread, and content schema                   | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.             |
-| RIT-023 | M2        |       P0 | Planned | Implement deterministic server-authoritative tarot engine                 | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                         |
+| RIT-022 | M2        |       P0 | Done    | Create versioned tarot deck, spread, and content schema                    | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.             |
+| RIT-023 | M2        |       P0 | Ready   | Implement deterministic server-authoritative tarot engine                 | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                         |
 | RIT-024 | M2        |       P0 | Planned | Implement tarot reading application service and API                       | RIT-020,RIT-021,RIT-023                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                          |
 | RIT-025 | M2        |       P0 | Planned | Build one-card tarot intake, draw, and result UI                          | RIT-011,RIT-024                         | frontend      | Anonymous mobile user reaches a useful deterministic result in under three minutes.                          |
 | RIT-026 | M2        |       P1 | Planned | Build three-card Situation/Action/Possibility flow                        | RIT-025                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                        |
@@ -2044,6 +2059,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-028 | Presentation-only resilient state boundary | [decisions/D-028.md](./decisions/D-028.md) |
 | Decision | D-029 | Privacy-minimal anonymous identity and per-purpose consent ledger | [decisions/D-029.md](./decisions/D-029.md) |
 | Decision | D-030 | English question-intake safety language and activation eligibility | [decisions/D-030.md](./decisions/D-030.md) |
+| Decision | D-031 | Git-authored tarot snapshot and structural publication eligibility | [decisions/D-031.md](./decisions/D-031.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2053,6 +2069,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-015 | Resilient page-level state patterns | [tasks/RIT-015.md](./tasks/RIT-015.md) |
 | Task | RIT-020 | Anonymous subject, session, and consent baseline | [tasks/RIT-020.md](./tasks/RIT-020.md) |
 | Task | RIT-021 | Safe question and theme intake | [tasks/RIT-021.md](./tasks/RIT-021.md) |
+| Task | RIT-022 | Versioned tarot deck, spread, and content schema | [tasks/RIT-022.md](./tasks/RIT-022.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 

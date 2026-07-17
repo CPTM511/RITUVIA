@@ -131,6 +131,12 @@ importers:
 
   packages/domain: {}
 
+  packages/divination:
+    dependencies:
+      '@rituvia/domain':
+        specifier: workspace:*
+        version: link:../domain
+
   packages/observability: {}
 
   packages/ui:

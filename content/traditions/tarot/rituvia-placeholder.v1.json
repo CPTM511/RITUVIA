@@ -1,0 +1,567 @@
+{
+  "schemaVersion": "tarot-catalog.v1",
+  "contentType": "tarot_catalog",
+  "catalogId": "rituvia.placeholder-catalog",
+  "version": "1.0.0",
+  "title": "RITUVIA internal structural placeholder catalog",
+  "locale": "en",
+  "supportedThemeCodes": ["open_reflection"],
+  "usePolicy": {
+    "publicationAllowed": false,
+    "indexingAllowed": false,
+    "aiRetrievalAllowed": false
+  },
+  "editorial": {
+    "status": "draft",
+    "audience": "Internal engineering and editorial validation only",
+    "authorRole": "product",
+    "authorId": "codex.draft",
+    "reviewerRole": null,
+    "reviewerId": null,
+    "reviewedDate": null,
+    "approvalReference": null,
+    "requiredApprovalRole": "content_review",
+    "riskClassification": "moderate",
+    "aiAssisted": true,
+    "effectiveDate": "2026-07-17",
+    "reviewDueDate": "2026-10-17",
+    "supersedes": null,
+    "changeReason": "Initial synthetic contract fixture with no publication permission."
+  },
+  "sources": [
+    {
+      "sourceId": "rituvia.placeholder-text",
+      "version": "1.0.0",
+      "sourceType": "original",
+      "title": "RITUVIA synthetic placeholder structure and text",
+      "creator": "RITUVIA product drafting process",
+      "editor": null,
+      "publisher": "RITUVIA",
+      "publicationDate": null,
+      "identifier": "repository:content/traditions/tarot/rituvia-placeholder.v1.json",
+      "tradition": "rituvia-original-secular-placeholder",
+      "geography": "Not tradition-specific",
+      "language": "en",
+      "claims": [],
+      "knownDisagreements": [],
+      "rights": {
+        "version": "1.0.0",
+        "status": "owned",
+        "licenseIdentifier": null,
+        "allowedUses": ["internal_validation"],
+        "materialTypes": ["structural_data", "spread_definition", "interpretive_text"],
+        "territory": "worldwide",
+        "expiresOn": null,
+        "evidenceReference": "repository:content/traditions/tarot/rituvia-placeholder.v1.json",
+        "attributionRequired": false,
+        "attributionText": null
+      },
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Original synthetic material created only to exercise the versioned schema."
+      }
+    }
+  ],
+  "decks": [
+    {
+      "contentType": "tarot_deck",
+      "deckId": "rituvia.placeholder-deck",
+      "version": "1.0.0",
+      "title": "RITUVIA structural placeholder deck",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "supportedOrientations": ["upright", "reversed"],
+      "textRightsSource": {
+        "id": "rituvia.placeholder-text",
+        "version": "1.0.0"
+      },
+      "artworkStatus": "none",
+      "artworkRightsSource": null,
+      "cards": [
+        {
+          "cardId": "threshold",
+          "order": 1,
+          "title": "The Threshold",
+          "traditionalTitle": null,
+          "alternativeTitles": [],
+          "artwork": null
+        },
+        {
+          "cardId": "mirror",
+          "order": 2,
+          "title": "The Mirror",
+          "traditionalTitle": null,
+          "alternativeTitles": [],
+          "artwork": null
+        },
+        {
+          "cardId": "lantern",
+          "order": 3,
+          "title": "The Lantern",
+          "traditionalTitle": null,
+          "alternativeTitles": [],
+          "artwork": null
+        }
+      ],
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Three-card synthetic fixture validates one-card and three-card contracts."
+      }
+    }
+  ],
+  "spreads": [
+    {
+      "contentType": "tarot_spread",
+      "spreadId": "one-card-perspective",
+      "version": "1.0.0",
+      "spreadType": "one_card",
+      "title": "One-card perspective",
+      "description": "One symbolic perspective followed by a reflection question and small action.",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "compatibleDecks": [
+        {
+          "id": "rituvia.placeholder-deck",
+          "version": "1.0.0"
+        }
+      ],
+      "source": {
+        "id": "rituvia.placeholder-text",
+        "version": "1.0.0"
+      },
+      "positions": [
+        {
+          "positionId": "perspective",
+          "order": 1,
+          "title": "Perspective",
+          "description": "A symbolic lens for the selected reflection theme."
+        }
+      ],
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Initial one-card schema fixture."
+      }
+    },
+    {
+      "contentType": "tarot_spread",
+      "spreadId": "situation-action-possibility",
+      "version": "1.0.0",
+      "spreadType": "three_card",
+      "title": "Situation, Action, Possibility",
+      "description": "Three ordered lenses that preserve uncertainty and user choice.",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "compatibleDecks": [
+        {
+          "id": "rituvia.placeholder-deck",
+          "version": "1.0.0"
+        }
+      ],
+      "source": {
+        "id": "rituvia.placeholder-text",
+        "version": "1.0.0"
+      },
+      "positions": [
+        {
+          "positionId": "situation",
+          "order": 1,
+          "title": "Situation",
+          "description": "What may deserve attention in the present context."
+        },
+        {
+          "positionId": "action",
+          "order": 2,
+          "title": "Action",
+          "description": "One small response that remains within the user's control."
+        },
+        {
+          "positionId": "possibility",
+          "order": 3,
+          "title": "Possibility",
+          "description": "A possibility to consider without treating it as a prediction."
+        }
+      ],
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Initial ordered three-card schema fixture."
+      }
+    }
+  ],
+  "cardContents": [
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.placeholder.threshold.upright",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "threshold",
+      "orientation": "upright",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Beginning", "Choice"],
+      "constructivePossibilities": ["Notice what is ready to begin without assuming an outcome."],
+      "tensions": ["Pause before turning uncertainty into a demand for certainty."],
+      "themeReadings": [
+        {
+          "themeCode": "open_reflection",
+          "text": "A threshold can invite attention to one beginning that remains within your choice."
+        }
+      ],
+      "reflectionQuestions": ["What small beginning feels within your control?"],
+      "smallActions": ["Write down one reversible next step."],
+      "cannotDetermine": "This structural fixture does not determine what will happen.",
+      "sources": [
+        {
+          "id": "rituvia.placeholder-text",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": ["Original secular placeholder; not a historical tarot tradition."],
+      "translationStatus": "source_draft",
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Synthetic upright threshold content for schema validation only."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.placeholder.threshold.reversed",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "threshold",
+      "orientation": "reversed",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Hesitation", "Readiness"],
+      "constructivePossibilities": ["Make room to prepare before choosing whether to begin."],
+      "tensions": ["Delay can become avoidance when no small check-in is chosen."],
+      "themeReadings": [
+        {
+          "themeCode": "open_reflection",
+          "text": "A reversed threshold can invite a check on readiness without declaring the path closed."
+        }
+      ],
+      "reflectionQuestions": ["What preparation would make the next choice clearer?"],
+      "smallActions": ["Name one condition you can check before proceeding."],
+      "cannotDetermine": "This structural fixture does not determine whether a path is right or wrong.",
+      "sources": [
+        {
+          "id": "rituvia.placeholder-text",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": ["Original secular placeholder; not a historical tarot tradition."],
+      "translationStatus": "source_draft",
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Synthetic reversed threshold content for schema validation only."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.placeholder.mirror.upright",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "mirror",
+      "orientation": "upright",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Observation", "Perspective"],
+      "constructivePossibilities": ["Separate what you observe from the story you add to it."],
+      "tensions": ["Reflection can narrow when it becomes harsh self-judgment."],
+      "themeReadings": [
+        {
+          "themeCode": "open_reflection",
+          "text": "A mirror can invite a careful look at observable patterns and personal choices."
+        }
+      ],
+      "reflectionQuestions": ["What do you observe without adding a prediction?"],
+      "smallActions": ["List one observation and one interpretation separately."],
+      "cannotDetermine": "This structural fixture does not reveal another person's private thoughts.",
+      "sources": [
+        {
+          "id": "rituvia.placeholder-text",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": ["Original secular placeholder; not a historical tarot tradition."],
+      "translationStatus": "source_draft",
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Synthetic upright mirror content for schema validation only."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.placeholder.mirror.reversed",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "mirror",
+      "orientation": "reversed",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Distortion", "Self-compassion"],
+      "constructivePossibilities": ["Test a difficult assumption against observable evidence."],
+      "tensions": ["A familiar story can feel factual even when evidence is incomplete."],
+      "themeReadings": [
+        {
+          "themeCode": "open_reflection",
+          "text": "A reversed mirror can invite gentler scrutiny of assumptions and self-criticism."
+        }
+      ],
+      "reflectionQuestions": ["Which assumption could you check rather than accept automatically?"],
+      "smallActions": ["Ask what evidence would change your current interpretation."],
+      "cannotDetermine": "This structural fixture does not prove motives, guilt, or hidden facts.",
+      "sources": [
+        {
+          "id": "rituvia.placeholder-text",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": ["Original secular placeholder; not a historical tarot tradition."],
+      "translationStatus": "source_draft",
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Synthetic reversed mirror content for schema validation only."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.placeholder.lantern.upright",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "lantern",
+      "orientation": "upright",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Clarity", "Next step"],
+      "constructivePossibilities": ["Focus on the next visible step rather than the whole route."],
+      "tensions": ["A narrow focus can miss context that still deserves attention."],
+      "themeReadings": [
+        {
+          "themeCode": "open_reflection",
+          "text": "A lantern can invite attention to the information available for one small choice."
+        }
+      ],
+      "reflectionQuestions": ["What is clear enough to act on today?"],
+      "smallActions": ["Choose one bounded action you can complete and reassess."],
+      "cannotDetermine": "This structural fixture does not illuminate an inevitable future.",
+      "sources": [
+        {
+          "id": "rituvia.placeholder-text",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": ["Original secular placeholder; not a historical tarot tradition."],
+      "translationStatus": "source_draft",
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Synthetic upright lantern content for schema validation only."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.placeholder.lantern.reversed",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.placeholder-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "lantern",
+      "orientation": "reversed",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-placeholder",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Uncertainty", "Pause"],
+      "constructivePossibilities": ["Ask for information or support before taking a larger step."],
+      "tensions": ["Waiting for perfect clarity can postpone a safe, reversible experiment."],
+      "themeReadings": [
+        {
+          "themeCode": "open_reflection",
+          "text": "A reversed lantern can invite a pause to identify what remains unknown."
+        }
+      ],
+      "reflectionQuestions": ["What missing information matters most for the next small decision?"],
+      "smallActions": [
+        "Write one question you can answer through observation or a trusted source."
+      ],
+      "cannotDetermine": "This structural fixture does not turn uncertainty into certainty.",
+      "sources": [
+        {
+          "id": "rituvia.placeholder-text",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": ["Original secular placeholder; not a historical tarot tradition."],
+      "translationStatus": "source_draft",
+      "editorial": {
+        "status": "draft",
+        "audience": "Internal engineering and editorial validation only",
+        "authorRole": "product",
+        "authorId": "codex.draft",
+        "reviewerRole": null,
+        "reviewerId": null,
+        "reviewedDate": null,
+        "approvalReference": null,
+        "requiredApprovalRole": "content_review",
+        "riskClassification": "moderate",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-17",
+        "reviewDueDate": "2026-10-17",
+        "supersedes": null,
+        "changeReason": "Synthetic reversed lantern content for schema validation only."
+      }
+    }
+  ]
+}
