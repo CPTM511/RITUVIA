@@ -340,3 +340,15 @@ effective until this register links it. Do not rewrite historical rationale; sup
   integrity, while mutating the immutable RIT-033 terminal row or storing rejected prose would
   weaken fencing, authenticated replay, privacy, and append-only guarantees.
 - **Date:** 2026-07-18
+
+### [D-042 — Private durable-only tarot interpretation polling boundary](records/decisions/D-042.md)
+
+- **Decision:** Start interpretation only through an explicit owner-bound UUID-idempotent POST;
+  poll status through a separate side-effect-free GET; expose only strict non-displayable
+  processing/failure states or a durable verified/reviewed-fallback projection; and bound the
+  foreground client to cancellation, eight polls, and same-operation manual retry while runtime
+  composition remains hard safe-off.
+- **Reason:** Browser delivery must never disclose provisional provider prose, turn a read into
+  paid work, duplicate inference, leak internal provenance, or imply that an unavailable provider
+  runtime is active.
+- **Date:** 2026-07-18

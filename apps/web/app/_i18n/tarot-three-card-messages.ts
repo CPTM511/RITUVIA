@@ -116,7 +116,8 @@ const englishTarotThreeCardMessages = {
   },
   result: {
     actionTitle: "One small action",
-    aiBoundary: "This result uses reviewed canonical content, not an AI-generated interpretation.",
+    aiBoundary:
+      "These fixed card results use reviewed canonical content, not an AI-generated interpretation. Any optional AI-generated interpretation appears in a separate panel after the cards.",
     alternativeTitle: "Other lenses to hold beside it",
     cannotDetermineTitle: "What this cannot determine",
     cardsLabel: "Situation, Action, and Possibility in fixed order",
@@ -150,6 +151,85 @@ const englishTarotThreeCardMessages = {
     themesTitle: "Core themes",
     title: "Your three-card reflection",
     versionLabel: "Content version",
+    interpretation: {
+      actionTitle: "One small action",
+      boundary: "Symbolic reflection, not professional advice.",
+      cancel: "Stop checking",
+      fallbackLabel: "Reviewed non-AI fallback",
+      fallbackNotice:
+        "The AI draft was not used. This bounded alternative comes from reviewed content.",
+      heading: "Explore a deeper interpretation",
+      idleDescription:
+        "Ask for one optional, structured perspective across the fixed spread. Starting is explicit and never redraws the reading.",
+      kicker: "Optional AI perspective",
+      limitsTitle: "Limits to hold in view",
+      meaningLabel: "Context",
+      perspectivesTitle: "Possibilities to consider",
+      possibilityLabel: "A possibility",
+      privacy:
+        "Only this reading's random ID is used. No free-text question, journal entry, or payment data is sent.",
+      processingDescription:
+        "The draft remains hidden while it is independently checked. The fixed reading above stays available.",
+      processingTitle: "Preparing and checking the interpretation",
+      questionsTitle: "Questions for reflection",
+      retry: "Try the same request again",
+      ritualTitle: "Optional ritual prompt",
+      start: "Explore the deeper interpretation",
+      symbolsTitle: "Symbols and context",
+      terminal: {
+        message:
+          "No enhanced text was released because the request did not complete its checks. The fixed reading above remains complete.",
+        title: "No interpretation was displayed",
+      },
+      timeHorizon: {
+        open: "when it feels useful",
+        today: "today",
+        this_week: "this week",
+      },
+      verifiedLabel: "AI-generated interpretation · independently checked",
+      failures: {
+        conflict: {
+          message:
+            "This request no longer matches the saved interpretation. The fixed reading is unchanged.",
+          title: "The interpretation request conflicts",
+        },
+        invalid_response: {
+          message:
+            "The returned interpretation did not pass the page's safety checks and was not displayed.",
+          title: "The interpretation could not be verified",
+        },
+        not_found: {
+          message:
+            "This private reading or interpretation is no longer available in the current session.",
+          title: "The interpretation is no longer available",
+        },
+        offline: {
+          message:
+            "Reconnect before checking the same request. Nothing will retry in the background.",
+          title: "You appear to be offline",
+        },
+        permission: {
+          message:
+            "An enhanced interpretation is not available for this reading. The fixed result remains complete.",
+          title: "The interpretation is not available",
+        },
+        rate_limited: {
+          message:
+            "Pause before checking again. Nothing will create another interpretation automatically.",
+          title: "Interpretation checks are temporarily limited",
+        },
+        session_expired: {
+          message:
+            "The private session ended before this interpretation could be checked. The visible fixed result is unchanged.",
+          title: "The private session has ended",
+        },
+        unavailable: {
+          message:
+            "The enhanced interpretation is temporarily unavailable. The fixed reading above remains complete and useful.",
+          title: "The interpretation could not be completed",
+        },
+      },
+    },
     report: {
       categories: {
         accessibility: "Accessibility",

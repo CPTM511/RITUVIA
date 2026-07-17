@@ -17,7 +17,16 @@ import {
   type LocalActionHref,
 } from "@rituvia/ui";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import type { TarotReadingMessages } from "../_i18n/tarot-one-card-messages";
 import {
@@ -40,6 +49,11 @@ import {
   readTarotReadingResumeId,
   storeTarotReadingResumeId,
 } from "./tarot-reading-resume-storage";
+
+const TarotInterpretationPanel = lazy(async () => {
+  const interpretationPanel = await import("./tarot-interpretation-panel");
+  return { default: interpretationPanel.TarotInterpretationPanel };
+});
 
 const themeGroupName = createUiControlName("tarot-theme-code");
 const subscribeToHydration = (): (() => void) => () => undefined;
@@ -582,28 +596,19 @@ export function TarotReadingFlow({
                       </figcaption>
                     </figure>
 
-                    <section
-                      aria-labelledby={`${cardId}-perspective-title`}
-                      className="tarot-result-section"
-                    >
+                    <div className="tarot-result-section">
                       <h4 id={`${cardId}-perspective-title`}>{messages.result.perspectiveTitle}</h4>
                       <p>{card.invitation}</p>
-                    </section>
-                    <section
-                      aria-labelledby={`${cardId}-themes-title`}
-                      className="tarot-result-section"
-                    >
+                    </div>
+                    <div className="tarot-result-section">
                       <h4 id={`${cardId}-themes-title`}>{messages.result.themesTitle}</h4>
                       <ul className="tarot-theme-list">
                         {card.coreThemes.map((theme) => (
                           <li key={theme}>{theme}</li>
                         ))}
                       </ul>
-                    </section>
-                    <section
-                      aria-labelledby={`${cardId}-alternatives-title`}
-                      className="tarot-result-section"
-                    >
+                    </div>
+                    <div className="tarot-result-section">
                       <h4 id={`${cardId}-alternatives-title`}>
                         {messages.result.alternativeTitle}
                       </h4>
@@ -617,35 +622,35 @@ export function TarotReadingFlow({
                           <dd>{card.tension}</dd>
                         </div>
                       </dl>
-                    </section>
-                    <section
-                      aria-labelledby={`${cardId}-limit-title`}
-                      className="tarot-result-section"
-                    >
+                    </div>
+                    <div className="tarot-result-section">
                       <h4 id={`${cardId}-limit-title`}>{messages.result.cannotDetermineTitle}</h4>
                       <p>{card.cannotDetermine}</p>
-                    </section>
+                    </div>
                     <div className="tarot-reflection-grid">
-                      <section
-                        aria-labelledby={`${cardId}-question-title`}
-                        className="tarot-prompt-card"
-                      >
+                      <div className="tarot-prompt-card">
                         <h4 id={`${cardId}-question-title`}>{messages.result.reflectionTitle}</h4>
                         <p>{card.reflectionQuestion}</p>
-                      </section>
-                      <section
-                        aria-labelledby={`${cardId}-action-title`}
-                        className="tarot-prompt-card"
-                      >
+                      </div>
+                      <div className="tarot-prompt-card">
                         <h4 id={`${cardId}-action-title`}>{messages.result.actionTitle}</h4>
                         <p>{card.smallAction}</p>
-                      </section>
+                      </div>
                     </div>
                   </article>
                 </li>
               );
             })}
           </ol>
+          <Suspense
+            fallback={<p className="tarot-ai-boundary">{messages.result.interpretation.heading}</p>}
+          >
+            <TarotInterpretationPanel
+              key={response.readingId}
+              messages={messages.result.interpretation}
+              readingId={response.readingId}
+            />
+          </Suspense>
           {displayedResult.restored ? <p>{messages.result.restored}</p> : null}
           <p>{displayedResult.resumeStored ? messages.result.saved : messages.result.notStored}</p>
           {displayedResult.replayed ? <p>{messages.result.replayed}</p> : null}

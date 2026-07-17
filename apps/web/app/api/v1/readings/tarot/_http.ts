@@ -18,6 +18,11 @@ const noIndex = "noindex, nofollow, noarchive";
 
 export type TarotReadingProblemCode =
   | "IDEMPOTENCY_KEY_INVALID"
+  | "TAROT_INTERPRETATION_CONFLICT"
+  | "TAROT_INTERPRETATION_PERMISSION_DENIED"
+  | "TAROT_INTERPRETATION_RATE_LIMITED"
+  | "TAROT_INTERPRETATION_REQUEST_REJECTED"
+  | "TAROT_INTERPRETATION_UNAVAILABLE"
   | "TAROT_READING_BODY_INVALID"
   | "TAROT_READING_BODY_TOO_LARGE"
   | "TAROT_READING_CONFLICT"
@@ -93,6 +98,9 @@ export const hasAcceptedPostOrigin = (request: NextRequest): boolean =>
 export const tarotReadingReportApiPath = (readingId: string): string =>
   `${tarotReadingResourceApiPath}/${readingId}/report`;
 
+export const tarotInterpretationApiPath = (readingId: string): string =>
+  `${tarotReadingResourceApiPath}/${readingId}/interpretation`;
+
 const isFrameworkPrivateRead = (request: NextRequest): boolean => {
   const accept = request.headers.get("accept");
   return (
@@ -119,6 +127,13 @@ export const hasAcceptedPrivateReadRequest = (request: NextRequest): boolean => 
     (fetchSite === null || fetchSite === "same-origin")
   );
 };
+
+export const hasNoRequestBody = (request: NextRequest): boolean =>
+  request.body === null &&
+  request.headers.get("content-type") === null &&
+  request.headers.get("content-encoding") === null &&
+  request.headers.get("transfer-encoding") === null &&
+  (request.headers.get("content-length") === null || request.headers.get("content-length") === "0");
 
 export type RequestMetadata = "accepted" | "invalid" | "too_large";
 

@@ -137,21 +137,25 @@ describe("public shell request and crawl gate", () => {
     },
   );
 
-  it("allows only the independently enabled private tarot create, owner read, and report APIs", async () => {
+  it("allows only the independently enabled private tarot create, owner read, report, and interpretation APIs", async () => {
     harness.tarotReadingAvailability = "enabled";
     const readingId = "33333333-3333-4333-8333-333333333333";
 
     const create = await proxy(request("/api/v1/readings/tarot", { method: "POST" }));
     const read = await proxy(request(`/api/v1/readings/${readingId}`));
     const report = await proxy(request(`/api/v1/readings/${readingId}/report`, { method: "POST" }));
+    const interpretationStart = await proxy(
+      request(`/api/v1/readings/${readingId}/interpretation`, { method: "POST" }),
+    );
+    const interpretationPoll = await proxy(request(`/api/v1/readings/${readingId}/interpretation`));
 
-    for (const response of [create, read, report]) {
+    for (const response of [create, read, report, interpretationStart, interpretationPoll]) {
       expect(response.status).toBe(200);
       expect(response.headers.get("x-middleware-next")).toBe("1");
       expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
       expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     }
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(5);
   });
 
   it.each([
@@ -177,6 +181,13 @@ describe("public shell request and crawl gate", () => {
     ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/report?private=canary"],
     ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/report.rsc"],
     ["POST", "/api/v1/readings/not-a-reading/report"],
+    ["HEAD", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation"],
+    ["OPTIONS", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation"],
+    ["PUT", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation"],
+    ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation/"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation?private=canary"],
+    ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation.rsc"],
+    ["GET", "/api/v1/readings/not-a-reading/interpretation"],
   ])("rejects unreviewed tarot variant %s %s before lookup", async (method, pathname) => {
     harness.tarotReadingAvailability = "enabled";
     const response = await proxy(request(pathname, { method }));
@@ -208,6 +219,17 @@ describe("public shell request and crawl gate", () => {
           method: "POST",
         }),
       ),
+      proxy(
+        request("/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation", {
+          headers,
+        }),
+      ),
+      proxy(
+        request("/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation", {
+          headers,
+          method: "POST",
+        }),
+      ),
     ]);
 
     for (const response of responses) {
@@ -226,11 +248,21 @@ describe("public shell request and crawl gate", () => {
         method: "POST",
       }),
     );
+    const interpretationStart = await proxy(
+      request("/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation", {
+        method: "POST",
+      }),
+    );
+    const interpretationPoll = await proxy(
+      request("/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation"),
+    );
 
     expect(create.status).toBe(404);
     expect(read.status).toBe(404);
     expect(report.status).toBe(404);
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
+    expect(interpretationStart.status).toBe(404);
+    expect(interpretationPoll.status).toBe(404);
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(5);
   });
 
   it.each(["one-card", "three-card"] as const)(

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -18,6 +18,7 @@ import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
 const nextRoot = path.join(repositoryRoot, "apps/web/.next");
+const tarotAcceptanceArtifactDirectory = path.join(repositoryRoot, "output/playwright/rit035");
 const homeContrastTargets = Object.freeze([
   Object.freeze([".brand-link"]),
   Object.freeze(['a[aria-current="page"]']),
@@ -106,6 +107,23 @@ const tarotReadingContrastTargets = (headingSelector) =>
     Object.freeze([".tarot-reading-boundary"]),
     Object.freeze([".tarot-reading-privacy"]),
   ]);
+const tarotAcceptanceContrastTargets = (headingSelector, flowSlug, cardCount) =>
+  Object.freeze([
+    ...tarotReadingContrastTargets(headingSelector),
+    Object.freeze(["figcaption > strong"]),
+    Object.freeze(["figcaption > span"]),
+    Object.freeze([".tarot-reading-heading > .eyebrow"]),
+    ...Array.from({ length: cardCount }, (_, index) =>
+      Object.freeze([
+        `article[aria-labelledby="tarot-${flowSlug}-card-${index + 1}-title"] > figure > figcaption > strong`,
+      ]),
+    ),
+    ...Array.from({ length: cardCount }, (_, index) =>
+      Object.freeze([
+        `article[aria-labelledby="tarot-${flowSlug}-card-${index + 1}-title"] > figure > figcaption > span`,
+      ]),
+    ),
+  ]);
 const contrastScanStates = Object.freeze(["dark", "english", "expanded", "rtl"]);
 const reviewedContrastTargetsByScan = new Map([
   ...contrastScanStates.map((state) => [`${state}:/en`, homeContrastTargets]),
@@ -122,7 +140,272 @@ const reviewedContrastTargetsByScan = new Map([
     `${state}:/en/tarot/three-card`,
     tarotReadingContrastTargets("#tarot-three-card-heading"),
   ]),
+  ["acceptance:one-card", tarotAcceptanceContrastTargets("#tarot-one-card-heading", "one-card", 1)],
+  [
+    "acceptance:three-card",
+    tarotAcceptanceContrastTargets("#tarot-three-card-heading", "three-card", 3),
+  ],
 ]);
+
+const tarotAcceptanceReadingIds = Object.freeze({
+  one_card: "33333333-3333-4333-8333-333333333333",
+  three_card: "44444444-4444-4444-8444-444444444444",
+});
+
+const tarotAcceptanceCards = Object.freeze({
+  one_card: Object.freeze([
+    Object.freeze({
+      cannotDetermine: "This symbol cannot determine an outcome.",
+      cardId: "lantern",
+      cardTitle: "The Lantern",
+      constructivePossibility: "A small source of clarity may be enough for the next step.",
+      coreThemes: Object.freeze(["clarity", "attention"]),
+      invitation: "Notice what becomes visible when you narrow your attention.",
+      order: 1,
+      orientation: "upright",
+      positionId: "perspective",
+      positionTitle: "Perspective",
+      reflectionQuestion: "What deserves a little more light today?",
+      smallAction: "Write down one next step you can complete in ten minutes.",
+      tension: "Seeking total certainty can obscure the useful detail already present.",
+    }),
+  ]),
+  three_card: Object.freeze([
+    Object.freeze({
+      cannotDetermine: "This symbol cannot determine what will happen.",
+      cardId: "lantern",
+      cardTitle: "The Lantern",
+      constructivePossibility: "A useful detail may already be visible.",
+      coreThemes: Object.freeze(["clarity", "attention"]),
+      invitation: "Notice what deserves attention in the present situation.",
+      order: 1,
+      orientation: "upright",
+      positionId: "situation",
+      positionTitle: "Situation",
+      reflectionQuestion: "What detail matters most right now?",
+      smallAction: "Name one fact you can observe without guessing.",
+      tension: "Seeking total certainty can hide the useful detail already present.",
+    }),
+    Object.freeze({
+      cannotDetermine: "This symbol cannot choose an action for you.",
+      cardId: "mirror",
+      cardTitle: "The Mirror",
+      constructivePossibility: "A brief pause may reveal what remains within your control.",
+      coreThemes: Object.freeze(["reflection", "choice"]),
+      invitation: "Consider one response that respects your own agency.",
+      order: 2,
+      orientation: "reversed",
+      positionId: "action",
+      positionTitle: "Action",
+      reflectionQuestion: "Which response is both small and within your control?",
+      smallAction: "Write one ten-minute step and decide whether it still feels useful tomorrow.",
+      tension: "Reflection can become delay when it avoids a manageable next step.",
+    }),
+    Object.freeze({
+      cannotDetermine: "This symbol cannot predict an outcome.",
+      cardId: "threshold",
+      cardTitle: "The Threshold",
+      constructivePossibility: "A new option may become visible after a careful first step.",
+      coreThemes: Object.freeze(["transition", "possibility"]),
+      invitation: "Hold one possible direction lightly without treating it as promised.",
+      order: 3,
+      orientation: "upright",
+      positionId: "possibility",
+      positionTitle: "Possibility",
+      reflectionQuestion: "What possibility is worth exploring without needing certainty?",
+      smallAction: "List one low-risk way to learn more before deciding.",
+      tension: "Possibility is not evidence that a particular future will occur.",
+    }),
+  ]),
+});
+
+const createTarotAcceptanceReading = (readingType) => {
+  const oneCard = readingType === "one_card";
+  const cards = tarotAcceptanceCards[readingType];
+  return Object.freeze({
+    createdAt: "2026-07-17T12:00:00.000Z",
+    facts: Object.freeze({
+      algorithmVersion: "partial-fisher-yates-rejection-uint8.v1",
+      catalog: Object.freeze({ id: "test.catalog", version: "1.0.0" }),
+      deck: Object.freeze({ id: "test.deck", version: "1.0.0" }),
+      engineName: "rituvia.tarot-draw",
+      engineVersion: "1.0.0",
+      method: "tarot",
+      orientationPolicy: "upright_and_reversed",
+      positions: Object.freeze(
+        cards.map(({ cardId, order, orientation, positionId }) =>
+          Object.freeze({ cardId, order, orientation, positionId }),
+        ),
+      ),
+      replacementPolicy: "without_replacement",
+      rulesVersion: "tarot-draw-rules.v1",
+      schemaVersion: "tarot-draw-facts.v1",
+      spread: Object.freeze({
+        id: oneCard ? "one-card-perspective" : "situation-action-possibility",
+        version: "1.0.0",
+      }),
+    }),
+    locale: "en",
+    presentation: Object.freeze({
+      cards,
+      schemaVersion: "tarot-reading-presentation.v1",
+    }),
+    readingId: tarotAcceptanceReadingIds[readingType],
+    readingPolicyVersion: "test.tarot-reading.v1",
+    readingType,
+    schemaVersion: "tarot-reading-response.v2",
+    status: "facts_ready",
+    themeCode: "open_reflection",
+  });
+};
+
+const tarotAcceptanceInterpretationOutput = Object.freeze({
+  boundaryNote:
+    "This interpretation offers reflective possibilities and cannot determine an outcome.",
+  perspectives: Object.freeze([
+    "A smaller source of clarity may be more useful than complete certainty.",
+    "The next helpful choice may be one that remains within your control.",
+  ]),
+  reflectionQuestions: Object.freeze([
+    "What already feels clear enough for one small next step?",
+    "Which uncertainty can remain open without stopping you today?",
+  ]),
+  ritualSuggestion: Object.freeze({
+    reason: "Pause with a free virtual candle while naming the one detail you want to notice.",
+  }),
+  smallAction: Object.freeze({
+    label: "Write one ten-minute next step.",
+    rationale: "A bounded action keeps the reflection grounded in your own judgment.",
+    timeHorizon: "today",
+  }),
+  summary:
+    "The fixed symbols invite attention to a manageable source of clarity, while leaving the outcome open.",
+  symbols: Object.freeze([
+    Object.freeze({
+      limitation: "A symbol cannot promise what will happen next.",
+      meaning: "The lantern can represent focused attention in an uncertain moment.",
+      possibility: "One visible detail may be enough to choose a low-risk next step.",
+    }),
+  ]),
+  title: "Acceptance-ready reflective perspective",
+});
+
+const jsonFulfill = async (route, status, body, contentType = "application/json") => {
+  const serialized = JSON.stringify(body);
+  await route.fulfill({
+    body: serialized,
+    headers: {
+      "cache-control": "no-store",
+      "content-length": String(Buffer.byteLength(serialized)),
+      "content-type": contentType,
+    },
+    status,
+  });
+};
+
+const installTarotAcceptanceRoutes = async (
+  page,
+  { failFirstInterpretationStart = false, finalStatus, readingType },
+) => {
+  const readingId = tarotAcceptanceReadingIds[readingType];
+  let observeInterpretationGet;
+  let releaseInterpretationGet;
+  const interpretationGetObserved = new Promise((resolve) => {
+    observeInterpretationGet = resolve;
+  });
+  const interpretationGetReleased = new Promise((resolve) => {
+    releaseInterpretationGet = resolve;
+  });
+  const requests = {
+    interpretationGets: 0,
+    interpretationOperationIds: [],
+    interpretationStarts: 0,
+    readingStarts: 0,
+    releaseInterpretationGet: () => releaseInterpretationGet(),
+    sessionStarts: 0,
+    unexpected: [],
+    waitForInterpretationGet: () => interpretationGetObserved,
+  };
+
+  await page.route("**/api/v1/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.method() === "POST" && url.pathname === "/api/v1/anonymous/session") {
+      requests.sessionStarts += 1;
+      await route.fulfill({
+        headers: { "cache-control": "no-store" },
+        status: 204,
+      });
+      return;
+    }
+    if (request.method() === "POST" && url.pathname === "/api/v1/readings/tarot") {
+      requests.readingStarts += 1;
+      await jsonFulfill(route, 201, createTarotAcceptanceReading(readingType));
+      return;
+    }
+    if (url.pathname === `/api/v1/readings/${readingId}/interpretation`) {
+      if (request.method() === "POST") {
+        requests.interpretationStarts += 1;
+        requests.interpretationOperationIds.push(request.headers()["idempotency-key"] ?? "missing");
+        if (failFirstInterpretationStart && requests.interpretationStarts === 1) {
+          await jsonFulfill(
+            route,
+            503,
+            {
+              code: "TAROT_INTERPRETATION_UNAVAILABLE",
+              detail:
+                "PRIVATE_PROBLEM_CANARY The enhanced interpretation is temporarily unavailable.",
+              fields: [],
+              instance: url.pathname,
+              requestId: "req_00000000000000000000000000000000",
+              status: 503,
+              title: "The interpretation could not be completed",
+              type: "urn:rituvia:problem:tarot-interpretation-unavailable",
+            },
+            "application/problem+json",
+          );
+          return;
+        }
+        const processing = {
+          displayable: false,
+          pollAfterMs: 250,
+          readingId,
+          schemaVersion: "tarot-interpretation-response.v1",
+          status: "processing",
+        };
+        const serialized = JSON.stringify(processing);
+        await route.fulfill({
+          body: serialized,
+          headers: {
+            "cache-control": "no-store",
+            "content-length": String(Buffer.byteLength(serialized)),
+            "content-type": "application/json",
+            "retry-after": "1",
+          },
+          status: 202,
+        });
+        return;
+      }
+      if (request.method() === "GET") {
+        requests.interpretationGets += 1;
+        observeInterpretationGet();
+        await interpretationGetReleased;
+        await jsonFulfill(route, 200, {
+          displayable: true,
+          output: tarotAcceptanceInterpretationOutput,
+          readingId,
+          schemaVersion: "tarot-interpretation-response.v1",
+          status: finalStatus,
+        });
+        return;
+      }
+    }
+    requests.unexpected.push(`${request.method()}:${url.pathname}`);
+    await route.abort("blockedbyclient");
+  });
+
+  return requests;
+};
 
 const loadReviewedArtifacts = async () => {
   const artifacts = new Map();
@@ -142,6 +425,14 @@ const loadReviewedArtifacts = async () => {
     await Promise.all(references.map(add));
   };
   await Promise.all(accessibilitySmokeRoutes.map(add));
+  const chunkEntries = await readdir(path.join(nextRoot, "static/chunks"), {
+    withFileTypes: true,
+  });
+  await Promise.all(
+    chunkEntries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".js"))
+      .map((entry) => add(`/_next/static/chunks/${entry.name}`)),
+  );
   return artifacts;
 };
 
@@ -611,7 +902,11 @@ const attachBrowserBoundary = async (
   page,
   origin,
   failures,
-  { allowDisabledScriptCsp = false } = {},
+  {
+    allowDisabledScriptCsp = false,
+    allowFulfilledSessionAbort = false,
+    allowInterpretationUnavailable = false,
+  } = {},
 ) => {
   await context.route("**/*", async (route) => {
     if (new URL(route.request().url()).origin === origin) {
@@ -622,14 +917,30 @@ const attachBrowserBoundary = async (
     await route.abort("blockedbyclient");
   });
   page.on("console", (message) => {
+    if (
+      allowInterpretationUnavailable &&
+      message.type() === "error" &&
+      /status of 503 \(Service Unavailable\)/u.test(message.text())
+    ) {
+      return;
+    }
     if (message.type() === "error" || message.type() === "warning") {
-      failures.push(`console:${message.type()}`);
+      failures.push(`console:${message.type()}:${message.text()}`);
     }
   });
   page.on("pageerror", (error) => failures.push(`pageerror:${error.name}`));
   page.on("requestfailed", (request) => {
     const url = new URL(request.url());
     const failure = request.failure()?.errorText ?? "unknown";
+    if (
+      allowFulfilledSessionAbort &&
+      request.method() === "POST" &&
+      url.origin === origin &&
+      url.pathname === "/api/v1/anonymous/session" &&
+      failure === "net::ERR_ABORTED"
+    ) {
+      return;
+    }
     if (
       allowDisabledScriptCsp &&
       request.resourceType() === "script" &&
@@ -643,7 +954,16 @@ const attachBrowserBoundary = async (
     }
   });
   page.on("response", (response) => {
-    if (response.status() >= 400) failures.push(`http:${response.status()}`);
+    const url = new URL(response.url());
+    if (
+      allowInterpretationUnavailable &&
+      response.status() === 503 &&
+      url.origin === origin &&
+      /^\/api\/v1\/readings\/[0-9a-f-]+\/interpretation$/u.test(url.pathname)
+    ) {
+      return;
+    }
+    if (response.status() >= 400) failures.push(`http:${response.status()}:${url.pathname}`);
   });
 };
 
@@ -654,6 +974,214 @@ const gotoReviewedPage = async (page, url, label) => {
   if ((await page.locator("h1").count()) !== 1 || (await page.locator("main").count()) !== 1) {
     throw new Error(`${label} does not expose one H1 and one main landmark.`);
   }
+};
+
+const scrollToElementTop = async (locator) => {
+  await locator.evaluate((element) => {
+    const top = window.scrollY + element.getBoundingClientRect().top - 24;
+    window.scrollTo(0, Math.max(0, top));
+  });
+};
+
+const assertTarotAcceptanceRequests = (requests, expected) => {
+  if (
+    requests.sessionStarts !== 1 ||
+    requests.readingStarts !== 1 ||
+    requests.interpretationStarts !== expected.interpretationStarts ||
+    requests.interpretationGets !== 1 ||
+    requests.unexpected.length > 0
+  ) {
+    throw new Error(`Tarot acceptance request ledger failed: ${JSON.stringify(requests)}`);
+  }
+  if (
+    requests.interpretationOperationIds.length !== expected.interpretationStarts ||
+    requests.interpretationOperationIds.some(
+      (operationId) =>
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(operationId),
+    ) ||
+    new Set(requests.interpretationOperationIds).size !== 1
+  ) {
+    throw new Error("Tarot acceptance did not preserve one UUID-v4 interpretation operation.");
+  }
+};
+
+const runTarotAcceptance = async (browser, origin, browserFailures) => {
+  await mkdir(tarotAcceptanceArtifactDirectory, { recursive: true });
+  let reviewedContrastNodes = 0;
+
+  const oneCardContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 1000, width: 1440 },
+  });
+  const oneCardPage = await oneCardContext.newPage();
+  await attachBrowserBoundary(oneCardContext, oneCardPage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+    allowInterpretationUnavailable: true,
+  });
+  const oneCardRequests = await installTarotAcceptanceRoutes(oneCardPage, {
+    failFirstInterpretationStart: true,
+    finalStatus: "verified",
+    readingType: "one_card",
+  });
+  try {
+    await gotoReviewedPage(oneCardPage, `${origin}/en/tarot/one-card`, "acceptance:one-card");
+    await oneCardPage.getByRole("radio", { name: "Open reflection" }).click();
+    await oneCardPage.getByRole("button", { name: "Draw one card" }).click();
+    await oneCardPage.getByRole("button", { name: "Reveal my card" }).click();
+    const oneCardInterpretationStart = oneCardPage.getByRole("button", {
+      name: "Explore the deeper interpretation",
+    });
+    await oneCardInterpretationStart.waitFor({ state: "visible" });
+    if (oneCardRequests.interpretationStarts !== 0) {
+      throw new Error("One-card interpretation started before explicit consent.");
+    }
+    await oneCardInterpretationStart.click();
+    await oneCardPage
+      .locator('section[aria-label="The interpretation could not be completed"]')
+      .waitFor({ state: "visible" });
+    if ((await oneCardPage.getByText("PRIVATE_PROBLEM_CANARY", { exact: true }).count()) !== 0) {
+      throw new Error("One-card failure leaked untrusted Problem Details text.");
+    }
+    await oneCardPage.getByRole("button", { name: "Try the same request again" }).click();
+    const oneCardProcessing = oneCardPage
+      .getByRole("status")
+      .filter({ hasText: "Preparing and checking the interpretation" });
+    await oneCardProcessing.waitFor({ state: "visible" });
+    await oneCardRequests.waitForInterpretationGet();
+    if (
+      (await oneCardPage
+        .getByRole("heading", { name: tarotAcceptanceInterpretationOutput.title })
+        .count()) !== 0
+    ) {
+      throw new Error("One-card processing displayed final interpretation text too early.");
+    }
+    const oneCardPanel = oneCardPage.locator(".principles-section").last();
+    await scrollToElementTop(oneCardPanel);
+    await oneCardPage.screenshot({
+      path: path.join(
+        tarotAcceptanceArtifactDirectory,
+        "rituvia-one-card-processing-1440x1000.png",
+      ),
+    });
+    oneCardRequests.releaseInterpretationGet();
+    const oneCardFinalHeading = oneCardPage.getByRole("heading", {
+      name: tarotAcceptanceInterpretationOutput.title,
+    });
+    await oneCardFinalHeading.waitFor({ state: "visible" });
+    await oneCardPage
+      .getByText("AI-generated interpretation · independently checked", { exact: true })
+      .waitFor({ state: "visible" });
+    await oneCardPage
+      .getByText("Symbolic reflection, not professional advice.", { exact: true })
+      .first()
+      .waitFor({ state: "visible" });
+    const oneCardArticle = oneCardPage.locator("article").filter({ has: oneCardFinalHeading });
+    if (!(await oneCardArticle.evaluate((article) => article === document.activeElement))) {
+      throw new Error("One-card verified interpretation did not receive focus.");
+    }
+    assertTarotAcceptanceRequests(oneCardRequests, { interpretationStarts: 2 });
+    await assertLayout(oneCardPage, "acceptance:one-card:desktop");
+    await assertTouchTargets(oneCardPage, "acceptance:one-card:desktop");
+    reviewedContrastNodes += await assertAxe(oneCardPage, "acceptance:one-card");
+    await scrollToElementTop(oneCardPanel);
+    await oneCardPage.screenshot({
+      path: path.join(tarotAcceptanceArtifactDirectory, "rituvia-one-card-verified-1440x1000.png"),
+    });
+    await oneCardPage.setViewportSize({ height: 844, width: 390 });
+    await assertLayout(oneCardPage, "acceptance:one-card:mobile");
+    await assertTouchTargets(oneCardPage, "acceptance:one-card:mobile");
+  } finally {
+    oneCardRequests.releaseInterpretationGet();
+    await oneCardContext.close();
+  }
+
+  const threeCardContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 844, width: 390 },
+  });
+  const threeCardPage = await threeCardContext.newPage();
+  await attachBrowserBoundary(threeCardContext, threeCardPage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+  });
+  const threeCardRequests = await installTarotAcceptanceRoutes(threeCardPage, {
+    finalStatus: "reviewed_fallback",
+    readingType: "three_card",
+  });
+  try {
+    await gotoReviewedPage(threeCardPage, `${origin}/en/tarot/three-card`, "acceptance:three-card");
+    await threeCardPage.getByRole("radio", { name: "Open reflection" }).click();
+    await threeCardPage.getByRole("button", { name: "Draw three cards" }).click();
+    await threeCardPage.getByRole("button", { name: "Reveal the three cards" }).click();
+    if ((await threeCardPage.locator("ol.tarot-result-cards > li").count()) !== 3) {
+      throw new Error("Three-card acceptance did not reveal exactly three ordered cards.");
+    }
+    await threeCardContext.setOffline(true);
+    await threeCardPage.getByRole("button", { name: "Explore the deeper interpretation" }).click();
+    await threeCardPage
+      .locator('section[aria-label="You appear to be offline"]')
+      .waitFor({ state: "visible" });
+    if (threeCardRequests.interpretationStarts !== 0) {
+      throw new Error("Three-card offline preflight sent an interpretation request.");
+    }
+    await threeCardContext.setOffline(false);
+    await threeCardPage.waitForFunction(() => navigator.onLine);
+    await threeCardPage.getByRole("button", { name: "Try the same request again" }).click();
+    const threeCardProcessing = threeCardPage
+      .getByRole("status")
+      .filter({ hasText: "Preparing and checking the interpretation" });
+    await threeCardProcessing.waitFor({ state: "visible" });
+    await threeCardRequests.waitForInterpretationGet();
+    if (
+      (await threeCardPage
+        .getByRole("heading", { name: tarotAcceptanceInterpretationOutput.title })
+        .count()) !== 0
+    ) {
+      throw new Error("Three-card processing displayed final fallback text too early.");
+    }
+    threeCardRequests.releaseInterpretationGet();
+    const threeCardFinalHeading = threeCardPage.getByRole("heading", {
+      name: tarotAcceptanceInterpretationOutput.title,
+    });
+    await threeCardFinalHeading.waitFor({ state: "visible" });
+    await threeCardPage
+      .getByText("Reviewed non-AI fallback", { exact: true })
+      .waitFor({ state: "visible" });
+    await threeCardPage
+      .getByText(
+        "The AI draft was not used. This bounded alternative comes from reviewed content.",
+        {
+          exact: true,
+        },
+      )
+      .waitFor({ state: "visible" });
+    if (
+      (await threeCardPage
+        .getByText("AI-generated interpretation · independently checked", { exact: true })
+        .count()) !== 0
+    ) {
+      throw new Error("Three-card reviewed fallback claimed AI verification.");
+    }
+    assertTarotAcceptanceRequests(threeCardRequests, { interpretationStarts: 1 });
+    await assertLayout(threeCardPage, "acceptance:three-card:mobile");
+    await assertTouchTargets(threeCardPage, "acceptance:three-card:mobile");
+    reviewedContrastNodes += await assertAxe(threeCardPage, "acceptance:three-card");
+    const threeCardPanel = threeCardPage.locator(".principles-section").last();
+    await scrollToElementTop(threeCardPanel);
+    await threeCardPage.screenshot({
+      path: path.join(tarotAcceptanceArtifactDirectory, "rituvia-three-card-fallback-390x844.png"),
+    });
+  } finally {
+    threeCardRequests.releaseInterpretationGet();
+    await threeCardContext.close();
+  }
+
+  return Object.freeze({ reviewedContrastNodes, scans: 2 });
 };
 
 const run = async () => {
@@ -796,6 +1324,14 @@ const run = async () => {
     );
     await context.close();
 
+    const tarotAcceptance = await runTarotAcceptance(
+      browser,
+      artifactServer.origin,
+      browserFailures,
+    );
+    reviewedContrastNodes += tarotAcceptance.reviewedContrastNodes;
+    scans += tarotAcceptance.scans;
+
     const noJavaScriptContext = await browser.newContext({
       colorScheme: "light",
       javaScriptEnabled: false,
@@ -834,7 +1370,7 @@ const run = async () => {
     throw new Error(`Accessibility browser boundary failed: ${[...new Set(failures)].join(", ")}`);
   }
   console.log(
-    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and ${privateAccessibilitySmokeRoutes.length} private routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
+    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and ${privateAccessibilitySmokeRoutes.length} private routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, explicit tarot interpretation retry/polling/verified/fallback/offline acceptance, 44px targets, dark/reduced-motion and no-JavaScript states, screenshots, and local-only requests.`,
   );
 };
 

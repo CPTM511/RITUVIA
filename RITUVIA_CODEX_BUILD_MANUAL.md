@@ -135,6 +135,7 @@ dist/
 playwright-report/
 test-results/
 .playwright-cli/
+/output/playwright/
 .rituvia-config-boundary-*/
 .local/
 packages/db/src/generated/prisma/
@@ -1028,8 +1029,8 @@ Use this order:
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the safe-off post-generation fact/safety
-verification and append-only owner-scoped persistence RIT-034 slice. M1 RIT-016 and manual
+**Stage:** M3 local implementation is complete through the safe-off private durable-only
+interpretation API, polling, and presentation RIT-035 slice. M1 RIT-016 and manual
 assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains
 owner-gated. Production catalog/prompt/classifier/safety-policy approval and activation, AI
 provider/model activation, and actual indexing remain separately gated.
@@ -1056,7 +1057,15 @@ provider/model activation, and actual indexing remain separately gated.
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
 - One typed four-page crawl inventory drives unique canonical/Open Graph metadata, production-only index polarity, exact end-anchored robots document allows, reviewed render-asset access, and a deterministic sitemap without fabricated `lastmod`; non-production, disabled, unavailable, private, query, spoofed/bare RSC, and unreviewed internal paths remain noindex, private/non-cacheable 404, disallow-all, or absent as appropriate.
 - Fail-closed Web build policy for all four canonical route artifacts, bounded compressed HTML/CSS/JavaScript/icon output, and HTML/CSS fetch surfaces including remote, ambiguous, duplicated, escaped, entity-obfuscated, and unbudgeted resources.
-- A production-artifact Chromium/axe gate for all four public routes plus the private intake, one-card, and three-card routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete forward/reverse keyboard order, native radio behavior, 44px targets, 40% text expansion, test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow, a persistent online/offline/online advisory announcement, and same-origin-only requests; exact gradient/background contrast incompletes are compensated by token-level contrast tests.
+- A production-artifact Chromium/axe gate for all four public routes plus the private intake,
+  one-card, and three-card routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete
+  forward/reverse keyboard order, native radio behavior, 44px targets, 40% text expansion,
+  test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow,
+  a persistent online/offline/online advisory announcement, and same-origin-only requests. Real
+  interpretation acceptance additionally covers explicit start, failure/manual retry, held
+  processing, verified output, offline zero-start/reconnect, reviewed fallback, screenshots, and
+  exact request ledgers; gradient/background contrast incompletes are compensated by token-level
+  contrast tests.
 - Cancellable Worker runtime and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
@@ -1069,8 +1078,8 @@ provider/model activation, and actual indexing remain separately gated.
 - Pure versioned deterministic tarot draw contracts with canonical without-replacement partial Fisher–Yates selection, bounded unbiased uint8 sampling, exact orientation rules, immutable public facts separated from internal audit data, fixed compatibility vectors, and safe replay/projection that require a caller-injected execution verifier.
 - Strict theme-only tarot reading creation with a server-selected exact catalog, operating-system CSPRNG, domain-separated HMAC execution binding, server-derived digests, owner-scoped transactional idempotency and limits, immutable `reading`/`tarot_draw` persistence, historical replay, and verified public-fact projection.
 - Exact no-store/noindex `POST /api/v1/readings/tarot` and owner-scoped `GET /api/v1/readings/{uuid}` contracts with bounded input, safe Problem Details, indistinguishable unknown/cross-owner reads, verified V2 reviewed-content presentation, and a hard unavailable runtime until an eligible production catalog is separately approved and configured.
-- Private noindex/no-store `/en/tarot/one-card` with ten theme-only choices, separate session/reading idempotency, explicit reveal without redraw, strict fact/presentation parsing, reviewed limitation/question/action output, complete calm failure states, and no AI, raw-question, analytics, account, payment, share, or storage surface.
-- Private noindex/no-store `/en/tarot/three-card` with the same theme-only privacy boundary and calm state machine, one fixed server-authoritative draw, exact unique Situation/Action/Possibility order, strict fact/presentation parsing, explicit reveal without redraw, reviewed per-position limitations/questions/actions, and no AI, raw-question, analytics, account, payment, share, or storage surface.
+- Private noindex/no-store `/en/tarot/one-card` with ten theme-only choices, separate session/reading idempotency, explicit reveal without redraw, strict fact/presentation parsing, reviewed limitation/question/action output, complete calm failure states, and no automatic or activated AI, raw-question, analytics, account, payment, share, or result-text storage surface.
+- Private noindex/no-store `/en/tarot/three-card` with the same theme-only privacy boundary and calm state machine, one fixed server-authoritative draw, exact unique Situation/Action/Possibility order, strict fact/presentation parsing, explicit reveal without redraw, reviewed per-position limitations/questions/actions, and no automatic or activated AI, raw-question, analytics, account, payment, share, or result-text storage surface.
 - One application/database-matched tarot quota authority with a three-per-hour local acceptance
   baseline, database-clock atomic enforcement, replay-before-quota behavior, bounded `Retry-After`,
   no immediate limit retry, explicit new-reflection transitions, and previous-result preservation.
@@ -1120,13 +1129,22 @@ provider/model activation, and actual indexing remain separately gated.
   is inserted atomically with parent finalization; keyed-HMAC replay validation and pending-output
   non-disclosure fail closed, and a historical pending row without a child remains non-displayable
   with no recovery API.
+- Exact private owner-bound `POST/GET /api/v1/readings/{uuid}/interpretation` with explicit
+  UUID-idempotent start, side-effect-free status polling, strict 128 KiB four-arm response,
+  final-only redacted projection, and indistinguishable private failures. The shared lazy-loaded
+  one-/three-card panel provides an explicit CTA, cancellation, foreground-only eight-poll bound,
+  stale-response rejection, same-operation manual retry, localized accessible states, verified-AI
+  versus reviewed-fallback labels, and the exact safety boundary; production composition remains
+  hard safe-off with no provider/model/reviewer/key/network/paid-inference capability.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 1,079 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 1,190 Vitest tests, real local and CI-shaped PostgreSQL
+  integration, dependency audit, and production-build gates with behavioral, HTTP,
+  shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -1144,8 +1162,8 @@ provider/model activation, and actual indexing remain separately gated.
 - Payment-provider written underwriting approval.
 - Astrology calculation commercial-license decision.
 - A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
-- An approved production tarot catalog, production runtime activation, AI provider/model/reviewer
-  activation, interpretation API/UI,
+- An approved production tarot catalog, production-composed/activated interpretation runtime, AI
+  provider/model/reviewer activation,
   intention/ritual continuation, report triage/admin workflow, or separate creation-versus-history
   operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
   cannot activate the RIT-024/RIT-027 runtime.
@@ -1175,10 +1193,10 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-034 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
-with zero warnings, strict type checking across all nine workspace tasks, 1,079 unit/contract tests
-in 68 files, 149 focused AI assertions, 27 focused Web-composition tests, the 179-file/nine-module
-architecture gate, all eight immutable-migration checks, a 411-file tracked/unignored secret scan,
+The RIT-035 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
+with zero warnings, strict type checking across all nine workspace tasks, 1,190 unit/contract tests
+in 74 files, 233 focused interpretation/API/client assertions, the 191-file/nine-module architecture
+gate, all eight immutable-migration checks, and a 424-file tracked/unignored secret scan
 and all nine build tasks pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum
 evidence.
@@ -1191,7 +1209,15 @@ pending provider output, historical timeout-zero pending non-displayability with
 recovery API, exact least privilege, privacy canaries, and non-empty logical dump/restore. The
 unrelated PostgreSQL instances on ports 55432 and 55439 were not connected to, stopped, or modified.
 
-The build verifier checks 79 artifacts and narrowed exports, including exact UI stylesheet parity,
+RIT-035 changes no database code, schema, migration, role, or persistence contract. Its fresh local
+database-foundation rerun remained blocked by the unrelated process on the repository-fixed port
+55432 and did not connect to or modify that process. A separate disposable PostgreSQL 17 probe on
+free port 5432 reached the existing CI schema-drift step after migration/seed work, then correctly
+failed because several Prisma relations do not map the custom foreign-key names authored by prior
+migrations. That pre-existing CI-contract gap is outside this frontend/API slice and remains part of
+the blocked RIT-004 closeout; current hosted/CI-shaped database-green status is not claimed here.
+
+The build verifier checks 80 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
@@ -1199,11 +1225,12 @@ the compiled AI Tarot input/output fixture, provider/version exports, published-
 prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation, exact allowed
 authorization binding, non-exported authorization issuers, provider-neutral generation and
 authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
-atomic interpretation claim/finalization/verification persistence, and the icon. Maximum Web output is 6,622 B
-gzip HTML, 6,126 B gzip CSS, 225,894 B gzip JavaScript, and 356 B raw icon.
+atomic interpretation claim/finalization/verification persistence, the private interpretation route,
+and the icon. Maximum Web output is 7,403 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
+and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 179 active source files across nine modules and keeps module,
+The architecture verifier audits 191 active source files across nine modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
@@ -1286,15 +1313,27 @@ and 27 Web-composition tests, with the PostgreSQL and full repository evidence d
 production provider, reviewer, model, SDK, key, network request, paid inference, API/UI, payment,
 deployment, or public launch is added.
 
+RIT-035 adds only the private durable-delivery boundary: an explicit owner-bound idempotent POST
+starts or resumes work, a separate GET can only observe state, and the browser accepts no
+provisional prose. A strict redacted DTO exposes processing/failed or durable verified/reviewed-
+fallback output; the shared client panel enforces one in-flight request, abortable foreground
+polling, an eight-poll ceiling, stale-response denial, cancellation, and same-operation manual
+retry. Focused coverage passes 233 assertions and the full repository/build/accessibility gates
+described above pass. Runtime adapters remain hard unavailable, so no provider, reviewer, model,
+SDK, key, network request, paid inference, catalog/content/safety activation, payment, deployment,
+or public launch is added.
+
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
 isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
 mobile, and same-origin coverage. Fresh production-artifact acceptance passes all four public routes
-plus the private intake, one-card, and three-card pages with 29 blocking axe scans, exact selector-level review for 276 gradient/background
-`color-contrast` incomplete nodes plus independent token contrast tests, complete forward/reverse
-focus, skip-link transfer, 44px targets, 40% expansion, desktop/mobile RTL, dark/reduced-motion/no-JS
-states, a persistent online/offline/online advisory announcement, and local-only requests. CLI Playwright also
-verifies all four synthetic state variants at 320px, RTL, and dark mode with zero console errors.
+plus the private intake, one-card, and three-card pages with 31 blocking Axe scans, exact
+selector-level review for 306 gradient/background `color-contrast` incomplete nodes plus independent
+token contrast tests, complete forward/reverse focus, skip-link transfer, 44px targets, 40%
+expansion, desktop/mobile RTL, dark/reduced-motion/no-JS states, a persistent
+online/offline/online advisory announcement, exact interpretation retry/polling/verified/fallback/
+offline scenarios, screenshots, and local-only requests. CLI Playwright also verifies all four
+synthetic state variants at 320px, RTL, and dark mode with zero console errors.
 
 The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
 seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,
@@ -1816,6 +1855,18 @@ effective until this register links it. Do not rewrite historical rationale; sup
   weaken fencing, authenticated replay, privacy, and append-only guarantees.
 - **Date:** 2026-07-18
 
+### [D-042 — Private durable-only tarot interpretation polling boundary](records/decisions/D-042.md)
+
+- **Decision:** Start interpretation only through an explicit owner-bound UUID-idempotent POST;
+  poll status through a separate side-effect-free GET; expose only strict non-displayable
+  processing/failure states or a durable verified/reviewed-fallback projection; and bound the
+  foreground client to cancellation, eight polls, and same-operation manual retry while runtime
+  composition remains hard safe-off.
+- **Reason:** Browser delivery must never disclose provisional provider prose, turn a read into
+  paid work, duplicate inference, leak internal provenance, or imply that an unavailable provider
+  runtime is active.
+- **Date:** 2026-07-18
+
 ---
 
 # File: `ROADMAP.md`
@@ -2102,8 +2153,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-032 | M3        |       P0 | Done    | Implement pre-generation high-stakes and crisis policy                   | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                            |
 | RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                 | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                      |
 | RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                        | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.            |
-| RIT-035 | M3        |       P0 | Ready   | Build tarot AI interpretation streaming/polling UX                        | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                             |
-| RIT-036 | M3        |       P0 | Planned | Create AI fixed regression and adversarial eval suite                     | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                |
+| RIT-035 | M3        |       P0 | Done    | Build tarot AI interpretation streaming/polling UX                        | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                             |
+| RIT-036 | M3        |       P0 | Ready   | Create AI fixed regression and adversarial eval suite                     | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                |
 | RIT-037 | M3        |       P1 | Planned | Add interpretation regeneration/report/version history                    | RIT-035,RIT-036                         | backend       | Regeneration is limited, version-linked, reportable, and does not alter facts.                                    |
 | RIT-038 | M3        |       P1 | Planned | Add AI cost, latency, fallback, and safety dashboards                     | RIT-006,RIT-033                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                    |
 | RIT-040 | M4        |       P0 | Planned | Implement intention domain and composer                                   | RIT-025                                 | product       | User-owned intention/action, coercive-control reframing, privacy, edit/archive/delete pass.                       |
@@ -2351,6 +2402,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-039 | Fail-closed pre-generation safety and request-bound authorization | [decisions/D-039.md](./decisions/D-039.md) |
 | Decision | D-040 | Provider-neutral generation, authorized fallback, and fenced persistence | [decisions/D-040.md](./decisions/D-040.md) |
 | Decision | D-041 | Monotonic post-generation verification and append-only safe results | [decisions/D-041.md](./decisions/D-041.md) |
+| Decision | D-042 | Private durable-only tarot interpretation polling boundary | [decisions/D-042.md](./decisions/D-042.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2372,6 +2424,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-032 | Pre-generation high-stakes and crisis policy | [tasks/RIT-032.md](./tasks/RIT-032.md) |
 | Task | RIT-033 | Structured generation, validation, fallback, and persistence | [tasks/RIT-033.md](./tasks/RIT-033.md) |
 | Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
+| Task | RIT-035 | Tarot AI interpretation polling UX | [tasks/RIT-035.md](./tasks/RIT-035.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 

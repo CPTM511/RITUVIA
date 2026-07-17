@@ -20,6 +20,7 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/api/v1/readings/tarot/route.js",
   "apps/web/.next/server/app/api/v1/readings/[readingId]/route.js",
   "apps/web/.next/server/app/api/v1/readings/[readingId]/report/route.js",
+  "apps/web/.next/server/app/api/v1/readings/[readingId]/interpretation/route.js",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",

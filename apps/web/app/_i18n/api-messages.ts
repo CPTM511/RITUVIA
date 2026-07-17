@@ -105,3 +105,31 @@ export const tarotReadingReportApiMessages = Object.freeze({
     title: "The reading report is unavailable",
   }),
 });
+
+export const tarotInterpretationApiMessages = Object.freeze({
+  conflict: Object.freeze({
+    detail: "Resume the existing interpretation request for this reading.",
+    title: "This interpretation request conflicts",
+  }),
+  invalidIdempotency: Object.freeze({
+    detail: "Send the same valid random idempotency key when retrying this request.",
+    title: "The interpretation request is invalid",
+  }),
+  invalidRequest: Object.freeze({
+    detail: "Send one empty same-origin request from this site.",
+    title: "The interpretation request was not accepted",
+  }),
+  permissionDenied: Object.freeze({
+    detail: "An enhanced interpretation is not available for this reading.",
+    title: "The interpretation is not available",
+  }),
+  rateLimited: Object.freeze({
+    detail: "Pause before checking this interpretation again.",
+    title: "Interpretation requests are temporarily limited",
+  }),
+  unavailable: Object.freeze({
+    detail:
+      "The enhanced interpretation is temporarily unavailable. The fixed reading remains available.",
+    title: "The interpretation could not be completed",
+  }),
+});
