@@ -1,8 +1,34 @@
 import { readFileSync } from "node:fs";
+import ts from "typescript";
 
 import { describe, expect, it } from "vitest";
 
 const read = (path: string): string => readFileSync(path, "utf8");
+
+const jsxCopyFindings = (source: string): string[] => {
+  const sourceFile = ts.createSourceFile(
+    "contract.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const findings: string[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isJsxText(node) && /[A-Za-z]/u.test(node.text)) findings.push(node.text.trim());
+    if (
+      ts.isJsxAttribute(node) &&
+      ["aria-label", "placeholder", "title"].includes(node.name.getText(sourceFile)) &&
+      node.initializer !== undefined &&
+      ts.isStringLiteral(node.initializer)
+    ) {
+      findings.push(node.initializer.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return findings;
+};
 
 describe("Web shell repository contract", () => {
   it("keeps production copy out of route and component JSX literals", () => {
@@ -10,17 +36,35 @@ describe("Web shell repository contract", () => {
       "apps/web/app/_components/site-shell.tsx",
       "apps/web/app/_components/public-site-frame.tsx",
       "apps/web/app/_components/public-information-page.tsx",
+      "apps/web/app/_components/question-intake-form.tsx",
     ]
       .map(read)
       .join("\n");
-    const route = ["apps/web/app/[locale]/page.tsx", "apps/web/app/[locale]/[page]/page.tsx"]
+    const route = [
+      "apps/web/app/[locale]/page.tsx",
+      "apps/web/app/[locale]/[page]/page.tsx",
+      "apps/web/app/[locale]/intake/page.tsx",
+    ]
       .map(read)
       .join("\n");
 
-    expect(component).not.toMatch(/>\s*[A-Za-z][^<{]*</u);
-    expect(component).not.toMatch(/\b(?:aria-label|placeholder|title)="[^"]+"/u);
-    expect(route).not.toMatch(/>\s*[A-Za-z][^<{]*</u);
+    expect(jsxCopyFindings(component)).toEqual([]);
+    expect(jsxCopyFindings(route)).toEqual([]);
     expect(route).not.toContain("RITUVIA");
+  });
+
+  it("keeps private question text out of browser persistence, URLs, analytics, and logs", () => {
+    const form = read("apps/web/app/_components/question-intake-form.tsx");
+    const route = read("apps/web/app/api/v1/intake/evaluate/route.ts");
+    const source = `${form}\n${route}`;
+
+    expect(form).toContain('method="post"');
+    expect(form).toContain('cache: "no-store"');
+    expect(form).not.toMatch(
+      /\b(?:localStorage|sessionStorage|indexedDB|history\.|URLSearchParams)\b/u,
+    );
+    expect(source).not.toMatch(/\b(?:console\.|analytics|captureException|recording)\b/iu);
+    expect(route).not.toContain("riskCategories");
   });
 
   it("locks explicit redirect, unsupported-locale failure, and server rendering", () => {

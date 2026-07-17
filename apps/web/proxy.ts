@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
 import { loadPublicShellState } from "./server/public-shell-state";
+import { loadQuestionIntakeAvailability } from "./server/question-intake-state";
 import { getWebRuntimeConfiguration } from "./config/server";
 import {
   isIndexablePublicPagePathname,
@@ -10,6 +11,7 @@ import {
   isPublicShellPathname,
 } from "./app/_i18n/public-routes";
 import { createRobotsText, createSitemapXml, type PublicShellState } from "./app/_i18n/seo";
+import { localeQuestionIntakePath } from "./app/_i18n/routing";
 
 const isUngatedInfrastructureRequest = (
   pathname: string,
@@ -40,6 +42,8 @@ const shellContentSecurityPolicy = [
 
 const noIndexDirective = "noindex, nofollow, noarchive";
 const anonymousSessionApiPathname = "/api/v1/anonymous/session";
+const questionIntakeApiPathname = "/api/v1/intake/evaluate";
+const questionIntakePagePathname = localeQuestionIntakePath("en");
 
 const isSafeReadMethod = (method: string): boolean => method === "GET" || method === "HEAD";
 
@@ -70,6 +74,11 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-segment-prefetch") ||
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
+
+const isQuestionIntakePagePathname = (pathname: string): boolean =>
+  pathname === questionIntakePagePathname ||
+  pathname === `${questionIntakePagePathname}.rsc` ||
+  pathname.startsWith(`${questionIntakePagePathname}.segments/`);
 
 const discoveryResponse = (
   request: NextRequest,
@@ -116,8 +125,15 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const discovery = isPublicDiscoveryPathname(pathname);
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
   const anonymousSessionApi = pathname === anonymousSessionApiPathname;
+  const questionIntakeApi = pathname === questionIntakeApiPathname;
+  const questionIntakeDocument = isQuestionIntakePagePathname(pathname);
   const reviewedAnonymousSessionRequest =
     anonymousSessionApi &&
+    request.method === "POST" &&
+    request.nextUrl.search === "" &&
+    !frameworkRepresentation;
+  const reviewedQuestionIntakeRequest =
+    questionIntakeApi &&
     request.method === "POST" &&
     request.nextUrl.search === "" &&
     !frameworkRepresentation;
@@ -126,6 +142,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const invalidRequest =
     !infrastructure &&
     !reviewedAnonymousSessionRequest &&
+    !reviewedQuestionIntakeRequest &&
     (unreviewedFrameworkRepresentation ||
       !isSafeReadMethod(request.method) ||
       (request.nextUrl.search !== "" && !hasOnlyReviewedFrameworkQuery(request)));
@@ -133,10 +150,23 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !invalidRequest &&
     (publicDocument ||
       reviewedAnonymousSessionRequest ||
+      reviewedQuestionIntakeRequest ||
+      questionIntakeDocument ||
       (discovery && configuration.deploymentEnvironment === "production"));
   const shellState = shouldLoadShellState ? await loadPublicShellState() : null;
-  const unsupported = !infrastructure && !publicDocument && !discovery && !anonymousSessionApi;
+  const intakeAvailability =
+    !invalidRequest && (questionIntakeDocument || reviewedQuestionIntakeRequest)
+      ? loadQuestionIntakeAvailability()
+      : "disabled";
+  const unsupported =
+    !infrastructure &&
+    !publicDocument &&
+    !discovery &&
+    !anonymousSessionApi &&
+    !questionIntakeApi &&
+    !questionIntakeDocument;
   const enabledDocument = publicDocument && shellState === "enabled";
+  const enabledQuestionIntake = shellState === "enabled" && intakeAvailability === "enabled";
   const response =
     invalidRequest || unsupported
       ? new NextResponse(null, { status: 404 })
@@ -144,6 +174,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
         ? discoveryResponse(request, shellState ?? "disabled")
         : infrastructure ||
             enabledDocument ||
+            (questionIntakeDocument && enabledQuestionIntake) ||
+            (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
             (reviewedAnonymousSessionRequest && shellState === "enabled")
           ? NextResponse.next({ request: { headers: downstreamHeaders } })
           : new NextResponse(null, { status: 404 });
@@ -165,7 +197,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   if (!indexableRepresentation) {
     response.headers.set("x-robots-tag", noIndexDirective);
   }
-  if (anonymousSessionApi) {
+  if (anonymousSessionApi || questionIntakeApi || questionIntakeDocument) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   } else if (discovery || response.status === 404) {
     response.headers.set("cache-control", "no-store, max-age=0");

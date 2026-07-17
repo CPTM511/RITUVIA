@@ -42,6 +42,7 @@ export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
   ...anonymousSessionEnvironmentVariables,
+  "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
 ] as const);
 
 export type DeploymentEnvironment = "local" | "preview" | "production" | "staging";
@@ -59,6 +60,7 @@ export type ServerConfiguration = Readonly<{
   client: ClientConfiguration;
   databaseUrl: string | undefined;
   deploymentEnvironment: DeploymentEnvironment;
+  questionIntakeActivationReference: string | undefined;
 }>;
 
 export type AnonymousSessionPolicyConfiguration = Readonly<{
@@ -130,6 +132,11 @@ const serverEnvironmentSchema = z.object({
     .regex(/^[1-9][0-9]{0,7}$/u)
     .transform(Number)
     .pipe(z.number().int().min(1).max(34_560_000))
+    .optional(),
+  RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: z
+    .string()
+    .regex(/^(?:test|own-[0-9]{3})[._-][a-z0-9]+(?:[._-][a-z0-9]+)*$/u)
+    .max(120)
     .optional(),
 });
 
@@ -307,7 +314,21 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS,
     ),
+    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: normalizeEnvironmentValue(
+      environment.RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE,
+    ),
   });
+
+  const questionIntakeActivationReference = server.RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE;
+  if (
+    build.deploymentEnvironment === "production" &&
+    questionIntakeActivationReference !== undefined &&
+    !questionIntakeActivationReference.startsWith("own-009.")
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE" },
+    ]);
+  }
 
   return Object.freeze({
     anonymousSessionPolicy: parseAnonymousSessionPolicy(server, build.deploymentEnvironment),
@@ -315,5 +336,6 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     client: build.client,
     databaseUrl: server.DATABASE_URL,
     deploymentEnvironment: build.deploymentEnvironment,
+    questionIntakeActivationReference,
   });
 };

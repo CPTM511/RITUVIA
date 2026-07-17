@@ -10,6 +10,7 @@ import {
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
+  publicAccessibilitySmokeRoutes,
   resolveAccessibilityArtifactRequest,
 } from "../apps/web/test/accessibility-policy.mjs";
 import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
@@ -77,6 +78,19 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".information-introduction"]),
   ]),
 });
+const intakeContrastTargets = Object.freeze([
+  Object.freeze([".brand-link"]),
+  Object.freeze(['.navigation-link[href="/en"]']),
+  Object.freeze(['.navigation-link[href$="methodology"]']),
+  Object.freeze(['.navigation-link[href$="safety"]']),
+  Object.freeze(['.navigation-link[href$="privacy"]']),
+  Object.freeze([".locale-label"]),
+  Object.freeze([".eyebrow"]),
+  Object.freeze(["h1"]),
+  Object.freeze([".question-intake-introduction"]),
+  Object.freeze([".question-intake-boundary"]),
+  Object.freeze([".question-intake-privacy"]),
+]);
 const contrastScanStates = Object.freeze(["dark", "english", "expanded", "rtl"]);
 const reviewedContrastTargetsByScan = new Map([
   ...contrastScanStates.map((state) => [`${state}:/en`, homeContrastTargets]),
@@ -84,6 +98,7 @@ const reviewedContrastTargetsByScan = new Map([
   ...Object.entries(informationContrastTargets).flatMap(([pathname, targets]) =>
     contrastScanStates.map((state) => [`${state}:${pathname}`, targets]),
   ),
+  ...contrastScanStates.map((state) => [`${state}:/en/intake`, intakeContrastTargets]),
 ]);
 
 const loadReviewedArtifacts = async () => {
@@ -390,13 +405,20 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
     window.scrollTo(0, 0);
   });
   await page.evaluate(() => {
-    const focusable = [
+    const candidates = [
       ...document.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
-    ].filter((element) => {
+    ];
+    const seenRadioGroups = new Set();
+    const focusable = candidates.filter((element) => {
       const style = getComputedStyle(element);
-      return style.display !== "none" && style.visibility !== "hidden";
+      if (style.display === "none" || style.visibility === "hidden") return false;
+      if (!(element instanceof HTMLInputElement) || element.type !== "radio") return true;
+      const key = `${element.form?.id ?? ""}:${element.name}`;
+      if (seenRadioGroups.has(key)) return false;
+      seenRadioGroups.add(key);
+      return true;
     });
     focusable.forEach((element, index) => {
       element.setAttribute("data-rituvia-smoke-focus-index", String(index));
@@ -509,7 +531,9 @@ const assertRtlGeometry = async (page, label) => {
   const geometry = await page.evaluate(() => {
     const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
     const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
-    const boundary = document.querySelector(".hero-boundary, .information-status");
+    const boundary = document.querySelector(
+      ".hero-boundary, .information-status, .question-intake-boundary",
+    );
     const boundaryStyle = boundary === null ? null : getComputedStyle(boundary);
     return {
       actionsCenter: actions === undefined ? null : actions.left + actions.width / 2,
@@ -536,6 +560,26 @@ const assertRtlGeometry = async (page, label) => {
     geometry.actionsCenter >= geometry.viewportCenter
   ) {
     throw new Error(`${label} did not mirror the header geometry.`);
+  }
+};
+
+const assertQuestionIntakeRadioKeyboard = async (page) => {
+  const first = page.locator('input[name="theme-code"]').first();
+  const second = page.locator('input[name="theme-code"]').nth(1);
+  await first.focus();
+  await page.keyboard.press("ArrowDown");
+  if (
+    !(await second.isChecked()) ||
+    !(await second.evaluate((input) => input === document.activeElement))
+  ) {
+    throw new Error("english:/en/intake did not preserve native radio arrow-key behavior.");
+  }
+  await page.keyboard.press("ArrowUp");
+  if (
+    !(await first.isChecked()) ||
+    !(await first.evaluate((input) => input === document.activeElement))
+  ) {
+    throw new Error("english:/en/intake did not restore the previous radio with ArrowUp.");
   }
 };
 
@@ -591,8 +635,10 @@ const gotoReviewedPage = async (page, url, label) => {
 
 const run = async () => {
   const build = await verifyWebShellBuild(repositoryRoot);
-  if (JSON.stringify(build.routes) !== JSON.stringify(accessibilitySmokeRoutes)) {
-    throw new Error("Accessibility route inventory differs from the reviewed Web build inventory.");
+  if (JSON.stringify(build.routes) !== JSON.stringify(publicAccessibilitySmokeRoutes)) {
+    throw new Error(
+      "Public accessibility inventory differs from the reviewed Web build inventory.",
+    );
   }
   const artifacts = await loadReviewedArtifacts();
   const artifactServer = await createArtifactServer(artifacts);
@@ -623,6 +669,7 @@ const run = async () => {
       reviewedContrastNodes += await assertAxe(page, label);
       scans += 1;
       await assertKeyboard(page, label);
+      if (pathname === "/en/intake") await assertQuestionIntakeRadioKeyboard(page);
 
       await page.setViewportSize({ height: 900, width: 320 });
       await gotoReviewedPage(page, `${artifactServer.origin}${pathname}`, `mobile:${pathname}`);
@@ -761,7 +808,7 @@ const run = async () => {
     throw new Error(`Accessibility browser boundary failed: ${[...new Set(failures)].join(", ")}`);
   }
   console.log(
-    `Verified ${accessibilitySmokeRoutes.length} public routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
+    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and one private intake route with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
   );
 };
 

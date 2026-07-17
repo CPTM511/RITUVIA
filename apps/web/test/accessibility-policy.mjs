@@ -1,9 +1,23 @@
-const routeArtifacts = Object.freeze([
+const publicRouteArtifacts = Object.freeze([
   Object.freeze({ artifact: "en", pathname: "/en" }),
   Object.freeze({ artifact: "en/methodology", pathname: "/en/methodology" }),
   Object.freeze({ artifact: "en/safety", pathname: "/en/safety" }),
   Object.freeze({ artifact: "en/privacy", pathname: "/en/privacy" }),
 ]);
+
+const privateRouteArtifacts = Object.freeze([
+  Object.freeze({ artifact: "en/intake", pathname: "/en/intake" }),
+]);
+
+const routeArtifacts = Object.freeze([...publicRouteArtifacts, ...privateRouteArtifacts]);
+
+export const publicAccessibilitySmokeRoutes = Object.freeze(
+  publicRouteArtifacts.map(({ pathname }) => pathname),
+);
+
+export const privateAccessibilitySmokeRoutes = Object.freeze(
+  privateRouteArtifacts.map(({ pathname }) => pathname),
+);
 
 export const accessibilitySmokeRoutes = Object.freeze(
   routeArtifacts.map(({ pathname }) => pathname),

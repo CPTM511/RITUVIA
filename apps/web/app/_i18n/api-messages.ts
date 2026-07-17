@@ -20,3 +20,22 @@ export const anonymousSessionApiMessages = Object.freeze({
     title: "A private session could not be started",
   }),
 });
+
+export const questionIntakeApiMessages = Object.freeze({
+  invalidBody: Object.freeze({
+    detail: "Send one valid, bounded English question-intake document.",
+    title: "The question intake is invalid",
+  }),
+  invalidRequest: Object.freeze({
+    detail: "Send one same-origin JSON request from this site.",
+    title: "The question intake request was not accepted",
+  }),
+  tooLarge: Object.freeze({
+    detail: "Shorten the question and try again.",
+    title: "The question intake is too large",
+  }),
+  unavailable: Object.freeze({
+    detail: "The private question check is temporarily unavailable. Try again manually.",
+    title: "The question intake is unavailable",
+  }),
+});

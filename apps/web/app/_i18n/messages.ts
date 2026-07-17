@@ -130,7 +130,7 @@ const englishMessages = {
     footer: {
       navigationLabel: "Public information navigation",
       foundationNote:
-        "No readings, AI interpretations, accounts, purchases, or rituals are available in this foundation yet.",
+        "No readings, AI interpretations, accounts, purchases, or rituals are available yet. A separately gated intake preview does not create or save a reading.",
     },
   },
   home: {
@@ -191,7 +191,7 @@ const englishMessages = {
       eyebrow: "Trust before novelty",
       title: "Grounded in clarity, agency, and completion.",
       introduction:
-        "The public foundation sets expectations before any personal experience is available.",
+        "The public foundation sets expectations before any symbolic reading is available.",
       items: [
         {
           title: "Your agency stays central",
@@ -214,14 +214,14 @@ const englishMessages = {
       eyebrow: "Trust starts in public",
       title: "Understand the boundaries before sharing anything personal.",
       description:
-        "These public pages explain the planned method, safety limits, and privacy design. This foundation asks for no personal question, journal entry, prayer, birth detail, account, or payment.",
+        "These public pages ask for no personal content. A separately gated private intake preview can check one optional question in memory without creating a reading, account, or payment.",
       note: "Only the minimum operational request metadata needed to serve and protect this site may be processed.",
       action: "Review the privacy design",
     },
     availability: {
-      title: "Personal reflection experiences are not open in this foundation yet.",
+      title: "Symbolic readings are not open in this foundation yet.",
       message:
-        "The public methodology and safety boundaries are available now. Read them without creating an account or sharing personal information.",
+        "The public methodology and safety boundaries are available now. A private intake preview may be enabled separately, but it does not create or save a reading.",
       primaryAction: "Read the methodology",
       secondaryAction: "Review safety boundaries",
     },
@@ -328,12 +328,12 @@ const englishMessages = {
       introduction:
         "This is a product-design overview, not a legal Privacy Policy. It explains the current public foundation and the constraints planned for future personal experiences.",
       status:
-        "This public foundation accepts no personal inputs and has no accounts, readings, purchases, or product analytics.",
+        "These public pages accept no personal inputs. A separately gated intake preview has no account, reading, purchase, product analytics, or persistent intake storage.",
       sections: [
         {
-          title: "The current site asks for no personal content",
+          title: "Public pages and private intake stay separated",
           description:
-            "You cannot submit a question, journal entry, prayer, intention, birth detail, account, or payment on this foundation. Minimum operational request metadata may be processed to serve and protect the site.",
+            "Public pages do not collect personal content. If the private intake preview is enabled, one optional question is checked in memory and excluded from URLs, metadata, product analytics, and persistent intake storage. Journals, prayers, intentions, birth details, accounts, and payments remain unavailable.",
         },
         {
           title: "Future reflection data stays private by default",

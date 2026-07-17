@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { getPublicPageMessages, type ShellMessages } from "./messages";
+import type { QuestionIntakeMessages } from "./question-intake-messages";
 import { localePublicPagePath, type Locale, type PublicPageId } from "./routing";
 import type { DeploymentEnvironment } from "./seo";
 
@@ -51,3 +52,12 @@ export const createPublicPageMetadata = ({
 
 export const createHomeMetadata = (input: Omit<PublicPageMetadataInput, "page">): Metadata =>
   createPublicPageMetadata({ ...input, page: "home" });
+
+export const createQuestionIntakeMetadata = (
+  brandName: string,
+  messages: QuestionIntakeMessages,
+): Metadata => ({
+  description: messages.metadata.description,
+  robots: { follow: false, index: false },
+  title: `${brandName} — ${messages.metadata.title}`,
+});

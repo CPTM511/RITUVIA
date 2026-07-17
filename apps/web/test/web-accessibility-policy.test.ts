@@ -6,9 +6,12 @@ import {
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
+  privateAccessibilitySmokeRoutes,
+  publicAccessibilitySmokeRoutes,
   resolveAccessibilityArtifactRequest,
 } from "./accessibility-policy.mjs";
 import { getMessages } from "../app/_i18n/messages";
+import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
 
 const collectStrings = (value: unknown): string[] => {
@@ -21,12 +24,20 @@ const collectStrings = (value: unknown): string[] => {
 };
 
 describe("Web accessibility smoke policy", () => {
-  it("keeps the exact finite public route and WCAG tag inventory", () => {
+  it("separates the exact public and private route inventories", () => {
+    expect(publicAccessibilitySmokeRoutes).toEqual([
+      "/en",
+      "/en/methodology",
+      "/en/safety",
+      "/en/privacy",
+    ]);
+    expect(privateAccessibilitySmokeRoutes).toEqual(["/en/intake"]);
     expect(accessibilitySmokeRoutes).toEqual([
       "/en",
       "/en/methodology",
       "/en/safety",
       "/en/privacy",
+      "/en/intake",
     ]);
     expect(accessibilityAxeTags).toEqual([
       "wcag2a",
@@ -37,6 +48,8 @@ describe("Web accessibility smoke policy", () => {
       "best-practice",
     ]);
     expect(Object.isFrozen(accessibilitySmokeRoutes)).toBe(true);
+    expect(Object.isFrozen(publicAccessibilitySmokeRoutes)).toBe(true);
+    expect(Object.isFrozen(privateAccessibilitySmokeRoutes)).toBe(true);
     expect(Object.isFrozen(accessibilityAxeTags)).toBe(true);
   });
 
@@ -44,6 +57,11 @@ describe("Web accessibility smoke policy", () => {
     expect(resolveAccessibilityArtifactRequest("/en/privacy")).toEqual({
       contentType: "text/html; charset=utf-8",
       relativePath: "server/app/en/privacy.html",
+      type: "document",
+    });
+    expect(resolveAccessibilityArtifactRequest("/en/intake")).toEqual({
+      contentType: "text/html; charset=utf-8",
+      relativePath: "server/app/en/intake.html",
       type: "document",
     });
     expect(resolveAccessibilityArtifactRequest("/icon.svg?icon.reviewed.svg")).toEqual({
@@ -85,7 +103,11 @@ describe("Web accessibility smoke policy", () => {
   });
 
   it("expands every transformable string by at least forty percent", () => {
-    const messages = collectStrings([getMessages("en"), getStateMessages("en")]);
+    const messages = collectStrings([
+      getMessages("en"),
+      getQuestionIntakeMessages("en"),
+      getStateMessages("en"),
+    ]);
     expect(messages.length).toBeGreaterThan(100);
     for (const source of messages) {
       const localized = pseudoLocalizeText(source);

@@ -84,6 +84,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
       "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
       "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+      "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
     ]);
   });
 
@@ -142,6 +143,40 @@ describe("server and client configuration boundary", () => {
       ttlSeconds: 86_400,
     });
     expect(Object.isFrozen(configuration.anonymousSessionPolicy)).toBe(true);
+  });
+
+  it("keeps question intake safe-off and requires an owner reference for production", () => {
+    expect(parseServerConfiguration({}).questionIntakeActivationReference).toBeUndefined();
+    expect(
+      parseServerConfiguration({
+        RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.question-intake.v1",
+      }).questionIntakeActivationReference,
+    ).toBe("test.question-intake.v1");
+
+    const production = {
+      APP_ENV: "production",
+      BRAND_NAME: "Brand",
+      BRAND_SHORT_NAME: "Brand",
+      BRAND_LEGAL_ENTITY: "Entity",
+      BRAND_TAGLINE: "Tagline",
+      BRAND_CANONICAL_ORIGIN: "https://example.com",
+      BRAND_SUPPORT_EMAIL: "support@example.com",
+      BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      BRAND_SOCIAL_HANDLES: "{}",
+      BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+    } as const;
+    expect(() =>
+      parseServerConfiguration({
+        ...production,
+        RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.question-intake.v1",
+      }),
+    ).toThrowError("RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE:invalid");
+    expect(
+      parseServerConfiguration({
+        ...production,
+        RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "own-009.question-intake.v1",
+      }).questionIntakeActivationReference,
+    ).toBe("own-009.question-intake.v1");
   });
 
   it("requires an owner-decision policy reference in production and rejects unsafe bounds", () => {

@@ -96,6 +96,8 @@ describe("public shell contrast compensation", () => {
       ".hero-introduction,\n.section-introduction",
       ".hero-boundary",
       ".information-introduction",
+      ".question-intake-introduction",
+      ".question-intake-boundary,\n.question-intake-privacy",
     ]) {
       expect(webStyles).toContain(declaration);
     }
@@ -103,5 +105,9 @@ describe("public shell contrast compensation", () => {
     expect(webStyles).toMatch(/\.locale-label \{[\s\S]*?color: var\(--ink-secondary\)/u);
     expect(webStyles).toMatch(/\.eyebrow,[\s\S]*?color: var\(--brand-main\)/u);
     expect(webStyles).toMatch(/\.hero-introduction,[\s\S]*?color: var\(--ink-secondary\)/u);
+    expect(webStyles).toMatch(
+      /\.question-intake-introduction \{[\s\S]*?color: var\(--ink-secondary\)/u,
+    );
+    expect(webStyles).toMatch(/\.question-intake-boundary,[\s\S]*?color: var\(--ink-secondary\)/u);
   });
 });

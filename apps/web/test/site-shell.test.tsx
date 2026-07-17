@@ -33,7 +33,7 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('aria-describedby="locale-hint"');
     expect(html).toContain("<noscript>");
     expect(html).toContain('data-kind="empty"');
-    expect(html).toContain("Personal reflection experiences are not open in this foundation yet.");
+    expect(html).toContain("Symbolic readings are not open in this foundation yet.");
     expect(html).not.toContain('data-connection-state="offline"');
   });
 

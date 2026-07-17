@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { createHomeMetadata, createPublicPageMetadata } from "../app/_i18n/metadata";
+import {
+  createHomeMetadata,
+  createPublicPageMetadata,
+  createQuestionIntakeMetadata,
+} from "../app/_i18n/metadata";
 import { getMessages } from "../app/_i18n/messages";
+import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 
 const input = {
   brandName: "Configured Brand",
@@ -60,5 +65,17 @@ describe("localized home metadata", () => {
         follow: false,
       });
     }
+  });
+
+  it("keeps private intake metadata noindex without canonical or social URLs", () => {
+    const metadata = createQuestionIntakeMetadata(
+      "Configured Brand",
+      getQuestionIntakeMessages("en"),
+    );
+
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(metadata.title).toContain("Private reflection intake");
+    expect(metadata.alternates).toBeUndefined();
+    expect(metadata.openGraph).toBeUndefined();
   });
 });

@@ -15,7 +15,7 @@ type PublicSiteFrameProps = Readonly<{
   brandName: string;
   brandTagline: string;
   children: ReactNode;
-  currentPage: PublicPageId;
+  currentPage: PublicPageId | null;
   locale: Locale;
   messages: SharedMessages;
 }>;

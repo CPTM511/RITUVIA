@@ -10,6 +10,7 @@ import {
   isPublicShellPathname,
   localeHomePath,
   localePublicPagePath,
+  localeQuestionIntakePath,
   localeSectionPath,
   parseLocale,
   parsePublicPageSlug,
@@ -31,6 +32,7 @@ describe("Web locale routing", () => {
 
   it("creates stable locale-prefixed public and in-page paths", () => {
     expect(localeHomePath("en")).toBe("/en");
+    expect(localeQuestionIntakePath("en")).toBe("/en/intake");
     expect(publicPageSlugs).toEqual(["methodology", "safety", "privacy"]);
     expect(localePublicPagePath("en", "methodology")).toBe("/en/methodology");
     expect(localePublicPagePath("en", "safety")).toBe("/en/safety");
@@ -91,6 +93,7 @@ describe("Web locale routing", () => {
       "/en/",
       "/en.rsc",
       "/en/account",
+      "/en/intake",
       "/en/journal",
       "/en/checkout",
       "/en?question=private",

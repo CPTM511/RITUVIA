@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getMessages } from "../app/_i18n/messages";
+import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
 
 const collectStrings = (value: unknown): string[] => {
@@ -29,6 +30,17 @@ describe("English shell messages", () => {
     expect(strings.join(" ")).not.toMatch(/\b(?:TODO|TBD|lorem ipsum)\b/iu);
   });
 
+  it("keeps question intake copy complete, bounded, and private", () => {
+    const copy = collectStrings(getQuestionIntakeMessages("en")).join(" ");
+
+    expect(copy).toContain("What would you like to reflect on?");
+    expect(copy).toContain("contact local emergency services now");
+    expect(copy).toContain("someone else may be in immediate danger");
+    expect(copy).toContain("not placed in the URL");
+    expect(copy).toContain("No reading has been created or saved");
+    expect(copy).not.toMatch(/\b(?:guaranteed|destined|curse removal|stronger ritual)\b/iu);
+  });
+
   it("avoids deterministic, coercive, and professional-advice claims", () => {
     const copy = collectStrings(getMessages("en")).join(" ");
 
@@ -42,7 +54,7 @@ describe("English shell messages", () => {
     expect(copy).toContain("Bounded AI explains");
     expect(copy).toContain("at least one free candle and one free incense experience");
     expect(copy).toContain("This is a product-design overview, not a legal Privacy Policy");
-    expect(copy).toContain("Minimum operational request metadata may be processed");
+    expect(copy).toContain("minimum operational request metadata needed");
     expect(copy).toContain("exclude raw sensitive prompts from routine logs");
     expect(copy).toContain("purpose-limited, authorized, and audited");
     expect(copy).toContain(

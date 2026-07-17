@@ -21,6 +21,8 @@ export type AccessibilityFinding = Readonly<{
 
 export const accessibilityAxeTags: readonly string[];
 export const accessibilitySmokeRoutes: readonly string[];
+export const privateAccessibilitySmokeRoutes: readonly string[];
+export const publicAccessibilitySmokeRoutes: readonly string[];
 
 export function resolveAccessibilityArtifactRequest(
   rawUrl: string,

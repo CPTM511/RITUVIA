@@ -4,11 +4,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const harness = vi.hoisted(() => ({
   deploymentEnvironment: "local" as "local" | "preview" | "production" | "staging",
   end: vi.fn(),
+  intakeAvailability: "disabled" as "disabled" | "enabled",
   loadPublicShellState: vi.fn(),
 }));
 
 vi.mock("../server/public-shell-state", () => ({
   loadPublicShellState: harness.loadPublicShellState,
+}));
+
+vi.mock("../server/question-intake-state", () => ({
+  loadQuestionIntakeAvailability: () => harness.intakeAvailability,
 }));
 
 vi.mock("../config/server", () => ({
@@ -40,6 +45,7 @@ describe("public shell request and crawl gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     harness.deploymentEnvironment = "local";
+    harness.intakeAvailability = "disabled";
     harness.loadPublicShellState.mockResolvedValue("enabled");
   });
 
@@ -124,6 +130,68 @@ describe("public shell request and crawl gate", () => {
       );
     },
   );
+
+  it("allows only the independently enabled private intake page and API", async () => {
+    harness.intakeAvailability = "enabled";
+
+    const page = await proxy(request("/en/intake"));
+    const reviewedRsc = await proxy(request("/en/intake?_rsc=abc_123", { headers: { rsc: "1" } }));
+    const api = await proxy(request("/api/v1/intake/evaluate", { method: "POST" }));
+
+    for (const response of [page, reviewedRsc, api]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    ["GET", "/api/v1/intake/evaluate"],
+    ["OPTIONS", "/api/v1/intake/evaluate"],
+    ["POST", "/api/v1/intake/evaluate/"],
+    ["POST", "/api/v1/intake/evaluate?question=private-canary"],
+    ["POST", "/api/v1/intake/evaluate.rsc"],
+    ["POST", "/en/intake"],
+    ["GET", "/en/intake/"],
+    ["GET", "/en/intake?question=private-canary"],
+    ["GET", "/en/intake.rsc"],
+  ])("rejects unreviewed intake variant %s %s before lookup", async (method, pathname) => {
+    harness.intakeAvailability = "enabled";
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
+  });
+
+  it.each(["disabled", "unavailable"] as const)(
+    "keeps intake closed when the public shell is %s",
+    async (state) => {
+      harness.intakeAvailability = "enabled";
+      harness.loadPublicShellState.mockResolvedValue(state);
+
+      const page = await proxy(request("/en/intake"));
+      const api = await proxy(request("/api/v1/intake/evaluate", { method: "POST" }));
+
+      expect(page.status).toBe(404);
+      expect(api.status).toBe(404);
+      expect(page.headers.get("cache-control")).toContain("no-store");
+      expect(api.headers.get("cache-control")).toContain("no-store");
+    },
+  );
+
+  it("keeps intake closed while its independent activation is absent", async () => {
+    const page = await proxy(request("/en/intake"));
+    const api = await proxy(request("/api/v1/intake/evaluate", { method: "POST" }));
+
+    expect(page.status).toBe(404);
+    expect(api.status).toBe(404);
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
+  });
 
   it.each([
     "/",

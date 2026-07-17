@@ -1,7 +1,7 @@
 import { access, readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
-import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
+import { auditWebShellBuildArtifacts, verifyWebShellBuild } from "./web-shell-build-policy.mjs";
 
 const requiredArtifacts = [
   "apps/web/.next/BUILD_ID",
@@ -9,8 +9,10 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/en/methodology.html",
   "apps/web/.next/server/app/en/privacy.html",
   "apps/web/.next/server/app/en/safety.html",
+  "apps/web/.next/server/app/en/intake.html",
   "apps/web/.next/server/app/icon.svg.body",
   "apps/web/.next/server/app/api/v1/anonymous/session/route.js",
+  "apps/web/.next/server/app/api/v1/intake/evaluate/route.js",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
@@ -32,6 +34,8 @@ const requiredArtifacts = [
   "packages/domain/dist/index.js",
   "packages/domain/dist/identity.d.ts",
   "packages/domain/dist/identity.js",
+  "packages/domain/dist/question-intake.d.ts",
+  "packages/domain/dist/question-intake.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
@@ -44,6 +48,41 @@ const requiredArtifacts = [
 
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
 const webShellBuild = await verifyWebShellBuild(process.cwd());
+const privateIntakeHtml = await readFile("apps/web/.next/server/app/en/intake.html", "utf8");
+const privateIntakeReferences = [
+  ...new Set(
+    [...privateIntakeHtml.matchAll(/\b(?:href|src)="(\/_next\/static\/[^"?#]+)"/gu)].map(
+      (match) => match[1],
+    ),
+  ),
+];
+const privateIntakeAssets = new Map(
+  await Promise.all(
+    privateIntakeReferences.map(async (reference) => [
+      reference,
+      await readFile(`apps/web/.next/${reference.replace(/^\/_next\//u, "")}`),
+    ]),
+  ),
+);
+const privateIntakeAudit = auditWebShellBuildArtifacts({
+  assets: privateIntakeAssets,
+  expectedPathname: "/en/intake",
+  html: privateIntakeHtml,
+  icon: await readFile("apps/web/.next/server/app/icon.svg.body"),
+});
+if (
+  privateIntakeAudit.findings.length > 0 ||
+  !/<meta\b[^>]*name="robots"[^>]*content="noindex, nofollow"/u.test(privateIntakeHtml) ||
+  /<link\b[^>]*rel="canonical"|<meta\b[^>]*property="og:/u.test(privateIntakeHtml) ||
+  !/<main\b[^>]*id="main-content"/u.test(privateIntakeHtml) ||
+  !/<form\b[^>]*action="\/api\/v1\/intake\/evaluate"[^>]*method="post"/u.test(privateIntakeHtml) ||
+  !/<textarea\b[^>]*(?:maxLength|maxlength)="600"/u.test(privateIntakeHtml) ||
+  privateIntakeHtml.includes("__next_error__")
+) {
+  throw new TypeError(
+    `Private intake build policy failed: ${privateIntakeAudit.findings.join(", ") || "private-contract"}`,
+  );
+}
 
 const domainModule = await import(pathToFileURL(`${process.cwd()}/packages/domain/dist/index.js`));
 const databaseModule = await import(pathToFileURL(`${process.cwd()}/packages/db/dist/index.js`));
@@ -72,7 +111,9 @@ if (
   typeof domainModule.parseAnonymousSubjectId !== "function" ||
   typeof domainModule.parsePersistedAnonymousSessionV1 !== "function" ||
   typeof domainModule.resolveAnonymousSessionState !== "function" ||
-  typeof domainModule.allowsConsentPurpose !== "function"
+  typeof domainModule.allowsConsentPurpose !== "function" ||
+  typeof domainModule.evaluateQuestionIntake !== "function" ||
+  typeof domainModule.parseQuestionIntakeResponse !== "function"
 ) {
   throw new Error("The domain build omitted its anonymous identity and consent contracts.");
 }
@@ -153,5 +194,5 @@ if (
 }
 
 console.log(
-  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages; maximum gzip: HTML ${webShellBuild.htmlGzipBytes} B, CSS ${webShellBuild.cssGzipBytes} B, JS ${webShellBuild.javascriptGzipBytes} B.`,
+  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and one private intake page; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, privateIntakeAudit.htmlGzipBytes)} B, CSS ${Math.max(webShellBuild.cssGzipBytes, privateIntakeAudit.cssGzipBytes)} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, privateIntakeAudit.javascriptGzipBytes)} B.`,
 );

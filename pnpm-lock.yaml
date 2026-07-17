@@ -60,6 +60,9 @@ importers:
       '@rituvia/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@rituvia/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@rituvia/observability':
         specifier: workspace:*
         version: link:../../packages/observability

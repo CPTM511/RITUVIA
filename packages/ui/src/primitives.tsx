@@ -395,7 +395,7 @@ export function FieldLabel({ children, htmlFor, requiredLabel }: FieldLabelProps
     <label className="rvt-field__label" htmlFor={reviewedHtmlFor}>
       {children}
       {requiredLabel === undefined ? null : (
-        <span className="rvt-field__required"> {requiredLabel}</span>
+        <span className="rvt-field__required">{` ${requiredLabel}`}</span>
       )}
     </label>
   );
@@ -754,7 +754,7 @@ export function Checkbox({
         <span aria-hidden="true" className="rvt-choice__indicator" />
         <span className="rvt-choice__label">
           {label}
-          {required ? <span className="rvt-field__required"> {requiredLabel}</span> : null}
+          {required ? <span className="rvt-field__required">{` ${requiredLabel}`}</span> : null}
         </span>
       </label>
       <FieldSupport description={description} error={error} id={reviewedId} />
@@ -815,7 +815,7 @@ export function Switch({
         </span>
         <span className="rvt-switch__label">
           {label}
-          {required ? <span className="rvt-field__required"> {requiredLabel}</span> : null}
+          {required ? <span className="rvt-field__required">{` ${requiredLabel}`}</span> : null}
         </span>
       </label>
       <FieldSupport description={description} error={error} id={reviewedId} />
@@ -829,6 +829,18 @@ export type RadioOption = Readonly<{
   value: UiControlValue;
 }>;
 
+type RadioValueState =
+  | Readonly<{
+      defaultValue?: UiControlValue;
+      onValueChange?: (value: string) => void;
+      value?: never;
+    }>
+  | Readonly<{
+      defaultValue?: never;
+      onValueChange: (value: string) => void;
+      value: UiControlValue | undefined;
+    }>;
+
 export type RadioGroupProps = Readonly<{
   description?: string;
   disabled?: boolean;
@@ -839,7 +851,7 @@ export type RadioGroupProps = Readonly<{
   options: readonly RadioOption[];
 }> &
   RequiredState &
-  ValueState<UiControlValue>;
+  RadioValueState;
 
 export function RadioGroup({
   defaultValue,
@@ -882,7 +894,7 @@ export function RadioGroup({
     >
       <legend className="rvt-field__label">
         {label}
-        {required ? <span className="rvt-field__required"> {requiredLabel}</span> : null}
+        {required ? <span className="rvt-field__required">{` ${requiredLabel}`}</span> : null}
       </legend>
       <div className="rvt-radio-group__options">
         {options.map((option, index) => {

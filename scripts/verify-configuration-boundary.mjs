@@ -28,6 +28,7 @@ const knownEnvironmentVariables = [
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
   "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
   "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+  "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
 ];
 
 const identifier = randomUUID().replaceAll("-", "");
@@ -38,6 +39,7 @@ const invalidCanary = `invalid-database-${identifier}`;
 const forgedRequestCanary = `forged-request-${identifier}`;
 const forgedTraceCanary = `forged-trace-${identifier}`;
 const privateQueryCanary = `private-query-${identifier}`;
+const privateQuestionCanary = `private-question-${identifier}`;
 const anonymousSessionTokenCanary = "a".repeat(43);
 const databaseUrl = `postgresql://local:${databaseCanary}@127.0.0.1:5432/app`;
 const secretCanaries = [
@@ -45,6 +47,7 @@ const secretCanaries = [
   databaseCanary,
   invalidCanary,
   privateQueryCanary,
+  privateQuestionCanary,
   databaseUrl,
 ];
 
@@ -239,6 +242,7 @@ const fetchBuiltWeb = async (managed, port, pathname, options = {}) => {
 
     try {
       const response = await fetch(`http://127.0.0.1:${port}${pathname}`, {
+        body: options.body,
         method: options.method ?? "GET",
         redirect: options.redirect ?? "follow",
         headers: {
@@ -397,6 +401,7 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
     RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.synthetic-session-policy.v1",
     RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "3600",
+    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "own-009.synthetic-question-intake.v1",
   });
   await assertSuccessfulCommand(
     process.execPath,
@@ -439,6 +444,75 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   for (const publicPage of publicPages) assertHttpBoundary(publicPage, webProcess.getOutput());
   if (publicPages.some(({ xRobotsTag }) => xRobotsTag !== null)) {
     fail("A production canonical HTML response was incorrectly blocked from indexing.");
+  }
+  const intakePage = await fetchBuiltWeb(webProcess, port, "/en/intake", {
+    headers: { accept: "text/html" },
+    redirect: "manual",
+  });
+  assertHttpBoundary(intakePage, webProcess.getOutput());
+  if (
+    intakePage.status !== 200 ||
+    intakePage.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    intakePage.cacheControl !== "private, no-store, max-age=0" ||
+    !intakePage.html.includes('action="/api/v1/intake/evaluate"') ||
+    !intakePage.html.includes("What would you like to reflect on?") ||
+    /rel="canonical"|property="og:/u.test(intakePage.html)
+  ) {
+    fail("The production private intake page violated its noindex/no-store contract.");
+  }
+  const intakeEvaluation = await fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate", {
+    body: JSON.stringify({
+      locale: "en",
+      question: `Will I definitely win? ${privateQuestionCanary}`,
+      schemaVersion: "1",
+      themeCode: "open_reflection",
+    }),
+    headers: {
+      "content-type": "application/json",
+      origin: "https://example.test",
+      "sec-fetch-site": "same-origin",
+    },
+    method: "POST",
+    redirect: "manual",
+  });
+  if (
+    intakeEvaluation.status !== 200 ||
+    intakeEvaluation.cacheControl !== "private, no-store, max-age=0" ||
+    intakeEvaluation.xRobotsTag !== "noindex, nofollow, noarchive" ||
+    !intakeEvaluation.html.includes('"state":"reframed"') ||
+    intakeEvaluation.html.includes(privateQuestionCanary) ||
+    intakeEvaluation.html.includes("riskCategories") ||
+    webProcess.getOutput().includes(privateQuestionCanary)
+  ) {
+    fail("The production intake API exposed private text or internal policy categories.");
+  }
+  const rejectedIntakeRequests = await Promise.all([
+    fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate", {
+      body: "{}",
+      headers: { "content-type": "application/json", origin: "https://foreign.example" },
+      method: "POST",
+      redirect: "manual",
+    }),
+    fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate?private=canary", {
+      body: "{}",
+      headers: { "content-type": "application/json", origin: "https://example.test" },
+      method: "POST",
+      redirect: "manual",
+    }),
+    fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate", {
+      method: "OPTIONS",
+      redirect: "manual",
+    }),
+  ]);
+  if (
+    rejectedIntakeRequests[0]?.status !== 403 ||
+    rejectedIntakeRequests.slice(1).some(({ html, status }) => status !== 404 || html !== "") ||
+    rejectedIntakeRequests.some(
+      ({ cacheControl, xRobotsTag }) =>
+        !hasNoStore(cacheControl) || xRobotsTag !== "noindex, nofollow, noarchive",
+    )
+  ) {
+    fail("The production intake boundary accepted an unreviewed request variant.");
   }
   const anonymousSession = await fetchBuiltWeb(webProcess, port, "/api/v1/anonymous/session", {
     headers: {
@@ -524,7 +598,7 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     sitemap.cacheControl !== "no-store, max-age=0" ||
     !expectedSitemapUrls.every((url) => sitemap.html.includes(url)) ||
     sitemap.html.match(/<loc>/gu)?.length !== expectedSitemapUrls.length ||
-    /(?:\.rsc|\.segments|<lastmod>|\/account|\/journal|\/checkout)/u.test(sitemap.html)
+    /(?:\.rsc|\.segments|<lastmod>|\/account|\/journal|\/checkout|\/intake)/u.test(sitemap.html)
   ) {
     fail("Production robots or sitemap violated the finite crawl inventory.");
   }
@@ -708,6 +782,45 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   await stopManagedProcess(webProcess);
   webProcess = undefined;
 
+  const {
+    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: _unusedIntakeActivation,
+    ...intakeDisabledEnvironment
+  } = validEnvironment;
+  void _unusedIntakeActivation;
+  webProcess = startManagedProcess(
+    process.execPath,
+    [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
+    {
+      cwd: temporaryWebRoot,
+      env: { ...intakeDisabledEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "on" },
+    },
+  );
+  const publicWithIntakeDisabled = await fetchBuiltWeb(webProcess, port, "/en", {
+    redirect: "manual",
+  });
+  const disabledIntakePage = await fetchBuiltWeb(webProcess, port, "/en/intake", {
+    redirect: "manual",
+  });
+  const disabledIntakeApi = await fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate", {
+    body: "{}",
+    headers: { "content-type": "application/json", origin: "https://example.test" },
+    method: "POST",
+    redirect: "manual",
+  });
+  if (
+    publicWithIntakeDisabled.status !== 200 ||
+    disabledIntakePage.status !== 404 ||
+    disabledIntakePage.html !== "" ||
+    disabledIntakeApi.status !== 404 ||
+    disabledIntakeApi.html !== "" ||
+    !hasNoStore(disabledIntakePage.cacheControl) ||
+    !hasNoStore(disabledIntakeApi.cacheControl)
+  ) {
+    fail("The independent question-intake activation reference did not fail closed.");
+  }
+  await stopManagedProcess(webProcess);
+  webProcess = undefined;
+
   webProcess = startManagedProcess(
     process.execPath,
     [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
@@ -733,6 +846,9 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
       "/en/privacy",
       "/en/privacy.rsc",
       "/en/privacy.segments/_full.segment.rsc",
+      "/en/intake",
+      "/en/intake.rsc",
+      "/en/intake.segments/_full.segment.rsc",
     ].map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
   );
   if (

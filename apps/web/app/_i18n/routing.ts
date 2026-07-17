@@ -33,6 +33,9 @@ export const parseLocale = (value: string | null | undefined): Locale | null =>
 export const localeHomePath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}`);
 
+export const localeQuestionIntakePath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/intake`);
+
 export const localePublicPagePath = (
   locale: Locale,
   page: PublicPageId | PublicPageSlug,

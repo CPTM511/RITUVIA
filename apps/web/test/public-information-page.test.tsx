@@ -36,7 +36,7 @@ describe("server-rendered public information pages", () => {
     const html = render("privacy");
 
     expect(html).toContain("not a legal Privacy Policy");
-    expect(html).toContain("Minimum operational request metadata may be processed");
+    expect(html).toContain("excluded from URLs, metadata, product analytics");
     expect(html).not.toContain("We collect nothing");
   });
 });
