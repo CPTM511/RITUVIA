@@ -20,7 +20,7 @@
     "db:local:url": "node scripts/local-postgres.mjs url",
     "generate": "prisma generate",
     "test:ci": "node --import tsx scripts/verify-ci-foundation.ts",
-    "test:integration": "node scripts/verify-foundation.mjs && node --import tsx scripts/verify-anonymous-identity.ts",
+    "test:integration": "node scripts/verify-foundation.mjs && node --import tsx scripts/verify-anonymous-identity.ts && node --import tsx scripts/verify-tarot-reading-persistence.ts",
     "typecheck": "pnpm generate && tsc --noEmit"
   },
   "dependencies": {

@@ -229,3 +229,18 @@ effective until this register links it. Do not rewrite historical rationale; sup
   client selection, predictable randomness, modulo bias, internal digest leakage, or database/AI
   coupling would undermine server authority, privacy, and future concurrent persistence.
 - **Date:** 2026-07-17
+
+### [D-033 — Owner-bound immutable tarot reading facts and safe-off API](records/decisions/D-033.md)
+
+- **Decision:** Accept only the exact theme-only V1 create command; bind every OS-CSPRNG draw to
+  its anonymous owner, server-issued reading identity, request and exact approved catalog through a
+  domain-separated HMAC; and persist the verified execution as immutable owner-scoped reading facts
+  in the same transaction that authenticates the session, resolves idempotency, and applies limits.
+  Expose only verified public facts through the canonical create and owner-scoped read routes, while
+  keeping runtime composition unavailable until an eligible production catalog is independently
+  approved and configured.
+- **Reason:** Server authority requires more than a pure draw algorithm: retries, races, ownership,
+  limits, historical catalog provenance, and public projection must fail closed without retaining
+  raw questions, entropy, keys, or client-controlled facts. A hard safe-off runtime prevents the
+  synthetic internal fixture from becoming publishable by implementation accident.
+- **Date:** 2026-07-17

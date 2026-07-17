@@ -49,9 +49,60 @@ model AnonymousSubject {
   lastSeenAt          DateTime           @default(now()) @map("last_seen_at") @db.Timestamptz(6)
   sessions            AnonymousSession[]
   consentRecords      ConsentRecord[]
+  readings            Reading[]
 
   @@index([expiresAt, id], map: "anonymous_subject_expiry_idx")
   @@map("anonymous_subject")
+}
+
+model Reading {
+  id                       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId       String           @map("anonymous_subject_id") @db.Uuid
+  modality                 String           @default("tarot") @db.VarChar(16)
+  readingType              String           @map("reading_type") @db.VarChar(24)
+  status                   String           @default("facts_ready") @db.VarChar(16)
+  locale                   String           @default("en") @db.VarChar(35)
+  themeCode                String           @map("theme_code") @db.VarChar(40)
+  requestSchemaVersion     String           @map("request_schema_version") @db.VarChar(100)
+  readingPolicyVersion     String           @map("reading_policy_version") @db.VarChar(100)
+  catalogId                String           @map("catalog_id") @db.VarChar(100)
+  catalogVersion           String           @map("catalog_version") @db.VarChar(100)
+  catalogChecksumSha256    Bytes            @map("catalog_checksum_sha256")
+  catalogApprovalReference String           @map("catalog_approval_reference") @db.VarChar(200)
+  idempotencyKeyVersion    String           @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash       Bytes            @map("idempotency_key_hash")
+  clientRequestHash        Bytes            @map("client_request_hash")
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt              DateTime         @default(now()) @map("completed_at") @db.Timestamptz(6)
+  expiresAt                DateTime         @map("expires_at") @db.Timestamptz(6)
+  anonymousSubject         AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  tarotDraw                TarotDraw?
+
+  @@unique([anonymousSubjectId, requestSchemaVersion, idempotencyKeyVersion, idempotencyKeyHash], map: "reading_subject_scope_idempotency_key")
+  @@unique([id, readingType, catalogId, catalogVersion], map: "reading_draw_identity_key")
+  @@index([anonymousSubjectId, createdAt(sort: Desc), id(sort: Desc)], map: "reading_subject_created_idx")
+  @@map("reading")
+}
+
+model TarotDraw {
+  readingId              String   @id @map("reading_id") @db.Uuid
+  readingType            String   @map("reading_type") @db.VarChar(24)
+  idempotencyKeyHash     Bytes    @map("idempotency_key_hash")
+  drawRequestHash        Bytes    @map("draw_request_hash")
+  catalogId              String   @map("catalog_id") @db.VarChar(100)
+  catalogVersion         String   @map("catalog_version") @db.VarChar(100)
+  executionSchemaVersion String   @map("execution_schema_version") @db.VarChar(100)
+  integrityScheme        String   @map("integrity_scheme") @db.VarChar(40)
+  integrityKeyVersion    String   @map("integrity_key_version") @db.VarChar(100)
+  entropyCommitment      String   @map("entropy_commitment") @db.VarChar(71)
+  entropyBytesConsumed   Int      @map("entropy_bytes_consumed")
+  entropyRejectedSamples Int      @map("entropy_rejected_samples")
+  execution              Json
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  reading                Reading  @relation(fields: [readingId, readingType, catalogId, catalogVersion], references: [id, readingType, catalogId, catalogVersion], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([readingId, readingType, catalogId, catalogVersion], map: "tarot_draw_reading_identity_key")
+  @@map("tarot_draw")
 }
 
 model AnonymousSession {

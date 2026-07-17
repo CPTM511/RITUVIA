@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
 import { loadPublicShellState } from "./server/public-shell-state";
 import { loadQuestionIntakeAvailability } from "./server/question-intake-state";
+import { loadTarotReadingAvailability } from "./server/tarot-reading-state";
 import { getWebRuntimeConfiguration } from "./config/server";
 import {
   isIndexablePublicPagePathname,
@@ -43,6 +44,9 @@ const shellContentSecurityPolicy = [
 const noIndexDirective = "noindex, nofollow, noarchive";
 const anonymousSessionApiPathname = "/api/v1/anonymous/session";
 const questionIntakeApiPathname = "/api/v1/intake/evaluate";
+const tarotReadingApiPathname = "/api/v1/readings/tarot";
+const tarotReadingPathPattern =
+  /^\/api\/v1\/readings\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const questionIntakePagePathname = localeQuestionIntakePath("en");
 
 const isSafeReadMethod = (method: string): boolean => method === "GET" || method === "HEAD";
@@ -126,6 +130,9 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
   const anonymousSessionApi = pathname === anonymousSessionApiPathname;
   const questionIntakeApi = pathname === questionIntakeApiPathname;
+  const tarotReadingCreateApi = pathname === tarotReadingApiPathname;
+  const tarotReadingReadApi = tarotReadingPathPattern.test(pathname);
+  const tarotReadingApi = tarotReadingCreateApi || tarotReadingReadApi;
   const questionIntakeDocument = isQuestionIntakePagePathname(pathname);
   const reviewedAnonymousSessionRequest =
     anonymousSessionApi &&
@@ -137,12 +144,19 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     request.method === "POST" &&
     request.nextUrl.search === "" &&
     !frameworkRepresentation;
+  const reviewedTarotReadingRequest =
+    tarotReadingApi &&
+    ((tarotReadingCreateApi && request.method === "POST") ||
+      (tarotReadingReadApi && request.method === "GET")) &&
+    request.nextUrl.search === "" &&
+    !frameworkRepresentation;
   const unreviewedFrameworkRepresentation =
     frameworkRepresentation && !hasReviewedFrameworkNavigationSignal(request);
   const invalidRequest =
     !infrastructure &&
     !reviewedAnonymousSessionRequest &&
     !reviewedQuestionIntakeRequest &&
+    !reviewedTarotReadingRequest &&
     (unreviewedFrameworkRepresentation ||
       !isSafeReadMethod(request.method) ||
       (request.nextUrl.search !== "" && !hasOnlyReviewedFrameworkQuery(request)));
@@ -151,6 +165,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     (publicDocument ||
       reviewedAnonymousSessionRequest ||
       reviewedQuestionIntakeRequest ||
+      reviewedTarotReadingRequest ||
       questionIntakeDocument ||
       (discovery && configuration.deploymentEnvironment === "production"));
   const shellState = shouldLoadShellState ? await loadPublicShellState() : null;
@@ -158,15 +173,19 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !invalidRequest && (questionIntakeDocument || reviewedQuestionIntakeRequest)
       ? loadQuestionIntakeAvailability()
       : "disabled";
+  const tarotReadingAvailability =
+    !invalidRequest && reviewedTarotReadingRequest ? loadTarotReadingAvailability() : "disabled";
   const unsupported =
     !infrastructure &&
     !publicDocument &&
     !discovery &&
     !anonymousSessionApi &&
     !questionIntakeApi &&
+    !tarotReadingApi &&
     !questionIntakeDocument;
   const enabledDocument = publicDocument && shellState === "enabled";
   const enabledQuestionIntake = shellState === "enabled" && intakeAvailability === "enabled";
+  const enabledTarotReading = shellState === "enabled" && tarotReadingAvailability === "enabled";
   const response =
     invalidRequest || unsupported
       ? new NextResponse(null, { status: 404 })
@@ -176,6 +195,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
             enabledDocument ||
             (questionIntakeDocument && enabledQuestionIntake) ||
             (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
+            (reviewedTarotReadingRequest && enabledTarotReading) ||
             (reviewedAnonymousSessionRequest && shellState === "enabled")
           ? NextResponse.next({ request: { headers: downstreamHeaders } })
           : new NextResponse(null, { status: 404 });
@@ -197,7 +217,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   if (!indexableRepresentation) {
     response.headers.set("x-robots-tag", noIndexDirective);
   }
-  if (anonymousSessionApi || questionIntakeApi || questionIntakeDocument) {
+  if (anonymousSessionApi || questionIntakeApi || questionIntakeDocument || tarotReadingApi) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   } else if (discovery || response.status === 404) {
     response.headers.set("cache-control", "no-store, max-age=0");

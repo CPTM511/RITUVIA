@@ -39,3 +39,42 @@ export const questionIntakeApiMessages = Object.freeze({
     title: "The question intake is unavailable",
   }),
 });
+
+export const tarotReadingApiMessages = Object.freeze({
+  conflict: Object.freeze({
+    detail: "Use a new idempotency key when changing the reading theme or spread.",
+    title: "This reading request conflicts",
+  }),
+  invalidBody: Object.freeze({
+    detail: "Send one valid versioned English tarot reading request.",
+    title: "The tarot reading request is invalid",
+  }),
+  invalidIdempotency: Object.freeze({
+    detail: "Send one new random idempotency key with this request.",
+    title: "The tarot reading request is invalid",
+  }),
+  invalidRequest: Object.freeze({
+    detail: "Send one same-origin JSON request from this site.",
+    title: "The tarot reading request was not accepted",
+  }),
+  notFound: Object.freeze({
+    detail: "This private reading is not available in the current session.",
+    title: "The tarot reading was not found",
+  }),
+  rateLimited: Object.freeze({
+    detail: "Pause for a moment before beginning another reading.",
+    title: "Tarot readings are temporarily limited",
+  }),
+  sessionRequired: Object.freeze({
+    detail: "Start or resume a private session before requesting a reading.",
+    title: "A private session is required",
+  }),
+  tooLarge: Object.freeze({
+    detail: "Send only the reading type, theme, locale, and schema version.",
+    title: "The tarot reading request is too large",
+  }),
+  unavailable: Object.freeze({
+    detail: "The tarot reading service is temporarily unavailable. Please try again.",
+    title: "A tarot reading could not be completed",
+  }),
+});

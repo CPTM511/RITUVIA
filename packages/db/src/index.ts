@@ -15,3 +15,19 @@ export {
   readFeatureFlagVersions,
   type PersistedFeatureFlagVersion,
 } from "./feature-flags.js";
+export {
+  assertTarotReadingRuntimeDatabasePrivileges,
+  createTarotReadingPersistence,
+  tarotReadingPersistenceErrorCodes,
+  TarotReadingPersistenceError,
+  type PersistedTarotReading,
+  type PreparedTarotReadingCreate,
+  type ResolvedTarotReading,
+  type TarotReadingCatalogProvenance,
+  type TarotReadingDigestCandidate,
+  type TarotReadingExecutionContext,
+  type TarotReadingPersistence,
+  type TarotReadingPersistenceErrorCode,
+  type TarotReadingPersistencePolicy,
+  type TarotReadingPrepareContext,
+} from "./tarot-reading-persistence.js";

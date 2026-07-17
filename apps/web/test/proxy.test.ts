@@ -6,6 +6,7 @@ const harness = vi.hoisted(() => ({
   end: vi.fn(),
   intakeAvailability: "disabled" as "disabled" | "enabled",
   loadPublicShellState: vi.fn(),
+  tarotReadingAvailability: "disabled" as "disabled" | "enabled",
 }));
 
 vi.mock("../server/public-shell-state", () => ({
@@ -14,6 +15,10 @@ vi.mock("../server/public-shell-state", () => ({
 
 vi.mock("../server/question-intake-state", () => ({
   loadQuestionIntakeAvailability: () => harness.intakeAvailability,
+}));
+
+vi.mock("../server/tarot-reading-state", () => ({
+  loadTarotReadingAvailability: () => harness.tarotReadingAvailability,
 }));
 
 vi.mock("../config/server", () => ({
@@ -46,6 +51,7 @@ describe("public shell request and crawl gate", () => {
     vi.clearAllMocks();
     harness.deploymentEnvironment = "local";
     harness.intakeAvailability = "disabled";
+    harness.tarotReadingAvailability = "disabled";
     harness.loadPublicShellState.mockResolvedValue("enabled");
   });
 
@@ -130,6 +136,52 @@ describe("public shell request and crawl gate", () => {
       );
     },
   );
+
+  it("allows only the independently enabled private tarot create and owner read APIs", async () => {
+    harness.tarotReadingAvailability = "enabled";
+    const readingId = "33333333-3333-4333-8333-333333333333";
+
+    const create = await proxy(request("/api/v1/readings/tarot", { method: "POST" }));
+    const read = await proxy(request(`/api/v1/readings/${readingId}`));
+
+    for (const response of [create, read]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    }
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["GET", "/api/v1/readings/tarot"],
+    ["OPTIONS", "/api/v1/readings/tarot"],
+    ["POST", "/api/v1/readings/tarot/"],
+    ["POST", "/api/v1/readings/tarot?question=private-canary"],
+    ["POST", "/api/v1/readings/tarot.rsc"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333?private=canary"],
+    ["GET", "/api/v1/readings/not-a-reading"],
+    ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333"],
+    ["GET", "/api/v1/readings/tarot/33333333-3333-4333-8333-333333333333"],
+  ])("rejects unreviewed tarot variant %s %s before lookup", async (method, pathname) => {
+    harness.tarotReadingAvailability = "enabled";
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
+  });
+
+  it("keeps tarot APIs closed without a separately approved catalog activation", async () => {
+    const create = await proxy(request("/api/v1/readings/tarot", { method: "POST" }));
+    const read = await proxy(request("/api/v1/readings/33333333-3333-4333-8333-333333333333"));
+
+    expect(create.status).toBe(404);
+    expect(read.status).toBe(404);
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
+  });
 
   it("allows only the independently enabled private intake page and API", async () => {
     harness.intakeAvailability = "enabled";

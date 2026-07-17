@@ -81,15 +81,15 @@ The expand-only identity migration creates `anonymous_subject`, `anonymous_sessi
 `consent_record`, and the singleton `anonymous_session_issuance_gate`. It creates no user row, token,
 consent, enabled feature, or legal-policy value.
 
-| Data | Classification | Baseline handling |
-| --- | --- | --- |
-| Anonymous subject/session UUIDs and timestamps | Personal pseudonymous | Fixed configured expiry; no email, IP, user-agent, device ID, or fingerprint |
-| Token hash and hash version | Security | SHA-256 of 32 random bytes; plaintext token exists only at the cookie boundary |
-| Issuance/idempotency and canonical request hashes | Security/internal | Fixed-size digests only; no raw idempotency key or request body |
-| Expiry policy version | Internal policy provenance | Required and immutable for issued subject/session |
-| Consent purpose, notice version, locale, decision, source, sequence, time | Personal compliance record | Append-only per purpose; no notice copy or private/free text |
-| Withdrawal link | Personal compliance record | Restricted to the same subject and purpose; historical row is not mutated |
-| Global issuance window/count | Internal security | Singleton aggregate with no subject, network, device, or content dimension |
+| Data                                                                      | Classification             | Baseline handling                                                              |
+| ------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| Anonymous subject/session UUIDs and timestamps                            | Personal pseudonymous      | Fixed configured expiry; no email, IP, user-agent, device ID, or fingerprint   |
+| Token hash and hash version                                               | Security                   | SHA-256 of 32 random bytes; plaintext token exists only at the cookie boundary |
+| Issuance/idempotency and canonical request hashes                         | Security/internal          | Fixed-size digests only; no raw idempotency key or request body                |
+| Expiry policy version                                                     | Internal policy provenance | Required and immutable for issued subject/session                              |
+| Consent purpose, notice version, locale, decision, source, sequence, time | Personal compliance record | Append-only per purpose; no notice copy or private/free text                   |
+| Withdrawal link                                                           | Personal compliance record | Restricted to the same subject and purpose; historical row is not mutated      |
+| Global issuance window/count                                              | Internal security          | Singleton aggregate with no subject, network, device, or content dimension     |
 
 The anonymous-session TTL is required runtime configuration and intentionally absent from the
 migration. Missing configuration disables issuance. Selecting a production retention period,
@@ -104,3 +104,37 @@ Rollback is expand-only: disable the route/configuration and revert application/
 leaving additive tables intact. Removing tables or records requires a later destructive migration,
 backup/restore evidence, retention review, and explicit owner approval. Logical backup/restore tests
 preserve non-empty session and consent history and re-attest the restored runtime privileges.
+
+## RIT-024 tarot reading persistence classification
+
+The expand-only tarot migration adds immutable `reading` and one-to-one `tarot_draw` tables. It
+creates no reading, draw, catalog, policy, approval, identity, or enabled-feature record.
+
+| Data                                                       | Classification                           | Baseline handling                                                                            |
+| ---------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Reading/anonymous-subject UUIDs and timestamps             | Personal pseudonymous                    | Owner-filtered reads; expiry equals the owning anonymous subject expiry                      |
+| Reading type, locale, theme, request/policy version        | Personal categorical/internal provenance | Exact bounded values; no raw question, intake risk, or interpretation text                   |
+| Catalog reference, checksum, approval reference            | Internal content provenance              | Exact historical snapshot selected by a server-owned approved mapping                        |
+| Idempotency key version/hash and client request hash       | Security/internal                        | Keyed 32-byte digests only; no raw key or request body                                       |
+| Complete tarot execution JSON and draw request hash        | Personal symbolic result/internal audit  | Strict bounded V1 facts/execution shape; no private question, key, nonce, or raw entropy     |
+| Integrity scheme/key version and entropy commitment/counts | Security/internal provenance             | Keyed verifier metadata and SHA-256-shaped commitment only; key material remains server-only |
+
+An active anonymous session is rechecked inside each transaction. The repository locks its subject
+before checking every retained idempotency-key version, so same-key retries replay before limits or
+entropy and same-key/different-client-request attempts conflict. The same lock serializes bounded
+owner-window counts for different keys; only the winning new request inserts a reading before its
+execution callback can consume entropy, and callback failure rolls the transaction back. Historical
+replay uses the stored catalog reference/checksum and stored key versions rather than current policy.
+
+Runtime receives `SELECT` and `INSERT` through dedicated tarot reader/writer capabilities. It has no
+reading/draw `UPDATE`, `DELETE`, `TRUNCATE`, DDL, ownership, or role-administration path. Every
+service invocation performs a live privilege attestation and every private query includes the
+active subject predicate. PostgreSQL cannot use a trustworthy per-request subject setting without a
+separate privileged context setter, and the migration policy forbids adding such a function; this
+slice therefore uses the reviewed repository owner-filtering boundary and does not claim fake RLS.
+
+Rollback is expand-only: disable the route/service and revoke the two tarot capabilities while
+leaving immutable rows and exact V1 parsers available for historical replay. Dropping either table,
+changing retention, or deleting production rows requires a later destructive migration, backup and
+restore evidence, privacy/legal review, and explicit owner approval. The local integration suite
+verifies non-empty logical dump/restore and reapplies/reattests the exact runtime grants.

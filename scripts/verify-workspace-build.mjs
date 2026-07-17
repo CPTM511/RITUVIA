@@ -13,6 +13,8 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/icon.svg.body",
   "apps/web/.next/server/app/api/v1/anonymous/session/route.js",
   "apps/web/.next/server/app/api/v1/intake/evaluate/route.js",
+  "apps/web/.next/server/app/api/v1/readings/tarot/route.js",
+  "apps/web/.next/server/app/api/v1/readings/[readingId]/route.js",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
@@ -30,12 +32,16 @@ const requiredArtifacts = [
   "packages/db/dist/feature-flags.js",
   "packages/db/dist/index.d.ts",
   "packages/db/dist/index.js",
+  "packages/db/dist/tarot-reading-persistence.d.ts",
+  "packages/db/dist/tarot-reading-persistence.js",
   "packages/domain/dist/index.d.ts",
   "packages/domain/dist/index.js",
   "packages/domain/dist/identity.d.ts",
   "packages/domain/dist/identity.js",
   "packages/domain/dist/question-intake.d.ts",
   "packages/domain/dist/question-intake.js",
+  "packages/domain/dist/tarot-reading.d.ts",
+  "packages/domain/dist/tarot-reading.js",
   "packages/divination/dist/index.d.ts",
   "packages/divination/dist/index.js",
   "packages/divination/dist/tarot-draw.d.ts",
@@ -124,7 +130,9 @@ if (
   typeof domainModule.resolveAnonymousSessionState !== "function" ||
   typeof domainModule.allowsConsentPurpose !== "function" ||
   typeof domainModule.evaluateQuestionIntake !== "function" ||
-  typeof domainModule.parseQuestionIntakeResponse !== "function"
+  typeof domainModule.parseQuestionIntakeResponse !== "function" ||
+  typeof domainModule.parseTarotReadingCreateRequestV1 !== "function" ||
+  domainModule.tarotReadingCreateSchemaVersion !== "tarot-reading-create.v1"
 ) {
   throw new Error("The domain build omitted its anonymous identity and consent contracts.");
 }
@@ -209,7 +217,9 @@ if (
   typeof databaseModule.assertAnonymousIdentityRuntimeDatabasePrivileges !== "function" ||
   typeof databaseModule.createAnonymousIdentityService !== "function" ||
   typeof databaseModule.assertFeatureFlagRuntimeDatabasePrivileges !== "function" ||
+  typeof databaseModule.assertTarotReadingRuntimeDatabasePrivileges !== "function" ||
   typeof databaseModule.createDatabaseClient !== "function" ||
+  typeof databaseModule.createTarotReadingPersistence !== "function" ||
   typeof databaseModule.readFeatureFlagVersions !== "function"
 ) {
   throw new TypeError(

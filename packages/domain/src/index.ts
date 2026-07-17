@@ -62,3 +62,12 @@ export {
   type QuestionIntakeSuggestionCode,
   type QuestionIntakeThemeCode,
 } from "./question-intake.js";
+export {
+  parseTarotReadingCreateRequestV1,
+  tarotReadingCreateSchemaVersion,
+  tarotReadingInputErrorCode,
+  tarotReadingTypes,
+  TarotReadingInputError,
+  type TarotReadingCreateRequestV1,
+  type TarotReadingType,
+} from "./tarot-reading.js";
