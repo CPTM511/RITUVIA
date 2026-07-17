@@ -44,22 +44,46 @@ describe("English shell messages", () => {
   });
 
   it("keeps one-card copy non-deterministic, private, and free of pressure", () => {
-    const copy = collectStrings(getTarotOneCardMessages("en")).join(" ");
+    const messages = getTarotOneCardMessages("en");
+    const copy = collectStrings(messages).join(" ");
 
     expect(copy).toContain("reviewed canonical content, not an AI-generated interpretation");
     expect(copy).toContain("does not draw again");
     expect(copy).toContain("without an account or payment");
+    expect(copy).toContain("Start a new reflection");
+    expect(copy).toContain("previous fixed result remains available");
+    expect(copy).toContain("There is no free-text field");
+    expect(Object.keys(messages.result.report.categories).sort()).toEqual([
+      "accessibility",
+      "cultural",
+      "factual",
+      "rights",
+      "safety",
+      "translation",
+    ]);
     expect(copy).not.toMatch(
       /\b(?:guaranteed|destined|curse removal|stronger ritual|act now|buy|upgrade)\b/iu,
     );
   });
 
   it("keeps three-card copy ordered, non-predictive, private, and free of pressure", () => {
-    const copy = collectStrings(getTarotThreeCardMessages("en")).join(" ");
+    const messages = getTarotThreeCardMessages("en");
+    const copy = collectStrings(messages).join(" ");
 
     expect(copy).toContain("Situation, Action, and Possibility");
     expect(copy).toContain("not a prediction");
     expect(copy).toContain("does not draw again");
+    expect(copy).toContain("Start a new reflection");
+    expect(copy).toContain("previous fixed result remains available");
+    expect(copy).toContain("There is no free-text field");
+    expect(Object.keys(messages.result.report.categories).sort()).toEqual([
+      "accessibility",
+      "cultural",
+      "factual",
+      "rights",
+      "safety",
+      "translation",
+    ]);
     expect(copy).not.toMatch(
       /\b(?:guaranteed|destined|curse removal|stronger ritual|act now|buy|upgrade)\b/iu,
     );

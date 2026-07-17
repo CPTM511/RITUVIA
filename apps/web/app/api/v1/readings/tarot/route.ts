@@ -40,6 +40,12 @@ const applicationProblem = (
         retryAfterSeconds: error.retryAfterSeconds,
         status: 429,
       });
+    case "not_found":
+      return problem(request, {
+        code: "TAROT_READING_UNAVAILABLE",
+        ...tarotReadingApiMessages.unavailable,
+        status: 503,
+      });
     case "session_required":
       return problem(request, {
         code: "TAROT_READING_SESSION_REQUIRED",

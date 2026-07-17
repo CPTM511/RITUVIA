@@ -17,6 +17,7 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/api/v1/intake/evaluate/route.js",
   "apps/web/.next/server/app/api/v1/readings/tarot/route.js",
   "apps/web/.next/server/app/api/v1/readings/[readingId]/route.js",
+  "apps/web/.next/server/app/api/v1/readings/[readingId]/report/route.js",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
@@ -44,6 +45,8 @@ const requiredArtifacts = [
   "packages/domain/dist/question-intake.js",
   "packages/domain/dist/tarot-reading.d.ts",
   "packages/domain/dist/tarot-reading.js",
+  "packages/domain/dist/tarot-reading-report.d.ts",
+  "packages/domain/dist/tarot-reading-report.js",
   "packages/divination/dist/index.d.ts",
   "packages/divination/dist/index.js",
   "packages/divination/dist/tarot-draw.d.ts",
@@ -168,6 +171,8 @@ if (
   typeof domainModule.evaluateQuestionIntake !== "function" ||
   typeof domainModule.parseQuestionIntakeResponse !== "function" ||
   typeof domainModule.parseTarotReadingCreateRequestV1 !== "function" ||
+  typeof domainModule.parseTarotReadingReportRequestV1 !== "function" ||
+  domainModule.tarotReadingReportSchemaVersion !== "tarot-reading-report.v1" ||
   domainModule.tarotReadingCreateSchemaVersion !== "tarot-reading-create.v1"
 ) {
   throw new Error("The domain build omitted its anonymous identity and consent contracts.");

@@ -13,7 +13,9 @@ import {
   createTarotReadingPersistence,
   TarotReadingPersistenceError,
   type PreparedTarotReadingCreate,
+  type PreparedTarotReadingReport,
   type TarotReadingPrepareContext,
+  type TarotReadingReportPrepareContext,
 } from "../src/tarot-reading-persistence.js";
 import {
   ensureRuntimeDatabasePrivileges,
@@ -32,6 +34,7 @@ const identityPolicy = Object.freeze({
 const readingPolicy = Object.freeze({
   readingLimit: 3,
   readingPolicyVersion: "tarot-reading.test.v1",
+  reportPolicyVersion: "tarot-reading-report.test.v1",
   windowSeconds: 3_600,
 });
 const catalog = Object.freeze({
@@ -179,6 +182,59 @@ const prepare =
     });
   };
 
+const reportRequest = (
+  category = "factual",
+  target: Readonly<{ kind: "reading" } | { kind: "position"; positionId: string }> = {
+    kind: "reading",
+  },
+) =>
+  Object.freeze({
+    category,
+    schemaVersion: "tarot-reading-report.v1",
+    target: Object.freeze(target),
+  });
+
+const prepareReport =
+  ({
+    activeVersion,
+    callbackCount,
+    key,
+    versions,
+  }: Readonly<{
+    activeVersion: keyof typeof idempotencyKeys;
+    callbackCount: { value: number };
+    key: string;
+    versions: readonly (keyof typeof idempotencyKeys)[];
+  }>) =>
+  (context: TarotReadingReportPrepareContext): PreparedTarotReadingReport => {
+    callbackCount.value += 1;
+    return Object.freeze({
+      activeIdempotencyKeyVersion: activeVersion,
+      candidates: Object.freeze(
+        versions.map((version) =>
+          Object.freeze({
+            canonicalRequestDigest: digest(
+              idempotencyKeys[version],
+              "rituvia.tarot-reading.report-request.v1",
+              [
+                context.subjectId,
+                context.readingId,
+                context.reportPolicyVersion,
+                JSON.stringify(context.request),
+              ],
+            ),
+            idempotencyKeyDigest: digest(
+              idempotencyKeys[version],
+              "rituvia.tarot-reading.report-idempotency.v1",
+              [context.subjectId, context.request.schemaVersion, key],
+            ),
+            idempotencyKeyVersion: version,
+          }),
+        ),
+      ),
+    });
+  };
+
 const request = (themeCode = "self", readingType = "one_card") =>
   Object.freeze({
     locale: "en",
@@ -193,12 +249,16 @@ const isPersistenceError = (error: unknown, code: TarotReadingPersistenceError["
 const expectPostgresError = async (
   operation: () => Promise<unknown>,
   code: string,
+  constraint?: string,
 ): Promise<void> => {
   try {
     await operation();
     assert.fail(`Expected PostgreSQL error ${code}.`);
   } catch (error) {
     assert.equal((error as { code?: unknown }).code, code);
+    if (constraint !== undefined) {
+      assert.equal((error as { constraint?: unknown }).constraint, constraint);
+    }
   }
 };
 
@@ -311,6 +371,121 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(new Set(raceResults.map(({ reading }) => reading.id)).size, 1);
       assert.equal(raceExecutionCount.value, 1);
 
+      const reportKey = idempotencyKey();
+      const reportPrepareCount = { value: 0 };
+      const reportCreated = await persistence.report({
+        prepare: prepareReport({
+          activeVersion: "test.idempotency-hmac.v1",
+          callbackCount: reportPrepareCount,
+          key: reportKey,
+          versions: ["test.idempotency-hmac.v1"],
+        }),
+        readingId: created.reading.id,
+        request: reportRequest(),
+        token: owner.token,
+      });
+      assert.equal(reportCreated.kind, "created");
+      assert.equal(reportPrepareCount.value, 1);
+
+      const replayPrepareCount = { value: 0 };
+      const reportReplayed = await persistence.report({
+        prepare: prepareReport({
+          activeVersion: "test.idempotency-hmac.v2",
+          callbackCount: replayPrepareCount,
+          key: reportKey,
+          versions: ["test.idempotency-hmac.v2", "test.idempotency-hmac.v1"],
+        }),
+        readingId: created.reading.id,
+        request: reportRequest(),
+        token: owner.token,
+      });
+      assert.equal(reportReplayed.kind, "replayed");
+      assert.equal(replayPrepareCount.value, 1);
+
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: replayPrepareCount,
+            key: reportKey,
+            versions: ["test.idempotency-hmac.v2", "test.idempotency-hmac.v1"],
+          }),
+          readingId: created.reading.id,
+          request: reportRequest("safety"),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_IDEMPOTENCY_CONFLICT"),
+      );
+
+      const hiddenTargetPrepareCount = { value: 0 };
+      const hiddenTargetPrepare = prepareReport({
+        activeVersion: "test.idempotency-hmac.v2",
+        callbackCount: hiddenTargetPrepareCount,
+        key: idempotencyKey(),
+        versions: ["test.idempotency-hmac.v2"],
+      });
+      for (const hiddenTarget of [
+        {
+          readingId: created.reading.id,
+          request: reportRequest(),
+          token: otherOwner.token,
+        },
+        {
+          readingId: created.reading.id,
+          request: reportRequest("factual", {
+            kind: "position",
+            positionId: "not-a-real-position",
+          }),
+          token: owner.token,
+        },
+        {
+          readingId: "00000000-0000-4000-8000-000000000000",
+          request: reportRequest(),
+          token: owner.token,
+        },
+      ]) {
+        await assert.rejects(
+          persistence.report({ prepare: hiddenTargetPrepare, ...hiddenTarget }),
+          (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+        );
+      }
+      assert.equal(hiddenTargetPrepareCount.value, 0);
+
+      const threeCardReading = raceResults[0]!.reading;
+      const positionReport = await persistence.report({
+        prepare: prepareReport({
+          activeVersion: "test.idempotency-hmac.v2",
+          callbackCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        readingId: threeCardReading.id,
+        request: reportRequest("translation", { kind: "position", positionId: "action" }),
+        token: otherOwner.token,
+      });
+      assert.equal(positionReport.kind, "created");
+
+      const reportRaceKey = idempotencyKey();
+      const reportRacePrepareCount = { value: 0 };
+      const reportRaceResults = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          persistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: reportRacePrepareCount,
+              key: reportRaceKey,
+              versions: ["test.idempotency-hmac.v2"],
+            }),
+            readingId: threeCardReading.id,
+            request: reportRequest("accessibility"),
+            token: otherOwner.token,
+          }),
+        ),
+      );
+      assert.equal(reportRaceResults.filter(({ kind }) => kind === "created").length, 1);
+      assert.equal(reportRaceResults.filter(({ kind }) => kind === "replayed").length, 7);
+      assert.equal(reportRacePrepareCount.value, 8);
+
       const quotaOwner = await createdSession(identity);
       const quotaSettlements = await Promise.allSettled(
         Array.from({ length: 6 }, (_, index) => {
@@ -337,6 +512,35 @@ await withLocalPostgresLease(async (lease) => {
           assert.ok((result.reason as TarotReadingPersistenceError).retryAfterSeconds! > 0);
         }
       }
+      const quotaReading = quotaSettlements.find(
+        (
+          result,
+        ): result is PromiseFulfilledResult<
+          Awaited<ReturnType<typeof persistence.resolveCreate>>
+        > => result.status === "fulfilled",
+      )?.value.reading;
+      assert.ok(quotaReading);
+      const readingsBeforeQuotaReport = await migrator.query<{ count: number }>(
+        "SELECT count(*)::int AS count FROM reading WHERE anonymous_subject_id = $1::uuid",
+        [quotaOwner.context.subjectId],
+      );
+      const quotaReport = await persistence.report({
+        prepare: prepareReport({
+          activeVersion: "test.idempotency-hmac.v2",
+          callbackCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        readingId: quotaReading.id,
+        request: reportRequest("rights"),
+        token: quotaOwner.token,
+      });
+      assert.equal(quotaReport.kind, "created");
+      const readingsAfterQuotaReport = await migrator.query<{ count: number }>(
+        "SELECT count(*)::int AS count FROM reading WHERE anonymous_subject_id = $1::uuid",
+        [quotaOwner.context.subjectId],
+      );
+      assert.deepEqual(readingsAfterQuotaReport.rows, readingsBeforeQuotaReport.rows);
 
       const invalidOwner = await createdSession(identity);
       const invalidKey = idempotencyKey();
@@ -396,9 +600,105 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(stored.rows[0]?.raw.includes(firstKey), false);
       assert.equal(stored.rows[0]?.raw.includes(owner.token), false);
 
+      const storedReport = await migrator.query<{
+        canonicalRequestHashBytes: number;
+        category: string;
+        expiresAt: Date;
+        idempotencyKeyHashBytes: number;
+        idempotencyKeyVersion: string;
+        raw: string;
+        readingExpiresAt: Date;
+        reportPolicyVersion: string;
+        schemaVersion: string;
+        targetKind: string;
+        targetPositionId: string | null;
+      }>(
+        `SELECT octet_length(report.canonical_request_hash) AS "canonicalRequestHashBytes",
+                report.category,
+                report.expires_at AS "expiresAt",
+                octet_length(report.idempotency_key_hash) AS "idempotencyKeyHashBytes",
+                report.idempotency_key_version AS "idempotencyKeyVersion",
+                row_to_json(report)::text AS raw,
+                reading.expires_at AS "readingExpiresAt",
+                report.report_policy_version AS "reportPolicyVersion",
+                report.schema_version AS "schemaVersion",
+                report.target_kind AS "targetKind",
+                report.target_position_id AS "targetPositionId"
+           FROM reading_report AS report
+           JOIN reading ON reading.id = report.reading_id
+          WHERE report.reading_id = $1::uuid
+            AND report.category = 'factual'`,
+        [created.reading.id],
+      );
+      assert.equal(storedReport.rows.length, 1);
+      assert.deepEqual(
+        {
+          ...storedReport.rows[0],
+          expiresAt: storedReport.rows[0]?.expiresAt.toISOString(),
+          raw: undefined,
+          readingExpiresAt: storedReport.rows[0]?.readingExpiresAt.toISOString(),
+        },
+        {
+          canonicalRequestHashBytes: 32,
+          category: "factual",
+          expiresAt: created.reading.expiresAt,
+          idempotencyKeyHashBytes: 32,
+          idempotencyKeyVersion: "test.idempotency-hmac.v1",
+          raw: undefined,
+          readingExpiresAt: created.reading.expiresAt,
+          reportPolicyVersion: readingPolicy.reportPolicyVersion,
+          schemaVersion: "tarot-reading-report.v1",
+          targetKind: "reading",
+          targetPositionId: null,
+        },
+      );
+      assert.equal(storedReport.rows[0]?.raw.includes(reportKey), false);
+      assert.equal(storedReport.rows[0]?.raw.includes(owner.token), false);
+
+      const forgedDigest = (): Buffer => randomBytes(32);
+      await expectPostgresError(
+        () =>
+          runtimeSql.query(
+            `INSERT INTO reading_report (
+               reading_id, anonymous_subject_id, category, target_kind, target_position_id,
+               schema_version, report_policy_version, idempotency_key_version,
+               idempotency_key_hash, canonical_request_hash, created_at, expires_at
+             ) SELECT reading_id, $1::uuid, category, target_kind, target_position_id,
+                      schema_version, report_policy_version, idempotency_key_version,
+                      $2::bytea, $3::bytea, created_at, expires_at
+                 FROM reading_report
+                WHERE reading_id = $4::uuid
+                LIMIT 1`,
+            [otherOwner.context.subjectId, forgedDigest(), forgedDigest(), created.reading.id],
+          ),
+        "23503",
+        "reading_report_reading_subject_fkey",
+      );
+      await expectPostgresError(
+        () =>
+          runtimeSql.query(
+            `INSERT INTO reading_report (
+               reading_id, anonymous_subject_id, category, target_kind, target_position_id,
+               schema_version, report_policy_version, idempotency_key_version,
+               idempotency_key_hash, canonical_request_hash, created_at, expires_at
+             ) SELECT reading_id, anonymous_subject_id, category, 'position', 'Not valid',
+                      schema_version, report_policy_version, idempotency_key_version,
+                      $1::bytea, $2::bytea, created_at, expires_at
+                 FROM reading_report
+                WHERE reading_id = $3::uuid
+                LIMIT 1`,
+            [forgedDigest(), forgedDigest(), created.reading.id],
+          ),
+        "23514",
+        "reading_report_target_check",
+      );
+
       for (const statement of [
         "UPDATE reading SET theme_code = 'work'",
         "DELETE FROM tarot_draw",
+        "UPDATE reading_report SET category = 'safety'",
+        "DELETE FROM reading_report",
+        "TRUNCATE reading_report",
         "TRUNCATE reading",
       ]) {
         await expectPostgresError(() => runtimeSql.query(statement), "42501");
@@ -436,6 +736,24 @@ await withLocalPostgresLease(async (lease) => {
           await restoredPersistence.get({ readingId: created.reading.id, token: owner.token }),
           created.reading,
         );
+        assert.deepEqual(
+          await restoredPersistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: { value: 0 },
+              key: reportKey,
+              versions: ["test.idempotency-hmac.v2", "test.idempotency-hmac.v1"],
+            }),
+            readingId: created.reading.id,
+            request: reportRequest(),
+            token: owner.token,
+          }),
+          { kind: "replayed" },
+        );
+        const restoredReports = await restoredRuntime.$queryRaw<Array<{ count: number }>>`
+          SELECT count(*)::int AS count FROM reading_report
+        `;
+        assert.equal(restoredReports[0]?.count, 4);
         await assertTarotReadingRuntimeDatabasePrivileges(restoredRuntime);
       } finally {
         await restoredRuntime.$disconnect();
@@ -473,5 +791,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 process.stdout.write(
-  "Verified owner-scoped tarot persistence, active sessions, keyed replay rotation, conflict, winner-before-entropy races, atomic limits, immutable execution, least privilege, and logical restore.\n",
+  "Verified owner-scoped tarot persistence and reporting, position validation, keyed replay/conflict races, quota independence, immutable execution/report rows, least privilege, and logical restore.\n",
 );

@@ -16,16 +16,25 @@ export const tarotReadingMaximumResponseBytes = 65_536;
 
 export class TarotReadingTransportError extends Error {
   public readonly failure: TarotOneCardFailure;
+  public readonly retryAfterSeconds: number | undefined;
 
-  public constructor(failure: TarotOneCardFailure) {
+  public constructor(failure: TarotOneCardFailure, retryAfterSeconds?: number) {
     super("The tarot reading request did not complete.");
     this.name = "TarotReadingTransportError";
     this.failure = failure;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
-const fail = (failure: TarotOneCardFailure): never => {
-  throw new TarotReadingTransportError(failure);
+const fail = (failure: TarotOneCardFailure, retryAfterSeconds?: number): never => {
+  throw new TarotReadingTransportError(failure, retryAfterSeconds);
+};
+
+const parseRetryAfterSeconds = (response: Response): number | undefined => {
+  const value = response.headers.get("retry-after");
+  if (value === null || !/^[1-9][0-9]{0,5}$/u.test(value)) return undefined;
+  const seconds = Number(value);
+  return seconds <= 604_800 ? seconds : undefined;
 };
 
 const failureForStatus = (status: number): TarotOneCardFailure => {
@@ -83,7 +92,9 @@ export const executeTarotReadingOperation = async (
     method: "POST",
     signal: input.signal,
   });
-  if (session.status !== 204) return fail(failureForStatus(session.status));
+  if (session.status !== 204) {
+    return fail(session.status === 429 ? "unavailable" : failureForStatus(session.status));
+  }
   input.onSessionReady();
 
   const reading = await fetcher(tarotReadingEndpoint, {
@@ -103,7 +114,10 @@ export const executeTarotReadingOperation = async (
     signal: input.signal,
   });
   if (reading.status !== 200 && reading.status !== 201) {
-    return fail(failureForStatus(reading.status));
+    return fail(
+      failureForStatus(reading.status),
+      reading.status === 429 ? parseRetryAfterSeconds(reading) : undefined,
+    );
   }
   let response: TarotReadingPublicResponseV2;
   try {

@@ -18,3 +18,6 @@ export const createWebTarotReading: TarotReadingApplicationService["create"] = a
   unavailable();
 
 export const getWebTarotReading: TarotReadingApplicationService["get"] = async () => unavailable();
+
+export const reportWebTarotReading: TarotReadingApplicationService["report"] = async () =>
+  unavailable();

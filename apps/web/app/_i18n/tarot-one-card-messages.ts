@@ -26,7 +26,12 @@ export type TarotReadingMessages = Readonly<{
     conflict: Readonly<{ message: string; startOver: string; title: string }>;
     drawing: string;
     error: Readonly<{ message: string; retry: string; title: string }>;
-    limitReached: Readonly<{ message: string; retry: string; title: string }>;
+    limitReached: Readonly<{
+      message: string;
+      retryAfterLabel: string;
+      returnToThemes: string;
+      title: string;
+    }>;
     offline: Readonly<{ message: string; retry: string; title: string }>;
     ready: Readonly<{ message: string; reveal: string; title: string }>;
     replayed: string;
@@ -45,8 +50,11 @@ export type TarotReadingMessages = Readonly<{
     engineVersionLabel: string;
     methodologyAction: string;
     methodologySummary: string;
+    newReflection: string;
+    newReflectionBoundary: string;
     orientation: Readonly<Record<"reversed" | "upright", string>>;
     perspectiveTitle: string;
+    previousPreserved: string;
     positionBoundary: string;
     reflectionTitle: string;
     replayed: string;
@@ -55,6 +63,32 @@ export type TarotReadingMessages = Readonly<{
     themesTitle: string;
     title: string;
     versionLabel: string;
+    report: Readonly<{
+      categories: Readonly<
+        Record<
+          "accessibility" | "cultural" | "factual" | "rights" | "safety" | "translation",
+          string
+        >
+      >;
+      categoryLabel: string;
+      conflict: string;
+      disclosure: string;
+      error: string;
+      notFound: string;
+      offline: string;
+      retry: string;
+      selectCategory: string;
+      selectTarget: string;
+      startNew: string;
+      submit: string;
+      submitting: string;
+      success: string;
+      summary: string;
+      targetLabel: string;
+      targetPosition: string;
+      targetReading: string;
+      unavailable: string;
+    }>;
   }>;
 }>;
 
@@ -105,7 +139,8 @@ const englishTarotOneCardMessages = {
     limitReached: {
       message:
         "This private session has reached its current reading limit. Pause here and return later; another card would not make the reflection more certain.",
-      retry: "Check the same draw later",
+      retryAfterLabel: "Server wait before another attempt:",
+      returnToThemes: "Return to theme selection",
       title: "The current reading limit has been reached",
     },
     offline: {
@@ -146,11 +181,16 @@ const englishTarotOneCardMessages = {
     engineVersionLabel: "Draw engine",
     methodologyAction: "Read the methodology",
     methodologySummary: "How this draw was made",
+    newReflection: "Start a new reflection",
+    newReflectionBoundary:
+      "A new reflection creates a separate server-selected draw. It does not make this result more certain, and you can stop here.",
     orientation: {
       reversed: "Reversed",
       upright: "Upright",
     },
     perspectiveTitle: "What this may invite you to notice",
+    previousPreserved:
+      "Your previous fixed result remains available while a separate new reflection is unfinished.",
     positionBoundary:
       "This symbolic perspective offers something to consider, not a prediction or instruction.",
     reflectionTitle: "A question to reflect on",
@@ -160,6 +200,37 @@ const englishTarotOneCardMessages = {
     themesTitle: "Core themes",
     title: "Your one-card reflection",
     versionLabel: "Content version",
+    report: {
+      categories: {
+        accessibility: "Accessibility",
+        cultural: "Cultural context",
+        factual: "Factual accuracy",
+        rights: "Rights or attribution",
+        safety: "Safety",
+        translation: "Translation",
+      },
+      categoryLabel: "Issue category",
+      conflict:
+        "This saved report no longer matches the selected options. Choose again to start a new report.",
+      disclosure:
+        "Reports record only the selected category and target. There is no free-text field, and reporting does not redraw or change this result.",
+      error: "The report was not recorded. Nothing will retry automatically.",
+      notFound: "This reading is no longer available to report in the current private session.",
+      offline: "Reconnect before sending this report. Nothing will retry automatically.",
+      retry: "Try the same report again",
+      selectCategory: "Choose a category",
+      selectTarget: "Choose what the report concerns",
+      startNew: "Start a new report request",
+      submit: "Send report",
+      submitting: "Sending report",
+      success: "Thank you. The report was recorded without your private question or journal text.",
+      summary: "Report an issue with this reading",
+      targetLabel: "Report target",
+      targetPosition: "Position: {position}",
+      targetReading: "The whole reading",
+      unavailable:
+        "The report service is temporarily unavailable. Nothing will retry automatically.",
+    },
   },
 } as const satisfies TarotOneCardMessages;
 

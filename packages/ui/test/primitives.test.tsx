@@ -377,6 +377,20 @@ describe("accessible UI primitives", () => {
     expect(radio).toContain("<legend");
     expect(radio.match(/type="radio"/gu)).toHaveLength(2);
     expect(radio).toMatch(/checked="" value="second-option"/u);
+    const controlledEmptyRadio = renderToStaticMarkup(
+      <RadioGroup
+        id={fieldId}
+        label="Choose one theme"
+        name={fieldName}
+        onValueChange={vi.fn()}
+        options={[
+          { label: "First theme", value: firstValue },
+          { label: "Second theme", value: secondValue },
+        ]}
+        value={undefined}
+      />,
+    );
+    expect(controlledEmptyRadio).not.toContain("checked=");
     expect(() =>
       renderToStaticMarkup(
         <RadioGroup id={fieldId} label="Choose one theme" name={fieldName} options={[]} />,

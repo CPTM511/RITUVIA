@@ -78,3 +78,30 @@ export const tarotReadingApiMessages = Object.freeze({
     title: "A tarot reading could not be completed",
   }),
 });
+
+export const tarotReadingReportApiMessages = Object.freeze({
+  conflict: Object.freeze({
+    detail: "Use a new idempotency key after changing the report category or target.",
+    title: "This report request conflicts",
+  }),
+  invalidBody: Object.freeze({
+    detail: "Send one valid category and reading or position target without free text.",
+    title: "The reading report is invalid",
+  }),
+  invalidIdempotency: Object.freeze({
+    detail: "Send one new random idempotency key with this report.",
+    title: "The reading report is invalid",
+  }),
+  invalidRequest: Object.freeze({
+    detail: "Send one same-origin JSON request from this site.",
+    title: "The reading report was not accepted",
+  }),
+  tooLarge: Object.freeze({
+    detail: "Send only the report category, target, and schema version.",
+    title: "The reading report is too large",
+  }),
+  unavailable: Object.freeze({
+    detail: "The report could not be recorded. Please try again manually.",
+    title: "The reading report is unavailable",
+  }),
+});

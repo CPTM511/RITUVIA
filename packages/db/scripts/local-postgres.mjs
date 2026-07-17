@@ -846,8 +846,15 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       "SELECT to_regclass('public.reading') IS NOT NULL AS present",
     );
     if (readingTables.rows[0]?.present === true) {
-      await admin.query(`GRANT SELECT ON TABLE reading, tarot_draw TO ${READING_READER_ROLE}`);
-      await admin.query(`GRANT INSERT ON TABLE reading, tarot_draw TO ${READING_WRITER_ROLE}`);
+      const reportTables = await admin.query(
+        "SELECT to_regclass('public.reading_report') IS NOT NULL AS present",
+      );
+      const readingRelations =
+        reportTables.rows[0]?.present === true
+          ? "reading, tarot_draw, reading_report"
+          : "reading, tarot_draw";
+      await admin.query(`GRANT SELECT ON TABLE ${readingRelations} TO ${READING_READER_ROLE}`);
+      await admin.query(`GRANT INSERT ON TABLE ${readingRelations} TO ${READING_WRITER_ROLE}`);
     }
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,

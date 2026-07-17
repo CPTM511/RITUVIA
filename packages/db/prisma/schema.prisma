@@ -50,6 +50,7 @@ model AnonymousSubject {
   sessions            AnonymousSession[]
   consentRecords      ConsentRecord[]
   readings            Reading[]
+  readingReports      ReadingReport[]
 
   @@index([expiresAt, id], map: "anonymous_subject_expiry_idx")
   @@map("anonymous_subject")
@@ -77,11 +78,36 @@ model Reading {
   expiresAt                DateTime         @map("expires_at") @db.Timestamptz(6)
   anonymousSubject         AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   tarotDraw                TarotDraw?
+  reports                  ReadingReport[]
 
   @@unique([anonymousSubjectId, requestSchemaVersion, idempotencyKeyVersion, idempotencyKeyHash], map: "reading_subject_scope_idempotency_key")
+  @@unique([id, anonymousSubjectId], map: "reading_subject_identity_key")
   @@unique([id, readingType, catalogId, catalogVersion], map: "reading_draw_identity_key")
   @@index([anonymousSubjectId, createdAt(sort: Desc), id(sort: Desc)], map: "reading_subject_created_idx")
   @@map("reading")
+}
+
+model ReadingReport {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  readingId             String           @map("reading_id") @db.Uuid
+  anonymousSubjectId    String           @map("anonymous_subject_id") @db.Uuid
+  category              String           @db.VarChar(24)
+  targetKind            String           @map("target_kind") @db.VarChar(16)
+  targetPositionId      String?          @map("target_position_id") @db.VarChar(100)
+  schemaVersion         String           @map("schema_version") @db.VarChar(100)
+  reportPolicyVersion   String           @map("report_policy_version") @db.VarChar(100)
+  idempotencyKeyVersion String           @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes            @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes            @map("canonical_request_hash")
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt             DateTime         @map("expires_at") @db.Timestamptz(6)
+  reading               Reading          @relation(fields: [readingId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject      AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([anonymousSubjectId, idempotencyKeyVersion, idempotencyKeyHash], map: "reading_report_subject_idempotency_key")
+  @@index([readingId, createdAt(sort: Desc), id(sort: Desc)], map: "reading_report_reading_created_idx")
+  @@index([expiresAt, id], map: "reading_report_expiry_idx")
+  @@map("reading_report")
 }
 
 model TarotDraw {

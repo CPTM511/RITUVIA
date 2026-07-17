@@ -51,6 +51,8 @@ const questionIntakeApiPathname = "/api/v1/intake/evaluate";
 const tarotReadingApiPathname = "/api/v1/readings/tarot";
 const tarotReadingPathPattern =
   /^\/api\/v1\/readings\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const tarotReadingReportPathPattern =
+  /^\/api\/v1\/readings\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/report$/u;
 const questionIntakePagePathname = localeQuestionIntakePath("en");
 const tarotReadingPagePathnames = Object.freeze([
   localeTarotOneCardPath("en"),
@@ -148,7 +150,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const questionIntakeApi = pathname === questionIntakeApiPathname;
   const tarotReadingCreateApi = pathname === tarotReadingApiPathname;
   const tarotReadingReadApi = tarotReadingPathPattern.test(pathname);
-  const tarotReadingApi = tarotReadingCreateApi || tarotReadingReadApi;
+  const tarotReadingReportApi = tarotReadingReportPathPattern.test(pathname);
+  const tarotReadingApi = tarotReadingCreateApi || tarotReadingReadApi || tarotReadingReportApi;
   const questionIntakeDocument = isQuestionIntakePagePathname(pathname);
   const tarotReadingDocument = isTarotReadingPagePathname(pathname);
   const reviewedAnonymousSessionRequest =
@@ -164,7 +167,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const reviewedTarotReadingRequest =
     tarotReadingApi &&
     ((tarotReadingCreateApi && request.method === "POST") ||
-      (tarotReadingReadApi && request.method === "GET")) &&
+      (tarotReadingReadApi && request.method === "GET") ||
+      (tarotReadingReportApi && request.method === "POST")) &&
     request.nextUrl.search === "" &&
     !frameworkRepresentation;
   const unreviewedFrameworkRepresentation =

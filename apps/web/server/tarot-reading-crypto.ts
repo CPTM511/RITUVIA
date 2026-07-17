@@ -12,7 +12,7 @@ import {
   type TarotDrawFactsV1,
   type TarotExecutionVerifierV1,
 } from "@rituvia/divination";
-import type { TarotReadingCreateRequestV1 } from "@rituvia/domain";
+import type { TarotReadingCreateRequestV1, TarotReadingReportRequestV1 } from "@rituvia/domain";
 
 export const tarotReadingIntegritySchemeVersion = "hmac-sha256.tarot-reading.v1" as const;
 export const tarotReadingIntegrityPayloadVersion = "tarot-reading-integrity-payload.v1" as const;
@@ -213,6 +213,44 @@ export const createTarotReadingCryptography = (input: TarotReadingIntegrityKeyri
       JSON.stringify({ operation: "reading.tarot.create.v1", request, subjectId }),
     );
   };
+  const deriveReportIdempotencyKeyDigest = (
+    version: string,
+    subjectId: string,
+    idempotencyKey: string,
+  ): string => {
+    if (!idPattern.test(subjectId) || !idempotencyKeyPattern.test(idempotencyKey)) return invalid();
+    return hmac(
+      requireKey(version).key,
+      "rituvia.tarot-reading.report-idempotency.v1",
+      JSON.stringify({ operation: "reading.tarot.report.v1", subjectId, idempotencyKey }),
+    );
+  };
+  const deriveReportRequestDigest = (
+    version: string,
+    subjectId: string,
+    readingId: string,
+    reportPolicyVersion: string,
+    request: TarotReadingReportRequestV1,
+  ): string => {
+    if (
+      !idPattern.test(subjectId) ||
+      !idPattern.test(readingId) ||
+      !keyVersionPattern.test(reportPolicyVersion)
+    ) {
+      return invalid();
+    }
+    return hmac(
+      requireKey(version).key,
+      "rituvia.tarot-reading.report-request.v1",
+      JSON.stringify({
+        operation: "reading.tarot.report.v1",
+        readingId,
+        reportPolicyVersion,
+        request,
+        subjectId,
+      }),
+    );
+  };
   const deriveRequestDigest = (
     version: string,
     inputBinding: Omit<
@@ -322,6 +360,8 @@ export const createTarotReadingCryptography = (input: TarotReadingIntegrityKeyri
     createExecutionVerifier,
     deriveClientRequestDigest,
     deriveIdempotencyKeyDigest,
+    deriveReportIdempotencyKeyDigest,
+    deriveReportRequestDigest,
     deriveRequestDigest,
     keyVersions: Object.freeze(keys.map(({ version }) => version)),
   });

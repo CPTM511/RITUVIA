@@ -83,6 +83,60 @@ describe("one-card browser transport", () => {
     await expect(execute(fetcher)).rejects.toMatchObject({ failure });
   });
 
+  it.each([
+    ["1", 1],
+    ["604800", 604_800],
+  ] as const)("accepts bounded integer Retry-After %s on a 429", async (header, expected) => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        new Response(null, { headers: { "retry-after": header }, status: 429 }),
+      ) as unknown as typeof fetch;
+
+    await expect(execute(fetcher)).rejects.toMatchObject({
+      failure: "limit_reached",
+      retryAfterSeconds: expected,
+    });
+  });
+
+  it.each(["", "0", "000001", "+1", "1.5", "604801", "1000000", "Wed, 21 Oct 2015 07:28:00 GMT"])(
+    "rejects malformed or out-of-range Retry-After %j without enabling an immediate retry",
+    async (header) => {
+      const headers = header === "" ? undefined : { "retry-after": header };
+      const fetcher = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+        .mockResolvedValueOnce(
+          new Response(null, {
+            ...(headers === undefined ? {} : { headers }),
+            status: 429,
+          }),
+        ) as unknown as typeof fetch;
+
+      await expect(execute(fetcher)).rejects.toMatchObject({
+        failure: "limit_reached",
+        retryAfterSeconds: undefined,
+      });
+    },
+  );
+
+  it.each([" 1", "1 "])("rejects an unnormalized Retry-After %j", async (header) => {
+    const rawResponse = {
+      headers: { get: (name: string) => (name === "retry-after" ? header : null) },
+      status: 429,
+    } as unknown as Response;
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(rawResponse) as unknown as typeof fetch;
+
+    await expect(execute(fetcher)).rejects.toMatchObject({
+      failure: "limit_reached",
+      retryAfterSeconds: undefined,
+    });
+  });
+
   it("fails closed on malformed, oversized, or theme-mismatched JSON", async () => {
     const wrongTheme = { ...createTarotOneCardResponseFixture(), themeCode: "work" };
     for (const response of [

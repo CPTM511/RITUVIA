@@ -138,3 +138,35 @@ leaving immutable rows and exact V1 parsers available for historical replay. Dro
 changing retention, or deleting production rows requires a later destructive migration, backup and
 restore evidence, privacy/legal review, and explicit owner approval. The local integration suite
 verifies non-empty logical dump/restore and reapplies/reattests the exact runtime grants.
+
+## RIT-027 tarot reading report classification
+
+The expand-only report migration adds `reading_report` and an owner-binding uniqueness constraint
+to `reading`. It creates no report, reading, identity, policy, retention value, or enabled feature.
+
+| Data                                                                 | Classification                    | Baseline handling                                                                                         |
+| -------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Report, reading, and anonymous-subject UUIDs                         | Personal pseudonymous             | Composite foreign key binds every report to the reading owner; runtime queries also require that owner    |
+| Category and whole-reading/canonical-position target                 | Personal categorical feedback     | Six bounded categories and no free text, question, interpretation, card payload, or arbitrary target      |
+| Schema/report-policy/idempotency-key versions                        | Internal policy/security provenance | Exact bounded identifiers; the schema does not select a production policy                                |
+| Keyed idempotency and canonical-request hashes                       | Security/internal                 | Fixed 32-byte digests only; no raw key or request body                                                    |
+| Created and expiry timestamps                                        | Personal operational metadata       | Report expiry is bounded by the existing owning reading expiry; no independent retention extension          |
+
+Report creation locks and revalidates the active anonymous subject, loads only an unexpired reading
+for that subject, and validates a position target against the immutable stored draw. An unknown,
+expired, cross-owner, or invalid-position target uses the same not-found result and performs no
+insert. Historical keyed requests replay before insertion; the same key with a different canonical
+request conflicts. Reporting does not call the reading-create limit path and therefore neither
+consumes nor bypasses reading quota.
+
+Runtime receives only `SELECT` and `INSERT` on `reading_report` through the existing tarot
+reader/writer capabilities. It cannot update, delete, truncate, maintain, reference, trigger, own,
+or administer the table, and the live tarot privilege attestation includes the report table.
+Reports are append-only operational feedback; triage access and deletion/export jobs remain outside
+this slice and must receive their own reviewed privileges and owner/legal approval.
+
+Rollback is expand-only: disable the report route and revoke/reapply the tarot capabilities while
+leaving the additive table and owner constraint intact. Dropping the table or constraint, changing
+retention, or deleting production reports requires a later forward migration, current recovery
+evidence, privacy/legal review, and explicit owner approval. The focused integration suite preserves
+non-empty reports through logical dump/restore and reattests exact runtime grants.

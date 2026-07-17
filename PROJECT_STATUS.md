@@ -2,7 +2,7 @@
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M2 local implementation is complete through the private, safe-off RIT-026 ordered three-card tarot reflection flow. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through the private, safe-off RIT-027 unified tarot-limit, explicit-new-reflection, and categorical-report slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -41,13 +41,20 @@
 - Exact no-store/noindex `POST /api/v1/readings/tarot` and owner-scoped `GET /api/v1/readings/{uuid}` contracts with bounded input, safe Problem Details, indistinguishable unknown/cross-owner reads, verified V2 reviewed-content presentation, and a hard unavailable runtime until an eligible production catalog is separately approved and configured.
 - Private noindex/no-store `/en/tarot/one-card` with ten theme-only choices, separate session/reading idempotency, explicit reveal without redraw, strict fact/presentation parsing, reviewed limitation/question/action output, complete calm failure states, and no AI, raw-question, analytics, account, payment, share, or storage surface.
 - Private noindex/no-store `/en/tarot/three-card` with the same theme-only privacy boundary and calm state machine, one fixed server-authoritative draw, exact unique Situation/Action/Possibility order, strict fact/presentation parsing, explicit reveal without redraw, reviewed per-position limitations/questions/actions, and no AI, raw-question, analytics, account, payment, share, or storage surface.
+- One application/database-matched tarot quota authority with a three-per-hour local acceptance
+  baseline, database-clock atomic enforcement, replay-before-quota behavior, bounded `Retry-After`,
+  no immediate limit retry, explicit new-reflection transitions, and previous-result preservation.
+- Exact owner-bound `POST /api/v1/readings/{uuid}/report` plus a private categorical report control
+  with six approved categories, whole/position targets, independent idempotency, empty `204`
+  create/replay, indistinguishable private `404`, changed-reuse `409`, no free text, no analytics,
+  no reading-quota use, inherited expiry, append-only persistence, and least-privilege runtime access.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 760 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 876 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -63,7 +70,10 @@
 - Payment-provider written underwriting approval.
 - Astrology calculation commercial-license decision.
 - A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
-- An approved production tarot catalog, production runtime activation, AI interpretation, intention/ritual continuation, or user-visible redraw/report controls; the synthetic RIT-022 fixture remains publication-ineligible and cannot activate the RIT-024/RIT-026 runtime.
+- An approved production tarot catalog, production runtime activation, AI interpretation,
+  intention/ritual continuation, report triage/admin workflow, or separate creation-versus-history
+  operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
+  cannot activate the RIT-024/RIT-027 runtime.
 - Production credentials or vendor accounts.
 - Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
@@ -90,29 +100,32 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-026 source passes local validation. With the bundled Node.js 24 runtime, formatting, lint,
-strict type checking, 760 unit/contract tests in 58 files, configuration-boundary integration, the
-154-file/eight-module architecture gate, and the 56-artifact production build pass. The record-policy
+The RIT-027 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
+lint, strict type checking, 876 unit/contract tests in 60 files, configuration-boundary integration,
+the 160-file/eight-module architecture gate, and the 59-artifact production build pass. The record-policy
 suite covers the canonical task/decision graph, privacy-safe records, contextual task results, and
-exact staged index-to-manual-to-checksum evidence. RIT-026 changes no database source or migration;
-the RIT-024 PostgreSQL suite remains the applicable persistence evidence and passed without stopping
-or modifying the active external `IPO.ONE` database on port 55432.
+exact staged index-to-manual-to-checksum evidence. RIT-027 PostgreSQL integration passed its
+expand-only report migration, ownership, idempotency, quota-independence, append-only privilege,
+and restore matrix; a later rerun stopped at preflight because the unrelated active `IPO.ONE`
+database occupied fixed port 55432 and was not stopped or modified.
 
-The build verifier checks 56 artifacts and narrowed exports, including exact UI stylesheet parity,
+The build verifier checks 59 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
-and the icon. Maximum Web output is 6,095 B
-gzip HTML, 6,098 B gzip CSS, 223,318 B gzip JavaScript, and 356 B raw icon.
+and the icon. Maximum Web output is 6,316 B
+gzip HTML, 6,126 B gzip CSS, 224,853 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 154 active source files across eight modules and keeps module,
+The architecture verifier audits 160 active source files across eight modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
 adds the first strict V2 one-card consumer. RIT-026 generalizes the flow and adds exact three-card
 position-title/order/uniqueness parsing, real service create/replay projection, browser-state,
-transport, proxy, metadata, build, and accessibility coverage. Real
+transport, proxy, metadata, build, and accessibility coverage. RIT-027 adds exact limit-policy
+matching, explicit new-reflection and previous-result state, controlled empty radio behavior,
+bounded wait handling, and owner-bound append-only categorical reports. Real
 PostgreSQL integration proves clean/idempotent migration, exact owner/session authorization,
 same-key replay and conflict, key rotation, winner-before-entropy concurrent creation, atomic
 limits, immutable execution, least privilege, and non-empty logical restore. Independent review
@@ -155,11 +168,13 @@ against an isolated production build whose feature-flag reader is replaced only 
 test adapter. Reframed, blocked, crisis, offline/degraded, edit/stale-response, 320px, RTL, dark,
 no-JavaScript, noindex/no-store, and raw-question non-retention behavior are covered by the
 component, domain, API, production HTTP, and Chromium/axe gates rather than overstated as CLI flows.
-RIT-026 Playwright CLI evidence at 320px verifies one 204 session request, one 201 exact theme-only
-three-card draw, an explicit reveal with no third request, three semantic result cards in fixed
-Situation/Action/Possibility order, no horizontal overflow, an actionable offline state with no new
-request, and zero success-path browser errors/warnings. The success response exists only in the
-isolated browser route; the same latest production server returns an empty 404 without interception.
+RIT-027 Playwright CLI evidence verifies one-card create then presentation-only reveal, exact
+category/position report submission with no free text, independent report idempotency, empty `204`
+success, explicit manual retry, explicit new reflection, a truly cleared theme choice, old-result
+preservation through a limit state, and no immediate limit retry. At 320px the one-card and
+three-card results have no horizontal overflow; the latter exposes exactly three ordered cards and
+all three canonical report positions. The success responses exist only in isolated browser routes;
+the same latest production server returns an empty 404 without interception.
 Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and
 Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or
 owner-side required-check protection is claimed.

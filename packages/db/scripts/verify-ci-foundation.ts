@@ -253,8 +253,12 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     await admin.query(
       `GRANT UPDATE (window_started_at, issued_count) ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
     );
-    await admin.query(`GRANT SELECT ON TABLE reading, tarot_draw TO ${READING_READER_ROLE}`);
-    await admin.query(`GRANT INSERT ON TABLE reading, tarot_draw TO ${READING_WRITER_ROLE}`);
+    await admin.query(
+      `GRANT SELECT ON TABLE reading, tarot_draw, reading_report TO ${READING_READER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE reading, tarot_draw, reading_report TO ${READING_WRITER_ROLE}`,
+    );
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
@@ -426,6 +430,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     const emptyIdentity = await app.query<{
       consents: number;
       draws: number;
+      reports: number;
       readings: number;
       sessions: number;
       subjects: number;
@@ -433,10 +438,12 @@ const verifyMigratedDatabase = async (): Promise<void> => {
               (SELECT count(*)::int FROM anonymous_session) AS sessions,
               (SELECT count(*)::int FROM consent_record) AS consents,
               (SELECT count(*)::int FROM reading) AS readings,
-              (SELECT count(*)::int FROM tarot_draw) AS draws`);
+              (SELECT count(*)::int FROM tarot_draw) AS draws,
+              (SELECT count(*)::int FROM reading_report) AS reports`);
     assert.deepEqual(emptyIdentity.rows[0], {
       consents: 0,
       draws: 0,
+      reports: 0,
       readings: 0,
       sessions: 0,
       subjects: 0,

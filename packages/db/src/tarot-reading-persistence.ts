@@ -1,6 +1,8 @@
 import {
   parseTarotReadingCreateRequestV1,
+  parseTarotReadingReportRequestV1,
   type TarotReadingCreateRequestV1,
+  type TarotReadingReportRequestV1,
   type TarotReadingType,
 } from "@rituvia/domain";
 
@@ -26,6 +28,7 @@ export const tarotReadingPersistenceErrorCodes = Object.freeze([
   "TAROT_READING_SESSION_UNAVAILABLE",
   "TAROT_READING_IDEMPOTENCY_CONFLICT",
   "TAROT_READING_RATE_LIMITED",
+  "TAROT_READING_NOT_FOUND",
   "TAROT_READING_EXECUTION_INVALID",
   "TAROT_READING_PERSISTENCE_UNAVAILABLE",
 ] as const);
@@ -40,6 +43,8 @@ const persistenceMessage = (code: TarotReadingPersistenceErrorCode): string => {
       return "The tarot reading request conflicts.";
     case "TAROT_READING_RATE_LIMITED":
       return "Tarot reading capacity is temporarily limited.";
+    case "TAROT_READING_NOT_FOUND":
+      return "The tarot reading is unavailable.";
     case "TAROT_READING_EXECUTION_INVALID":
       return "The tarot reading execution is invalid.";
     case "TAROT_READING_PERSISTENCE_UNAVAILABLE":
@@ -62,11 +67,24 @@ export class TarotReadingPersistenceError extends Error {
 export type TarotReadingPersistencePolicy = Readonly<{
   readingLimit: number;
   readingPolicyVersion: string;
+  reportPolicyVersion: string;
+  windowSeconds: number;
+}>;
+
+export type TarotReadingLimitPolicy = Readonly<{
+  maximumReadingsPerWindow: number;
+  policyVersion: string;
   windowSeconds: number;
 }>;
 
 export type TarotReadingDigestCandidate = Readonly<{
   clientRequestDigest: string;
+  idempotencyKeyDigest: string;
+  idempotencyKeyVersion: string;
+}>;
+
+export type TarotReadingReportDigestCandidate = Readonly<{
+  canonicalRequestDigest: string;
   idempotencyKeyDigest: string;
   idempotencyKeyVersion: string;
 }>;
@@ -101,6 +119,18 @@ export type TarotReadingPrepareContext = Readonly<{
   subjectId: string;
 }>;
 
+export type PreparedTarotReadingReport = Readonly<{
+  activeIdempotencyKeyVersion: string;
+  candidates: readonly TarotReadingReportDigestCandidate[];
+}>;
+
+export type TarotReadingReportPrepareContext = Readonly<{
+  readingId: string;
+  reportPolicyVersion: string;
+  request: TarotReadingReportRequestV1;
+  subjectId: string;
+}>;
+
 export type PersistedTarotReading = Readonly<{
   catalog: TarotReadingCatalogProvenance;
   clientRequestDigest: string;
@@ -128,8 +158,23 @@ export type ResolvedTarotReading = Readonly<{
   reading: PersistedTarotReading;
 }>;
 
+export type ResolvedTarotReadingReport = Readonly<{
+  kind: "created" | "replayed";
+}>;
+
 export type TarotReadingPersistence = Readonly<{
   get(input: Readonly<{ readingId: string; token: string }>): Promise<PersistedTarotReading | null>;
+  limits: TarotReadingLimitPolicy;
+  report(
+    input: Readonly<{
+      prepare: (
+        context: TarotReadingReportPrepareContext,
+      ) => Promise<PreparedTarotReadingReport> | PreparedTarotReadingReport;
+      readingId: string;
+      request: unknown;
+      token: string;
+    }>,
+  ): Promise<ResolvedTarotReadingReport>;
   resolveCreate(
     input: Readonly<{
       prepare: (
@@ -184,6 +229,11 @@ type ActiveSessionRow = Readonly<{
   subjectId: string;
 }>;
 
+type ReadingReportRow = Readonly<{
+  canonicalRequestHash: Uint8Array;
+  id: string;
+}>;
+
 type ExecutionSnapshot = Readonly<{
   bytesConsumed: number;
   catalogId: string;
@@ -203,9 +253,12 @@ type TarotPrivilegeAttestation = Readonly<{
   canInsertReading: boolean;
   canMutateDraw: boolean;
   canMutateReading: boolean;
+  canInsertReport: boolean;
+  canMutateReport: boolean;
   canReadDraw: boolean;
   canReadIdentity: boolean;
   canReadReading: boolean;
+  canReadReport: boolean;
   databaseOwner: string;
   privilegedRole: boolean;
   reachableOwnerOrPrivilegedRole: boolean;
@@ -226,7 +279,8 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
                  FROM pg_class
                 WHERE oid = ANY(ARRAY[
                   'public.reading'::regclass,
-                  'public.tarot_draw'::regclass
+                  'public.tarot_draw'::regclass,
+                  'public.reading_report'::regclass
                 ])
              ) AS table_owner_oids
     ), reachable_roles AS (
@@ -251,6 +305,10 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
            has_table_privilege(current_user, 'public.tarot_draw', 'INSERT') AS "canInsertDraw",
            (has_table_privilege(current_user, 'public.tarot_draw', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
              OR has_any_column_privilege(current_user, 'public.tarot_draw', 'UPDATE')) AS "canMutateDraw",
+           has_table_privilege(current_user, 'public.reading_report', 'SELECT') AS "canReadReport",
+           has_table_privilege(current_user, 'public.reading_report', 'INSERT') AS "canInsertReport",
+           (has_table_privilege(current_user, 'public.reading_report', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+             OR has_any_column_privilege(current_user, 'public.reading_report', 'UPDATE')) AS "canMutateReport",
            (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
               FROM pg_roles WHERE rolname = current_user) AS "privilegedRole",
            EXISTS (
@@ -280,11 +338,14 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
     row.canCreateInSchema ||
     !row.canInsertDraw ||
     !row.canInsertReading ||
+    !row.canInsertReport ||
     row.canMutateDraw ||
     row.canMutateReading ||
+    row.canMutateReport ||
     !row.canReadDraw ||
     !row.canReadIdentity ||
     !row.canReadReading ||
+    !row.canReadReport ||
     row.privilegedRole ||
     row.reachableOwnerOrPrivilegedRole
   ) {
@@ -487,9 +548,10 @@ const tokenHash = async (token: string): Promise<Uint8Array<ArrayBuffer> | null>
 const validatePolicy = (policy: TarotReadingPersistencePolicy): TarotReadingPersistencePolicy => {
   if (
     !identifierPattern.test(policy.readingPolicyVersion) ||
+    !identifierPattern.test(policy.reportPolicyVersion) ||
     !Number.isSafeInteger(policy.readingLimit) ||
     policy.readingLimit < 1 ||
-    policy.readingLimit > 1_000 ||
+    policy.readingLimit > 100 ||
     !Number.isSafeInteger(policy.windowSeconds) ||
     policy.windowSeconds < 60 ||
     policy.windowSeconds > 604_800
@@ -543,6 +605,37 @@ const parsePrepared = (value: PreparedTarotReadingCreate): PreparedTarotReadingC
     createExecution: value.createExecution,
     integrityKeyVersion: value.integrityKeyVersion,
     integrityScheme,
+  });
+};
+
+const parsePreparedReport = (value: PreparedTarotReadingReport): PreparedTarotReadingReport => {
+  const candidates = Array.from(value.candidates ?? []);
+  if (
+    candidates.length < 1 ||
+    candidates.length > maximumDigestCandidates ||
+    !identifierPattern.test(value.activeIdempotencyKeyVersion)
+  ) {
+    throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+  }
+  const versions = new Set<string>();
+  const frozenCandidates = candidates.map((candidate) => {
+    if (
+      !identifierPattern.test(candidate.idempotencyKeyVersion) ||
+      versions.has(candidate.idempotencyKeyVersion) ||
+      !sha256DigestPattern.test(candidate.idempotencyKeyDigest) ||
+      !sha256DigestPattern.test(candidate.canonicalRequestDigest)
+    ) {
+      throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+    }
+    versions.add(candidate.idempotencyKeyVersion);
+    return Object.freeze({ ...candidate });
+  });
+  if (!versions.has(value.activeIdempotencyKeyVersion)) {
+    throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+  }
+  return Object.freeze({
+    activeIdempotencyKeyVersion: value.activeIdempotencyKeyVersion,
+    candidates: Object.freeze(frozenCandidates),
   });
 };
 
@@ -688,6 +781,11 @@ export const createTarotReadingPersistence = (
   rawPolicy: TarotReadingPersistencePolicy,
 ): TarotReadingPersistence => {
   const policy = validatePolicy(rawPolicy);
+  const limits = Object.freeze({
+    maximumReadingsPerWindow: policy.readingLimit,
+    policyVersion: policy.readingPolicyVersion,
+    windowSeconds: policy.windowSeconds,
+  });
 
   const attest = async (): Promise<void> => {
     await assertAnonymousIdentityRuntimeDatabasePrivileges(database);
@@ -714,6 +812,136 @@ export const createTarotReadingPersistence = (
         return persistedReading(rows[0]);
       });
     } catch (error) {
+      if (error instanceof TarotReadingPersistenceError) throw error;
+      throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+    }
+  };
+
+  const report: TarotReadingPersistence["report"] = async (input) => {
+    if (!uuidPattern.test(input.readingId)) {
+      throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
+    }
+    const request = parseTarotReadingReportRequestV1(input.request);
+    await attest();
+    let callbackFailure: unknown;
+    try {
+      return await database.$transaction(
+        async (transaction) => {
+          const active = await resolveActiveSession(transaction, input.token);
+          if (active === null) {
+            throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
+          }
+          const readingRows = await transaction.$queryRaw<ReadingRow[]>`
+            ${readingSelect}
+             WHERE reading.id = ${input.readingId}::uuid
+               AND reading.anonymous_subject_id = ${active.subjectId}::uuid
+               AND reading.expires_at > CURRENT_TIMESTAMP
+             LIMIT 2
+          `;
+          if (readingRows.length === 0) {
+            throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
+          }
+          if (readingRows.length !== 1 || readingRows[0] === undefined) {
+            throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+          }
+          const reading = persistedReading(readingRows[0]);
+          if (request.target.kind === "position") {
+            const requestedPositionId = request.target.positionId;
+            const execution = parseExecution(readingRows[0].execution, reading.readingType);
+            const root = record(execution.value);
+            const facts = root === null ? null : record(root.facts);
+            const positions = facts?.positions;
+            if (
+              !Array.isArray(positions) ||
+              !positions.some((value) => record(value)?.positionId === requestedPositionId)
+            ) {
+              throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
+            }
+          }
+
+          let prepared: PreparedTarotReadingReport;
+          try {
+            prepared = parsePreparedReport(
+              await input.prepare({
+                readingId: reading.id,
+                reportPolicyVersion: policy.reportPolicyVersion,
+                request,
+                subjectId: active.subjectId,
+              }),
+            );
+          } catch (error) {
+            callbackFailure = error;
+            throw error;
+          }
+
+          let historical: Readonly<{
+            candidate: TarotReadingReportDigestCandidate;
+            row: ReadingReportRow;
+          }> | null = null;
+          for (const candidate of prepared.candidates) {
+            const idempotencyKeyHash = digestBytes(candidate.idempotencyKeyDigest);
+            const rows = await transaction.$queryRaw<ReadingReportRow[]>`
+              SELECT id, canonical_request_hash AS "canonicalRequestHash"
+                FROM reading_report
+               WHERE anonymous_subject_id = ${active.subjectId}::uuid
+                 AND idempotency_key_version = ${candidate.idempotencyKeyVersion}
+                 AND idempotency_key_hash = ${idempotencyKeyHash}
+               LIMIT 2
+            `;
+            if (rows.length > 1 || (rows.length === 1 && historical !== null)) {
+              throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+            }
+            if (rows[0] !== undefined) historical = Object.freeze({ candidate, row: rows[0] });
+          }
+          if (historical !== null) {
+            if (
+              !bytesEqual(
+                historical.row.canonicalRequestHash,
+                digestBytes(historical.candidate.canonicalRequestDigest),
+              )
+            ) {
+              throw new TarotReadingPersistenceError("TAROT_READING_IDEMPOTENCY_CONFLICT");
+            }
+            return Object.freeze({ kind: "replayed" as const });
+          }
+
+          const activeCandidate = prepared.candidates.find(
+            ({ idempotencyKeyVersion }) =>
+              idempotencyKeyVersion === prepared.activeIdempotencyKeyVersion,
+          );
+          if (activeCandidate === undefined) {
+            throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+          }
+          const targetPositionId =
+            request.target.kind === "position" ? request.target.positionId : null;
+          const inserted = await transaction.$queryRaw<Array<{ id: string }>>`
+            INSERT INTO reading_report (
+              reading_id, anonymous_subject_id, category, target_kind, target_position_id,
+              schema_version, report_policy_version, idempotency_key_version,
+              idempotency_key_hash, canonical_request_hash, created_at, expires_at
+            ) VALUES (
+              ${reading.id}::uuid, ${active.subjectId}::uuid, ${request.category},
+              ${request.target.kind}, ${targetPositionId}, ${request.schemaVersion},
+              ${policy.reportPolicyVersion}, ${activeCandidate.idempotencyKeyVersion},
+              ${digestBytes(activeCandidate.idempotencyKeyDigest)},
+              ${digestBytes(activeCandidate.canonicalRequestDigest)}, CURRENT_TIMESTAMP,
+              ${new Date(reading.expiresAt)}
+            )
+            RETURNING id
+          `;
+          if (
+            inserted.length !== 1 ||
+            inserted[0] === undefined ||
+            !uuidPattern.test(inserted[0].id)
+          ) {
+            throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+          }
+          return Object.freeze({ kind: "created" as const });
+        },
+        { maxWait: 5_000, timeout: 10_000 },
+      );
+    } catch (error) {
+      if (error === callbackFailure) throw error;
       if (error instanceof TarotReadingPersistenceError) throw error;
       throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
     }
@@ -887,5 +1115,5 @@ export const createTarotReadingPersistence = (
     }
   };
 
-  return Object.freeze({ get, resolveCreate });
+  return Object.freeze({ get, limits, report, resolveCreate });
 };

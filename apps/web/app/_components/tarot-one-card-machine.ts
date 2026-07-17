@@ -9,11 +9,18 @@ export type TarotOneCardOperation = Readonly<{
   sessionIdempotencyKey: string;
 }>;
 
+export type TarotReadingResultSnapshot = Readonly<{
+  replayed: boolean;
+  response: TarotReadingPublicResponseV2;
+}>;
+
 export type TarotOneCardState = Readonly<{
   failure: TarotOneCardFailure | null;
+  failureRetryAfterSeconds: number | null;
   operation: TarotOneCardOperation | null;
   phase: "choosing" | "drawing" | "ensuring_session" | "failed" | "ready_to_reveal" | "revealed";
   replayed: boolean;
+  previousResult: TarotReadingResultSnapshot | null;
   response: TarotReadingPublicResponseV2 | null;
   themeCode: QuestionIntakeThemeCode | null;
   validationError: boolean;
@@ -28,18 +35,29 @@ export type TarotOneCardEvent =
       response: TarotReadingPublicResponseV2;
       type: "reading_ready";
     }>
-  | Readonly<{ failure: TarotOneCardFailure; type: "fail_before_begin" }>
-  | Readonly<{ failure: TarotOneCardFailure; type: "fail" }>
+  | Readonly<{
+      failure: TarotOneCardFailure;
+      retryAfterSeconds?: number | undefined;
+      type: "fail_before_begin";
+    }>
+  | Readonly<{
+      failure: TarotOneCardFailure;
+      retryAfterSeconds?: number | undefined;
+      type: "fail";
+    }>
   | Readonly<{ type: "retry" }>
   | Readonly<{ type: "reveal" }>
+  | Readonly<{ type: "new_reflection" }>
   | Readonly<{ type: "start_over" }>
   | Readonly<{ type: "validate" }>;
 
 export const initialTarotOneCardState: TarotOneCardState = Object.freeze({
   failure: null,
+  failureRetryAfterSeconds: null,
   operation: null,
   phase: "choosing",
   replayed: false,
+  previousResult: null,
   response: null,
   themeCode: null,
   validationError: false,
@@ -62,6 +80,7 @@ export const reduceTarotOneCardState = (
       }
       return Object.freeze({
         ...initialTarotOneCardState,
+        previousResult: state.previousResult,
         themeCode: event.themeCode,
       });
     case "validate":
@@ -75,6 +94,7 @@ export const reduceTarotOneCardState = (
         ? Object.freeze({
             ...state,
             failure: null,
+            failureRetryAfterSeconds: null,
             operation: event.operation,
             phase: "ensuring_session",
             validationError: false,
@@ -89,6 +109,7 @@ export const reduceTarotOneCardState = (
         ? Object.freeze({
             ...state,
             failure: null,
+            failureRetryAfterSeconds: null,
             phase: "ready_to_reveal",
             replayed: event.replayed,
             response: event.response,
@@ -96,27 +117,54 @@ export const reduceTarotOneCardState = (
         : unchanged(state);
     case "fail":
       return state.phase === "ensuring_session" || state.phase === "drawing"
-        ? Object.freeze({ ...state, failure: event.failure, phase: "failed" })
+        ? Object.freeze({
+            ...state,
+            failure: event.failure,
+            failureRetryAfterSeconds: event.retryAfterSeconds ?? null,
+            phase: "failed",
+          })
         : unchanged(state);
     case "fail_before_begin":
       return (state.phase === "choosing" || state.phase === "failed") &&
         state.themeCode !== null &&
         state.operation === null
-        ? Object.freeze({ ...state, failure: event.failure, phase: "failed" })
+        ? Object.freeze({
+            ...state,
+            failure: event.failure,
+            failureRetryAfterSeconds: event.retryAfterSeconds ?? null,
+            phase: "failed",
+          })
         : unchanged(state);
     case "retry":
       return state.phase === "failed" &&
         state.failure !== "conflict" &&
+        state.failure !== "limit_reached" &&
         state.operation !== null &&
         state.themeCode !== null
-        ? Object.freeze({ ...state, failure: null, phase: "ensuring_session" })
+        ? Object.freeze({
+            ...state,
+            failure: null,
+            failureRetryAfterSeconds: null,
+            phase: "ensuring_session",
+          })
         : unchanged(state);
     case "reveal":
       return state.phase === "ready_to_reveal"
-        ? Object.freeze({ ...state, phase: "revealed" })
+        ? Object.freeze({ ...state, phase: "revealed", previousResult: null })
+        : unchanged(state);
+    case "new_reflection":
+      return state.phase === "revealed" && state.response !== null
+        ? Object.freeze({
+            ...initialTarotOneCardState,
+            previousResult: Object.freeze({ replayed: state.replayed, response: state.response }),
+          })
         : unchanged(state);
     case "start_over":
-      return state.phase === "failed" ? initialTarotOneCardState : unchanged(state);
+      return state.phase === "failed"
+        ? state.previousResult === null
+          ? initialTarotOneCardState
+          : Object.freeze({ ...initialTarotOneCardState, previousResult: state.previousResult })
+        : unchanged(state);
   }
 };
 

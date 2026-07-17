@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import type { TarotDrawExecutionV1 } from "@rituvia/divination";
 import { resolveTarotDrawV1, tarotDrawRulesVersion } from "@rituvia/divination";
+import type { TarotReadingReportRequestV1 } from "@rituvia/domain";
 import { describe, expect, it, vi } from "vitest";
 
 const cryptoHarness = vi.hoisted(() => ({ bytes: [0] as number[], offset: 0 }));
@@ -53,6 +54,11 @@ const request = Object.freeze({
   readingType: "one_card" as const,
   schemaVersion: "tarot-reading-create.v1" as const,
   themeCode: "open_reflection" as const,
+});
+const reportRequest = Object.freeze({
+  category: "cultural" as const,
+  schemaVersion: "tarot-reading-report.v1" as const,
+  target: Object.freeze({ kind: "reading" as const }),
 });
 
 const createFixture = () => {
@@ -177,6 +183,105 @@ describe("tarot reading cryptography", () => {
     for (const changed of changes) {
       expect(cryptography.createExecutionVerifier(changed, 3)(execution)).toBe(false);
     }
+  });
+
+  it("domain-separates report idempotency from reading creation and binds it to the owner", () => {
+    const { cryptography } = createFixture();
+    const idempotencyKey = "abcdefghijklmnopqrstuv";
+    const reportDigest = cryptography.deriveReportIdempotencyKeyDigest(
+      cryptography.activeVersion,
+      subjectId,
+      idempotencyKey,
+    );
+
+    expect(reportDigest).not.toBe(
+      cryptography.deriveIdempotencyKeyDigest(
+        cryptography.activeVersion,
+        subjectId,
+        idempotencyKey,
+      ),
+    );
+    expect(reportDigest).not.toBe(
+      cryptography.deriveReportIdempotencyKeyDigest(
+        cryptography.activeVersion,
+        "33333333-3333-4333-8333-333333333333",
+        idempotencyKey,
+      ),
+    );
+    expect(reportDigest).not.toBe(
+      cryptography.deriveReportIdempotencyKeyDigest("test.key.v1", subjectId, idempotencyKey),
+    );
+  });
+
+  it("binds a report request digest to owner, reading, policy, category, and target", () => {
+    const { cryptography } = createFixture();
+    const derive = (
+      owner: string,
+      reportedReadingId: string,
+      policyVersion: string,
+      report: TarotReadingReportRequestV1,
+    ) =>
+      cryptography.deriveReportRequestDigest(
+        cryptography.activeVersion,
+        owner,
+        reportedReadingId,
+        policyVersion,
+        report,
+      );
+    const digest = derive(subjectId, readingId, "test.tarot-reading-report.v1", reportRequest);
+    const changed = [
+      derive(
+        "33333333-3333-4333-8333-333333333333",
+        readingId,
+        "test.tarot-reading-report.v1",
+        reportRequest,
+      ),
+      derive(
+        subjectId,
+        "44444444-4444-4444-8444-444444444444",
+        "test.tarot-reading-report.v1",
+        reportRequest,
+      ),
+      derive(subjectId, readingId, "test.tarot-reading-report.v2", reportRequest),
+      derive(subjectId, readingId, "test.tarot-reading-report.v1", {
+        category: "rights",
+        schemaVersion: "tarot-reading-report.v1",
+        target: { kind: "position", positionId: "perspective" },
+      }),
+    ];
+
+    expect(changed).not.toContain(digest);
+    expect(new Set(changed).size).toBe(changed.length);
+  });
+
+  it("fails closed on noncanonical report digest bindings", () => {
+    const { cryptography } = createFixture();
+
+    expect(() =>
+      cryptography.deriveReportIdempotencyKeyDigest(
+        cryptography.activeVersion,
+        subjectId,
+        "private invalid key",
+      ),
+    ).toThrow(/integrity configuration/u);
+    expect(() =>
+      cryptography.deriveReportRequestDigest(
+        cryptography.activeVersion,
+        subjectId,
+        "not-a-reading",
+        "test.tarot-reading-report.v1",
+        reportRequest,
+      ),
+    ).toThrow(/integrity configuration/u);
+    expect(() =>
+      cryptography.deriveReportRequestDigest(
+        cryptography.activeVersion,
+        subjectId,
+        readingId,
+        "not semver",
+        reportRequest,
+      ),
+    ).toThrow(/integrity configuration/u);
   });
 
   it("derives the exact singleton and orientation counts without accepting impossible audits", () => {

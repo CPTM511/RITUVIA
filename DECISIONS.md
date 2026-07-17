@@ -257,3 +257,14 @@ effective until this register links it. Do not rewrite historical rationale; sup
   idempotency and reveal transitions make retries stable and prevent accidental or compulsive
   redraws, while the shared gate prevents the synthetic test fixture from becoming public content.
 - **Date:** 2026-07-17
+
+### [D-035 — Unified tarot limit, explicit new-reflection, and categorical report boundary](records/decisions/D-035.md)
+
+- **Decision:** Require the Web reading policy to exactly match the persistence limit version,
+  maximum, and window; preserve same-key manual retry and the prior revealed result; permit only an
+  explicit post-result action to create a new reflection; and store exact categorical, no-free-text
+  reports as owner-bound append-only rows whose expiry inherits the parent reading.
+- **Reason:** Server-authoritative limits and distinct recovery/new-reflection transitions prevent
+  silent rerolls, while minimal idempotent report records provide auditable correction input without
+  collecting private prose, leaking reading existence, or inventing another retention period.
+- **Date:** 2026-07-17

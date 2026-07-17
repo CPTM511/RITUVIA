@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 
 import { parseTarotCatalogV1, parseTarotDrawExecutionV1 } from "@rituvia/divination";
-import { parseTarotReadingCreateRequestV1, questionIntakeThemeCodes } from "@rituvia/domain";
+import {
+  parseTarotReadingCreateRequestV1,
+  parseTarotReadingReportRequestV1,
+  questionIntakeThemeCodes,
+} from "@rituvia/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTarotCatalogChecksum } from "../server/tarot-reading-crypto";
@@ -125,6 +129,7 @@ const eligibleCatalog = (): unknown => {
 class FakePersistenceError extends Error {
   readonly code:
     | "TAROT_READING_IDEMPOTENCY_CONFLICT"
+    | "TAROT_READING_NOT_FOUND"
     | "TAROT_READING_RATE_LIMITED"
     | "TAROT_READING_SESSION_UNAVAILABLE";
   readonly retryAfterSeconds: number | undefined;
@@ -132,6 +137,7 @@ class FakePersistenceError extends Error {
   constructor(
     code:
       | "TAROT_READING_IDEMPOTENCY_CONFLICT"
+      | "TAROT_READING_NOT_FOUND"
       | "TAROT_READING_RATE_LIMITED"
       | "TAROT_READING_SESSION_UNAVAILABLE",
     retryAfterSeconds?: number,
@@ -158,9 +164,15 @@ const threeCardRequest = Object.freeze({
   ...request,
   readingType: "three_card" as const,
 });
+const reportRequest = Object.freeze({
+  category: "cultural" as const,
+  schemaVersion: "tarot-reading-report.v1" as const,
+  target: Object.freeze({ kind: "reading" as const }),
+});
 
-const createFakePersistence = (maximumReadingsPerWindow = 2) => {
+const createFakePersistence = (maximumReadingsPerWindow = 3, retryAfterSeconds = 31) => {
   const readings: PersistedTarotReading[] = [];
+  const reports: Array<Readonly<{ digest: string; idempotency: string; readingId: string }>> = [];
   let createCalls = 0;
   const ownerFor = (sessionToken: string): string => {
     if (sessionToken === token) return subjectId;
@@ -174,6 +186,48 @@ const createFakePersistence = (maximumReadingsPerWindow = 2) => {
         readings.find((candidate) => candidate.id === readingId && candidate.subjectId === owner) ??
           null,
       );
+    },
+    limits: Object.freeze({
+      maximumReadingsPerWindow,
+      policyVersion: "test.tarot-reading.v1",
+      windowSeconds: 3_600,
+    }),
+    report: async ({ prepare, readingId, request: requestInput, token: sessionToken }) => {
+      const owner = ownerFor(sessionToken);
+      if (
+        !readings.some((candidate) => candidate.id === readingId && candidate.subjectId === owner)
+      ) {
+        throw new FakePersistenceError("TAROT_READING_NOT_FOUND");
+      }
+      const parsedRequest = parseTarotReadingReportRequestV1(requestInput);
+      const prepared = await prepare({
+        readingId,
+        reportPolicyVersion: "test.tarot-reading-report.v1",
+        request: parsedRequest,
+        subjectId: owner,
+      });
+      const existing = reports.find((candidate) =>
+        prepared.candidates.some((entry) => entry.idempotencyKeyDigest === candidate.idempotency),
+      );
+      if (existing !== undefined) {
+        const candidate = prepared.candidates.find(
+          (entry) => entry.idempotencyKeyDigest === existing.idempotency,
+        );
+        if (candidate?.canonicalRequestDigest !== existing.digest) {
+          throw new FakePersistenceError("TAROT_READING_IDEMPOTENCY_CONFLICT");
+        }
+        return { kind: "replayed" as const };
+      }
+      const active = prepared.candidates.find(
+        (candidate) => candidate.idempotencyKeyVersion === prepared.activeIdempotencyKeyVersion,
+      );
+      if (active === undefined) throw new Error("active report candidate missing");
+      reports.push({
+        digest: active.canonicalRequestDigest,
+        idempotency: active.idempotencyKeyDigest,
+        readingId,
+      });
+      return { kind: "created" as const };
     },
     resolveCreate: async ({ prepare, request: requestInput, token: sessionToken }) => {
       const owner = ownerFor(sessionToken);
@@ -207,7 +261,7 @@ const createFakePersistence = (maximumReadingsPerWindow = 2) => {
         readings.filter(({ subjectId: ownerId }) => ownerId === owner).length >=
         maximumReadingsPerWindow
       ) {
-        throw new FakePersistenceError("TAROT_READING_RATE_LIMITED", 31);
+        throw new FakePersistenceError("TAROT_READING_RATE_LIMITED", retryAfterSeconds);
       }
       const activeCandidate = prepared.candidates.find(
         ({ idempotencyKeyVersion }) =>
@@ -250,10 +304,15 @@ const createFakePersistence = (maximumReadingsPerWindow = 2) => {
       return { kind: "created" as const, reading };
     },
   };
-  return { createCalls: () => createCalls, persistence, readings };
+  return { createCalls: () => createCalls, persistence, readings, reports };
 };
 
-const serviceFixture = (input?: { limit?: number; rawCatalog?: unknown }) => {
+const serviceFixture = (input?: {
+  limit?: number;
+  persistenceLimits?: Partial<TarotReadingPersistence["limits"]>;
+  rawCatalog?: unknown;
+  retryAfterSeconds?: number;
+}) => {
   const catalog = input?.rawCatalog ?? eligibleCatalog();
   const parsed = parseTarotCatalogV1(catalog);
   const policy: TarotReadingPolicyV1 = Object.freeze({
@@ -265,7 +324,7 @@ const serviceFixture = (input?: { limit?: number; rawCatalog?: unknown }) => {
     }),
     deck: Object.freeze({ id: "rituvia.placeholder-deck", version: "1.0.0" }),
     locale: "en",
-    maximumReadingsPerWindow: input?.limit ?? 2,
+    maximumReadingsPerWindow: input?.limit ?? 3,
     orientationPolicy: "upright_and_reversed",
     policyVersion: "test.tarot-reading.v1",
     schemaVersion: tarotReadingPolicySchemaVersion,
@@ -278,7 +337,17 @@ const serviceFixture = (input?: { limit?: number; rawCatalog?: unknown }) => {
     }),
     windowSeconds: 3_600,
   });
-  const fake = createFakePersistence(input?.limit ?? 2);
+  const fake = createFakePersistence(input?.limit ?? 3, input?.retryAfterSeconds);
+  const persistence =
+    input?.persistenceLimits === undefined
+      ? fake.persistence
+      : Object.freeze({
+          ...fake.persistence,
+          limits: Object.freeze({
+            ...fake.persistence.limits,
+            ...input.persistenceLimits,
+          }),
+        });
   const provider = { load: vi.fn().mockResolvedValue(catalog) };
   const service = createTarotReadingApplicationService({
     catalogProvider: provider,
@@ -290,7 +359,7 @@ const serviceFixture = (input?: { limit?: number; rawCatalog?: unknown }) => {
         { encodedKey: key(7), version: "test.key.v2" },
       ],
     },
-    persistence: fake.persistence,
+    persistence,
     policy,
   });
   return { fake, provider, service };
@@ -298,6 +367,95 @@ const serviceFixture = (input?: { limit?: number; rawCatalog?: unknown }) => {
 
 describe("tarot reading application service", () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it.each([
+    ["reading count", { maximumReadingsPerWindow: 4 }],
+    ["policy version", { policyVersion: "test.tarot-reading.v2" }],
+    ["window", { windowSeconds: 3_601 }],
+  ] as const)(
+    "fails closed when the service and persistence %s policies drift",
+    (_label, limits) => {
+      expect(() => serviceFixture({ persistenceLimits: limits })).toThrow(
+        /configuration is invalid/u,
+      );
+    },
+  );
+
+  it("records and replays one categorical owner-bound report without loading the catalog again", async () => {
+    const { fake, provider, service } = serviceFixture();
+    const created = await service.create(request, idempotencyKey, token);
+    provider.load.mockClear();
+
+    const report = await service.report(
+      created.response.readingId,
+      reportRequest,
+      "reportabcdefghijklmnop",
+      token,
+    );
+    const replay = await service.report(
+      created.response.readingId,
+      reportRequest,
+      "reportabcdefghijklmnop",
+      token,
+    );
+
+    expect(report).toEqual({ kind: "created" });
+    expect(replay).toEqual({ kind: "replayed" });
+    expect(fake.reports).toHaveLength(1);
+    expect(provider.load).not.toHaveBeenCalled();
+  });
+
+  it("rejects report idempotency conflicts and redacts unknown or cross-owner readings", async () => {
+    const { service } = serviceFixture();
+    const created = await service.create(request, idempotencyKey, token);
+    const reportKey = "reportabcdefghijklmnop";
+    await service.report(created.response.readingId, reportRequest, reportKey, token);
+
+    await expect(
+      service.report(
+        created.response.readingId,
+        { ...reportRequest, category: "rights" },
+        reportKey,
+        token,
+      ),
+    ).rejects.toMatchObject({ code: "conflict" });
+    await expect(
+      service.report(
+        created.response.readingId,
+        { ...reportRequest, target: { kind: "position", positionId: "perspective" } },
+        reportKey,
+        token,
+      ),
+    ).rejects.toMatchObject({ code: "conflict" });
+    await expect(
+      service.report(
+        created.response.readingId,
+        reportRequest,
+        "anotherreportkeyabcdef",
+        otherToken,
+      ),
+    ).rejects.toMatchObject({ code: "not_found" });
+    await expect(
+      service.report("99999999-9999-4999-8999-999999999999", reportRequest, reportKey, token),
+    ).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("keeps categorical reporting available after the new-reading quota is exhausted", async () => {
+    const { service } = serviceFixture({ limit: 1 });
+    const created = await service.create(request, idempotencyKey, token);
+    await expect(service.create(request, "mnopqrstuvabcdefghijkl", token)).rejects.toMatchObject({
+      code: "limit_reached",
+    });
+
+    await expect(
+      service.report(
+        created.response.readingId,
+        { ...reportRequest, target: { kind: "position", positionId: "perspective" } },
+        "reportabcdefghijklmnop",
+        token,
+      ),
+    ).resolves.toEqual({ kind: "created" });
+  });
 
   it("creates and replays one immutable public presentation without exposing audit data", async () => {
     const { fake, service } = serviceFixture();
@@ -396,6 +554,19 @@ describe("tarot reading application service", () => {
     });
   });
 
+  it.each([0, -1, 3_601, 1.5] as const)(
+    "drops an invalid persistence Retry-After value (%s) at the service boundary",
+    async (retryAfterSeconds) => {
+      const { service } = serviceFixture({ limit: 1, retryAfterSeconds });
+      await service.create(request, idempotencyKey, token);
+
+      await expect(service.create(request, "mnopqrstuvabcdefghijkl", token)).rejects.toMatchObject({
+        code: "limit_reached",
+        retryAfterSeconds: undefined,
+      });
+    },
+  );
+
   it("rejects missing sessions without exposing the token", async () => {
     const { service } = serviceFixture();
     await expect(service.create(request, idempotencyKey, "private-token-canary")).rejects.toEqual(
@@ -476,7 +647,7 @@ describe("tarot reading application service", () => {
       },
       deck: { id: "rituvia.placeholder-deck", version: "1.0.0" },
       locale: "en",
-      maximumReadingsPerWindow: 2,
+      maximumReadingsPerWindow: 3,
       orientationPolicy: "upright_only",
       policyVersion: "test.tarot-reading.v1",
       schemaVersion: tarotReadingPolicySchemaVersion,

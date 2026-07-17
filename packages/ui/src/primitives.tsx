@@ -902,7 +902,7 @@ export function RadioGroup({
           return (
             <label className="rvt-choice rvt-choice--radio" htmlFor={optionId} key={option.value}>
               <input
-                checked={reviewedValue === undefined ? undefined : reviewedValue === option.value}
+                checked={onValueChange === undefined ? undefined : reviewedValue === option.value}
                 className="rvt-choice__input"
                 defaultChecked={
                   reviewedDefaultValue === undefined

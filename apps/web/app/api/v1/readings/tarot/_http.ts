@@ -23,6 +23,11 @@ export type TarotReadingProblemCode =
   | "TAROT_READING_CONFLICT"
   | "TAROT_READING_NOT_FOUND"
   | "TAROT_READING_RATE_LIMITED"
+  | "TAROT_READING_REPORT_BODY_INVALID"
+  | "TAROT_READING_REPORT_BODY_TOO_LARGE"
+  | "TAROT_READING_REPORT_CONFLICT"
+  | "TAROT_READING_REPORT_REQUEST_REJECTED"
+  | "TAROT_READING_REPORT_UNAVAILABLE"
   | "TAROT_READING_REQUEST_REJECTED"
   | "TAROT_READING_SESSION_REQUIRED"
   | "TAROT_READING_UNAVAILABLE";
@@ -69,7 +74,12 @@ export const problem = (
     ),
   );
   response.headers.set("content-type", "application/problem+json");
-  if (input.retryAfterSeconds !== undefined) {
+  if (
+    input.retryAfterSeconds !== undefined &&
+    Number.isSafeInteger(input.retryAfterSeconds) &&
+    input.retryAfterSeconds >= 1 &&
+    input.retryAfterSeconds <= 604_800
+  ) {
     response.headers.set("retry-after", String(input.retryAfterSeconds));
   }
   return response;
@@ -79,6 +89,9 @@ export const hasAcceptedPostOrigin = (request: NextRequest): boolean =>
   request.headers.get("origin") === getWebRuntimeConfiguration().brand.canonicalOrigin &&
   (request.headers.get("sec-fetch-site") === null ||
     request.headers.get("sec-fetch-site") === "same-origin");
+
+export const tarotReadingReportApiPath = (readingId: string): string =>
+  `${tarotReadingResourceApiPath}/${readingId}/report`;
 
 export const hasAcceptedPrivateReadOrigin = (request: NextRequest): boolean => {
   const origin = request.headers.get("origin");

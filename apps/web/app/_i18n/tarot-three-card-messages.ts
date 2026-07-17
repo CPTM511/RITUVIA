@@ -51,7 +51,8 @@ const englishTarotThreeCardMessages = {
     limitReached: {
       message:
         "This private session has reached its current reading limit. Pause here and return later; another draw would not make the reflection more certain.",
-      retry: "Check the same draw later",
+      retryAfterLabel: "Server wait before another attempt:",
+      returnToThemes: "Return to theme selection",
       title: "The current reading limit has been reached",
     },
     offline: {
@@ -93,11 +94,16 @@ const englishTarotThreeCardMessages = {
     engineVersionLabel: "Draw engine",
     methodologyAction: "Read the methodology",
     methodologySummary: "How this draw was made",
+    newReflection: "Start a new reflection",
+    newReflectionBoundary:
+      "A new reflection creates a separate server-selected draw. It does not make this result more certain, and you can stop here.",
     orientation: {
       reversed: "Reversed",
       upright: "Upright",
     },
     perspectiveTitle: "What this position may invite you to notice",
+    previousPreserved:
+      "Your previous fixed result remains available while a separate new reflection is unfinished.",
     positionBoundary:
       "Situation and Action are reflective lenses. Possibility is something to consider, not a prediction of what will happen.",
     reflectionTitle: "A question to reflect on",
@@ -107,6 +113,37 @@ const englishTarotThreeCardMessages = {
     themesTitle: "Core themes",
     title: "Your three-card reflection",
     versionLabel: "Content version",
+    report: {
+      categories: {
+        accessibility: "Accessibility",
+        cultural: "Cultural context",
+        factual: "Factual accuracy",
+        rights: "Rights or attribution",
+        safety: "Safety",
+        translation: "Translation",
+      },
+      categoryLabel: "Issue category",
+      conflict:
+        "This saved report no longer matches the selected options. Choose again to start a new report.",
+      disclosure:
+        "Reports record only the selected category and target. There is no free-text field, and reporting does not redraw or change this result.",
+      error: "The report was not recorded. Nothing will retry automatically.",
+      notFound: "This reading is no longer available to report in the current private session.",
+      offline: "Reconnect before sending this report. Nothing will retry automatically.",
+      retry: "Try the same report again",
+      selectCategory: "Choose a category",
+      selectTarget: "Choose what the report concerns",
+      startNew: "Start a new report request",
+      submit: "Send report",
+      submitting: "Sending report",
+      success: "Thank you. The report was recorded without your private question or journal text.",
+      summary: "Report an issue with this reading",
+      targetLabel: "Report target",
+      targetPosition: "Position: {position}",
+      targetReading: "The whole reading",
+      unavailable:
+        "The report service is temporarily unavailable. Nothing will retry automatically.",
+    },
   },
 } as const satisfies TarotThreeCardMessages;
 

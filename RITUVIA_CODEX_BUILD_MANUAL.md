@@ -1028,7 +1028,7 @@ Use this order:
 
 **Last reconciled:** 2026-07-17
 
-**Stage:** M2 local implementation is complete through the private, safe-off RIT-026 ordered three-card tarot reflection flow. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
+**Stage:** M2 local implementation is complete through the private, safe-off RIT-027 unified tarot-limit, explicit-new-reflection, and categorical-report slice. M1 RIT-016 and manual assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains owner-gated. Production catalog approval/activation and actual indexing remain separately gated.
 
 **Release:** Pre-M0
 
@@ -1067,13 +1067,20 @@ Use this order:
 - Exact no-store/noindex `POST /api/v1/readings/tarot` and owner-scoped `GET /api/v1/readings/{uuid}` contracts with bounded input, safe Problem Details, indistinguishable unknown/cross-owner reads, verified V2 reviewed-content presentation, and a hard unavailable runtime until an eligible production catalog is separately approved and configured.
 - Private noindex/no-store `/en/tarot/one-card` with ten theme-only choices, separate session/reading idempotency, explicit reveal without redraw, strict fact/presentation parsing, reviewed limitation/question/action output, complete calm failure states, and no AI, raw-question, analytics, account, payment, share, or storage surface.
 - Private noindex/no-store `/en/tarot/three-card` with the same theme-only privacy boundary and calm state machine, one fixed server-authoritative draw, exact unique Situation/Action/Possibility order, strict fact/presentation parsing, explicit reveal without redraw, reviewed per-position limitations/questions/actions, and no AI, raw-question, analytics, account, payment, share, or storage surface.
+- One application/database-matched tarot quota authority with a three-per-hour local acceptance
+  baseline, database-clock atomic enforcement, replay-before-quota behavior, bounded `Retry-After`,
+  no immediate limit retry, explicit new-reflection transitions, and previous-result preservation.
+- Exact owner-bound `POST /api/v1/readings/{uuid}/report` plus a private categorical report control
+  with six approved categories, whole/position targets, independent idempotency, empty `204`
+  create/replay, indistinguishable private `404`, changed-reuse `409`, no free text, no analytics,
+  no reading-quota use, inherited expiry, append-only persistence, and least-privilege runtime access.
 - One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 760 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, 876 Vitest tests, real local and CI-shaped PostgreSQL integration, dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and artifact verification.
 
 ## What does not exist yet
 
@@ -1089,7 +1096,10 @@ Use this order:
 - Payment-provider written underwriting approval.
 - Astrology calculation commercial-license decision.
 - A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
-- An approved production tarot catalog, production runtime activation, AI interpretation, intention/ritual continuation, or user-visible redraw/report controls; the synthetic RIT-022 fixture remains publication-ineligible and cannot activate the RIT-024/RIT-026 runtime.
+- An approved production tarot catalog, production runtime activation, AI interpretation,
+  intention/ritual continuation, report triage/admin workflow, or separate creation-versus-history
+  operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
+  cannot activate the RIT-024/RIT-027 runtime.
 - Production credentials or vendor accounts.
 - Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
@@ -1116,29 +1126,32 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-026 source passes local validation. With the bundled Node.js 24 runtime, formatting, lint,
-strict type checking, 760 unit/contract tests in 58 files, configuration-boundary integration, the
-154-file/eight-module architecture gate, and the 56-artifact production build pass. The record-policy
+The RIT-027 source passes local validation. With the pinned Node.js 24.18.0 runtime, formatting,
+lint, strict type checking, 876 unit/contract tests in 60 files, configuration-boundary integration,
+the 160-file/eight-module architecture gate, and the 59-artifact production build pass. The record-policy
 suite covers the canonical task/decision graph, privacy-safe records, contextual task results, and
-exact staged index-to-manual-to-checksum evidence. RIT-026 changes no database source or migration;
-the RIT-024 PostgreSQL suite remains the applicable persistence evidence and passed without stopping
-or modifying the active external `IPO.ONE` database on port 55432.
+exact staged index-to-manual-to-checksum evidence. RIT-027 PostgreSQL integration passed its
+expand-only report migration, ownership, idempotency, quota-independence, append-only privilege,
+and restore matrix; a later rerun stopped at preflight because the unrelated active `IPO.ONE`
+database occupied fixed port 55432 and was not stopped or modified.
 
-The build verifier checks 56 artifacts and narrowed exports, including exact UI stylesheet parity,
+The build verifier checks 59 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
-and the icon. Maximum Web output is 6,095 B
-gzip HTML, 6,098 B gzip CSS, 223,318 B gzip JavaScript, and 356 B raw icon.
+and the icon. Maximum Web output is 6,316 B
+gzip HTML, 6,126 B gzip CSS, 224,853 B gzip JavaScript, and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 154 active source files across eight modules and keeps module,
+The architecture verifier audits 160 active source files across eight modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
 adds the first strict V2 one-card consumer. RIT-026 generalizes the flow and adds exact three-card
 position-title/order/uniqueness parsing, real service create/replay projection, browser-state,
-transport, proxy, metadata, build, and accessibility coverage. Real
+transport, proxy, metadata, build, and accessibility coverage. RIT-027 adds exact limit-policy
+matching, explicit new-reflection and previous-result state, controlled empty radio behavior,
+bounded wait handling, and owner-bound append-only categorical reports. Real
 PostgreSQL integration proves clean/idempotent migration, exact owner/session authorization,
 same-key replay and conflict, key rotation, winner-before-entropy concurrent creation, atomic
 limits, immutable execution, least privilege, and non-empty logical restore. Independent review
@@ -1181,11 +1194,13 @@ against an isolated production build whose feature-flag reader is replaced only 
 test adapter. Reframed, blocked, crisis, offline/degraded, edit/stale-response, 320px, RTL, dark,
 no-JavaScript, noindex/no-store, and raw-question non-retention behavior are covered by the
 component, domain, API, production HTTP, and Chromium/axe gates rather than overstated as CLI flows.
-RIT-026 Playwright CLI evidence at 320px verifies one 204 session request, one 201 exact theme-only
-three-card draw, an explicit reveal with no third request, three semantic result cards in fixed
-Situation/Action/Possibility order, no horizontal overflow, an actionable offline state with no new
-request, and zero success-path browser errors/warnings. The success response exists only in the
-isolated browser route; the same latest production server returns an empty 404 without interception.
+RIT-027 Playwright CLI evidence verifies one-card create then presentation-only reveal, exact
+category/position report submission with no free text, independent report idempotency, empty `204`
+success, explicit manual retry, explicit new reflection, a truly cleared theme choice, old-result
+preservation through a limit state, and no immediate limit retry. At 320px the one-card and
+three-card results have no horizontal overflow; the latter exposes exactly three ordered cards and
+all three canonical report positions. The success responses exist only in isolated browser routes;
+the same latest production server returns an empty 404 without interception.
 Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and
 Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or
 owner-side required-check protection is claimed.
@@ -1592,6 +1607,17 @@ effective until this register links it. Do not rewrite historical rationale; sup
   redraws, while the shared gate prevents the synthetic test fixture from becoming public content.
 - **Date:** 2026-07-17
 
+### [D-035 — Unified tarot limit, explicit new-reflection, and categorical report boundary](records/decisions/D-035.md)
+
+- **Decision:** Require the Web reading policy to exactly match the persistence limit version,
+  maximum, and window; preserve same-key manual retry and the prior revealed result; permit only an
+  explicit post-result action to create a new reflection; and store exact categorical, no-free-text
+  reports as owner-bound append-only rows whose expiry inherits the parent reading.
+- **Reason:** Server-authoritative limits and distinct recovery/new-reflection transitions prevent
+  silent rerolls, while minimal idempotent report records provide auditable correction input without
+  collecting private prose, leaking reading existence, or inventing another retention period.
+- **Date:** 2026-07-17
+
 ---
 
 # File: `ROADMAP.md`
@@ -1870,8 +1896,9 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-024 | M2        |       P0 | Done    | Implement tarot reading application service and API                       | RIT-020,RIT-021,RIT-023                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                               |
 | RIT-025 | M2        |       P0 | Done    | Build one-card tarot intake, draw, and result UI                          | RIT-011,RIT-024                         | frontend      | Anonymous mobile user reaches a useful deterministic result in under three minutes.                               |
 | RIT-026 | M2        |       P1 | Done    | Build three-card Situation/Action/Possibility flow                        | RIT-025                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                             |
-| RIT-027 | M2        |       P1 | Ready   | Add tarot limits, calm redraw behavior, and report control                | RIT-024,RIT-025                         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                             |
-| RIT-028 | M2        |       P1 | Planned | Add deterministic tarot E2E and visual/accessibility tests                | RIT-025,RIT-026                         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error scenarios.                                           |
+| RIT-027 | M2        |       P1 | Done    | Add tarot limits, calm redraw behavior, and report control                | RIT-024,RIT-025,RIT-026,OWN-010         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                             |
+| RIT-028 | M2        |       P1 | Planned | Add deterministic tarot E2E and visual/accessibility tests                | RIT-025,RIT-026,RIT-027,RIT-029         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error/resume/report scenarios.                              |
+| RIT-029 | M2        |       P1 | Ready   | Add private same-session tarot result resume                              | RIT-027                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage. |
 | RIT-030 | M3        |       P0 | Planned | Define AI provider interfaces and typed interpretation schemas            | RIT-001,RIT-023                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                      |
 | RIT-031 | M3        |       P0 | Planned | Implement curated content retrieval and prompt versioning                 | RIT-022,RIT-030                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                            |
 | RIT-032 | M3        |       P0 | Planned | Implement pre-generation high-stakes and crisis policy                    | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                            |
@@ -1975,6 +2002,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | OWN-007 | External  |       P2 | Blocked | Approve regional-tradition expert and source program                      | None                                    | owner         | Qualified reviewers, sources, rights, scope, language and compensation are documented.                            |
 | OWN-008 | External  |       P0 | Blocked | Configure the GitHub remote and enforce CI checks                         | None                                    | owner         | Remote, workflow-change protection, and all three required CI jobs are configured and one hosted run passes.      |
 | OWN-009 | External  |       P0 | Done    | Approve English question-intake safety language and activation policy     | None                                    | owner         | Exact copy, English scope, generic emergency-resource strategy, and production-activation reference are recorded. |
+| OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                  | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded. |
 
 ## Backlog maintenance
 
@@ -2118,6 +2146,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-032 | Versioned unbiased tarot draw and internal audit boundary | [decisions/D-032.md](./decisions/D-032.md) |
 | Decision | D-033 | Owner-bound immutable tarot reading facts and safe-off API | [decisions/D-033.md](./decisions/D-033.md) |
 | Decision | D-034 | Private one-card presentation and idempotent reveal boundary | [decisions/D-034.md](./decisions/D-034.md) |
+| Decision | D-035 | Unified tarot limit, explicit new-reflection, and categorical report boundary | [decisions/D-035.md](./decisions/D-035.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2132,6 +2161,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-024 | Tarot reading application service and API | [tasks/RIT-024.md](./tasks/RIT-024.md) |
 | Task | RIT-025 | Private one-card tarot reflection flow | [tasks/RIT-025.md](./tasks/RIT-025.md) |
 | Task | RIT-026 | Private three-card tarot reflection flow | [tasks/RIT-026.md](./tasks/RIT-026.md) |
+| Task | RIT-027 | Tarot limits, explicit new reflection, and categorical report control | [tasks/RIT-027.md](./tasks/RIT-027.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
@@ -7006,6 +7036,38 @@ leaving immutable rows and exact V1 parsers available for historical replay. Dro
 changing retention, or deleting production rows requires a later destructive migration, backup and
 restore evidence, privacy/legal review, and explicit owner approval. The local integration suite
 verifies non-empty logical dump/restore and reapplies/reattests the exact runtime grants.
+
+## RIT-027 tarot reading report classification
+
+The expand-only report migration adds `reading_report` and an owner-binding uniqueness constraint
+to `reading`. It creates no report, reading, identity, policy, retention value, or enabled feature.
+
+| Data                                                                 | Classification                    | Baseline handling                                                                                         |
+| -------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Report, reading, and anonymous-subject UUIDs                         | Personal pseudonymous             | Composite foreign key binds every report to the reading owner; runtime queries also require that owner    |
+| Category and whole-reading/canonical-position target                 | Personal categorical feedback     | Six bounded categories and no free text, question, interpretation, card payload, or arbitrary target      |
+| Schema/report-policy/idempotency-key versions                        | Internal policy/security provenance | Exact bounded identifiers; the schema does not select a production policy                                |
+| Keyed idempotency and canonical-request hashes                       | Security/internal                 | Fixed 32-byte digests only; no raw key or request body                                                    |
+| Created and expiry timestamps                                        | Personal operational metadata       | Report expiry is bounded by the existing owning reading expiry; no independent retention extension          |
+
+Report creation locks and revalidates the active anonymous subject, loads only an unexpired reading
+for that subject, and validates a position target against the immutable stored draw. An unknown,
+expired, cross-owner, or invalid-position target uses the same not-found result and performs no
+insert. Historical keyed requests replay before insertion; the same key with a different canonical
+request conflicts. Reporting does not call the reading-create limit path and therefore neither
+consumes nor bypasses reading quota.
+
+Runtime receives only `SELECT` and `INSERT` on `reading_report` through the existing tarot
+reader/writer capabilities. It cannot update, delete, truncate, maintain, reference, trigger, own,
+or administer the table, and the live tarot privilege attestation includes the report table.
+Reports are append-only operational feedback; triage access and deletion/export jobs remain outside
+this slice and must receive their own reviewed privileges and owner/legal approval.
+
+Rollback is expand-only: disable the report route and revoke/reapply the tarot capabilities while
+leaving the additive table and owner constraint intact. Dropping the table or constraint, changing
+retention, or deleting production reports requires a later forward migration, current recovery
+evidence, privacy/legal review, and explicit owner approval. The focused integration suite preserves
+non-empty reports through logical dump/restore and reattests exact runtime grants.
 
 ---
 

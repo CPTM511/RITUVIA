@@ -12,6 +12,7 @@ import {
 } from "@rituvia/divination";
 import {
   parseTarotReadingCreateRequestV1,
+  parseTarotReadingReportRequestV1,
   tarotReadingCreateSchemaVersion,
   type TarotReadingType,
 } from "@rituvia/domain";
@@ -68,7 +69,7 @@ export type PersistedTarotReading = DatabasePersistedTarotReading;
 export type TarotReadingPersistence = DatabaseTarotReadingPersistence;
 
 export type TarotReadingApplicationErrorCode =
-  "conflict" | "limit_reached" | "session_required" | "unavailable";
+  "conflict" | "limit_reached" | "not_found" | "session_required" | "unavailable";
 
 export class TarotReadingApplicationError extends Error {
   public readonly code: TarotReadingApplicationErrorCode;
@@ -176,6 +177,13 @@ export const createTarotReadingApplicationService = (
   }>,
 ) => {
   const policy = parsePolicy(input.policy);
+  if (
+    input.persistence.limits.maximumReadingsPerWindow !== policy.maximumReadingsPerWindow ||
+    input.persistence.limits.policyVersion !== policy.policyVersion ||
+    input.persistence.limits.windowSeconds !== policy.windowSeconds
+  ) {
+    return invalidConfiguration();
+  }
   const cryptography = createTarotReadingCryptography(input.integrityKeys);
   const catalogCache = new Map<string, Promise<TarotCatalogV1>>();
 
@@ -464,8 +472,11 @@ export const createTarotReadingApplicationService = (
           error.code === "TAROT_READING_SESSION_UNAVAILABLE")
       ) {
         const retryAfterSeconds =
-          "retryAfterSeconds" in error && typeof error.retryAfterSeconds === "number"
-            ? error.retryAfterSeconds
+          "retryAfterSeconds" in error &&
+          Number.isSafeInteger(error.retryAfterSeconds) &&
+          (error.retryAfterSeconds as number) >= 1 &&
+          (error.retryAfterSeconds as number) <= policy.windowSeconds
+            ? (error.retryAfterSeconds as number)
             : undefined;
         const code =
           error.code === "TAROT_READING_IDEMPOTENCY_CONFLICT"
@@ -498,5 +509,73 @@ export const createTarotReadingApplicationService = (
     }
   };
 
-  return Object.freeze({ create, get });
+  const report = async (
+    readingId: string,
+    requestInput: unknown,
+    idempotencyKey: string,
+    sessionToken: string,
+  ) => {
+    if (!uuidV4Pattern.test(readingId)) throw new TarotReadingApplicationError("not_found");
+    const request = parseTarotReadingReportRequestV1(requestInput);
+    try {
+      return await input.persistence.report({
+        prepare: ({
+          readingId: persistedReadingId,
+          reportPolicyVersion,
+          request: preparedRequest,
+          subjectId,
+        }) => {
+          if (
+            persistedReadingId !== readingId ||
+            preparedRequest.category !== request.category ||
+            preparedRequest.schemaVersion !== request.schemaVersion ||
+            JSON.stringify(preparedRequest.target) !== JSON.stringify(request.target)
+          ) {
+            return invalidConfiguration();
+          }
+          return Object.freeze({
+            activeIdempotencyKeyVersion: cryptography.activeVersion,
+            candidates: Object.freeze(
+              cryptography.keyVersions.map((idempotencyKeyVersion) =>
+                Object.freeze({
+                  canonicalRequestDigest: cryptography.deriveReportRequestDigest(
+                    idempotencyKeyVersion,
+                    subjectId,
+                    readingId,
+                    reportPolicyVersion,
+                    request,
+                  ),
+                  idempotencyKeyDigest: cryptography.deriveReportIdempotencyKeyDigest(
+                    idempotencyKeyVersion,
+                    subjectId,
+                    idempotencyKey,
+                  ),
+                  idempotencyKeyVersion,
+                }),
+              ),
+            ),
+          });
+        },
+        readingId,
+        request,
+        token: sessionToken,
+      });
+    } catch (error) {
+      if (error instanceof TarotReadingApplicationError) throw error;
+      if (typeof error === "object" && error !== null && "code" in error) {
+        if (error.code === "TAROT_READING_IDEMPOTENCY_CONFLICT") {
+          throw new TarotReadingApplicationError("conflict");
+        }
+        if (
+          error.code === "TAROT_READING_NOT_FOUND" ||
+          error.code === "TAROT_READING_SESSION_UNAVAILABLE"
+        ) {
+          throw new TarotReadingApplicationError("not_found");
+        }
+      }
+      throw new TarotReadingApplicationError("unavailable");
+    }
+  };
+
+  return Object.freeze({ create, get, report });
 };

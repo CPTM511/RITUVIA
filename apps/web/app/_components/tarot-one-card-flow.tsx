@@ -31,6 +31,7 @@ import {
   executeTarotReadingOperation,
   TarotReadingTransportError,
 } from "./tarot-one-card-transport";
+import { TarotReadingReport } from "./tarot-reading-report";
 
 const themeGroupName = createUiControlName("tarot-theme-code");
 const subscribeToHydration = (): (() => void) => () => undefined;
@@ -83,6 +84,13 @@ const failureMessages = (failure: TarotOneCardFailure, messages: TarotReadingMes
     case "unavailable":
       return messages.states.unavailable;
   }
+};
+
+const formatRetryAfter = (seconds: number): string => {
+  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "always", style: "long" });
+  if (seconds < 90) return formatter.format(seconds, "second");
+  if (seconds < 5_400) return formatter.format(Math.ceil(seconds / 60), "minute");
+  return formatter.format(Math.ceil(seconds / 3_600), "hour");
 };
 
 export type TarotReadingFlowProps = Readonly<{
@@ -179,6 +187,9 @@ export function TarotReadingFlow({
             : navigator.onLine
               ? "error"
               : "offline",
+        ...(error instanceof TarotReadingTransportError && error.retryAfterSeconds !== undefined
+          ? { retryAfterSeconds: error.retryAfterSeconds }
+          : {}),
         type: "fail",
       });
     } finally {
@@ -223,6 +234,12 @@ export function TarotReadingFlow({
     requestAnimationFrame(() => document.getElementById(`${flowId}-theme-option-1`)?.focus());
   };
 
+  const startNewReflection = (): void => {
+    cancelCurrentRequest();
+    dispatch({ type: "new_reflection" });
+    requestAnimationFrame(() => document.getElementById(`${flowId}-theme-option-1`)?.focus());
+  };
+
   const busy = state.phase === "ensuring_session" || state.phase === "drawing";
   const controlsLocked =
     !hydrated ||
@@ -231,7 +248,11 @@ export function TarotReadingFlow({
     state.phase === "revealed" ||
     (state.phase === "failed" && state.failure === "conflict");
   const failure = state.failure === null ? null : failureMessages(state.failure, messages);
-  const response = state.response;
+  const displayedResult =
+    state.phase === "revealed" && state.response !== null
+      ? Object.freeze({ replayed: state.replayed, response: state.response })
+      : state.previousResult;
+  const response = displayedResult?.response ?? null;
   const cards = response?.presentation.cards ?? [];
 
   return (
@@ -298,20 +319,30 @@ export function TarotReadingFlow({
             tone={state.failure === "limit_reached" ? "warning" : "error"}
           />
           <div className="tarot-actions">
-            {state.failure === "conflict" ? null : (
+            {state.failure !== "conflict" && state.failure !== "limit_reached" ? (
               <Button
                 label={"retry" in failure ? failure.retry : messages.states.error.retry}
                 onPress={retry}
               />
-            )}
-            {state.failure === "conflict" ? (
+            ) : null}
+            {state.failure === "conflict" || state.failure === "limit_reached" ? (
               <Button
-                label={messages.states.conflict.startOver}
+                label={
+                  state.failure === "conflict"
+                    ? messages.states.conflict.startOver
+                    : messages.states.limitReached.returnToThemes
+                }
                 onPress={startOver}
                 tone="secondary"
               />
             ) : null}
           </div>
+          {state.failure === "limit_reached" && state.failureRetryAfterSeconds !== null ? (
+            <p className="tarot-limit-wait">
+              <span>{messages.states.limitReached.retryAfterLabel}</span>{" "}
+              <time>{formatRetryAfter(state.failureRetryAfterSeconds)}</time>
+            </p>
+          ) : null}
         </section>
       ) : null}
 
@@ -341,7 +372,7 @@ export function TarotReadingFlow({
         </section>
       ) : null}
 
-      {state.phase === "revealed" &&
+      {displayedResult !== null &&
       response !== null &&
       response.readingType === readingType &&
       cards.length === expectedCardCount ? (
@@ -357,6 +388,10 @@ export function TarotReadingFlow({
               {messages.result.cardsLabel}
             </p>
           </header>
+
+          {state.previousResult === displayedResult ? (
+            <p className="tarot-position-boundary">{messages.result.previousPreserved}</p>
+          ) : null}
 
           <p className="tarot-position-boundary">{messages.result.positionBoundary}</p>
           <p className="tarot-ai-boundary">{messages.result.aiBoundary}</p>
@@ -447,7 +482,7 @@ export function TarotReadingFlow({
             })}
           </ol>
           <p>{messages.result.saved}</p>
-          {state.replayed ? <p>{messages.result.replayed}</p> : null}
+          {displayedResult.replayed ? <p>{messages.result.replayed}</p> : null}
           <details className="tarot-methodology">
             <summary>{messages.result.methodologySummary}</summary>
             <dl>
@@ -461,11 +496,30 @@ export function TarotReadingFlow({
               </div>
             </dl>
           </details>
+          <TarotReadingReport
+            key={response.readingId}
+            messages={messages.result.report}
+            positions={cards.map(({ positionId, positionTitle }) => ({
+              positionId,
+              positionTitle,
+            }))}
+            readingId={response.readingId}
+          />
           <div className="tarot-completion">
             <p>{messages.result.completion}</p>
             <ActionLink href={methodologyHref} variant="secondary">
               {messages.result.methodologyAction}
             </ActionLink>
+            {state.phase === "revealed" ? (
+              <div className="tarot-new-reflection">
+                <p>{messages.result.newReflectionBoundary}</p>
+                <Button
+                  label={messages.result.newReflection}
+                  onPress={startNewReflection}
+                  tone="secondary"
+                />
+              </div>
+            ) : null}
           </div>
         </section>
       ) : null}

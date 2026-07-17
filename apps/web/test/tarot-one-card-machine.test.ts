@@ -13,6 +13,26 @@ const operation = Object.freeze({
   sessionIdempotencyKey: "11111111-1111-4111-8111-111111111111",
 });
 
+const nextOperation = Object.freeze({
+  readingIdempotencyKey: "44444444-4444-4444-8444-444444444444",
+  sessionIdempotencyKey: "33333333-3333-4333-8333-333333333333",
+});
+
+const reachRevealedState = () => {
+  const selected = reduceTarotOneCardState(initialTarotOneCardState, {
+    themeCode: "open_reflection",
+    type: "select_theme",
+  });
+  const begun = reduceTarotOneCardState(selected, { operation, type: "begin" });
+  const drawing = reduceTarotOneCardState(begun, { type: "session_ready" });
+  const ready = reduceTarotOneCardState(drawing, {
+    replayed: false,
+    response: parseTarotOneCardResponse(createTarotOneCardResponseFixture()),
+    type: "reading_ready",
+  });
+  return reduceTarotOneCardState(ready, { type: "reveal" });
+};
+
 describe("one-card interaction state machine", () => {
   it("draws, preserves the operation across explicit retry, and reveals without redrawing", () => {
     const selected = reduceTarotOneCardState(initialTarotOneCardState, {
@@ -50,6 +70,83 @@ describe("one-card interaction state machine", () => {
     );
     expect(reduceTarotOneCardState(failed, { type: "start_over" })).toBe(initialTarotOneCardState);
   });
+
+  it("creates a new operation only after an explicit new-reflection transition", () => {
+    const revealed = reachRevealedState();
+
+    expect(reduceTarotOneCardState(revealed, { type: "begin", operation: nextOperation })).toBe(
+      revealed,
+    );
+    expect(reduceTarotOneCardState(revealed, { type: "retry" })).toBe(revealed);
+
+    const choosingAgain = reduceTarotOneCardState(revealed, { type: "new_reflection" });
+    expect(choosingAgain).toMatchObject({
+      operation: null,
+      phase: "choosing",
+      previousResult: {
+        replayed: false,
+        response: revealed.response,
+      },
+      response: null,
+      themeCode: null,
+    });
+
+    const selectedAgain = reduceTarotOneCardState(choosingAgain, {
+      themeCode: "creativity",
+      type: "select_theme",
+    });
+    const begunAgain = reduceTarotOneCardState(selectedAgain, {
+      operation: nextOperation,
+      type: "begin",
+    });
+    expect(begunAgain).toMatchObject({
+      operation: nextOperation,
+      phase: "ensuring_session",
+      previousResult: choosingAgain.previousResult,
+    });
+    expect(begunAgain.operation).not.toBe(operation);
+  });
+
+  it.each([
+    ["offline", undefined],
+    ["limit_reached", 3_600],
+  ] as const)(
+    "preserves the previous result when a new reflection fails with %s",
+    (failure, retryAfterSeconds) => {
+      const revealed = reachRevealedState();
+      const choosingAgain = reduceTarotOneCardState(revealed, { type: "new_reflection" });
+      const selectedAgain = reduceTarotOneCardState(choosingAgain, {
+        themeCode: "work",
+        type: "select_theme",
+      });
+      const begunAgain = reduceTarotOneCardState(selectedAgain, {
+        operation: nextOperation,
+        type: "begin",
+      });
+      const failed = reduceTarotOneCardState(begunAgain, {
+        failure,
+        ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+        type: "fail",
+      });
+
+      expect(failed).toMatchObject({
+        failure,
+        failureRetryAfterSeconds: retryAfterSeconds ?? null,
+        operation: nextOperation,
+        phase: "failed",
+        previousResult: choosingAgain.previousResult,
+      });
+      if (failure === "limit_reached") {
+        expect(reduceTarotOneCardState(failed, { type: "retry" })).toBe(failed);
+      } else {
+        expect(reduceTarotOneCardState(failed, { type: "retry" })).toMatchObject({
+          operation: nextOperation,
+          phase: "ensuring_session",
+          previousResult: choosingAgain.previousResult,
+        });
+      }
+    },
+  );
 
   it("creates separate session and reading idempotency keys and fails on reuse", () => {
     const values = ["11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"];

@@ -71,3 +71,13 @@ export {
   type TarotReadingCreateRequestV1,
   type TarotReadingType,
 } from "./tarot-reading.js";
+export {
+  parseTarotReadingReportRequestV1,
+  tarotReadingReportCategories,
+  tarotReadingReportInputErrorCode,
+  tarotReadingReportSchemaVersion,
+  TarotReadingReportInputError,
+  type TarotReadingReportCategory,
+  type TarotReadingReportRequestV1,
+  type TarotReadingReportTarget,
+} from "./tarot-reading-report.js";
