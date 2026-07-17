@@ -86,6 +86,7 @@ export {
 } from "./provider.js";
 export type {
   AllowedInterpretationSafetyDecisionV1,
+  InterpretationGenerationAuthorizationBindingV1,
   InterpretationGenerationAuthorizationV1,
   InterpretationOperationalMetadataV1,
   InterpretationSafetyDecisionV1,
@@ -103,3 +104,41 @@ export type {
   StructuredGenerationUsageV1,
   StructuredStreamingProviderV1,
 } from "./provider.js";
+
+export {
+  PreGenerationSafetyError,
+  createInterpretationSafetyDecisionV1,
+  evaluatePreGenerationSafetyV1,
+  isPreGenerationSafetyEvaluationV1,
+  preGenerationSafetyClassifierAuthoritySchemaVersion,
+  preGenerationSafetyClassifierRequestSchemaVersion,
+  preGenerationSafetyClassifierResultSchemaVersion,
+  preGenerationSafetyClassifierStatuses,
+  preGenerationSafetyErrorCodes,
+  preGenerationSafetyEvaluationSchemaVersion,
+  preGenerationSafetyIntakePolicyVersion,
+  preGenerationSafetyLimits,
+  preGenerationSafetyPolicyAuthoritySchemaVersion,
+  preGenerationSafetyPolicyVersion,
+  preGenerationSafetyRiskCategories,
+  preGenerationSafetyRoutes,
+  runPreGenerationSafetyGateV1,
+} from "./safety.js";
+export type {
+  ApprovedPreGenerationSafetyClassifierPolicyReferenceV1,
+  EvaluatePreGenerationSafetyInputV1,
+  PreGenerationSafetyClassifierAuthorityV1,
+  PreGenerationSafetyClassifierAuthorityVerifierV1,
+  PreGenerationSafetyClassifierRegistrationV1,
+  PreGenerationSafetyClassifierRequestV1,
+  PreGenerationSafetyClassifierStatus,
+  PreGenerationSafetyClassifierV1,
+  PreGenerationSafetyContinuationContextV1,
+  PreGenerationSafetyErrorCode,
+  PreGenerationSafetyEvaluationV1,
+  PreGenerationSafetyGateResultV1,
+  PreGenerationSafetyPolicyAuthorityV1,
+  PreGenerationSafetyPolicyAuthorityVerifierV1,
+  PreGenerationSafetyRiskCategory,
+  PreGenerationSafetyRoute,
+} from "./safety.js";

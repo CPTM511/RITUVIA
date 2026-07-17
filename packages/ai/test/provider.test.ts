@@ -6,6 +6,7 @@ import {
   isInterpretationGenerationAuthorizationV1,
   parseTarotInterpretationInputJsonV1,
   parseTarotInterpretationOutputForInputV1,
+  preGenerationSafetyPolicyVersion,
   structuredGenerationProviderSchemaVersion,
   structuredGenerationRequestSchemaVersion,
   type InterpretationOperationalMetadataV1,
@@ -23,11 +24,24 @@ const fixture = JSON.parse(
 const fixtureInput = fixture.cases.at(0)?.input;
 if (fixtureInput === undefined) throw new Error("The provider fixture input is unavailable.");
 const parsedInput = parseTarotInterpretationInputJsonV1(JSON.stringify(fixtureInput));
-const authorization = issueInterpretationGenerationAuthorizationV1({
-  policyVersion: "safety.tarot.en.v1",
-  route: "allowed",
-  schemaVersion: "interpretation-safety-decision.v1",
+const authorizationBinding = Object.freeze({
+  intakePolicyVersion: "question-intake.en.v1",
+  locale: "en",
+  modality: "tarot" as const,
+  policyApprovalReference: "test:rit-032:policy",
+  readingType: "one_card" as const,
+  requestId: "11111111-1111-4111-8111-111111111111",
+  safetyPolicyVersion: preGenerationSafetyPolicyVersion,
+  themeCode: "open_reflection" as const,
 });
+const authorization = issueInterpretationGenerationAuthorizationV1(
+  {
+    policyVersion: preGenerationSafetyPolicyVersion,
+    route: "allowed",
+    schemaVersion: "interpretation-safety-decision.v1",
+  },
+  authorizationBinding,
+);
 
 const request = Object.freeze({
   authorization,
@@ -47,7 +61,7 @@ const request = Object.freeze({
     id: "test.prompt.tarot.en",
     version: "1.0.0",
   }),
-  requestId: "33333333-3333-4333-8333-333333333333",
+  requestId: "11111111-1111-4111-8111-111111111111",
   schemaVersion: structuredGenerationRequestSchemaVersion,
   timeoutMs: 8_000,
 }) satisfies StructuredGenerationRequestV1;
@@ -113,7 +127,7 @@ describe("provider-neutral structured generation contracts", () => {
 
   it("requires an internally issued allowed authorization instead of a forgeable route object", () => {
     const forged = Object.freeze({
-      policyVersion: "safety.tarot.en.v1",
+      policyVersion: preGenerationSafetyPolicyVersion,
       route: "allowed" as const,
       schemaVersion: "interpretation-safety-decision.v1" as const,
     });
@@ -126,11 +140,14 @@ describe("provider-neutral structured generation contracts", () => {
 
     for (const route of ["blocked", "crisis", "reframed"] as const) {
       expect(() =>
-        issueInterpretationGenerationAuthorizationV1({
-          policyVersion: "safety.tarot.en.v1",
-          route,
-          schemaVersion: "interpretation-safety-decision.v1",
-        }),
+        issueInterpretationGenerationAuthorizationV1(
+          {
+            policyVersion: preGenerationSafetyPolicyVersion,
+            route,
+            schemaVersion: "interpretation-safety-decision.v1",
+          },
+          authorizationBinding,
+        ),
       ).toThrow("The interpretation generation authorization is invalid.");
     }
   });
@@ -214,7 +231,7 @@ describe("provider-neutral structured generation contracts", () => {
       promptVersion: "1.0.0",
       providerVersion: "1.0.0",
       result: "succeeded",
-      safetyPolicyVersion: "safety.tarot.en.v1",
+      safetyPolicyVersion: preGenerationSafetyPolicyVersion,
       themeCode: "open_reflection",
     }) satisfies InterpretationOperationalMetadataV1;
 

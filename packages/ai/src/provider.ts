@@ -1,3 +1,10 @@
+import {
+  parseQuestionIntakeThemeCode,
+  tarotReadingTypes,
+  type QuestionIntakeThemeCode,
+  type TarotReadingType,
+} from "@rituvia/domain";
+
 export const structuredGenerationRequestSchemaVersion = "structured-generation-request.v1" as const;
 export const structuredGenerationProviderSchemaVersion =
   "structured-generation-provider.v1" as const;
@@ -42,7 +49,19 @@ export type AllowedInterpretationSafetyDecisionV1 = Readonly<{
 
 declare const interpretationGenerationAuthorizationBrand: unique symbol;
 
+export type InterpretationGenerationAuthorizationBindingV1 = Readonly<{
+  intakePolicyVersion: string;
+  locale: string;
+  modality: "tarot";
+  policyApprovalReference: string;
+  readingType: TarotReadingType;
+  requestId: string;
+  safetyPolicyVersion: string;
+  themeCode: QuestionIntakeThemeCode;
+}>;
+
 export type InterpretationGenerationAuthorizationV1 = Readonly<{
+  binding: InterpretationGenerationAuthorizationBindingV1;
   policyVersion: string;
   route: "allowed";
   schemaVersion: "interpretation-safety-decision.v1";
@@ -51,8 +70,50 @@ export type InterpretationGenerationAuthorizationV1 = Readonly<{
 
 const issuedInterpretationGenerationAuthorizations = new WeakSet<object>();
 
+const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const approvalReferencePattern = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/u;
+
+const parseAuthorizationBinding = (
+  binding: InterpretationGenerationAuthorizationBindingV1,
+): InterpretationGenerationAuthorizationBindingV1 => {
+  let canonicalLocale: string;
+  try {
+    canonicalLocale = new Intl.Locale(binding.locale).toString();
+  } catch {
+    throw new TypeError("The interpretation generation authorization is invalid.");
+  }
+  if (
+    !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(binding.intakePolicyVersion) ||
+    canonicalLocale !== binding.locale ||
+    binding.modality !== "tarot" ||
+    !approvalReferencePattern.test(binding.policyApprovalReference) ||
+    !tarotReadingTypes.includes(binding.readingType) ||
+    !uuidV4Pattern.test(binding.requestId) ||
+    !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(binding.safetyPolicyVersion)
+  ) {
+    throw new TypeError("The interpretation generation authorization is invalid.");
+  }
+  let themeCode: QuestionIntakeThemeCode;
+  try {
+    themeCode = parseQuestionIntakeThemeCode(binding.themeCode);
+  } catch {
+    throw new TypeError("The interpretation generation authorization is invalid.");
+  }
+  return Object.freeze({
+    intakePolicyVersion: binding.intakePolicyVersion,
+    locale: canonicalLocale,
+    modality: "tarot",
+    policyApprovalReference: binding.policyApprovalReference,
+    readingType: binding.readingType,
+    requestId: binding.requestId,
+    safetyPolicyVersion: binding.safetyPolicyVersion,
+    themeCode,
+  });
+};
+
 export const issueInterpretationGenerationAuthorizationV1 = (
   decision: InterpretationSafetyDecisionV1,
+  binding: InterpretationGenerationAuthorizationBindingV1,
 ): InterpretationGenerationAuthorizationV1 => {
   if (
     decision.route !== "allowed" ||
@@ -61,7 +122,12 @@ export const issueInterpretationGenerationAuthorizationV1 = (
   ) {
     throw new TypeError("The interpretation generation authorization is invalid.");
   }
+  const parsedBinding = parseAuthorizationBinding(binding);
+  if (parsedBinding.safetyPolicyVersion !== decision.policyVersion) {
+    throw new TypeError("The interpretation generation authorization is invalid.");
+  }
   const authorization = Object.freeze({
+    binding: parsedBinding,
     policyVersion: decision.policyVersion,
     route: "allowed" as const,
     schemaVersion: "interpretation-safety-decision.v1" as const,
@@ -72,10 +138,25 @@ export const issueInterpretationGenerationAuthorizationV1 = (
 
 export const isInterpretationGenerationAuthorizationV1 = (
   value: unknown,
-): value is InterpretationGenerationAuthorizationV1 =>
-  typeof value === "object" &&
-  value !== null &&
-  issuedInterpretationGenerationAuthorizations.has(value);
+  expectedBinding?: InterpretationGenerationAuthorizationBindingV1,
+): value is InterpretationGenerationAuthorizationV1 => {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !issuedInterpretationGenerationAuthorizations.has(value)
+  ) {
+    return false;
+  }
+  if (expectedBinding === undefined) return true;
+  try {
+    return (
+      JSON.stringify((value as InterpretationGenerationAuthorizationV1).binding) ===
+      JSON.stringify(parseAuthorizationBinding(expectedBinding))
+    );
+  } catch {
+    return false;
+  }
+};
 
 export type InterpretationSafetyDecisionV1 =
   | AllowedInterpretationSafetyDecisionV1

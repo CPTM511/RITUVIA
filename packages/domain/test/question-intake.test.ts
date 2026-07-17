@@ -60,6 +60,9 @@ describe("question intake policy", () => {
     expect(parseQuestionIntakeRequest(request("a".repeat(questionIntakeMaximumLength)))).toEqual(
       expect.objectContaining({ question: "a".repeat(questionIntakeMaximumLength) }),
     );
+    expect(parseQuestionIntakeRequest(request("What can I reflect on today? 🌱"))).toEqual(
+      expect.objectContaining({ question: "What can I reflect on today? 🌱" }),
+    );
   });
 
   it.each([
@@ -73,6 +76,8 @@ describe("question intake policy", () => {
     request("hidden\u0000control"),
     request("su\u200bicide"),
     request("bidi\u202etext"),
+    request("lone-high-surrogate\ud800"),
+    request("lone-low-surrogate\udc00"),
   ])("fails closed for malformed or ambiguous input %#", (value) => {
     expect(() => parseQuestionIntakeRequest(value)).toThrow(
       expect.objectContaining({ code: "INTAKE_INPUT_INVALID" }),

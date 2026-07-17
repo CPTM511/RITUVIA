@@ -7,6 +7,7 @@ import {
   interpretationContractLimits,
   interpretationTimeHorizons,
   interpretationTones,
+  preGenerationSafetyPolicyVersion,
   parseTarotInterpretationInputJsonV1,
   parseTarotInterpretationOutputForInputV1,
   tarotInterpretationFactRefsV1,
@@ -160,7 +161,7 @@ describe("tarot interpretation contracts v1", () => {
           parseInput({
             ...valid,
             safetyDecision: {
-              policyVersion: "safety.tarot.en.v1",
+              policyVersion: preGenerationSafetyPolicyVersion,
               route,
               schemaVersion: "interpretation-safety-decision.v1",
             },

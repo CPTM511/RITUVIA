@@ -67,6 +67,8 @@ const requiredArtifacts = [
   "packages/ai/dist/prompt.js",
   "packages/ai/dist/retrieval.d.ts",
   "packages/ai/dist/retrieval.js",
+  "packages/ai/dist/safety.d.ts",
+  "packages/ai/dist/safety.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/worker.d.ts",
@@ -273,12 +275,21 @@ if (
   typeof aiModule.loadApprovedTarotPromptTemplateV1 !== "function" ||
   typeof aiModule.assembleTarotPromptV1 !== "function" ||
   typeof aiModule.isTarotPromptAssemblyV1 !== "function" ||
+  typeof aiModule.runPreGenerationSafetyGateV1 !== "function" ||
+  typeof aiModule.evaluatePreGenerationSafetyV1 !== "function" ||
+  typeof aiModule.isPreGenerationSafetyEvaluationV1 !== "function" ||
   typeof aiModule.isInterpretationGenerationAuthorizationV1 !== "function" ||
   aiModule.structuredGenerationProviderSchemaVersion !== "structured-generation-provider.v1" ||
   aiModule.tarotInterpretationInputSchemaVersion !== "tarot-interpretation-input.v1" ||
   aiModule.tarotInterpretationOutputSchemaVersion !== "1" ||
   aiModule.tarotContentRetrievalPolicyVersion !== "tarot-content-retrieval-policy.v1" ||
-  aiModule.tarotPromptAssemblyPolicyVersion !== "tarot-prompt-assembly-policy.v1"
+  aiModule.tarotPromptAssemblyPolicyVersion !== "tarot-prompt-assembly-policy.v1" ||
+  aiModule.preGenerationSafetyPolicyVersion !== "pre-generation-safety.en.v1" ||
+  aiModule.preGenerationSafetyIntakePolicyVersion !== "question-intake.en.v1" ||
+  aiModule.preGenerationSafetyPolicyAuthoritySchemaVersion !==
+    "pre-generation-safety-policy-authority.v1" ||
+  typeof aiModule.issuePreGenerationSafetyAuthorizationV1 !== "undefined" ||
+  typeof aiModule.issueInterpretationGenerationAuthorizationV1 !== "undefined"
 ) {
   throw new TypeError("The AI build omitted its versioned provider or tarot contracts.");
 }
@@ -336,6 +347,70 @@ try {
 }
 if (!rejectedUnpublishedRetrieval || aiModule.isTarotPromptAssemblyV1({})) {
   throw new TypeError("The compiled AI retrieval or prompt trust boundary is invalid.");
+}
+
+let safetyContinuationCalls = 0;
+const crisisSafetyGate = await aiModule.runPreGenerationSafetyGateV1(
+  {
+    asOf: "2026-07-18",
+    readingType: "one_card",
+    requestId: "32222222-2222-4222-8222-222222222222",
+    requestJson: JSON.stringify({
+      locale: "en",
+      question: "I am planning to end my life.",
+      schemaVersion: "1",
+      themeCode: "grief",
+    }),
+  },
+  () => {
+    safetyContinuationCalls += 1;
+    return "must-not-run";
+  },
+);
+if (
+  crisisSafetyGate.status !== "stopped" ||
+  crisisSafetyGate.evaluation.route !== "crisis" ||
+  crisisSafetyGate.evaluation.canContinue ||
+  safetyContinuationCalls !== 0 ||
+  aiModule.isPreGenerationSafetyEvaluationV1({ ...crisisSafetyGate.evaluation }) ||
+  JSON.stringify(crisisSafetyGate).includes("planning to end my life")
+) {
+  throw new TypeError("The compiled pre-generation crisis boundary is invalid.");
+}
+
+const allowedSafetyGate = await aiModule.runPreGenerationSafetyGateV1(
+  {
+    asOf: "2026-07-18",
+    authorizePolicy: () => true,
+    policyApprovalReference: "test:rit-032:policy",
+    readingType: "one_card",
+    requestId: "32333333-3333-4333-8333-333333333333",
+    requestJson: JSON.stringify({
+      locale: "en",
+      schemaVersion: "1",
+      themeCode: "open_reflection",
+    }),
+  },
+  ({ authorization }) => {
+    safetyContinuationCalls += 1;
+    return aiModule.isInterpretationGenerationAuthorizationV1(authorization, {
+      intakePolicyVersion: "question-intake.en.v1",
+      locale: "en",
+      modality: "tarot",
+      policyApprovalReference: "test:rit-032:policy",
+      readingType: "one_card",
+      requestId: "32333333-3333-4333-8333-333333333333",
+      safetyPolicyVersion: "pre-generation-safety.en.v1",
+      themeCode: "open_reflection",
+    });
+  },
+);
+if (
+  allowedSafetyGate.status !== "continued" ||
+  allowedSafetyGate.value !== true ||
+  safetyContinuationCalls !== 1
+) {
+  throw new TypeError("The compiled pre-generation allowed boundary is invalid.");
 }
 
 if (

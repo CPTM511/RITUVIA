@@ -305,3 +305,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
   unforgeable artifact that reconstructs exactly which facts, sources, prompt, schemas, and policies
   were used.
 - **Date:** 2026-07-18
+
+### [D-039 — Fail-closed pre-generation safety and request-bound authorization](records/decisions/D-039.md)
+
+- **Decision:** Re-evaluate bounded raw intake inside a pure English/Tarot gate; require exact
+  server-owned classifier and policy authority; merge routes without downgrades; keep question and
+  risk data transient; and mint only an opaque authorization bound to the exact allowed request.
+- **Reason:** Client routes, structural decisions, or reusable authorization cannot safely prove
+  that high-stakes and crisis policy ran before divination or generation, while storing sensitive
+  moderation data would create unnecessary privacy risk.
+- **Date:** 2026-07-18
