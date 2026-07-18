@@ -1,5 +1,5 @@
 const LOCAL_HOST = "127.0.0.1";
-const LOCAL_PORT = "55432";
+const DEFAULT_LOCAL_PORT = "55432";
 const LOCAL_ROLE = "rituvia_migrator";
 const DEVELOPMENT_DATABASE = "rituvia_local";
 const TEST_DATABASE_PATTERN = /^rituvia_test_[a-f0-9]{24}$/;
@@ -28,7 +28,12 @@ const fail = (): never => {
 };
 
 export type SyntheticSeedTarget =
-  | Readonly<{ databaseName: string; expectedClusterName: string; kind: "local" }>
+  | Readonly<{
+      databaseName: string;
+      expectedClusterName: string;
+      expectedPort: number;
+      kind: "local";
+    }>
   | Readonly<{ databaseName: string; expectedSystemIdentifier: string; kind: "ci" }>;
 
 export const assertSyntheticSeedTarget = ({
@@ -40,6 +45,7 @@ export const assertSyntheticSeedTarget = ({
   githubActions,
   githubRunAttempt,
   githubRunId,
+  localPostgresPort,
   seedTarget,
 }: Readonly<{
   appEnvironment: string | undefined;
@@ -50,6 +56,7 @@ export const assertSyntheticSeedTarget = ({
   githubActions?: string | undefined;
   githubRunAttempt?: string | undefined;
   githubRunId?: string | undefined;
+  localPostgresPort?: string | undefined;
   seedTarget: string | undefined;
 }>): SyntheticSeedTarget => {
   if (databaseUrl === undefined) return fail();
@@ -58,13 +65,17 @@ export const assertSyntheticSeedTarget = ({
     const parsed = new URL(databaseUrl);
     const databaseName = parsed.pathname.slice(1);
     if (seedTarget === "local") {
+      const expectedLocalPort = localPostgresPort?.trim() || DEFAULT_LOCAL_PORT;
       if (
         appEnvironment !== "local" ||
         expectedClusterName === undefined ||
         !CLUSTER_NAME_PATTERN.test(expectedClusterName) ||
         parsed.protocol !== "postgresql:" ||
         parsed.hostname !== LOCAL_HOST ||
-        parsed.port !== LOCAL_PORT ||
+        !/^\d{4,5}$/u.test(expectedLocalPort) ||
+        Number(expectedLocalPort) < 1_024 ||
+        Number(expectedLocalPort) > 65_535 ||
+        parsed.port !== expectedLocalPort ||
         parsed.username !== LOCAL_ROLE ||
         parsed.password === "" ||
         parsed.hash !== "" ||
@@ -76,7 +87,12 @@ export const assertSyntheticSeedTarget = ({
       ) {
         return fail();
       }
-      return Object.freeze({ databaseName, expectedClusterName, kind: "local" });
+      return Object.freeze({
+        databaseName,
+        expectedClusterName,
+        expectedPort: Number(expectedLocalPort),
+        kind: "local",
+      });
     }
 
     const expectedPassword = `rituvia-ci-${githubRunId ?? ""}-${githubRunAttempt ?? ""}-admin-migrator`;

@@ -100,7 +100,9 @@ describe("Web shell repository contract", () => {
       expect(styles).toContain(rule);
     }
     expect(styles).toContain("border-inline-start");
-    expect(applicationStyles).not.toContain("--surface-canvas:");
+    expect(applicationStyles).toMatch(
+      /:root,\s*\[data-theme="light"\],\s*\[data-theme="dark"\]\s*\{[^}]*--surface-canvas:\s*#060711/su,
+    );
     expect(applicationStyles).not.toContain("--motion-fast:");
     expect(styles).toMatch(
       /\.brand-link\s*\{[^}]*max-inline-size:\s*100%[^}]*overflow-wrap:\s*anywhere/su,

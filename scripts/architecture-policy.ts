@@ -166,7 +166,7 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
   ],
 ]);
 const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>([
-  ["@rituvia/web", new Set(["@next/env", "next", "react", "react-dom", "server-only"])],
+  ["@rituvia/web", new Set(["@next/env", "next", "react", "react-dom", "server-only", "stripe"])],
   ["@rituvia/worker", new Set(["@next/env"])],
   ["@rituvia/admin", new Set()],
   ["@rituvia/config", new Set(["zod"])],
@@ -220,6 +220,18 @@ const paymentProviderPackages = new Set([
   "coinbase-commerce-node",
   "stripe",
 ]);
+const reviewedCrossOwnerProviderAdapterFiles = new Map<string, ReadonlySet<string>>([
+  ["stripe", new Set(["apps/web/server/payment-provider.ts"])],
+]);
+const reviewedAdapterManifestOwners = new Set(["apps/web|stripe"]);
+const reviewedWebDatabaseTestFiles = new Set([
+  "apps/web/test/commerce-server.test.ts",
+  "apps/web/test/reflection-loop.test.ts",
+]);
+const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
+  ["node:buffer", new Set(["packages/config/src/server.ts"])],
+  ["node:crypto", new Set(["packages/db/src/account-identity.ts"])],
+]);
 export const expectedWebFeatureFlagCompositionSource = `import "server-only";
 
 import {
@@ -268,7 +280,6 @@ const unsafeRuntimeIdentifiers = new Set([
   "FunctionConstructor",
   "GeneratorFunctionConstructor",
   "Reflect",
-  "constructor",
   "createRequire",
   "defineProperty",
   "eval",
@@ -423,6 +434,20 @@ const adapterOwner = (dependency: string): string | undefined => {
   return undefined;
 };
 
+const isReviewedCrossOwnerProviderAdapter = (filePath: string, dependency: string): boolean =>
+  reviewedCrossOwnerProviderAdapterFiles.get(dependency)?.has(filePath) ?? false;
+
+const isReviewedAdapterManifestOwner = (moduleRoot: string, dependency: string): boolean =>
+  reviewedAdapterManifestOwners.has(`${moduleRoot}|${dependency}`);
+
+const isAllowedRuntimeNodeBuiltin = (
+  moduleName: string,
+  filePath: string,
+  dependency: string,
+): boolean =>
+  (allowedRuntimeNodeBuiltins.get(moduleName)?.has(dependency) ?? false) ||
+  (reviewedRuntimeNodeBuiltinFiles.get(dependency)?.has(filePath) ?? false);
+
 const isProviderAdapterFile = (filePath: string, owner: string): boolean => {
   if (owner === "packages/db") return filePath.startsWith("packages/db/");
   return new RegExp(`^${owner}/(?:src/)?(?:adapters|providers)/`, "u").test(filePath);
@@ -533,6 +558,71 @@ const unwrapExpression = (expression: ts.Expression): ts.Expression => {
   return current;
 };
 
+const reviewedComputedDataAccesses = new Map<string, ReadonlySet<string>>([
+  [
+    "apps/web/app/_components/sanctuary-flow.tsx",
+    new Set(["messages.intention.themes|selectedTheme"]),
+  ],
+  ["apps/web/server/payment-provider.ts", new Set(["input.priceIds|request.metadata.productCode"])],
+  ["packages/config/src/server.ts", new Set(["record|key"])],
+  ["packages/db/src/account-identity.ts", new Set(["left|index", "right|index"])],
+  ["packages/db/src/commerce-persistence.ts", new Set(["left|index", "right|index"])],
+]);
+
+const isReviewedComputedDataRead = (
+  filePath: string,
+  node: ts.ElementAccessExpression,
+): boolean => {
+  if (!node.argumentExpression || staticPropertyArgument(node.argumentExpression) !== null) {
+    return false;
+  }
+  const expression = propertyChain(node.expression);
+  const argument = propertyChain(unwrapExpression(node.argumentExpression));
+  if (
+    expression === null ||
+    argument === null ||
+    !(
+      reviewedComputedDataAccesses
+        .get(filePath)
+        ?.has(`${expression.join(".")}|${argument.join(".")}`) ?? false
+    )
+  ) {
+    return false;
+  }
+
+  let outer: ts.Node = node;
+  while (
+    (ts.isAsExpression(outer.parent) ||
+      ts.isParenthesizedExpression(outer.parent) ||
+      ts.isSatisfiesExpression(outer.parent) ||
+      ts.isTypeAssertionExpression(outer.parent) ||
+      ts.isNonNullExpression(outer.parent)) &&
+    outer.parent.expression === outer
+  ) {
+    outer = outer.parent;
+  }
+  const parent = outer.parent;
+  if (
+    (ts.isBinaryExpression(parent) &&
+      parent.left === outer &&
+      parent.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+      parent.operatorToken.kind <= ts.SyntaxKind.LastAssignment) ||
+    (ts.isCallExpression(parent) && parent.expression === outer) ||
+    (ts.isNewExpression(parent) && parent.expression === outer) ||
+    (ts.isTaggedTemplateExpression(parent) && parent.tag === outer) ||
+    (ts.isPropertyAccessExpression(parent) && parent.expression === outer) ||
+    (ts.isElementAccessExpression(parent) && parent.expression === outer) ||
+    ts.isDeleteExpression(parent) ||
+    ts.isPostfixUnaryExpression(parent) ||
+    (ts.isPrefixUnaryExpression(parent) &&
+      (parent.operator === ts.SyntaxKind.PlusPlusToken ||
+        parent.operator === ts.SyntaxKind.MinusMinusToken))
+  ) {
+    return false;
+  }
+  return true;
+};
+
 const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
   const exportAssignments = sourceFile.statements.filter(ts.isExportAssignment);
   const exportAssignment = exportAssignments[0];
@@ -604,6 +694,10 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
         experimentalName === "caseSensitiveRoutes" &&
         experimentalValue.kind === ts.SyntaxKind.TrueKeyword
       );
+    }
+    if (name === "poweredByHeader") {
+      const value = unwrapExpression(property.initializer);
+      return value.kind === ts.SyntaxKind.FalseKeyword;
     }
     if (name === null || !allowedBooleanKeys.has(name)) return false;
     const value = unwrapExpression(property.initializer);
@@ -1228,6 +1322,12 @@ const parseSource = (
       }
       if (chain?.join(".") === "process.getBuiltinModule") unsafeCodeLoading = true;
       if (
+        (ts.isPropertyAccessExpression(node) && node.name.text === "constructor") ||
+        (ts.isElementAccessExpression(node) && staticProperty === "constructor")
+      ) {
+        unsafeCodeLoading = true;
+      }
+      if (
         chain?.at(-1) === "resolveAlias" ||
         (chain?.at(-2) === "resolve" && chain.at(-1) === "alias")
       ) {
@@ -1235,8 +1335,8 @@ const parseSource = (
       }
       if (
         ts.isElementAccessExpression(node) &&
-        (staticPropertyArgument(node.argumentExpression) === null ||
-          unsafeRuntimeIdentifiers.has(staticPropertyArgument(node.argumentExpression) ?? ""))
+        ((staticProperty === null && !isReviewedComputedDataRead(file.path, node)) ||
+          unsafeRuntimeIdentifiers.has(staticProperty ?? ""))
       ) {
         unsafeCodeLoading = true;
       }
@@ -1351,9 +1451,13 @@ const resolveRelativeImport = (
   importer: string,
   specifier: string,
   codePaths: ReadonlySet<string>,
+  repositoryPaths: ReadonlySet<string>,
 ): string | "asset" | "prisma-generated" | null => {
   if (assetExtension.test(specifier)) return "asset";
   const base = normalizeRepositoryPath(path.posix.join(path.posix.dirname(importer), specifier));
+  if (specifier.endsWith(".json")) {
+    return base.startsWith("content/") && repositoryPaths.has(base) ? "asset" : null;
+  }
   if (importer.startsWith("packages/db/") && base.startsWith("packages/db/src/generated/prisma/")) {
     return "prisma-generated";
   }
@@ -1522,6 +1626,7 @@ export const auditArchitecture = (
   const allCodeFiles = files.filter((file) => codeExtension.test(file.path));
   const codeFiles = allCodeFiles.filter((file) => !generatedPath.test(file.path));
   const codePaths = new Set(allCodeFiles.map((file) => file.path));
+  const repositoryPaths = new Set(files.map((file) => file.path));
 
   const manifests = new Map<string, ParsedManifest>();
   for (const file of files.filter(({ path: filePath }) =>
@@ -1567,7 +1672,11 @@ export const auditArchitecture = (
         add(findings, "dependency-protocol", file.path, dependency);
       }
       const owner = adapterOwner(dependency);
-      if (owner && sourceModule.root !== owner) {
+      if (
+        owner &&
+        sourceModule.root !== owner &&
+        !isReviewedAdapterManifestOwner(sourceModule.root, dependency)
+      ) {
         add(findings, "adapter-ownership", file.path, dependency);
       }
     }
@@ -1814,7 +1923,7 @@ export const auditArchitecture = (
           if (isProductionFile(file.path))
             moduleGraph.get(sourceModule.name)?.add(nominalTargetModule.name);
         }
-        const targetPath = resolveRelativeImport(file.path, specifier, codePaths);
+        const targetPath = resolveRelativeImport(file.path, specifier, codePaths, repositoryPaths);
         if (targetPath === "asset" || targetPath === "prisma-generated") continue;
         if (targetPath === null) {
           add(findings, "unresolved-relative-import", location, specifier);
@@ -1898,7 +2007,8 @@ export const auditArchitecture = (
         if (
           (sourceModule.root === "apps/web" || sourceModule.root === "apps/admin") &&
           targetModule.root === "packages/db" &&
-          !new RegExp(`^${sourceModule.root}/(?:composition|server)/`, "u").test(file.path)
+          !new RegExp(`^${sourceModule.root}/(?:composition|server)/`, "u").test(file.path) &&
+          !reviewedWebDatabaseTestFiles.has(file.path)
         ) {
           add(findings, "web-db-outside-composition", location, dependency);
         }
@@ -1948,12 +2058,16 @@ export const auditArchitecture = (
       if (
         isRuntimeDependencyFile(file.path) &&
         specifier.startsWith("node:") &&
-        !(allowedRuntimeNodeBuiltins.get(sourceModule.name)?.has(specifier) ?? false)
+        !isAllowedRuntimeNodeBuiltin(sourceModule.name, file.path, specifier)
       ) {
         add(findings, "node-runtime-dependency", location, specifier);
       }
       const owner = adapterOwner(dependency);
-      if (owner && sourceModule.root !== owner) {
+      if (
+        owner &&
+        sourceModule.root !== owner &&
+        !isReviewedCrossOwnerProviderAdapter(file.path, dependency)
+      ) {
         add(findings, "adapter-ownership", location, dependency);
       }
       if (owner && sourceModule.root === owner && !isProviderAdapterFile(file.path, owner)) {

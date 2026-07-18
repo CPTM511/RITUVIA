@@ -363,3 +363,19 @@ effective until this register links it. Do not rewrite historical rationale; sup
   all-fallback result cannot provide a trustworthy release decision, while live provider calls
   would introduce unauthorized secrets, spend, and nondeterminism.
 - **Date:** 2026-07-18
+
+### [D-044 — Lumora-reference local commercial MVP consolidation](records/decisions/D-044.md)
+
+- **Decision:** For the owner-directed local commercial MVP, use
+  `reference/lumora_interactive_prototype.html` and `reference/lumora_business_plan_zh.html` as the
+  primary product references for scope, UX, and the commercial loop, and consolidate execution in
+  RIT-158. Deliver one responsive English vertical slice covering anonymous reading, account
+  sign-in/sign-out, exact 18+ paid attestation, intention, free and owned paid rituals, encrypted
+  private journal/revisit, a server-authoritative catalog, Stripe hosted-checkout adapter, signed
+  local checkout simulator, and verified webhook-to-ledger-to-entitlement fulfillment. `AGENTS.md`
+  safety, privacy, payment, cultural-integrity, and human-approval floors continue to override any
+  conflicting prototype or business-plan detail.
+- **Reason:** A runnable local commercial loop now provides better owner validation than continuing
+  isolated milestone slices, while one consolidated record preserves the distinction between local
+  product evidence and unapproved production payment, legal, provider, or launch state.
+- **Date:** 2026-07-18

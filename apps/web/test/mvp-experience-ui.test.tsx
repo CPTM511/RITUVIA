@@ -1,0 +1,215 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+
+import { AccountExperience, parseAccountSummary } from "../app/_components/account-experience";
+import { CheckoutReturn, resolveCheckoutOrderStatus } from "../app/_components/checkout-return";
+import {
+  completedLocalOrderId,
+  LocalCheckout,
+  localCheckoutCompletionEndpoint,
+} from "../app/_components/local-checkout";
+import {
+  parseCatalogResponse,
+  SanctuaryFlow,
+  sanctuaryEndpoints,
+} from "../app/_components/sanctuary-flow";
+import { SignInForm } from "../app/_components/sign-in-form";
+import { safeLocalReturnTo } from "../app/_contracts/reviewed-return-to";
+import { getAccountMessages } from "../app/_i18n/account-messages";
+import { getCommerceMessages } from "../app/_i18n/commerce-messages";
+import {
+  localeAccountPath,
+  localeCheckoutReturnPath,
+  localeLocalCheckoutPath,
+  localeSanctuaryPath,
+  localeSignInPath,
+  localeTarotOneCardPath,
+} from "../app/_i18n/routing";
+import { getSanctuaryMessages } from "../app/_i18n/sanctuary-messages";
+
+const uuid = "00000000-0000-4000-8000-000000000001";
+
+describe("MVP client boundaries", () => {
+  it("accepts only the server-authoritative commerce catalog shape", () => {
+    const parsed = parseCatalogResponse({
+      items: [
+        {
+          exactContents: ["One moonlit lotus", "Private sanctuary use"],
+          name: "Moonlit lotus",
+          price: { amountMinor: 199, currencyCode: "USD" },
+          productCode: "moonlit_lotus",
+        },
+      ],
+      schemaVersion: 1,
+    });
+
+    expect(parsed).toEqual([
+      {
+        access: "purchase",
+        code: "moonlit_lotus",
+        description: "One moonlit lotus · Private sanctuary use",
+        name: "Moonlit lotus",
+        owned: false,
+        price: { amountMinor: 199, currency: "USD" },
+      },
+    ]);
+    expect(
+      parseCatalogResponse({
+        items: [{ amountMinor: 1, code: "client_price", currency: "USD" }],
+        schemaVersion: 1,
+      }),
+    ).toBeNull();
+  });
+
+  it("requires a valid private account response before showing account data", () => {
+    const account = {
+      ageAttested: false,
+      displayName: null,
+      emailVerified: true,
+      id: uuid,
+      locale: "en",
+      profileVersion: 1,
+      schemaVersion: 1,
+      status: "active",
+      timeZone: "UTC",
+    };
+
+    expect(parseAccountSummary(account)).toMatchObject({ adultAttested: false, id: uuid });
+    expect(parseAccountSummary({ ...account, emailVerified: false })).toBeNull();
+    expect(parseAccountSummary({ ...account, id: "not-an-account-id" })).toBeNull();
+  });
+
+  it("never treats a browser redirect or an unentitled paid order as success", () => {
+    expect(resolveCheckoutOrderStatus({ entitlementGranted: false, state: "paid" })).toBe(
+      "pending",
+    );
+    expect(resolveCheckoutOrderStatus({ entitlementGranted: true, state: "paid" })).toBe("success");
+    expect(resolveCheckoutOrderStatus({ entitlementGranted: true, state: "refunded" })).toBe(
+      "failed",
+    );
+    expect(resolveCheckoutOrderStatus({ state: "pending_checkout" })).toBe("pending");
+    expect(resolveCheckoutOrderStatus({ state: "payment_failed" })).toBe("failed");
+    expect(resolveCheckoutOrderStatus({ redirect: "success" })).toBeNull();
+  });
+
+  it("keeps passwordless return paths on reviewed local English routes", () => {
+    expect(safeLocalReturnTo("/en/sanctuary", "/en/account")).toBe("/en/sanctuary");
+    expect(
+      safeLocalReturnTo("/en/checkout/local?checkout_id=local_checkout.123", "/en/account"),
+    ).toBe("/en/checkout/local?checkout_id=local_checkout.123");
+    for (const candidate of [
+      null,
+      "https://example.com",
+      "//example.com",
+      "/fr/account",
+      "/en/checkout/local?checkout_id=bad&next=https://foreign.test",
+    ]) {
+      expect(safeLocalReturnTo(candidate, "/en/account")).toBe("/en/account");
+    }
+  });
+
+  it("accepts local completion only after paid state and active entitlement", () => {
+    expect(
+      completedLocalOrderId({
+        entitlementGranted: true,
+        orderId: uuid,
+        schemaVersion: 1,
+        state: "paid",
+      }),
+    ).toBe(uuid);
+    expect(
+      completedLocalOrderId({
+        entitlementGranted: false,
+        orderId: uuid,
+        schemaVersion: 1,
+        state: "paid",
+      }),
+    ).toBeNull();
+    expect(localCheckoutCompletionEndpoint).toBe("/api/v1/checkout/local/complete");
+  });
+
+  it("uses first-party API paths for the complete sanctuary loop", () => {
+    expect(sanctuaryEndpoints).toEqual({
+      catalog: "/api/v1/catalog",
+      entitlements: "/api/v1/entitlements",
+      intentions: "/api/v1/intentions",
+      journalEntries: "/api/v1/journal-entries",
+      orders: "/api/v1/orders",
+      ritualSessions: "/api/v1/ritual-sessions",
+    });
+  });
+});
+
+describe("MVP server-rendered initial states", () => {
+  it("renders an accessible passwordless sign-in form", () => {
+    const html = renderToStaticMarkup(
+      createElement(SignInForm, {
+        messages: getAccountMessages("en").signIn,
+        returnTo: localeAccountPath("en"),
+      }),
+    );
+
+    expect(html).toContain('type="email"');
+    expect(html).toContain('autoComplete="email"');
+    expect(html).toContain("Sign in without a password");
+    expect(html).not.toContain('type="password"');
+  });
+
+  it("renders private account and checkout verification loading states", () => {
+    const accountHtml = renderToStaticMarkup(
+      createElement(AccountExperience, {
+        messages: getAccountMessages("en").account,
+        sanctuaryHref: localeSanctuaryPath("en"),
+        signInHref: localeSignInPath("en"),
+      }),
+    );
+    const checkoutHtml = renderToStaticMarkup(
+      createElement(CheckoutReturn, {
+        accountHref: localeAccountPath("en"),
+        messages: getCommerceMessages("en").checkoutReturn,
+        orderId: uuid,
+        sanctuaryHref: localeSanctuaryPath("en"),
+      }),
+    );
+
+    expect(accountHtml).toContain('aria-busy="true"');
+    expect(accountHtml).toContain("Loading your private account");
+    expect(checkoutHtml).toContain('aria-busy="true"');
+    expect(checkoutHtml).toContain("Checking the verified order status");
+  });
+
+  it("renders an explicit, non-card local checkout confirmation", () => {
+    const html = renderToStaticMarkup(
+      createElement(LocalCheckout, {
+        checkoutId: "local_checkout_11111111",
+        checkoutReturnHref: localeCheckoutReturnPath("en"),
+        localCheckoutHref: localeLocalCheckoutPath("en"),
+        messages: getCommerceMessages("en").localCheckout,
+        sanctuaryHref: localeSanctuaryPath("en"),
+        signInHref: localeSignInPath("en"),
+      }),
+    );
+
+    expect(html).toContain("Complete a local test payment");
+    expect(html).toContain("no real payment is taken");
+    expect(html).not.toMatch(/<input\b/u);
+  });
+
+  it("renders the sanctuary with a labelled formal image and degraded-safe catalog state", () => {
+    const html = renderToStaticMarkup(
+      createElement(SanctuaryFlow, {
+        accountHref: localeAccountPath("en"),
+        messages: getSanctuaryMessages("en"),
+        readingHref: localeTarotOneCardPath("en"),
+        sanctuaryHref: localeSanctuaryPath("en"),
+        signInHref: localeSignInPath("en"),
+      }),
+    );
+
+    expect(html).toContain("rituvia-sanctuary-orb.png");
+    expect(html).toContain("Loading available ritual objects");
+    expect(html).toContain("Set an intention");
+    expect(html).toContain("Private reflection");
+  });
+});

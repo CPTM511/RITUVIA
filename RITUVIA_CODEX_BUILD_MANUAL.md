@@ -198,7 +198,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, `packages/domain`, `packages/observability`, and `packages/ui`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active MVP now also includes the `packages/country-policy` and `packages/payments` provider boundaries alongside the existing Web, Worker, configuration, database, domain, divination, i18n, observability, AI, and UI workspaces.
 
 ### Continuous integration
 
@@ -219,35 +219,39 @@ cp .env.example .env
 
 Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted. The database lifecycle commands derive the attested local URL themselves; application processes still receive `DATABASE_URL` explicitly through the process environment or an ignored environment file. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
 
-The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
+The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires the complete validated brand projection, an HTTPS canonical origin, and every enabled provider secret; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
 
-### Local Web shell
+### Local commercial MVP
 
-Build the English-first shell without a database:
-
-```bash
-npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web build
-```
-
-The running route is deliberately safe-off. Starting the local server without a validated
-read-only runtime database and an explicit active `experience.public_shell=on` version returns an
-empty 404 for the shell HTML and RSC representations; it does not bypass the activation plane.
-After those existing RIT-007 prerequisites are present, run:
+Start the attested local PostgreSQL database, generate a private local-only configuration, and run
+the English MVP:
 
 ```bash
-npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web dev
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:setup
+npm exec --yes --package=pnpm@11.13.1 -- pnpm mvp:local:configure
+npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web exec next dev --hostname 127.0.0.1 --port 4175
 ```
 
-When explicitly enabled, opening `http://localhost:3000` returns a permanent redirect to the only
-active, reviewed locale at `/en`. The finite public surface is `/en`, `/en/methodology`,
-`/en/safety`, and `/en/privacy`; the privacy route is a product-design overview, not a legal privacy
-policy. Unsupported or non-canonical locale/page segments return 404 rather than silently falling
-back or generating caches. Every page is server rendered and remains readable without JavaScript.
-Local, preview, and staging metadata is `noindex`; a production environment must provide the
-approved HTTPS canonical origin before it may emit indexable metadata. The configuration-boundary
-integration harness reproducibly verifies enabled and disabled behavior without documenting an
-activation bypass or ad hoc SQL. The current shell is an honest foundation, not a claim that
-accounts, readings, legal terms, purchases, rituals, or a public launch exist.
+The repository-root `.env.local` is ignored, created with mode `0600`, and contains independent random local
+keys. The configurator refuses to replace it so encrypted local account and journal data are not
+silently orphaned. If port `55432` is occupied, set the same `RITUVIA_LOCAL_POSTGRES_PORT` value for
+the database and configuration commands. The runtime remains safe-off without the validated
+database and explicit `experience.public_shell=on` activation record.
+
+When explicitly enabled, opening the local origin returns a permanent redirect to the only active,
+reviewed locale at `/en`. The finite public surface remains `/en`, `/en/methodology`, `/en/safety`,
+and `/en/privacy`; the private noindex product routes add `/en/sanctuary`, `/en/sign-in`,
+`/en/account`, and exact checkout-return paths. The privacy route is a product-design overview, not
+a legal privacy policy. Unsupported or non-canonical locale/page segments return 404 rather than
+silently falling back or generating caches. Public information pages remain server rendered and
+readable without JavaScript; transactional product flows require JavaScript and expose explicit
+loading, retry, error, and offline states. Local, preview, and staging metadata is `noindex`; a
+production environment must provide the approved HTTPS canonical origin before it may emit
+indexable metadata. The configuration-boundary integration harness reproducibly verifies enabled
+and disabled behavior without documenting an activation bypass or ad hoc SQL. The local MVP
+implements anonymous readings, account sessions, age-gated hosted checkout, entitlements, intention
+and ritual completion, and encrypted private journaling; it does not claim that provider onboarding,
+legal terms, or a public deployment are approved.
 
 `/robots.txt` and `/sitemap.xml` are generated from the same typed four-page inventory. Local,
 preview, and staging robots disallow the entire site and publish no sitemap. Production publishes
@@ -261,9 +265,9 @@ to RIT-114 rather than being published before its visible-content and rich-resul
 
 The production build audits all four canonical pages and enforces compressed budgets for localized
 HTML, initial CSS/JavaScript, and the SVG icon while rejecting remote script/style/font/media
-resources. Browser QA remains required for every future behavior change; the current public pages
-have passed keyboard/focus, 320px/400%-equivalent reflow, dark mode, reduced motion, forced colors,
-no-JavaScript, console, and local-only network checks.
+resources. Browser QA remains required for every future behavior change; the public pages and local
+MVP loop are covered by responsive, keyboard/focus, reduced-motion, console, local-network, and
+end-to-end purchase/entitlement checks.
 
 After a fresh production build, run the committed accessibility/pseudolocale browser gate with the
 pinned Chromium headless shell:
@@ -1029,13 +1033,13 @@ Use this order:
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the checksum-bound fixed synthetic AI
-release-evaluation RIT-036 slice. M1 RIT-016 and manual
-assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains
-owner-gated. Production catalog/prompt/classifier/safety-policy approval and activation, AI
-provider/model activation, and actual indexing remain separately gated.
+**Stage:** The owner-directed RIT-158 local commercial MVP is complete and running from its
+production build at `http://127.0.0.1:4175/en`. Its product shape follows the Lumora interactive
+prototype and business plan while the repository's safety, privacy, payment, and human-approval
+floors remain authoritative. Production activation, provider onboarding, and public launch remain
+separately gated.
 
-**Release:** Pre-M0
+**Release:** Local commercial MVP (production artifact, not a public production deployment)
 
 **Working brand:** RITUVIA, pending formal trademark/domain/language clearance.
 
@@ -1052,6 +1056,13 @@ provider/model activation, and actual indexing remain separately gated.
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
 - Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
+- A completed responsive English local MVP vertical slice: anonymous deterministic reading;
+  account sign-in/sign-out; an exact persisted 18+ attestation before paid order creation;
+  intention and small-action capture; free candle/incense and entitlement-gated owned ritual
+  objects; encrypted private journal entries with revisit; a server-authoritative catalog; a
+  Stripe hosted-checkout provider adapter plus an HMAC-signed local checkout simulator; and
+  verified webhook, ledger, and entitlement fulfillment. This is local capability, not production
+  payment approval or activation.
 - Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
 - Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
@@ -1150,18 +1161,26 @@ provider/model activation, and actual indexing remain separately gated.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 1,190 Vitest tests, real local and CI-shaped PostgreSQL
-  integration, dependency audit, and production-build gates with behavioral, HTTP,
-  shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, Vitest, real local and CI-shaped PostgreSQL integration,
+  dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and
+  artifact verification.
 
 ## What does not exist yet
 
-- A production-available reading flow, accounts, payments, legal terms/policies, rituals, or other complete end-to-end product flows; the reviewed English public pages, private intake, and tarot flows remain server-side safe-off until their existing gates are explicitly satisfied.
-- An approved production anonymous-session retention duration, legal consent notice, consent/privacy-control UI, per-client abuse strategy, account merge, anonymous export/deletion workflow, or private-resource authorization surface; the current session policy is required configuration and safe-off when absent.
+- A production-available reading, account, payment, legal, or ritual flow. RIT-158 is deliberately
+  local-only: its signed checkout simulator cannot charge money, and the Stripe adapter has no live
+  key, provider account/session, underwriting approval, or production activation.
+- An approved production anonymous-session retention duration, legal consent notice,
+  consent/privacy-control UI, per-client abuse strategy, anonymous export/deletion workflow, or
+  complete production private-resource authorization surface; the current session policy is
+  required configuration and safe-off when absent.
 - A country-specific crisis-resource program, an approved real classifier, intake persistence,
   question-bearing analytics, or an intake-to-reading continuation; the owner-approved English
   lexical baseline and the RIT-032 safety contract remain safe-off.
-- A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
+- A production-approved payment-provider route, real provider-unavailable classifier, offline
+  cache/synchronization layer, or generic partial/degraded network state machine. The local Stripe
+  adapter and signed simulator are implementation evidence only; the connection notice remains a
+  `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Production metrics, alerts, retention/sampling policy, vendor exporters, and a real persisted outbox/queue consumer; the current Worker carrier path is a reviewed protocol and sealed adapter boundary, not a deployed queue.
@@ -1171,10 +1190,10 @@ provider/model activation, and actual indexing remain separately gated.
 - Astrology calculation commercial-license decision.
 - A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
 - An approved production tarot catalog, production-composed/activated interpretation runtime, AI
-  provider/model/reviewer activation,
-  intention/ritual continuation, report triage/admin workflow, or separate creation-versus-history
-  operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
-  cannot activate the RIT-024/RIT-027 runtime.
+  provider/model/reviewer activation, production intention/ritual/journal activation, report
+  triage/admin workflow, or separate creation-versus-history operational kill switches; the
+  synthetic RIT-022 fixture remains publication-ineligible and cannot activate the production
+  RIT-024/RIT-027 runtime.
 - Production credentials or vendor accounts.
 - A production AI provider/model candidate evaluation, representative human output review,
   latency/cost comparison, canary evidence, or approved model rollback rehearsal; RIT-036 is local
@@ -1205,29 +1224,19 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-036 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
-with zero warnings, strict type checking across all nine workspace tasks, 1,199 unit/contract tests
-in 75 files, 145 fixed AI release assertions, the 191-file/nine-module architecture gate, all eight
-immutable-migration checks, and the tracked/unignored secret scan
-and all nine build tasks pass. The record-policy suite covers the canonical task/decision graph,
-privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum
-evidence.
+RIT-158 passes the production-artifact Playwright flow from anonymous reading through intention,
+free ritual, encrypted journal, account merge, fresh account, 18+ attestation, four exact prices,
+signed local hosted checkout, entitlement, owned paid ritual, revisit, mobile layouts, and sign-out.
+All 11 steps pass with zero serious/critical Axe findings, page errors, unexpected console errors,
+unexpected HTTP/request failures, or desktop/mobile horizontal overflow.
 
-RIT-034's PostgreSQL matrix passed against an isolated local PostgreSQL 17 instance. All seven
-current migrations and an idempotent redeploy passed. The suite proves atomic fenced parent
-compare-and-set plus verification-child insertion and full rollback, exact replay, keyed
-finalization tamper rejection, eight-way claim concurrency, conflict and owner isolation, hidden
-pending provider output, historical timeout-zero pending non-displayability without a child or
-recovery API, exact least privilege, privacy canaries, and non-empty logical dump/restore. The
-unrelated PostgreSQL instances on ports 55432 and 55439 were not connected to, stopped, or modified.
-
-RIT-035 changes no database code, schema, migration, role, or persistence contract. Its fresh local
-database-foundation rerun remained blocked by the unrelated process on the repository-fixed port
-55432 and did not connect to or modify that process. A separate disposable PostgreSQL 17 probe on
-free port 5432 reached the existing CI schema-drift step after migration/seed work, then correctly
-failed because several Prisma relations do not map the custom foreign-key names authored by prior
-migrations. That pre-existing CI-contract gap is outside this frontend/API slice and remains part of
-the blocked RIT-004 closeout; current hosted/CI-shaped database-green status is not claimed here.
+The pinned Node.js 24 runtime passes formatting, lint with zero warnings, strict type checking
+across all 11 workspace tasks, 1,426 unit/contract tests in 104 files, 145 fixed AI release
+assertions, the 287-file/11-module architecture gate, all 11 immutable-migration policy files, the
+tracked/unignored secret scan, and all 11 production build tasks. The isolated PostgreSQL 17 matrix
+on port 55435 applies all 10 migrations, redeploys and seeds idempotently, and verifies MVP schema,
+least privileges, RLS, constraints, concurrency, guarded reset, privacy canaries, and non-empty
+logical dump/restore without touching unrelated PostgreSQL instances.
 
 The build verifier checks 80 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
@@ -1238,7 +1247,7 @@ prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation
 authorization binding, non-exported authorization issuers, provider-neutral generation and
 authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
 atomic interpretation claim/finalization/verification persistence, the private interpretation route,
-and the icon. Maximum Web output is 7,407 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
+and the icon. Maximum Web output is 7,511 B gzip HTML, 7,356 B gzip CSS, 230,076 B gzip JavaScript,
 and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
@@ -1900,6 +1909,22 @@ effective until this register links it. Do not rewrite historical rationale; sup
   would introduce unauthorized secrets, spend, and nondeterminism.
 - **Date:** 2026-07-18
 
+### [D-044 — Lumora-reference local commercial MVP consolidation](records/decisions/D-044.md)
+
+- **Decision:** For the owner-directed local commercial MVP, use
+  `reference/lumora_interactive_prototype.html` and `reference/lumora_business_plan_zh.html` as the
+  primary product references for scope, UX, and the commercial loop, and consolidate execution in
+  RIT-158. Deliver one responsive English vertical slice covering anonymous reading, account
+  sign-in/sign-out, exact 18+ paid attestation, intention, free and owned paid rituals, encrypted
+  private journal/revisit, a server-authoritative catalog, Stripe hosted-checkout adapter, signed
+  local checkout simulator, and verified webhook-to-ledger-to-entitlement fulfillment. `AGENTS.md`
+  safety, privacy, payment, cultural-integrity, and human-approval floors continue to override any
+  conflicting prototype or business-plan detail.
+- **Reason:** A runnable local commercial loop now provides better owner validation than continuing
+  isolated milestone slices, while one consolidated record preserves the distinction between local
+  product evidence and unapproved production payment, legal, provider, or launch state.
+- **Date:** 2026-07-18
+
 ---
 
 # File: `ROADMAP.md`
@@ -2275,6 +2300,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                 | RIT-151                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence.       |
 | RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                      | RIT-031,RIT-110,RIT-153                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.        |
 | RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                              | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.       |
+| RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP          | RIT-025,RIT-029,RIT-036                 | product       | Anonymous reading through signed local purchase, owned ritual, encrypted revisit, and account sign-out pass final responsive Playwright; production gates remain closed. |
 | OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance       | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                    |
 | OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval           | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                |
 | OWN-003 | External  |       P0 | Blocked | Select and license astrology engine/provider                              | None                                    | owner         | Commercial rights, usage, data, cost, SLA, attribution and exit are approved.                                     |
@@ -2287,6 +2313,10 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                  | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded. |
 
 ## Backlog maintenance
+
+RIT-158 is the single consolidated local-MVP exception authorized by D-044. It does not mark the
+broader M4-M7 production tasks complete or bypass their legal, privacy, payment, operational, or
+release criteria.
 
 When adding a task, include an outcome rather than a vague activity, explicit dependencies, a primary review role, and testable completion. Do not remove completed tasks; archive them to a dated release log only after a release if this file becomes unwieldy. Owner tasks remain blocked until the owner supplies evidence; Codex may prepare dossiers and code but may not mark external approval complete.
 
@@ -2437,6 +2467,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-041 | Monotonic post-generation verification and append-only safe results | [decisions/D-041.md](./decisions/D-041.md) |
 | Decision | D-042 | Private durable-only tarot interpretation polling boundary | [decisions/D-042.md](./decisions/D-042.md) |
 | Decision | D-043 | Fixed synthetic AI release evaluation gate | [decisions/D-043.md](./decisions/D-043.md) |
+| Decision | D-044 | Lumora-reference local commercial MVP consolidation | [decisions/D-044.md](./decisions/D-044.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2460,6 +2491,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
 | Task | RIT-035 | Tarot AI interpretation polling UX | [tasks/RIT-035.md](./tasks/RIT-035.md) |
 | Task | RIT-036 | Fixed AI regression and adversarial release evaluations | [tasks/RIT-036.md](./tasks/RIT-036.md) |
+| Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 

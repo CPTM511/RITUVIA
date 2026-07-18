@@ -206,6 +206,7 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     verificationStage = "least-privilege role membership";
     await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE} TO ${MIGRATOR_ROLE}`);
     await admin.query(`GRANT ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(`GRANT ${READING_READER_ROLE}, ${READING_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(
@@ -286,6 +287,37 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     );
     await admin.query(
       `GRANT INSERT (anonymous_subject_id, candidate_digest, candidate_digest_scope, deterministic_checks_version, expires_at, finalization_digest, interpretation_id, metadata_schema_version, output, output_digest, output_digest_scope, output_schema_version, policy_approval_reference, policy_checksum_sha256, policy_id, policy_version, result_schema_version, reviewer_approval_reference, reviewer_checksum_sha256, reviewer_id, reviewer_model_id, reviewer_model_version, reviewer_policy_approval_reference, reviewer_policy_checksum_sha256, reviewer_policy_id, reviewer_policy_version, reviewer_provider_id, reviewer_provider_version, reviewer_version, runtime_approval_reference, runtime_checksum_sha256, runtime_id, runtime_version, status, verification_timeout_ms) ON TABLE interpretation_verification TO ${VERIFICATION_WRITER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT, INSERT ON TABLE app_user, auth_identity, auth_challenge, account_session TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (last_active_at, age_attested_at, age_policy_version, profile_version, display_name, locale, time_zone) ON TABLE app_user TO ${APP_ROLE}`,
+    );
+    await admin.query(`GRANT UPDATE (last_sign_in_at) ON TABLE auth_identity TO ${APP_ROLE}`);
+    await admin.query(`GRANT UPDATE (consumed_at) ON TABLE auth_challenge TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (last_seen_at, revoked_at) ON TABLE account_session TO ${APP_ROLE}`,
+    );
+    await admin.query(`GRANT SELECT, INSERT ON TABLE account_subject_link TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT SELECT, INSERT ON TABLE intention, ritual_session, journal_entry TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT ON TABLE commerce_order, commerce_order_line, payment_attempt, payment_event, ledger_entry, entitlement TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE commerce_order, commerce_order_line, payment_attempt, payment_event, ledger_entry, entitlement TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (status, refunded_minor, updated_at) ON TABLE commerce_order TO ${APP_ROLE}`,
+    );
+    await admin.query(`GRANT UPDATE (state, updated_at) ON TABLE payment_attempt TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (order_id, payment_attempt_id, processed_at, processing_state) ON TABLE payment_event TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (source_order_line_id, status, granted_at, revoked_at, version) ON TABLE entitlement TO ${APP_ROLE}`,
     );
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,

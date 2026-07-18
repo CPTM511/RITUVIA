@@ -12,6 +12,7 @@ const root = process.cwd();
 const maximumSourceBytes = 2 * 1024 * 1024;
 const relevantFile = (filePath: string): boolean =>
   (/^tsconfig(?:\.[^/]+)?\.json$/u.test(filePath) ||
+    /^content\/[^/]+(?:\/[^/]+)*\.json$/u.test(filePath) ||
     /^(?:apps|packages)\/[^/]+\/(?:package\.json|tsconfig(?:\.[^/]+)?\.json|.*\.[cm]?[jt]sx?)$/u.test(
       filePath,
     )) &&
@@ -28,6 +29,7 @@ const trackedAndUnignoredFiles = (): readonly string[] => {
       "--exclude-standard",
       "--",
       "apps",
+      "content",
       "packages",
       "tsconfig.json",
       "tsconfig.base.json",

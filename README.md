@@ -40,7 +40,7 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active workspaces are `apps/web`, `apps/worker`, `packages/config`, `packages/db`, `packages/domain`, `packages/observability`, and `packages/ui`; other planned directories remain instruction-only until their backlog task begins.
+The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active MVP now also includes the `packages/country-policy` and `packages/payments` provider boundaries alongside the existing Web, Worker, configuration, database, domain, divination, i18n, observability, AI, and UI workspaces.
 
 ### Continuous integration
 
@@ -61,35 +61,39 @@ cp .env.example .env
 
 Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted. The database lifecycle commands derive the attested local URL themselves; application processes still receive `DATABASE_URL` explicitly through the process environment or an ignored environment file. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
 
-The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires all nine brand settings and an HTTPS canonical origin; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
+The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires the complete validated brand projection, an HTTPS canonical origin, and every enabled provider secret; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
 
-### Local Web shell
+### Local commercial MVP
 
-Build the English-first shell without a database:
-
-```bash
-npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web build
-```
-
-The running route is deliberately safe-off. Starting the local server without a validated
-read-only runtime database and an explicit active `experience.public_shell=on` version returns an
-empty 404 for the shell HTML and RSC representations; it does not bypass the activation plane.
-After those existing RIT-007 prerequisites are present, run:
+Start the attested local PostgreSQL database, generate a private local-only configuration, and run
+the English MVP:
 
 ```bash
-npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web dev
+npm exec --yes --package=pnpm@11.13.1 -- pnpm db:setup
+npm exec --yes --package=pnpm@11.13.1 -- pnpm mvp:local:configure
+npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web exec next dev --hostname 127.0.0.1 --port 4175
 ```
 
-When explicitly enabled, opening `http://localhost:3000` returns a permanent redirect to the only
-active, reviewed locale at `/en`. The finite public surface is `/en`, `/en/methodology`,
-`/en/safety`, and `/en/privacy`; the privacy route is a product-design overview, not a legal privacy
-policy. Unsupported or non-canonical locale/page segments return 404 rather than silently falling
-back or generating caches. Every page is server rendered and remains readable without JavaScript.
-Local, preview, and staging metadata is `noindex`; a production environment must provide the
-approved HTTPS canonical origin before it may emit indexable metadata. The configuration-boundary
-integration harness reproducibly verifies enabled and disabled behavior without documenting an
-activation bypass or ad hoc SQL. The current shell is an honest foundation, not a claim that
-accounts, readings, legal terms, purchases, rituals, or a public launch exist.
+The repository-root `.env.local` is ignored, created with mode `0600`, and contains independent random local
+keys. The configurator refuses to replace it so encrypted local account and journal data are not
+silently orphaned. If port `55432` is occupied, set the same `RITUVIA_LOCAL_POSTGRES_PORT` value for
+the database and configuration commands. The runtime remains safe-off without the validated
+database and explicit `experience.public_shell=on` activation record.
+
+When explicitly enabled, opening the local origin returns a permanent redirect to the only active,
+reviewed locale at `/en`. The finite public surface remains `/en`, `/en/methodology`, `/en/safety`,
+and `/en/privacy`; the private noindex product routes add `/en/sanctuary`, `/en/sign-in`,
+`/en/account`, and exact checkout-return paths. The privacy route is a product-design overview, not
+a legal privacy policy. Unsupported or non-canonical locale/page segments return 404 rather than
+silently falling back or generating caches. Public information pages remain server rendered and
+readable without JavaScript; transactional product flows require JavaScript and expose explicit
+loading, retry, error, and offline states. Local, preview, and staging metadata is `noindex`; a
+production environment must provide the approved HTTPS canonical origin before it may emit
+indexable metadata. The configuration-boundary integration harness reproducibly verifies enabled
+and disabled behavior without documenting an activation bypass or ad hoc SQL. The local MVP
+implements anonymous readings, account sessions, age-gated hosted checkout, entitlements, intention
+and ritual completion, and encrypted private journaling; it does not claim that provider onboarding,
+legal terms, or a public deployment are approved.
 
 `/robots.txt` and `/sitemap.xml` are generated from the same typed four-page inventory. Local,
 preview, and staging robots disallow the entire site and publish no sitemap. Production publishes
@@ -103,9 +107,9 @@ to RIT-114 rather than being published before its visible-content and rich-resul
 
 The production build audits all four canonical pages and enforces compressed budgets for localized
 HTML, initial CSS/JavaScript, and the SVG icon while rejecting remote script/style/font/media
-resources. Browser QA remains required for every future behavior change; the current public pages
-have passed keyboard/focus, 320px/400%-equivalent reflow, dark mode, reduced motion, forced colors,
-no-JavaScript, console, and local-only network checks.
+resources. Browser QA remains required for every future behavior change; the public pages and local
+MVP loop are covered by responsive, keyboard/focus, reduced-motion, console, local-network, and
+end-to-end purchase/entitlement checks.
 
 After a fresh production build, run the committed accessibility/pseudolocale browser gate with the
 pinned Chromium headless shell:

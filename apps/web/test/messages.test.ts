@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { getMessages } from "../app/_i18n/messages";
+import { getAccountMessages } from "../app/_i18n/account-messages";
+import { getCommerceMessages } from "../app/_i18n/commerce-messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
+import { getSanctuaryMessages } from "../app/_i18n/sanctuary-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
 import { getTarotOneCardMessages } from "../app/_i18n/tarot-one-card-messages";
 import { getTarotThreeCardMessages } from "../app/_i18n/tarot-three-card-messages";
@@ -100,14 +103,30 @@ describe("English shell messages", () => {
     expect(copy).toContain("A meaningful free path");
     expect(copy).toContain("Product systems draw and calculate; AI does not");
     expect(copy).toContain("Bounded AI explains");
-    expect(copy).toContain("at least one free candle and one free incense experience");
+    expect(copy).toContain("free candle and free incense experience remain available");
     expect(copy).toContain("This is a product-design overview, not a legal Privacy Policy");
     expect(copy).toContain("minimum operational request metadata needed");
     expect(copy).toContain("exclude raw sensitive prompts from routine logs");
     expect(copy).toContain("purpose-limited, authorized, and audited");
-    expect(copy).toContain(
-      "No public readings, AI interpretations, accounts, purchases, or rituals are available",
-    );
+    expect(copy).toContain("Begin a free reading");
+    expect(copy).toContain("Enter the sanctuary");
+    expect(copy).toContain("Paid objects enhance visual ambience only");
     expect(copy).not.toMatch(/(?:encrypted at rest|delete your account|export your data)/iu);
+  });
+
+  it("keeps account, sanctuary, and commerce copy complete and non-coercive", () => {
+    const copy = collectStrings({
+      account: getAccountMessages("en"),
+      commerce: getCommerceMessages("en"),
+      sanctuary: getSanctuaryMessages("en"),
+    }).join(" ");
+
+    expect(copy).toContain("The free anonymous reflection path remains available");
+    expect(copy).toContain("Payment does not imply stronger spiritual effect");
+    expect(copy).toContain("Only a verified provider event can activate access");
+    expect(copy).toContain("There is no need to draw again or purchase anything else");
+    expect(copy).not.toMatch(
+      /\b(?:guaranteed|destined|act now|limited time|stronger efficacy|unlock your fate)\b/iu,
+    );
   });
 });

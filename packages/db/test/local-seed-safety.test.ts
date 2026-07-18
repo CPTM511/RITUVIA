@@ -28,7 +28,26 @@ describe("synthetic seed target", () => {
         expectedClusterName: clusterName,
         seedTarget: "local",
       }),
-    ).toEqual({ databaseName: "rituvia_local", expectedClusterName: clusterName, kind: "local" });
+    ).toEqual({
+      databaseName: "rituvia_local",
+      expectedClusterName: clusterName,
+      expectedPort: 55432,
+      kind: "local",
+    });
+  });
+
+  it("accepts an explicitly attested alternate local port", () => {
+    const url = createUrl();
+    url.port = "55433";
+    expect(
+      assertSyntheticSeedTarget({
+        appEnvironment: "local",
+        databaseUrl: url.toString(),
+        expectedClusterName: clusterName,
+        localPostgresPort: "55433",
+        seedTarget: "local",
+      }),
+    ).toMatchObject({ expectedPort: 55433, kind: "local" });
   });
 
   it.each([

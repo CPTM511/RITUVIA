@@ -12,6 +12,20 @@ const seoHead = (pathname = "/en", label = "Home") =>
 const html = (script = "/_next/static/app.js", stylesheet = "/_next/static/app.css") =>
   `<html><head><link rel="stylesheet" href="${stylesheet}"></head><body><script src="${script}"></script></body></html>`;
 
+const sanctuaryImageWidths = [256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
+const sanctuaryImageUrl = (width: number) =>
+  "/_next/image?url=%2Fimages%2Frituvia-sanctuary-orb.png&amp;w=" + width + "&amp;q=75";
+const reviewedSanctuaryImage =
+  '<img alt="A luminous sanctuary orb" class="hero-orb-image" data-nimg="1" decoding="async" height="1402" loading="eager" sizes="(max-width: 640px) 88vw, (max-width: 928px) 60vw, 38vw" src="' +
+  sanctuaryImageUrl(3840) +
+  '" srcSet="' +
+  sanctuaryImageWidths.map((width) => sanctuaryImageUrl(width) + " " + width + "w").join(", ") +
+  '" style="color:transparent" width="1122">';
+const reviewedSanctuaryImagePreload =
+  '<link rel="preload" as="image" imagesrcset="' +
+  sanctuaryImageWidths.map((width) => sanctuaryImageUrl(width) + " " + width + "w").join(", ") +
+  '" imagesizes="(max-width: 640px) 88vw, (max-width: 928px) 60vw, 38vw">';
+
 const audit = (
   document = html(),
   assets = new Map([
@@ -78,6 +92,34 @@ describe("Web shell build policy", () => {
     );
   });
 
+  it("accepts only the exact optimized local sanctuary image contract", () => {
+    expect(
+      auditWebShellBuildArtifacts({
+        assets: new Map([
+          ["/_next/static/app.js", Buffer.from("export{}")],
+          ["/_next/static/app.css", Buffer.from("body{color:#111}")],
+        ]),
+        budgets: {
+          cssGzipBytes: 128,
+          htmlGzipBytes: 4_096,
+          iconBytes: 128,
+          javascriptGzipBytes: 128,
+        },
+        html: html() + reviewedSanctuaryImagePreload + reviewedSanctuaryImage,
+        icon: Buffer.from("<svg/>"),
+      }).findings,
+    ).toEqual([]);
+  });
+
+  it.each([
+    reviewedSanctuaryImage.replace("hero-orb-image", "unreviewed-image"),
+    reviewedSanctuaryImage.replace('width="1122"', 'width="1123"'),
+    reviewedSanctuaryImage.replace("color:transparent", "background:url(/pixel)"),
+    reviewedSanctuaryImage.replace(">", ' onerror="alert(1)">'),
+  ])("rejects a mutated sanctuary image contract", (image) => {
+    expect(audit(html() + image).findings).toContain("unexpected-media-element");
+  });
+
   it("rejects CSS escapes that can normalize into hidden resource functions", () => {
     const escapedResource = "body{background:u\\72l(https://tracker.invalid/pixel)}";
     const assets = new Map([
@@ -111,7 +153,7 @@ describe("Web shell build policy", () => {
     );
   });
 
-  it("rejects every inline style attribute so CSP can disable style attributes", () => {
+  it("rejects unreviewed inline styles outside the single CSP-hashed image attribute", () => {
     expect(audit(`${html()}<main style="color:inherit"></main>`).findings).toContain(
       "inline-style-attribute",
     );

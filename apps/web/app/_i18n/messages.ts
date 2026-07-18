@@ -11,6 +11,14 @@ type Principle = Readonly<{
   description: string;
 }>;
 
+type OracleMethod = Readonly<{
+  eyebrow: string;
+  title: string;
+  description: string;
+  action: string;
+  note: string;
+}>;
+
 type InformationSection = Readonly<{
   title: string;
   description: string;
@@ -30,6 +38,9 @@ export type SharedMessages = Readonly<{
     safety: string;
     privacy: string;
     primaryAction: string;
+    sanctuary: string;
+    signIn: string;
+    account: string;
     localeLabel: string;
     localeName: string;
     localeHint: string;
@@ -58,6 +69,22 @@ export type HomeMessages = Readonly<{
     label: string;
     items: readonly string[];
   }>;
+  oracle: Readonly<{
+    eyebrow: string;
+    title: string;
+    introduction: string;
+    oneCard: OracleMethod;
+    threeCard: OracleMethod;
+    sanctuary: OracleMethod;
+  }>;
+  sanctuaryPreview: Readonly<{
+    eyebrow: string;
+    title: string;
+    description: string;
+    note: string;
+    action: string;
+    imageAlt: string;
+  }>;
   practice: Readonly<{
     eyebrow: string;
     title: string;
@@ -76,12 +103,6 @@ export type HomeMessages = Readonly<{
     description: string;
     note: string;
     action: string;
-  }>;
-  availability: Readonly<{
-    title: string;
-    message: string;
-    primaryAction: string;
-    secondaryAction: string;
   }>;
 }>;
 
@@ -122,15 +143,17 @@ const englishMessages = {
       safety: "Safety",
       privacy: "Privacy",
       primaryAction: "Explore the practice",
+      sanctuary: "Sanctuary",
+      signIn: "Sign in",
+      account: "Account",
       localeLabel: "Language",
       localeName: "English",
-      localeHint:
-        "English is the only language available in this foundation; no other locale is active.",
+      localeHint: "English is the current launch language; no other reviewed locale is active.",
     },
     footer: {
       navigationLabel: "Public information navigation",
       foundationNote:
-        "No public readings, AI interpretations, accounts, purchases, or rituals are available. Separately gated private experiences do not imply public launch or catalog approval.",
+        "Symbolic reflection and AI-generated interpretations are for entertainment and self-reflection, not prediction or professional advice.",
     },
   },
   home: {
@@ -140,24 +163,63 @@ const englishMessages = {
         "A calm, private foundation for symbolic self-reflection, personal ritual, and thoughtful return.",
     },
     hero: {
-      status: "English foundation preview",
-      eyebrow: "A private digital sanctuary in development",
-      title: "Pause. Notice what matters. Choose one small next step.",
+      status: "Anonymous first · private by default",
+      eyebrow: "Read · Intend · Ritualize · Reflect",
+      title: "Read the symbols. Set an intention. Return to yourself.",
       introduction:
-        "RITUVIA is being built for symbolic self-reflection, personal ritual, and a private digital sanctuary—a calm place to explore perspective, shape an intention, and return to what you learn.",
+        "A calm digital space for symbolic self-reflection. Begin with a free tarot reading, choose one action you control, and carry the insight into a private ritual and journal.",
       boundary: "Symbolic reflection, not prediction or professional advice.",
-      primaryAction: "See the reflection path",
-      secondaryAction: "Read how the method works",
+      primaryAction: "Begin a free reading",
+      secondaryAction: "Enter the sanctuary",
     },
     trust: {
       label: "Product commitments",
       items: ["Private by default", "No belief required", "A meaningful free path"],
     },
+    oracle: {
+      eyebrow: "The oracle",
+      title: "Choose today's entry point.",
+      introduction:
+        "Each reading keeps the random draw separate from the interpretation and ends with a calm stopping point.",
+      oneCard: {
+        eyebrow: "A focused pause",
+        title: "One-card reflection",
+        description:
+          "Explore one theme through reviewed card content and an optional bounded AI interpretation.",
+        action: "Draw one card",
+        note: "Free · anonymous · about three minutes",
+      },
+      threeCard: {
+        eyebrow: "A wider perspective",
+        title: "Three-card reflection",
+        description:
+          "Consider Situation, Action, and Possibility without turning the spread into a prediction.",
+        action: "Draw three cards",
+        note: "Free · anonymous · fixed result",
+      },
+      sanctuary: {
+        eyebrow: "Complete the loop",
+        title: "Private sanctuary",
+        description:
+          "Set an intention, place a free ritual object, and save one private reflection.",
+        action: "Visit the sanctuary",
+        note: "A free ritual path always remains",
+      },
+    },
+    sanctuaryPreview: {
+      eyebrow: "Digital sanctuary",
+      title: "Turn one insight into a ritual you can complete.",
+      description:
+        "Choose an intention, one small action, a free or owned ritual object, and a private journal entry.",
+      note: "Paid objects enhance visual ambience only. They do not make an outcome more likely.",
+      action: "Enter my sanctuary",
+      imageAlt: "A luminous violet and gold sanctuary orb floating above a circular altar",
+    },
     practice: {
       eyebrow: "A complete moment",
       title: "From a question to a thoughtful return.",
       introduction:
-        "The planned experience follows a finite path that supports your agency instead of asking you to keep scrolling, buying, or drawing.",
+        "The experience follows a finite path that supports your agency instead of asking you to keep scrolling, buying, or drawing.",
       steps: [
         {
           title: "Question",
@@ -191,7 +253,7 @@ const englishMessages = {
       eyebrow: "Trust before novelty",
       title: "Grounded in clarity, agency, and completion.",
       introduction:
-        "The public foundation sets expectations before any symbolic reading is available.",
+        "These expectations remain visible before, during, and after every symbolic reading.",
       items: [
         {
           title: "Your agency stays central",
@@ -214,16 +276,9 @@ const englishMessages = {
       eyebrow: "Trust starts in public",
       title: "Understand the boundaries before sharing anything personal.",
       description:
-        "These public pages ask for no personal content. A separately gated private intake preview can check one optional question in memory without creating a reading, account, or payment.",
+        "Public pages ask for no personal content. Private questions, intentions, journals, accounts, and payments stay on purpose-limited routes with separate controls.",
       note: "Only the minimum operational request metadata needed to serve and protect this site may be processed.",
       action: "Review the privacy design",
-    },
-    availability: {
-      title: "Symbolic readings are not open in this foundation yet.",
-      message:
-        "The public methodology and safety boundaries are available now. A private intake preview may be enabled separately, but it does not create or save a reading.",
-      primaryAction: "Read the methodology",
-      secondaryAction: "Review safety boundaries",
     },
   },
   pages: {
@@ -231,33 +286,34 @@ const englishMessages = {
       metadata: {
         title: "How symbolic reflection is designed",
         description:
-          "Learn how RITUVIA plans to separate deterministic calculations, curated sources, bounded AI explanation, and personal reflection.",
+          "Learn how RITUVIA separates deterministic calculations, curated sources, bounded AI explanation, and personal reflection.",
       },
       eyebrow: "Methodology",
       title: "A transparent path from source material to your own reflection.",
       introduction:
-        "The planned method keeps calculation, interpretation, and personal choice separate so the product can show what it knows, what it suggests, and what remains yours to decide.",
-      status: "Method overview; no readings or AI interpretations are available yet.",
+        "The method keeps calculation, interpretation, and personal choice separate so the product can show what it knows, what it suggests, and what remains yours to decide.",
+      status:
+        "Free one-card and three-card reflections use fixed server-side draws and reviewed source content.",
       sections: [
         {
           title: "Product systems draw and calculate; AI does not",
           description:
-            "Tested domain logic will perform randomized card draws and deterministic numerology or chart calculations; AI prose will do neither.",
+            "Tested domain logic performs randomized card draws. AI prose does not choose cards, prices, entitlements, or country eligibility.",
         },
         {
           title: "Curated sources provide context",
           description:
-            "Versioned, reviewed sources will provide attributable, tradition-specific context, including limits or disagreement. General model memory will not act as the cultural authority.",
+            "Versioned, reviewed sources provide card context and limits. General model memory does not act as the cultural authority.",
         },
         {
           title: "Bounded AI explains",
           description:
-            "AI-generated material will be disclosed and constrained to explain possibilities, context, limitations, and reflective questions. It will not invent calculations or certainty.",
+            "When AI-generated material is available, it is disclosed and constrained to explain possibilities, context, limitations, and reflective questions. It cannot invent calculations or certainty.",
         },
         {
           title: "You interpret your life",
           description:
-            "A reading can offer a lens, but your circumstances, values, and choices remain primary. The planned loop can lead to an intention, a small action, a ritual, a private journal, and an optional revisit.",
+            "A reading can offer a lens, but your circumstances, values, and choices remain primary. The loop can lead to an intention, a small action, a ritual, a private journal, and an optional revisit.",
         },
         {
           title: "Modality boundaries stay visible",
@@ -268,7 +324,7 @@ const englishMessages = {
       nextStep: {
         title: "Start with the product boundary",
         description:
-          "See the complete reflection path and the commitments that apply before any personal experience is available.",
+          "See the complete reflection path and the commitments that apply throughout the experience.",
         action: "Return to the reflection path",
       },
     },
@@ -281,39 +337,39 @@ const englishMessages = {
       eyebrow: "Safety",
       title: "Reflection should widen your choices, not narrow them.",
       introduction:
-        "RITUVIA is designed around autonomy, clear limits, and calm stopping points. Symbolic material will never be presented as authority over your life.",
+        "RITUVIA is designed around autonomy, clear limits, and calm stopping points. Symbolic material is never presented as authority over your life.",
       status: "Product boundary overview; this is not professional or emergency guidance.",
       sections: [
         {
           title: "No high-stakes determinations",
           description:
-            "The product will not diagnose or treat health conditions, decide legal outcomes, promise financial results, predict fertility or death, determine guilt, or replace qualified professional support.",
+            "The product does not diagnose or treat health conditions, decide legal outcomes, promise financial results, predict fertility or death, determine guilt, or replace qualified professional support.",
         },
         {
           title: "No fear or supernatural certainty",
           description:
-            "It will not validate mind reading, curses, supernatural persecution, guaranteed reunion, guaranteed wealth, or other claims that intensify fear, paranoia, or certainty about unseen causes.",
+            "It does not validate mind reading, curses, supernatural persecution, guaranteed reunion, guaranteed wealth, or other claims that intensify fear, paranoia, or certainty about unseen causes.",
         },
         {
           title: "No dependence by design",
           description:
-            "There will be no false scarcity, shame, streak punishment, countdown pressure, infinite drawing, or language that makes the product necessary for a decision.",
+            "There is no false scarcity, shame, streak punishment, countdown pressure, infinite drawing, or language that makes the product necessary for a decision.",
         },
         {
           title: "Payment never buys spiritual efficacy",
           description:
-            "Enhanced experiences may add clearly described digital value, but paying more will never be framed as stronger protection, luck, manifestation, or spiritual effect.",
+            "Paid digital objects add clearly described visual value. Paying more is never framed as stronger protection, luck, manifestation, or spiritual effect.",
         },
         {
           title: "A free ritual path remains",
           description:
-            "When rituals launch, at least one free candle and one free incense experience will be available. Rituals are deliberate pauses for reflection, not proof that an outcome will occur.",
+            "A free candle and free incense experience remain available. Rituals are deliberate pauses for reflection, not proof that an outcome will occur.",
         },
       ],
       nextStep: {
         title: "Know what stays private",
         description:
-          "Review the product privacy principles planned for questions, intentions, prayers, journals, and birth details.",
+          "Review the product privacy principles applied to questions, intentions, journals, accounts, and orders.",
         action: "Review the privacy design",
       },
     },
@@ -321,34 +377,34 @@ const englishMessages = {
       metadata: {
         title: "Privacy by product design",
         description:
-          "Understand RITUVIA's current public-site boundary and the privacy principles planned for future sensitive reflection data.",
+          "Understand RITUVIA's public/private boundary and the controls around reflection and account data.",
       },
       eyebrow: "Privacy design",
       title: "Private reflection should not become public exhaust.",
       introduction:
-        "This is a product-design overview, not a legal Privacy Policy. It explains the current public foundation and the constraints planned for future personal experiences.",
+        "This is a product-design overview, not a legal Privacy Policy. It explains the boundaries applied to the current local product.",
       status:
-        "These public pages accept no personal inputs. A separately gated intake preview has no account, reading, purchase, product analytics, or persistent intake storage.",
+        "Public information pages accept no personal inputs. Account, reflection, and checkout data use separate private, non-indexable routes.",
       sections: [
         {
-          title: "Public pages and private intake stay separated",
+          title: "Public pages and private experiences stay separated",
           description:
-            "Public pages do not collect personal content. If the private intake preview is enabled, one optional question is checked in memory and excluded from URLs, metadata, product analytics, and persistent intake storage. Journals, prayers, intentions, birth details, accounts, and payments remain unavailable.",
+            "Public pages do not collect personal content. Private questions, intentions, journals, accounts, orders, and entitlements stay off public and indexable routes.",
         },
         {
-          title: "Future reflection data stays private by default",
+          title: "Reflection data stays private by default",
           description:
-            "Questions, intentions, prayers, journals, and birth details are planned as private content. Public sharing will never be the default.",
+            "Questions, intentions, and journals are private content. Public sharing is not part of this MVP and is never the default.",
         },
         {
           title: "Sensitive words stay out of exposure surfaces",
           description:
-            "Private content must not appear in URLs, page metadata, routine logs, analytics, notifications, or public previews. Any future support access must be purpose-limited, authorized, and audited.",
+            "Private content must not appear in URLs, page metadata, routine logs, analytics, notifications, or public previews. Any support access must be purpose-limited, authorized, and audited.",
         },
         {
           title: "AI receives only what the experience needs",
           description:
-            "Future AI features must minimize the context they send, disclose generated material, and exclude raw sensitive prompts from routine logs. Provider changes remain subject to review.",
+            "AI features minimize the context they send, disclose generated material, and exclude raw sensitive prompts from routine logs. Provider changes remain subject to review.",
         },
         {
           title: "Controls must be real before they are promised",
@@ -359,7 +415,7 @@ const englishMessages = {
       nextStep: {
         title: "See how interpretations stay bounded",
         description:
-          "Review how deterministic logic, curated sources, AI explanation, and personal judgment are planned to remain distinct.",
+          "Review how deterministic logic, curated sources, AI explanation, and personal judgment remain distinct.",
         action: "Read the methodology",
       },
     },

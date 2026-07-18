@@ -1,0 +1,839 @@
+{
+  "schemaVersion": "tarot-catalog.v1",
+  "contentType": "tarot_catalog",
+  "catalogId": "rituvia.original-reflection-catalog",
+  "version": "1.0.0",
+  "title": "RITUVIA original secular reflection cards",
+  "locale": "en",
+  "supportedThemeCodes": [
+    "self",
+    "relationships",
+    "work",
+    "creativity",
+    "transition",
+    "grief",
+    "courage",
+    "gratitude",
+    "release",
+    "open_reflection"
+  ],
+  "usePolicy": {
+    "publicationAllowed": true,
+    "indexingAllowed": false,
+    "aiRetrievalAllowed": false
+  },
+  "editorial": {
+    "status": "approved",
+    "audience": "Adults using the local RITUVIA reflective MVP",
+    "authorRole": "product_editorial",
+    "authorId": "rituvia.product",
+    "reviewerRole": "owner_review",
+    "reviewerId": "owner.cptmao",
+    "reviewedDate": "2026-07-18",
+    "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+    "requiredApprovalRole": "owner_review",
+    "riskClassification": "low",
+    "aiAssisted": true,
+    "effectiveDate": "2026-07-18",
+    "reviewDueDate": "2027-07-18",
+    "supersedes": null,
+    "changeReason": "Owner-approved local MVP release of three original, non-predictive reflection symbols."
+  },
+  "sources": [
+    {
+      "sourceId": "rituvia.original-reflection-source",
+      "version": "1.0.0",
+      "sourceType": "original",
+      "title": "RITUVIA original secular reflection symbols and prompts",
+      "creator": "RITUVIA product and editorial process",
+      "editor": null,
+      "publisher": "RITUVIA",
+      "publicationDate": null,
+      "identifier": "repository:content/traditions/tarot/rituvia-original-reflection.v1.json",
+      "tradition": "rituvia-original-secular-reflection",
+      "geography": "Not tradition-specific",
+      "language": "en",
+      "claims": [],
+      "knownDisagreements": [],
+      "rights": {
+        "version": "1.0.0",
+        "status": "owned",
+        "licenseIdentifier": null,
+        "allowedUses": ["internal_validation", "public_display", "commercial_use"],
+        "materialTypes": ["structural_data", "spread_definition", "interpretive_text", "artwork"],
+        "territory": "worldwide",
+        "expiresOn": null,
+        "evidenceReference": "repository:content/traditions/tarot/rituvia-original-reflection.v1.json",
+        "attributionRequired": false,
+        "attributionText": null
+      },
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved original text, structure, and abstract symbol metadata for the local MVP."
+      }
+    }
+  ],
+  "decks": [
+    {
+      "contentType": "tarot_deck",
+      "deckId": "rituvia.original-reflection-deck",
+      "version": "1.0.0",
+      "title": "RITUVIA reflection symbols",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "supportedOrientations": ["upright", "reversed"],
+      "textRightsSource": {
+        "id": "rituvia.original-reflection-source",
+        "version": "1.0.0"
+      },
+      "artworkStatus": "assigned",
+      "artworkRightsSource": {
+        "id": "rituvia.original-reflection-source",
+        "version": "1.0.0"
+      },
+      "cards": [
+        {
+          "cardId": "threshold",
+          "order": 1,
+          "title": "The Threshold",
+          "traditionalTitle": null,
+          "alternativeTitles": [],
+          "artwork": {
+            "assetId": "rituvia-reflection-threshold",
+            "version": "1.0.0",
+            "source": {
+              "id": "rituvia.original-reflection-source",
+              "version": "1.0.0"
+            },
+            "altText": "An abstract RITUVIA symbol representing the threshold.",
+            "credit": "RITUVIA original interface symbol",
+            "localizationNotes": "Keep the symbol abstract, calm, and free of cultural or religious claims."
+          }
+        },
+        {
+          "cardId": "mirror",
+          "order": 2,
+          "title": "The Mirror",
+          "traditionalTitle": null,
+          "alternativeTitles": [],
+          "artwork": {
+            "assetId": "rituvia-reflection-mirror",
+            "version": "1.0.0",
+            "source": {
+              "id": "rituvia.original-reflection-source",
+              "version": "1.0.0"
+            },
+            "altText": "An abstract RITUVIA symbol representing the mirror.",
+            "credit": "RITUVIA original interface symbol",
+            "localizationNotes": "Keep the symbol abstract, calm, and free of cultural or religious claims."
+          }
+        },
+        {
+          "cardId": "lantern",
+          "order": 3,
+          "title": "The Lantern",
+          "traditionalTitle": null,
+          "alternativeTitles": [],
+          "artwork": {
+            "assetId": "rituvia-reflection-lantern",
+            "version": "1.0.0",
+            "source": {
+              "id": "rituvia.original-reflection-source",
+              "version": "1.0.0"
+            },
+            "altText": "An abstract RITUVIA symbol representing the lantern.",
+            "credit": "RITUVIA original interface symbol",
+            "localizationNotes": "Keep the symbol abstract, calm, and free of cultural or religious claims."
+          }
+        }
+      ],
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved three-symbol original secular reflection deck for the local MVP."
+      }
+    }
+  ],
+  "spreads": [
+    {
+      "contentType": "tarot_spread",
+      "spreadId": "one-card-perspective",
+      "version": "1.0.0",
+      "spreadType": "one_card",
+      "title": "One-card perspective",
+      "description": "One symbolic perspective followed by a reflection question and small action.",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "compatibleDecks": [
+        {
+          "id": "rituvia.original-reflection-deck",
+          "version": "1.0.0"
+        }
+      ],
+      "source": {
+        "id": "rituvia.original-reflection-source",
+        "version": "1.0.0"
+      },
+      "positions": [
+        {
+          "positionId": "perspective",
+          "order": 1,
+          "title": "Perspective",
+          "description": "A symbolic lens for the selected reflection theme."
+        }
+      ],
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved bounded reflection layout that preserves uncertainty and user choice."
+      }
+    },
+    {
+      "contentType": "tarot_spread",
+      "spreadId": "situation-action-possibility",
+      "version": "1.0.0",
+      "spreadType": "three_card",
+      "title": "Situation, Action, Possibility",
+      "description": "Three ordered lenses that preserve uncertainty and user choice.",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "compatibleDecks": [
+        {
+          "id": "rituvia.original-reflection-deck",
+          "version": "1.0.0"
+        }
+      ],
+      "source": {
+        "id": "rituvia.original-reflection-source",
+        "version": "1.0.0"
+      },
+      "positions": [
+        {
+          "positionId": "situation",
+          "order": 1,
+          "title": "Situation",
+          "description": "What may deserve attention in the present context."
+        },
+        {
+          "positionId": "action",
+          "order": 2,
+          "title": "Action",
+          "description": "One small response that remains within the user's control."
+        },
+        {
+          "positionId": "possibility",
+          "order": 3,
+          "title": "Possibility",
+          "description": "A possibility to consider without treating it as a prediction."
+        }
+      ],
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved bounded reflection layout that preserves uncertainty and user choice."
+      }
+    }
+  ],
+  "cardContents": [
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.original-reflection.threshold.upright",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.original-reflection-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "threshold",
+      "orientation": "upright",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Beginning", "Choice"],
+      "constructivePossibilities": ["Notice what is ready to begin without assuming an outcome."],
+      "tensions": ["Pause before turning uncertainty into a demand for certainty."],
+      "themeReadings": [
+        {
+          "themeCode": "self",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for how you are meeting yourself today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "relationships",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for what remains within your control in a relationship, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "work",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for one workable next step in your work, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "creativity",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for what could help an idea move gently forward, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "transition",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for what may support you while something is changing, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "grief",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for what kind of care or support you may need today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "courage",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for one measured action that respects both courage and limits, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "gratitude",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for what feels worth noticing without denying difficulty, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "release",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for what you may be ready to loosen or set down, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "open_reflection",
+          "text": "The threshold can invite attention to one beginning that remains within your choice. Use it only as a reflective lens for the question you are holding, not as a prediction or instruction."
+        }
+      ],
+      "reflectionQuestions": ["What small beginning feels within your control?"],
+      "smallActions": ["Write down one reversible next step."],
+      "cannotDetermine": "This symbolic prompt does not determine what will happen.",
+      "sources": [
+        {
+          "id": "rituvia.original-reflection-source",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": [
+        "Original secular RITUVIA reflection symbol; not presented as a historical tarot tradition."
+      ],
+      "translationStatus": "source_reviewed",
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved non-predictive source copy for the original secular reflection catalog."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.original-reflection.threshold.reversed",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.original-reflection-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "threshold",
+      "orientation": "reversed",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Hesitation", "Readiness"],
+      "constructivePossibilities": ["Make room to prepare before choosing whether to begin."],
+      "tensions": ["Delay can become avoidance when no small check-in is chosen."],
+      "themeReadings": [
+        {
+          "themeCode": "self",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for how you are meeting yourself today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "relationships",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for what remains within your control in a relationship, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "work",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for one workable next step in your work, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "creativity",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for what could help an idea move gently forward, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "transition",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for what may support you while something is changing, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "grief",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for what kind of care or support you may need today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "courage",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for one measured action that respects both courage and limits, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "gratitude",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for what feels worth noticing without denying difficulty, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "release",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for what you may be ready to loosen or set down, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "open_reflection",
+          "text": "This reversed threshold can invite a check on readiness without declaring the path closed. Use it only as a reflective lens for the question you are holding, not as a prediction or instruction."
+        }
+      ],
+      "reflectionQuestions": ["What preparation would make the next choice clearer?"],
+      "smallActions": ["Name one condition you can check before proceeding."],
+      "cannotDetermine": "This symbolic prompt does not determine whether a path is right or wrong.",
+      "sources": [
+        {
+          "id": "rituvia.original-reflection-source",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": [
+        "Original secular RITUVIA reflection symbol; not presented as a historical tarot tradition."
+      ],
+      "translationStatus": "source_reviewed",
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved non-predictive source copy for the original secular reflection catalog."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.original-reflection.mirror.upright",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.original-reflection-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "mirror",
+      "orientation": "upright",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Observation", "Perspective"],
+      "constructivePossibilities": ["Separate what you observe from the story you add to it."],
+      "tensions": ["Reflection can narrow when it becomes harsh self-judgment."],
+      "themeReadings": [
+        {
+          "themeCode": "self",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for how you are meeting yourself today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "relationships",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for what remains within your control in a relationship, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "work",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for one workable next step in your work, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "creativity",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for what could help an idea move gently forward, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "transition",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for what may support you while something is changing, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "grief",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for what kind of care or support you may need today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "courage",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for one measured action that respects both courage and limits, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "gratitude",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for what feels worth noticing without denying difficulty, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "release",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for what you may be ready to loosen or set down, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "open_reflection",
+          "text": "The mirror can invite a careful look at observable patterns and personal choices. Use it only as a reflective lens for the question you are holding, not as a prediction or instruction."
+        }
+      ],
+      "reflectionQuestions": ["What do you observe without adding a prediction?"],
+      "smallActions": ["List one observation and one interpretation separately."],
+      "cannotDetermine": "This symbolic prompt does not reveal another person's private thoughts.",
+      "sources": [
+        {
+          "id": "rituvia.original-reflection-source",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": [
+        "Original secular RITUVIA reflection symbol; not presented as a historical tarot tradition."
+      ],
+      "translationStatus": "source_reviewed",
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved non-predictive source copy for the original secular reflection catalog."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.original-reflection.mirror.reversed",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.original-reflection-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "mirror",
+      "orientation": "reversed",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Distortion", "Self-compassion"],
+      "constructivePossibilities": ["Test a difficult assumption against observable evidence."],
+      "tensions": ["A familiar story can feel factual even when evidence is incomplete."],
+      "themeReadings": [
+        {
+          "themeCode": "self",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for how you are meeting yourself today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "relationships",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for what remains within your control in a relationship, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "work",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for one workable next step in your work, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "creativity",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for what could help an idea move gently forward, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "transition",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for what may support you while something is changing, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "grief",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for what kind of care or support you may need today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "courage",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for one measured action that respects both courage and limits, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "gratitude",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for what feels worth noticing without denying difficulty, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "release",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for what you may be ready to loosen or set down, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "open_reflection",
+          "text": "This reversed mirror can invite gentler scrutiny of assumptions and self-criticism. Use it only as a reflective lens for the question you are holding, not as a prediction or instruction."
+        }
+      ],
+      "reflectionQuestions": ["Which assumption could you check rather than accept automatically?"],
+      "smallActions": ["Ask what evidence would change your current interpretation."],
+      "cannotDetermine": "This symbolic prompt does not prove motives, guilt, or hidden facts.",
+      "sources": [
+        {
+          "id": "rituvia.original-reflection-source",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": [
+        "Original secular RITUVIA reflection symbol; not presented as a historical tarot tradition."
+      ],
+      "translationStatus": "source_reviewed",
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved non-predictive source copy for the original secular reflection catalog."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.original-reflection.lantern.upright",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.original-reflection-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "lantern",
+      "orientation": "upright",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Clarity", "Next step"],
+      "constructivePossibilities": ["Focus on the next visible step rather than the whole route."],
+      "tensions": ["A narrow focus can miss context that still deserves attention."],
+      "themeReadings": [
+        {
+          "themeCode": "self",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for how you are meeting yourself today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "relationships",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for what remains within your control in a relationship, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "work",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for one workable next step in your work, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "creativity",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for what could help an idea move gently forward, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "transition",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for what may support you while something is changing, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "grief",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for what kind of care or support you may need today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "courage",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for one measured action that respects both courage and limits, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "gratitude",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for what feels worth noticing without denying difficulty, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "release",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for what you may be ready to loosen or set down, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "open_reflection",
+          "text": "The lantern can invite attention to the information available for one small choice. Use it only as a reflective lens for the question you are holding, not as a prediction or instruction."
+        }
+      ],
+      "reflectionQuestions": ["What is clear enough to act on today?"],
+      "smallActions": ["Choose one bounded action you can complete and reassess."],
+      "cannotDetermine": "This symbolic prompt does not illuminate an inevitable future.",
+      "sources": [
+        {
+          "id": "rituvia.original-reflection-source",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": [
+        "Original secular RITUVIA reflection symbol; not presented as a historical tarot tradition."
+      ],
+      "translationStatus": "source_reviewed",
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved non-predictive source copy for the original secular reflection catalog."
+      }
+    },
+    {
+      "contentType": "tarot_card_orientation",
+      "contentId": "rituvia.original-reflection.lantern.reversed",
+      "version": "1.0.0",
+      "deck": {
+        "id": "rituvia.original-reflection-deck",
+        "version": "1.0.0"
+      },
+      "cardId": "lantern",
+      "orientation": "reversed",
+      "method": "tarot",
+      "tradition": "rituvia-original-secular-reflection",
+      "locale": "en",
+      "alternativeTitles": [],
+      "visualSymbols": [],
+      "coreThemes": ["Uncertainty", "Pause"],
+      "constructivePossibilities": ["Ask for information or support before taking a larger step."],
+      "tensions": ["Waiting for perfect clarity can postpone a safe, reversible experiment."],
+      "themeReadings": [
+        {
+          "themeCode": "self",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for how you are meeting yourself today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "relationships",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for what remains within your control in a relationship, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "work",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for one workable next step in your work, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "creativity",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for what could help an idea move gently forward, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "transition",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for what may support you while something is changing, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "grief",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for what kind of care or support you may need today, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "courage",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for one measured action that respects both courage and limits, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "gratitude",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for what feels worth noticing without denying difficulty, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "release",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for what you may be ready to loosen or set down, not as a prediction or instruction."
+        },
+        {
+          "themeCode": "open_reflection",
+          "text": "This reversed lantern can invite a pause to identify what remains unknown. Use it only as a reflective lens for the question you are holding, not as a prediction or instruction."
+        }
+      ],
+      "reflectionQuestions": ["What missing information matters most for the next small decision?"],
+      "smallActions": [
+        "Write one question you can answer through observation or a trusted source."
+      ],
+      "cannotDetermine": "This symbolic prompt does not turn uncertainty into certainty.",
+      "sources": [
+        {
+          "id": "rituvia.original-reflection-source",
+          "version": "1.0.0"
+        }
+      ],
+      "culturalNotes": [
+        "Original secular RITUVIA reflection symbol; not presented as a historical tarot tradition."
+      ],
+      "translationStatus": "source_reviewed",
+      "editorial": {
+        "status": "approved",
+        "audience": "Adults using the local RITUVIA reflective MVP",
+        "authorRole": "product_editorial",
+        "authorId": "rituvia.product",
+        "reviewerRole": "owner_review",
+        "reviewerId": "owner.cptmao",
+        "reviewedDate": "2026-07-18",
+        "approvalReference": "OWN-010:rituvia-original-reflection.v1",
+        "requiredApprovalRole": "owner_review",
+        "riskClassification": "low",
+        "aiAssisted": true,
+        "effectiveDate": "2026-07-18",
+        "reviewDueDate": "2027-07-18",
+        "supersedes": null,
+        "changeReason": "Owner-approved non-predictive source copy for the original secular reflection catalog."
+      }
+    }
+  ]
+}

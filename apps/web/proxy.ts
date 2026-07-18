@@ -13,7 +13,12 @@ import {
 } from "./app/_i18n/public-routes";
 import { createRobotsText, createSitemapXml, type PublicShellState } from "./app/_i18n/seo";
 import {
+  localeAccountPath,
+  localeCheckoutReturnPath,
+  localeLocalCheckoutPath,
   localeQuestionIntakePath,
+  localeSanctuaryPath,
+  localeSignInPath,
   localeTarotOneCardPath,
   localeTarotThreeCardPath,
 } from "./app/_i18n/routing";
@@ -23,6 +28,7 @@ const isUngatedInfrastructureRequest = (
   deploymentEnvironment: ReturnType<typeof getWebRuntimeConfiguration>["deploymentEnvironment"],
 ): boolean =>
   pathname === "/icon.svg" ||
+  pathname.startsWith("/images/") ||
   pathname.startsWith("/_next/static/") ||
   (deploymentEnvironment !== "production" && pathname === "/_next/webpack-hmr");
 
@@ -41,7 +47,7 @@ const shellContentSecurityPolicy = [
   "script-src 'self' 'unsafe-inline'",
   "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
-  "style-src-attr 'none'",
+  "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
   "worker-src 'none'",
 ].join("; ");
 
@@ -60,8 +66,127 @@ const tarotReadingPagePathnames = Object.freeze([
   localeTarotOneCardPath("en"),
   localeTarotThreeCardPath("en"),
 ]);
+const privateExperiencePagePathnames = Object.freeze([
+  localeAccountPath("en"),
+  localeCheckoutReturnPath("en"),
+  localeLocalCheckoutPath("en"),
+  localeSanctuaryPath("en"),
+  localeSignInPath("en"),
+]);
+const uuidPathPart = "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
+const reviewedMvpApiPatterns = Object.freeze([
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/account-merge$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/auth\/callback$/u, query: "auth_callback" },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements)$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/(?:intentions|journal-entries|ritual-sessions)$/u },
+  {
+    methods: ["GET"],
+    pattern: new RegExp(
+      `^/api/v1/(?:intentions|journal-entries|ritual-sessions)/${uuidPathPart}$`,
+      "u",
+    ),
+  },
+  { methods: ["GET", "PATCH"], pattern: /^\/api\/v1\/me$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/(?:readings|sessions)$/u },
+  { methods: ["DELETE"], pattern: new RegExp(`^/api/v1/me/sessions/${uuidPathPart}$`, "u") },
+  { methods: ["POST"], pattern: /^\/api\/v1\/orders$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
+  { methods: ["POST"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}/checkout$`, "u") },
+  {
+    methods: ["POST"],
+    pattern: /^\/api\/v1\/webhooks\/payments\/(?:local|stripe)$/u,
+    webhook: true,
+  },
+] as const);
 
 const isSafeReadMethod = (method: string): boolean => method === "GET" || method === "HEAD";
+
+const hasExactAuthCallbackQuery = (request: NextRequest): boolean => {
+  const entries = [...request.nextUrl.searchParams.entries()];
+  return (
+    entries.length === 3 &&
+    entries[0]?.[0] === "challenge" &&
+    entries[1]?.[0] === "state" &&
+    entries[2]?.[0] === "token" &&
+    entries.every(([, value]) => /^[A-Za-z0-9_-]{16,512}$/u.test(value))
+  );
+};
+
+const classifyReviewedMvpApi = (
+  request: NextRequest,
+): Readonly<{ reviewed: boolean; webhook: boolean }> => {
+  if (isFrameworkRepresentationRequest(request)) return { reviewed: false, webhook: false };
+  for (const route of reviewedMvpApiPatterns) {
+    if (
+      !route.pattern.test(request.nextUrl.pathname) ||
+      !(route.methods as readonly string[]).includes(request.method)
+    ) {
+      continue;
+    }
+    const queryAllowed =
+      "query" in route && route.query === "auth_callback"
+        ? hasExactAuthCallbackQuery(request)
+        : request.nextUrl.search === "";
+    if (!queryAllowed) return { reviewed: false, webhook: false };
+    return { reviewed: true, webhook: "webhook" in route && route.webhook === true };
+  }
+  return { reviewed: false, webhook: false };
+};
+
+const matchesPrivateExperienceDocument = (pathname: string): boolean =>
+  privateExperiencePagePathnames.some(
+    (pagePathname) =>
+      pathname === pagePathname ||
+      pathname === `${pagePathname}.rsc` ||
+      pathname.startsWith(`${pagePathname}.segments/`),
+  );
+
+const hasReviewedPrivateDocumentQuery = (request: NextRequest): boolean => {
+  if (request.nextUrl.search === "") return true;
+  const pathname = request.nextUrl.pathname;
+  const entries = [...request.nextUrl.searchParams.entries()];
+  if (pathname === localeLocalCheckoutPath("en")) {
+    return (
+      entries.length === 1 &&
+      entries[0]?.[0] === "checkout_id" &&
+      /^local_[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(entries[0][1])
+    );
+  }
+  if (pathname === localeCheckoutReturnPath("en")) {
+    return (
+      entries.length === 1 &&
+      entries[0]?.[0] === "order_id" &&
+      new RegExp(`^${uuidPathPart}$`, "u").test(entries[0][1])
+    );
+  }
+  if (pathname === localeSanctuaryPath("en")) {
+    return (
+      entries.length === 2 &&
+      request.nextUrl.searchParams.get("checkout") === "canceled" &&
+      new RegExp(`^${uuidPathPart}$`, "u").test(
+        request.nextUrl.searchParams.get("order_id") ?? "",
+      ) &&
+      new Set(entries.map(([key]) => key)).size === 2
+    );
+  }
+  if (pathname === localeSignInPath("en")) {
+    if (entries.length < 1 || entries.length > 2) return false;
+    const keys = new Set(entries.map(([key]) => key));
+    if (
+      keys.size !== entries.length ||
+      [...keys].some((key) => key !== "returnTo" && key !== "status")
+    )
+      return false;
+    return entries.every(([key, value]) =>
+      key === "status"
+        ? value === "invalid"
+        : value.length >= 1 && value.length <= 512 && value.startsWith("/en/"),
+    );
+  }
+  return hasOnlyReviewedFrameworkQuery(request);
+};
 
 const isFrameworkRepresentationRequest = (request: NextRequest): boolean =>
   request.nextUrl.pathname.endsWith(".rsc") ||
@@ -141,10 +266,9 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   downstreamHeaders.set("traceparent", operation.toTraceHeaders().traceparent);
   const pathname = request.nextUrl.pathname;
   const configuration = getWebRuntimeConfiguration();
-  const infrastructure = isUngatedInfrastructureRequest(
-    pathname,
-    configuration.deploymentEnvironment,
-  );
+  const infrastructure =
+    isSafeReadMethod(request.method) &&
+    isUngatedInfrastructureRequest(pathname, configuration.deploymentEnvironment);
   const publicDocument = isPublicShellPathname(pathname);
   const discovery = isPublicDiscoveryPathname(pathname);
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
@@ -158,6 +282,13 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     tarotReadingCreateApi || tarotReadingReadApi || tarotReadingReportApi || tarotInterpretationApi;
   const questionIntakeDocument = isQuestionIntakePagePathname(pathname);
   const tarotReadingDocument = isTarotReadingPagePathname(pathname);
+  const privateExperienceDocument = matchesPrivateExperienceDocument(pathname);
+  const reviewedMvpApi = classifyReviewedMvpApi(request);
+  const reviewedPrivateExperienceDocument =
+    privateExperienceDocument &&
+    isSafeReadMethod(request.method) &&
+    hasReviewedPrivateDocumentQuery(request) &&
+    (!frameworkRepresentation || hasReviewedFrameworkNavigationSignal(request));
   const reviewedAnonymousSessionRequest =
     anonymousSessionApi &&
     request.method === "POST" &&
@@ -183,6 +314,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !reviewedAnonymousSessionRequest &&
     !reviewedQuestionIntakeRequest &&
     !reviewedTarotReadingRequest &&
+    !reviewedMvpApi.reviewed &&
+    !reviewedPrivateExperienceDocument &&
     (unreviewedFrameworkRepresentation ||
       !isSafeReadMethod(request.method) ||
       (request.nextUrl.search !== "" && !hasOnlyReviewedFrameworkQuery(request)));
@@ -192,6 +325,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
       reviewedAnonymousSessionRequest ||
       reviewedQuestionIntakeRequest ||
       reviewedTarotReadingRequest ||
+      (reviewedMvpApi.reviewed && !reviewedMvpApi.webhook) ||
+      reviewedPrivateExperienceDocument ||
       questionIntakeDocument ||
       tarotReadingDocument ||
       (discovery && configuration.deploymentEnvironment === "production"));
@@ -211,6 +346,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !anonymousSessionApi &&
     !questionIntakeApi &&
     !tarotReadingApi &&
+    !reviewedMvpApi.reviewed &&
+    !privateExperienceDocument &&
     !questionIntakeDocument &&
     !tarotReadingDocument;
   const enabledDocument = publicDocument && shellState === "enabled";
@@ -227,6 +364,9 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
             (tarotReadingDocument && enabledTarotReading) ||
             (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
             (reviewedTarotReadingRequest && enabledTarotReading) ||
+            reviewedMvpApi.webhook ||
+            (reviewedMvpApi.reviewed && shellState === "enabled") ||
+            (reviewedPrivateExperienceDocument && shellState === "enabled") ||
             (reviewedAnonymousSessionRequest && shellState === "enabled")
           ? NextResponse.next({ request: { headers: downstreamHeaders } })
           : new NextResponse(null, { status: 404 });
@@ -253,7 +393,9 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     questionIntakeApi ||
     questionIntakeDocument ||
     tarotReadingApi ||
-    tarotReadingDocument
+    tarotReadingDocument ||
+    reviewedMvpApi.reviewed ||
+    privateExperienceDocument
   ) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   } else if (discovery || response.status === 404) {

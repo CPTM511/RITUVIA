@@ -113,6 +113,34 @@ describe("package architecture policy", () => {
     expect(rules(misplaced)).toContain("node-runtime-dependency");
   });
 
+  it("allows sensitive Node primitives only in their reviewed configuration and identity files", () => {
+    const accepted = baseline();
+    replaceSource(
+      accepted,
+      "packages/config/src/server.ts",
+      'import { Buffer } from "node:buffer"; export const decode = (value: string) => Buffer.from(value, "base64url");',
+    );
+    accepted.push({
+      path: "packages/db/src/account-identity.ts",
+      source:
+        'import { webcrypto } from "node:crypto"; export const digest = (value: Uint8Array) => webcrypto.subtle.digest("SHA-256", value);',
+    });
+    expect(rules(accepted)).not.toContain("node-runtime-dependency");
+
+    const misplaced = baseline();
+    misplaced.push(
+      {
+        path: "packages/config/src/client-secret.ts",
+        source: 'import { Buffer } from "node:buffer"; export const unsafe = Buffer;',
+      },
+      {
+        path: "packages/db/src/general-crypto.ts",
+        source: 'import { webcrypto } from "node:crypto"; export const unsafe = webcrypto;',
+      },
+    );
+    expect(rules(misplaced).filter((rule) => rule === "node-runtime-dependency")).toHaveLength(2);
+  });
+
   it("keeps domain free of runtime packages, environment access, and network access", () => {
     const files = baseline();
     replaceSource(
@@ -441,6 +469,41 @@ describe("package architecture policy", () => {
     );
   });
 
+  it("allows DB-backed Web service tests without widening production composition", () => {
+    const accepted = baseline();
+    replaceSource(
+      accepted,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          "@rituvia/db": "workspace:*",
+          react: "19.2.7",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    accepted.push(
+      {
+        path: "apps/web/test/commerce-server.test.ts",
+        source: 'import type { Domain } from "@rituvia/db"; export type Fixture = Domain;',
+      },
+      {
+        path: "apps/web/test/reflection-loop.test.ts",
+        source: 'import { Domain } from "@rituvia/db"; export const fixture = Domain;',
+      },
+    );
+    expect(rules(accepted)).not.toContain("web-db-outside-composition");
+
+    const unreviewed = [...accepted];
+    unreviewed.push({
+      path: "apps/web/test/database-bypass.test.ts",
+      source: 'import { Domain } from "@rituvia/db"; export const bypass = Domain;',
+    });
+    expect(rules(unreviewed)).toContain("web-db-outside-composition");
+  });
+
   it("propagates server taint through local bridges and rejects client capability imports", () => {
     const files = baseline();
     files.push(
@@ -662,6 +725,25 @@ describe("package architecture policy", () => {
     expect(rules(files)).toContain("unresolved-relative-import");
   });
 
+  it("resolves committed canonical content JSON and rejects missing JSON", () => {
+    const files = baseline();
+    files.push(
+      { path: "content/traditions/tarot/catalog.json", source: "{}" },
+      {
+        path: "apps/web/server/catalog.ts",
+        source:
+          'import catalog from "../../../content/traditions/tarot/catalog.json"; export { catalog };',
+      },
+    );
+    expect(rules(files)).not.toContain("unresolved-relative-import");
+    replaceSource(
+      files,
+      "apps/web/server/catalog.ts",
+      'import catalog from "../../../content/traditions/tarot/missing.json"; export { catalog };',
+    );
+    expect(rules(files)).toContain("unresolved-relative-import");
+  });
+
   it("detects manifest-level and production-file cycles", () => {
     const moduleCycle = baseline();
     replaceSource(
@@ -860,7 +942,7 @@ describe("package architecture policy", () => {
     accepted.push({
       path: "apps/web/next.config.ts",
       source:
-        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, skipProxyUrlNormalize: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, poweredByHeader: false, reactStrictMode: true, skipProxyUrlNormalize: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
     });
     expect(rules(accepted)).not.toContain("framework-config-dynamic");
 
@@ -887,6 +969,14 @@ describe("package architecture policy", () => {
         "const nextConfig = { experimental: { caseSensitiveRoutes: true }, reactStrictMode: true, skipProxyUrlNormalize: false, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
     });
     expect(rules(normalizedProxyUrl)).toContain("framework-config-dynamic");
+
+    const frameworkHeaderEnabled = baseline();
+    frameworkHeaderEnabled.push({
+      path: "apps/web/next.config.ts",
+      source:
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, poweredByHeader: true, reactStrictMode: true, skipProxyUrlNormalize: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
+    });
+    expect(rules(frameworkHeaderEnabled)).toContain("framework-config-dynamic");
   });
 
   it("rejects private test traversal and runtime code-loading escape hatches", () => {
@@ -928,6 +1018,69 @@ describe("package architecture policy", () => {
         "unsafe-code-loading",
       ]),
     );
+  });
+
+  it("permits only reviewed computed data reads while preserving code-loading defenses", () => {
+    const accepted = baseline();
+    replaceSource(
+      accepted,
+      "packages/config/src/server.ts",
+      "export const read = (record: Record<string, string>, key: string) => record[key];",
+    );
+    accepted.push(
+      {
+        path: "apps/web/app/_components/sanctuary-flow.tsx",
+        source:
+          '"use client"; export const label = (messages: { intention: { themes: Record<string, string> } }, selectedTheme: string) => messages.intention.themes[selectedTheme];',
+      },
+      {
+        path: "apps/web/server/payment-provider.ts",
+        source:
+          "export const price = (input: { priceIds: Record<string, string> }, request: { metadata: { productCode: string } }) => input.priceIds[request.metadata.productCode];",
+      },
+      {
+        path: "packages/db/src/account-identity.ts",
+        source:
+          "export class AccountError { constructor(readonly code: string) {} } export const byte = (left: Uint8Array, right: Uint8Array, index: number) => (left[index] ?? 0) ^ (right[index] ?? 0);",
+      },
+      {
+        path: "packages/db/src/commerce-persistence.ts",
+        source:
+          "export class CommerceError { constructor(readonly code: string) {} } export const byte = (left: Uint8Array, right: Uint8Array, index: number) => (left[index] ?? 0) ^ (right[index] ?? 0);",
+      },
+    );
+    expect(rules(accepted)).not.toContain("unsafe-code-loading");
+
+    const mutatedKey = baseline();
+    replaceSource(
+      mutatedKey,
+      "packages/config/src/server.ts",
+      "export const read = (record: Record<string, string>, unreviewed: string) => record[unreviewed];",
+    );
+    expect(rules(mutatedKey)).toContain("unsafe-code-loading");
+
+    const mutatedWrite = baseline();
+    replaceSource(
+      mutatedWrite,
+      "packages/config/src/server.ts",
+      'export const write = (record: Record<string, string>, key: string) => { record[key] = "changed"; };',
+    );
+    expect(rules(mutatedWrite)).toContain("unsafe-code-loading");
+
+    const misplaced = baseline();
+    misplaced.push({
+      path: "packages/config/src/unreviewed.ts",
+      source: "export const read = (record: Record<string, string>, key: string) => record[key];",
+    });
+    expect(rules(misplaced)).toContain("unsafe-code-loading");
+
+    const constructorEscape = baseline();
+    constructorEscape.push({
+      path: "packages/db/src/constructor-escape.ts",
+      source:
+        'export const direct = (value: object) => value.constructor; export const indexed = (value: Record<string, unknown>) => value["constructor"];',
+    });
+    expect(rules(constructorEscape)).toContain("unsafe-code-loading");
   });
 
   it("confines descriptor reflection to the observability redaction boundary", () => {
@@ -1052,12 +1205,43 @@ describe("package architecture policy", () => {
   });
 
   it("keeps payment provider SDKs inside explicit adapter zones", () => {
-    const files = baseline();
-    files.push(manifest("packages/payments", "@rituvia/payments", { stripe: "20.4.0" }), {
-      path: "packages/payments/src/core/order.ts",
+    const accepted = baseline();
+    replaceSource(
+      accepted,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          react: "19.2.7",
+          stripe: "20.4.0",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    accepted.push({
+      path: "apps/web/server/payment-provider.ts",
       source: 'import Stripe from "stripe"; export type Client = Stripe;',
     });
-    expect(rules(files)).toContain("provider-outside-adapter");
+    expect(rules(accepted)).not.toContain("adapter-ownership");
+    expect(rules(accepted)).not.toContain("external-runtime-dependency");
+
+    const misplacedWeb = [...accepted];
+    misplacedWeb.push({
+      path: "apps/web/server/commerce-provider-bypass.ts",
+      source: 'import Stripe from "stripe"; export type Client = Stripe;',
+    });
+    expect(rules(misplacedWeb)).toContain("adapter-ownership");
+
+    const misplacedPackage = baseline();
+    misplacedPackage.push(
+      manifest("packages/payments", "@rituvia/payments", { stripe: "20.4.0" }),
+      {
+        path: "packages/payments/src/core/order.ts",
+        source: 'import Stripe from "stripe"; export type Client = Stripe;',
+      },
+    );
+    expect(rules(misplacedPackage)).toContain("provider-outside-adapter");
   });
 
   it("fails closed on computed imports, syntax errors, symlinks, and unknown modules", () => {

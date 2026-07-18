@@ -9,9 +9,14 @@ import {
   isPublicDiscoveryPathname,
   isPublicShellPathname,
   localeHomePath,
+  localeAccountPath,
+  localeCheckoutReturnPath,
   localePublicPagePath,
+  localeLocalCheckoutPath,
   localeQuestionIntakePath,
+  localeSanctuaryPath,
   localeSectionPath,
+  localeSignInPath,
   localeTarotOneCardPath,
   localeTarotThreeCardPath,
   parseLocale,
@@ -37,6 +42,11 @@ describe("Web locale routing", () => {
     expect(localeQuestionIntakePath("en")).toBe("/en/intake");
     expect(localeTarotOneCardPath("en")).toBe("/en/tarot/one-card");
     expect(localeTarotThreeCardPath("en")).toBe("/en/tarot/three-card");
+    expect(localeSanctuaryPath("en")).toBe("/en/sanctuary");
+    expect(localeSignInPath("en")).toBe("/en/sign-in");
+    expect(localeAccountPath("en")).toBe("/en/account");
+    expect(localeCheckoutReturnPath("en")).toBe("/en/checkout/return");
+    expect(localeLocalCheckoutPath("en")).toBe("/en/checkout/local");
     expect(publicPageSlugs).toEqual(["methodology", "safety", "privacy"]);
     expect(localePublicPagePath("en", "methodology")).toBe("/en/methodology");
     expect(localePublicPagePath("en", "safety")).toBe("/en/safety");

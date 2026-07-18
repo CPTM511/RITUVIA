@@ -54,6 +54,16 @@ const sensitiveBasenames = new Set([
   "id_rsa",
 ]);
 
+const reviewedLargeStaticAssets = new Map([
+  [
+    "apps/web/public/images/rituvia-sanctuary-orb.png",
+    Object.freeze({
+      bytes: 1_951_492,
+      sha256: "dc63dbfd1656d1e09b4b636c270b0ff61069d748d4cb549c573fc5d163879020",
+    }),
+  ],
+]);
+
 const lineForOffset = (content: string, offset: number): number => {
   let line = 1;
   for (let index = 0; index < offset; index += 1) {
@@ -84,6 +94,18 @@ export const createSecretFinding = (rule: string, filePath: string, line = 1): S
     path: normalizedPath,
     rule,
   });
+};
+
+export const isReviewedLargeStaticAssetPath = (filePath: string): boolean =>
+  reviewedLargeStaticAssets.has(filePath.replaceAll("\\", "/"));
+
+export const isReviewedLargeStaticAsset = (filePath: string, content: Uint8Array): boolean => {
+  const reviewed = reviewedLargeStaticAssets.get(filePath.replaceAll("\\", "/"));
+  return (
+    reviewed !== undefined &&
+    content.byteLength === reviewed.bytes &&
+    createHash("sha256").update(content).digest("hex") === reviewed.sha256
+  );
 };
 
 export const scanSecretText = (filePath: string, content: string): readonly SecretFinding[] => {

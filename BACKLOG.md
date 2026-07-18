@@ -139,6 +139,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                 | RIT-151                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence.       |
 | RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                      | RIT-031,RIT-110,RIT-153                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.        |
 | RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                              | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.       |
+| RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP          | RIT-025,RIT-029,RIT-036                 | product       | Anonymous reading through signed local purchase, owned ritual, encrypted revisit, and account sign-out pass final responsive Playwright; production gates remain closed. |
 | OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance       | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                    |
 | OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval           | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                |
 | OWN-003 | External  |       P0 | Blocked | Select and license astrology engine/provider                              | None                                    | owner         | Commercial rights, usage, data, cost, SLA, attribution and exit are approved.                                     |
@@ -151,5 +152,9 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                  | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded. |
 
 ## Backlog maintenance
+
+RIT-158 is the single consolidated local-MVP exception authorized by D-044. It does not mark the
+broader M4-M7 production tasks complete or bypass their legal, privacy, payment, operational, or
+release criteria.
 
 When adding a task, include an outcome rather than a vague activity, explicit dependencies, a primary review role, and testable completion. Do not remove completed tasks; archive them to a dated release log only after a release if this file becomes unwieldy. Owner tasks remain blocked until the owner supplies evidence; Codex may prepare dossiers and code but may not mark external approval complete.

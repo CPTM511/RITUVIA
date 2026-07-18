@@ -15,6 +15,9 @@ importers:
       '@axe-core/playwright':
         specifier: 4.12.1
         version: 4.12.1(playwright-core@1.61.1)
+      '@next/env':
+        specifier: 16.2.10
+        version: 16.2.10
       '@types/node':
         specifier: 24.13.3
         version: 24.13.3
@@ -60,6 +63,9 @@ importers:
       '@rituvia/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@rituvia/country-policy':
+        specifier: workspace:*
+        version: link:../../packages/country-policy
       '@rituvia/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -72,6 +78,9 @@ importers:
       '@rituvia/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@rituvia/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@rituvia/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -87,6 +96,9 @@ importers:
       server-only:
         specifier: 0.0.1
         version: 0.0.1
+      stripe:
+        specifier: 22.3.2
+        version: 22.3.2(@types/node@24.13.3)
     devDependencies:
       '@types/react':
         specifier: 19.2.17
@@ -125,6 +137,8 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
+  packages/country-policy: {}
+
   packages/db:
     dependencies:
       '@prisma/adapter-pg':
@@ -156,6 +170,8 @@ importers:
   packages/domain: {}
 
   packages/observability: {}
+
+  packages/payments: {}
 
   packages/ui:
     devDependencies:
@@ -2710,6 +2726,15 @@ packages:
   strip-json-comments@3.1.1:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
+
+  stripe@22.3.2:
+    resolution: {integrity: sha512-O13QOvgEIQvDlTy6Ubb5kB980wpbhmoZNsgCXKILjCMZS67f+bW+6w99k3gnSi/N1lkryoj1WYdpGT5Wc5edjg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   styled-jsx@5.1.6:
     resolution: {integrity: sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==}
@@ -5584,6 +5609,10 @@ snapshots:
   strip-bom@3.0.0: {}
 
   strip-json-comments@3.1.1: {}
+
+  stripe@22.3.2(@types/node@24.13.3):
+    optionalDependencies:
+      '@types/node': 24.13.3
 
   styled-jsx@5.1.6(@babel/core@7.29.7)(react@19.2.7):
     dependencies:

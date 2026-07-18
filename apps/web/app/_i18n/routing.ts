@@ -42,6 +42,21 @@ export const localeTarotOneCardPath = (locale: Locale): LocalActionHref =>
 export const localeTarotThreeCardPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/tarot/three-card`);
 
+export const localeSanctuaryPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/sanctuary`);
+
+export const localeSignInPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/sign-in`);
+
+export const localeAccountPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account`);
+
+export const localeCheckoutReturnPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/checkout/return`);
+
+export const localeLocalCheckoutPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/checkout/local`);
+
 export const localePublicPagePath = (
   locale: Locale,
   page: PublicPageId | PublicPageSlug,

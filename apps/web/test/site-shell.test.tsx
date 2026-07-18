@@ -32,12 +32,16 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('<label class="locale-label" for="locale-select">');
     expect(html).toContain('aria-describedby="locale-hint"');
     expect(html).toContain("<noscript>");
-    expect(html).toContain('data-kind="empty"');
-    expect(html).toContain("Symbolic readings are not open in this foundation yet.");
+    expect(html).toContain('href="/en/tarot/one-card"');
+    expect(html).toContain('href="/en/tarot/three-card"');
+    expect(html).toContain('href="/en/sanctuary"');
+    expect(html).toContain('href="/en/account"');
+    expect(html).toContain("rituvia-sanctuary-orb.png");
+    expect(html).toContain("A free ritual path always remains");
     expect(html).not.toContain('data-connection-state="offline"');
   });
 
-  it("renders only locale-safe internal targets and no unfinished feature route", () => {
+  it("renders only locale-safe internal targets and no unsupported feature route", () => {
     const html = render();
     const targets = [...html.matchAll(/href="([^"]+)"/gu)]
       .map((match) => match[1])
@@ -48,7 +52,7 @@ describe("server-rendered public shell", () => {
       true,
     );
     expect(html).not.toMatch(/href="https?:/u);
-    expect(html).not.toMatch(/href="\/en\/(?:account|tarot|astrology|numerology|pricing)/u);
+    expect(html).not.toMatch(/href="\/en\/(?:astrology|numerology|pricing)/u);
     expect(html).not.toMatch(/<(?:form|input|textarea)\b/u);
   });
 

@@ -1,6 +1,14 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { isSensitiveFilePath, scanSecretBuffer, scanSecretText } from "../scripts/secret-policy.js";
+import {
+  isReviewedLargeStaticAsset,
+  isReviewedLargeStaticAssetPath,
+  isSensitiveFilePath,
+  scanSecretBuffer,
+  scanSecretText,
+} from "../scripts/secret-policy.js";
 
 describe("secret policy", () => {
   it("detects high-confidence canaries without returning their values", () => {
@@ -65,5 +73,19 @@ describe("secret policy", () => {
       rule: "github-token",
     });
     expect(Object.keys(finding ?? {}).sort()).toEqual(["fingerprint", "line", "path", "rule"]);
+  });
+
+  it("allows only the exact reviewed large visual asset bytes", async () => {
+    const assetPath = "apps/web/public/images/rituvia-sanctuary-orb.png";
+    const content = await readFile(path.resolve(import.meta.dirname, "..", assetPath));
+    const changed = Buffer.from(content);
+    changed[0] = changed[0] === 0 ? 1 : 0;
+
+    expect(isReviewedLargeStaticAssetPath(assetPath)).toBe(true);
+    expect(isReviewedLargeStaticAsset(assetPath, content)).toBe(true);
+    expect(isReviewedLargeStaticAsset(assetPath, changed)).toBe(false);
+    expect(isReviewedLargeStaticAsset("apps/web/public/images/unreviewed.png", content)).toBe(
+      false,
+    );
   });
 });

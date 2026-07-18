@@ -178,6 +178,13 @@ describe("source configuration boundaries", () => {
     expect(sources[2]).not.toContain("--env-file");
   });
 
+  it("writes the generated local MVP environment only at the shared repository root", async () => {
+    const configurator = await readFile(path.join(root, "scripts/configure-local-mvp.mjs"), "utf8");
+
+    expect(configurator).toContain('path.join(repositoryRoot, ".env.local")');
+    expect(configurator).not.toContain('path.join(repositoryRoot, "apps", "web", ".env.local")');
+  });
+
   it("contains no working-brand display literal in application production source", async () => {
     const files = await readProductionTypeScriptFiles(path.join(root, "apps"));
     const violations: string[] = [];

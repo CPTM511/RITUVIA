@@ -13,15 +13,18 @@
     "@next/env": "16.2.10",
     "@rituvia/ai": "workspace:*",
     "@rituvia/config": "workspace:*",
+    "@rituvia/country-policy": "workspace:*",
     "@rituvia/db": "workspace:*",
     "@rituvia/divination": "workspace:*",
     "@rituvia/domain": "workspace:*",
     "@rituvia/observability": "workspace:*",
+    "@rituvia/payments": "workspace:*",
     "@rituvia/ui": "workspace:*",
     "next": "16.2.10",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "stripe": "22.3.2"
   },
   "devDependencies": {
     "@types/react": "19.2.17",

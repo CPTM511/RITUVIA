@@ -28,7 +28,21 @@ const knownEnvironmentVariables = [
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
   "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
   "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+  "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
+  "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
+  "RITUVIA_AUTH_DATA_KEY_V1",
+  "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
+  "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
+  "RITUVIA_PAYMENT_PROVIDER",
+  "RITUVIA_PRIVATE_CONTENT_KEY_V1",
   "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
+  "RITUVIA_REFLECTION_POLICY_VERSION",
+  "RITUVIA_REFLECTION_RETENTION_SECONDS",
+  "RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS",
+  "RITUVIA_STRIPE_PRICE_IDS",
+  "RITUVIA_TAROT_INTEGRITY_KEY_V1",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
 ];
 
 const identifier = randomUUID().replaceAll("-", "");
@@ -294,7 +308,9 @@ const assertHttpBoundary = ({ contentSecurityPolicy, html, requestId }, processO
     !contentSecurityPolicy.includes("connect-src 'self'") ||
     !contentSecurityPolicy.includes("object-src 'none'") ||
     !contentSecurityPolicy.includes("script-src-attr 'none'") ||
-    !contentSecurityPolicy.includes("style-src-attr 'none'")
+    !contentSecurityPolicy.includes(
+      "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
+    )
   ) {
     fail("The Web request boundary did not return its restrictive shell security policy.");
   }
@@ -338,9 +354,9 @@ let webProcess;
 try {
   await assertSuccessfulCommand(
     turboCli,
-    ["run", "build", "--filter=@rituvia/ui", "--filter=@rituvia/worker", "--force"],
+    ["run", "build", "--filter=!@rituvia/web", "--force"],
     { env: createEnvironment() },
-    "Configuration and Worker prerequisite build",
+    "Configuration and Web prerequisite build",
   );
 
   await mkdir(path.dirname(temporaryWebRoot), { recursive: true });
@@ -348,7 +364,11 @@ try {
     recursive: true,
     filter: (source) =>
       ![".next", ".turbo", "node_modules"].includes(path.basename(source)) &&
+      !path.basename(source).startsWith(".env") &&
       !source.endsWith(".tsbuildinfo"),
+  });
+  await cp(path.join(repositoryRoot, "content"), path.join(temporaryRoot, "content"), {
+    recursive: true,
   });
   await cp(
     path.join(repositoryRoot, "tsconfig.base.json"),
@@ -664,9 +684,15 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     `/en/privacy?birthTime=${privateQueryCanary}`,
     { redirect: "manual" },
   );
-  const privatePaths = ["/en/account", "/en/journal", "/en/checkout", "/en/reading/private-id"];
-  const privateResponses = await Promise.all(
-    privatePaths.map((pathname) =>
+  const supportedPrivatePaths = ["/en/account", "/en/sanctuary", "/en/sign-in"];
+  const supportedPrivateResponses = await Promise.all(
+    supportedPrivatePaths.map((pathname) =>
+      fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" }),
+    ),
+  );
+  const unsupportedPrivatePaths = ["/en/journal", "/en/checkout", "/en/reading/private-id"];
+  const unsupportedPrivateResponses = await Promise.all(
+    unsupportedPrivatePaths.map((pathname) =>
       fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" }),
     ),
   );
@@ -723,7 +749,13 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     queryVariant.html !== "" ||
     queryVariant.location !== null ||
     queryVariant.xRobotsTag !== "noindex, nofollow, noarchive" ||
-    privateResponses.some(
+    supportedPrivateResponses.some(
+      ({ cacheControl, status, xRobotsTag }) =>
+        status !== 200 ||
+        !isPrivateNoStore(cacheControl) ||
+        xRobotsTag !== "noindex, nofollow, noarchive",
+    ) ||
+    unsupportedPrivateResponses.some(
       ({ html, status, xRobotsTag }) =>
         status !== 404 || html !== "" || xRobotsTag !== "noindex, nofollow, noarchive",
     ) ||
@@ -766,7 +798,14 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
             status: response.status,
             xRobotsTag: response.xRobotsTag,
           })),
-          privateStatuses: privateResponses.map(({ status, xRobotsTag }) => ({
+          supportedPrivateStatuses: supportedPrivateResponses.map(
+            ({ cacheControl, status, xRobotsTag }) => ({
+              cacheControl,
+              status,
+              xRobotsTag,
+            }),
+          ),
+          unsupportedPrivateStatuses: unsupportedPrivateResponses.map(({ status, xRobotsTag }) => ({
             status,
             xRobotsTag,
           })),

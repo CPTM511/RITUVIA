@@ -17,14 +17,56 @@ import {
   withLocalPostgresLease,
 } from "./local-postgres.mjs";
 
-const EXPECTED_SEED = Object.freeze({
-  id: "6d393ec1-2019-4abc-9cf8-62f58c72efe8",
-  datasetKey: "foundation-synthetic",
+const EXPECTED_SEEDS = Object.freeze([
+  Object.freeze({
+    id: "6d393ec1-2019-4abc-9cf8-62f58c72efe8",
+    datasetKey: "foundation-synthetic",
+    version: 1,
+    checksumSha256: "921224db98642ee1f9abc307c710066eb3a94a59c3caba29ffda110ee1928937",
+    isSynthetic: true,
+    createdAt: new Date("2026-07-16T00:00:00.000Z"),
+  }),
+  Object.freeze({
+    id: "72d0431b-fdc7-4181-97d0-f9e1ae213cc1",
+    datasetKey: "local-mvp-feature-flags",
+    version: 1,
+    checksumSha256: "5d898d56bcb06a0ac5a0871dcd67587ad7be8b319ea8214a6dba848da38f5c9a",
+    isSynthetic: true,
+    createdAt: new Date("2026-07-18T00:00:00.000Z"),
+  }),
+]);
+
+const EXPECTED_LOCAL_PUBLIC_SHELL = Object.freeze({
+  actorId: "owner.local-mvp",
+  approvalReference: null,
+  changeReference: "RIT-158",
+  countryCodes: [],
+  createdAt: new Date("2026-07-18T00:00:00.000Z"),
+  effectiveAt: new Date("2026-07-18T00:00:00.000Z"),
+  flagKey: "experience.public_shell",
+  id: "d35f0bbb-b037-4bc8-8cb4-cb42a413535d",
+  localeTags: [],
+  registryVersion: 1,
+  state: "on",
   version: 1,
-  checksumSha256: "921224db98642ee1f9abc307c710066eb3a94a59c3caba29ffda110ee1928937",
-  isSynthetic: true,
-  createdAt: new Date("2026-07-16T00:00:00.000Z"),
 });
+
+const MVP_TABLES = Object.freeze([
+  "account_session",
+  "account_subject_link",
+  "app_user",
+  "auth_challenge",
+  "auth_identity",
+  "commerce_order",
+  "commerce_order_line",
+  "entitlement",
+  "intention",
+  "journal_entry",
+  "ledger_entry",
+  "payment_attempt",
+  "payment_event",
+  "ritual_session",
+]);
 
 const openPools = new Set();
 let backgroundPoolError;
@@ -134,8 +176,8 @@ const verifySeed = async (pool) => {
       FROM seed_manifest
      ORDER BY dataset_key, version
   `);
-  assert.equal(result.rowCount, 1);
-  assert.deepEqual(result.rows[0], EXPECTED_SEED);
+  assert.equal(result.rowCount, EXPECTED_SEEDS.length);
+  assert.deepEqual(result.rows, EXPECTED_SEEDS);
 };
 
 const verifyMigrationState = async (pool) => {
@@ -153,6 +195,10 @@ const verifyMigrationState = async (pool) => {
       "202607170003_tarot_reading_persistence",
       "202607170004_tarot_reading_report",
       "202607180001_interpretation_generation",
+      "202607180002_interpretation_verification",
+      "202607180003_account_identity",
+      "202607180004_reflection_loop",
+      "202607180005_commerce",
     ],
   );
   for (const row of result.rows) {
@@ -193,28 +239,94 @@ const verifyMigrationState = async (pool) => {
       roles: ["rituvia_feature_flag_reader"],
     },
   ]);
+
+  const criticalRowSecurity = await pool.query(`
+    SELECT relation.relname AS "tableName",
+           relation.relrowsecurity AS "rowSecurity",
+           relation.relforcerowsecurity AS "forceRowSecurity",
+           count(policy.oid)::int AS "policyCount"
+      FROM pg_class AS relation
+      JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+      LEFT JOIN pg_policy AS policy ON policy.polrelid = relation.oid
+     WHERE namespace.nspname = 'public'
+       AND relation.relname IN (
+         'feature_flag_version', 'interpretation', 'interpretation_verification'
+       )
+     GROUP BY relation.relname, relation.relrowsecurity, relation.relforcerowsecurity
+     ORDER BY relation.relname
+  `);
+  assert.deepEqual(criticalRowSecurity.rows, [
+    {
+      forceRowSecurity: true,
+      policyCount: 2,
+      rowSecurity: true,
+      tableName: "feature_flag_version",
+    },
+    {
+      forceRowSecurity: true,
+      policyCount: 3,
+      rowSecurity: true,
+      tableName: "interpretation",
+    },
+    {
+      forceRowSecurity: true,
+      policyCount: 2,
+      rowSecurity: true,
+      tableName: "interpretation_verification",
+    },
+  ]);
 };
 
-const verifyIdentityTablesStartEmpty = async (pool) => {
+const verifyProductTablesStartEmpty = async (pool) => {
   const result = await pool.query(`
-    SELECT (SELECT count(*)::int FROM anonymous_subject) AS subjects,
-           (SELECT count(*)::int FROM anonymous_session) AS sessions,
+    SELECT (SELECT count(*)::int FROM anonymous_subject) AS "anonymousSubjects",
+           (SELECT count(*)::int FROM anonymous_session) AS "anonymousSessions",
            (SELECT count(*)::int FROM consent_record) AS consents,
-           (SELECT count(*)::int FROM anonymous_session_issuance_gate) AS issuance_gates,
+           (SELECT count(*)::int FROM anonymous_session_issuance_gate) AS "issuanceGates",
            (SELECT count(*)::int FROM reading) AS readings,
            (SELECT count(*)::int FROM tarot_draw) AS draws,
            (SELECT count(*)::int FROM reading_report) AS reports,
-           (SELECT count(*)::int FROM interpretation) AS interpretations
+           (SELECT count(*)::int FROM interpretation) AS interpretations,
+           (SELECT count(*)::int FROM interpretation_verification) AS verifications,
+           (SELECT count(*)::int FROM app_user) AS users,
+           (SELECT count(*)::int FROM auth_identity) AS "authIdentities",
+           (SELECT count(*)::int FROM auth_challenge) AS "authChallenges",
+           (SELECT count(*)::int FROM account_session) AS "accountSessions",
+           (SELECT count(*)::int FROM account_subject_link) AS "accountSubjectLinks",
+           (SELECT count(*)::int FROM intention) AS intentions,
+           (SELECT count(*)::int FROM ritual_session) AS "ritualSessions",
+           (SELECT count(*)::int FROM journal_entry) AS "journalEntries",
+           (SELECT count(*)::int FROM commerce_order) AS "commerceOrders",
+           (SELECT count(*)::int FROM commerce_order_line) AS "commerceOrderLines",
+           (SELECT count(*)::int FROM payment_attempt) AS "paymentAttempts",
+           (SELECT count(*)::int FROM payment_event) AS "paymentEvents",
+           (SELECT count(*)::int FROM ledger_entry) AS "ledgerEntries",
+           (SELECT count(*)::int FROM entitlement) AS entitlements
   `);
   assert.deepEqual(result.rows[0], {
+    accountSessions: 0,
+    accountSubjectLinks: 0,
+    anonymousSessions: 0,
+    anonymousSubjects: 0,
+    authChallenges: 0,
+    authIdentities: 0,
+    commerceOrderLines: 0,
+    commerceOrders: 0,
     consents: 0,
     draws: 0,
-    issuance_gates: 0,
+    entitlements: 0,
+    issuanceGates: 0,
+    intentions: 0,
     interpretations: 0,
-    reports: 0,
+    journalEntries: 0,
+    ledgerEntries: 0,
+    paymentAttempts: 0,
+    paymentEvents: 0,
     readings: 0,
-    sessions: 0,
-    subjects: 0,
+    reports: 0,
+    ritualSessions: 0,
+    users: 0,
+    verifications: 0,
   });
 };
 
@@ -238,6 +350,118 @@ const verifyRoleRestrictions = async (databaseUrl) => {
       schemaOwner: localPostgresConstants.migratorRole,
       tableOwner: localPostgresConstants.migratorRole,
     });
+
+    const rolePosture = await client.query(`
+      SELECT rolsuper AS "superuser", rolcreatedb AS "createDatabase",
+             rolcreaterole AS "createRole", rolreplication AS replication,
+             rolbypassrls AS "bypassRowSecurity"
+        FROM pg_roles
+       WHERE rolname = current_user
+    `);
+    assert.deepEqual(rolePosture.rows[0], {
+      bypassRowSecurity: false,
+      createDatabase: false,
+      createRole: false,
+      replication: false,
+      superuser: false,
+    });
+
+    const mvpOwners = await client.query(
+      `SELECT relation.relname AS "tableName", pg_get_userbyid(relation.relowner) AS owner
+         FROM pg_class AS relation
+         JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace
+        WHERE namespace.nspname = 'public' AND relation.relname = ANY($1::text[])
+        ORDER BY relation.relname`,
+      [MVP_TABLES],
+    );
+    assert.deepEqual(
+      mvpOwners.rows,
+      MVP_TABLES.map((tableName) => ({
+        owner: localPostgresConstants.migratorRole,
+        tableName,
+      })),
+    );
+
+    const tablePrivileges = await client.query(
+      `SELECT table_name AS "tableName",
+              json_agg(privilege_type ORDER BY privilege_type) AS privileges
+         FROM information_schema.role_table_grants
+        WHERE table_schema = 'public'
+          AND grantee = current_user
+          AND table_name = ANY($1::text[])
+        GROUP BY table_name
+        ORDER BY table_name`,
+      [MVP_TABLES],
+    );
+    assert.deepEqual(
+      tablePrivileges.rows,
+      MVP_TABLES.map((tableName) => ({ privileges: ["INSERT", "SELECT"], tableName })),
+    );
+
+    const updatePrivileges = await client.query(
+      `SELECT table_name AS "tableName",
+              json_agg(column_name ORDER BY column_name) AS columns
+         FROM information_schema.column_privileges
+        WHERE table_schema = 'public'
+          AND grantee = current_user
+          AND privilege_type = 'UPDATE'
+          AND table_name = ANY($1::text[])
+        GROUP BY table_name
+        ORDER BY table_name`,
+      [MVP_TABLES],
+    );
+    assert.deepEqual(updatePrivileges.rows, [
+      { columns: ["last_seen_at", "revoked_at"], tableName: "account_session" },
+      {
+        columns: [
+          "age_attested_at",
+          "age_policy_version",
+          "display_name",
+          "last_active_at",
+          "locale",
+          "profile_version",
+          "time_zone",
+        ],
+        tableName: "app_user",
+      },
+      { columns: ["consumed_at"], tableName: "auth_challenge" },
+      { columns: ["last_sign_in_at"], tableName: "auth_identity" },
+      {
+        columns: ["refunded_minor", "status", "updated_at"],
+        tableName: "commerce_order",
+      },
+      {
+        columns: ["granted_at", "revoked_at", "source_order_line_id", "status", "version"],
+        tableName: "entitlement",
+      },
+      { columns: ["state", "updated_at"], tableName: "payment_attempt" },
+      {
+        columns: ["order_id", "payment_attempt_id", "processed_at", "processing_state"],
+        tableName: "payment_event",
+      },
+    ]);
+
+    const destructivePrivileges = await client.query(
+      `SELECT table_name AS "tableName",
+              has_table_privilege(current_user, format('public.%I', table_name), 'DELETE') AS "canDelete",
+              has_table_privilege(current_user, format('public.%I', table_name), 'TRUNCATE') AS "canTruncate",
+              has_table_privilege(current_user, format('public.%I', table_name), 'REFERENCES') AS "canReference",
+              has_table_privilege(current_user, format('public.%I', table_name), 'TRIGGER') AS "canTrigger",
+              has_table_privilege(current_user, format('public.%I', table_name), 'UPDATE') AS "canUpdateTable"
+         FROM unnest($1::text[]) AS table_name
+        ORDER BY table_name`,
+      [MVP_TABLES],
+    );
+    for (const privilege of destructivePrivileges.rows) {
+      assert.deepEqual(privilege, {
+        canDelete: false,
+        canReference: false,
+        canTrigger: false,
+        canTruncate: false,
+        canUpdateTable: false,
+        tableName: privilege.tableName,
+      });
+    }
     const suffix = randomBytes(6).toString("hex");
     await expectPostgresError(() => client.query(`CREATE ROLE forbidden_${suffix}`), "42501");
     await expectPostgresError(() => client.query(`CREATE DATABASE forbidden_${suffix}`), "42501");
@@ -348,10 +572,16 @@ const verifyConstraintsAndTransactions = async (pool) => {
 };
 
 const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
-  const initial = await runtimePool.query(
-    "SELECT count(*)::int AS count FROM feature_flag_version",
-  );
-  assert.equal(initial.rows[0]?.count, 0);
+  const initial = await runtimePool.query(`
+    SELECT id::text AS id, registry_version AS "registryVersion", flag_key AS "flagKey",
+           version, state, country_codes AS "countryCodes", locale_tags AS "localeTags",
+           effective_at AS "effectiveAt", approval_reference AS "approvalReference",
+           change_reference AS "changeReference", actor_id AS "actorId",
+           created_at AS "createdAt"
+      FROM feature_flag_version
+     ORDER BY registry_version, flag_key, version
+  `);
+  assert.deepEqual(initial.rows, [EXPECTED_LOCAL_PUBLIC_SHELL]);
 
   const insert = (overrides = {}) => {
     const record = {
@@ -366,7 +596,7 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
       localeTags: [],
       registryVersion: 1,
       state: "off",
-      version: 1,
+      version: 2,
       ...overrides,
     };
     return controlPool.query(
@@ -474,6 +704,7 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
     countryCodes: ["US"],
     flagKey: "payments.fiat_checkout",
     state: "on",
+    version: 1,
   });
   assert.match(approved.rows[0]?.id, /^[0-9a-f-]{36}$/);
   await expectPostgresError(
@@ -487,7 +718,7 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
       }),
     "42501",
   );
-  await insert({ registryVersion: 2 });
+  await insert({ registryVersion: 2, version: 1 });
 
   await expectPostgresError(
     () =>
@@ -523,8 +754,16 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
       countryCodes: [],
       flagKey: "experience.public_shell",
       registryVersion: 1,
-      state: "off",
+      state: "on",
       version: 1,
+    },
+    {
+      approvalReference: null,
+      countryCodes: [],
+      flagKey: "experience.public_shell",
+      registryVersion: 1,
+      state: "off",
+      version: 2,
     },
     {
       approvalReference: "OWN-002:local-owner-record",
@@ -600,7 +839,7 @@ await withLocalPostgresLease(async (lease) => {
     let controlPool = createTrackedPool(database.controlDatabaseUrl, 10);
     await verifyMigrationState(pool);
     await verifySeed(pool);
-    await verifyIdentityTablesStartEmpty(pool);
+    await verifyProductTablesStartEmpty(pool);
     await verifyRoleRestrictions(database.databaseUrl);
     await verifyConstraintsAndTransactions(migrationPool);
     await verifyFeatureFlagVersions(pool, controlPool);
@@ -619,7 +858,7 @@ await withLocalPostgresLease(async (lease) => {
     controlPool = createTrackedPool(database.controlDatabaseUrl);
     await verifyMigrationState(pool);
     await verifySeed(pool);
-    await verifyIdentityTablesStartEmpty(pool);
+    await verifyProductTablesStartEmpty(pool);
     const resetMarker = await pool.query(
       "SELECT count(*)::int AS count FROM seed_manifest WHERE dataset_key = 'reset-marker'",
     );
@@ -639,6 +878,7 @@ await withLocalPostgresLease(async (lease) => {
     const restoredControlPool = createTrackedPool(restored.controlDatabaseUrl);
     await verifyMigrationState(restoredPool);
     await verifySeed(restoredPool);
+    await verifyProductTablesStartEmpty(restoredPool);
     const restoredHistory = await restoredPool.query(
       `SELECT registry_version AS "registryVersion", flag_key AS "flagKey", version, state,
               country_codes AS "countryCodes", approval_reference AS "approvalReference"
@@ -689,5 +929,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 process.stdout.write(
-  "Verified local PostgreSQL attestation, migration, seed, feature-flag immutability, constraints, transaction, race, reset, and logical restore.\n",
+  "Verified local PostgreSQL attestation, all MVP migrations, seed, least privileges, RLS, empty product tables, constraints, transaction, race, reset, and logical restore.\n",
 );

@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   experimental: {
     caseSensitiveRoutes: true,
   },
+  poweredByHeader: false,
   reactStrictMode: true,
   skipProxyUrlNormalize: true,
   skipTrailingSlashRedirect: true,

@@ -27,6 +27,7 @@
     "format": "prettier --write package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.{mjs,ts}\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json,css}\" \"packages/**/*.{ts,tsx,mjs,json,css}\" \"content/**/*.json\" \".github/workflows/*.{yml,yaml}\" \".github/codex/workflow-examples/*.{yml,yaml}\"",
     "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json tsconfig.base.json eslint.config.mjs prettier.config.mjs vitest.config.ts \"scripts/**/*.{mjs,ts}\" \"tests/**/*.ts\" \"apps/**/*.{ts,tsx,mjs,json,css}\" \"packages/**/*.{ts,tsx,mjs,json,css}\" \"content/**/*.json\" \".github/workflows/*.{yml,yaml}\" \".github/codex/workflow-examples/*.{yml,yaml}\"",
     "lint": "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
+    "mvp:local:configure": "node scripts/configure-local-mvp.mjs",
     "scan:secrets": "node --import tsx scripts/scan-secrets.ts",
     "test": "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
     "test:accessibility": "node scripts/verify-web-accessibility.mjs",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
+    "@next/env": "16.2.10",
     "@types/node": "24.13.3",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.10",

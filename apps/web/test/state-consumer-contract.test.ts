@@ -6,6 +6,7 @@ const errorBoundary = readFileSync("apps/web/app/[locale]/error.tsx", "utf8");
 const connectionState = readFileSync("apps/web/app/_components/connection-state.tsx", "utf8");
 const connectionNotice = readFileSync("apps/web/app/_components/connection-notice.tsx", "utf8");
 const siteShell = readFileSync("apps/web/app/_components/site-shell.tsx", "utf8");
+const sanctuaryFlow = readFileSync("apps/web/app/_components/sanctuary-flow.tsx", "utf8");
 const proxy = readFileSync("apps/web/proxy.ts", "utf8");
 
 describe("public-shell state consumer boundary", () => {
@@ -14,7 +15,8 @@ describe("public-shell state consumer boundary", () => {
     expect(errorBoundary).toContain('kind="error"');
     expect(errorBoundary).toContain('kind="offline"');
     expect(connectionNotice).toContain('kind="offline"');
-    expect(siteShell).toContain('kind="empty"');
+    expect(sanctuaryFlow).toContain("<Skeleton");
+    expect(sanctuaryFlow).toContain("<InlineAlert");
   });
 
   it("never reads or logs raw route errors", () => {

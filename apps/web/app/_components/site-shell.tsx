@@ -1,11 +1,17 @@
 import { ActionLink, createUiControlId } from "@rituvia/ui";
+import Image from "next/image";
 
 import type { ShellMessages } from "../_i18n/messages";
-import { localePublicPagePath, localeSectionPath, type Locale } from "../_i18n/routing";
+import {
+  localePublicPagePath,
+  localeSanctuaryPath,
+  localeTarotOneCardPath,
+  localeTarotThreeCardPath,
+  type Locale,
+} from "../_i18n/routing";
 import { PublicSiteFrame } from "./public-site-frame";
-import { ResilientState } from "./resilient-state";
 
-const availabilityTitleId = createUiControlId("availability-title");
+const oracleHeadingId = createUiControlId("oracle-heading");
 
 type SiteShellProps = Readonly<{
   brandName: string;
@@ -34,16 +40,24 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
             <p className="hero-introduction">{content.hero.introduction}</p>
             <p className="hero-boundary">{content.hero.boundary}</p>
             <div className="hero-actions">
-              <ActionLink href={localeSectionPath(locale, "practice")}>
+              <ActionLink href={localeTarotOneCardPath(locale)}>
                 {content.hero.primaryAction}
               </ActionLink>
-              <ActionLink href={localePublicPagePath(locale, "methodology")} variant="secondary">
+              <ActionLink href={localeSanctuaryPath(locale)} variant="secondary">
                 {content.hero.secondaryAction}
               </ActionLink>
             </div>
           </div>
-          <div aria-hidden="true" className="hero-art">
-            <span className="hero-art-mark" />
+          <div className="hero-art">
+            <Image
+              alt={content.sanctuaryPreview.imageAlt}
+              className="hero-orb-image"
+              height={1402}
+              loading="eager"
+              sizes="(max-width: 640px) 88vw, (max-width: 928px) 60vw, 38vw"
+              src="/images/rituvia-sanctuary-orb.png"
+              width={1122}
+            />
           </div>
         </section>
 
@@ -51,34 +65,74 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
           <ul className="shell trust-list">
             {content.trust.items.map((item) => (
               <li className="trust-item" key={item}>
-                <span aria-hidden="true" className="trust-mark">
-                  •
-                </span>
                 {item}
               </li>
             ))}
           </ul>
         </aside>
 
-        <div className="shell content-section availability-section">
-          <ResilientState
-            kind="empty"
-            message={content.availability.message}
-            primaryAction={{
-              href: localePublicPagePath(locale, "methodology"),
-              kind: "link",
-              label: content.availability.primaryAction,
-            }}
-            secondaryAction={{
-              href: localePublicPagePath(locale, "safety"),
-              kind: "link",
-              label: content.availability.secondaryAction,
-            }}
-            title={content.availability.title}
-            titleAs="h2"
-            titleId={availabilityTitleId}
-          />
-        </div>
+        <section aria-labelledby={oracleHeadingId} className="shell content-section" id="oracle">
+          <div className="section-heading oracle-heading">
+            <p className="eyebrow">{content.oracle.eyebrow}</p>
+            <h2 id={oracleHeadingId}>{content.oracle.title}</h2>
+            <p className="section-introduction">{content.oracle.introduction}</p>
+          </div>
+          <div className="oracle-card-grid">
+            <article className="oracle-card oracle-card-featured">
+              <p className="eyebrow">{content.oracle.oneCard.eyebrow}</p>
+              <h3>{content.oracle.oneCard.title}</h3>
+              <p>{content.oracle.oneCard.description}</p>
+              <p className="oracle-note">{content.oracle.oneCard.note}</p>
+              <ActionLink href={localeTarotOneCardPath(locale)}>
+                {content.oracle.oneCard.action}
+              </ActionLink>
+            </article>
+            <article className="oracle-card">
+              <p className="eyebrow">{content.oracle.threeCard.eyebrow}</p>
+              <h3>{content.oracle.threeCard.title}</h3>
+              <p>{content.oracle.threeCard.description}</p>
+              <p className="oracle-note">{content.oracle.threeCard.note}</p>
+              <ActionLink href={localeTarotThreeCardPath(locale)} variant="secondary">
+                {content.oracle.threeCard.action}
+              </ActionLink>
+            </article>
+            <article className="oracle-card">
+              <p className="eyebrow">{content.oracle.sanctuary.eyebrow}</p>
+              <h3>{content.oracle.sanctuary.title}</h3>
+              <p>{content.oracle.sanctuary.description}</p>
+              <p className="oracle-note">{content.oracle.sanctuary.note}</p>
+              <ActionLink href={localeSanctuaryPath(locale)} variant="secondary">
+                {content.oracle.sanctuary.action}
+              </ActionLink>
+            </article>
+          </div>
+        </section>
+
+        <section className="sanctuary-preview" aria-labelledby="sanctuary-preview-heading">
+          <div className="shell sanctuary-preview-inner">
+            <div className="sanctuary-preview-art">
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="sanctuary-preview-image"
+                height={1402}
+                loading="lazy"
+                sizes="(max-width: 640px) 94vw, 48vw"
+                src="/images/rituvia-sanctuary-orb.png"
+                width={1122}
+              />
+            </div>
+            <div className="sanctuary-preview-copy">
+              <p className="eyebrow">{content.sanctuaryPreview.eyebrow}</p>
+              <h2 id="sanctuary-preview-heading">{content.sanctuaryPreview.title}</h2>
+              <p>{content.sanctuaryPreview.description}</p>
+              <p className="privacy-note">{content.sanctuaryPreview.note}</p>
+              <ActionLink href={localeSanctuaryPath(locale)}>
+                {content.sanctuaryPreview.action}
+              </ActionLink>
+            </div>
+          </div>
+        </section>
 
         <section aria-labelledby="practice-heading" className="shell content-section" id="practice">
           <div className="section-heading">

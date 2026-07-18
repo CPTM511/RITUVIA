@@ -3,7 +3,12 @@ import { createHash, createHmac } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
+import nextEnvironment from "@next/env";
+
 import { auditWebShellBuildArtifacts, verifyWebShellBuild } from "./web-shell-build-policy.mjs";
+
+const { loadEnvConfig } = nextEnvironment;
+loadEnvConfig(process.cwd(), false);
 
 const requiredArtifacts = [
   "apps/web/.next/BUILD_ID",

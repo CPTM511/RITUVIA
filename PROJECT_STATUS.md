@@ -2,13 +2,13 @@
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the checksum-bound fixed synthetic AI
-release-evaluation RIT-036 slice. M1 RIT-016 and manual
-assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains
-owner-gated. Production catalog/prompt/classifier/safety-policy approval and activation, AI
-provider/model activation, and actual indexing remain separately gated.
+**Stage:** The owner-directed RIT-158 local commercial MVP is complete and running from its
+production build at `http://127.0.0.1:4175/en`. Its product shape follows the Lumora interactive
+prototype and business plan while the repository's safety, privacy, payment, and human-approval
+floors remain authoritative. Production activation, provider onboarding, and public launch remain
+separately gated.
 
-**Release:** Pre-M0
+**Release:** Local commercial MVP (production artifact, not a public production deployment)
 
 **Working brand:** RITUVIA, pending formal trademark/domain/language clearance.
 
@@ -25,6 +25,13 @@ provider/model activation, and actual indexing remain separately gated.
 - Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
 - Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
 - Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
+- A completed responsive English local MVP vertical slice: anonymous deterministic reading;
+  account sign-in/sign-out; an exact persisted 18+ attestation before paid order creation;
+  intention and small-action capture; free candle/incense and entitlement-gated owned ritual
+  objects; encrypted private journal entries with revisit; a server-authoritative catalog; a
+  Stripe hosted-checkout provider adapter plus an HMAC-signed local checkout simulator; and
+  verified webhook, ledger, and entitlement fulfillment. This is local capability, not production
+  payment approval or activation.
 - Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
 - Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
@@ -123,18 +130,26 @@ provider/model activation, and actual indexing remain separately gated.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
 - Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
 - Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, 1,190 Vitest tests, real local and CI-shaped PostgreSQL
-  integration, dependency audit, and production-build gates with behavioral, HTTP,
-  shell/private-browser, and artifact verification.
+- Root formatting, ESLint, TypeScript, Vitest, real local and CI-shaped PostgreSQL integration,
+  dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and
+  artifact verification.
 
 ## What does not exist yet
 
-- A production-available reading flow, accounts, payments, legal terms/policies, rituals, or other complete end-to-end product flows; the reviewed English public pages, private intake, and tarot flows remain server-side safe-off until their existing gates are explicitly satisfied.
-- An approved production anonymous-session retention duration, legal consent notice, consent/privacy-control UI, per-client abuse strategy, account merge, anonymous export/deletion workflow, or private-resource authorization surface; the current session policy is required configuration and safe-off when absent.
+- A production-available reading, account, payment, legal, or ritual flow. RIT-158 is deliberately
+  local-only: its signed checkout simulator cannot charge money, and the Stripe adapter has no live
+  key, provider account/session, underwriting approval, or production activation.
+- An approved production anonymous-session retention duration, legal consent notice,
+  consent/privacy-control UI, per-client abuse strategy, anonymous export/deletion workflow, or
+  complete production private-resource authorization surface; the current session policy is
+  required configuration and safe-off when absent.
 - A country-specific crisis-resource program, an approved real classifier, intake persistence,
   question-bearing analytics, or an intake-to-reading continuation; the owner-approved English
   lexical baseline and the RIT-032 safety contract remain safe-off.
-- A real provider-unavailable classifier, provider adapter, offline cache/synchronization layer, or generic partial/degraded network state machine; current provider states are synthetic presentation evidence and the connection notice is only a `navigator.onLine` advisory.
+- A production-approved payment-provider route, real provider-unavailable classifier, offline
+  cache/synchronization layer, or generic partial/degraded network state machine. The local Stripe
+  adapter and signed simulator are implementation evidence only; the connection notice remains a
+  `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Production metrics, alerts, retention/sampling policy, vendor exporters, and a real persisted outbox/queue consumer; the current Worker carrier path is a reviewed protocol and sealed adapter boundary, not a deployed queue.
@@ -144,10 +159,10 @@ provider/model activation, and actual indexing remain separately gated.
 - Astrology calculation commercial-license decision.
 - A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
 - An approved production tarot catalog, production-composed/activated interpretation runtime, AI
-  provider/model/reviewer activation,
-  intention/ritual continuation, report triage/admin workflow, or separate creation-versus-history
-  operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
-  cannot activate the RIT-024/RIT-027 runtime.
+  provider/model/reviewer activation, production intention/ritual/journal activation, report
+  triage/admin workflow, or separate creation-versus-history operational kill switches; the
+  synthetic RIT-022 fixture remains publication-ineligible and cannot activate the production
+  RIT-024/RIT-027 runtime.
 - Production credentials or vendor accounts.
 - A production AI provider/model candidate evaluation, representative human output review,
   latency/cost comparison, canary evidence, or approved model rollback rehearsal; RIT-036 is local
@@ -178,29 +193,19 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-036 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
-with zero warnings, strict type checking across all nine workspace tasks, 1,199 unit/contract tests
-in 75 files, 145 fixed AI release assertions, the 191-file/nine-module architecture gate, all eight
-immutable-migration checks, and the tracked/unignored secret scan
-and all nine build tasks pass. The record-policy suite covers the canonical task/decision graph,
-privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum
-evidence.
+RIT-158 passes the production-artifact Playwright flow from anonymous reading through intention,
+free ritual, encrypted journal, account merge, fresh account, 18+ attestation, four exact prices,
+signed local hosted checkout, entitlement, owned paid ritual, revisit, mobile layouts, and sign-out.
+All 11 steps pass with zero serious/critical Axe findings, page errors, unexpected console errors,
+unexpected HTTP/request failures, or desktop/mobile horizontal overflow.
 
-RIT-034's PostgreSQL matrix passed against an isolated local PostgreSQL 17 instance. All seven
-current migrations and an idempotent redeploy passed. The suite proves atomic fenced parent
-compare-and-set plus verification-child insertion and full rollback, exact replay, keyed
-finalization tamper rejection, eight-way claim concurrency, conflict and owner isolation, hidden
-pending provider output, historical timeout-zero pending non-displayability without a child or
-recovery API, exact least privilege, privacy canaries, and non-empty logical dump/restore. The
-unrelated PostgreSQL instances on ports 55432 and 55439 were not connected to, stopped, or modified.
-
-RIT-035 changes no database code, schema, migration, role, or persistence contract. Its fresh local
-database-foundation rerun remained blocked by the unrelated process on the repository-fixed port
-55432 and did not connect to or modify that process. A separate disposable PostgreSQL 17 probe on
-free port 5432 reached the existing CI schema-drift step after migration/seed work, then correctly
-failed because several Prisma relations do not map the custom foreign-key names authored by prior
-migrations. That pre-existing CI-contract gap is outside this frontend/API slice and remains part of
-the blocked RIT-004 closeout; current hosted/CI-shaped database-green status is not claimed here.
+The pinned Node.js 24 runtime passes formatting, lint with zero warnings, strict type checking
+across all 11 workspace tasks, 1,426 unit/contract tests in 104 files, 145 fixed AI release
+assertions, the 287-file/11-module architecture gate, all 11 immutable-migration policy files, the
+tracked/unignored secret scan, and all 11 production build tasks. The isolated PostgreSQL 17 matrix
+on port 55435 applies all 10 migrations, redeploys and seeds idempotently, and verifies MVP schema,
+least privileges, RLS, constraints, concurrency, guarded reset, privacy canaries, and non-empty
+logical dump/restore without touching unrelated PostgreSQL instances.
 
 The build verifier checks 80 artifacts and narrowed exports, including exact UI stylesheet parity,
 all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
@@ -211,7 +216,7 @@ prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation
 authorization binding, non-exported authorization issuers, provider-neutral generation and
 authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
 atomic interpretation claim/finalization/verification persistence, the private interpretation route,
-and the icon. Maximum Web output is 7,407 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
+and the icon. Maximum Web output is 7,511 B gzip HTML, 7,356 B gzip CSS, 230,076 B gzip JavaScript,
 and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.

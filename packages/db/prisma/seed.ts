@@ -11,6 +11,31 @@ const FOUNDATION_SEED = Object.freeze({
   createdAt: new Date("2026-07-16T00:00:00.000Z"),
 });
 
+const LOCAL_MVP_PUBLIC_SHELL = Object.freeze({
+  id: "d35f0bbb-b037-4bc8-8cb4-cb42a413535d",
+  registryVersion: 1,
+  flagKey: "experience.public_shell",
+  version: 1,
+  state: "on",
+  countryCodes: [] as string[],
+  localeTags: [] as string[],
+  effectiveAt: new Date("2026-07-18T00:00:00.000Z"),
+  expiresAt: null,
+  changeReference: "RIT-158",
+  approvalReference: null,
+  actorId: "owner.local-mvp",
+  createdAt: new Date("2026-07-18T00:00:00.000Z"),
+});
+
+const LOCAL_MVP_FEATURE_FLAG_SEED = Object.freeze({
+  id: "72d0431b-fdc7-4181-97d0-f9e1ae213cc1",
+  datasetKey: "local-mvp-feature-flags",
+  version: 1,
+  checksumSha256: "5d898d56bcb06a0ac5a0871dcd67587ad7be8b319ea8214a6dba848da38f5c9a",
+  isSynthetic: true,
+  createdAt: new Date("2026-07-18T00:00:00.000Z"),
+});
+
 const databaseUrl = process.env.DATABASE_URL?.trim();
 const target = assertSyntheticSeedTarget({
   appEnvironment: process.env.APP_ENV,
@@ -21,6 +46,7 @@ const target = assertSyntheticSeedTarget({
   githubActions: process.env.GITHUB_ACTIONS,
   githubRunAttempt: process.env.GITHUB_RUN_ATTEMPT,
   githubRunId: process.env.GITHUB_RUN_ID,
+  localPostgresPort: process.env.RITUVIA_LOCAL_POSTGRES_PORT,
   seedTarget: process.env.RITUVIA_SEED_TARGET,
 });
 if (databaseUrl === undefined) {
@@ -50,7 +76,7 @@ try {
       attestation.userName !== "rituvia_migrator" ||
       attestation.clusterName !== target.expectedClusterName ||
       attestation.serverAddress !== "127.0.0.1" ||
-      attestation.serverPort !== 55432
+      attestation.serverPort !== target.expectedPort
     ) {
       throw new Error("Synthetic seed requires an attested local database target.");
     }
@@ -87,7 +113,11 @@ try {
   }
 
   await prisma.seedManifest.createMany({
-    data: [FOUNDATION_SEED],
+    data: [FOUNDATION_SEED, LOCAL_MVP_FEATURE_FLAG_SEED],
+    skipDuplicates: true,
+  });
+  await prisma.featureFlagVersion.createMany({
+    data: [LOCAL_MVP_PUBLIC_SHELL],
     skipDuplicates: true,
   });
 
@@ -105,6 +135,29 @@ try {
     persisted.checksumSha256 !== FOUNDATION_SEED.checksumSha256 ||
     persisted.isSynthetic !== FOUNDATION_SEED.isSynthetic ||
     persisted.createdAt.getTime() !== FOUNDATION_SEED.createdAt.getTime()
+  ) {
+    throw new Error("Synthetic seed provenance does not match the committed dataset.");
+  }
+
+  const publicShell = await prisma.featureFlagVersion.findUniqueOrThrow({
+    where: {
+      registryVersion_flagKey_version: {
+        flagKey: LOCAL_MVP_PUBLIC_SHELL.flagKey,
+        registryVersion: LOCAL_MVP_PUBLIC_SHELL.registryVersion,
+        version: LOCAL_MVP_PUBLIC_SHELL.version,
+      },
+    },
+  });
+  if (
+    publicShell.id !== LOCAL_MVP_PUBLIC_SHELL.id ||
+    publicShell.state !== "on" ||
+    publicShell.countryCodes.length !== 0 ||
+    publicShell.localeTags.length !== 0 ||
+    publicShell.changeReference !== LOCAL_MVP_PUBLIC_SHELL.changeReference ||
+    publicShell.approvalReference !== null ||
+    publicShell.actorId !== LOCAL_MVP_PUBLIC_SHELL.actorId ||
+    publicShell.effectiveAt.getTime() !== LOCAL_MVP_PUBLIC_SHELL.effectiveAt.getTime() ||
+    publicShell.createdAt.getTime() !== LOCAL_MVP_PUBLIC_SHELL.createdAt.getTime()
   ) {
     throw new Error("Synthetic seed provenance does not match the committed dataset.");
   }

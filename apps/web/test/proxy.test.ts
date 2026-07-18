@@ -65,13 +65,33 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("content-security-policy")).toContain("font-src 'none'");
     expect(response.headers.get("content-security-policy")).toContain("object-src 'none'");
     expect(response.headers.get("content-security-policy")).toContain("script-src-attr 'none'");
-    expect(response.headers.get("content-security-policy")).toContain("style-src-attr 'none'");
+    expect(response.headers.get("content-security-policy")).toContain(
+      "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
+    );
     expect(response.headers.get("permissions-policy")).toContain("payment=()");
     expect(response.headers.get("referrer-policy")).toBe("no-referrer");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
     expect(harness.end).toHaveBeenCalledWith({ outcome: "success" });
+  });
+
+  it.each([
+    "/en/account",
+    "/en/sanctuary",
+    "/en/sanctuary?checkout=canceled&order_id=33333333-3333-4333-8333-333333333333",
+    "/en/sign-in",
+    "/en/sign-in?returnTo=%2Fen%2Fsanctuary",
+    "/en/checkout/local?checkout_id=local_checkout.123",
+    "/en/checkout/return?order_id=33333333-3333-4333-8333-333333333333",
+  ])("allows an enabled exact private MVP document without indexing: %s", async (pathname) => {
+    const response = await proxy(request(pathname));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
 
   it("permits indexing only for production canonical HTML, never framework representations", async () => {
@@ -429,7 +449,6 @@ describe("public shell request and crawl gate", () => {
     "/fr",
     "/en-US",
     "/en/other",
-    "/en/account",
     "/en/journal",
     "/en/checkout",
     "/en/reading/private-id",

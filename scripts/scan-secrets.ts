@@ -2,7 +2,13 @@ import { execFileSync } from "node:child_process";
 import { lstat, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 
-import { createSecretFinding, scanSecretBuffer, type SecretFinding } from "./secret-policy.js";
+import {
+  createSecretFinding,
+  isReviewedLargeStaticAsset,
+  isReviewedLargeStaticAssetPath,
+  scanSecretBuffer,
+  type SecretFinding,
+} from "./secret-policy.js";
 
 const MAX_FILE_BYTES = 1_048_576;
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
@@ -35,6 +41,10 @@ for (const filePath of files) {
   }
   if (metadata.isDirectory()) continue;
   if (metadata.size > MAX_FILE_BYTES) {
+    if (metadata.isFile() && isReviewedLargeStaticAssetPath(filePath)) {
+      const buffer = await readFile(absolutePath);
+      if (isReviewedLargeStaticAsset(filePath, buffer)) continue;
+    }
     findings.push(createSecretFinding("file-too-large-to-scan", filePath));
     continue;
   }

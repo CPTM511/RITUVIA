@@ -1,14 +1,17 @@
-import { ActionLink } from "@rituvia/ui";
+import type { LocalActionHref } from "@rituvia/ui";
 import type { ReactNode } from "react";
 
 import type { SharedMessages } from "../_i18n/messages";
 import {
   localeHomePath,
+  localeAccountPath,
   localePublicPagePath,
-  localeSectionPath,
+  localeSanctuaryPath,
+  localeSignInPath,
   type Locale,
   type PublicPageId,
 } from "../_i18n/routing";
+import { AccountNavigation } from "./account-experience";
 import { ConnectionNotice } from "./connection-notice";
 
 type PublicSiteFrameProps = Readonly<{
@@ -21,8 +24,9 @@ type PublicSiteFrameProps = Readonly<{
 }>;
 
 type NavigationLink = Readonly<{
+  current: boolean;
+  href: LocalActionHref;
   label: string;
-  page: PublicPageId;
 }>;
 
 export function PublicSiteFrame({
@@ -34,10 +38,34 @@ export function PublicSiteFrame({
   messages,
 }: PublicSiteFrameProps) {
   const navigationLinks: readonly NavigationLink[] = [
-    { label: messages.navigation.home, page: "home" },
-    { label: messages.navigation.methodology, page: "methodology" },
-    { label: messages.navigation.safety, page: "safety" },
-    { label: messages.navigation.privacy, page: "privacy" },
+    {
+      current: currentPage === "home",
+      href: localeHomePath(locale),
+      label: messages.navigation.home,
+    },
+    {
+      current: false,
+      href: localeSanctuaryPath(locale),
+      label: messages.navigation.sanctuary,
+    },
+    {
+      current: currentPage === "methodology",
+      href: localePublicPagePath(locale, "methodology"),
+      label: messages.navigation.methodology,
+    },
+    {
+      current: currentPage === "safety",
+      href: localePublicPagePath(locale, "safety"),
+      label: messages.navigation.safety,
+    },
+  ];
+  const footerLinks: readonly NavigationLink[] = [
+    ...navigationLinks,
+    {
+      current: currentPage === "privacy",
+      href: localePublicPagePath(locale, "privacy"),
+      label: messages.navigation.privacy,
+    },
   ];
 
   return (
@@ -59,11 +87,11 @@ export function PublicSiteFrame({
           <nav aria-label={messages.navigation.primaryLabel} className="primary-navigation">
             <ul className="navigation-list">
               {navigationLinks.map((link) => (
-                <li key={link.page}>
+                <li key={link.href}>
                   <a
-                    aria-current={link.page === currentPage ? "page" : undefined}
+                    aria-current={link.current ? "page" : undefined}
                     className="navigation-link"
-                    href={localePublicPagePath(locale, link.page)}
+                    href={link.href}
                   >
                     {link.label}
                   </a>
@@ -90,9 +118,13 @@ export function PublicSiteFrame({
                 {messages.navigation.localeHint}
               </span>
             </div>
-            <ActionLink href={localeSectionPath(locale, "practice")}>
-              {messages.navigation.primaryAction}
-            </ActionLink>
+            <AccountNavigation
+              accountHref={localeAccountPath(locale)}
+              accountLabel={messages.navigation.account}
+              loadingLabel={messages.navigation.account}
+              signInHref={localeSignInPath(locale)}
+              signInLabel={messages.navigation.signIn}
+            />
           </div>
         </div>
       </header>
@@ -114,9 +146,13 @@ export function PublicSiteFrame({
           </div>
           <nav aria-label={messages.footer.navigationLabel}>
             <ul className="footer-navigation">
-              {navigationLinks.map((link) => (
-                <li key={link.page}>
-                  <a className="footer-link" href={localePublicPagePath(locale, link.page)}>
+              {footerLinks.map((link) => (
+                <li key={link.href}>
+                  <a
+                    aria-current={link.current ? "page" : undefined}
+                    className="footer-link"
+                    href={link.href}
+                  >
                     {link.label}
                   </a>
                 </li>

@@ -25,10 +25,10 @@ describe("server-rendered public information pages", () => {
 
       expect(html).toContain('<main class="information-main" id="main-content" tabindex="-1">');
       expect(html.match(/<h1\b/gu)).toHaveLength(1);
-      expect(html).toContain(`aria-current="page" class="navigation-link" href="/en/${page}"`);
-      expect(html).toContain(
-        "No public readings, AI interpretations, accounts, purchases, or rituals",
+      expect(html).toMatch(
+        new RegExp(`aria-current="page" class="(?:navigation|footer)-link" href="/en/${page}"`),
       );
+      expect(html).toContain(getMessages("en").pages[page].status);
       expect(html).not.toMatch(/<(?:form|input|textarea)\b/u);
       expect(html).not.toMatch(/href="https?:/u);
     },
@@ -38,7 +38,9 @@ describe("server-rendered public information pages", () => {
     const html = render("privacy");
 
     expect(html).toContain("not a legal Privacy Policy");
-    expect(html).toContain("excluded from URLs, metadata, product analytics");
+    expect(html).toContain(
+      "must not appear in URLs, page metadata, routine logs, analytics, notifications, or public previews",
+    );
     expect(html).not.toContain("We collect nothing");
   });
 });

@@ -3,10 +3,10 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 
 export const webShellBuildBudgets = Object.freeze({
-  cssGzipBytes: 6 * 1024,
+  cssGzipBytes: 9 * 1024,
   htmlGzipBytes: 8 * 1024,
   iconBytes: 2 * 1024,
-  javascriptGzipBytes: 224 * 1024,
+  javascriptGzipBytes: 232 * 1024,
 });
 
 const parseAttributeEntries = (tag) =>
@@ -57,6 +57,64 @@ const reviewedDocumentRelations = new Set([
   "preload",
   "stylesheet",
 ]);
+const sanctuaryImageWidths = Object.freeze([256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840]);
+const sanctuaryImagePath = "/images/rituvia-sanctuary-orb.png";
+const sanctuaryImageSizes = Object.freeze({
+  "hero-orb-image": "(max-width: 640px) 88vw, (max-width: 928px) 60vw, 38vw",
+  "sanctuary-preview-image": "(max-width: 640px) 94vw, 48vw",
+  "sanctuary-scene-image": "(max-width: 640px) 100vw, (max-width: 928px) 90vw, 58vw",
+});
+
+const optimizedSanctuaryImageUrl = (width) =>
+  `/_next/image?url=${encodeURIComponent(sanctuaryImagePath)}&amp;w=${width}&amp;q=75`;
+
+const optimizedSanctuaryImageSrcSet = (widths) =>
+  widths.map((width) => `${optimizedSanctuaryImageUrl(width)} ${width}w`).join(", ");
+
+const isReviewedSanctuaryImage = (attributes) => {
+  const className = attributes.get("class") ?? "";
+  const sizes = sanctuaryImageSizes[className];
+  if (sizes === undefined) return false;
+  const widths =
+    className === "hero-orb-image" ? sanctuaryImageWidths : sanctuaryImageWidths.slice(1);
+  const expectedKeys = new Set([
+    "alt",
+    "class",
+    "data-nimg",
+    "decoding",
+    "height",
+    "loading",
+    "sizes",
+    "src",
+    "srcset",
+    "style",
+    "width",
+    ...(className === "sanctuary-preview-image" ? ["aria-hidden"] : []),
+  ]);
+  return (
+    attributes.size === expectedKeys.size &&
+    [...attributes.keys()].every((key) => expectedKeys.has(key)) &&
+    attributes.get("data-nimg") === "1" &&
+    attributes.get("decoding") === "async" &&
+    attributes.get("height") === "1402" &&
+    attributes.get("loading") === (className === "sanctuary-preview-image" ? "lazy" : "eager") &&
+    attributes.get("sizes") === sizes &&
+    attributes.get("src") === optimizedSanctuaryImageUrl(3840) &&
+    attributes.get("srcset") === optimizedSanctuaryImageSrcSet(widths) &&
+    attributes.get("style") === "color:transparent" &&
+    attributes.get("width") === "1122" &&
+    (className !== "sanctuary-preview-image" ||
+      (attributes.get("alt") === "" && attributes.get("aria-hidden") === "true")) &&
+    (className === "sanctuary-preview-image" || (attributes.get("alt") ?? "").trim() !== "")
+  );
+};
+
+const isReviewedSanctuaryImagePreload = (attributes) =>
+  attributes.size === 4 &&
+  attributes.get("rel") === "preload" &&
+  attributes.get("as") === "image" &&
+  attributes.get("imagesizes") === sanctuaryImageSizes["hero-orb-image"] &&
+  attributes.get("imagesrcset") === optimizedSanctuaryImageSrcSet(sanctuaryImageWidths);
 
 const canonicalStartTagSyntax = (tag) => {
   let position = 1;
@@ -397,16 +455,23 @@ const auditDocumentResources = (html, expectedPathname = "/en") => {
   ]);
 
   for (const { attributes, duplicateAttributes, name } of tags) {
+    const reviewedSanctuaryImage = name === "img" && isReviewedSanctuaryImage(attributes);
+    const reviewedSanctuaryImagePreload =
+      name === "link" && isReviewedSanctuaryImagePreload(attributes);
     if (name === "base") findings.push("document-base-url");
     if (duplicateAttributes) findings.push("duplicate-html-attribute");
     if ([...attributes.keys()].some((attributeName) => attributeName.startsWith("on"))) {
       findings.push("unreviewed-executable-html-attribute");
     }
     if (attributes.has("srcdoc")) findings.push("unreviewed-executable-html-attribute");
-    if (unexpectedResourceElements.has(name)) findings.push("unexpected-media-element");
+    if (unexpectedResourceElements.has(name) && !reviewedSanctuaryImage) {
+      findings.push("unexpected-media-element");
+    }
     if (
-      ["attributionsrc", "background", "imagesrcset", "manifest", "ping"].some((attributeName) =>
-        attributes.has(attributeName),
+      ["attributionsrc", "background", "imagesrcset", "manifest", "ping"].some(
+        (attributeName) =>
+          attributes.has(attributeName) &&
+          !(attributeName === "imagesrcset" && reviewedSanctuaryImagePreload),
       )
     ) {
       findings.push("unreviewed-fetch-attribute");
@@ -418,7 +483,9 @@ const auditDocumentResources = (html, expectedPathname = "/en") => {
       findings.push("meta-refresh-url");
     }
     const inlineStyle = attributes.get("style") ?? "";
-    if (attributes.has("style")) findings.push("inline-style-attribute");
+    if (attributes.has("style") && !reviewedSanctuaryImage) {
+      findings.push("inline-style-attribute");
+    }
     if (cssResourceSyntax.test(inlineStyle)) {
       findings.push("inline-style-resource");
     }
@@ -438,7 +505,8 @@ const auditDocumentResources = (html, expectedPathname = "/en") => {
         const destination = attributes.get("as");
         const reviewed =
           (destination === "script" && scriptSources.has(href)) ||
-          (destination === "style" && stylesheetSources.has(href));
+          (destination === "style" && stylesheetSources.has(href)) ||
+          reviewedSanctuaryImagePreload;
         if (!reviewed) findings.push("unreviewed-resource-preload");
       }
       if (
@@ -464,6 +532,7 @@ const auditDocumentResources = (html, expectedPathname = "/en") => {
       if (
         attributeApplies &&
         !metadataLink &&
+        !(reviewedSanctuaryImage && ["src", "srcset"].includes(urlAttribute)) &&
         !isLocalDocumentUrl(value, name === "a" && urlAttribute === "href")
       ) {
         findings.push("nonlocal-or-ambiguous-resource-url");

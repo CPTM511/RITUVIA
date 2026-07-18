@@ -15,8 +15,20 @@ export default defineConfig({
       "@rituvia/config/feature-flags": fileURLToPath(
         new URL("./packages/config/src/feature-flags.ts", import.meta.url),
       ),
+      "@rituvia/country-policy": fileURLToPath(
+        new URL("./packages/country-policy/src/index.ts", import.meta.url),
+      ),
       "@rituvia/db": fileURLToPath(new URL("./packages/db/src/index.ts", import.meta.url)),
       "@rituvia/domain": fileURLToPath(new URL("./packages/domain/src/index.ts", import.meta.url)),
+      "@rituvia/payments/adapters/local": fileURLToPath(
+        new URL("./packages/payments/src/adapters/local-hosted-checkout.ts", import.meta.url),
+      ),
+      "@rituvia/payments/adapters/stripe": fileURLToPath(
+        new URL("./packages/payments/src/adapters/stripe-hosted-checkout.ts", import.meta.url),
+      ),
+      "@rituvia/payments": fileURLToPath(
+        new URL("./packages/payments/src/index.ts", import.meta.url),
+      ),
       "@rituvia/ui": fileURLToPath(new URL("./packages/ui/src/index.ts", import.meta.url)),
       "server-only": fileURLToPath(new URL("./tests/server-only-stub.ts", import.meta.url)),
     },
