@@ -63,6 +63,18 @@ describe("reflection loop domain", () => {
     ).toBe(intentionCode);
   });
 
+  it("accepts an independently created intention without a reading", () => {
+    const intention = parseReflectionIntentionCreateRequestV1({
+      ...intentionRequest,
+      readingId: null,
+    });
+
+    expect(intention.readingId).toBeNull();
+    expect(canonicalizeReflectionIntentionCreateRequestV1(intention)).toBe(
+      '{"intentionCode":"calm_clarity","locale":"en","readingId":null,"schemaVersion":"reflection-intention.v1","smallAction":"Take one quiet breath before replying."}',
+    );
+  });
+
   it.each(reflectionFreeRitualObjectCodes)("keeps the free %s ritual available", (objectCode) => {
     expect(parseReflectionRitualCreateRequestV1({ ...ritualRequest, objectCode }).objectCode).toBe(
       objectCode,
@@ -167,6 +179,9 @@ describe("reflection loop domain", () => {
     expect(Object.keys(ritual)).not.toContain("idempotencyKeyHash");
     expect(Object.keys(journal)).not.toContain("canonicalRequestHash");
     expect(Object.isFrozen(journal)).toBe(true);
+    expect(
+      parseReflectionIntentionResourceV1({ ...intention, readingId: null }).readingId,
+    ).toBeNull();
   });
 
   it("rejects malformed resource time ordering", () => {

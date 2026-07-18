@@ -85,7 +85,7 @@ export type PersistedReflectionIntention = Readonly<{
   intentionCode: ReflectionIntentionCode;
   locale: "en";
   policyVersion: typeof reflectionPolicyVersion;
-  readingId: string;
+  readingId: string | null;
   schemaVersion: typeof reflectionIntentionSchemaVersion;
   subjectId: string;
 }>;
@@ -194,6 +194,7 @@ type ActiveReflectionPrincipal =
     }>;
 
 type ReadingOwnerRow = Readonly<{ expiresAt: Date; id: string; subjectId: string }>;
+type IntentionOwnerRow = Readonly<{ expiresAt: Date; subjectId: string }>;
 
 type IntentionRow = Readonly<{
   canonicalRequestHash: Uint8Array;
@@ -261,10 +262,10 @@ const intentionSelect = Prisma.sql`
          intention.canonical_request_hash AS "canonicalRequestHash",
          intention.created_at AS "createdAt",
          intention.expires_at AS "expiresAt",
-         reading.locale
+         COALESCE(reading.locale, 'en') AS locale
     FROM intention
-    JOIN reading ON reading.id = intention.reading_id
-                AND reading.anonymous_subject_id = intention.anonymous_subject_id
+    LEFT JOIN reading ON reading.id = intention.reading_id
+                     AND reading.anonymous_subject_id = intention.anonymous_subject_id
 `;
 
 const ritualSelect = Prisma.sql`
@@ -437,8 +438,7 @@ const parseIntentionRow = (row: IntentionRow): PersistedReflectionIntention => {
   if (
     !uuidPattern.test(row.id) ||
     !uuidPattern.test(row.subjectId) ||
-    row.readingId === null ||
-    !uuidPattern.test(row.readingId) ||
+    (row.readingId !== null && !uuidPattern.test(row.readingId)) ||
     row.locale !== "en" ||
     row.schemaVersion !== reflectionIntentionSchemaVersion ||
     row.policyVersion !== reflectionPolicyVersion ||
@@ -768,36 +768,55 @@ export const createReflectionPersistence = (
         async (transaction) => {
           const active = await resolveActivePrincipal(transaction, input.principal);
           if (active === null) return fail("REFLECTION_SESSION_UNAVAILABLE");
-          const readingOwnership =
-            active.kind === "anonymous"
-              ? Prisma.sql`reading.anonymous_subject_id = ${active.subjectId}::uuid`
-              : Prisma.sql`EXISTS (
-                  SELECT 1
-                    FROM account_subject_link AS link
-                    JOIN anonymous_subject AS subject
-                      ON subject.id = link.anonymous_subject_id
-                   WHERE link.user_id = ${active.userId}::uuid
-                     AND link.anonymous_subject_id = reading.anonymous_subject_id
-                     AND subject.expires_at > CURRENT_TIMESTAMP
-                )`;
-          const readingRows = await transaction.$queryRaw<ReadingOwnerRow[]>`
-            SELECT id, anonymous_subject_id AS "subjectId", expires_at AS "expiresAt"
-              FROM reading
-             WHERE id = ${request.readingId}::uuid
-               AND ${readingOwnership}
-               AND status = 'facts_ready'
-               AND expires_at > CURRENT_TIMESTAMP
-             LIMIT 2
-          `;
-          if (readingRows.length !== 1 || readingRows[0] === undefined) {
-            return fail(
-              readingRows.length === 0
-                ? "REFLECTION_NOT_FOUND"
-                : "REFLECTION_PERSISTENCE_UNAVAILABLE",
-            );
+          let owner: IntentionOwnerRow;
+          if (request.readingId === null) {
+            if (active.kind === "anonymous") {
+              owner = Object.freeze({ expiresAt: active.expiresAt, subjectId: active.subjectId });
+            } else {
+              const owners = await transaction.$queryRaw<IntentionOwnerRow[]>`
+                SELECT subject.id AS "subjectId", subject.expires_at AS "expiresAt"
+                  FROM account_subject_link AS link
+                  JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
+                 WHERE link.user_id = ${active.userId}::uuid
+                   AND subject.expires_at > CURRENT_TIMESTAMP
+                 ORDER BY link.created_at DESC, link.id DESC
+                 LIMIT 1
+              `;
+              if (owners[0] === undefined) return fail("REFLECTION_SESSION_UNAVAILABLE");
+              owner = owners[0];
+            }
+          } else {
+            const readingOwnership =
+              active.kind === "anonymous"
+                ? Prisma.sql`reading.anonymous_subject_id = ${active.subjectId}::uuid`
+                : Prisma.sql`EXISTS (
+                    SELECT 1
+                      FROM account_subject_link AS link
+                      JOIN anonymous_subject AS subject
+                        ON subject.id = link.anonymous_subject_id
+                     WHERE link.user_id = ${active.userId}::uuid
+                       AND link.anonymous_subject_id = reading.anonymous_subject_id
+                       AND subject.expires_at > CURRENT_TIMESTAMP
+                  )`;
+            const readingRows = await transaction.$queryRaw<ReadingOwnerRow[]>`
+              SELECT id, anonymous_subject_id AS "subjectId", expires_at AS "expiresAt"
+                FROM reading
+               WHERE id = ${request.readingId}::uuid
+                 AND ${readingOwnership}
+                 AND status = 'facts_ready'
+                 AND expires_at > CURRENT_TIMESTAMP
+               LIMIT 2
+            `;
+            if (readingRows.length !== 1 || readingRows[0] === undefined) {
+              return fail(
+                readingRows.length === 0
+                  ? "REFLECTION_NOT_FOUND"
+                  : "REFLECTION_PERSISTENCE_UNAVAILABLE",
+              );
+            }
+            owner = readingRows[0];
           }
-          const reading = readingRows[0];
-          const subjectId = reading.subjectId;
+          const subjectId = owner.subjectId;
           let prepared: PreparedPrivateReflectionCreate;
           try {
             prepared = parsePreparedPrivate(await input.prepare({ request, subjectId }));
@@ -832,9 +851,9 @@ export const createReflectionPersistence = (
             active.observedAt.getTime() + policy.retentionSeconds * 1_000,
           );
           const principalExpiresAt =
-            active.kind === "anonymous" && active.expiresAt < reading.expiresAt
+            active.kind === "anonymous" && active.expiresAt < owner.expiresAt
               ? active.expiresAt
-              : reading.expiresAt;
+              : owner.expiresAt;
           const expiresAt =
             retentionExpiresAt < principalExpiresAt ? retentionExpiresAt : principalExpiresAt;
           const inserted = await transaction.$queryRaw<Array<{ id: string }>>`

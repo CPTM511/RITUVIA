@@ -18,6 +18,7 @@ import type { SanctuaryMessages, SanctuaryThemeCode } from "../_i18n/sanctuary-m
 import { tarotReadingResumeStorageKeys } from "./tarot-reading-resume-storage";
 
 export const sanctuaryEndpoints = Object.freeze({
+  anonymousSession: "/api/v1/anonymous/session",
   catalog: "/api/v1/catalog",
   entitlements: "/api/v1/entitlements",
   intentions: "/api/v1/intentions",
@@ -145,18 +146,61 @@ const parseRitualSession = (value: unknown): RitualSession | null => {
   return Object.freeze({ id: value.id, objectCode: value.objectCode });
 };
 
-const latestReadingId = (): string | null => {
+type ReadingResumeStorage = Pick<Storage, "getItem">;
+
+const readingResumeCandidates = (storage: ReadingResumeStorage): readonly string[] => {
   try {
     const candidates = [
-      window.sessionStorage.getItem(tarotReadingResumeStorageKeys.one_card),
-      window.sessionStorage.getItem(tarotReadingResumeStorageKeys.three_card),
+      storage.getItem(tarotReadingResumeStorageKeys.one_card),
+      storage.getItem(tarotReadingResumeStorageKeys.three_card),
     ];
-    return (
-      candidates.find((candidate) => candidate !== null && uuidPattern.test(candidate)) ?? null
+    return Object.freeze(
+      [
+        ...new Set(candidates.filter((candidate): candidate is string => candidate !== null)),
+      ].filter((candidate) => uuidPattern.test(candidate)),
     );
   } catch {
-    return null;
+    return Object.freeze([]);
   }
+};
+
+export const resolveLatestReadingId = async (
+  fetcher: typeof fetch,
+  storage: ReadingResumeStorage,
+): Promise<string | null> => {
+  const candidates = readingResumeCandidates(storage);
+  const resolved = await Promise.all(
+    candidates.map(async (readingId) => {
+      try {
+        const response = await fetcher(`/api/v1/readings/${readingId}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+          method: "GET",
+        });
+        if (!response.ok) return null;
+        const value = (await response.json()) as unknown;
+        if (
+          !isRecord(value) ||
+          value.readingId !== readingId ||
+          typeof value.createdAt !== "string"
+        ) {
+          return null;
+        }
+        const createdAt = Date.parse(value.createdAt);
+        return Number.isFinite(createdAt) ? Object.freeze({ createdAt, readingId }) : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return (
+    resolved
+      .filter(
+        (candidate): candidate is Readonly<{ createdAt: number; readingId: string }> =>
+          candidate !== null,
+      )
+      .sort((left, right) => right.createdAt - left.createdAt)[0]?.readingId ?? null
+  );
 };
 
 const currencyLabel = (item: CatalogItem): string | null => {
@@ -328,11 +372,6 @@ export function SanctuaryFlow({
       document.getElementById(smallActionId)?.focus();
       return;
     }
-    const readingId = latestReadingId();
-    if (readingId === null) {
-      setIntentionError(messages.intention.readingRequired);
-      return;
-    }
     if (!navigator.onLine) {
       setIntentionPhase("offline");
       setIntentionError(messages.intention.offline);
@@ -341,6 +380,14 @@ export function SanctuaryFlow({
     setIntentionError(null);
     setIntentionPhase("loading");
     try {
+      const sessionResponse = await fetch(sanctuaryEndpoints.anonymousSession, {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "idempotency-key": crypto.randomUUID() },
+        method: "POST",
+      });
+      if (sessionResponse.status !== 204) throw new TypeError("session unavailable");
+      const readingId = await resolveLatestReadingId(fetch, window.sessionStorage);
       const response = await fetch(sanctuaryEndpoints.intentions, {
         body: JSON.stringify({
           intentionCode: selectedTheme,

@@ -11,13 +11,14 @@ import {
 } from "./tarot-reading";
 import { createTarotCatalogChecksum } from "./tarot-reading-crypto";
 import {
+  loadTarotReadingCatalog,
   loadTarotReadingAvailability,
   tarotReadingMvpApprovalReference,
   tarotReadingMvpCatalog,
   tarotReadingMvpCatalogChecksum,
 } from "./tarot-reading-state";
 
-const readingPolicyVersion = "tarot-reading.local.en.v1" as const;
+const readingPolicyVersion = "tarot-reading.local.en.v2" as const;
 const reportPolicyVersion = "tarot-reading-report.local.en.v1" as const;
 const readingLimit = 12;
 const readingWindowSeconds = 3_600;
@@ -50,13 +51,8 @@ const loadWebTarotReadingService = (): TarotReadingApplicationService => {
     const service = createTarotReadingApplicationService({
       catalogProvider: Object.freeze({
         load: async (reference: Readonly<{ id: string; version: string }>) => {
-          if (
-            reference.id !== tarotReadingMvpCatalog.catalogId ||
-            reference.version !== tarotReadingMvpCatalog.version
-          ) {
-            return unavailable();
-          }
-          return tarotReadingMvpCatalog;
+          const catalog = loadTarotReadingCatalog(reference);
+          return catalog ?? unavailable();
         },
       }),
       clock: () => new Date(),
@@ -69,7 +65,7 @@ const loadWebTarotReadingService = (): TarotReadingApplicationService => {
           id: tarotReadingMvpCatalog.catalogId,
           version: tarotReadingMvpCatalog.version,
         }),
-        deck: Object.freeze({ id: "rituvia.original-reflection-deck", version: "1.0.0" }),
+        deck: Object.freeze({ id: "rituvia.major-arcana-deck", version: "1.0.0" }),
         locale: "en",
         maximumReadingsPerWindow: readingLimit,
         orientationPolicy: "upright_and_reversed",

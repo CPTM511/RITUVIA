@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   evaluateTarotReadingAvailability,
+  loadTarotReadingCatalog,
+  tarotReadingHistoricalCatalog,
   tarotReadingMvpCatalog,
   tarotReadingMvpCatalogChecksum,
 } from "../server/tarot-reading-state";
@@ -21,11 +23,26 @@ describe("tarot reading activation state", () => {
   it("enables the approved catalog only for a fully configured local runtime", () => {
     expect(evaluateTarotReadingAvailability(configuredLocalRuntime, "2026-07-18")).toBe("enabled");
     expect(tarotReadingMvpCatalog.editorial.approvalReference).toBe(
-      "OWN-010:rituvia-original-reflection.v1",
+      "owner-directive:2026-07-18-major-arcana",
     );
+    expect(tarotReadingMvpCatalog.catalogId).toBe("rituvia.major-arcana-catalog");
+    expect(tarotReadingMvpCatalog.decks[0]?.cards).toHaveLength(22);
     expect(tarotReadingMvpCatalogChecksum).toBe(
-      "sha256:e5359254f1596051db60139281d2c426b702b552496b9ff52b7834389ca1bb70",
+      "sha256:06666a86d228c64d620f98c6c2b65925e788fb474e0c73fa55255af16e013c51",
     );
+  });
+
+  it("loads the exact active and historical catalogs for new draws and replay", () => {
+    expect(loadTarotReadingCatalog({ id: "rituvia.major-arcana-catalog", version: "1.0.0" })).toBe(
+      tarotReadingMvpCatalog,
+    );
+    expect(
+      loadTarotReadingCatalog({
+        id: "rituvia.original-reflection-catalog",
+        version: "1.0.0",
+      }),
+    ).toBe(tarotReadingHistoricalCatalog);
+    expect(loadTarotReadingCatalog({ id: "unknown.catalog", version: "1.0.0" })).toBeUndefined();
   });
 
   it.each([

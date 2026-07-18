@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { AccountExperience, parseAccountSummary } from "../app/_components/account-experience";
 import { CheckoutReturn, resolveCheckoutOrderStatus } from "../app/_components/checkout-return";
@@ -11,6 +11,7 @@ import {
 } from "../app/_components/local-checkout";
 import {
   parseCatalogResponse,
+  resolveLatestReadingId,
   SanctuaryFlow,
   sanctuaryEndpoints,
 } from "../app/_components/sanctuary-flow";
@@ -131,6 +132,7 @@ describe("MVP client boundaries", () => {
 
   it("uses first-party API paths for the complete sanctuary loop", () => {
     expect(sanctuaryEndpoints).toEqual({
+      anonymousSession: "/api/v1/anonymous/session",
       catalog: "/api/v1/catalog",
       entitlements: "/api/v1/entitlements",
       intentions: "/api/v1/intentions",
@@ -138,6 +140,34 @@ describe("MVP client boundaries", () => {
       orders: "/api/v1/orders",
       ritualSessions: "/api/v1/ritual-sessions",
     });
+  });
+
+  it("links the newest valid saved reading", async () => {
+    const older = "00000000-0000-4000-8000-000000000002";
+    const newer = "00000000-0000-4000-8000-000000000003";
+    const storage = {
+      getItem: (key: string) =>
+        key.endsWith("one_card") ? older : key.endsWith("three_card") ? newer : null,
+    };
+    const fetcher = vi.fn(async (input: string | URL | Request) => {
+      const readingId = String(input).split("/").at(-1);
+      return Response.json({
+        createdAt: readingId === older ? "2026-07-18T11:00:00.000Z" : "2026-07-18T12:00:00.000Z",
+        readingId,
+      });
+    }) as unknown as typeof fetch;
+
+    await expect(resolveLatestReadingId(fetcher, storage)).resolves.toBe(newer);
+  });
+
+  it("ignores stale saved reading identifiers", async () => {
+    const stale = "00000000-0000-4000-8000-000000000004";
+    const storage = { getItem: () => stale };
+    const fetcher = vi.fn(
+      async () => new Response(null, { status: 404 }),
+    ) as unknown as typeof fetch;
+
+    await expect(resolveLatestReadingId(fetcher, storage)).resolves.toBeNull();
   });
 });
 

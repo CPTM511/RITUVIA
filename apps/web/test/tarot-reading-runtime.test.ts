@@ -96,7 +96,7 @@ describe("tarot reading web runtime", () => {
 
     expect(harness.createPersistence).toHaveBeenCalledWith(harness.database, {
       readingLimit: 12,
-      readingPolicyVersion: "tarot-reading.local.en.v1",
+      readingPolicyVersion: "tarot-reading.local.en.v2",
       reportPolicyVersion: "tarot-reading-report.local.en.v1",
       windowSeconds: 3_600,
     });
@@ -105,17 +105,35 @@ describe("tarot reading web runtime", () => {
         integrityKeys: harness.configuration.tarotReadingIntegrityKeyring,
         policy: expect.objectContaining({
           catalog: expect.objectContaining({
-            approvalReference: "OWN-010:rituvia-original-reflection.v1",
-            id: "rituvia.original-reflection-catalog",
+            approvalReference: "owner-directive:2026-07-18-major-arcana",
+            id: "rituvia.major-arcana-catalog",
             version: "1.0.0",
           }),
-          deck: { id: "rituvia.original-reflection-deck", version: "1.0.0" },
+          deck: { id: "rituvia.major-arcana-deck", version: "1.0.0" },
           orientationPolicy: "upright_and_reversed",
         }),
       }),
     );
     expect(harness.create).toHaveBeenCalledWith(request, idempotencyKey, sessionToken);
     expect(harness.get).toHaveBeenCalledWith(readingId, sessionToken);
+    const applicationInput = harness.createApplicationService.mock.calls[0]?.[0] as
+      | Readonly<{
+          catalogProvider: Readonly<{
+            load: (reference: Readonly<{ id: string; version: string }>) => Promise<unknown>;
+          }>;
+        }>
+      | undefined;
+
+    expect(applicationInput).toBeDefined();
+    await expect(
+      applicationInput?.catalogProvider.load({
+        id: "rituvia.original-reflection-catalog",
+        version: "1.0.0",
+      }),
+    ).resolves.toMatchObject({ catalogId: "rituvia.original-reflection-catalog" });
+    await expect(
+      applicationInput?.catalogProvider.load({ id: "unknown.catalog", version: "1.0.0" }),
+    ).rejects.toMatchObject({ code: "unavailable" });
   });
 
   it.each(["preview", "staging", "production"] as const)(

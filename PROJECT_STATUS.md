@@ -3,10 +3,12 @@
 **Last reconciled:** 2026-07-18
 
 **Stage:** The owner-directed RIT-158 local commercial MVP is complete and running from its
-production build at `http://127.0.0.1:4175/en`. Its product shape follows the Lumora interactive
-prototype and business plan while the repository's safety, privacy, payment, and human-approval
-floors remain authoritative. Production activation, provider onboarding, and public launch remain
-separately gated.
+production build at `http://127.0.0.1:4175/en`. Direct Sanctuary visits can complete a standalone
+intention, free ritual, and private journal, and new local Tarot draws use the complete 22-card
+Major Arcana from the Lumora prototype using Rider-Waite-Smith ordering. Its product shape follows
+the prototype and business plan while the repository's safety, privacy, payment, and human-
+approval floors remain authoritative. Production activation, provider onboarding, and public
+launch remain separately gated.
 
 **Release:** Local commercial MVP (production artifact, not a public production deployment)
 
@@ -32,6 +34,10 @@ separately gated.
   Stripe hosted-checkout provider adapter plus an HMAC-signed local checkout simulator; and
   verified webhook, ledger, and entitlement fulfillment. This is local capability, not production
   payment approval or activation.
+- A versioned local 22-card Major Arcana catalog derived from the owner-provided Lumora prototype,
+  with 44 reviewed upright/reversed reflective entries, full ten-theme coverage, Strength VIII,
+  Justice XI, and an exact-version registry that keeps the superseded Threshold/Mirror/Lantern
+  catalog available only for historical replay.
 - Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
 - Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
 - Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
@@ -57,7 +63,7 @@ separately gated.
 - Pure `@rituvia/divination` contracts for strict immutable V1 tarot catalogs, sources, rights, decks, cards, spreads, orientation content, translation/editorial evidence, exact version references, tradition consistency, and explicit dated structural publication eligibility. The Git-authored three-card/six-content English fixture is original, internal-validation-only, art-free, non-publishable, non-indexable, and unavailable to AI retrieval.
 - Pure versioned deterministic tarot draw contracts with canonical without-replacement partial Fisher–Yates selection, bounded unbiased uint8 sampling, exact orientation rules, immutable public facts separated from internal audit data, fixed compatibility vectors, and safe replay/projection that require a caller-injected execution verifier.
 - Strict theme-only tarot reading creation with a server-selected exact catalog, operating-system CSPRNG, domain-separated HMAC execution binding, server-derived digests, owner-scoped transactional idempotency and limits, immutable `reading`/`tarot_draw` persistence, historical replay, and verified public-fact projection.
-- Exact no-store/noindex `POST /api/v1/readings/tarot` and owner-scoped `GET /api/v1/readings/{uuid}` contracts with bounded input, safe Problem Details, indistinguishable unknown/cross-owner reads, verified V2 reviewed-content presentation, and a hard unavailable runtime until an eligible production catalog is separately approved and configured.
+- Exact no-store/noindex `POST /api/v1/readings/tarot` and owner-scoped `GET /api/v1/readings/{uuid}` contracts with bounded input, safe Problem Details, indistinguishable unknown/cross-owner reads, verified V2 reviewed-content presentation, an approved local-only Major Arcana runtime, and a separately hard-gated production runtime.
 - Private noindex/no-store `/en/tarot/one-card` with ten theme-only choices, separate session/reading idempotency, explicit reveal without redraw, strict fact/presentation parsing, reviewed limitation/question/action output, complete calm failure states, and no automatic or activated AI, raw-question, analytics, account, payment, share, or result-text storage surface.
 - Private noindex/no-store `/en/tarot/three-card` with the same theme-only privacy boundary and calm state machine, one fixed server-authoritative draw, exact unique Situation/Action/Possibility order, strict fact/presentation parsing, explicit reveal without redraw, reviewed per-position limitations/questions/actions, and no automatic or activated AI, raw-question, analytics, account, payment, share, or result-text storage surface.
 - One application/database-matched tarot quota authority with a three-per-hour local acceptance
@@ -199,9 +205,17 @@ signed local hosted checkout, entitlement, owned paid ritual, revisit, mobile la
 All 11 steps pass with zero serious/critical Axe findings, page errors, unexpected console errors,
 unexpected HTTP/request failures, or desktop/mobile horizontal overflow.
 
+The corrective Playwright run also passes a direct Sanctuary visit with no saved reading through
+standalone intention, free candle, private journal, and completion. A fresh active-catalog draw
+revealed `The Star`; the accepted set contains exactly the 22 Major Arcana identities. Both current
+screens have zero serious/critical Axe findings, page errors, unexpected console errors, and
+unexpected HTTP failures; four signed-out `401` responses from `/api/v1/me` and
+`/api/v1/entitlements` were expected and classified.
+
 The pinned Node.js 24 runtime passes formatting, lint with zero warnings, strict type checking
-across all 11 workspace tasks, 1,426 unit/contract tests in 104 files, 145 fixed AI release
-assertions, the 287-file/11-module architecture gate, all 11 immutable-migration policy files, the
+across all 11 workspace tasks, 1,433 unit/contract tests in 105 files plus the focused standalone-
+intention persistence regression, 145 fixed AI release
+assertions, the 288-file/11-module architecture gate, all 11 immutable-migration policy files, the
 tracked/unignored secret scan, and all 11 production build tasks. The isolated PostgreSQL 17 matrix
 on port 55435 applies all 10 migrations, redeploys and seeds idempotently, and verifies MVP schema,
 least privileges, RLS, constraints, concurrency, guarded reset, privacy canaries, and non-empty
@@ -220,7 +234,7 @@ and the icon. Maximum Web output is 7,511 B gzip HTML, 7,356 B gzip CSS, 230,076
 and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 191 active source files across nine modules and keeps module,
+The architecture verifier audits 288 source files across 11 active modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025

@@ -37,7 +37,7 @@ export const isFreeReflectionRitualObjectCode = (
 export type ReflectionIntentionCreateRequestV1 = Readonly<{
   intentionCode: ReflectionIntentionCode;
   locale: "en";
-  readingId: string;
+  readingId: string | null;
   schemaVersion: typeof reflectionIntentionSchemaVersion;
   smallAction: string;
 }>;
@@ -62,7 +62,7 @@ export type ReflectionIntentionResourceV1 = Readonly<{
   intentionCode: ReflectionIntentionCode;
   locale: "en";
   policyVersion: typeof reflectionPolicyVersion;
-  readingId: string;
+  readingId: string | null;
   schemaVersion: typeof reflectionIntentionSchemaVersion;
   smallAction: string;
 }>;
@@ -205,7 +205,7 @@ export const parseReflectionIntentionCreateRequestV1 = (
   return Object.freeze({
     intentionCode: input.intentionCode,
     locale: "en",
-    readingId: parseUuidV4(input.readingId),
+    readingId: input.readingId === null ? null : parseUuidV4(input.readingId),
     schemaVersion: reflectionIntentionSchemaVersion,
     smallAction: normalizePrivateText(input.smallAction, reflectionSmallActionMaximumLength),
   });
@@ -319,7 +319,7 @@ export const parseReflectionIntentionResourceV1 = (
     intentionCode: input.intentionCode,
     locale: "en",
     policyVersion: reflectionPolicyVersion,
-    readingId: parseUuidV4(input.readingId, true),
+    readingId: input.readingId === null ? null : parseUuidV4(input.readingId, true),
     schemaVersion: reflectionIntentionSchemaVersion,
     smallAction: parseOutputPrivateText(input.smallAction, reflectionSmallActionMaximumLength),
   });

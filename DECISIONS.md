@@ -374,7 +374,10 @@ effective until this register links it. Do not rewrite historical rationale; sup
   private journal/revisit, a server-authoritative catalog, Stripe hosted-checkout adapter, signed
   local checkout simulator, and verified webhook-to-ledger-to-entitlement fulfillment. `AGENTS.md`
   safety, privacy, payment, cultural-integrity, and human-approval floors continue to override any
-  conflicting prototype or business-plan detail.
+  conflicting prototype or business-plan detail. The 2026-07-18 corrective owner directive also
+  makes standalone Sanctuary intentions valid and selects the prototype's 22-card Rider-Waite-
+  Smith Major Arcana ordering for new local readings, while retaining the superseded three-symbol
+  catalog only for exact historical replay.
 - **Reason:** A runnable local commercial loop now provides better owner validation than continuing
   isolated milestone slices, while one consolidated record preserves the distinction between local
   product evidence and unapproved production payment, legal, provider, or launch state.
