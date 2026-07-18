@@ -149,6 +149,18 @@ Use provider sandboxes plus recorded sanitized fixtures. Never test production c
 
 Critical failure blocks release. Store fixtures and expected rubric/version in the repository without sensitive real-user content.
 
+The repository-fixed English/Tarot V1 gate is `pnpm test:ai-evals`. It binds the exact synthetic
+suite bytes to a separately parsed metadata-only safe-off baseline, runs the real interpretation,
+retrieval/prompt, pre-generation, generation/fallback, and post-generation verification boundaries,
+and requires unique passing test evidence before generating each in-memory observation. Code-fixed
+thresholds require all registered cases and safe controls, 100% applicable
+fact/schema/source/fallback results, and zero critical failures, missing/unexpected cases, unsafe
+continuations, privacy leaks, external requests, or paid calls. Fixtures cannot define thresholds,
+executable behavior, self-reported pass fields, or observations. The non-English locale cases prove
+only fail-closed scope; this local synthetic gate does not approve a production model or prove
+multilingual output quality, human review, latency, cost, or canary quality, which remain
+candidate/release evidence.
+
 ## 6. Accessibility testing
 
 Automated:
@@ -231,7 +243,8 @@ Per PR, run the smallest affected matrix plus mandatory foundation:
 - Integration with migrated PostgreSQL.
 - Relevant E2E/a11y/i18n.
 - Security/secret/dependency.
-- AI eval subset when AI/content changes.
+- Fixed synthetic AI release eval on every active Quality run; expanded candidate/model/content
+  comparison when AI/content changes.
 - Payment contract suite when commerce changes.
 - Migration drift and generated-client check.
 - Build and preview smoke.

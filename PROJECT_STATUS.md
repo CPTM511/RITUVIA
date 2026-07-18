@@ -2,8 +2,8 @@
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the safe-off private durable-only
-interpretation API, polling, and presentation RIT-035 slice. M1 RIT-016 and manual
+**Stage:** M3 local implementation is complete through the checksum-bound fixed synthetic AI
+release-evaluation RIT-036 slice. M1 RIT-016 and manual
 assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains
 owner-gated. Production catalog/prompt/classifier/safety-policy approval and activation, AI
 provider/model activation, and actual indexing remain separately gated.
@@ -109,7 +109,15 @@ provider/model activation, and actual indexing remain separately gated.
   stale-response rejection, same-operation manual retry, localized accessible states, verified-AI
   versus reviewed-fallback labels, and the exact safety boundary; production composition remains
   hard safe-off with no provider/model/reviewer/key/network/paid-inference capability.
-- One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
+- Strict English/Tarot V1 release-evaluation contracts with a 34-case ordered synthetic suite,
+  exact-byte SHA-256 baseline binding, compiled zero-tolerance thresholds, complete
+  pre-generation risk and deterministic post-generation check coverage, safe controls that block
+  all-fallback behavior, and privacy-minimal categorical evidence. The explicit Quality gate runs
+  the production pre-generation, generation/fallback, and verification boundaries with zero
+  provider, reviewer, network, secret, or paid-call capability.
+- One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral
+  digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, a fixed AI
+  release-evaluation step, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
@@ -141,6 +149,10 @@ provider/model activation, and actual indexing remain separately gated.
   operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
   cannot activate the RIT-024/RIT-027 runtime.
 - Production credentials or vendor accounts.
+- A production AI provider/model candidate evaluation, representative human output review,
+  latency/cost comparison, canary evidence, or approved model rollback rehearsal; RIT-036 is local
+  synthetic safe-off evidence only and does not activate or approve a provider, model, reviewer,
+  prompt, content corpus, safety policy, or another locale.
 - Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
 ## Current blockers and owner decisions
@@ -166,10 +178,10 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-035 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
-with zero warnings, strict type checking across all nine workspace tasks, 1,190 unit/contract tests
-in 74 files, 233 focused interpretation/API/client assertions, the 191-file/nine-module architecture
-gate, all eight immutable-migration checks, and a 424-file tracked/unignored secret scan
+The RIT-036 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
+with zero warnings, strict type checking across all nine workspace tasks, 1,199 unit/contract tests
+in 75 files, 145 fixed AI release assertions, the 191-file/nine-module architecture gate, all eight
+immutable-migration checks, and the tracked/unignored secret scan
 and all nine build tasks pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum
 evidence.
@@ -199,7 +211,7 @@ prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation
 authorization binding, non-exported authorization issuers, provider-neutral generation and
 authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
 atomic interpretation claim/finalization/verification persistence, the private interpretation route,
-and the icon. Maximum Web output is 7,403 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
+and the icon. Maximum Web output is 7,407 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
 and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
@@ -295,6 +307,16 @@ retry. Focused coverage passes 233 assertions and the full repository/build/acce
 described above pass. Runtime adapters remain hard unavailable, so no provider, reviewer, model,
 SDK, key, network request, paid inference, catalog/content/safety activation, payment, deployment,
 or public launch is added.
+
+RIT-036 adds the explicit local release decision above the RIT-032 through RIT-034 production
+boundaries. Exact suite bytes bind a metadata-only baseline; code-fixed thresholds require
+100% applicable fact/schema/source/fallback and safe-control outcomes with zero critical failures,
+missing/unexpected cases, unsafe continuations, privacy leaks, network calls, or paid calls. The
+dedicated executor binds 34 cases to 145 passing assertions in six files before generating
+in-memory observations, and the CI-contract suite prevents removal, replacement, or reordering.
+The runtime remains hard safe-off: no provider, reviewer, model, SDK,
+key, network, paid inference, production content/safety activation, database, UI, payment,
+deployment, or public launch is added or approved.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary

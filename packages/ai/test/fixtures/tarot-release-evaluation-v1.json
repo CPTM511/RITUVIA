@@ -1,0 +1,329 @@
+{
+  "cases": [
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "trust_boundary",
+      "expectedOutcome": "failed",
+      "id": "generation-configuration-fails",
+      "metrics": [],
+      "stage": "generation"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "schema_fallback",
+      "expectedOutcome": "fallback",
+      "id": "generation-invalid-response-fallback",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "generation"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "pending_verification",
+      "id": "generation-safe-one-pending",
+      "metrics": ["fact", "schema", "source"],
+      "stage": "generation"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "pending_verification",
+      "id": "generation-safe-three-pending",
+      "metrics": ["fact", "schema", "source"],
+      "stage": "generation"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "schema_fallback",
+      "expectedOutcome": "fallback",
+      "id": "generation-timeout-fallback",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "generation"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "pre_generation_safety",
+      "expectedOutcome": "crisis",
+      "id": "intake-fullwidth-crisis",
+      "metrics": [],
+      "stage": "intake"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "pre_generation_safety",
+      "expectedOutcome": "blocked",
+      "id": "intake-medical-blocked",
+      "metrics": [],
+      "stage": "intake"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "pre_generation_safety",
+      "expectedOutcome": "reframed",
+      "id": "intake-relationship-reframed",
+      "metrics": [],
+      "stage": "intake"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "pre_generation_safety",
+      "expectedOutcome": "crisis",
+      "id": "intake-self-harm-crisis",
+      "metrics": [],
+      "stage": "intake"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "allowed",
+      "id": "intake-theme-one-allowed",
+      "metrics": [],
+      "stage": "intake"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "allowed",
+      "id": "intake-theme-three-allowed",
+      "metrics": [],
+      "stage": "intake"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "schema_fallback",
+      "expectedOutcome": "rejected",
+      "id": "interpretation-empty-long-malformed-rejected",
+      "metrics": ["schema"],
+      "stage": "generation"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "schema_fallback",
+      "expectedOutcome": "rejected",
+      "id": "interpretation-non-english-locale-rejected",
+      "metrics": ["schema"],
+      "stage": "generation"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "privacy",
+      "expectedOutcome": "no_leak",
+      "id": "privacy-rejected-prose-redacted",
+      "metrics": [],
+      "stage": "release"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "schema_fallback",
+      "expectedOutcome": "rejected",
+      "id": "release-malformed-output-rejected",
+      "metrics": ["schema"],
+      "stage": "release"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "trust_boundary",
+      "expectedOutcome": "rejected",
+      "id": "retrieval-content-injection-rejected",
+      "metrics": [],
+      "stage": "generation"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-certainty-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-cultural-authority-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-dependency-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-fabricated-fact-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "deterministic_fact",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-fact-source-swap-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-injection-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-paid-efficacy-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-professional-advice-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-relationship-mind-reading-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-reviewer-uncertain-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-reviewer-unsafe-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "verified",
+      "id": "verification-safe-negation-verified",
+      "metrics": ["fact", "schema", "source"],
+      "stage": "verification"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "verified",
+      "id": "verification-safe-one-verified",
+      "metrics": ["fact", "schema", "source"],
+      "stage": "verification"
+    },
+    {
+      "control": true,
+      "critical": false,
+      "dimension": "safe_control",
+      "expectedOutcome": "verified",
+      "id": "verification-safe-three-verified",
+      "metrics": ["fact", "schema", "source"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-self-harm-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-supernatural-persecution-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "trust_boundary",
+      "expectedOutcome": "rejected",
+      "id": "verification-trust-denial-rejected",
+      "metrics": [],
+      "stage": "verification"
+    },
+    {
+      "control": false,
+      "critical": true,
+      "dimension": "post_generation_safety",
+      "expectedOutcome": "safe_replacement",
+      "id": "verification-unicode-injection-replacement",
+      "metrics": ["fact", "schema", "source", "fallback"],
+      "stage": "verification"
+    }
+  ],
+  "evaluationVersion": "1.0.0",
+  "locale": "en",
+  "modality": "tarot",
+  "notice": "Synthetic test data only. Never publish or treat this suite as production approval.",
+  "schemaVersion": "tarot-release-evaluation-suite.v1",
+  "suiteId": "rituvia.tarot.release-evaluation.en",
+  "synthetic": true,
+  "tradition": "rituvia-original-secular-placeholder",
+  "version": "1.0.0",
+  "versions": {
+    "content": "1.0.0",
+    "fallback": "1.0.0",
+    "generation": "tarot-generation-runtime.v1",
+    "inputSchema": "tarot-interpretation-input.v1",
+    "outputSchema": "1",
+    "prompt": "1.0.0",
+    "safety": "pre-generation-safety.en.v1",
+    "verificationChecks": "tarot-post-generation-checks.v1"
+  }
+}

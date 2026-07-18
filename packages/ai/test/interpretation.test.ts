@@ -181,10 +181,9 @@ describe("tarot interpretation contracts v1", () => {
       () => parseInput({ ...valid, schemaVersion: "2" }),
       "INTERPRETATION_SCHEMA_UNSUPPORTED",
     );
-    expectContractError(
-      () => parseInput({ ...valid, locale: "EN" }),
-      "INTERPRETATION_INPUT_INVALID",
-    );
+    for (const locale of ["EN", "ar", "zh-Hans"]) {
+      expectContractError(() => parseInput({ ...valid, locale }), "INTERPRETATION_INPUT_INVALID");
+    }
     expectContractError(
       () => parseInput({ ...valid, tone: "authoritative" }),
       "INTERPRETATION_INPUT_INVALID",

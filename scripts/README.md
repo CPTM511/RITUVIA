@@ -27,6 +27,7 @@ pnpm check:architecture
 pnpm check:records
 pnpm check:migrations
 pnpm check:generated
+pnpm test:ai-evals
 pnpm scan:secrets
 ```
 
@@ -38,6 +39,14 @@ files, transaction loss, and destructive SQL. The current-tree secret policy sca
 unignored file without following symlinks and emits only path, line, rule, and a non-secret
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
+
+`pnpm test:ai-evals` runs the checksum-bound English/Tarot synthetic release contract together with
+the interpretation, retrieval/prompt, pre-generation, generation/fallback, and post-generation
+verification suites. Every registered case requires unique passing test evidence before an
+in-memory observation is scored. The command requires 100% applicable
+fact/schema/source/fallback and safe-control outcomes with zero critical safety, case-completeness,
+privacy, continuation, network, or paid-call failures. It does not contact or approve a production
+provider/model.
 
 `scripts/web-shell-build-policy.mjs` runs from the workspace build verifier. It reads the generated
 English home HTML and its referenced local assets, rejects remote JavaScript/styles, CSS resource

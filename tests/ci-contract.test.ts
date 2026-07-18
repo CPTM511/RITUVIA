@@ -73,7 +73,9 @@ describe("active CI workflow contract", () => {
       "check:evidence":
         "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
+      test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
       "test:accessibility": "node scripts/verify-web-accessibility.mjs",
+      "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
     };
     expect(auditCiScripts(valid)).toEqual([]);
     expect(auditCiScripts({ ...valid, "check:architecture": "node -e 'process.exit(0)'" })).toEqual(
@@ -84,6 +86,12 @@ describe("active CI workflow contract", () => {
         },
       ],
     );
+    expect(auditCiScripts({ ...valid, "test:ai-evals": "node -e 'process.exit(0)'" })).toEqual([
+      {
+        location: "package.json#scripts.test:ai-evals",
+        rule: "ci-script-command",
+      },
+    ]);
   });
 
   it("rejects write permissions and dangerous triggers", () => {
@@ -151,6 +159,37 @@ describe("active CI workflow contract", () => {
     if (index < 0) throw new Error("architecture fixture step missing");
     steps.splice(index, 1);
     expect(auditCiWorkflow(candidate)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.quality", rule: "run-command-sequence" },
+        { location: "jobs.quality", rule: "step-sequence" },
+      ]),
+    );
+  });
+
+  it("locks the fixed AI release evaluation after unit tests", () => {
+    const removed = cloneWorkflow();
+    const removedSteps = record(record(removed.jobs).quality).steps as unknown[];
+    const removedIndex = removedSteps.findIndex(
+      (step) => record(step).run === "pnpm test:ai-evals",
+    );
+    if (removedIndex < 0) throw new Error("AI evaluation fixture step missing");
+    removedSteps.splice(removedIndex, 1);
+    expect(auditCiWorkflow(removed)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.quality", rule: "run-command-sequence" },
+        { location: "jobs.quality", rule: "step-sequence" },
+      ]),
+    );
+
+    const reordered = cloneWorkflow();
+    const reorderedSteps = record(record(reordered.jobs).quality).steps as unknown[];
+    const current = reorderedSteps.findIndex((step) => record(step).run === "pnpm test:ai-evals");
+    if (current < 1) throw new Error("AI evaluation fixture step missing");
+    [reorderedSteps[current - 1], reorderedSteps[current]] = [
+      reorderedSteps[current],
+      reorderedSteps[current - 1],
+    ];
+    expect(auditCiWorkflow(reordered)).toEqual(
       expect.arrayContaining([
         { location: "jobs.quality", rule: "run-command-sequence" },
         { location: "jobs.quality", rule: "step-sequence" },

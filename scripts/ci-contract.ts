@@ -26,6 +26,7 @@ const expectedRunCommands = Object.freeze({
     "pnpm lint",
     "pnpm typecheck",
     "pnpm test:unit",
+    "pnpm test:ai-evals",
     "pnpm test:configuration-boundary",
     "pnpm build",
     "pnpm exec playwright install --with-deps --only-shell chromium",
@@ -127,7 +128,9 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
     "check:evidence":
       "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
+    test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
     "test:accessibility": "node scripts/verify-web-accessibility.mjs",
+    "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
   });
   if (!isRecord(scripts)) return [{ location: "package.json#scripts", rule: "ci-scripts" }];
   return Object.entries(expected).flatMap(([name, command]) =>

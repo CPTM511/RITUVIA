@@ -55,6 +55,8 @@ jobs:
         run: pnpm typecheck
       - name: Run unit and contract tests
         run: pnpm test:unit
+      - name: Run fixed AI release evaluations
+        run: pnpm test:ai-evals
       - name: Verify configuration boundary
         run: pnpm test:configuration-boundary
       - name: Build production artifacts

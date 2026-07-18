@@ -1029,8 +1029,8 @@ Use this order:
 
 **Last reconciled:** 2026-07-18
 
-**Stage:** M3 local implementation is complete through the safe-off private durable-only
-interpretation API, polling, and presentation RIT-035 slice. M1 RIT-016 and manual
+**Stage:** M3 local implementation is complete through the checksum-bound fixed synthetic AI
+release-evaluation RIT-036 slice. M1 RIT-016 and manual
 assistive-technology exit evidence remain outstanding, and M0 hosted CI evidence remains
 owner-gated. Production catalog/prompt/classifier/safety-policy approval and activation, AI
 provider/model activation, and actual indexing remain separately gated.
@@ -1136,7 +1136,15 @@ provider/model activation, and actual indexing remain separately gated.
   stale-response rejection, same-operation manual retry, localized accessible states, verified-AI
   versus reviewed-fallback labels, and the exact safety boundary; production composition remains
   hard safe-off with no provider/model/reviewer/key/network/paid-inference capability.
-- One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, and separate quality/database/security jobs.
+- Strict English/Tarot V1 release-evaluation contracts with a 34-case ordered synthetic suite,
+  exact-byte SHA-256 baseline binding, compiled zero-tolerance thresholds, complete
+  pre-generation risk and deterministic post-generation check coverage, safe controls that block
+  all-fallback behavior, and privacy-minimal categorical evidence. The explicit Quality gate runs
+  the production pre-generation, generation/fallback, and verification boundaries with zero
+  provider, reviewer, network, secret, or paid-call capability.
+- One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral
+  digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, a fixed AI
+  release-evaluation step, and separate quality/database/security jobs.
 - Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
 - Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
 - Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
@@ -1168,6 +1176,10 @@ provider/model activation, and actual indexing remain separately gated.
   operational kill switches; the synthetic RIT-022 fixture remains publication-ineligible and
   cannot activate the RIT-024/RIT-027 runtime.
 - Production credentials or vendor accounts.
+- A production AI provider/model candidate evaluation, representative human output review,
+  latency/cost comparison, canary evidence, or approved model rollback rehearsal; RIT-036 is local
+  synthetic safe-off evidence only and does not activate or approve a provider, model, reviewer,
+  prompt, content corpus, safety policy, or another locale.
 - Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
 
 ## Current blockers and owner decisions
@@ -1193,10 +1205,10 @@ remains above and task history stays in Git and durable records.
 
 ## Current quality state
 
-The RIT-035 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
-with zero warnings, strict type checking across all nine workspace tasks, 1,190 unit/contract tests
-in 74 files, 233 focused interpretation/API/client assertions, the 191-file/nine-module architecture
-gate, all eight immutable-migration checks, and a 424-file tracked/unignored secret scan
+The RIT-036 source passes local validation on the pinned Node.js 24.18.0 runtime. Formatting, lint
+with zero warnings, strict type checking across all nine workspace tasks, 1,199 unit/contract tests
+in 75 files, 145 fixed AI release assertions, the 191-file/nine-module architecture gate, all eight
+immutable-migration checks, and the tracked/unignored secret scan
 and all nine build tasks pass. The record-policy suite covers the canonical task/decision graph,
 privacy-safe records, contextual task results, and exact staged index-to-manual-to-checksum
 evidence.
@@ -1226,7 +1238,7 @@ prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation
 authorization binding, non-exported authorization issuers, provider-neutral generation and
 authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
 atomic interpretation claim/finalization/verification persistence, the private interpretation route,
-and the icon. Maximum Web output is 7,403 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
+and the icon. Maximum Web output is 7,407 B gzip HTML, 6,126 B gzip CSS, 226,422 B gzip JavaScript,
 and 356 B raw icon.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
@@ -1322,6 +1334,16 @@ retry. Focused coverage passes 233 assertions and the full repository/build/acce
 described above pass. Runtime adapters remain hard unavailable, so no provider, reviewer, model,
 SDK, key, network request, paid inference, catalog/content/safety activation, payment, deployment,
 or public launch is added.
+
+RIT-036 adds the explicit local release decision above the RIT-032 through RIT-034 production
+boundaries. Exact suite bytes bind a metadata-only baseline; code-fixed thresholds require
+100% applicable fact/schema/source/fallback and safe-control outcomes with zero critical failures,
+missing/unexpected cases, unsafe continuations, privacy leaks, network calls, or paid calls. The
+dedicated executor binds 34 cases to 145 passing assertions in six files before generating
+in-memory observations, and the CI-contract suite prevents removal, replacement, or reordering.
+The runtime remains hard safe-off: no provider, reviewer, model, SDK,
+key, network, paid inference, production content/safety activation, database, UI, payment,
+deployment, or public launch is added or approved.
 
 The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
@@ -1867,6 +1889,17 @@ effective until this register links it. Do not rewrite historical rationale; sup
   runtime is active.
 - **Date:** 2026-07-18
 
+### [D-043 — Fixed synthetic AI release evaluation gate](records/decisions/D-043.md)
+
+- **Decision:** Bind one versioned English/Tarot synthetic suite to an independent safe-off baseline
+  by checksum; score exact outcomes with compiled zero-tolerance fact, schema, source, fallback,
+  safe-control, privacy, continuation, completeness, and critical-safety thresholds; and pin the
+  production-boundary evaluation command as an explicit Quality workflow step.
+- **Reason:** Dispersed tests, fixture-defined thresholds, aggregate/model-judge scores, or an
+  all-fallback result cannot provide a trustworthy release decision, while live provider calls
+  would introduce unauthorized secrets, spend, and nondeterminism.
+- **Date:** 2026-07-18
+
 ---
 
 # File: `ROADMAP.md`
@@ -2154,8 +2187,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                 | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                      |
 | RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                        | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.            |
 | RIT-035 | M3        |       P0 | Done    | Build tarot AI interpretation streaming/polling UX                        | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                             |
-| RIT-036 | M3        |       P0 | Ready   | Create AI fixed regression and adversarial eval suite                     | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                |
-| RIT-037 | M3        |       P1 | Planned | Add interpretation regeneration/report/version history                    | RIT-035,RIT-036                         | backend       | Regeneration is limited, version-linked, reportable, and does not alter facts.                                    |
+| RIT-036 | M3        |       P0 | Done    | Create AI fixed regression and adversarial eval suite                     | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                |
+| RIT-037 | M3        |       P1 | Ready   | Add interpretation regeneration/report/version history                    | RIT-035,RIT-036                         | backend       | Regeneration is limited, version-linked, reportable, and does not alter facts.                                    |
 | RIT-038 | M3        |       P1 | Planned | Add AI cost, latency, fallback, and safety dashboards                     | RIT-006,RIT-033                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                    |
 | RIT-040 | M4        |       P0 | Planned | Implement intention domain and composer                                   | RIT-025                                 | product       | User-owned intention/action, coercive-control reframing, privacy, edit/archive/delete pass.                       |
 | RIT-041 | M4        |       P0 | Planned | Implement ritual template and object domain                               | RIT-003,RIT-011                         | backend       | Free/paid-capable objects are versioned; efficacy claims are structurally impossible.                             |
@@ -2403,6 +2436,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-040 | Provider-neutral generation, authorized fallback, and fenced persistence | [decisions/D-040.md](./decisions/D-040.md) |
 | Decision | D-041 | Monotonic post-generation verification and append-only safe results | [decisions/D-041.md](./decisions/D-041.md) |
 | Decision | D-042 | Private durable-only tarot interpretation polling boundary | [decisions/D-042.md](./decisions/D-042.md) |
+| Decision | D-043 | Fixed synthetic AI release evaluation gate | [decisions/D-043.md](./decisions/D-043.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2425,6 +2459,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-033 | Structured generation, validation, fallback, and persistence | [tasks/RIT-033.md](./tasks/RIT-033.md) |
 | Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
 | Task | RIT-035 | Tarot AI interpretation polling UX | [tasks/RIT-035.md](./tasks/RIT-035.md) |
+| Task | RIT-036 | Fixed AI regression and adversarial release evaluations | [tasks/RIT-036.md](./tasks/RIT-036.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
@@ -5887,6 +5922,18 @@ Use provider sandboxes plus recorded sanitized fixtures. Never test production c
 
 Critical failure blocks release. Store fixtures and expected rubric/version in the repository without sensitive real-user content.
 
+The repository-fixed English/Tarot V1 gate is `pnpm test:ai-evals`. It binds the exact synthetic
+suite bytes to a separately parsed metadata-only safe-off baseline, runs the real interpretation,
+retrieval/prompt, pre-generation, generation/fallback, and post-generation verification boundaries,
+and requires unique passing test evidence before generating each in-memory observation. Code-fixed
+thresholds require all registered cases and safe controls, 100% applicable
+fact/schema/source/fallback results, and zero critical failures, missing/unexpected cases, unsafe
+continuations, privacy leaks, external requests, or paid calls. Fixtures cannot define thresholds,
+executable behavior, self-reported pass fields, or observations. The non-English locale cases prove
+only fail-closed scope; this local synthetic gate does not approve a production model or prove
+multilingual output quality, human review, latency, cost, or canary quality, which remain
+candidate/release evidence.
+
 ## 6. Accessibility testing
 
 Automated:
@@ -5969,7 +6016,8 @@ Per PR, run the smallest affected matrix plus mandatory foundation:
 - Integration with migrated PostgreSQL.
 - Relevant E2E/a11y/i18n.
 - Security/secret/dependency.
-- AI eval subset when AI/content changes.
+- Fixed synthetic AI release eval on every active Quality run; expanded candidate/model/content
+  comparison when AI/content changes.
 - Payment contract suite when commerce changes.
 - Migration drift and generated-client check.
 - Build and preview smoke.
@@ -8622,8 +8670,9 @@ Block private readings, journals, sanctuaries, account, checkout, thin generated
 cover:
 
 - durable-record graph and generated-evidence integrity, formatting, lint, strict type checking,
-  unit/contract tests, the production configuration boundary, architecture and migration policy,
-  CI contract, production builds, and a pinned Chromium/axe accessibility plus pseudolocale smoke;
+  unit/contract tests, the fixed synthetic AI release evaluation, the production configuration
+  boundary, architecture and migration policy, CI contract, production builds, and a pinned
+  Chromium/axe accessibility plus pseudolocale smoke;
 - Prisma generation, two idempotent migration deployments, two idempotent synthetic seeds,
   migration status/drift, constraints, transactions, and least-privilege attestation against a
   digest-pinned ephemeral PostgreSQL 17 service; and
@@ -8638,7 +8687,8 @@ or deploys an environment.
 
 The repository-owned contract tests fail on mutable action references, credential persistence,
 dangerous triggers, write permissions, event-data shell interpolation, a mutable database image,
-removal or broadening of the exact Chromium install, or removal/reordering of a required gate. The
+removal or broadening of the exact Chromium install, mutation of the fixed AI evaluation command,
+or removal/reordering of a required gate. The
 accessibility smoke consumes the production artifacts built immediately before it and does not
 activate a second locale or contact a remote origin. GitHub repository settings must still make the three jobs required
 checks and restrict changes to this workflow; that owner-controlled configuration cannot be proven
@@ -8719,6 +8769,8 @@ jobs:
         run: pnpm typecheck
       - name: Run unit and contract tests
         run: pnpm test:unit
+      - name: Run fixed AI release evaluations
+        run: pnpm test:ai-evals
       - name: Verify configuration boundary
         run: pnpm test:configuration-boundary
       - name: Build production artifacts
@@ -9185,6 +9237,7 @@ pnpm check:architecture
 pnpm check:records
 pnpm check:migrations
 pnpm check:generated
+pnpm test:ai-evals
 pnpm scan:secrets
 ```
 
@@ -9196,6 +9249,14 @@ files, transaction loss, and destructive SQL. The current-tree secret policy sca
 unignored file without following symlinks and emits only path, line, rule, and a non-secret
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
+
+`pnpm test:ai-evals` runs the checksum-bound English/Tarot synthetic release contract together with
+the interpretation, retrieval/prompt, pre-generation, generation/fallback, and post-generation
+verification suites. Every registered case requires unique passing test evidence before an
+in-memory observation is scored. The command requires 100% applicable
+fact/schema/source/fallback and safe-control outcomes with zero critical safety, case-completeness,
+privacy, continuation, network, or paid-call failures. It does not contact or approve a production
+provider/model.
 
 `scripts/web-shell-build-policy.mjs` runs from the workspace build verifier. It reads the generated
 English home HTML and its referenced local assets, rejects remote JavaScript/styles, CSS resource

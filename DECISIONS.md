@@ -352,3 +352,14 @@ effective until this register links it. Do not rewrite historical rationale; sup
   paid work, duplicate inference, leak internal provenance, or imply that an unavailable provider
   runtime is active.
 - **Date:** 2026-07-18
+
+### [D-043 — Fixed synthetic AI release evaluation gate](records/decisions/D-043.md)
+
+- **Decision:** Bind one versioned English/Tarot synthetic suite to an independent safe-off baseline
+  by checksum; score exact outcomes with compiled zero-tolerance fact, schema, source, fallback,
+  safe-control, privacy, continuation, completeness, and critical-safety thresholds; and pin the
+  production-boundary evaluation command as an explicit Quality workflow step.
+- **Reason:** Dispersed tests, fixture-defined thresholds, aggregate/model-judge scores, or an
+  all-fallback result cannot provide a trustworthy release decision, while live provider calls
+  would introduce unauthorized secrets, spend, and nondeterminism.
+- **Date:** 2026-07-18
