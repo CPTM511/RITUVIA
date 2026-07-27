@@ -129,7 +129,9 @@ const run = (command, args, options = {}) =>
         child.kill("SIGKILL");
         finish(() =>
           rejectPromise(
-            new Error(`Release Corresponding Source command output exceeded its limit.`),
+            new Error(
+              `Release Corresponding Source command output exceeded its limit: ${basename(command)}.`,
+            ),
           ),
         );
         return;
@@ -161,7 +163,11 @@ const run = (command, args, options = {}) =>
     );
     const timeout = setTimeout(() => {
       child.kill("SIGKILL");
-      finish(() => rejectPromise(new Error("Release Corresponding Source command timed out.")));
+      finish(() =>
+        rejectPromise(
+          new Error(`Release Corresponding Source command timed out: ${basename(command)}.`),
+        ),
+      );
     }, options.timeoutMilliseconds ?? 120_000);
   });
 
