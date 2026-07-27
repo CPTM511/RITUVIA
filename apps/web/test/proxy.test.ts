@@ -84,6 +84,7 @@ describe("public shell request and crawl gate", () => {
 
   it.each([
     "/en/account",
+    "/en/readings/astrology",
     "/en/sanctuary",
     "/en/sanctuary?checkout=canceled&order_id=33333333-3333-4333-8333-333333333333",
     "/en/sign-in",
@@ -98,6 +99,40 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+  });
+
+  it("allows only the exact saved astrology page and read API", async () => {
+    const page = await proxy(request("/en/readings/astrology"));
+    const reviewedRsc = await proxy(
+      request("/en/readings/astrology?_rsc=abc_123", { headers: { rsc: "1" } }),
+    );
+    const api = await proxy(request("/api/v1/readings/astrology/natal"));
+
+    for (const response of [page, reviewedRsc, api]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+  });
+
+  it.each([
+    ["POST", "/api/v1/readings/astrology/natal"],
+    ["GET", "/api/v1/readings/astrology/natal/"],
+    ["GET", "/api/v1/readings/astrology/natal?birthDate=private-canary"],
+    ["GET", "/api/v1/readings/astrology/natal.rsc"],
+    ["POST", "/en/readings/astrology"],
+    ["GET", "/en/readings/astrology/"],
+    ["GET", "/en/readings/astrology?birthDate=private-canary"],
+    ["GET", "/en/readings/astrology.rsc"],
+  ])("rejects unreviewed astrology variant %s %s before lookup", async (method, pathname) => {
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it("allows only the exact local authentication preview endpoint", async () => {

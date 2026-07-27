@@ -44,6 +44,7 @@
     "test:privacy-deletion-database": "pnpm --filter @rituvia/db test:privacy-deletion",
     "test:admin-security-database": "pnpm --filter @rituvia/db test:admin-security",
     "test:account-auth-browser": "node scripts/verify-account-auth-browser.mjs",
+    "test:astrology-browser": "node scripts/verify-astrology-browser.mjs",
     "test:account-control-browser": "node scripts/verify-account-control-browser.mjs",
     "test:privacy-control-browser": "node scripts/verify-privacy-control-browser.mjs",
     "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",

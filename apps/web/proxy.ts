@@ -15,6 +15,7 @@ import {
 import { createRobotsText, createSitemapXml, type PublicShellState } from "./app/_i18n/seo";
 import {
   localeAccountPath,
+  localeAstrologyPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeNumerologyPath,
@@ -73,6 +74,7 @@ const tarotReadingPagePathnames = Object.freeze([
 ]);
 const privateExperiencePagePathnames = Object.freeze([
   localeAccountPath("en"),
+  localeAstrologyPath("en"),
   localeCheckoutReturnPath("en"),
   localeLocalCheckoutPath("en"),
   localeRevisitPath("en"),
@@ -86,6 +88,7 @@ const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements|ritual-objects)$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/readings\/astrology\/natal$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/(?:intentions|journal-entries|ritual-sessions)$/u },
   { methods: ["GET", "POST"], pattern: /^\/api\/v1\/revisits$/u },

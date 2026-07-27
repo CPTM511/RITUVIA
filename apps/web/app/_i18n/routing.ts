@@ -46,6 +46,9 @@ export const localeTarotThreeCardPath = (locale: Locale): LocalActionHref =>
 export const localeNumerologyPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/readings/numerology`);
 
+export const localeAstrologyPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/readings/astrology`);
+
 export const localeNumerologyLibraryPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/numerology`);
 

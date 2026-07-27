@@ -10,6 +10,7 @@ import {
   isPublicShellPathname,
   localeHomePath,
   localeAccountPath,
+  localeAstrologyPath,
   localeCheckoutReturnPath,
   localePublicPagePath,
   localeLocalCheckoutPath,
@@ -45,6 +46,7 @@ describe("Web locale routing", () => {
     expect(localeTarotOneCardPath("en")).toBe("/en/tarot/one-card");
     expect(localeTarotThreeCardPath("en")).toBe("/en/tarot/three-card");
     expect(localeNumerologyPath("en")).toBe("/en/readings/numerology");
+    expect(localeAstrologyPath("en")).toBe("/en/readings/astrology");
     expect(localeNumerologyLibraryPath("en")).toBe("/en/numerology");
     expect(localeSanctuaryPath("en")).toBe("/en/sanctuary");
     expect(localeSignInPath("en")).toBe("/en/sign-in");

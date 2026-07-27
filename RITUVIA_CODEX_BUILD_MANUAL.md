@@ -1123,8 +1123,10 @@ append-only PostgreSQL persistence. Privacy export is intentionally versioned
 `privacy-export-package.v2` to include verified decrypted natal calculations, while privacy
 deletion cryptographically shreds retained calculation payloads. The server runtime now composes
 live flag evaluation, encrypted persistence, a production-only metadata loader, checksum-attested
-native execution, and the pure adapter while proving disabled-before-native ordering. No API
-route, UI, production migration, deployment, public source endpoint, or activation exists. An
+native execution, and the pure adapter while proving disabled-before-native ordering. RIT-094 now
+adds a query-free, owner-scoped read-only latest-result API and private English natal-facts viewer
+without adding birth-profile input, location search, calculation mutation, production migration,
+deployment, public source endpoint, or activation. An
 isolated 28-migration PostgreSQL drill passes default off, approved on,
 emergency off, historical-key rejection, append-only/least-privilege enforcement, and logical
 restore. The root full production
@@ -1160,7 +1162,9 @@ with SHA-256 `68cc39041511e1de29fa9355efc512d065c32612e88d396d6dbfe9aebafb4ae6`.
 D-072 closes RIT-093 without claiming a deployment: RIT-142 must repeat the gate for the exact
 deployment SHA, upload and re-download the archive, verify its digest, expose a prominent public
 source link, and bind that link to the deployed revision before RIT-143 owner go/no-go. RIT-094 is
-now In Progress while `experience.astrology` remains disabled. The
+Done with a table-authoritative presentation-only SVG, strict client response parser, exact,
+approximate, unknown, empty, offline, unauthorized, and unavailable states, and no raw birth input
+surface. `experience.astrology` remains disabled. The
 repository remains
 a local production-capable foundation, not a public production service. The new golden UI,
 bilingual route inventory, wallet/SIWE, Credits
@@ -1690,7 +1694,20 @@ experience pages. Production-artifact accessibility and the full PostgreSQL foun
 in the unrestricted local environment; historical RIT-158 runs remain separately identified rather
 than substituted for this evidence. The 2026-07-26 configuration-boundary rerun reaches the
 finite-route phase but does not pass the legacy direct-RSC assertions after `/en` became dynamic.
-No new full workspace, accessibility, or full PostgreSQL foundation run is claimed for RIT-093.
+No new full workspace, full accessibility matrix, or full PostgreSQL foundation run is claimed for
+RIT-093 or RIT-094.
+
+RIT-094 passes Web production build and affected type checking, 181 focused route/contract/proxy/UI
+tests, and a dedicated production-artifact Chromium gate. The browser evidence covers a 320px
+viewport at 400% root zoom, keyboard focus, forced colors, reduced motion, pseudodirectional RTL
+with LTR chart geometry, exact/approximate/unknown/empty/offline/unauthorized/unavailable states,
+zero critical or serious Axe violations, zero browser-storage entries, zero private API query
+parameters, and no document-level horizontal overflow. The browser's Axe run reports only its
+allowed color-contrast incomplete classification; no color-contrast violation is claimed as
+passing through suppression.
+
+RIT-095 is the sole Ready task. No natal interpretation provider, prompt, activation, or
+production behavior is started by the RIT-094 closure.
 
 RIT-047 adds one production-artifact Chromium context that navigates in the same tab from safe
 intake through deterministic Tarot, exact-reading intention handoff, free reduced-motion ritual,
@@ -3063,8 +3080,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-091 | M9        |       P0 | Done        | Implement location and historical time-zone adapter                         | RIT-090                                 | backend       | Explicit fold/gap handling, historical DST, exact provider/data/runtime versions, privacy-safe bounded caching, and fixtures pass through D-067.                                                                                     |
 | RIT-092 | M9        |       P0 | Done        | Implement encrypted birth profile and uncertainty model                     | RIT-050,RIT-091                         | backend       | Exact/approx/unknown time, original/UTC/source, export/delete and privacy tests pass.                                                                                                                                                |
 | RIT-093 | M9        |       P0 | Done        | Implement astrology engine adapter and natal facts                          | RIT-090,RIT-091,RIT-092,OWN-013,OWN-015 | backend       | Runtime, SCA, component archive, 40-vector comparison, Linux sanitizers/fuzz, and exact-clean complete release-source archive pass; D-072 assigns deployed-source upload/readback/public-link proof to RIT-142/143.                  |
-| RIT-094 | M9        |       P0 | In Progress | Build natal chart and textual table UI                                      | RIT-011,RIT-093,OWN-014                 | frontend      | Accessible visual/table, confidence, mobile/zoom/keyboard and no-color-only encoding pass.                                                                                                                                           |
-| RIT-095 | M9        |       P1 | Planned     | Add natal interpretation, fact verifier, and evals                          | RIT-033,RIT-034,RIT-093                 | ai_safety     | No invented placement/aspect/personality certainty; uncertainty and source tests pass.                                                                                                                                               |
+| RIT-094 | M9        |       P0 | Done        | Build natal chart and textual table UI                                      | RIT-011,RIT-093,OWN-014                 | frontend      | Private read-only saved-result API, strict facts projection, semantic tables, confidence states, and focused mobile/400%-zoom/keyboard/forced-colors/RTL browser evidence pass without activating astrology.                         |
+| RIT-095 | M9        |       P1 | Ready       | Add natal interpretation, fact verifier, and evals                          | RIT-033,RIT-034,RIT-093                 | ai_safety     | No invented placement/aspect/personality certainty; uncertainty and source tests pass.                                                                                                                                               |
 | RIT-096 | M9        |       P1 | Planned     | Publish curated astrology education cluster                                 | RIT-013,RIT-093                         | growth_seo    | Definitions/calculators/source/methodology and no unsupported prediction pass.                                                                                                                                                       |
 | RIT-100 | M10       |       P0 | Planned     | Complete ICU i18n and content/translation workflow                          | RIT-010,RIT-012                         | localization  | Messages/content/glossary/status/source version and missing-key gates work end to end.                                                                                                                                               |
 | RIT-101 | M10       |       P0 | Planned     | Complete RTL architecture and Arabic pseudotranslation QA                   | RIT-100,RIT-011                         | localization  | Layout, icons, charts, forms, dialogs, email, share cards pass RTL/a11y tests.                                                                                                                                                       |
