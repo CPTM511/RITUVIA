@@ -49,7 +49,7 @@ exist. The local security profile now passes macOS UBSan, 151 deterministic muta
 cases, manifest/SBOM/license closure, and sanitized native integration tests. D-070 now approves
 OWN-015 Option A: tropical zodiac, eleven bodies including True Node,
 exact-time Placidus houses, fixed major-aspect orbs, strict approximate/unknown-time suppression,
-and no polar/house fallback or partial facts. RIT-093 is In Progress with the approved checksummed
+and no polar/house fallback or partial facts. RIT-093 is Done under D-072 with the approved checksummed
 method catalog, strict facts parser, official upstream `setest` regression corpus, default-off
 `experience.astrology` kill switch, owner/profile-revision-bound server service, and encrypted
 append-only PostgreSQL persistence. Privacy export is intentionally versioned
@@ -74,8 +74,9 @@ the CI contract locks that fail-closed query. An ignored 120-file native-compone
 Source archive now includes patched-dependency/test/source-dependency closure, suppresses host
 xattrs, verifies its complete extracted inventory, replaces curl with a rejecting shim, reproduces
 the baseline engine metadata from archived source/data, and supports a frozen-lockfile install in
-a fresh Linux environment. The recorded worktree is dirty, so this rehearsal is not presented as
-complete deployed-version source publication. The
+a fresh Linux environment. Exact-clean revision
+`1fded12559b4e2986a317f2a6fee4008a2c22b8a` produced a 120-file component archive with SHA-256
+`2040f941a674fe45c80ed317139e99bb24f1bb955ad2909399bfd6c82bc80a7c`. The
 normal and sanitizer-native gates now additionally compare forty locked geocentric vectors for ten
 celestial bodies against independently maintained MIT Astronomy Engine `2.1.19`. The maximum
 observed differences remain below `0.02°` angular and `0.001` relative-distance limits; True Node
@@ -87,10 +88,12 @@ unexpected ignored inputs, symlinks/submodules, case collisions, unresolved Git 
 environment redirection, component/source drift, unsafe archive entries, and output replacement;
 archives all tracked source plus pinned native source/data; independently verifies the extracted
 inventory; and repeats the offline native rebuild. Eight focused tests pass, the CI contract locks
-the Linux rehearsal, and the current dirty worktree is rejected rather than mislabeled as release
-evidence. The remaining RIT-093 work is executing the gate on the final clean release revision,
-upload/re-download digest verification, and complete public Corresponding Source delivery bound to
-the deployed revision. The
+the Linux rehearsal, and the clean implementation revision produced a 914-file complete archive
+with SHA-256 `68cc39041511e1de29fa9355efc512d065c32612e88d396d6dbfe9aebafb4ae6`.
+D-072 closes RIT-093 without claiming a deployment: RIT-142 must repeat the gate for the exact
+deployment SHA, upload and re-download the archive, verify its digest, expose a prominent public
+source link, and bind that link to the deployed revision before RIT-143 owner go/no-go. RIT-094 is
+now In Progress while `experience.astrology` remains disabled. The
 repository remains
 a local production-capable foundation, not a public production service. The new golden UI,
 bilingual route inventory, wallet/SIWE, Credits
@@ -593,8 +596,10 @@ These owner decisions do not block independent local engineering foundation work
   mutation/boundary cases, 5,000 libFuzzer runs, and both sanitized native integration files under
   Node 24.18.0, pnpm 11.13.1, and Clang 18.1.3.
 - The complete release-source boundary passes eight focused synthetic Git/archive cases plus the
-  locked CI contract. Its current-worktree invocation fails closed because the repository is not a
-  clean immutable release checkout; no release archive is claimed or uploaded.
+  locked CI contract. Clean revision `1fded12559b4e2986a317f2a6fee4008a2c22b8a` produced and
+  independently verified the 914-file complete archive with SHA-256
+  `68cc39041511e1de29fa9355efc512d065c32612e88d396d6dbfe9aebafb4ae6`; no upload, deployment, or
+  public-source claim is made.
 - The obsolete owner-untracked `apps/web/server/tarot-reading-state 2.ts` safe-off stub was removed
   after comparison proved that the canonical implementation fully supersedes it. The two
   D-030-excluded QA report copies remain untouched.

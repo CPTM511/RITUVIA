@@ -686,3 +686,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
   policy preserves that constraint and enables a real staging drill without rewriting history or
   activating production.
 - **Date:** 2026-07-26
+
+### [D-072 — Separate astrology implementation completion from deployed-source publication](records/decisions/D-072.md)
+
+- **Decision:** Close RIT-093 after the exact-clean complete local Corresponding Source archive
+  passes, while requiring RIT-142 to upload, re-download, verify, publicly link, and bind the exact
+  source archive for every deployed revision before RIT-143 owner go/no-go.
+- **Reason:** A future deployed revision cannot be published before it exists; separating the
+  implementation gate from the deployment operation lets dependent UI work proceed without
+  weakening D-069 or crossing the production approval gate.
+- **Date:** 2026-07-27

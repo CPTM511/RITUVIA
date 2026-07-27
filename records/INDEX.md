@@ -54,6 +54,7 @@
 | Decision | D-069 | Adopt AGPLv3 for RITUVIA and Swiss Ephemeris | [decisions/D-069.md](./decisions/D-069.md) |
 | Decision | D-070 | Approved conservative Western astrology V1 calculation method | [decisions/D-070.md](./decisions/D-070.md) |
 | Decision | D-071 | Canonicalize the astrology kill-switch persistence key | [decisions/D-071.md](./decisions/D-071.md) |
+| Decision | D-072 | Separate astrology implementation completion from deployed-source publication | [decisions/D-072.md](./decisions/D-072.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -107,6 +108,7 @@
 | Task | RIT-091 | Location and historical time-zone adapter | [tasks/RIT-091.md](./tasks/RIT-091.md) |
 | Task | RIT-092 | Encrypted birth profile and uncertainty model | [tasks/RIT-092.md](./tasks/RIT-092.md) |
 | Task | RIT-093 | Astrology engine adapter and natal facts | [tasks/RIT-093.md](./tasks/RIT-093.md) |
+| Task | RIT-094 | Natal chart and textual table UI | [tasks/RIT-094.md](./tasks/RIT-094.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
 | Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
 
