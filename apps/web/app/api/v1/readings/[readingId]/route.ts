@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { tarotReadingApiMessages } from "../../../../_i18n/api-messages";
+import { accountSessionCookieName } from "../../../../../server/account-auth";
 import { getWebTarotReading } from "../../../../../server/tarot-reading-runtime";
 import { TarotReadingApplicationError } from "../../../../../server/tarot-reading";
 import {
@@ -32,11 +33,16 @@ export const GET = async (request: NextRequest, context: Context): Promise<NextR
   }
   const { readingId } = await context.params;
   if (!readingIdPattern.test(readingId)) return notFound(request);
-  const sessionToken = request.cookies.get(tarotReadingSessionCookieName)?.value;
+  const accountToken = request.cookies.get(accountSessionCookieName)?.value;
+  const anonymousToken = request.cookies.get(tarotReadingSessionCookieName)?.value;
+  const sessionToken = accountToken ?? anonymousToken;
   if (sessionToken === undefined) return notFound(request);
 
   try {
-    const reading = await getWebTarotReading(readingId, sessionToken);
+    const reading =
+      accountToken === undefined
+        ? await getWebTarotReading(readingId, sessionToken)
+        : await getWebTarotReading(readingId, sessionToken, "account");
     return reading === null
       ? notFound(request)
       : applyPrivateHeaders(NextResponse.json(reading, { status: 200 }));

@@ -4,17 +4,17 @@ import { createHash, randomUUID } from "node:crypto";
 
 import {
   createCommercePersistence,
+  readCountryPolicyVersions,
   type CommercePersistence,
   type PersistedCommerceOrder,
   type PersistedEntitlement,
   type PreparedPaymentEvent,
 } from "@rituvia/db";
 import {
-  evaluateCountryPolicy,
-  parseCountryPolicyRuleV1,
-  type CountryPolicyEnvironment,
-  type CountryPolicyRuleV1,
-  type CountryPolicySnapshotV1,
+  evaluateCountryPolicyVersion,
+  parseCountryPolicyVersionV1,
+  type CountryPolicySnapshotV2,
+  type CountryPolicyVersionV1,
 } from "@rituvia/country-policy";
 import {
   applyPaymentEvent,
@@ -190,8 +190,13 @@ export type CommerceApplicationDependencies = Readonly<{
   accounts: CommerceAccountGateway;
   canonicalOrigin: string;
   clock: () => string;
-  countryPolicyRules: readonly CountryPolicyRuleV1[];
-  environment: CountryPolicyEnvironment;
+  countryPolicies: Readonly<{
+    read(
+      countryCode: string,
+      environment: CountryPolicyVersionV1["environment"],
+    ): Promise<readonly CountryPolicyVersionV1[]>;
+  }>;
+  environment: CountryPolicyVersionV1["environment"];
   idFactory: () => string;
   paymentProviders: WebPaymentProviderRegistry;
   persistence: CommercePersistence;
@@ -249,30 +254,56 @@ const findCatalogDefinition = (productCode: unknown): CatalogDefinition => {
   return definition;
 };
 
-export const webCommerceLocalPolicyRules: readonly CountryPolicyRuleV1[] = Object.freeze(
-  catalogDefinitions.map((definition) =>
-    parseCountryPolicyRuleV1({
-      approvalMode: "local_test",
-      countryCode: localCountryCode,
-      currencyCode: definition.price.money.currencyCode,
-      effectiveFrom: catalogEffectiveFrom,
-      effectiveUntil: null,
-      environment: "local",
-      evidence: {
-        legalReference: "test:local:legal",
-        ownerReference: "test:own-010:local",
-        providerReference: "test:local:hosted-checkout",
-      },
-      minimumAge: 18,
-      paymentMethod: "card",
-      productCode: definition.product.code,
-      providerId: localHostedCheckoutProviderId,
-      schemaVersion: "country-policy-rule.v1",
-      status: "approved",
-      version: `local.us.${definition.product.code}.v1`,
-    }),
-  ),
-);
+export const webCommerceLocalPolicyVersions: readonly CountryPolicyVersionV1[] = Object.freeze([
+  parseCountryPolicyVersionV1({
+    approvalMode: "local_test",
+    countryCode: localCountryCode,
+    crypto: { assets: [], enabled: false, providerRoute: null },
+    dataFlags: ["private_by_default"],
+    effectiveFrom: catalogEffectiveFrom,
+    effectiveUntil: null,
+    environment: "local",
+    evidence: {
+      cryptoApprovalReference: null,
+      fiatApprovalReference: "test:local:fiat",
+      legalReference: "test:local:legal",
+      ownerReference: "test:own-010:local",
+      providerReference: "test:local:hosted-checkout",
+    },
+    fiat: {
+      currencies: ["USD"],
+      enabled: true,
+      methods: ["card"],
+      providerRoutes: [localHostedCheckoutProviderId],
+      recurringAllowed: false,
+    },
+    legalDocumentVersions: [
+      { documentCode: "privacy", version: "local.privacy.v1" },
+      { documentCode: "terms", version: termsVersion },
+    ],
+    localeTags: ["en"],
+    marketingFlags: ["no_fear_upsell"],
+    minimumAge: 18,
+    modalities: ["ritual"],
+    nextReviewAt: "2099-01-01T00:00:00.000Z",
+    prohibitedClaims: ["guaranteed_outcome"],
+    products: [...catalogDefinitions]
+      .map((definition) => ({
+        access: "paid" as const,
+        productCode: definition.product.code,
+        subscriptionAllowed: false,
+      }))
+      .sort((left, right) => left.productCode.localeCompare(right.productCode)),
+    refundPolicyVersion,
+    requiredDisclosures: ["digital_contents", "reflective_not_predictive"],
+    schemaVersion: "country-policy-version.v1",
+    status: "paid",
+    supersedesVersion: null,
+    supportAvailable: true,
+    taxMode: "not_applicable",
+    version: "local.us.commerce.v1",
+  }),
+]);
 
 export const getWebCommerceCatalog = (): readonly WebCommerceCatalogItem[] =>
   Object.freeze(
@@ -475,23 +506,38 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
     }
   };
 
-  const evaluatePolicy = (
+  const evaluatePolicy = async (
     definition: CatalogDefinition,
     asOf: string,
     providerId: WebPaymentProviderId,
-  ): CountryPolicySnapshotV1 => {
-    const decision = evaluateCountryPolicy(
+  ): Promise<CountryPolicySnapshotV2> => {
+    const versions = await dependencies.countryPolicies.read(
+      localCountryCode,
+      dependencies.environment,
+    );
+    const decision = evaluateCountryPolicyVersion(
       {
-        adultAttested: true,
+        ageAttested: true,
         asOf,
-        countryCode: localCountryCode,
-        currencyCode: definition.price.money.currencyCode,
+        countryEvidence: {
+          billingCountryCode: null,
+          declaredCountryCode: localCountryCode,
+          geolocationConfidence: "none",
+          geolocationCountryCode: null,
+          localeCountryCode: null,
+        },
         environment: dependencies.environment,
-        paymentMethod: "card",
+        modality: "ritual",
+        payment: {
+          currencyCode: definition.price.money.currencyCode,
+          kind: "fiat",
+          method: "card",
+          providerId,
+          recurring: false,
+        },
         productCode: definition.product.code,
-        providerId,
       },
-      dependencies.countryPolicyRules,
+      versions,
     );
     if (!decision.allowed) throw new WebCommerceError("not_eligible");
     return decision.snapshot;
@@ -655,14 +701,14 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
         const asOf = requireInstant(dependencies.clock());
         const providerId = dependencies.providerId;
         if (providerId === null) throw new WebCommerceError("unavailable");
-        const policy = evaluatePolicy(definition, asOf, providerId);
+        const policy = await evaluatePolicy(definition, asOf, providerId);
         const domainOrder = createOrderV1({
           accountId: account.userId,
           asOf,
           countryPolicy: {
-            countryCode: policy.countryCode,
+            countryCode: policy.selectedCountryCode,
             evaluatedAt: policy.evaluatedAt,
-            ruleVersion: policy.ruleVersion,
+            ruleVersion: policy.policyVersion,
           },
           orderId: dependencies.idFactory(),
           price: definition.price,
@@ -670,7 +716,7 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
           providerId,
         });
         const canonicalRequest = JSON.stringify({
-          countryPolicyVersion: policy.ruleVersion,
+          countryPolicyVersion: policy.policyVersion,
           currencyCode: domainOrder.amount.currencyCode,
           productCode: domainOrder.productCode,
           productVersion: domainOrder.productVersion,
@@ -682,8 +728,8 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
           idempotencyKeyHash: sha256(idempotencyKey),
           order: {
             amountMinor: domainOrder.amount.amountMinor,
-            countryCode: policy.countryCode,
-            countryPolicyVersion: policy.ruleVersion,
+            countryCode: policy.selectedCountryCode,
+            countryPolicyVersion: policy.policyVersion,
             createdAt: domainOrder.createdAt,
             currencyCode: domainOrder.amount.currencyCode,
             entitlementCode: domainOrder.entitlementCode,
@@ -757,7 +803,7 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
         const definition = findCatalogDefinition(order.productCode);
         const providerId = dependencies.providerId;
         if (providerId === null) throw new WebCommerceError("unavailable");
-        evaluatePolicy(definition, now, providerId);
+        await evaluatePolicy(definition, now, providerId);
         const provider = dependencies.paymentProviders.get(providerId);
         const returnUrl = new URL("/en/checkout/return", dependencies.canonicalOrigin);
         returnUrl.searchParams.set("order_id", order.orderId);
@@ -834,8 +880,15 @@ export const loadWebCommerceApplicationService = (): CommerceApplicationService 
     },
     canonicalOrigin: configuration.brand.canonicalOrigin,
     clock: () => new Date().toISOString(),
-    countryPolicyRules:
-      configuration.deploymentEnvironment === "local" ? webCommerceLocalPolicyRules : [],
+    countryPolicies: {
+      read: async (countryCode, environment) =>
+        (
+          await readCountryPolicyVersions(loadWebDatabase(), {
+            countryCode,
+            environment,
+          })
+        ).map((persisted) => parseCountryPolicyVersionV1(persisted.policyDocument)),
+    },
     environment: configuration.deploymentEnvironment,
     idFactory: randomUUID,
     paymentProviders: loadWebPaymentProviderRegistry(),

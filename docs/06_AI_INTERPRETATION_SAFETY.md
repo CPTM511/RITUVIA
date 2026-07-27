@@ -32,10 +32,10 @@ Use a typed bundle such as:
 ```ts
 type InterpretationInput = {
   requestId: string;
-  modality: 'tarot' | 'numerology' | 'astrology';
+  modality: "tarot" | "numerology" | "astrology";
   readingType: string;
   locale: string;
-  tone: 'grounded' | 'gentle' | 'concise' | 'poetic-light';
+  tone: "grounded" | "gentle" | "concise" | "poetic-light";
   themeCode?: string;
   safeQuestion?: string; // encrypted in storage; minimize model exposure
   deterministicFacts: unknown; // modality-specific validated schema
@@ -63,7 +63,7 @@ Minimize context. Do not include full journal history, payment data, contact dat
 
 ```ts
 type InterpretationOutput = {
-  schemaVersion: '1';
+  schemaVersion: "1";
   title: string;
   summary: string;
   symbols: Array<{
@@ -77,7 +77,7 @@ type InterpretationOutput = {
   smallAction: {
     label: string;
     rationale: string;
-    timeHorizon: 'today' | 'this_week' | 'open';
+    timeHorizon: "today" | "this_week" | "open";
   };
   ritualSuggestion?: {
     approvedTemplateCode: string;
@@ -86,7 +86,7 @@ type InterpretationOutput = {
   boundaryNote: string;
   sourceRefs: string[];
   safety: {
-    certaintyLevel: 'reflective';
+    certaintyLevel: "reflective";
     containsProfessionalAdvice: false;
     containsGuaranteedOutcome: false;
   };
@@ -243,3 +243,22 @@ Do not reduce quality to one model-as-judge score. Use deterministic validators,
 - Default logs contain request ID, model/prompt/content versions, token/cost/latency, schema/safety result, and categorical theme—not raw question/journal/birth data.
 - Raw traces, if temporarily needed for debugging, require explicit gated sampling, encryption, restricted access, retention expiry, and user/legal basis.
 - Never send payment data, authentication secrets, private keys, or unnecessary identifiers to the model.
+
+## 15. Numerology V1 safe-off boundary
+
+RIT-083 adds no production model or calculator prose. A future English numerology interpretation
+must recompute the exact deterministic facts, project only calculation code/result/rule and the
+explicit Personal Year target, and exclude birth date, canonical digits, initial sums, and
+reduction steps from provider context. Structured number and target-year fields remain
+server-authoritative; model prose may contain neither digits nor number words.
+
+Content must cover every reachable Life Path, Birthday Number, and Personal Year result before an
+exact request-specific selection is made. Content, prompt, and fallback integrity are checked
+separately from server-owned authorization. A provider candidate is single-use, input-identity and
+digest bound, deterministically checked, independently reviewed, and non-displayable until the
+final verified or approved-replacement result exists.
+
+The canonical V1 catalog currently has AI interpretation disabled. Synthetic fixtures and passing
+local evaluations do not authorize production meanings, content rights, a provider/reviewer,
+Credits, persistence, the free calculator surface, or launch. Those remain blocked by OWN-012 and
+the production AI owner gates.

@@ -7,6 +7,7 @@ import {
   ensureWebAnonymousSession,
   WebAnonymousSessionError,
 } from "../../../../../server/anonymous-session";
+import { deriveSessionCsrfToken, sessionCsrfHeaderName } from "../../../../../server/session-csrf";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -122,12 +123,18 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
   }
 
   try {
+    const existingToken = request.cookies.get(anonymousSessionCookieName)?.value;
     const ensured = await ensureWebAnonymousSession({
       idempotencyKey,
-      token: request.cookies.get(anonymousSessionCookieName)?.value,
+      token: existingToken,
     });
+    const csrfSessionToken = ensured.kind === "created" ? ensured.token : existingToken;
+    if (csrfSessionToken === undefined) {
+      throw new WebAnonymousSessionError("unavailable");
+    }
     const response = new NextResponse(null, { status: 204 });
     response.headers.set("cache-control", privateNoStore);
+    response.headers.set(sessionCsrfHeaderName, deriveSessionCsrfToken(csrfSessionToken));
     response.headers.set("x-robots-tag", noIndex);
     if (ensured.kind === "created") {
       const expires = new Date(ensured.context.expiresAt);

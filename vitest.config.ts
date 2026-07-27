@@ -12,6 +12,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@rituvia/ai": fileURLToPath(new URL("./packages/ai/src/index.ts", import.meta.url)),
+      "@rituvia/analytics": fileURLToPath(
+        new URL("./packages/analytics/src/index.ts", import.meta.url),
+      ),
+      "@rituvia/astrology-engine-native": fileURLToPath(
+        new URL("./packages/astrology-engine-native/src/index.ts", import.meta.url),
+      ),
       "@rituvia/config/feature-flags": fileURLToPath(
         new URL("./packages/config/src/feature-flags.ts", import.meta.url),
       ),
@@ -19,6 +25,9 @@ export default defineConfig({
         new URL("./packages/country-policy/src/index.ts", import.meta.url),
       ),
       "@rituvia/db": fileURLToPath(new URL("./packages/db/src/index.ts", import.meta.url)),
+      "@rituvia/divination": fileURLToPath(
+        new URL("./packages/divination/src/index.ts", import.meta.url),
+      ),
       "@rituvia/domain": fileURLToPath(new URL("./packages/domain/src/index.ts", import.meta.url)),
       "@rituvia/payments/adapters/local": fileURLToPath(
         new URL("./packages/payments/src/adapters/local-hosted-checkout.ts", import.meta.url),

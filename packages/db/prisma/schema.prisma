@@ -41,6 +41,300 @@ model FeatureFlagVersion {
   @@map("feature_flag_version")
 }
 
+model CountryPolicyVersion {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schemaVersion     String    @map("schema_version") @db.VarChar(100)
+  version           String    @unique(map: "country_policy_version_version_key") @db.VarChar(100)
+  supersedesVersion String?   @unique(map: "country_policy_version_supersedes_version_key") @map("supersedes_version") @db.VarChar(100)
+  countryCode       String    @map("country_code") @db.Char(2)
+  environment       String    @db.VarChar(16)
+  status            String    @db.VarChar(16)
+  approvalMode      String    @map("approval_mode") @db.VarChar(16)
+  effectiveFrom     DateTime  @map("effective_from") @db.Timestamptz(6)
+  effectiveUntil    DateTime? @map("effective_until") @db.Timestamptz(6)
+  nextReviewAt      DateTime  @map("next_review_at") @db.Timestamptz(6)
+  legalReference    String    @map("legal_reference") @db.VarChar(200)
+  ownerReference    String    @map("owner_reference") @db.VarChar(200)
+  providerReference String    @map("provider_reference") @db.VarChar(200)
+  actorId           String    @map("actor_id") @db.VarChar(100)
+  policyDocument    Json      @map("policy_document") @db.JsonB
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([environment, countryCode, effectiveFrom], map: "country_policy_version_lookup_idx")
+  @@map("country_policy_version")
+}
+
+model CatalogVersion {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schemaVersion        String           @map("schema_version") @db.VarChar(100)
+  version              String           @unique(map: "catalog_version_version_key") @db.VarChar(100)
+  supersedesVersion    String?          @unique(map: "catalog_version_supersedes_version_key") @map("supersedes_version") @db.VarChar(100)
+  environment          String           @db.VarChar(16)
+  status               String           @db.VarChar(16)
+  approvalMode         String           @map("approval_mode") @db.VarChar(16)
+  defaultLocale        String           @map("default_locale") @db.VarChar(35)
+  supportedLocales     String[]         @map("supported_locales") @db.VarChar(35)
+  effectiveFrom        DateTime         @map("effective_from") @db.Timestamptz(6)
+  effectiveUntil       DateTime?        @map("effective_until") @db.Timestamptz(6)
+  nextReviewAt         DateTime         @map("next_review_at") @db.Timestamptz(6)
+  sourceReference      String           @map("source_reference") @db.VarChar(300)
+  sourceChecksumSha256 String           @map("source_checksum_sha256") @db.Char(64)
+  ownerReference       String           @map("owner_reference") @db.VarChar(200)
+  actorId              String           @map("actor_id") @db.VarChar(100)
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  products             CatalogProduct[]
+
+  @@index([environment, effectiveFrom], map: "catalog_version_lookup_idx")
+  @@map("catalog_version")
+}
+
+model CatalogProduct {
+  id                   String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  catalogVersion       String                       @map("catalog_version") @db.VarChar(100)
+  code                 String                       @db.VarChar(100)
+  version              String                       @db.VarChar(100)
+  kind                 String                       @db.VarChar(32)
+  status               String                       @db.VarChar(16)
+  fulfillmentCode      String                       @map("fulfillment_code") @db.VarChar(100)
+  creditsGranted       Int?                         @map("credits_granted")
+  creditsCost          Int?                         @map("credits_cost")
+  creditsPerMonth      Int?                         @map("credits_per_month")
+  subscriptionInterval String?                      @map("subscription_interval") @db.VarChar(16)
+  createdAt            DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  catalog              CatalogVersion               @relation(fields: [catalogVersion], references: [version], onDelete: Restrict, onUpdate: Restrict)
+  localizations        CatalogProductLocalization[]
+  prices               CatalogPrice[]
+
+  @@unique([catalogVersion, code, version], map: "catalog_product_identity_key")
+  @@index([catalogVersion, status, kind, code], map: "catalog_product_lookup_idx")
+  @@map("catalog_product")
+}
+
+model CatalogProductLocalization {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  catalogVersion String         @map("catalog_version") @db.VarChar(100)
+  productCode    String         @map("product_code") @db.VarChar(100)
+  productVersion String         @map("product_version") @db.VarChar(100)
+  locale         String         @db.VarChar(35)
+  title          String         @db.VarChar(160)
+  description    String         @db.VarChar(1000)
+  exactContents  String[]       @map("exact_contents") @db.VarChar(500)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  product        CatalogProduct @relation(fields: [catalogVersion, productCode, productVersion], references: [catalogVersion, code, version], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([catalogVersion, productCode, productVersion, locale], map: "catalog_product_localization_identity_key")
+  @@index([catalogVersion, locale, productCode], map: "catalog_product_localization_lookup_idx")
+  @@map("catalog_product_localization")
+}
+
+model CatalogPrice {
+  id                  String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  catalogVersion      String         @map("catalog_version") @db.VarChar(100)
+  priceId             String         @map("price_id") @db.VarChar(200)
+  version             String         @db.VarChar(100)
+  productCode         String         @map("product_code") @db.VarChar(100)
+  productVersion      String         @map("product_version") @db.VarChar(100)
+  status              String         @db.VarChar(16)
+  currencyCode        String         @map("currency_code") @db.Char(3)
+  amountMinor         Int            @map("amount_minor")
+  billingInterval     String         @map("billing_interval") @db.VarChar(16)
+  countryCodes        String[]       @map("country_codes") @db.Char(2)
+  providerEligibility String[]       @map("provider_eligibility") @db.VarChar(32)
+  taxCategory         String         @map("tax_category") @db.VarChar(100)
+  refundPolicyVersion String         @map("refund_policy_version") @db.VarChar(100)
+  effectiveFrom       DateTime       @map("effective_from") @db.Timestamptz(6)
+  effectiveUntil      DateTime?      @map("effective_until") @db.Timestamptz(6)
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  product             CatalogProduct @relation(fields: [catalogVersion, productCode, productVersion], references: [catalogVersion, code, version], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([catalogVersion, priceId, version], map: "catalog_price_identity_key")
+  @@index([catalogVersion, productCode, currencyCode, effectiveFrom], map: "catalog_price_lookup_idx")
+  @@map("catalog_price")
+}
+
+model CommercialOrderV2 {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publicId              String    @unique(map: "commercial_order_v2_public_id_key") @default(dbgenerated("gen_random_uuid()")) @map("public_id") @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  status                String    @default("created") @db.VarChar(24)
+  currencyCode          String    @map("currency_code") @db.Char(3)
+  subtotalMinor         Int       @map("subtotal_minor")
+  taxMinor              Int       @default(0) @map("tax_minor")
+  totalMinor            Int       @map("total_minor")
+  refundedMinor         Int       @default(0) @map("refunded_minor")
+  countryCode           String    @map("country_code") @db.Char(2)
+  countryPolicyVersion  String    @map("country_policy_version") @db.VarChar(100)
+  catalogVersion        String    @map("catalog_version") @db.VarChar(100)
+  priceId               String    @map("price_id") @db.VarChar(200)
+  priceVersion          String    @map("price_version") @db.VarChar(100)
+  termsVersion          String    @map("terms_version") @db.VarChar(100)
+  refundPolicyVersion   String    @map("refund_policy_version") @db.VarChar(100)
+  idempotencyKeyVersion String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes     @map("canonical_request_hash")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @map("updated_at") @db.Timestamptz(6)
+  paidAt                DateTime? @map("paid_at") @db.Timestamptz(6)
+  refundRequestedAt     DateTime? @map("refund_requested_at") @db.Timestamptz(6)
+  refundedAt            DateTime? @map("refunded_at") @db.Timestamptz(6)
+
+  @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_order_v2_user_idempotency_key")
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "commercial_order_v2_user_created_idx")
+  @@map("commercial_order_v2")
+}
+
+model CommercialOrderItemV2 {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId               String   @unique(map: "commercial_order_item_v2_order_key") @map("order_id") @db.Uuid
+  catalogVersion        String   @map("catalog_version") @db.VarChar(100)
+  productCode           String   @map("product_code") @db.VarChar(100)
+  productVersion        String   @map("product_version") @db.VarChar(100)
+  quantity              Int      @default(1) @db.SmallInt
+  unitAmountMinor       Int      @map("unit_amount_minor")
+  totalMinor            Int      @map("total_minor")
+  exactContentsSnapshot String[] @map("exact_contents_snapshot") @db.VarChar(500)
+  fulfillmentKind       String   @map("fulfillment_kind") @db.VarChar(24)
+  fulfillmentCode       String   @map("fulfillment_code") @db.VarChar(100)
+  creditsGranted        Int?     @map("credits_granted")
+  creditsPerMonth       Int?     @map("credits_per_month")
+
+  @@index([catalogVersion, productCode, productVersion], map: "commercial_order_item_v2_product_idx")
+  @@map("commercial_order_item_v2")
+}
+
+model CommercialPaymentAttemptV2 {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId                 String    @map("order_id") @db.Uuid
+  provider                String    @db.VarChar(32)
+  environment             String    @db.VarChar(16)
+  attemptNumber           Int       @map("attempt_number") @db.SmallInt
+  state                   String    @default("created") @db.VarChar(24)
+  providerCheckoutId      String?   @map("provider_checkout_id") @db.VarChar(255)
+  providerCheckoutUrl     String?   @map("provider_checkout_url") @db.Text
+  providerPaymentIntentId String?   @map("provider_payment_intent_id") @db.VarChar(255)
+  expectedNetwork         String?   @map("expected_network") @db.VarChar(32)
+  expectedAsset           String?   @map("expected_asset") @db.VarChar(32)
+  amountMinor             Int       @map("amount_minor")
+  currencyCode            String    @map("currency_code") @db.Char(3)
+  idempotencyKeyVersion   String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash      Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash    Bytes     @map("canonical_request_hash")
+  expiresAt               DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @map("updated_at") @db.Timestamptz(6)
+  completedAt             DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  @@unique([orderId, attemptNumber], map: "commercial_payment_attempt_v2_order_number_key")
+  @@unique([orderId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_payment_attempt_v2_idempotency_key")
+  @@unique([provider, environment, providerCheckoutId], map: "commercial_payment_attempt_v2_checkout_key")
+  @@unique([provider, environment, providerPaymentIntentId], map: "commercial_payment_attempt_v2_intent_key")
+  @@index([orderId, state, id], map: "commercial_payment_attempt_v2_order_state_idx")
+  @@map("commercial_payment_attempt_v2")
+}
+
+model CreditReservation {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  catalogVersion        String    @map("catalog_version") @db.VarChar(100)
+  productCode           String    @map("product_code") @db.VarChar(100)
+  productVersion        String    @map("product_version") @db.VarChar(100)
+  amount                Int
+  status                String    @default("active") @db.VarChar(16)
+  idempotencyKeyVersion String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes     @map("canonical_request_hash")
+  expiresAt             DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  consumedAt            DateTime? @map("consumed_at") @db.Timestamptz(6)
+  releasedAt            DateTime? @map("released_at") @db.Timestamptz(6)
+  expiredAt             DateTime? @map("expired_at") @db.Timestamptz(6)
+
+  @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "credit_reservation_user_idempotency_key")
+  @@index([userId, status, expiresAt, id], map: "credit_reservation_user_status_idx")
+  @@map("credit_reservation")
+}
+
+model CreditLedgerEntry {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  creditType            String    @map("credit_type") @db.VarChar(24)
+  direction             String    @db.VarChar(16)
+  amount                Int
+  reason                String    @db.VarChar(100)
+  catalogVersion        String?   @map("catalog_version") @db.VarChar(100)
+  productCode           String?   @map("product_code") @db.VarChar(100)
+  productVersion        String?   @map("product_version") @db.VarChar(100)
+  orderId               String?   @map("order_id") @db.Uuid
+  subscriptionPeriodId  String?   @map("subscription_period_id") @db.VarChar(200)
+  reservationId         String?   @map("reservation_id") @db.Uuid
+  generationId          String?   @map("generation_id") @db.Uuid
+  sourceEntryId         String?   @map("source_entry_id") @db.Uuid
+  operation             String    @db.VarChar(100)
+  idempotencyKeyVersion String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes     @map("canonical_request_hash")
+  policyVersion         String    @map("policy_version") @db.VarChar(100)
+  termsVersion          String    @map("terms_version") @db.VarChar(100)
+  expiresAt             DateTime? @map("expires_at") @db.Timestamptz(6)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, operation, idempotencyKeyVersion, idempotencyKeyHash], map: "credit_ledger_entry_user_idempotency_key")
+  @@index([userId, createdAt, id], map: "credit_ledger_entry_user_created_idx")
+  @@index([sourceEntryId, id], map: "credit_ledger_entry_source_idx")
+  @@map("credit_ledger_entry")
+}
+
+model CreditAllocation {
+  reservationId   String   @map("reservation_id") @db.Uuid
+  sourceEntryId   String   @map("source_entry_id") @db.Uuid
+  creditType      String   @map("credit_type") @db.VarChar(24)
+  amount          Int
+  allocationOrder Int      @map("allocation_order") @db.SmallInt
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@id([reservationId, sourceEntryId], map: "credit_allocation_pkey")
+  @@unique([reservationId, allocationOrder], map: "credit_allocation_order_key")
+  @@index([sourceEntryId, reservationId], map: "credit_allocation_source_idx")
+  @@map("credit_allocation")
+}
+
+model CreditProjection {
+  userId                String   @id @map("user_id") @db.Uuid
+  subscriptionAvailable Int      @default(0) @map("subscription_available")
+  promotionalAvailable  Int      @default(0) @map("promotional_available")
+  purchasedAvailable    Int      @default(0) @map("purchased_available")
+  reserved              Int      @default(0)
+  version               BigInt   @default(0)
+  updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("credit_projection")
+}
+
+model CommercialEntitlementV2 {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  entitlementType       String    @map("entitlement_type") @db.VarChar(24)
+  catalogVersion        String    @map("catalog_version") @db.VarChar(100)
+  productCode           String    @map("product_code") @db.VarChar(100)
+  productVersion        String    @map("product_version") @db.VarChar(100)
+  fulfillmentCode       String    @map("fulfillment_code") @db.VarChar(100)
+  status                String    @default("active") @db.VarChar(16)
+  sourceOrderId         String?   @map("source_order_id") @db.Uuid
+  sourceLedgerEntryId   String?   @map("source_ledger_entry_id") @db.Uuid
+  idempotencyKeyVersion String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes     @map("canonical_request_hash")
+  grantedAt             DateTime  @default(now()) @map("granted_at") @db.Timestamptz(6)
+  frozenAt              DateTime? @map("frozen_at") @db.Timestamptz(6)
+  revokedAt             DateTime? @map("revoked_at") @db.Timestamptz(6)
+  version               Int       @default(1)
+
+  @@unique([userId, entitlementType, fulfillmentCode], map: "commercial_entitlement_v2_user_code_key")
+  @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_entitlement_v2_idempotency_key")
+  @@index([userId, status, grantedAt(sort: Desc), id(sort: Desc)], map: "commercial_entitlement_v2_user_status_idx")
+  @@map("commercial_entitlement_v2")
+}
+
 model AnonymousSubject {
   id                          String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   expiryPolicyVersion         String                       @map("expiry_policy_version") @db.VarChar(100)
@@ -57,6 +351,9 @@ model AnonymousSubject {
   intentions                  Intention[]
   ritualSessions              RitualSession[]
   journalEntries              JournalEntry[]
+  ritualSessionsV2            RitualSessionV2[]
+  privateJournalEntries       PrivateJournalEntry[]
+  revisits                    Revisit[]
 
   @@index([expiresAt, id], map: "anonymous_subject_expiry_idx")
   @@map("anonymous_subject")
@@ -86,7 +383,7 @@ model Reading {
   tarotDraw                TarotDraw?
   reports                  ReadingReport[]
   interpretations          Interpretation[]
-  intentions              Intention[]
+  intentions               Intention[]
 
   @@unique([anonymousSubjectId, requestSchemaVersion, idempotencyKeyVersion, idempotencyKeyHash], map: "reading_subject_scope_idempotency_key")
   @@unique([id, anonymousSubjectId], map: "reading_subject_identity_key")
@@ -97,80 +394,82 @@ model Reading {
 }
 
 model Interpretation {
-  id                                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  readingId                         String           @map("reading_id") @db.Uuid
-  anonymousSubjectId                String           @map("anonymous_subject_id") @db.Uuid
-  generationNumber                  Int              @default(1) @map("generation_number") @db.SmallInt
-  requestId                         String           @unique(map: "interpretation_request_id_key") @map("request_id") @db.Uuid
-  status                            String           @default("generating") @db.VarChar(24)
-  generationSchemaVersion           String           @map("generation_schema_version") @db.VarChar(100)
-  generationPolicyVersion           String           @map("generation_policy_version") @db.VarChar(100)
-  eligibilityAsOf                   DateTime         @map("eligibility_as_of") @db.Date
-  idempotencyKeyVersion             String           @map("idempotency_key_version") @db.VarChar(100)
-  idempotencyKeyHash                Bytes            @map("idempotency_key_hash")
-  canonicalRequestHash              Bytes            @map("canonical_request_hash")
-  locale                            String           @db.VarChar(35)
-  modality                          String           @db.VarChar(16)
-  readingType                       String           @map("reading_type") @db.VarChar(24)
-  themeCode                         String           @map("theme_code") @db.VarChar(40)
-  tone                              String           @db.VarChar(24)
-  providerId                        String           @map("provider_id") @db.VarChar(100)
-  providerVersion                   String           @map("provider_version") @db.VarChar(100)
-  modelId                           String           @map("model_id") @db.VarChar(100)
-  modelVersion                      String           @map("model_version") @db.VarChar(100)
-  providerApprovalReference         String           @map("provider_approval_reference") @db.VarChar(200)
-  promptId                          String           @map("prompt_id") @db.VarChar(100)
-  promptVersion                     String           @map("prompt_version") @db.VarChar(100)
-  promptChecksumSha256              Bytes            @map("prompt_checksum_sha256")
-  promptApprovalReference           String           @map("prompt_approval_reference") @db.VarChar(200)
-  outputSchemaVersion               String           @map("output_schema_version") @db.VarChar(100)
-  safetyPolicyVersion               String           @map("safety_policy_version") @db.VarChar(100)
-  retrievalPolicyVersion            String           @map("retrieval_policy_version") @db.VarChar(100)
-  assemblyPolicyVersion             String           @map("assembly_policy_version") @db.VarChar(100)
-  fallbackTemplateId                String           @map("fallback_template_id") @db.VarChar(100)
-  fallbackTemplateVersion           String           @map("fallback_template_version") @db.VarChar(100)
-  fallbackTemplateChecksumSha256    Bytes            @map("fallback_template_checksum_sha256")
-  fallbackTemplateApprovalReference String           @map("fallback_template_approval_reference") @db.VarChar(200)
-  deterministicEngineName           String           @map("deterministic_engine_name") @db.VarChar(100)
-  deterministicEngineVersion        String           @map("deterministic_engine_version") @db.VarChar(100)
-  deterministicAlgorithmVersion     String           @map("deterministic_algorithm_version") @db.VarChar(100)
-  deterministicRulesVersion         String           @map("deterministic_rules_version") @db.VarChar(100)
-  contentVersions                   String[]         @map("content_versions") @db.VarChar(100)
-  generationProvenance              Json             @map("generation_provenance")
-  maxOutputTokens                   Int              @map("max_output_tokens")
-  attemptTimeoutMs                  Int              @map("attempt_timeout_ms")
-  totalTimeoutMs                    Int              @map("total_timeout_ms")
-  verificationTimeoutMs             Int              @default(0) @map("verification_timeout_ms")
-  maxAttempts                       Int              @map("max_attempts") @db.SmallInt
-  retryDelayMs                      Int              @map("retry_delay_ms")
-  maximumEstimatedCostMicros        BigInt           @map("maximum_estimated_cost_micros")
-  approvedCurrencyCode              String           @map("approved_currency_code") @db.Char(3)
-  claimVersion                      Int              @default(1) @map("claim_version")
-  claimTokenHash                    Bytes            @map("claim_token_hash")
-  leaseExpiresAt                    DateTime         @map("lease_expires_at") @db.Timestamptz(6)
-  finalizationHash                  Bytes?           @map("finalization_hash")
-  attemptCount                      Int?             @map("attempt_count") @db.SmallInt
-  failureCode                       String?          @map("failure_code") @db.VarChar(32)
-  retryReason                       String?          @map("retry_reason") @db.VarChar(32)
-  latencyMs                         Int?             @map("latency_ms")
-  tokenStatus                       String?          @map("token_status") @db.VarChar(16)
-  inputTokens                       Int?             @map("input_tokens")
-  outputTokens                      Int?             @map("output_tokens")
-  totalTokens                       Int?             @map("total_tokens")
-  costStatus                        String?          @map("cost_status") @db.VarChar(16)
-  estimatedCostMicros               BigInt?          @map("estimated_cost_micros")
-  currencyCode                      String?          @map("currency_code") @db.Char(3)
-  fallbackOutput                    Json?            @map("fallback_output")
-  createdAt                         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  completedAt                       DateTime?        @map("completed_at") @db.Timestamptz(6)
-  expiresAt                         DateTime         @map("expires_at") @db.Timestamptz(6)
-  reading                           Reading          @relation(fields: [readingId, anonymousSubjectId, expiresAt], references: [id, anonymousSubjectId, expiresAt], onDelete: Restrict, onUpdate: Restrict)
-  anonymousSubject                  AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  verification                     InterpretationVerification?
+  id                                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  readingId                         String                      @map("reading_id") @db.Uuid
+  anonymousSubjectId                String                      @map("anonymous_subject_id") @db.Uuid
+  generationNumber                  Int                         @default(1) @map("generation_number") @db.SmallInt
+  requestId                         String                      @unique(map: "interpretation_request_id_key") @map("request_id") @db.Uuid
+  status                            String                      @default("generating") @db.VarChar(24)
+  generationSchemaVersion           String                      @map("generation_schema_version") @db.VarChar(100)
+  generationPolicyVersion           String                      @map("generation_policy_version") @db.VarChar(100)
+  eligibilityAsOf                   DateTime                    @map("eligibility_as_of") @db.Date
+  idempotencyKeyVersion             String                      @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash                Bytes                       @map("idempotency_key_hash")
+  canonicalRequestHash              Bytes                       @map("canonical_request_hash")
+  locale                            String                      @db.VarChar(35)
+  modality                          String                      @db.VarChar(16)
+  readingType                       String                      @map("reading_type") @db.VarChar(24)
+  themeCode                         String                      @map("theme_code") @db.VarChar(40)
+  tone                              String                      @db.VarChar(24)
+  providerId                        String                      @map("provider_id") @db.VarChar(100)
+  providerVersion                   String                      @map("provider_version") @db.VarChar(100)
+  modelId                           String                      @map("model_id") @db.VarChar(100)
+  modelVersion                      String                      @map("model_version") @db.VarChar(100)
+  providerApprovalReference         String                      @map("provider_approval_reference") @db.VarChar(200)
+  promptId                          String                      @map("prompt_id") @db.VarChar(100)
+  promptVersion                     String                      @map("prompt_version") @db.VarChar(100)
+  promptChecksumSha256              Bytes                       @map("prompt_checksum_sha256")
+  promptApprovalReference           String                      @map("prompt_approval_reference") @db.VarChar(200)
+  outputSchemaVersion               String                      @map("output_schema_version") @db.VarChar(100)
+  safetyPolicyVersion               String                      @map("safety_policy_version") @db.VarChar(100)
+  retrievalPolicyVersion            String                      @map("retrieval_policy_version") @db.VarChar(100)
+  assemblyPolicyVersion             String                      @map("assembly_policy_version") @db.VarChar(100)
+  fallbackTemplateId                String                      @map("fallback_template_id") @db.VarChar(100)
+  fallbackTemplateVersion           String                      @map("fallback_template_version") @db.VarChar(100)
+  fallbackTemplateChecksumSha256    Bytes                       @map("fallback_template_checksum_sha256")
+  fallbackTemplateApprovalReference String                      @map("fallback_template_approval_reference") @db.VarChar(200)
+  deterministicEngineName           String                      @map("deterministic_engine_name") @db.VarChar(100)
+  deterministicEngineVersion        String                      @map("deterministic_engine_version") @db.VarChar(100)
+  deterministicAlgorithmVersion     String                      @map("deterministic_algorithm_version") @db.VarChar(100)
+  deterministicRulesVersion         String                      @map("deterministic_rules_version") @db.VarChar(100)
+  contentVersions                   String[]                    @map("content_versions") @db.VarChar(100)
+  generationProvenance              Json                        @map("generation_provenance")
+  maxOutputTokens                   Int                         @map("max_output_tokens")
+  attemptTimeoutMs                  Int                         @map("attempt_timeout_ms")
+  totalTimeoutMs                    Int                         @map("total_timeout_ms")
+  verificationTimeoutMs             Int                         @default(0) @map("verification_timeout_ms")
+  maxAttempts                       Int                         @map("max_attempts") @db.SmallInt
+  retryDelayMs                      Int                         @map("retry_delay_ms")
+  maximumEstimatedCostMicros        BigInt                      @map("maximum_estimated_cost_micros")
+  approvedCurrencyCode              String                      @map("approved_currency_code") @db.Char(3)
+  claimVersion                      Int                         @default(1) @map("claim_version")
+  claimTokenHash                    Bytes                       @map("claim_token_hash")
+  leaseExpiresAt                    DateTime                    @map("lease_expires_at") @db.Timestamptz(6)
+  finalizationHash                  Bytes?                      @map("finalization_hash")
+  attemptCount                      Int?                        @map("attempt_count") @db.SmallInt
+  failureCode                       String?                     @map("failure_code") @db.VarChar(32)
+  retryReason                       String?                     @map("retry_reason") @db.VarChar(32)
+  latencyMs                         Int?                        @map("latency_ms")
+  tokenStatus                       String?                     @map("token_status") @db.VarChar(16)
+  inputTokens                       Int?                        @map("input_tokens")
+  outputTokens                      Int?                        @map("output_tokens")
+  totalTokens                       Int?                        @map("total_tokens")
+  costStatus                        String?                     @map("cost_status") @db.VarChar(16)
+  estimatedCostMicros               BigInt?                     @map("estimated_cost_micros")
+  currencyCode                      String?                     @map("currency_code") @db.Char(3)
+  fallbackOutput                    Json?                       @map("fallback_output")
+  createdAt                         DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt                       DateTime?                   @map("completed_at") @db.Timestamptz(6)
+  expiresAt                         DateTime                    @map("expires_at") @db.Timestamptz(6)
+  reading                           Reading                     @relation(fields: [readingId, anonymousSubjectId, expiresAt], references: [id, anonymousSubjectId, expiresAt], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject                  AnonymousSubject            @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  verification                      InterpretationVerification?
+  reports                           ReadingReport[]             @relation("ReadingReportInterpretation")
 
   @@unique([readingId, generationNumber], map: "interpretation_reading_generation_key")
   @@unique([anonymousSubjectId, idempotencyKeyVersion, idempotencyKeyHash], map: "interpretation_subject_idempotency_key")
   @@unique([id, anonymousSubjectId, expiresAt, status], map: "interpretation_verification_owner_expiry_status_key")
+  @@unique([id, readingId, anonymousSubjectId, expiresAt, status], map: "interpretation_report_target_key")
   @@index([readingId, createdAt(sort: Desc), id(sort: Desc)], map: "interpretation_reading_created_idx")
   @@index([leaseExpiresAt, id], map: "interpretation_lease_idx")
   @@index([expiresAt, id], map: "interpretation_expiry_idx")
@@ -215,34 +514,43 @@ model InterpretationVerification {
   output                          Json
   createdAt                       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   expiresAt                       DateTime         @map("expires_at") @db.Timestamptz(6)
-  interpretation                 Interpretation   @relation(fields: [interpretationId, anonymousSubjectId, expiresAt, parentStatus], references: [id, anonymousSubjectId, expiresAt, status], onDelete: Restrict, onUpdate: Restrict)
-  anonymousSubject               AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  interpretation                  Interpretation   @relation(fields: [interpretationId, anonymousSubjectId, expiresAt, parentStatus], references: [id, anonymousSubjectId, expiresAt, status], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject                AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reports                         ReadingReport[]  @relation("ReadingReportVerification")
 
   @@unique([interpretationId, anonymousSubjectId, expiresAt, parentStatus], map: "interpretation_verification_parent_key")
+  @@unique([interpretationId, anonymousSubjectId, expiresAt, parentStatus, status], map: "interpretation_report_verification_key")
   @@index([anonymousSubjectId, createdAt(sort: Desc), interpretationId(sort: Desc)], map: "interpretation_verification_subject_created_idx")
   @@index([expiresAt, interpretationId], map: "interpretation_verification_expiry_idx")
   @@map("interpretation_verification")
 }
 
 model ReadingReport {
-  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  readingId             String           @map("reading_id") @db.Uuid
-  anonymousSubjectId    String           @map("anonymous_subject_id") @db.Uuid
-  category              String           @db.VarChar(24)
-  targetKind            String           @map("target_kind") @db.VarChar(16)
-  targetPositionId      String?          @map("target_position_id") @db.VarChar(100)
-  schemaVersion         String           @map("schema_version") @db.VarChar(100)
-  reportPolicyVersion   String           @map("report_policy_version") @db.VarChar(100)
-  idempotencyKeyVersion String           @map("idempotency_key_version") @db.VarChar(100)
-  idempotencyKeyHash    Bytes            @map("idempotency_key_hash")
-  canonicalRequestHash  Bytes            @map("canonical_request_hash")
-  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt             DateTime         @map("expires_at") @db.Timestamptz(6)
-  reading               Reading          @relation(fields: [readingId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
-  anonymousSubject      AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  id                               String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  readingId                        String                      @map("reading_id") @db.Uuid
+  anonymousSubjectId               String                      @map("anonymous_subject_id") @db.Uuid
+  category                         String                      @db.VarChar(24)
+  targetKind                       String                      @map("target_kind") @db.VarChar(16)
+  targetPositionId                 String?                     @map("target_position_id") @db.VarChar(100)
+  interpretationId                 String?                     @map("interpretation_id") @db.Uuid
+  interpretationParentStatus       String?                     @map("interpretation_parent_status") @db.VarChar(24)
+  interpretationVerificationStatus String?                     @map("interpretation_verification_status") @db.VarChar(24)
+  requestSchemaVersion             String?                     @map("report_request_schema_version") @db.VarChar(100)
+  schemaVersion                    String                      @map("schema_version") @db.VarChar(100)
+  reportPolicyVersion              String                      @map("report_policy_version") @db.VarChar(100)
+  idempotencyKeyVersion            String                      @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash               Bytes                       @map("idempotency_key_hash")
+  canonicalRequestHash             Bytes                       @map("canonical_request_hash")
+  createdAt                        DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt                        DateTime                    @map("expires_at") @db.Timestamptz(6)
+  reading                          Reading                     @relation(fields: [readingId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject                 AnonymousSubject            @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  interpretation                   Interpretation?             @relation("ReadingReportInterpretation", fields: [interpretationId, readingId, anonymousSubjectId, expiresAt, interpretationParentStatus], references: [id, readingId, anonymousSubjectId, expiresAt, status], onDelete: Restrict, onUpdate: Restrict)
+  verification                     InterpretationVerification? @relation("ReadingReportVerification", fields: [interpretationId, anonymousSubjectId, expiresAt, interpretationParentStatus, interpretationVerificationStatus], references: [interpretationId, anonymousSubjectId, expiresAt, parentStatus, status], onDelete: Restrict, onUpdate: Restrict)
 
   @@unique([anonymousSubjectId, idempotencyKeyVersion, idempotencyKeyHash], map: "reading_report_subject_idempotency_key")
   @@index([readingId, createdAt(sort: Desc), id(sort: Desc)], map: "reading_report_reading_created_idx")
+  @@index([interpretationId, createdAt(sort: Desc), id(sort: Desc)], map: "reading_report_interpretation_created_idx")
   @@index([expiresAt, id], map: "reading_report_expiry_idx")
   @@map("reading_report")
 }
@@ -311,6 +619,30 @@ model ConsentRecord {
   @@map("consent_record")
 }
 
+model AccountConsentRecord {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String                 @map("user_id") @db.Uuid
+  purpose              String                 @db.VarChar(64)
+  sequence             Int
+  noticeVersion        String                 @map("notice_version") @db.VarChar(100)
+  locale               String                 @db.VarChar(35)
+  decision             String                 @db.VarChar(16)
+  source               String                 @db.VarChar(40)
+  recordedAt           DateTime               @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  withdrawsRecordId    String?                @map("withdraws_record_id") @db.Uuid
+  idempotencyKeyHash   Bytes                  @map("idempotency_key_hash")
+  canonicalRequestHash Bytes                  @map("canonical_request_hash")
+  user                 AppUser                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  withdrawsRecord      AccountConsentRecord?  @relation("AccountConsentWithdrawal", fields: [withdrawsRecordId, userId, purpose], references: [id, userId, purpose], onDelete: Restrict, onUpdate: Restrict)
+  withdrawnByRecords   AccountConsentRecord[] @relation("AccountConsentWithdrawal")
+
+  @@unique([id, userId, purpose], map: "account_consent_record_identity_key")
+  @@unique([userId, purpose, sequence], map: "account_consent_record_user_purpose_sequence_key")
+  @@unique([userId, idempotencyKeyHash], map: "account_consent_record_user_idempotency_key")
+  @@index([userId, purpose, sequence(sort: Desc)], map: "account_consent_record_current_idx")
+  @@map("account_consent_record")
+}
+
 model AnonymousSessionIssuanceGate {
   id              Int      @id @default(1) @db.SmallInt
   windowStartedAt DateTime @map("window_started_at") @db.Timestamptz(6)
@@ -320,42 +652,62 @@ model AnonymousSessionIssuanceGate {
 }
 
 model AppUser {
-  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  status             String               @default("active") @db.VarChar(24)
-  locale             String               @default("en") @db.VarChar(35)
-  timeZone           String               @default("UTC") @map("time_zone") @db.VarChar(64)
-  displayName        String?              @map("display_name") @db.VarChar(120)
-  emailVerifiedAt    DateTime             @map("email_verified_at") @db.Timestamptz(6)
-  ageAttestedAt      DateTime?            @map("age_attested_at") @db.Timestamptz(6)
-  agePolicyVersion   String?              @map("age_policy_version") @db.VarChar(100)
-  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  lastActiveAt       DateTime             @default(now()) @map("last_active_at") @db.Timestamptz(6)
-  profileVersion     Int                  @default(1) @map("profile_version")
-  authIdentities     AuthIdentity[]
-  accountSessions    AccountSession[]
-  accountSubjectLinks AccountSubjectLink[]
-  orders             CommerceOrder[]
-  entitlements       Entitlement[]
+  id                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status                       String                        @default("active") @db.VarChar(24)
+  locale                       String                        @default("en") @db.VarChar(35)
+  timeZone                     String                        @default("UTC") @map("time_zone") @db.VarChar(64)
+  displayName                  String?                       @map("display_name") @db.VarChar(120)
+  emailVerifiedAt              DateTime                      @map("email_verified_at") @db.Timestamptz(6)
+  ageAttestedAt                DateTime?                     @map("age_attested_at") @db.Timestamptz(6)
+  agePolicyVersion             String?                       @map("age_policy_version") @db.VarChar(100)
+  createdAt                    DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastActiveAt                 DateTime                      @default(now()) @map("last_active_at") @db.Timestamptz(6)
+  profileVersion               Int                           @default(1) @map("profile_version")
+  authIdentities               AuthIdentity[]
+  accountSessions              AccountSession[]
+  accountConsents              AccountConsentRecord[]
+  revisitReminderSubscriptions RevisitReminderSubscription[]
+  accountSubjectLinks          AccountSubjectLink[]
+  privacyExports               PrivacyExport[]
+  privacyExportAudits          PrivacyExportAudit[]
+  privacyDeletions             PrivacyDeletionRequest[]
+  deletionCompletions          PrivacyDeletionCompletion[]
+  identitySuppressions         AuthIdentitySuppression[]
+  adminRoleAssignments         AdminRoleAssignment[]         @relation("AdminRoleSubject")
+  adminRolesGranted            AdminRoleAssignment[]         @relation("AdminRoleGrantor")
+  adminRolesRevoked            AdminRoleRevocation[]         @relation("AdminRoleRevoker")
+  adminMfaAssertions           AdminMfaAssertion[]
+  adminAuditEvents             AdminAuditEvent[]
+  orders                       CommerceOrder[]
+  entitlements                 Entitlement[]
+  ritualPasses                 RitualPass[]
+  birthProfiles                BirthProfile[]
+  birthProfileOperations       BirthProfileOperation[]
+  astrologyCalculations        AstrologyCalculation[]
+  astrologyCalculationOperations AstrologyCalculationOperation[]
 
   @@index([status, lastActiveAt(sort: Desc), id], map: "app_user_status_activity_idx")
   @@map("app_user")
 }
 
 model AuthIdentity {
-  id                      String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                  String           @map("user_id") @db.Uuid
-  providerKey             String           @map("provider_key") @db.VarChar(40)
-  providerSubject         String           @map("provider_subject") @db.VarChar(200)
-  verifiedEmailCiphertext Bytes            @map("verified_email_ciphertext")
-  verifiedEmailNonce      Bytes            @map("verified_email_nonce")
-  verifiedEmailTag        Bytes            @map("verified_email_tag")
-  encryptionKeyVersion    String           @map("encryption_key_version") @db.VarChar(100)
-  verifiedAt              DateTime         @map("verified_at") @db.Timestamptz(6)
-  lastSignInAt            DateTime         @map("last_sign_in_at") @db.Timestamptz(6)
-  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  user                    AppUser          @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  accountSessions         AccountSession[]
+  id                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                       String                        @map("user_id") @db.Uuid
+  providerKey                  String                        @map("provider_key") @db.VarChar(40)
+  providerSubject              String                        @map("provider_subject") @db.VarChar(200)
+  verifiedEmailCiphertext      Bytes                         @map("verified_email_ciphertext")
+  verifiedEmailNonce           Bytes                         @map("verified_email_nonce")
+  verifiedEmailTag             Bytes                         @map("verified_email_tag")
+  encryptionKeyVersion         String                        @map("encryption_key_version") @db.VarChar(100)
+  verifiedAt                   DateTime                      @map("verified_at") @db.Timestamptz(6)
+  lastSignInAt                 DateTime                      @map("last_sign_in_at") @db.Timestamptz(6)
+  createdAt                    DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                         AppUser                       @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accountSessions              AccountSession[]
+  passkeyCredentials           PasskeyCredential[]
+  revisitReminderSubscriptions RevisitReminderSubscription[]
 
+  @@unique([id, userId], map: "auth_identity_user_identity_key")
   @@unique([providerKey, providerSubject], map: "auth_identity_provider_subject_key")
   @@index([userId, createdAt, id], map: "auth_identity_user_created_idx")
   @@map("auth_identity")
@@ -372,6 +724,7 @@ model AuthChallenge {
   tokenHash            Bytes     @unique(map: "auth_challenge_token_hash_key") @map("token_hash")
   tokenHashVersion     Int       @default(1) @map("token_hash_version") @db.SmallInt
   stateHash            Bytes     @unique(map: "auth_challenge_state_hash_key") @map("state_hash")
+  previousSessionHash  Bytes?    @map("previous_session_hash")
   returnTo             String    @map("return_to") @db.VarChar(500)
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   expiresAt            DateTime  @map("expires_at") @db.Timestamptz(6)
@@ -382,61 +735,410 @@ model AuthChallenge {
   @@map("auth_challenge")
 }
 
-model AccountSession {
-  id               String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId           String       @map("user_id") @db.Uuid
-  authIdentityId   String       @map("auth_identity_id") @db.Uuid
-  tokenHash        Bytes        @unique(map: "account_session_token_hash_key") @map("token_hash")
-  tokenHashVersion Int          @default(1) @map("token_hash_version") @db.SmallInt
-  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  expiresAt        DateTime     @map("expires_at") @db.Timestamptz(6)
-  lastSeenAt       DateTime     @default(now()) @map("last_seen_at") @db.Timestamptz(6)
-  revokedAt        DateTime?    @map("revoked_at") @db.Timestamptz(6)
-  user             AppUser      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  authIdentity     AuthIdentity @relation(fields: [authIdentityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+model AuthStartRateLimit {
+  scope           String   @db.VarChar(16)
+  keyHash         Bytes    @map("key_hash")
+  windowStartedAt DateTime @map("window_started_at") @db.Timestamptz(6)
+  requestCount    Int      @map("request_count")
 
+  @@id([scope, keyHash], map: "auth_start_rate_limit_pkey")
+  @@index([windowStartedAt, scope], map: "auth_start_rate_limit_window_idx")
+  @@map("auth_start_rate_limit")
+}
+
+model AccountSession {
+  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String                   @map("user_id") @db.Uuid
+  authIdentityId     String                   @map("auth_identity_id") @db.Uuid
+  tokenHash          Bytes                    @unique(map: "account_session_token_hash_key") @map("token_hash")
+  tokenHashVersion   Int                      @default(1) @map("token_hash_version") @db.SmallInt
+  authenticatedAt    DateTime?                @map("authenticated_at") @db.Timestamptz(6)
+  createdAt          DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt          DateTime                 @map("expires_at") @db.Timestamptz(6)
+  lastSeenAt         DateTime                 @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  revokedAt          DateTime?                @map("revoked_at") @db.Timestamptz(6)
+  user               AppUser                  @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  authIdentity       AuthIdentity             @relation(fields: [authIdentityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  privacyExports     PrivacyExport[]
+  privacyAudits      PrivacyExportAudit[]
+  privacyDeletions   PrivacyDeletionRequest[]
+  adminMfaAssertions AdminMfaAssertion[]
+  adminAuditEvents   AdminAuditEvent[]
+
+  @@unique([id, userId], map: "account_session_user_identity_key")
+  @@unique([id, userId, authIdentityId], map: "account_session_user_auth_identity_key")
   @@index([userId, expiresAt, id], map: "account_session_user_expiry_idx")
   @@index([expiresAt, id], map: "account_session_expiry_idx")
   @@map("account_session")
 }
 
-model AccountSubjectLink {
-  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId               String           @map("user_id") @db.Uuid
-  anonymousSubjectId   String           @unique(map: "account_subject_link_subject_key") @map("anonymous_subject_id") @db.Uuid
-  sourceSessionId      String           @map("source_session_id") @db.Uuid
-  idempotencyKeyHash   Bytes            @map("idempotency_key_hash")
-  canonicalRequestHash Bytes            @map("canonical_request_hash")
-  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  user                 AppUser          @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  anonymousSubject     AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+model PasskeyCredential {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authIdentityId     String              @map("auth_identity_id") @db.Uuid
+  credentialId       Bytes               @unique(map: "passkey_credential_credential_id_key") @map("credential_id")
+  publicKey          Bytes               @map("public_key")
+  rpId               String              @map("rp_id") @db.VarChar(253)
+  signCount          BigInt              @default(0) @map("sign_count")
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastUsedAt         DateTime?           @map("last_used_at") @db.Timestamptz(6)
+  revokedAt          DateTime?           @map("revoked_at") @db.Timestamptz(6)
+  authIdentity       AuthIdentity        @relation(fields: [authIdentityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  adminMfaAssertions AdminMfaAssertion[]
 
+  @@unique([id, authIdentityId], map: "passkey_credential_auth_identity_key")
+  @@index([authIdentityId, createdAt, id], map: "passkey_credential_identity_created_idx")
+  @@map("passkey_credential")
+}
+
+model AdminRoleAssignment {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String               @map("user_id") @db.Uuid
+  role            String               @db.VarChar(40)
+  grantedByUserId String?              @map("granted_by_user_id") @db.Uuid
+  reasonCode      String               @map("reason_code") @db.VarChar(64)
+  ticketReference String?              @map("ticket_reference") @db.VarChar(64)
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt       DateTime?            @map("expires_at") @db.Timestamptz(6)
+  user            AppUser              @relation("AdminRoleSubject", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  grantedBy       AppUser?             @relation("AdminRoleGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  revocation      AdminRoleRevocation?
+
+  @@unique([id, userId], map: "admin_role_assignment_user_identity_key")
+  @@index([userId, role, createdAt(sort: Desc), id(sort: Desc)], map: "admin_role_assignment_user_role_idx")
+  @@index([role, expiresAt, createdAt(sort: Desc), id(sort: Desc)], map: "admin_role_assignment_active_idx")
+  @@map("admin_role_assignment")
+}
+
+model AdminRoleRevocation {
+  assignmentId    String              @id @map("assignment_id") @db.Uuid
+  userId          String              @map("user_id") @db.Uuid
+  revokedByUserId String              @map("revoked_by_user_id") @db.Uuid
+  reasonCode      String              @map("reason_code") @db.VarChar(64)
+  ticketReference String?             @map("ticket_reference") @db.VarChar(64)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  assignment      AdminRoleAssignment @relation(fields: [assignmentId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  revokedBy       AppUser             @relation("AdminRoleRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([assignmentId, userId], map: "admin_role_revocation_assignment_user_key")
+  @@index([userId, createdAt(sort: Desc), assignmentId(sort: Desc)], map: "admin_role_revocation_user_created_idx")
+  @@map("admin_role_revocation")
+}
+
+model AdminMfaAssertion {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String            @map("user_id") @db.Uuid
+  accountSessionId    String            @map("account_session_id") @db.Uuid
+  authIdentityId      String            @map("auth_identity_id") @db.Uuid
+  passkeyCredentialId String            @map("passkey_credential_id") @db.Uuid
+  challengeHash       Bytes             @unique(map: "admin_mfa_assertion_challenge_key") @map("challenge_hash")
+  verifiedAt          DateTime          @map("verified_at") @db.Timestamptz(6)
+  expiresAt           DateTime          @map("expires_at") @db.Timestamptz(6)
+  user                AppUser           @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accountSession      AccountSession    @relation(fields: [accountSessionId, userId, authIdentityId], references: [id, userId, authIdentityId], onDelete: Restrict, onUpdate: Restrict)
+  passkeyCredential   PasskeyCredential @relation(fields: [passkeyCredentialId, authIdentityId], references: [id, authIdentityId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([accountSessionId, verifiedAt(sort: Desc), id(sort: Desc)], map: "admin_mfa_assertion_session_verified_idx")
+  @@index([expiresAt, id], map: "admin_mfa_assertion_expiry_idx")
+  @@map("admin_mfa_assertion")
+}
+
+model AdminAuditEvent {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId       String         @map("actor_user_id") @db.Uuid
+  actorSessionId    String         @map("actor_session_id") @db.Uuid
+  actorRole         String?        @map("actor_role") @db.VarChar(40)
+  requestId         String         @unique(map: "admin_audit_event_request_key") @map("request_id") @db.Uuid
+  action            String         @db.VarChar(64)
+  outcome           String         @db.VarChar(16)
+  targetType        String         @map("target_type") @db.VarChar(64)
+  targetId          String         @map("target_id") @db.VarChar(128)
+  reasonCode        String         @map("reason_code") @db.VarChar(64)
+  ticketReference   String?        @map("ticket_reference") @db.VarChar(64)
+  changeFields      String[]       @map("change_fields")
+  beforeDigest      Bytes?         @map("before_digest")
+  afterDigest       Bytes?         @map("after_digest")
+  previousEventHash Bytes?         @map("previous_event_hash")
+  eventHash         Bytes          @unique(map: "admin_audit_event_hash_key") @map("event_hash")
+  createdAt         DateTime       @map("created_at") @db.Timestamptz(6)
+  actorUser         AppUser        @relation(fields: [actorUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  actorSession      AccountSession @relation(fields: [actorSessionId, actorUserId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([createdAt, id], map: "admin_audit_event_chain_idx")
+  @@index([actorUserId, createdAt(sort: Desc), id(sort: Desc)], map: "admin_audit_event_actor_idx")
+  @@index([targetType, targetId, createdAt(sort: Desc), id(sort: Desc)], map: "admin_audit_event_target_idx")
+  @@map("admin_audit_event")
+}
+
+model AccountSubjectLink {
+  id                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                       String                        @map("user_id") @db.Uuid
+  anonymousSubjectId           String                        @unique(map: "account_subject_link_subject_key") @map("anonymous_subject_id") @db.Uuid
+  sourceSessionId              String                        @map("source_session_id") @db.Uuid
+  sourceAccountSessionId       String?                       @map("source_account_session_id") @db.Uuid
+  idempotencyKeyHash           Bytes                         @map("idempotency_key_hash")
+  canonicalRequestHash         Bytes                         @map("canonical_request_hash")
+  createdAt                    DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  privacyDeletedAt             DateTime?                     @map("privacy_deleted_at") @db.Timestamptz(6)
+  privacyDeletionRequestId     String?                       @map("privacy_deletion_request_id") @db.Uuid
+  user                         AppUser                       @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  anonymousSubject             AnonymousSubject              @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  privacyDeletionRequest       PrivacyDeletionRequest?       @relation(fields: [privacyDeletionRequestId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  revisitReminderSubscriptions RevisitReminderSubscription[]
+
+  @@unique([id, userId, anonymousSubjectId], map: "account_subject_link_identity_key")
   @@unique([userId, idempotencyKeyHash], map: "account_subject_link_user_idempotency_key")
+  @@index([sourceAccountSessionId], map: "account_subject_link_source_account_session_idx")
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "account_subject_link_user_created_idx")
   @@map("account_subject_link")
 }
 
+model PrivacyExport {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String                 @map("user_id") @db.Uuid
+  requestedBySessionId String                 @map("requested_by_session_id") @db.Uuid
+  schemaVersion        String                 @map("schema_version") @db.VarChar(100)
+  encryptionKeyVersion String                 @map("encryption_key_version") @db.VarChar(100)
+  idempotencyKeyHash   Bytes                  @map("idempotency_key_hash")
+  canonicalRequestHash Bytes                  @map("canonical_request_hash")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt            DateTime               @map("expires_at") @db.Timestamptz(6)
+  user                 AppUser                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requestedBySession   AccountSession         @relation(fields: [requestedBySessionId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  artifact             PrivacyExportArtifact?
+  auditEvents          PrivacyExportAudit[]
+
+  @@unique([id, userId], map: "privacy_export_user_identity_key")
+  @@unique([userId, idempotencyKeyHash], map: "privacy_export_user_idempotency_key")
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "privacy_export_user_created_idx")
+  @@index([expiresAt, id], map: "privacy_export_expiry_idx")
+  @@map("privacy_export")
+}
+
+model PrivacyExportArtifact {
+  exportId          String        @id @map("export_id") @db.Uuid
+  userId            String        @map("user_id") @db.Uuid
+  ciphertext        Bytes
+  nonce             Bytes
+  authenticationTag Bytes         @map("authentication_tag")
+  plaintextSha256   Bytes         @map("plaintext_sha256")
+  plaintextBytes    Int           @map("plaintext_bytes")
+  recordCount       Int           @map("record_count")
+  completedAt       DateTime      @default(now()) @map("completed_at") @db.Timestamptz(6)
+  export            PrivacyExport @relation(fields: [exportId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([exportId, userId], map: "privacy_export_artifact_export_user_key")
+  @@index([userId, completedAt(sort: Desc), exportId(sort: Desc)], map: "privacy_export_artifact_user_completed_idx")
+  @@map("privacy_export_artifact")
+}
+
+model PrivacyExportAudit {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  exportId       String         @map("export_id") @db.Uuid
+  actorSessionId String         @map("actor_session_id") @db.Uuid
+  action         String         @db.VarChar(32)
+  metadata       Json           @default("{}") @db.JsonB
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  user           AppUser        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  export         PrivacyExport  @relation(fields: [exportId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  actorSession   AccountSession @relation(fields: [actorSessionId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([exportId, createdAt, id], map: "privacy_export_audit_export_created_idx")
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "privacy_export_audit_user_created_idx")
+  @@map("privacy_export_audit")
+}
+
+model PrivacyDeletionRequest {
+  id                     String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String                     @map("user_id") @db.Uuid
+  requestedBySessionId   String                     @map("requested_by_session_id") @db.Uuid
+  scope                  String                     @db.VarChar(24)
+  policyVersion          String                     @map("policy_version") @db.VarChar(100)
+  idempotencyKeyHash     Bytes                      @map("idempotency_key_hash")
+  canonicalRequestHash   Bytes                      @map("canonical_request_hash")
+  replaySessionTokenHash Bytes                      @map("replay_session_token_hash")
+  retentionCategories    String[]                   @map("retention_categories")
+  requestedAt            DateTime                   @default(now()) @map("requested_at") @db.Timestamptz(6)
+  user                   AppUser                    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requestedBySession     AccountSession             @relation(fields: [requestedBySessionId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  completion             PrivacyDeletionCompletion?
+  deletedSubjectLinks    AccountSubjectLink[]
+  identitySuppressions   AuthIdentitySuppression[]
+
+  @@unique([id, userId], map: "privacy_deletion_request_user_identity_key")
+  @@unique([userId, idempotencyKeyHash], map: "privacy_deletion_request_user_idempotency_key")
+  @@index([userId, requestedAt(sort: Desc), id(sort: Desc)], map: "privacy_deletion_request_user_requested_idx")
+  @@map("privacy_deletion_request")
+}
+
+model PrivacyDeletionCompletion {
+  requestId           String                 @id @map("request_id") @db.Uuid
+  userId              String                 @map("user_id") @db.Uuid
+  subjectCount        Int                    @map("subject_count")
+  intentionCount      Int                    @map("intention_count")
+  legacyJournalCount  Int                    @map("legacy_journal_count")
+  currentJournalCount Int                    @map("current_journal_count")
+  revisitCount        Int                    @map("revisit_count")
+  interpretationCount Int                    @map("interpretation_count")
+  verificationCount   Int                    @map("verification_count")
+  exportArtifactCount Int                    @map("export_artifact_count")
+  authIdentityCount   Int                    @map("auth_identity_count")
+  accountSessionCount Int                    @map("account_session_count")
+  passkeyCount        Int                    @map("passkey_count")
+  birthProfileCount   Int                    @map("birth_profile_count")
+  astrologyCalculationCount Int              @map("astrology_calculation_count")
+  evidenceSha256      Bytes                  @map("evidence_sha256")
+  completedAt         DateTime               @default(now()) @map("completed_at") @db.Timestamptz(6)
+  request             PrivacyDeletionRequest @relation(fields: [requestId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  user                AppUser                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([requestId, userId], map: "privacy_deletion_completion_request_user_key")
+  @@index([userId, completedAt(sort: Desc), requestId(sort: Desc)], map: "privacy_deletion_completion_user_completed_idx")
+  @@map("privacy_deletion_completion")
+}
+
+model BirthProfile {
+  id                     String                  @id @db.Uuid
+  userId                 String                  @map("user_id") @db.Uuid
+  timeCertainty          String                  @map("time_certainty") @db.VarChar(16)
+  schemaVersion          String                  @map("schema_version") @db.VarChar(100)
+  payloadCiphertext      Bytes                   @map("payload_ciphertext")
+  payloadNonce           Bytes                   @map("payload_nonce")
+  payloadTag             Bytes                   @map("payload_tag")
+  encryptionKeyVersion   String                  @map("encryption_key_version") @db.VarChar(100)
+  digestKeyVersion       String                  @map("digest_key_version") @db.VarChar(100)
+  canonicalPayloadDigest Bytes                   @map("canonical_payload_digest")
+  revision               Int                     @default(1)
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt              DateTime?               @map("deleted_at") @db.Timestamptz(6)
+  user                   AppUser                 @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  operations             BirthProfileOperation[]
+  astrologyCalculations  AstrologyCalculation[]
+
+  @@unique([id, userId], map: "birth_profile_user_identity_key")
+  @@index([userId, deletedAt, createdAt(sort: Desc), id(sort: Desc)], map: "birth_profile_user_active_idx")
+  @@map("birth_profile")
+}
+
+model BirthProfileOperation {
+  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String       @map("user_id") @db.Uuid
+  birthProfileId       String       @map("birth_profile_id") @db.Uuid
+  action               String       @db.VarChar(16)
+  idempotencyKeyHash   Bytes        @map("idempotency_key_hash")
+  canonicalRequestHash Bytes        @map("canonical_request_hash")
+  resultRevision       Int          @map("result_revision")
+  createdAt            DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                 AppUser      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  birthProfile         BirthProfile @relation(fields: [birthProfileId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([userId, idempotencyKeyHash], map: "birth_profile_operation_user_idempotency_key")
+  @@index([birthProfileId, userId, createdAt, id], map: "birth_profile_operation_profile_created_idx")
+  @@map("birth_profile_operation")
+}
+
+model AstrologyCalculation {
+  id                         String                         @id @db.Uuid
+  userId                     String                         @map("user_id") @db.Uuid
+  birthProfileId             String                         @map("birth_profile_id") @db.Uuid
+  birthProfileRevision       Int                            @map("birth_profile_revision")
+  birthProfilePayloadDigest  Bytes                          @map("birth_profile_payload_digest")
+  status                     String                         @db.VarChar(48)
+  timeCertainty              String                         @map("time_certainty") @db.VarChar(16)
+  methodVersion              String                         @map("method_version") @db.VarChar(100)
+  aspectPolicyVersion        String                         @map("aspect_policy_version") @db.VarChar(100)
+  methodCatalogDigest        Bytes                          @map("method_catalog_digest")
+  inputSnapshotDigest        Bytes                          @map("input_snapshot_digest")
+  timezoneProvenanceDigest   Bytes                          @map("timezone_provenance_digest")
+  engineProvenanceVersion    String                         @map("engine_provenance_version") @db.VarChar(100)
+  engineBuildProvenance      Json                           @map("engine_build_provenance")
+  factsCiphertext            Bytes                          @map("facts_ciphertext")
+  factsNonce                 Bytes                          @map("facts_nonce")
+  factsTag                   Bytes                          @map("facts_tag")
+  encryptionKeyVersion       String                         @map("encryption_key_version") @db.VarChar(100)
+  digestKeyVersion           String                         @map("digest_key_version") @db.VarChar(100)
+  keyedFactsDigest           Bytes                          @map("keyed_facts_digest")
+  createdAt                  DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
+  privacyDeletedAt           DateTime?                      @map("privacy_deleted_at") @db.Timestamptz(6)
+  user                       AppUser                        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  birthProfile               BirthProfile                   @relation(fields: [birthProfileId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  operation                  AstrologyCalculationOperation?
+
+  @@unique([id, userId], map: "astrology_calculation_user_identity_key")
+  @@index([userId, privacyDeletedAt, createdAt(sort: Desc), id(sort: Desc)], map: "astrology_calculation_user_active_created_idx")
+  @@index([birthProfileId, userId, birthProfileRevision, createdAt(sort: Desc), id(sort: Desc)], map: "astrology_calculation_profile_created_idx")
+  @@map("astrology_calculation")
+}
+
+model AstrologyCalculationOperation {
+  id                       String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String               @map("user_id") @db.Uuid
+  astrologyCalculationId   String               @map("astrology_calculation_id") @db.Uuid
+  action                   String               @db.VarChar(16)
+  idempotencyKeyDigest     Bytes                @map("idempotency_key_digest")
+  canonicalRequestDigest   Bytes                @map("canonical_request_digest")
+  createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                     AppUser              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  astrologyCalculation     AstrologyCalculation @relation(fields: [astrologyCalculationId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([userId, idempotencyKeyDigest], map: "astrology_calculation_operation_user_idempotency_key")
+  @@unique([astrologyCalculationId, userId], map: "astrology_calculation_operation_calculation_key")
+  @@map("astrology_calculation_operation")
+}
+
+model AuthIdentitySuppression {
+  providerKey         String                 @map("provider_key") @db.VarChar(40)
+  providerSubjectHash Bytes                  @map("provider_subject_hash")
+  userId              String                 @map("user_id") @db.Uuid
+  deletionRequestId   String                 @map("deletion_request_id") @db.Uuid
+  createdAt           DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                AppUser                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  deletionRequest     PrivacyDeletionRequest @relation(fields: [deletionRequestId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([providerKey, providerSubjectHash], map: "auth_identity_suppression_pkey")
+  @@index([userId, createdAt(sort: Desc), providerKey], map: "auth_identity_suppression_user_created_idx")
+  @@map("auth_identity_suppression")
+}
+
 model Intention {
-  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  anonymousSubjectId    String           @map("anonymous_subject_id") @db.Uuid
-  readingId             String?          @map("reading_id") @db.Uuid
-  intentionCode         String           @map("intention_code") @db.VarChar(40)
-  smallActionCiphertext Bytes            @map("small_action_ciphertext")
-  smallActionNonce      Bytes            @map("small_action_nonce")
-  smallActionTag        Bytes            @map("small_action_tag")
-  encryptionKeyVersion  String           @map("encryption_key_version") @db.VarChar(100)
-  schemaVersion         String           @map("schema_version") @db.VarChar(100)
-  policyVersion         String           @map("policy_version") @db.VarChar(100)
-  idempotencyKeyHash    Bytes            @map("idempotency_key_hash")
-  canonicalRequestHash  Bytes            @map("canonical_request_hash")
-  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  completedAt           DateTime?        @map("completed_at") @db.Timestamptz(6)
-  expiresAt             DateTime         @map("expires_at") @db.Timestamptz(6)
-  anonymousSubject      AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  reading               Reading?         @relation(fields: [readingId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
-  ritualSessions        RitualSession[]
-  journalEntries        JournalEntry[]
+  id                      String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId      String                @map("anonymous_subject_id") @db.Uuid
+  readingId               String?               @map("reading_id") @db.Uuid
+  intentionCode           String                @map("intention_code") @db.VarChar(40)
+  intentionTextCiphertext Bytes?                @map("intention_text_ciphertext")
+  intentionTextNonce      Bytes?                @map("intention_text_nonce")
+  intentionTextTag        Bytes?                @map("intention_text_tag")
+  contractVersion         String                @default("reflection-intention.v1") @map("contract_version") @db.VarChar(100)
+  smallActionCiphertext   Bytes                 @map("small_action_ciphertext")
+  smallActionNonce        Bytes                 @map("small_action_nonce")
+  smallActionTag          Bytes                 @map("small_action_tag")
+  encryptionKeyVersion    String                @map("encryption_key_version") @db.VarChar(100)
+  schemaVersion           String                @map("schema_version") @db.VarChar(100)
+  policyVersion           String                @map("policy_version") @db.VarChar(100)
+  privacyState            String                @default("private") @map("privacy_state") @db.VarChar(16)
+  reminderPreference      String                @default("none") @map("reminder_preference") @db.VarChar(16)
+  revisitDate             DateTime?             @map("revisit_date") @db.Date
+  timeZone                String?               @map("time_zone") @db.VarChar(100)
+  status                  String                @default("active") @db.VarChar(16)
+  revision                Int                   @default(1)
+  idempotencyKeyHash      Bytes                 @map("idempotency_key_hash")
+  canonicalRequestHash    Bytes                 @map("canonical_request_hash")
+  lastMutationKeyHash     Bytes?                @map("last_mutation_key_hash")
+  lastMutationRequestHash Bytes?                @map("last_mutation_request_hash")
+  createdAt               DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  completedAt             DateTime?             @map("completed_at") @db.Timestamptz(6)
+  archivedAt              DateTime?             @map("archived_at") @db.Timestamptz(6)
+  deletedAt               DateTime?             @map("deleted_at") @db.Timestamptz(6)
+  expiresAt               DateTime              @map("expires_at") @db.Timestamptz(6)
+  anonymousSubject        AnonymousSubject      @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reading                 Reading?              @relation(fields: [readingId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  ritualSessions          RitualSession[]
+  journalEntries          JournalEntry[]
+  ritualSessionsV2        RitualSessionV2[]
+  privateJournalEntries   PrivateJournalEntry[]
+  revisits                Revisit[]
 
   @@unique([id, anonymousSubjectId], map: "intention_subject_identity_key")
   @@unique([anonymousSubjectId, idempotencyKeyHash], map: "intention_subject_idempotency_key")
@@ -496,28 +1198,216 @@ model JournalEntry {
   @@map("journal_entry")
 }
 
+model RitualSessionV2 {
+  id                      String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId      String                @map("anonymous_subject_id") @db.Uuid
+  intentionId             String                @map("intention_id") @db.Uuid
+  itemCode                String                @map("item_code") @db.VarChar(64)
+  schemaVersion           String                @map("schema_version") @db.VarChar(100)
+  policyVersion           String                @map("policy_version") @db.VarChar(100)
+  idempotencyKeyHash      Bytes                 @map("idempotency_key_hash")
+  canonicalRequestHash    Bytes                 @map("canonical_request_hash")
+  startedAt               DateTime              @default(now()) @map("started_at") @db.Timestamptz(6)
+  expiresAt               DateTime              @map("expires_at") @db.Timestamptz(6)
+  catalogId               String                @map("catalog_id") @db.VarChar(100)
+  catalogVersion          String                @map("catalog_version") @db.VarChar(100)
+  itemVersion             String                @map("item_version") @db.VarChar(100)
+  publicationId           String                @map("publication_id") @db.VarChar(120)
+  templateCode            String                @map("template_code") @db.VarChar(100)
+  templateVersion         String                @map("template_version") @db.VarChar(100)
+  accessKind              String                @map("access_kind") @db.VarChar(32)
+  accessRequirementCode   String?               @map("access_requirement_code") @db.VarChar(120)
+  ritualPassId            String?               @unique(map: "ritual_session_v2_pass_key") @map("ritual_pass_id") @db.Uuid
+  status                  String                @default("active") @db.VarChar(16)
+  currentStepCode         String                @default("prepare") @map("current_step_code") @db.VarChar(32)
+  elapsedSeconds          Int                   @default(0) @map("elapsed_seconds")
+  revision                Int                   @default(1)
+  pausedAt                DateTime?             @map("paused_at") @db.Timestamptz(6)
+  completedAt             DateTime?             @map("completed_at") @db.Timestamptz(6)
+  abandonedAt             DateTime?             @map("abandoned_at") @db.Timestamptz(6)
+  lastMutationKeyHash     Bytes?                @map("last_mutation_key_hash")
+  lastMutationRequestHash Bytes?                @map("last_mutation_request_hash")
+  anonymousSubject        AnonymousSubject      @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  intention               Intention             @relation(fields: [intentionId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  privateJournalEntries   PrivateJournalEntry[]
+  ritualPass              RitualPass?           @relation("RitualSessionV2SelectedPass", fields: [ritualPassId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  consumedPass            RitualPass?           @relation("RitualPassConsumedSessionV2")
+
+  @@unique([id, anonymousSubjectId], map: "ritual_session_v2_subject_identity_key")
+  @@unique([anonymousSubjectId, idempotencyKeyHash], map: "ritual_session_v2_subject_idempotency_key")
+  @@index([anonymousSubjectId, startedAt(sort: Desc), id(sort: Desc)], map: "ritual_session_v2_subject_started_idx")
+  @@map("ritual_session_v2")
+}
+
+model PrivateJournalEntry {
+  id                      String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId      String           @map("anonymous_subject_id") @db.Uuid
+  intentionId             String           @map("intention_id") @db.Uuid
+  ritualSessionId         String           @map("ritual_session_id") @db.Uuid
+  reflectionCiphertext    Bytes            @map("reflection_ciphertext")
+  reflectionNonce         Bytes            @map("reflection_nonce")
+  reflectionTag           Bytes            @map("reflection_tag")
+  encryptionKeyVersion    String           @map("encryption_key_version") @db.VarChar(100)
+  schemaVersion           String           @map("schema_version") @db.VarChar(100)
+  policyVersion           String           @map("policy_version") @db.VarChar(100)
+  idempotencyKeyHash      Bytes            @map("idempotency_key_hash")
+  canonicalRequestHash    Bytes            @map("canonical_request_hash")
+  createdAt               DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  expiresAt               DateTime         @map("expires_at") @db.Timestamptz(6)
+  deletedAt               DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  revision                Int              @default(1)
+  lastMutationKeyHash     Bytes?           @map("last_mutation_key_hash")
+  lastMutationRequestHash Bytes?           @map("last_mutation_request_hash")
+  anonymousSubject        AnonymousSubject @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  intention               Intention        @relation(fields: [intentionId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  ritualSession           RitualSessionV2  @relation(fields: [ritualSessionId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([anonymousSubjectId, idempotencyKeyHash], map: "private_journal_entry_subject_idempotency_key")
+  @@index([anonymousSubjectId, createdAt(sort: Desc), id(sort: Desc)], map: "private_journal_entry_subject_created_idx")
+  @@map("private_journal_entry")
+}
+
+model Revisit {
+  id                      String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId      String                        @map("anonymous_subject_id") @db.Uuid
+  intentionId             String                        @map("intention_id") @db.Uuid
+  schemaVersion           String                        @map("schema_version") @db.VarChar(100)
+  policyVersion           String                        @map("policy_version") @db.VarChar(100)
+  intentionRevision       Int                           @map("intention_revision")
+  intentionTextCiphertext Bytes                         @map("intention_text_ciphertext")
+  intentionTextNonce      Bytes                         @map("intention_text_nonce")
+  intentionTextTag        Bytes                         @map("intention_text_tag")
+  smallActionCiphertext   Bytes                         @map("small_action_ciphertext")
+  smallActionNonce        Bytes                         @map("small_action_nonce")
+  smallActionTag          Bytes                         @map("small_action_tag")
+  snapshotKeyVersion      String                        @map("snapshot_key_version") @db.VarChar(100)
+  scheduleKind            String                        @map("schedule_kind") @db.VarChar(16)
+  scheduledLocalDate      DateTime                      @map("scheduled_local_date") @db.Date
+  timeZone                String                        @map("time_zone") @db.VarChar(100)
+  reminderPreference      String                        @default("none") @map("reminder_preference") @db.VarChar(16)
+  reminderChannel         String?                       @map("reminder_channel") @db.VarChar(32)
+  quietHoursStart         DateTime?                     @map("quiet_hours_start") @db.Time
+  quietHoursEnd           DateTime?                     @map("quiet_hours_end") @db.Time
+  completionCiphertext    Bytes?                        @map("completion_ciphertext")
+  completionNonce         Bytes?                        @map("completion_nonce")
+  completionTag           Bytes?                        @map("completion_tag")
+  completionKeyVersion    String?                       @map("completion_key_version") @db.VarChar(100)
+  outcomeTags             String[]                      @default([]) @map("outcome_tags")
+  status                  String                        @default("scheduled") @db.VarChar(16)
+  revision                Int                           @default(1)
+  createdAt               DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime                      @map("updated_at") @db.Timestamptz(6)
+  completedAt             DateTime?                     @map("completed_at") @db.Timestamptz(6)
+  archivedAt              DateTime?                     @map("archived_at") @db.Timestamptz(6)
+  deletedAt               DateTime?                     @map("deleted_at") @db.Timestamptz(6)
+  expiresAt               DateTime                      @map("expires_at") @db.Timestamptz(6)
+  anonymousSubject        AnonymousSubject              @relation(fields: [anonymousSubjectId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  intention               Intention                     @relation(fields: [intentionId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  operations              RevisitOperation[]
+  reminderSubscriptions   RevisitReminderSubscription[]
+
+  @@unique([id, anonymousSubjectId], map: "revisit_subject_identity_key")
+  @@index([anonymousSubjectId, scheduledLocalDate, createdAt(sort: Desc), id(sort: Desc)], map: "revisit_subject_schedule_idx")
+  @@map("revisit")
+}
+
+model RevisitReminderSubscription {
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String                     @map("user_id") @db.Uuid
+  accountSubjectLinkId     String                     @map("account_subject_link_id") @db.Uuid
+  anonymousSubjectId       String                     @map("anonymous_subject_id") @db.Uuid
+  revisitId                String                     @unique(map: "revisit_reminder_subscription_revisit_key") @map("revisit_id") @db.Uuid
+  recipientIdentityId      String                     @map("recipient_identity_id") @db.Uuid
+  schemaVersion            String                     @map("schema_version") @db.VarChar(100)
+  noticeVersion            String                     @map("notice_version") @db.VarChar(100)
+  channel                  String                     @db.VarChar(16)
+  frequency                String                     @db.VarChar(16)
+  locale                   String                     @db.VarChar(35)
+  preferenceState          String                     @map("preference_state") @db.VarChar(16)
+  deliveryState            String                     @map("delivery_state") @db.VarChar(24)
+  attemptCount             Int                        @default(0) @map("attempt_count") @db.SmallInt
+  maxAttempts              Int                        @default(3) @map("max_attempts") @db.SmallInt
+  nextAttemptAt            DateTime                   @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  leaseTokenHash           Bytes?                     @map("lease_token_hash")
+  leasedUntil              DateTime?                  @map("leased_until") @db.Timestamptz(6)
+  lastFailureCode          String?                    @map("last_failure_code") @db.VarChar(40)
+  providerMessageReference String?                    @map("provider_message_reference") @db.VarChar(200)
+  createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime                   @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deliveredAt              DateTime?                  @map("delivered_at") @db.Timestamptz(6)
+  unsubscribedAt           DateTime?                  @map("unsubscribed_at") @db.Timestamptz(6)
+  deadLetteredAt           DateTime?                  @map("dead_lettered_at") @db.Timestamptz(6)
+  user                     AppUser                    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  accountSubjectLink       AccountSubjectLink         @relation(fields: [accountSubjectLinkId, userId, anonymousSubjectId], references: [id, userId, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  revisit                  Revisit                    @relation(fields: [revisitId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+  recipientIdentity        AuthIdentity               @relation(fields: [recipientIdentityId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  operations               RevisitReminderOperation[]
+
+  @@unique([id, userId], map: "revisit_reminder_subscription_identity_key")
+  @@index([deliveryState, nextAttemptAt, createdAt, id], map: "revisit_reminder_subscription_due_idx")
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "revisit_reminder_subscription_user_idx")
+  @@map("revisit_reminder_subscription")
+}
+
+model RevisitReminderOperation {
+  id                    String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionId        String                      @map("subscription_id") @db.Uuid
+  userId                String                      @map("user_id") @db.Uuid
+  revisitId             String                      @map("revisit_id") @db.Uuid
+  action                String                      @db.VarChar(16)
+  idempotencyKeyHash    Bytes                       @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes                       @map("canonical_request_hash")
+  resultPreferenceState String                      @map("result_preference_state") @db.VarChar(16)
+  resultDeliveryState   String                      @map("result_delivery_state") @db.VarChar(24)
+  createdAt             DateTime                    @default(now()) @map("created_at") @db.Timestamptz(6)
+  subscription          RevisitReminderSubscription @relation(fields: [subscriptionId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([userId, idempotencyKeyHash], map: "revisit_reminder_operation_user_idempotency_key")
+  @@index([subscriptionId, createdAt, id], map: "revisit_reminder_operation_subscription_idx")
+  @@map("revisit_reminder_operation")
+}
+
+model RevisitOperation {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  anonymousSubjectId   String   @map("anonymous_subject_id") @db.Uuid
+  revisitId            String   @map("revisit_id") @db.Uuid
+  action               String   @db.VarChar(16)
+  idempotencyKeyHash   Bytes    @map("idempotency_key_hash")
+  canonicalRequestHash Bytes    @map("canonical_request_hash")
+  resultRevision       Int      @map("result_revision")
+  resultStatus         String   @map("result_status") @db.VarChar(16)
+  resultDeleted        Boolean  @default(false) @map("result_deleted")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  revisit              Revisit  @relation(fields: [revisitId, anonymousSubjectId], references: [id, anonymousSubjectId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([anonymousSubjectId, idempotencyKeyHash], map: "revisit_operation_subject_idempotency_key")
+  @@index([revisitId, createdAt, id], map: "revisit_operation_revisit_created_idx")
+  @@map("revisit_operation")
+}
+
 model CommerceOrder {
-  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                String              @map("user_id") @db.Uuid
-  status                String              @default("pending_checkout") @db.VarChar(24)
-  currency              String              @db.Char(3)
-  subtotalMinor         Int                 @map("subtotal_minor")
-  taxMinor              Int                 @default(0) @map("tax_minor")
-  totalMinor            Int                 @map("total_minor")
-  refundedMinor         Int                 @default(0) @map("refunded_minor")
-  countryCode           String              @map("country_code") @db.Char(2)
-  countryPolicyVersion  String              @map("country_policy_version") @db.VarChar(100)
-  termsVersion          String              @map("terms_version") @db.VarChar(100)
-  refundPolicyVersion   String              @map("refund_policy_version") @db.VarChar(100)
-  idempotencyKeyHash    Bytes               @map("idempotency_key_hash")
-  canonicalRequestHash  Bytes               @map("canonical_request_hash")
-  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user                  AppUser             @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  lines                 CommerceOrderLine[]
-  paymentAttempts       PaymentAttempt[]
-  paymentEvents         PaymentEvent[]
-  ledgerEntries         LedgerEntry[]
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String              @map("user_id") @db.Uuid
+  status               String              @default("pending_checkout") @db.VarChar(24)
+  currency             String              @db.Char(3)
+  subtotalMinor        Int                 @map("subtotal_minor")
+  taxMinor             Int                 @default(0) @map("tax_minor")
+  totalMinor           Int                 @map("total_minor")
+  refundedMinor        Int                 @default(0) @map("refunded_minor")
+  countryCode          String              @map("country_code") @db.Char(2)
+  countryPolicyVersion String              @map("country_policy_version") @db.VarChar(100)
+  termsVersion         String              @map("terms_version") @db.VarChar(100)
+  refundPolicyVersion  String              @map("refund_policy_version") @db.VarChar(100)
+  idempotencyKeyHash   Bytes               @map("idempotency_key_hash")
+  canonicalRequestHash Bytes               @map("canonical_request_hash")
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                 AppUser             @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  lines                CommerceOrderLine[]
+  paymentAttempts      PaymentAttempt[]
+  paymentEvents        PaymentEvent[]
+  ledgerEntries        LedgerEntry[]
 
   @@unique([userId, idempotencyKeyHash], map: "commerce_order_user_idempotency_key")
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "commerce_order_user_created_idx")
@@ -537,6 +1427,7 @@ model CommerceOrderLine {
   entitlementCode       String        @map("entitlement_code") @db.VarChar(100)
   order                 CommerceOrder @relation(fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   entitlements          Entitlement[]
+  ritualPasses          RitualPass[]
 
   @@unique([orderId, productCode], map: "commerce_order_line_product_key")
   @@index([orderId, id], map: "commerce_order_line_order_idx")
@@ -576,14 +1467,14 @@ model PaymentEvent {
   objectId                   String          @map("object_id") @db.VarChar(255)
   apiVersion                 String?         @map("api_version") @db.VarChar(40)
   payloadDigest              Bytes           @map("payload_digest")
-  providerCreatedAt          DateTime         @map("provider_created_at") @db.Timestamptz(6)
-  receivedAt                 DateTime         @default(now()) @map("received_at") @db.Timestamptz(6)
-  processedAt                DateTime?        @map("processed_at") @db.Timestamptz(6)
-  processingState            String           @default("received") @map("processing_state") @db.VarChar(24)
-  orderId                    String?          @map("order_id") @db.Uuid
-  paymentAttemptId           String?          @map("payment_attempt_id") @db.Uuid
-  order                      CommerceOrder?   @relation(fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  paymentAttempt             PaymentAttempt?  @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  providerCreatedAt          DateTime        @map("provider_created_at") @db.Timestamptz(6)
+  receivedAt                 DateTime        @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt                DateTime?       @map("processed_at") @db.Timestamptz(6)
+  processingState            String          @default("received") @map("processing_state") @db.VarChar(24)
+  orderId                    String?         @map("order_id") @db.Uuid
+  paymentAttemptId           String?         @map("payment_attempt_id") @db.Uuid
+  order                      CommerceOrder?  @relation(fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  paymentAttempt             PaymentAttempt? @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   ledgerEntries              LedgerEntry[]
 
   @@unique([provider, providerAccountFingerprint, providerEventId], map: "payment_event_provider_event_key")
@@ -628,4 +1519,23 @@ model Entitlement {
   @@unique([userId, entitlementCode], map: "entitlement_user_code_key")
   @@index([userId, status, grantedAt(sort: Desc), id(sort: Desc)], map: "entitlement_user_status_idx")
   @@map("entitlement")
+}
+
+model RitualPass {
+  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String            @map("user_id") @db.Uuid
+  accessRequirementCode String            @map("access_requirement_code") @db.VarChar(120)
+  sourceOrderLineId     String            @unique(map: "ritual_pass_source_order_line_key") @map("source_order_line_id") @db.Uuid
+  status                String            @default("available") @db.VarChar(16)
+  grantedAt             DateTime          @default(now()) @map("granted_at") @db.Timestamptz(6)
+  consumedAt            DateTime?         @map("consumed_at") @db.Timestamptz(6)
+  reversedAt            DateTime?         @map("reversed_at") @db.Timestamptz(6)
+  ritualSessionId       String?           @unique(map: "ritual_pass_session_key") @map("ritual_session_id") @db.Uuid
+  user                  AppUser           @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  sourceOrderLine       CommerceOrderLine @relation(fields: [sourceOrderLineId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  ritualSession         RitualSessionV2?  @relation("RitualPassConsumedSessionV2", fields: [ritualSessionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  selectedBySession     RitualSessionV2?  @relation("RitualSessionV2SelectedPass")
+
+  @@index([userId, accessRequirementCode, status, grantedAt, id], map: "ritual_pass_user_requirement_status_idx")
+  @@map("ritual_pass")
 }

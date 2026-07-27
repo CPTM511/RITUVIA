@@ -6,7 +6,12 @@ import { QuestionIntakeForm } from "../../_components/question-intake-form";
 import { createQuestionIntakeMetadata } from "../../_i18n/metadata";
 import { getMessages } from "../../_i18n/messages";
 import { getQuestionIntakeMessages } from "../../_i18n/question-intake-messages";
-import { parseLocale, supportedLocales, type Locale } from "../../_i18n/routing";
+import {
+  localeTarotOneCardPath,
+  parseLocale,
+  supportedLocales,
+  type Locale,
+} from "../../_i18n/routing";
 import { getWebRuntimeConfiguration } from "../../../config/server";
 
 type QuestionIntakePageProps = Readonly<{
@@ -50,7 +55,7 @@ export default async function QuestionIntakePage({ params }: QuestionIntakePageP
           <p className="question-intake-boundary">{messages.page.boundary}</p>
           <p className="question-intake-privacy">{messages.page.privacy}</p>
         </header>
-        <QuestionIntakeForm messages={messages} />
+        <QuestionIntakeForm messages={messages} readingHref={localeTarotOneCardPath(locale)} />
       </main>
     </PublicSiteFrame>
   );

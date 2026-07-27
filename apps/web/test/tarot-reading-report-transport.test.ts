@@ -12,11 +12,26 @@ const operation = Object.freeze({
   idempotencyKey: "abcdefghijklmnopqrstuv",
   target: Object.freeze({ kind: "position" as const, positionId: "situation" }),
 });
+const interpretationRequestId = "44444444-4444-4444-8444-444444444444";
 
 const response = (status: number, body: BodyInit | null = null, headers?: HeadersInit): Response =>
   new Response(body, { ...(headers === undefined ? {} : { headers }), status });
 
 describe("tarot reading report transport", () => {
+  it("invokes a native-style fetcher without an object receiver", async () => {
+    const fetcher = function (this: unknown): Promise<Response> {
+      expect(this).toBeUndefined();
+      return Promise.resolve(response(204));
+    } as typeof fetch;
+
+    await executeTarotReadingReport({
+      fetcher,
+      operation,
+      readingId,
+      signal: new AbortController().signal,
+    });
+  });
+
   it("sends one exact no-store categorical command and accepts only an empty 204", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response(204));
 
@@ -68,6 +83,28 @@ describe("tarot reading report transport", () => {
       expect(String(request?.body)).not.toMatch(/comment|free.?text|journal|prayer|question/iu);
     },
   );
+
+  it("sends the exact interpretation operation through the strict v2 request arm", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response(204));
+
+    await executeTarotReadingReport({
+      fetcher,
+      operation: {
+        ...operation,
+        target: { interpretationRequestId, kind: "interpretation" },
+      },
+      readingId,
+      signal: new AbortController().signal,
+    });
+
+    const request = fetcher.mock.calls[0]?.[1];
+    expect(JSON.parse(String(request?.body))).toEqual({
+      category: "safety",
+      schemaVersion: "tarot-reading-report.v2",
+      target: { interpretationRequestId, kind: "interpretation" },
+    });
+    expect(String(request?.body)).not.toMatch(/comment|free.?text|journal|prayer|question/iu);
+  });
 
   it("keeps the report idempotency key independent from the reading identifier and body", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response(204));

@@ -52,6 +52,11 @@ content/
 
 A separate `apps/admin` is optional. Prefer a protected route group in `apps/web` until isolation, deployment, or bundle needs justify separation.
 
+`@rituvia/analytics` currently implements only strict core-loop event contracts, bounded synthetic
+test storage, and deterministic funnel/WMRS projections. Web composition supplies purpose-scoped
+identity and consent checks; production collection, persistence, browser ingestion, vendors, and
+network export remain safe-off.
+
 ## 4. System context
 
 ```mermaid
@@ -88,6 +93,40 @@ Owns anonymous subjects, users, sessions, auth links, role/permission mapping, a
 
 Owns deterministic draw/calculation requests and immutable result facts. It does not call an LLM and does not know commerce presentation.
 
+Western astrology uses the provider-neutral
+`rituvia_astrology_ephemeris_adapter_v1` boundary selected historically in D-066 and relicensed
+through D-069. The selected implementation is
+Swiss Ephemeris library `2.10.03`; the later `v2.10.3final` source/data snapshot is a separate
+provenance dimension. `@rituvia/divination` owns only the pure interface and deterministic facts.
+The native implementation lives in the separately registered
+`@rituvia/astrology-engine-native` server-only adapter zone;
+provider C types, paths, flags, binaries, and data formats cannot enter the pure package. Domain
+inputs and outputs carry exact library, adapter, source commit, ephemeris-data digest, ABI,
+compiler/flags, house-system, returned engine-flag, and calculation-schema versions. Runtime
+calculation is offline; an unexpected engine/data flag returns unavailable without placements.
+Selection V2 permits local integration only after independently verified owner AGPL approval and
+the root whole-project license. Production still requires independently authorized source/data,
+Corresponding Source, build, SBOM, ABI, reference-vector, supply-chain, method, and
+`experience.astrology` kill-switch
+evidence. Selection V1 cannot activate production.
+
+Web server composition reads the live database-backed `experience.astrology` decision before
+loading native metadata or touching the executable. An enabled calculation lazily loads an
+absolute production build-metadata JSON file, rejects sanitizer/security build profiles, attests
+the binary and both ephemeris files, and composes the native executor into the pure adapter.
+Metadata-load failures are not cached; emergency-off versions take effect before the next native
+load or execution. No client or route imports the native package.
+
+Location and historical time-zone resolution use a separate provider-neutral V1 contract. The
+intended production gazetteer is a self-hosted GeoNames export with an immutable snapshot version
+and SHA-256 digest; no request-time public geocoder dependency is allowed. `@rituvia/divination`
+owns strict search/result and local-time resolution facts only. `apps/web/server` owns the pinned
+Node `24.18.0` / ICU `78.3` / tzdata `2026b` runtime, timeout cancellation, and bounded private
+process cache capped at 64 entries and 15 minutes. Cache keys are HMAC-only and partitioned by
+provider, adapter, and data versions. Resolution rereads the opaque location ID, never trusts
+client coordinates/zone data, never caches birth time, and returns explicit fold/gap states without
+current-offset, nearest-place, or UTC fallback.
+
 ### Interpretation
 
 Consumes a validated fact bundle plus approved content and returns a structured interpretation. It cannot mutate deterministic facts.
@@ -99,6 +138,10 @@ Owns intentions, actions, journals, revisit schedules, and ritual completion.
 ### Sanctuary/catalog
 
 Owns ritual object definitions, rendering metadata, collections, and required entitlements. It does not decide whether a payment succeeded.
+The versioned ritual catalog distinguishes free objects, permanent objects, and consumable ritual
+experiences. It exposes only abstract access requirements; Commerce remains authoritative for
+Credit cost, fulfillment, permanent entitlement state, and atomic pass consumption. Historical
+reflection codes resolve through exact replay mappings rather than being silently renamed.
 
 ### Commerce
 
@@ -196,6 +239,14 @@ Job envelope MUST include:
 - No raw sensitive free text unless the job's purpose requires it and the payload is encrypted/short-lived.
 
 Classify jobs as at-most-once, at-least-once, or effectively-once through idempotency. Define retry/backoff/dead-letter and manual replay behavior.
+
+RIT-045 implements one narrow effectively-once Revisit email job using the
+`revisit_reminder_subscription` table as both current preference and privacy-minimal queue. Claims
+use database time, `FOR UPDATE SKIP LOCKED`, a hashed lease token, three attempts, bounded
+deterministic backoff, and terminal dead-letter state. The Worker receives only account-safe
+identifiers and exact versions, reauthorizes immediately before provider use, and uses the
+subscription ID as the stable provider idempotency key. This is not a generic queue platform; the
+only composed provider is hard disabled and no production scheduler or email vendor is activated.
 
 ## 11. Environment strategy
 

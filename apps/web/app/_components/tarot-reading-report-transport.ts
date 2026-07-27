@@ -1,4 +1,8 @@
-import { tarotReadingReportSchemaVersion, type TarotReadingReportCategory } from "@rituvia/domain";
+import {
+  tarotReadingReportSchemaVersion,
+  tarotReadingReportSchemaVersionV2,
+  type TarotReadingReportCategory,
+} from "@rituvia/domain";
 
 export type TarotReadingReportFailure =
   "conflict" | "error" | "not_found" | "offline" | "unavailable";
@@ -6,7 +10,10 @@ export type TarotReadingReportFailure =
 export type TarotReadingReportOperation = Readonly<{
   category: TarotReadingReportCategory;
   idempotencyKey: string;
-  target: Readonly<{ kind: "reading" }> | Readonly<{ kind: "position"; positionId: string }>;
+  target:
+    | Readonly<{ kind: "reading" }>
+    | Readonly<{ kind: "position"; positionId: string }>
+    | Readonly<{ interpretationRequestId: string; kind: "interpretation" }>;
 }>;
 
 export class TarotReadingReportTransportError extends Error {
@@ -44,10 +51,14 @@ export const executeTarotReadingReport = async (
     signal: AbortSignal;
   }>,
 ): Promise<void> => {
-  const response = await input.fetcher(`/api/v1/readings/${input.readingId}/report`, {
+  const fetcher = input.fetcher;
+  const response = await fetcher(`/api/v1/readings/${input.readingId}/report`, {
     body: JSON.stringify({
       category: input.operation.category,
-      schemaVersion: tarotReadingReportSchemaVersion,
+      schemaVersion:
+        input.operation.target.kind === "interpretation"
+          ? tarotReadingReportSchemaVersionV2
+          : tarotReadingReportSchemaVersion,
       target: input.operation.target,
     }),
     cache: "no-store",

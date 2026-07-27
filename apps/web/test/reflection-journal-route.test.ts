@@ -2,6 +2,8 @@ import { parseReflectionJournalCreateRequestV1 } from "@rituvia/domain";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deriveSessionCsrfToken } from "../server/session-csrf";
+
 const harness = vi.hoisted(() => {
   class ApplicationError extends Error {
     readonly code: "conflict" | "daily_limit" | "not_found" | "session_required" | "unavailable";
@@ -15,7 +17,12 @@ const harness = vi.hoisted(() => {
       this.retryAfterSeconds = retryAfterSeconds;
     }
   }
-  return { ApplicationError, create: vi.fn(), get: vi.fn() };
+  return {
+    ApplicationError,
+    create: vi.fn(),
+    get: vi.fn(),
+    getV2: vi.fn(),
+  };
 });
 
 vi.mock("../config/server", () => ({
@@ -26,11 +33,15 @@ vi.mock("../server/reflection-loop", () => ({
   getWebJournalEntry: harness.get,
   ReflectionLoopApplicationError: harness.ApplicationError,
 }));
+vi.mock("../server/ritual-journal", () => ({
+  getWebJournalEntryV2: harness.getV2,
+}));
 
 import { GET } from "../app/api/v1/journal-entries/[journalEntryId]/route";
 import { journalEntryApiPath, POST } from "../app/api/v1/journal-entries/route";
 
 const token = "c".repeat(43);
+const csrfToken = deriveSessionCsrfToken(token);
 const idempotencyKey = "cdefghijklmnopqrstuvwx";
 const intentionId = "22222222-2222-4222-8222-222222222222";
 const ritualSessionId = "33333333-3333-4333-8333-333333333333";
@@ -66,6 +77,7 @@ const post = (
       "idempotency-key": idempotencyKey,
       origin: "https://example.test",
       "sec-fetch-site": "same-origin",
+      "x-csrf-token": csrfToken,
       ...headers,
     },
     method: "POST",
@@ -88,6 +100,7 @@ describe("encrypted journal entry API", () => {
       return { kind: "created", resource };
     });
     harness.get.mockResolvedValue(resource);
+    harness.getV2.mockResolvedValue(null);
   });
 
   it("creates an owner-bound journal entry and returns a finite revisit", async () => {

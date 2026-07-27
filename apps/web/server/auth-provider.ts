@@ -7,7 +7,11 @@ import { normalizeAccountEmail, parseAuthProviderKey } from "@rituvia/domain";
 import { isReviewedReturnTo } from "../app/_contracts/reviewed-return-to";
 
 export const localPasswordlessProviderKey = parseAuthProviderKey("local.passwordless.v1");
-const localEmailPattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@example\.test$/u;
+
+export const accountAuthProviderCapabilities = Object.freeze({
+  emailMagicLink: "active",
+  passkey: "schema_ready",
+} as const);
 
 export class AccountAuthProviderUnavailableError extends Error {
   constructor() {
@@ -35,8 +39,14 @@ export type LocalPasswordlessStart = Readonly<{
 }>;
 
 export type AccountAuthProvider = Readonly<{
+  capabilities: typeof accountAuthProviderCapabilities;
+  consumeLocalPreview(stateToken: string): boolean;
   issueSessionToken(): string;
-  start(input: Readonly<{ email: unknown; returnTo: unknown }>): LocalPasswordlessStart;
+  readLocalPreview(stateToken: string): LocalPasswordlessStart | null;
+  stageLocalPreview(started: LocalPasswordlessStart): void;
+  startEmailMagicLink(
+    input: Readonly<{ email: unknown; returnTo: unknown }>,
+  ): LocalPasswordlessStart;
 }>;
 
 const issueOpaqueToken = (): string => {
@@ -66,17 +76,40 @@ export const createAccountAuthProvider = (input: {
     throw new AccountAuthProviderUnavailableError();
   }
   const now = input.now ?? (() => new Date());
+  const localPreviews = new Map<string, LocalPasswordlessStart>();
+
+  const purgeExpiredPreviews = (): void => {
+    const currentTime = now().getTime();
+    for (const [stateToken, preview] of localPreviews) {
+      if (Date.parse(preview.expiresAt) <= currentTime) localPreviews.delete(stateToken);
+    }
+  };
 
   return Object.freeze({
+    capabilities: accountAuthProviderCapabilities,
+    consumeLocalPreview(stateToken) {
+      return localPreviews.delete(stateToken);
+    },
     issueSessionToken: issueOpaqueToken,
-    start(raw) {
+    readLocalPreview(stateToken) {
+      if (!/^[A-Za-z0-9_-]{43}$/u.test(stateToken)) return null;
+      const started = localPreviews.get(stateToken);
+      return started !== undefined && Date.parse(started.expiresAt) > now().getTime()
+        ? started
+        : null;
+    },
+    stageLocalPreview(started) {
+      purgeExpiredPreviews();
+      if (localPreviews.size >= 1_000 || localPreviews.has(started.state)) {
+        throw new AccountAuthProviderUnavailableError();
+      }
+      localPreviews.set(started.state, started);
+    },
+    startEmailMagicLink(raw) {
       let email: string;
       try {
         email = normalizeAccountEmail(raw.email);
       } catch {
-        throw new AccountAuthProviderInputError();
-      }
-      if (!localEmailPattern.test(email)) {
         throw new AccountAuthProviderInputError();
       }
       if (!isReviewedReturnTo(raw.returnTo)) {

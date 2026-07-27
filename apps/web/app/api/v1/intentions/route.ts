@@ -10,6 +10,7 @@ export const intentionApiPath = "/api/v1/intentions";
 export const POST = (request: NextRequest) =>
   handleReflectionCreate(request, {
     create: createWebIntention,
+    csrfRequired: true,
     kind: "intention",
     path: intentionApiPath,
   });

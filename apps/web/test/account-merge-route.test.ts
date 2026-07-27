@@ -1,11 +1,14 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deriveSessionCsrfToken } from "../server/session-csrf";
+
 const harness = vi.hoisted(() => ({ merge: vi.fn() }));
 vi.mock("../app/api/v1/anonymous/session/route", () => ({
   anonymousSessionCookieName: "__Host-rituvia-anonymous-session",
 }));
 vi.mock("../server/account-auth", () => ({
+  accountAuthStateCookieName: "__Host-rituvia-auth-state",
   accountSessionCookieName: "__Host-rituvia-account-session",
   mergeWebAnonymousSubject: harness.merge,
   WebAccountAuthError: class extends Error {
@@ -26,7 +29,11 @@ describe("anonymous account merge route", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("requires both host cookies and idempotency, then deletes only the anonymous bearer", async () => {
-    harness.merge.mockResolvedValue("created");
+    harness.merge.mockResolvedValue({
+      context: { expiresAt: new Date(Date.now() + 600_000).toISOString() },
+      sessionToken: "c".repeat(43),
+      status: "created",
+    });
     const response = await POST(
       new NextRequest("https://example.test/api/v1/auth/account-merge", {
         headers: {
@@ -39,6 +46,7 @@ describe("anonymous account merge route", () => {
           "idempotency-key": "abcdefghijklmnopqrstuv",
           origin: "https://example.test",
           "sec-fetch-site": "same-origin",
+          "x-csrf-token": deriveSessionCsrfToken("a".repeat(43)),
         },
         method: "POST",
       }),
@@ -53,11 +61,20 @@ describe("anonymous account merge route", () => {
     });
     expect(cookie).toContain("__Host-rituvia-anonymous-session=");
     expect(cookie).toContain("Max-Age=0");
-    expect(cookie).not.toContain("__Host-rituvia-account-session");
+    expect(cookie).toContain("__Host-rituvia-account-session=" + "c".repeat(43));
+    expect(cookie).toContain("HttpOnly");
+    expect(cookie).toContain("Secure");
+    expect(cookie).toContain("SameSite=strict");
+    expect(cookie).not.toContain("a".repeat(43));
+    expect(response.headers.get("x-csrf-token")).toBe(deriveSessionCsrfToken("c".repeat(43)));
   });
 
   it("accepts a browser-shaped empty stream without accepting request bytes", async () => {
-    harness.merge.mockResolvedValue("created");
+    harness.merge.mockResolvedValue({
+      context: { expiresAt: new Date(Date.now() + 600_000).toISOString() },
+      sessionToken: "c".repeat(43),
+      status: "created",
+    });
     const emptyBrowserPostBody = new ReadableStream<Uint8Array>({
       start(controller) {
         controller.close();
@@ -75,6 +92,7 @@ describe("anonymous account merge route", () => {
         "idempotency-key": "abcdefghijklmnopqrstuv",
         origin: "https://example.test",
         "sec-fetch-site": "same-origin",
+        "x-csrf-token": deriveSessionCsrfToken("a".repeat(43)),
       },
       method: "POST",
     };
@@ -104,6 +122,7 @@ describe("anonymous account merge route", () => {
         "idempotency-key": "abcdefghijklmnopqrstuv",
         origin: "https://example.test",
         "sec-fetch-site": "same-origin",
+        "x-csrf-token": deriveSessionCsrfToken("a".repeat(43)),
       },
       method: "POST",
     };

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 
 import { Client } from "pg";
 
@@ -202,6 +202,16 @@ const reportRequest = (
     category,
     schemaVersion: "tarot-reading-report.v1",
     target: Object.freeze(target),
+  });
+
+const interpretationReportRequest = (interpretationRequestId: string, category = "safety") =>
+  Object.freeze({
+    category,
+    schemaVersion: "tarot-reading-report.v2",
+    target: Object.freeze({
+      interpretationRequestId,
+      kind: "interpretation" as const,
+    }),
   });
 
 const prepareReport =
@@ -514,6 +524,105 @@ await withLocalPostgresLease(async (lease) => {
         await persistence.get({ readingId: created.reading.id, token: otherOwner.token }),
         null,
       );
+      const createLinkedAccount = async (
+        anonymousToken: string,
+      ): Promise<Readonly<{ token: string }>> => {
+        const anonymousHash = createHash("sha256")
+          .update(Buffer.from(anonymousToken, "base64url"))
+          .digest();
+        const source = await migrator.query<{ sessionId: string; subjectId: string }>(
+          `
+            SELECT id AS "sessionId", anonymous_subject_id AS "subjectId"
+              FROM anonymous_session
+             WHERE token_hash = $1
+          `,
+          [anonymousHash],
+        );
+        const sourceRow = source.rows[0];
+        assert.ok(sourceRow);
+        const userId = randomUUID();
+        const identityId = randomUUID();
+        const sessionId = randomUUID();
+        const accountToken = randomBytes(32).toString("base64url");
+        const accountHash = createHash("sha256")
+          .update(Buffer.from(accountToken, "base64url"))
+          .digest();
+        await migrator.query("BEGIN");
+        try {
+          await migrator.query(
+            `
+              INSERT INTO app_user (id, email_verified_at)
+              VALUES ($1::uuid, CURRENT_TIMESTAMP)
+            `,
+            [userId],
+          );
+          await migrator.query(
+            `
+              INSERT INTO auth_identity (
+                id, user_id, provider_key, provider_subject, verified_email_ciphertext,
+                verified_email_nonce, verified_email_tag, encryption_key_version,
+                verified_at, last_sign_in_at
+              ) VALUES (
+                $1::uuid, $2::uuid, 'test', $3, decode('01', 'hex'),
+                decode(repeat('02', 12), 'hex'), decode(repeat('03', 16), 'hex'),
+                'test.account-reading.v1', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+              )
+            `,
+            [identityId, userId, `account-reading-${randomUUID().replaceAll("-", "")}`],
+          );
+          await migrator.query(
+            `
+              INSERT INTO account_session (
+                id, user_id, auth_identity_id, token_hash, expires_at
+              ) VALUES (
+                $1::uuid, $2::uuid, $3::uuid, $4, CURRENT_TIMESTAMP + INTERVAL '1 day'
+              )
+            `,
+            [sessionId, userId, identityId, accountHash],
+          );
+          await migrator.query(
+            `
+              INSERT INTO account_subject_link (
+                user_id, anonymous_subject_id, source_session_id, source_account_session_id,
+                idempotency_key_hash, canonical_request_hash
+              ) VALUES (
+                $1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6
+              )
+            `,
+            [
+              userId,
+              sourceRow.subjectId,
+              sourceRow.sessionId,
+              sessionId,
+              randomBytes(32),
+              randomBytes(32),
+            ],
+          );
+          await migrator.query("COMMIT");
+        } catch (error) {
+          await migrator.query("ROLLBACK");
+          throw error;
+        }
+        return Object.freeze({ token: accountToken });
+      };
+      const linkedOwner = await createLinkedAccount(owner.token);
+      const linkedOther = await createLinkedAccount(otherOwner.token);
+      assert.deepEqual(
+        await persistence.get({
+          ownerType: "account",
+          readingId: created.reading.id,
+          token: linkedOwner.token,
+        }),
+        created.reading,
+      );
+      assert.equal(
+        await persistence.get({
+          ownerType: "account",
+          readingId: created.reading.id,
+          token: linkedOther.token,
+        }),
+        null,
+      );
 
       const rotationExecutionCount = { value: 0 };
       const replayed = await persistence.resolveCreate({
@@ -627,14 +736,6 @@ await withLocalPostgresLease(async (lease) => {
           token: otherOwner.token,
         },
         {
-          readingId: created.reading.id,
-          request: reportRequest("factual", {
-            kind: "position",
-            positionId: "not-a-real-position",
-          }),
-          token: owner.token,
-        },
-        {
           readingId: "00000000-0000-4000-8000-000000000000",
           request: reportRequest(),
           token: owner.token,
@@ -646,6 +747,19 @@ await withLocalPostgresLease(async (lease) => {
         );
       }
       assert.equal(hiddenTargetPrepareCount.value, 0);
+      await assert.rejects(
+        persistence.report({
+          prepare: hiddenTargetPrepare,
+          readingId: created.reading.id,
+          request: reportRequest("factual", {
+            kind: "position",
+            positionId: "not-a-real-position",
+          }),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+      );
+      assert.equal(hiddenTargetPrepareCount.value, 1);
 
       const threeCardReading = raceResults[0]!.reading;
       const positionReport = await persistence.report({
@@ -1030,6 +1144,22 @@ await withLocalPostgresLease(async (lease) => {
       const initialFenceClaim = await shortLeaseInterpretation.claim(fenceClaimInput);
       assert.equal(initialFenceClaim.kind, "claimed");
       if (initialFenceClaim.kind !== "claimed") assert.fail("Expected a new fenced claim.");
+      const generatingReportPrepareCount = { value: 0 };
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: generatingReportPrepareCount,
+            key: idempotencyKey(),
+            versions: ["test.idempotency-hmac.v2"],
+          }),
+          readingId: fenceReading.reading.id,
+          request: interpretationReportRequest(fenceClaimInput.requestId),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+      );
+      assert.equal(generatingReportPrepareCount.value, 1);
 
       const failedReading = await persistence.resolveCreate({
         prepare: prepare({
@@ -1129,6 +1259,20 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(failedFinalized.interpretation.status, "failed");
       assert.equal(Object.hasOwn(failedFinalized.interpretation, "output"), false);
       assert.equal(failedFinalized.interpretation.operational.failureCode, "configuration");
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: { value: 0 },
+            key: idempotencyKey(),
+            versions: ["test.idempotency-hmac.v2"],
+          }),
+          readingId: failedReading.reading.id,
+          request: interpretationReportRequest(failedClaimInput.requestId),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+      );
 
       const unknownFailureClaimInput = Object.freeze({
         canonicalRequestDigest: `sha256:${"6d".repeat(32)}`,
@@ -1277,6 +1421,272 @@ await withLocalPostgresLease(async (lease) => {
         fallbackOutput,
       );
 
+      const safeReplacementReading = await persistence.resolveCreate({
+        prepare: prepare({
+          activeVersion: "test.idempotency-hmac.v2",
+          executionCount: { value: 0 },
+          key: idempotencyKey(),
+          versions: ["test.idempotency-hmac.v2"],
+        }),
+        request: request("gratitude"),
+        token: otherOwner.token,
+      });
+      assert.equal(safeReplacementReading.kind, "created");
+      const safeReplacementClaimInput = Object.freeze({
+        canonicalRequestDigest: `sha256:${"74".repeat(32)}`,
+        generationSchemaVersion: "interpretation-generation.v1" as const,
+        idempotencyKeyDigest: `sha256:${"75".repeat(32)}`,
+        idempotencyKeyVersion: "test.interpretation-idempotency.v1",
+        provenance: generationClaimProvenance(safeReplacementReading.reading),
+        readingId: safeReplacementReading.reading.id,
+        requestId: randomUUID(),
+        token: otherOwner.token,
+      });
+      const safeReplacementClaim = await shortLeaseInterpretation.claim(safeReplacementClaimInput);
+      assert.equal(safeReplacementClaim.kind, "claimed");
+      if (safeReplacementClaim.kind !== "claimed") {
+        assert.fail("Expected a safe-replacement claim.");
+      }
+      const safeReplacementCompletion = Object.freeze({
+        ...pendingCompletion,
+        verification: verificationResult("safe_replacement"),
+      });
+      const safeReplacementFinalized = await shortLeaseInterpretation.finalize({
+        claimToken: safeReplacementClaim.claimToken,
+        claimVersion: safeReplacementClaim.claimVersion,
+        completion: safeReplacementCompletion,
+        completionDigest: `sha256:${"76".repeat(32)}`,
+        interpretationId: safeReplacementClaim.interpretationId,
+        token: otherOwner.token,
+      });
+      if (safeReplacementFinalized.interpretation.status !== "pending_verification") {
+        assert.fail("Expected a pending-verification safe replacement.");
+      }
+      assert.equal(
+        safeReplacementFinalized.interpretation.verification?.status,
+        "safe_replacement",
+      );
+
+      const reportStateBefore = await migrator.query<{
+        interpretations: number;
+        readings: number;
+        verifications: number;
+      }>(
+        `SELECT (SELECT count(*)::int FROM reading) AS readings,
+                (SELECT count(*)::int FROM interpretation) AS interpretations,
+                (SELECT count(*)::int FROM interpretation_verification) AS verifications`,
+      );
+      const interpretationReportKey = idempotencyKey();
+      const interpretationReportPrepareCount = { value: 0 };
+      const interpretationReportRace = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          persistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: interpretationReportPrepareCount,
+              key: interpretationReportKey,
+              versions: ["test.idempotency-hmac.v2"],
+            }),
+            readingId: created.reading.id,
+            request: interpretationReportRequest(claimInput.requestId),
+            token: owner.token,
+          }),
+        ),
+      );
+      assert.equal(interpretationReportRace.filter(({ kind }) => kind === "created").length, 1);
+      assert.equal(interpretationReportRace.filter(({ kind }) => kind === "replayed").length, 7);
+      assert.equal(interpretationReportPrepareCount.value, 8);
+      assert.deepEqual(
+        (
+          await migrator.query<{
+            interpretations: number;
+            readings: number;
+            verifications: number;
+          }>(
+            `SELECT (SELECT count(*)::int FROM reading) AS readings,
+                    (SELECT count(*)::int FROM interpretation) AS interpretations,
+                    (SELECT count(*)::int FROM interpretation_verification) AS verifications`,
+          )
+        ).rows,
+        reportStateBefore.rows,
+      );
+
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: { value: 0 },
+            key: interpretationReportKey,
+            versions: ["test.idempotency-hmac.v2"],
+          }),
+          readingId: created.reading.id,
+          request: interpretationReportRequest("00000000-0000-4000-8000-000000000000"),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_IDEMPOTENCY_CONFLICT"),
+      );
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: { value: 0 },
+            key: interpretationReportKey,
+            versions: ["test.idempotency-hmac.v2"],
+          }),
+          readingId: created.reading.id,
+          request: interpretationReportRequest(claimInput.requestId, "factual"),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_IDEMPOTENCY_CONFLICT"),
+      );
+
+      const fallbackReportKey = idempotencyKey();
+      assert.equal(
+        (
+          await persistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: { value: 0 },
+              key: fallbackReportKey,
+              versions: ["test.idempotency-hmac.v2"],
+            }),
+            readingId: fenceReading.reading.id,
+            request: interpretationReportRequest(fenceClaimInput.requestId, "factual"),
+            token: owner.token,
+          })
+        ).kind,
+        "created",
+      );
+      const safeReplacementReportKey = idempotencyKey();
+      assert.equal(
+        (
+          await persistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: { value: 0 },
+              key: safeReplacementReportKey,
+              versions: ["test.idempotency-hmac.v2"],
+            }),
+            readingId: safeReplacementReading.reading.id,
+            request: interpretationReportRequest(
+              safeReplacementClaimInput.requestId,
+              "translation",
+            ),
+            token: otherOwner.token,
+          })
+        ).kind,
+        "created",
+      );
+
+      const hiddenInterpretationPrepareCount = { value: 0 };
+      const hiddenInterpretationPrepare = prepareReport({
+        activeVersion: "test.idempotency-hmac.v2",
+        callbackCount: hiddenInterpretationPrepareCount,
+        key: idempotencyKey(),
+        versions: ["test.idempotency-hmac.v2"],
+      });
+      for (const hiddenTarget of [
+        {
+          readingId: created.reading.id,
+          request: interpretationReportRequest(claimInput.requestId),
+          token: otherOwner.token,
+        },
+        {
+          readingId: fenceReading.reading.id,
+          request: interpretationReportRequest(claimInput.requestId),
+          token: owner.token,
+        },
+        {
+          readingId: created.reading.id,
+          request: interpretationReportRequest("00000000-0000-4000-8000-000000000000"),
+          token: owner.token,
+        },
+      ]) {
+        await assert.rejects(
+          persistence.report({ prepare: hiddenInterpretationPrepare, ...hiddenTarget }),
+          (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+        );
+      }
+      assert.equal(hiddenInterpretationPrepareCount.value, 2);
+
+      const storedInterpretationReports = await migrator.query<{
+        interpretationId: string;
+        interpretationParentStatus: string;
+        interpretationVerificationStatus: string | null;
+        raw: string;
+        requestSchemaVersion: string;
+        schemaVersion: string;
+        targetKind: string;
+      }>(
+        `SELECT report.interpretation_id::text AS "interpretationId",
+                report.interpretation_parent_status AS "interpretationParentStatus",
+                report.interpretation_verification_status AS "interpretationVerificationStatus",
+                row_to_json(report)::text AS raw,
+                report.report_request_schema_version AS "requestSchemaVersion",
+                report.schema_version AS "schemaVersion",
+                report.target_kind AS "targetKind"
+           FROM reading_report AS report
+          WHERE report.report_request_schema_version = 'tarot-reading-report.v2'
+          ORDER BY report.created_at, report.id`,
+      );
+      assert.deepEqual(
+        storedInterpretationReports.rows.map(
+          ({
+            interpretationId,
+            interpretationParentStatus,
+            interpretationVerificationStatus,
+            requestSchemaVersion,
+            schemaVersion,
+            targetKind,
+          }) => ({
+            interpretationId,
+            interpretationParentStatus,
+            interpretationVerificationStatus,
+            requestSchemaVersion,
+            schemaVersion,
+            targetKind,
+          }),
+        ),
+        [
+          {
+            interpretationId: winningClaim.interpretationId,
+            interpretationParentStatus: "pending_verification",
+            interpretationVerificationStatus: "verified",
+            requestSchemaVersion: "tarot-reading-report.v2",
+            schemaVersion: "tarot-reading-report.v1",
+            targetKind: "reading",
+          },
+          {
+            interpretationId: reclaimedFenceClaim.interpretationId,
+            interpretationParentStatus: "fallback",
+            interpretationVerificationStatus: null,
+            requestSchemaVersion: "tarot-reading-report.v2",
+            schemaVersion: "tarot-reading-report.v1",
+            targetKind: "reading",
+          },
+          {
+            interpretationId: safeReplacementClaim.interpretationId,
+            interpretationParentStatus: "pending_verification",
+            interpretationVerificationStatus: "safe_replacement",
+            requestSchemaVersion: "tarot-reading-report.v2",
+            schemaVersion: "tarot-reading-report.v1",
+            targetKind: "reading",
+          },
+        ],
+      );
+      assert.equal(
+        storedInterpretationReports.rows.some(({ raw }) => raw.includes(owner.token)),
+        false,
+      );
+      assert.equal(
+        storedInterpretationReports.rows.some(({ raw }) => raw.includes(claimInput.requestId)),
+        false,
+      );
+      assert.equal(
+        storedInterpretationReports.rows.some(({ raw }) => raw.includes("providerOutput")),
+        false,
+      );
+
       const tooShortLease = createInterpretationGenerationPersistence(runtime, {
         leaseSeconds: 31,
       });
@@ -1339,6 +1749,55 @@ await withLocalPostgresLease(async (lease) => {
         "23514",
         "reading_report_target_check",
       );
+      await expectPostgresError(
+        () =>
+          runtimeSql.query(
+            `INSERT INTO reading_report (
+               reading_id, anonymous_subject_id, category, target_kind, target_position_id,
+               interpretation_id, interpretation_parent_status,
+               interpretation_verification_status, report_request_schema_version,
+               schema_version, report_policy_version, idempotency_key_version,
+               idempotency_key_hash, canonical_request_hash, created_at, expires_at
+             ) SELECT $1::uuid, anonymous_subject_id, category, target_kind, target_position_id,
+                      interpretation_id, interpretation_parent_status,
+                      interpretation_verification_status, report_request_schema_version,
+                      schema_version, report_policy_version, idempotency_key_version,
+                      $2::bytea, $3::bytea, created_at, expires_at
+                 FROM reading_report
+                WHERE interpretation_id = $4::uuid
+                LIMIT 1`,
+            [
+              fenceReading.reading.id,
+              forgedDigest(),
+              forgedDigest(),
+              winningClaim.interpretationId,
+            ],
+          ),
+        "23503",
+        "reading_report_interpretation_fkey",
+      );
+      await expectPostgresError(
+        () =>
+          runtimeSql.query(
+            `INSERT INTO reading_report (
+               reading_id, anonymous_subject_id, category, target_kind, target_position_id,
+               interpretation_id, interpretation_parent_status,
+               interpretation_verification_status, report_request_schema_version,
+               schema_version, report_policy_version, idempotency_key_version,
+               idempotency_key_hash, canonical_request_hash, created_at, expires_at
+             ) SELECT reading_id, anonymous_subject_id, category, target_kind,
+                      target_position_id, interpretation_id,
+                      interpretation_parent_status, NULL, report_request_schema_version,
+                      schema_version, report_policy_version, idempotency_key_version,
+                      $1::bytea, $2::bytea, created_at, expires_at
+                 FROM reading_report
+                WHERE interpretation_id = $3::uuid
+                LIMIT 1`,
+            [forgedDigest(), forgedDigest(), winningClaim.interpretationId],
+          ),
+        "23514",
+        "reading_report_interpretation_target_check",
+      );
 
       for (const statement of [
         "UPDATE reading SET theme_code = 'work'",
@@ -1382,6 +1841,22 @@ await withLocalPostgresLease(async (lease) => {
         await persistence.get({ readingId: expiredReading.reading.id, token: expiredOwner.token }),
         null,
       );
+      const expiredReportPrepareCount = { value: 0 };
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: expiredReportPrepareCount,
+            key: idempotencyKey(),
+            versions: ["test.idempotency-hmac.v2"],
+          }),
+          readingId: expiredReading.reading.id,
+          request: interpretationReportRequest("00000000-0000-4000-8000-000000000000"),
+          token: expiredOwner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+      );
+      assert.equal(expiredReportPrepareCount.value, 0);
 
       const revokedOwner = await createdSession(identity);
       const revokedReading = await persistence.resolveCreate({
@@ -1443,10 +1918,38 @@ await withLocalPostgresLease(async (lease) => {
           }),
           { kind: "replayed" },
         );
+        assert.deepEqual(
+          await restoredPersistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: { value: 0 },
+              key: interpretationReportKey,
+              versions: ["test.idempotency-hmac.v2"],
+            }),
+            readingId: created.reading.id,
+            request: interpretationReportRequest(claimInput.requestId),
+            token: owner.token,
+          }),
+          { kind: "replayed" },
+        );
+        assert.deepEqual(
+          await restoredPersistence.report({
+            prepare: prepareReport({
+              activeVersion: "test.idempotency-hmac.v2",
+              callbackCount: { value: 0 },
+              key: fallbackReportKey,
+              versions: ["test.idempotency-hmac.v2"],
+            }),
+            readingId: fenceReading.reading.id,
+            request: interpretationReportRequest(fenceClaimInput.requestId, "factual"),
+            token: owner.token,
+          }),
+          { kind: "replayed" },
+        );
         const restoredReports = await restoredRuntime.$queryRaw<Array<{ count: number }>>`
           SELECT count(*)::int AS count FROM reading_report
         `;
-        assert.equal(restoredReports[0]?.count, 4);
+        assert.equal(restoredReports[0]?.count, 7);
         const restoredInterpretation = createInterpretationGenerationPersistence(restoredRuntime, {
           leaseSeconds: 32,
         });
@@ -1483,7 +1986,7 @@ await withLocalPostgresLease(async (lease) => {
           SELECT count(*)::int AS count, string_agg(row_to_json(interpretation)::text, '') AS raw
             FROM interpretation
         `;
-        assert.equal(restoredInterpretations[0]?.count, 4);
+        assert.equal(restoredInterpretations[0]?.count, 5);
         assert.equal(restoredInterpretations[0]?.raw.includes(owner.token), false);
         assert.equal(restoredInterpretations[0]?.raw.includes("promptMessages"), false);
         assert.equal(restoredInterpretations[0]?.raw.includes("providerOutput"), false);
@@ -1494,7 +1997,7 @@ await withLocalPostgresLease(async (lease) => {
                  string_agg(row_to_json(verification)::text, '') AS raw
             FROM interpretation_verification AS verification
         `;
-        assert.equal(restoredVerifications[0]?.count, 1);
+        assert.equal(restoredVerifications[0]?.count, 2);
         assert.equal(restoredVerifications[0]?.raw.includes("riskCategories"), false);
         assert.equal(restoredVerifications[0]?.raw.includes("providerOutput"), false);
         await assertTarotReadingRuntimeDatabasePrivileges(restoredRuntime);
@@ -1502,6 +2005,9 @@ await withLocalPostgresLease(async (lease) => {
       } finally {
         await restoredRuntime.$disconnect();
       }
+      await adminSql.query("DELETE FROM reading_report WHERE interpretation_id = $1::uuid", [
+        winningClaim.interpretationId,
+      ]);
       await adminSql.query(
         "DELETE FROM interpretation_verification WHERE interpretation_id = $1::uuid",
         [winningClaim.interpretationId],
@@ -1522,6 +2028,20 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(historicalZeroTimeoutReplay.interpretation.provenance.verificationTimeoutMs, 0);
       assert.equal(historicalZeroTimeoutReplay.interpretation.verification, null);
       assert.equal(Object.hasOwn(historicalZeroTimeoutReplay.interpretation, "output"), false);
+      await assert.rejects(
+        persistence.report({
+          prepare: prepareReport({
+            activeVersion: "test.idempotency-hmac.v2",
+            callbackCount: { value: 0 },
+            key: idempotencyKey(),
+            versions: ["test.idempotency-hmac.v2"],
+          }),
+          readingId: created.reading.id,
+          request: interpretationReportRequest(claimInput.requestId),
+          token: owner.token,
+        }),
+        (error: unknown) => isPersistenceError(error, "TAROT_READING_NOT_FOUND"),
+      );
     } finally {
       await Promise.all([
         runtime.$disconnect(),

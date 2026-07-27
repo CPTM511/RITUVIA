@@ -14,17 +14,46 @@ import {
   publicAccessibilitySmokeRoutes,
   resolveAccessibilityArtifactRequest,
 } from "../apps/web/test/accessibility-policy.mjs";
+import {
+  auditTarotBrowserAcceptanceLedger,
+  tarotBrowserAcceptanceScenarioIds,
+} from "../apps/web/test/tarot-browser-acceptance-policy.mjs";
 import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
 const nextRoot = path.join(repositoryRoot, "apps/web/.next");
+const deterministicTarotAcceptanceArtifactDirectory = path.join(
+  repositoryRoot,
+  "output/playwright/rit028",
+);
 const tarotAcceptanceArtifactDirectory = path.join(repositoryRoot, "output/playwright/rit035");
+const currentAccountPath = "/api/v1/me";
+const currentRevisitRemindersPath = "/api/v1/me/revisit-reminders";
+const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const artifactContentSecurityPolicy = [
+  "base-uri 'none'",
+  "connect-src 'self'",
+  "default-src 'self'",
+  "font-src 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "frame-src 'none'",
+  "img-src 'self'",
+  "manifest-src 'none'",
+  "media-src 'none'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline'",
+  "script-src-attr 'none'",
+  "style-src 'self' 'unsafe-inline'",
+  "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
+  "worker-src 'none'",
+].join("; ");
 const homeContrastTargets = Object.freeze([
   Object.freeze([".brand-link"]),
-  Object.freeze(['a[aria-current="page"]']),
+  Object.freeze(['.navigation-link[aria-current="page"][href="/en"]']),
   Object.freeze(['.navigation-link[href$="methodology"]']),
   Object.freeze(['.navigation-link[href$="safety"]']),
-  Object.freeze(['.navigation-link[href$="privacy"]']),
+  Object.freeze(['.navigation-link[href$="sanctuary"]']),
   Object.freeze(["label"]),
   Object.freeze([".hero-copy > .eyebrow"]),
   Object.freeze(["#home-heading"]),
@@ -38,6 +67,21 @@ const homeContrastTargets = Object.freeze([
   Object.freeze([".availability-section .rvt-state-pattern__icon"]),
   Object.freeze(['.availability-section .rvt-action[href="/en/methodology"]']),
   Object.freeze(['.availability-section .rvt-action[href="/en/safety"]']),
+  Object.freeze([".oracle-heading > .eyebrow"]),
+  Object.freeze(["#oracle-heading"]),
+  Object.freeze([".oracle-heading > .section-introduction"]),
+  Object.freeze([".oracle-card-featured > .eyebrow"]),
+  Object.freeze([".oracle-card-featured > h3"]),
+  Object.freeze([".oracle-card-featured > p:nth-child(3)"]),
+  Object.freeze([".oracle-card-featured > .oracle-note"]),
+  Object.freeze([".oracle-card:nth-child(2) > .eyebrow"]),
+  Object.freeze([".oracle-card:nth-child(2) > h3"]),
+  Object.freeze([".oracle-card:nth-child(2) > p:nth-child(3)"]),
+  Object.freeze([".oracle-card:nth-child(2) > .oracle-note"]),
+  Object.freeze([".oracle-card:nth-child(3) > .eyebrow"]),
+  Object.freeze([".oracle-card:nth-child(3) > h3"]),
+  Object.freeze([".oracle-card:nth-child(3) > p:nth-child(3)"]),
+  Object.freeze([".oracle-card:nth-child(3) > .oracle-note"]),
 ]);
 const offlineContrastTargets = Object.freeze([
   ...homeContrastTargets,
@@ -49,9 +93,9 @@ const informationContrastTargets = Object.freeze({
   "/en/methodology": Object.freeze([
     Object.freeze([".brand-link"]),
     Object.freeze(['.navigation-link[href="/en"]']),
-    Object.freeze(['a[aria-current="page"]']),
+    Object.freeze(['.navigation-link[href$="sanctuary"]']),
+    Object.freeze(['.navigation-link[aria-current="page"][href$="methodology"]']),
     Object.freeze(['.navigation-link[href$="safety"]']),
-    Object.freeze(['.navigation-link[href$="privacy"]']),
     Object.freeze(["label"]),
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
@@ -60,9 +104,10 @@ const informationContrastTargets = Object.freeze({
   "/en/privacy": Object.freeze([
     Object.freeze([".brand-link"]),
     Object.freeze(['.navigation-link[href="/en"]']),
+    Object.freeze(['.navigation-link[href$="sanctuary"]']),
     Object.freeze(['.navigation-link[href$="methodology"]']),
     Object.freeze(['.navigation-link[href$="safety"]']),
-    Object.freeze(['a[aria-current="page"]']),
+    Object.freeze(['.footer-link[aria-current="page"][href$="privacy"]']),
     Object.freeze(["label"]),
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
@@ -71,21 +116,45 @@ const informationContrastTargets = Object.freeze({
   "/en/safety": Object.freeze([
     Object.freeze([".brand-link"]),
     Object.freeze(['.navigation-link[href="/en"]']),
+    Object.freeze(['.navigation-link[href$="sanctuary"]']),
     Object.freeze(['.navigation-link[href$="methodology"]']),
-    Object.freeze(['a[aria-current="page"]']),
-    Object.freeze(['.navigation-link[href$="privacy"]']),
+    Object.freeze(['.navigation-link[aria-current="page"][href$="safety"]']),
     Object.freeze(["label"]),
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
   ]),
+  ...Object.fromEntries(
+    [
+      "/en/numerology",
+      "/en/numerology/life-path-number",
+      "/en/numerology/birthday-number",
+      "/en/numerology/personal-year-number",
+      "/en/numerology/master-numbers",
+    ].map((pathname) => [
+      pathname,
+      Object.freeze([
+        Object.freeze([".brand-link"]),
+        Object.freeze(['.navigation-link[href="/en"]']),
+        Object.freeze(['.navigation-link[href$="sanctuary"]']),
+        Object.freeze(['.navigation-link[href$="methodology"]']),
+        Object.freeze(['.navigation-link[href$="safety"]']),
+        Object.freeze(["label"]),
+        Object.freeze([".eyebrow"]),
+        Object.freeze(["h1"]),
+        Object.freeze([".numerology-library-answer"]),
+        Object.freeze([".numerology-library-boundary"]),
+        Object.freeze(["#numerology-guide-list-heading"]),
+      ]),
+    ]),
+  ),
 });
 const intakeContrastTargets = Object.freeze([
   Object.freeze([".brand-link"]),
   Object.freeze(['.navigation-link[href="/en"]']),
+  Object.freeze(['.navigation-link[href$="sanctuary"]']),
   Object.freeze(['.navigation-link[href$="methodology"]']),
   Object.freeze(['.navigation-link[href$="safety"]']),
-  Object.freeze(['.navigation-link[href$="privacy"]']),
   Object.freeze([".locale-label"]),
   Object.freeze([".eyebrow"]),
   Object.freeze(["h1"]),
@@ -97,9 +166,9 @@ const tarotReadingContrastTargets = (headingSelector) =>
   Object.freeze([
     Object.freeze([".brand-link"]),
     Object.freeze(['.navigation-link[href="/en"]']),
+    Object.freeze(['.navigation-link[href$="sanctuary"]']),
     Object.freeze(['.navigation-link[href$="methodology"]']),
     Object.freeze(['.navigation-link[href$="safety"]']),
-    Object.freeze(['.navigation-link[href$="privacy"]']),
     Object.freeze([".locale-label"]),
     Object.freeze([".eyebrow"]),
     Object.freeze([headingSelector]),
@@ -112,6 +181,8 @@ const tarotAcceptanceContrastTargets = (headingSelector, flowSlug, cardCount) =>
     ...tarotReadingContrastTargets(headingSelector),
     Object.freeze(["figcaption > strong"]),
     Object.freeze(["figcaption > span"]),
+    Object.freeze(["strong"]),
+    Object.freeze([".rvt-icon"]),
     Object.freeze([".tarot-reading-heading > .eyebrow"]),
     ...Array.from({ length: cardCount }, (_, index) =>
       Object.freeze([
@@ -143,6 +214,30 @@ const reviewedContrastTargetsByScan = new Map([
   ["acceptance:one-card", tarotAcceptanceContrastTargets("#tarot-one-card-heading", "one-card", 1)],
   [
     "acceptance:three-card",
+    tarotAcceptanceContrastTargets("#tarot-three-card-heading", "three-card", 3),
+  ],
+  [
+    "deterministic:one-card",
+    tarotAcceptanceContrastTargets("#tarot-one-card-heading", "one-card", 1),
+  ],
+  [
+    "deterministic:one-card-offline",
+    tarotAcceptanceContrastTargets("#tarot-one-card-heading", "one-card", 1),
+  ],
+  [
+    "deterministic:one-card-limit",
+    tarotAcceptanceContrastTargets("#tarot-one-card-heading", "one-card", 1),
+  ],
+  [
+    "deterministic:one-card-stale-resume",
+    tarotAcceptanceContrastTargets("#tarot-one-card-heading", "one-card", 1),
+  ],
+  [
+    "deterministic:three-card",
+    tarotAcceptanceContrastTargets("#tarot-three-card-heading", "three-card", 3),
+  ],
+  [
+    "deterministic:three-card-error",
     tarotAcceptanceContrastTargets("#tarot-three-card-heading", "three-card", 3),
   ],
 ]);
@@ -217,6 +312,16 @@ const tarotAcceptanceCards = Object.freeze({
       tension: "Possibility is not evidence that a particular future will occur.",
     }),
   ]),
+});
+const wholeReadingSafetyReportBody = Object.freeze({
+  category: "safety",
+  schemaVersion: "tarot-reading-report.v1",
+  target: Object.freeze({ kind: "reading" }),
+});
+const actionPositionTranslationReportBody = Object.freeze({
+  category: "translation",
+  schemaVersion: "tarot-reading-report.v1",
+  target: Object.freeze({ kind: "position", positionId: "action" }),
 });
 
 const createTarotAcceptanceReading = (readingType) => {
@@ -317,8 +422,12 @@ const installTarotAcceptanceRoutes = async (
     releaseInterpretationGet = resolve;
   });
   const requests = {
+    accountGets: 0,
     interpretationGets: 0,
     interpretationOperationIds: [],
+    interpretationReportBodies: [],
+    interpretationReportOperationIds: [],
+    interpretationReports: 0,
     interpretationStarts: 0,
     readingStarts: 0,
     releaseInterpretationGet: () => releaseInterpretationGet(),
@@ -330,6 +439,11 @@ const installTarotAcceptanceRoutes = async (
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
+    if (request.method() === "GET" && url.pathname === currentAccountPath) {
+      requests.accountGets += 1;
+      await route.fallback();
+      return;
+    }
     if (request.method() === "POST" && url.pathname === "/api/v1/anonymous/session") {
       requests.sessionStarts += 1;
       await route.fulfill({
@@ -341,6 +455,22 @@ const installTarotAcceptanceRoutes = async (
     if (request.method() === "POST" && url.pathname === "/api/v1/readings/tarot") {
       requests.readingStarts += 1;
       await jsonFulfill(route, 201, createTarotAcceptanceReading(readingType));
+      return;
+    }
+    if (request.method() === "POST" && url.pathname === `/api/v1/readings/${readingId}/report`) {
+      requests.interpretationReports += 1;
+      requests.interpretationReportOperationIds.push(
+        request.headers()["idempotency-key"] ?? "missing",
+      );
+      try {
+        requests.interpretationReportBodies.push(request.postDataJSON());
+      } catch {
+        requests.unexpected.push("POST:malformed-interpretation-report");
+      }
+      await route.fulfill({
+        headers: { "cache-control": "no-store" },
+        status: 204,
+      });
       return;
     }
     if (url.pathname === `/api/v1/readings/${readingId}/interpretation`) {
@@ -407,6 +537,100 @@ const installTarotAcceptanceRoutes = async (
   return requests;
 };
 
+const installDeterministicTarotRoutes = async (
+  page,
+  { readingFailures = [], readingType, resumeStatus = 200 },
+) => {
+  const readingId = tarotAcceptanceReadingIds[readingType];
+  const requests = {
+    accountGets: 0,
+    readingBodies: [],
+    readingGets: 0,
+    readingOperationIds: [],
+    readingStarts: 0,
+    reportBodies: [],
+    reportOperationIds: [],
+    reports: 0,
+    sessionBodies: [],
+    sessionOperationIds: [],
+    sessionStarts: 0,
+    unexpected: [],
+  };
+
+  await page.route("**/api/v1/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.method() === "GET" && url.pathname === currentAccountPath) {
+      requests.accountGets += 1;
+      await route.fallback();
+      return;
+    }
+    if (request.method() === "POST" && url.pathname === "/api/v1/anonymous/session") {
+      requests.sessionStarts += 1;
+      requests.sessionBodies.push(request.postData());
+      requests.sessionOperationIds.push(request.headers()["idempotency-key"] ?? "missing");
+      await route.fulfill({
+        headers: { "cache-control": "no-store", "content-length": "0" },
+        status: 204,
+      });
+      return;
+    }
+    if (request.method() === "POST" && url.pathname === "/api/v1/readings/tarot") {
+      requests.readingStarts += 1;
+      requests.readingOperationIds.push(request.headers()["idempotency-key"] ?? "missing");
+      try {
+        requests.readingBodies.push(request.postDataJSON());
+      } catch {
+        requests.unexpected.push("POST:malformed-reading");
+      }
+      const failureStatus = readingFailures[requests.readingStarts - 1];
+      if (failureStatus !== undefined) {
+        await route.fulfill({
+          headers: {
+            "cache-control": "no-store",
+            "content-length": "0",
+            ...(failureStatus === 429 ? { "retry-after": "60" } : {}),
+          },
+          status: failureStatus,
+        });
+        return;
+      }
+      await jsonFulfill(route, 201, createTarotAcceptanceReading(readingType));
+      return;
+    }
+    if (request.method() === "GET" && url.pathname === `/api/v1/readings/${readingId}`) {
+      requests.readingGets += 1;
+      if (resumeStatus === 404) {
+        await route.fulfill({
+          headers: { "cache-control": "no-store", "content-length": "0" },
+          status: 404,
+        });
+        return;
+      }
+      await jsonFulfill(route, 200, createTarotAcceptanceReading(readingType));
+      return;
+    }
+    if (request.method() === "POST" && url.pathname === `/api/v1/readings/${readingId}/report`) {
+      requests.reports += 1;
+      requests.reportOperationIds.push(request.headers()["idempotency-key"] ?? "missing");
+      try {
+        requests.reportBodies.push(request.postDataJSON());
+      } catch {
+        requests.unexpected.push("POST:malformed-report");
+      }
+      await route.fulfill({
+        headers: { "cache-control": "no-store", "content-length": "0" },
+        status: 204,
+      });
+      return;
+    }
+    requests.unexpected.push(`${request.method()}:${url.pathname}`);
+    await route.abort("blockedbyclient");
+  });
+
+  return requests;
+};
+
 const loadReviewedArtifacts = async () => {
   const artifacts = new Map();
   const add = async (requestTarget) => {
@@ -415,13 +639,20 @@ const loadReviewedArtifacts = async () => {
     if (descriptor === null) {
       throw new Error("Reviewed Web build emitted an invalid accessibility artifact reference.");
     }
-    const body = await readFile(path.join(nextRoot, descriptor.relativePath));
+    const artifactRoot =
+      descriptor.type === "public-image" ? path.join(repositoryRoot, "apps/web/public") : nextRoot;
+    const body = await readFile(path.join(artifactRoot, descriptor.relativePath));
     artifacts.set(requestTarget, Object.freeze({ body, descriptor }));
     if (descriptor.type !== "document") return;
     const html = body.toString("utf8");
     const references = [
       ...html.matchAll(/\b(?:href|src)="(\/_next\/static\/[^"]+|\/icon\.svg[^"]*)"/gu),
     ].map(([, reference]) => reference);
+    references.push(
+      ...[...html.matchAll(/\/_next\/image\?url=[^"'\s,>]+/gu)].map(([reference]) =>
+        reference.replaceAll("&amp;", "&"),
+      ),
+    );
     await Promise.all(references.map(add));
   };
   await Promise.all(accessibilitySmokeRoutes.map(add));
@@ -459,8 +690,7 @@ const createArtifactServer = async (artifacts) => {
       const headers = {
         "cache-control": "no-store",
         "content-length": String(artifact.body.byteLength),
-        "content-security-policy":
-          "default-src 'none'; base-uri 'none'; connect-src 'self'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'",
+        "content-security-policy": artifactContentSecurityPolicy,
         "content-type": artifact.descriptor.contentType,
         "x-content-type-options": "nosniff",
         "x-robots-tag": "noindex, nofollow, noarchive",
@@ -477,7 +707,11 @@ const createArtifactServer = async (artifacts) => {
     }
   });
   server.on("clientError", (error, socket) => {
-    serverErrors.push(error.name);
+    if ("code" in error && error.code === "ECONNRESET") {
+      socket.destroy();
+      return;
+    }
+    serverErrors.push("code" in error && typeof error.code === "string" ? error.code : error.name);
     socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
   });
   await new Promise((resolve, reject) => {
@@ -586,13 +820,13 @@ const assertLayout = async (page, label) => {
 
 const assertTouchTargets = async (page, label) => {
   const failures = await page
-    .locator('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    .locator('a[href], button, input, select, summary, textarea, [tabindex]:not([tabindex="-1"])')
     .evaluateAll((elements) =>
       elements.flatMap((element, index) => {
         const style = getComputedStyle(element);
         const rectangle = element.getBoundingClientRect();
         if (
-          element.hasAttribute("disabled") ||
+          element.matches(":disabled") ||
           style.display === "none" ||
           style.visibility === "hidden"
         ) {
@@ -692,12 +926,42 @@ const assertPseudolocaleBoundary = async (page, pathname, direction) => {
   }
 };
 
+const assertReviewedIncompleteScope = async (page, label, reviewedTargets) => {
+  const reviewed = new Set(reviewedTargets.map((target) => JSON.stringify(target)));
+  if (!reviewed.has('["strong"]') && !reviewed.has('[".rvt-icon"]')) return;
+  const scope = await page.evaluate(() => {
+    const strongElements = [...document.querySelectorAll("strong")];
+    const iconElements = [...document.querySelectorAll(".rvt-icon")];
+    return {
+      iconCount: iconElements.length,
+      iconOutsideReviewedComponents: iconElements.filter(
+        (element) => element.closest(".rvt-alert, .rvt-state-pattern") === null,
+      ).length,
+      strongCount: strongElements.length,
+      strongOutsideReviewedComponents: strongElements.filter(
+        (element) =>
+          element.closest(".tarot-result-cards figcaption, .principles-section, .tarot-report") ===
+          null,
+      ).length,
+    };
+  });
+  if (
+    scope.iconCount > 2 ||
+    scope.iconOutsideReviewedComponents !== 0 ||
+    scope.strongCount > 5 ||
+    scope.strongOutsideReviewedComponents !== 0
+  ) {
+    throw new Error(`${label} broad reviewed contrast scope drifted: ${JSON.stringify(scope)}`);
+  }
+};
+
 const assertAxe = async (page, label) => {
   const result = await new AxeBuilder({ page })
     .setLegacyMode(true)
     .withTags([...accessibilityAxeTags])
     .analyze();
   const reviewedTargets = reviewedContrastTargetsByScan.get(label) ?? [];
+  await assertReviewedIncompleteScope(page, label, reviewedTargets);
   const findings = auditAxeResult(result, reviewedTargets);
   if (findings.length > 0) {
     throw new Error(
@@ -709,10 +973,41 @@ const assertAxe = async (page, label) => {
   return countReviewedAxeIncompleteNodes(result, reviewedTargets);
 };
 
+const waitForReviewedPageReady = async (page) => {
+  await page.waitForFunction(() => {
+    if (document.readyState !== "complete") return false;
+    const noScriptNotice = document.querySelector(".no-script-note");
+    if (
+      noScriptNotice instanceof HTMLElement &&
+      getComputedStyle(noScriptNotice).display !== "none"
+    ) {
+      return true;
+    }
+    if (document.querySelector(".account-navigation-link:not([aria-busy])") === null) {
+      return false;
+    }
+    if (document.querySelector('[aria-busy="true"]') !== null) return false;
+    const tarotFlow = document.querySelector(".tarot-flow");
+    return (
+      tarotFlow === null ||
+      tarotFlow.querySelector(
+        "button:not(:disabled), input:not(:disabled), select:not(:disabled)",
+      ) !== null
+    );
+  });
+  if (await page.locator(".no-script-note").isVisible()) return;
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))),
+      ),
+  );
+};
+
 const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = true } = {}) => {
   if (resetPage) {
     await page.goto(page.url().split("#", 1)[0], { waitUntil: "load" });
-    await page.waitForLoadState("networkidle");
+    await waitForReviewedPageReady(page);
   }
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -721,22 +1016,38 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
   await page.evaluate(() => {
     const candidates = [
       ...document.querySelectorAll(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), summary, textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
     ];
-    const seenRadioGroups = new Set();
+    const tabbableRadioByGroup = new Map();
+    for (const element of candidates) {
+      if (!(element instanceof HTMLInputElement) || element.type !== "radio") continue;
+      const key = `${element.form?.id ?? ""}:${element.name}`;
+      const current = tabbableRadioByGroup.get(key);
+      if (current === undefined || element.checked) {
+        tabbableRadioByGroup.set(key, element);
+      }
+    }
     const focusable = candidates.filter((element) => {
       const style = getComputedStyle(element);
-      if (style.display === "none" || style.visibility === "hidden") return false;
+      if (
+        style.display === "none" ||
+        style.visibility === "hidden" ||
+        element.getClientRects().length === 0 ||
+        element.matches(":disabled")
+      ) {
+        return false;
+      }
       if (!(element instanceof HTMLInputElement) || element.type !== "radio") return true;
       const key = `${element.form?.id ?? ""}:${element.name}`;
-      if (seenRadioGroups.has(key)) return false;
-      seenRadioGroups.add(key);
-      return true;
+      return tabbableRadioByGroup.get(key) === element;
     });
     focusable.forEach((element, index) => {
       element.setAttribute("data-rituvia-smoke-focus-index", String(index));
     });
+    document.body.setAttribute("tabindex", "-1");
+    document.body.focus();
+    document.body.removeAttribute("tabindex");
   });
   const expectedCount = await page.locator("[data-rituvia-smoke-focus-index]").count();
   if (expectedCount === 0) throw new Error(`${label} exposes no keyboard controls.`);
@@ -750,23 +1061,64 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
       );
       return;
     }
-    await page.waitForFunction(
-      (index) => {
+    try {
+      await page.waitForFunction(
+        (index) => {
+          const active = document.activeElement;
+          if (!(active instanceof HTMLElement)) return false;
+          const rectangle = active.getBoundingClientRect();
+          return (
+            active.getAttribute("data-rituvia-smoke-focus-index") === String(index) &&
+            active.matches(":focus-visible") &&
+            rectangle.left >= -1 &&
+            rectangle.right <= document.documentElement.clientWidth + 1 &&
+            rectangle.top >= -1 &&
+            rectangle.bottom <= document.documentElement.clientHeight + 1
+          );
+        },
+        expectedIndex,
+        { timeout: 2_000 },
+      );
+    } catch {
+      const diagnostic = await page.evaluate((index) => {
         const active = document.activeElement;
-        if (!(active instanceof HTMLElement)) return false;
+        if (!(active instanceof HTMLElement)) return null;
+        const expected = document.querySelector(`[data-rituvia-smoke-focus-index="${index}"]`);
         const rectangle = active.getBoundingClientRect();
-        return (
-          active.getAttribute("data-rituvia-smoke-focus-index") === String(index) &&
-          active.matches(":focus-visible") &&
-          rectangle.left >= -1 &&
-          rectangle.right <= document.documentElement.clientWidth + 1 &&
-          rectangle.top >= -1 &&
-          rectangle.bottom <= document.documentElement.clientHeight + 1
-        );
-      },
-      expectedIndex,
-      { timeout: 2_000 },
-    );
+        return {
+          ariaLabel: active.getAttribute("aria-label"),
+          expected:
+            expected instanceof HTMLElement
+              ? {
+                  tagName: expected.tagName,
+                  text: expected.textContent?.trim().slice(0, 80) ?? "",
+                  ...(expected instanceof HTMLInputElement
+                    ? {
+                        checked: expected.checked,
+                        formId: expected.form?.id ?? "",
+                        name: expected.name,
+                        tabIndex: expected.tabIndex,
+                        type: expected.type,
+                      }
+                    : {}),
+                }
+              : null,
+          focusIndex: active.getAttribute("data-rituvia-smoke-focus-index"),
+          focusVisible: active.matches(":focus-visible"),
+          rectangle: {
+            bottom: rectangle.bottom,
+            left: rectangle.left,
+            right: rectangle.right,
+            top: rectangle.top,
+          },
+          tagName: active.tagName,
+          text: active.textContent?.trim().slice(0, 80) ?? "",
+        };
+      }, expectedIndex);
+      throw new Error(
+        `${label} keyboard focus did not settle at index ${expectedIndex}: ${JSON.stringify(diagnostic)}`,
+      );
+    }
   };
   const focusedState = async () =>
     page.evaluate(() => {
@@ -824,10 +1176,15 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
     await settleFocus(index);
     assertFocus(await focusedState(), index, "reverse");
   }
+  await page.evaluate(() => {
+    for (const element of document.querySelectorAll("[data-rituvia-smoke-focus-index]")) {
+      element.removeAttribute("data-rituvia-smoke-focus-index");
+    }
+  });
 
   if (!verifySkipLink) return;
   await page.goto(page.url().split("#", 1)[0], { waitUntil: "load" });
-  await page.waitForLoadState("networkidle");
+  await waitForReviewedPageReady(page);
   await page.keyboard.press("Tab");
   const skipLink = page.locator(".skip-link");
   if (!(await skipLink.isVisible())) throw new Error(`${label} skip link is not visible on focus.`);
@@ -873,7 +1230,7 @@ const assertRtlGeometry = async (page, label) => {
     geometry.brandCenter <= geometry.viewportCenter ||
     geometry.actionsCenter >= geometry.viewportCenter
   ) {
-    throw new Error(`${label} did not mirror the header geometry.`);
+    throw new Error(`${label} did not mirror the header geometry: ${JSON.stringify(geometry)}`);
   }
 };
 
@@ -906,10 +1263,51 @@ const attachBrowserBoundary = async (
     allowDisabledScriptCsp = false,
     allowFulfilledSessionAbort = false,
     allowInterpretationUnavailable = false,
+    expectedApiFailures = [],
   } = {},
 ) => {
+  const expectedFailure = (url, status, method) =>
+    url.origin === origin &&
+    expectedApiFailures.some(
+      ({ method: expectedMethod, pathname, status: expectedStatus }) =>
+        status === expectedStatus &&
+        url.pathname === pathname &&
+        (expectedMethod === undefined || method === expectedMethod),
+    );
   await context.route("**/*", async (route) => {
-    if (new URL(route.request().url()).origin === origin) {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (
+      url.origin === origin &&
+      request.method() === "GET" &&
+      url.pathname === currentAccountPath
+    ) {
+      await jsonFulfill(route, 200, {
+        ageAttested: true,
+        displayName: null,
+        emailVerified: true,
+        id: "55555555-5555-4555-8555-555555555555",
+        locale: "en",
+        profileVersion: 1,
+        schemaVersion: 1,
+        status: "active",
+        timeZone: "UTC",
+      });
+      return;
+    }
+    if (
+      url.origin === origin &&
+      request.method() === "GET" &&
+      url.pathname === currentRevisitRemindersPath
+    ) {
+      await jsonFulfill(route, 200, {
+        accountAvailable: true,
+        reminders: [],
+        schemaVersion: 1,
+      });
+      return;
+    }
+    if (url.origin === origin) {
       await route.continue();
       return;
     }
@@ -917,6 +1315,9 @@ const attachBrowserBoundary = async (
     await route.abort("blockedbyclient");
   });
   page.on("console", (message) => {
+    const expectedFailureStatus = expectedApiFailures.some(({ status }) =>
+      message.text().includes(`status of ${status} (`),
+    );
     if (
       allowInterpretationUnavailable &&
       message.type() === "error" &&
@@ -924,6 +1325,7 @@ const attachBrowserBoundary = async (
     ) {
       return;
     }
+    if (message.type() === "error" && expectedFailureStatus) return;
     if (message.type() === "error" || message.type() === "warning") {
       failures.push(`console:${message.type()}:${message.text()}`);
     }
@@ -932,6 +1334,16 @@ const attachBrowserBoundary = async (
   page.on("requestfailed", (request) => {
     const url = new URL(request.url());
     const failure = request.failure()?.errorText ?? "unknown";
+    if (
+      failure === "net::ERR_ABORTED" &&
+      url.origin === origin &&
+      expectedApiFailures.some(
+        ({ method, pathname }) =>
+          url.pathname === pathname && (method === undefined || method === request.method()),
+      )
+    ) {
+      return;
+    }
     if (
       allowFulfilledSessionAbort &&
       request.method() === "POST" &&
@@ -949,12 +1361,21 @@ const attachBrowserBoundary = async (
     ) {
       return;
     }
+    if (
+      failure === "net::ERR_ABORTED" &&
+      request.method() === "GET" &&
+      url.origin === origin &&
+      resolveAccessibilityArtifactRequest(`${url.pathname}${url.search}`)?.type === "public-image"
+    ) {
+      return;
+    }
     if (url.origin === origin) {
       failures.push(`local-request-failed:${url.pathname}:${failure}`);
     }
   });
   page.on("response", (response) => {
     const url = new URL(response.url());
+    if (expectedFailure(url, response.status(), response.request().method())) return;
     if (
       allowInterpretationUnavailable &&
       response.status() === 503 &&
@@ -970,7 +1391,7 @@ const attachBrowserBoundary = async (
 const gotoReviewedPage = async (page, url, label) => {
   const response = await page.goto(url, { waitUntil: "load" });
   if (response?.status() !== 200) throw new Error(`${label} did not return HTTP 200.`);
-  await page.waitForLoadState("networkidle");
+  await waitForReviewedPageReady(page);
   if ((await page.locator("h1").count()) !== 1 || (await page.locator("main").count()) !== 1) {
     throw new Error(`${label} does not expose one H1 and one main landmark.`);
   }
@@ -983,25 +1404,661 @@ const scrollToElementTop = async (locator) => {
   });
 };
 
+const assertDeterministicCards = async (page, readingType) => {
+  const expectedCards = tarotAcceptanceCards[readingType];
+  const cards = page.locator("ol.tarot-result-cards > li");
+  if ((await cards.count()) !== expectedCards.length) {
+    throw new Error(`${readingType} did not reveal the exact fixed card count.`);
+  }
+  for (const [index, expected] of expectedCards.entries()) {
+    const card = cards.nth(index);
+    for (const text of [
+      expected.positionTitle,
+      expected.cardTitle,
+      expected.orientation === "upright" ? "Upright" : "Reversed",
+      expected.cannotDetermine,
+      expected.reflectionQuestion,
+      expected.smallAction,
+    ]) {
+      if ((await card.getByText(text, { exact: true }).count()) === 0) {
+        throw new Error(`${readingType} card ${index + 1} is missing ${JSON.stringify(text)}.`);
+      }
+    }
+  }
+  await page.waitForFunction(
+    () =>
+      [...document.images].every(
+        (image) => image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+      ),
+    null,
+    { timeout: 5_000 },
+  );
+};
+
+const assertDeterministicStorage = async (page, readingType) => {
+  const expectedKey =
+    readingType === "one_card"
+      ? "rituvia.tarot.resume.v1.one_card"
+      : "rituvia.tarot.resume.v1.three_card";
+  const expectedReadingId = tarotAcceptanceReadingIds[readingType];
+  const snapshot = await page.evaluate(() =>
+    Object.fromEntries(
+      Array.from({ length: sessionStorage.length }, (_, index) => sessionStorage.key(index))
+        .filter((key) => key !== null)
+        .map((key) => [key, sessionStorage.getItem(key)]),
+    ),
+  );
+  if (JSON.stringify(snapshot) !== JSON.stringify({ [expectedKey]: expectedReadingId })) {
+    throw new Error(
+      `${readingType} stored more than its exact resume UUID: ${JSON.stringify(snapshot)}`,
+    );
+  }
+};
+
+const submitDeterministicReadingReport = async (page, { category, target }) => {
+  const report = page.locator("details").filter({
+    hasText: "Report an issue with this reading",
+  });
+  await report.locator("summary").click();
+  await report.getByRole("combobox", { name: "Issue category" }).selectOption(category);
+  await report.getByRole("combobox", { name: "Report target" }).selectOption(target);
+  await report.getByRole("button", { name: "Send report" }).click();
+  await report
+    .getByText(
+      "Thank you. The report was recorded without your private question or journal text.",
+      { exact: true },
+    )
+    .waitFor({ state: "visible" });
+};
+
+const assertScreenshot = async (page, fileName, expectedSize) => {
+  const pageText = await page.locator("body").innerText();
+  if (
+    /PRIVATE_[A-Z0-9_]*CANARY|authorization:\s*bearer|(?:^|\s)sk-[A-Za-z0-9_-]+/iu.test(pageText)
+  ) {
+    throw new Error(`${fileName} page contains forbidden private or credential-bearing text.`);
+  }
+  const screenshot = await page.screenshot({
+    path: path.join(deterministicTarotAcceptanceArtifactDirectory, fileName),
+  });
+  if (screenshot.byteLength < 10_000) {
+    throw new Error(`${fileName} is not a substantive deterministic screenshot.`);
+  }
+  const signature = screenshot.subarray(0, 8).toString("hex");
+  const dimensions = {
+    height: screenshot.readUInt32BE(20),
+    width: screenshot.readUInt32BE(16),
+  };
+  if (
+    signature !== "89504e470d0a1a0a" ||
+    dimensions.height !== expectedSize.height ||
+    dimensions.width !== expectedSize.width
+  ) {
+    throw new Error(`${fileName} metadata is not the exact reviewed PNG viewport.`);
+  }
+  for (let offset = 8; offset + 12 <= screenshot.byteLength;) {
+    const length = screenshot.readUInt32BE(offset);
+    const type = screenshot.subarray(offset + 4, offset + 8).toString("ascii");
+    if (["iTXt", "tEXt", "zTXt"].includes(type)) {
+      throw new Error(`${fileName} contains unexpected textual PNG metadata.`);
+    }
+    offset += 12 + length;
+  }
+};
+
+const assertNoAutomaticRequest = async (page, requests, key) => {
+  const before = requests[key];
+  await page.waitForTimeout(250);
+  if (requests[key] !== before) {
+    throw new Error(`The deterministic ${key} ledger changed without a user action.`);
+  }
+};
+
+const assertDeterministicLedger = (scenarioId, ledger, expectation) => {
+  if (!tarotBrowserAcceptanceScenarioIds.includes(scenarioId)) {
+    throw new Error(`Unknown deterministic tarot scenario: ${scenarioId}`);
+  }
+  const findings = auditTarotBrowserAcceptanceLedger(ledger, expectation);
+  if (findings.length > 0) {
+    throw new Error(`${scenarioId} request ledger failed: ${findings.join(", ")}`);
+  }
+};
+
+const runDeterministicTarotAcceptance = async (browser, origin, browserFailures) => {
+  await mkdir(deterministicTarotAcceptanceArtifactDirectory, { recursive: true });
+  let reviewedContrastNodes = 0;
+  let scans = 0;
+
+  const oneCardContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 1000, width: 1440 },
+  });
+  const oneCardPage = await oneCardContext.newPage();
+  await attachBrowserBoundary(oneCardContext, oneCardPage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+  });
+  const oneCardRequests = await installDeterministicTarotRoutes(oneCardPage, {
+    readingType: "one_card",
+  });
+  try {
+    await gotoReviewedPage(oneCardPage, `${origin}/en/tarot/one-card`, "deterministic:one-card");
+    await assertRadioKeyboard(oneCardPage, "deterministic:one-card", "tarot-theme-code");
+    await oneCardPage.getByRole("radio", { name: "Open reflection" }).focus();
+    await oneCardPage.keyboard.press("Space");
+    const drawOneCard = oneCardPage.getByRole("button", { name: "Draw one card" });
+    await drawOneCard.focus();
+    await oneCardPage.keyboard.press("Enter");
+    const revealOneCard = oneCardPage.getByRole("button", { name: "Reveal my card" });
+    await revealOneCard.waitFor({ state: "visible" });
+    const oneCardRequestsBeforeReveal =
+      oneCardRequests.sessionStarts + oneCardRequests.readingStarts + oneCardRequests.reports;
+    await revealOneCard.focus();
+    await oneCardPage.keyboard.press("Enter");
+    await oneCardPage.getByRole("heading", { name: "Your one-card reflection" }).waitFor();
+    if (
+      oneCardRequests.sessionStarts + oneCardRequests.readingStarts + oneCardRequests.reports !==
+      oneCardRequestsBeforeReveal
+    ) {
+      throw new Error("One-card reveal performed a network request.");
+    }
+    await assertDeterministicCards(oneCardPage, "one_card");
+    await assertDeterministicStorage(oneCardPage, "one_card");
+    await submitDeterministicReadingReport(oneCardPage, {
+      category: "safety",
+      target: "reading",
+    });
+    await oneCardPage
+      .getByRole("button", { name: "Explore the deeper interpretation" })
+      .waitFor({ state: "visible" });
+    await assertKeyboard(oneCardPage, "deterministic:one-card:keyboard", {
+      resetPage: false,
+      verifySkipLink: false,
+    });
+    await assertReducedMotion(oneCardPage, "deterministic:one-card");
+    await assertLayout(oneCardPage, "deterministic:one-card:desktop");
+    await assertTouchTargets(oneCardPage, "deterministic:one-card:desktop");
+    reviewedContrastNodes += await assertAxe(oneCardPage, "deterministic:one-card");
+    scans += 1;
+    await scrollToElementTop(
+      oneCardPage.getByRole("heading", { name: "Your one-card reflection" }),
+    );
+    await assertScreenshot(oneCardPage, "one-card-result-1440x1000.png", {
+      height: 1000,
+      width: 1440,
+    });
+
+    await oneCardPage.setViewportSize({ height: 844, width: 320 });
+    await assertLayout(oneCardPage, "deterministic:one-card:mobile");
+    await assertTouchTargets(oneCardPage, "deterministic:one-card:mobile");
+    reviewedContrastNodes += await assertAxe(oneCardPage, "deterministic:one-card");
+    scans += 1;
+    await applyPseudolocale(oneCardPage, "ltr");
+    await assertPseudolocaleBoundary(oneCardPage, "/en/tarot/one-card", "ltr");
+    await assertLayout(oneCardPage, "deterministic:one-card:expanded-mobile");
+
+    const startsBeforeResume = {
+      readingStarts: oneCardRequests.readingStarts,
+      reports: oneCardRequests.reports,
+      sessionStarts: oneCardRequests.sessionStarts,
+    };
+    await oneCardPage.reload({ waitUntil: "load" });
+    await waitForReviewedPageReady(oneCardPage);
+    try {
+      await oneCardPage
+        .getByText("This is the same saved result. Revealing it does not draw another card.", {
+          exact: true,
+        })
+        .waitFor({ state: "visible", timeout: 5_000 });
+    } catch {
+      const diagnostic = await oneCardPage.evaluate(() => ({
+        body: document.body.innerText.slice(-1_000),
+        storage: Object.fromEntries(
+          Array.from({ length: sessionStorage.length }, (_, index) => sessionStorage.key(index))
+            .filter((key) => key !== null)
+            .map((key) => [key, sessionStorage.getItem(key)]),
+        ),
+      }));
+      throw new Error(
+        `One-card refresh did not expose its saved result: ${JSON.stringify({
+          diagnostic,
+          requests: oneCardRequests,
+        })}`,
+      );
+    }
+    if (
+      oneCardRequests.readingGets !== 1 ||
+      oneCardRequests.readingStarts !== startsBeforeResume.readingStarts ||
+      oneCardRequests.reports !== startsBeforeResume.reports ||
+      oneCardRequests.sessionStarts !== startsBeforeResume.sessionStarts
+    ) {
+      throw new Error(`One-card refresh was not GET-only: ${JSON.stringify(oneCardRequests)}`);
+    }
+    const resumeReveal = oneCardPage.getByRole("button", { name: "Reveal my card" });
+    await resumeReveal.click();
+    await assertDeterministicCards(oneCardPage, "one_card");
+    if (oneCardRequests.readingGets !== 1) {
+      throw new Error("One-card restored reveal performed another owner GET.");
+    }
+    assertDeterministicLedger("one-card-happy-report-resume", oneCardRequests, {
+      readingGets: 1,
+      readingStarts: 1,
+      readingType: "one_card",
+      reportBody: wholeReadingSafetyReportBody,
+      reports: 1,
+      sessionStarts: 1,
+    });
+  } finally {
+    await oneCardContext.close();
+  }
+
+  const threeCardContext = await browser.newContext({
+    colorScheme: "dark",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 844, width: 320 },
+  });
+  const threeCardPage = await threeCardContext.newPage();
+  await attachBrowserBoundary(threeCardContext, threeCardPage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+  });
+  const threeCardRequests = await installDeterministicTarotRoutes(threeCardPage, {
+    readingType: "three_card",
+  });
+  try {
+    await gotoReviewedPage(
+      threeCardPage,
+      `${origin}/en/tarot/three-card`,
+      "deterministic:three-card",
+    );
+    await threeCardPage.getByRole("radio", { name: "Open reflection" }).click();
+    await threeCardPage.getByRole("button", { name: "Draw three cards" }).click();
+    const revealThreeCards = threeCardPage.getByRole("button", {
+      name: "Reveal the three cards",
+    });
+    await revealThreeCards.waitFor({ state: "visible" });
+    const threeCardRequestsBeforeReveal =
+      threeCardRequests.sessionStarts + threeCardRequests.readingStarts + threeCardRequests.reports;
+    await revealThreeCards.click();
+    if (
+      threeCardRequests.sessionStarts +
+        threeCardRequests.readingStarts +
+        threeCardRequests.reports !==
+      threeCardRequestsBeforeReveal
+    ) {
+      throw new Error(
+        `Three-card reveal performed a network request: ${JSON.stringify(threeCardRequests)}`,
+      );
+    }
+    await assertDeterministicCards(threeCardPage, "three_card");
+    await assertDeterministicStorage(threeCardPage, "three_card");
+    await submitDeterministicReadingReport(threeCardPage, {
+      category: "translation",
+      target: "action",
+    });
+    await threeCardPage
+      .getByRole("button", { name: "Explore the deeper interpretation" })
+      .waitFor({ state: "visible" });
+    await assertKeyboard(threeCardPage, "deterministic:three-card:keyboard", {
+      resetPage: false,
+      verifySkipLink: false,
+    });
+    await assertReducedMotion(threeCardPage, "deterministic:three-card");
+    await assertLayout(threeCardPage, "deterministic:three-card:mobile");
+    await assertTouchTargets(threeCardPage, "deterministic:three-card:mobile");
+    reviewedContrastNodes += await assertAxe(threeCardPage, "deterministic:three-card");
+    scans += 1;
+    await scrollToElementTop(
+      threeCardPage.getByRole("heading", { name: "Your three-card reflection" }),
+    );
+    await assertScreenshot(threeCardPage, "three-card-result-320x844.png", {
+      height: 844,
+      width: 320,
+    });
+
+    await threeCardPage.setViewportSize({ height: 1000, width: 1440 });
+    await assertLayout(threeCardPage, "deterministic:three-card:desktop");
+    await assertTouchTargets(threeCardPage, "deterministic:three-card:desktop");
+    reviewedContrastNodes += await assertAxe(threeCardPage, "deterministic:three-card");
+    scans += 1;
+    await applyPseudolocale(threeCardPage, "rtl");
+    await assertPseudolocaleBoundary(threeCardPage, "/en/tarot/three-card", "rtl");
+    await assertRtlGeometry(threeCardPage, "deterministic:three-card:rtl");
+    await assertLayout(threeCardPage, "deterministic:three-card:rtl-desktop");
+    await threeCardPage.setViewportSize({ height: 844, width: 320 });
+    await assertLayout(threeCardPage, "deterministic:three-card:rtl-mobile");
+
+    const startsBeforeResume = {
+      readingStarts: threeCardRequests.readingStarts,
+      reports: threeCardRequests.reports,
+      sessionStarts: threeCardRequests.sessionStarts,
+    };
+    await threeCardPage.reload({ waitUntil: "load" });
+    await waitForReviewedPageReady(threeCardPage);
+    await threeCardPage
+      .getByText(
+        "These are the same saved cards in the same order. Revealing them does not draw again.",
+        { exact: true },
+      )
+      .waitFor({ state: "visible" });
+    if (
+      threeCardRequests.readingGets !== 1 ||
+      threeCardRequests.readingStarts !== startsBeforeResume.readingStarts ||
+      threeCardRequests.reports !== startsBeforeResume.reports ||
+      threeCardRequests.sessionStarts !== startsBeforeResume.sessionStarts
+    ) {
+      throw new Error(`Three-card refresh was not GET-only: ${JSON.stringify(threeCardRequests)}`);
+    }
+    await threeCardPage.getByRole("button", { name: "Reveal the three cards" }).click();
+    await assertDeterministicCards(threeCardPage, "three_card");
+    assertDeterministicLedger("three-card-happy-position-report", threeCardRequests, {
+      readingGets: 1,
+      readingStarts: 1,
+      readingType: "three_card",
+      reportBody: actionPositionTranslationReportBody,
+      reports: 1,
+      sessionStarts: 1,
+    });
+  } finally {
+    await threeCardContext.close();
+  }
+
+  const offlineContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 844, width: 320 },
+  });
+  const offlinePage = await offlineContext.newPage();
+  await attachBrowserBoundary(offlineContext, offlinePage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+  });
+  const offlineRequests = await installDeterministicTarotRoutes(offlinePage, {
+    readingType: "one_card",
+  });
+  try {
+    await gotoReviewedPage(
+      offlinePage,
+      `${origin}/en/tarot/one-card`,
+      "deterministic:one-card-offline",
+    );
+    await offlineContext.setOffline(true);
+    await offlinePage.waitForFunction(() => !navigator.onLine);
+    await offlinePage.getByRole("radio", { name: "Open reflection" }).click();
+    await offlinePage.getByRole("button", { name: "Draw one card" }).click();
+    await offlinePage
+      .locator('section[aria-label="You appear to be offline"]')
+      .waitFor({ state: "visible" });
+    if (offlineRequests.sessionStarts !== 0 || offlineRequests.readingStarts !== 0) {
+      throw new Error("Offline one-card creation sent a request.");
+    }
+    await assertLayout(offlinePage, "deterministic:one-card-offline:mobile");
+    await assertTouchTargets(offlinePage, "deterministic:one-card-offline:mobile");
+    reviewedContrastNodes += await assertAxe(offlinePage, "deterministic:one-card-offline");
+    scans += 1;
+    await offlineContext.setOffline(false);
+    await offlinePage.waitForFunction(() => navigator.onLine);
+    await offlinePage.getByRole("button", { name: "Check connection and try again" }).click();
+    await offlinePage.getByRole("button", { name: "Reveal my card" }).waitFor();
+    if (offlineRequests.sessionStarts !== 1 || offlineRequests.readingStarts !== 1) {
+      throw new Error("Offline recovery did not create exactly one fixed draw.");
+    }
+    assertDeterministicLedger("one-card-offline-recovery", offlineRequests, {
+      readingGets: 0,
+      readingStarts: 1,
+      readingType: "one_card",
+      reports: 0,
+      sessionStarts: 1,
+    });
+  } finally {
+    await offlineContext.close();
+  }
+
+  const serviceContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 844, width: 320 },
+  });
+  const servicePage = await serviceContext.newPage();
+  await attachBrowserBoundary(serviceContext, servicePage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+    expectedApiFailures: [{ method: "POST", pathname: "/api/v1/readings/tarot", status: 503 }],
+  });
+  const serviceRequests = await installDeterministicTarotRoutes(servicePage, {
+    readingFailures: [503],
+    readingType: "three_card",
+  });
+  try {
+    await gotoReviewedPage(
+      servicePage,
+      `${origin}/en/tarot/three-card`,
+      "deterministic:three-card-error",
+    );
+    await servicePage.getByRole("radio", { name: "Open reflection" }).click();
+    await servicePage.getByRole("button", { name: "Draw three cards" }).click();
+    await servicePage
+      .locator('section[aria-label="The reading service is unavailable"]')
+      .waitFor({ state: "visible" });
+    await assertNoAutomaticRequest(servicePage, serviceRequests, "readingStarts");
+    reviewedContrastNodes += await assertAxe(servicePage, "deterministic:three-card-error");
+    scans += 1;
+    await servicePage.getByRole("button", { name: "Try the same draw again" }).click();
+    await servicePage.getByRole("button", { name: "Reveal the three cards" }).waitFor();
+    if (
+      serviceRequests.sessionStarts !== 2 ||
+      serviceRequests.readingStarts !== 2 ||
+      new Set(serviceRequests.sessionOperationIds).size !== 1 ||
+      new Set(serviceRequests.readingOperationIds).size !== 1
+    ) {
+      throw new Error(
+        `Transient retry changed operation identity: ${JSON.stringify(serviceRequests)}`,
+      );
+    }
+    await servicePage.getByRole("button", { name: "Reveal the three cards" }).click();
+    await assertDeterministicCards(servicePage, "three_card");
+    assertDeterministicLedger("three-card-service-retry", serviceRequests, {
+      readingGets: 0,
+      readingStarts: 2,
+      readingType: "three_card",
+      reports: 0,
+      sameReadingKey: true,
+      sameSessionKey: true,
+      sessionStarts: 2,
+    });
+  } finally {
+    await serviceContext.close();
+  }
+
+  const limitContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 844, width: 320 },
+  });
+  const limitPage = await limitContext.newPage();
+  await attachBrowserBoundary(limitContext, limitPage, origin, browserFailures, {
+    allowFulfilledSessionAbort: true,
+    expectedApiFailures: [{ method: "POST", pathname: "/api/v1/readings/tarot", status: 429 }],
+  });
+  const limitRequests = await installDeterministicTarotRoutes(limitPage, {
+    readingFailures: [undefined, 429],
+    readingType: "one_card",
+  });
+  try {
+    await gotoReviewedPage(
+      limitPage,
+      `${origin}/en/tarot/one-card`,
+      "deterministic:one-card-limit",
+    );
+    await limitPage.getByRole("radio", { name: "Open reflection" }).click();
+    await limitPage.getByRole("button", { name: "Draw one card" }).click();
+    await limitPage.getByRole("button", { name: "Reveal my card" }).click();
+    await limitPage.getByRole("button", { name: "Start a new reflection" }).click();
+    await limitPage.getByRole("radio", { name: "Open reflection" }).click();
+    await limitPage.getByRole("button", { name: "Draw one card" }).click();
+    await limitPage
+      .locator('section[aria-label="The current reading limit has been reached"]')
+      .waitFor({ state: "visible" });
+    await limitPage
+      .getByText(
+        "Your previous fixed result remains available while a separate new reflection is unfinished.",
+        { exact: true },
+      )
+      .waitFor({ state: "visible" });
+    if ((await limitPage.getByRole("button", { name: "Try the same draw again" }).count()) !== 0) {
+      throw new Error("The rate-limit state exposed an immediate draw retry.");
+    }
+    await assertNoAutomaticRequest(limitPage, limitRequests, "readingStarts");
+    await assertDeterministicCards(limitPage, "one_card");
+    reviewedContrastNodes += await assertAxe(limitPage, "deterministic:one-card-limit");
+    scans += 1;
+    assertDeterministicLedger("one-card-limit-stop", limitRequests, {
+      readingGets: 0,
+      readingStarts: 2,
+      readingType: "one_card",
+      reports: 0,
+      sameReadingKey: false,
+      sameSessionKey: false,
+      sessionStarts: 2,
+    });
+  } finally {
+    await limitContext.close();
+  }
+
+  const staleContext = await browser.newContext({
+    colorScheme: "light",
+    locale: "en-US",
+    reducedMotion: "reduce",
+    serviceWorkers: "block",
+    viewport: { height: 844, width: 320 },
+  });
+  const stalePage = await staleContext.newPage();
+  await stalePage.addInitScript(({ key, readingId }) => sessionStorage.setItem(key, readingId), {
+    key: "rituvia.tarot.resume.v1.one_card",
+    readingId: tarotAcceptanceReadingIds.one_card,
+  });
+  await attachBrowserBoundary(staleContext, stalePage, origin, browserFailures, {
+    expectedApiFailures: [
+      {
+        method: "GET",
+        pathname: `/api/v1/readings/${tarotAcceptanceReadingIds.one_card}`,
+        status: 404,
+      },
+    ],
+  });
+  const staleRequests = await installDeterministicTarotRoutes(stalePage, {
+    readingType: "one_card",
+    resumeStatus: 404,
+  });
+  try {
+    await gotoReviewedPage(
+      stalePage,
+      `${origin}/en/tarot/one-card`,
+      "deterministic:one-card-stale-resume",
+    );
+    await stalePage
+      .locator('section[aria-label="The saved result is no longer available"]')
+      .waitFor({ state: "visible" });
+    const stored = await stalePage.evaluate(() =>
+      sessionStorage.getItem("rituvia.tarot.resume.v1.one_card"),
+    );
+    if (
+      stored !== null ||
+      staleRequests.readingGets !== 1 ||
+      staleRequests.sessionStarts !== 0 ||
+      staleRequests.readingStarts !== 0
+    ) {
+      throw new Error(`Stale resume did not clear safely: ${JSON.stringify(staleRequests)}`);
+    }
+    await assertLayout(stalePage, "deterministic:one-card-stale-resume:mobile");
+    await assertTouchTargets(stalePage, "deterministic:one-card-stale-resume:mobile");
+    reviewedContrastNodes += await assertAxe(stalePage, "deterministic:one-card-stale-resume");
+    scans += 1;
+    assertDeterministicLedger("one-card-stale-resume", staleRequests, {
+      readingGets: 1,
+      readingStarts: 0,
+      readingType: "one_card",
+      reports: 0,
+      sessionStarts: 0,
+    });
+  } finally {
+    await staleContext.close();
+  }
+
+  return Object.freeze({
+    reviewedContrastNodes,
+    scans,
+    scenarioCount: tarotBrowserAcceptanceScenarioIds.length,
+    screenshotCount: 2,
+  });
+};
+
 const assertTarotAcceptanceRequests = (requests, expected) => {
   if (
+    requests.accountGets !== 1 ||
     requests.sessionStarts !== 1 ||
     requests.readingStarts !== 1 ||
     requests.interpretationStarts !== expected.interpretationStarts ||
     requests.interpretationGets !== 1 ||
+    requests.interpretationReports !== expected.interpretationReports ||
     requests.unexpected.length > 0
   ) {
     throw new Error(`Tarot acceptance request ledger failed: ${JSON.stringify(requests)}`);
   }
   if (
     requests.interpretationOperationIds.length !== expected.interpretationStarts ||
-    requests.interpretationOperationIds.some(
-      (operationId) =>
-        !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(operationId),
-    ) ||
+    requests.interpretationOperationIds.some((operationId) => !uuidV4Pattern.test(operationId)) ||
     new Set(requests.interpretationOperationIds).size !== 1
   ) {
     throw new Error("Tarot acceptance did not preserve one UUID-v4 interpretation operation.");
+  }
+  const interpretationRequestId = requests.interpretationOperationIds.at(-1);
+  if (
+    requests.interpretationReportBodies.length !== expected.interpretationReports ||
+    requests.interpretationReportOperationIds.length !== expected.interpretationReports ||
+    requests.interpretationReportOperationIds.some(
+      (operationId) => !uuidV4Pattern.test(operationId),
+    ) ||
+    requests.interpretationReportBodies.some(
+      (body) =>
+        JSON.stringify(body) !==
+        JSON.stringify({
+          category: "safety",
+          schemaVersion: "tarot-reading-report.v2",
+          target: {
+            interpretationRequestId,
+            kind: "interpretation",
+          },
+        }),
+    )
+  ) {
+    throw new Error(`Tarot interpretation report ledger failed: ${JSON.stringify(requests)}`);
+  }
+};
+
+const submitInterpretationReport = async (page, requests) => {
+  const report = page.locator("details").filter({
+    hasText: "Report an issue with this interpretation",
+  });
+  await report.locator("summary").click();
+  await report.getByRole("combobox", { name: "Issue category" }).selectOption("safety");
+  await report.getByRole("button", { name: "Send report" }).click();
+  const alert = report.locator(".rvt-alert");
+  await alert.waitFor({ state: "visible" });
+  const alertText = await alert.innerText();
+  const expected =
+    "Thank you. The report was recorded without your private question or journal text.";
+  if (!alertText.includes(expected)) {
+    throw new Error(
+      `Interpretation report did not succeed: ${alertText}; ledger=${JSON.stringify(requests)}`,
+    );
   }
 };
 
@@ -1082,7 +2139,11 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     if (!(await oneCardArticle.evaluate((article) => article === document.activeElement))) {
       throw new Error("One-card verified interpretation did not receive focus.");
     }
-    assertTarotAcceptanceRequests(oneCardRequests, { interpretationStarts: 2 });
+    await submitInterpretationReport(oneCardPage, oneCardRequests);
+    assertTarotAcceptanceRequests(oneCardRequests, {
+      interpretationReports: 1,
+      interpretationStarts: 2,
+    });
     await assertLayout(oneCardPage, "acceptance:one-card:desktop");
     await assertTouchTargets(oneCardPage, "acceptance:one-card:desktop");
     reviewedContrastNodes += await assertAxe(oneCardPage, "acceptance:one-card");
@@ -1167,7 +2228,11 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     ) {
       throw new Error("Three-card reviewed fallback claimed AI verification.");
     }
-    assertTarotAcceptanceRequests(threeCardRequests, { interpretationStarts: 1 });
+    await submitInterpretationReport(threeCardPage, threeCardRequests);
+    assertTarotAcceptanceRequests(threeCardRequests, {
+      interpretationReports: 1,
+      interpretationStarts: 1,
+    });
     await assertLayout(threeCardPage, "acceptance:three-card:mobile");
     await assertTouchTargets(threeCardPage, "acceptance:three-card:mobile");
     reviewedContrastNodes += await assertAxe(threeCardPage, "acceptance:three-card");
@@ -1195,6 +2260,8 @@ const run = async () => {
   const artifactServer = await createArtifactServer(artifacts);
   const browserFailures = [];
   let browser = null;
+  let deterministicTarotScenarios = 0;
+  let deterministicTarotScreenshots = 0;
   let reviewedContrastNodes = 0;
   let scans = 0;
   try {
@@ -1324,6 +2391,16 @@ const run = async () => {
     );
     await context.close();
 
+    const deterministicTarotAcceptance = await runDeterministicTarotAcceptance(
+      browser,
+      artifactServer.origin,
+      browserFailures,
+    );
+    deterministicTarotScenarios = deterministicTarotAcceptance.scenarioCount;
+    deterministicTarotScreenshots = deterministicTarotAcceptance.screenshotCount;
+    reviewedContrastNodes += deterministicTarotAcceptance.reviewedContrastNodes;
+    scans += deterministicTarotAcceptance.scans;
+
     const tarotAcceptance = await runTarotAcceptance(
       browser,
       artifactServer.origin,
@@ -1370,7 +2447,7 @@ const run = async () => {
     throw new Error(`Accessibility browser boundary failed: ${[...new Set(failures)].join(", ")}`);
   }
   console.log(
-    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and ${privateAccessibilitySmokeRoutes.length} private routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, explicit tarot interpretation retry/polling/verified/fallback/offline acceptance, 44px targets, dark/reduced-motion and no-JavaScript states, screenshots, and local-only requests.`,
+    `Verified ${publicAccessibilitySmokeRoutes.length} public routes and ${privateAccessibilitySmokeRoutes.length} private routes with ${scans} axe scans (${reviewedContrastNodes} color-contrast nodes retained for the existing token/manual review), ${deterministicTarotScenarios} deterministic tarot scenarios with ${deterministicTarotScreenshots} supporting screenshots, forward/reverse keyboard focus, 40% expanded text, desktop/mobile RTL mirroring, a persistent online/offline/online advisory announcement, explicit tarot create/reveal/retry/limit/resume/report and interpretation retry/polling/verified/fallback/offline acceptance, 44px targets, dark/reduced-motion and no-JavaScript states, and local-only requests.`,
   );
 };
 

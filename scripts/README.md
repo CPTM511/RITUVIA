@@ -40,13 +40,54 @@ unignored file without following symlinks and emits only path, line, rule, and a
 fingerprint. CI additionally runs checksum-pinned actionlint and full-history Gitleaks through
 `run-pinned-ci-tool.mjs`, plus a fail-closed high-severity pnpm dependency audit.
 
-`pnpm test:ai-evals` runs the checksum-bound English/Tarot synthetic release contract together with
-the interpretation, retrieval/prompt, pre-generation, generation/fallback, and post-generation
-verification suites. Every registered case requires unique passing test evidence before an
-in-memory observation is scored. The command requires 100% applicable
-fact/schema/source/fallback and safe-control outcomes with zero critical safety, case-completeness,
-privacy, continuation, network, or paid-call failures. It does not contact or approve a production
-provider/model.
+`pnpm test:astrology-native-sca -- --allow-network` sends only the immutable Swiss Ephemeris commit
+to the OSV commit-query API, validates a bounded response, and fails when any vulnerability record
+is returned. The deterministic parser contract can be tested without representing current SCA
+evidence by passing `--response-file test/fixtures/osv-empty-response.json`.
+
+`pnpm test:astrology-native-corresponding-source -- --source-root <verified-source-root>` creates a
+native-component dry-run archive under the ignored `.native-cache`, verifies its complete file
+inventory, includes patched-dependency and pure source dependency closure, suppresses host xattrs,
+extracts it, places a rejecting curl shim first in `PATH`, and rebuilds from the archived Swiss
+Ephemeris source/data. A fresh Linux extraction must also accept
+`pnpm install --frozen-lockfile --ignore-scripts`. CI uses the explicit `--allow-download`
+acquisition mode. Passing this component rehearsal does not replace a clean, immutable, public
+archive for the complete deployed RITUVIA release.
+
+`pnpm test:release-corresponding-source -- --expected-revision <40-hex-release-sha>
+--component-archive <path> --component-archive-sha256 <64-hex-sha256>` is the complete
+release-source rehearsal. It accepts only an exact clean Git revision and a clean component archive
+bound to the same revision, packages all tracked source plus pinned native source/data, verifies
+the extracted payload against its in-process inventory, and repeats the offline native rebuild.
+The command writes only under ignored `.release-cache/`; CI does not upload the result or claim a
+public source offer.
+
+`pnpm test:astrology-native -- --source-root <verified-source-root>` now includes the independent
+Astronomy Engine `2.1.19` comparison after both reproducible native builds. The same forty-vector
+gate runs under `test:astrology-native-security`, so the local UBSan and Linux ASan+UBSan paths
+cannot omit it. The corpus covers ten geocentric placements with fixed `0.02°` angular and `0.001`
+relative-distance limits; it deliberately makes no independent True Node or Placidus-house claim.
+On Ubuntu, the Linux security gate requires Clang plus its matching `libclang-rt` development
+package and must report `platform: "linux"`, sanitizers `address` and `undefined`, 151 mutation
+cases, and 5,000 coverage-guided runs.
+
+`pnpm test:ai-evals` runs the separate checksum-bound English/Tarot and English/numerology
+synthetic release contracts. The Tarot gate covers interpretation, retrieval/prompt,
+pre-generation, generation/fallback, and post-generation verification. The numerology gate covers
+exact calculation facts, complete content inventory, artifact trust, number/source/locale/safety
+fidelity, single-use candidate review, deterministic replacement, and privacy metadata.
+`pnpm test:numerology-ai-evals` runs only the latter for focused diagnosis. Every registered case
+requires unique passing test evidence before an in-memory observation is scored. The gates require
+zero applicable metric, safe-control, critical safety, case-completeness, privacy, continuation,
+network, or paid-call failures. They do not contact or approve a production provider/model or
+production numerology content.
+
+`pnpm test:numerology-seo-browser` runs the focused RIT-084 production-artifact check after
+`pnpm --filter @rituvia/web build`. It serves the built Web app on loopback and checks only
+`/en/numerology` plus the four approved method guides at a 320px viewport with dark mode and
+reduced motion. The gate validates exact structured-data types, index metadata, calculator links,
+no form/input surface, layout, touch targets, zero storage, a bounded request ledger, console/page
+errors, axe serious/critical findings, and the reviewed list of axe-incomplete contrast targets.
 
 `scripts/web-shell-build-policy.mjs` runs from the workspace build verifier. It reads the generated
 English home HTML and its referenced local assets, rejects remote JavaScript/styles, CSS resource
@@ -60,13 +101,50 @@ and runs pinned Chromium plus axe. It blocks WCAG/best-practice violations and u
 results; verifies forward/reverse keyboard order, focus visibility, 44px targets, reduced motion,
 dark mode, no-JavaScript content, mobile reflow, at-least-40% test-only text expansion, and RTL
 mirroring; verifies a persistent live region through an online/offline/online advisory transition
-while retaining the already-loaded server content; and rejects nonlocal, failed, or error responses. Build first, then run
+while retaining the already-loaded server content; and rejects nonlocal, failed, or error responses.
+`scripts/verify-ritual-browser.mjs` then exercises both canonical free rituals against the same
+reviewed production artifact, including standard 2D and linear modes, pause/resume, exit focus,
+reduced motion, RTL, 320px reflow, offline zero-write behavior, stable-key completion retry,
+request/storage privacy, and a supporting screenshot. Build first, then run
 `pnpm test:accessibility`; CI enforces that ordering and installs only the Chromium headless shell.
+`scripts/verify-revisit-browser.mjs` exercises schedule, offline zero-write recovery, local-date
+reschedule, early completion, archive, and soft delete against that current production artifact.
+It also verifies reminders remain off, private canaries stay out of storage/metadata/console,
+keyboard-accessible controls, 320px RTL/reduced-motion layout, 44px targets, axe, and a redacted
+supporting screenshot.
+
+`scripts/verify-full-loop-browser.mjs` keeps one anonymous Chromium context across private question
+intake, deterministic Tarot, Sanctuary intention, a free reduced-motion ritual, private journal,
+and Revisit. It proves the real cross-page actions, UUID-only handoffs, same-key failure recovery,
+deletion, mobile keyboard/RTL/touch/axe behavior, and absence of private canaries from browser
+storage, history, metadata, console, or analytics requests. `pnpm test:accessibility` composes this
+continuous gate after the detailed Tarot, intention, ritual, and Revisit verifiers.
+
+`scripts/verify-account-auth-browser.mjs` is the focused RIT-050/RIT-051 browser gate. It uses the
+real local PostgreSQL account boundary to verify uniform sign-in starts, constant local preview
+routing, host-only secure cookies, atomic anonymous merge, exact dropped-response replay,
+previous-session rotation, successor-bound CSRF, durable logout, database rate limiting, mobile
+layout, keyboard completion, and serious/critical axe findings without running the complete browser
+matrix. `pnpm test:account-merge-database` separately verifies merge concurrency, ownership,
+history, rollback, audit provenance, and least privilege against an isolated PostgreSQL database.
+
+`scripts/verify-account-control-browser.mjs` is the focused RIT-052 production-artifact gate. It
+verifies profile save/conflict behavior, private history states, timestamp-only current/other
+sessions, durable targeted and all-session logout, 320px layout, keyboard flow, privacy, and
+serious/critical axe findings. `pnpm test:account-control-database` separately proves stable
+multi-resource history pagination, expiry/deletion filtering, cross-account isolation,
+private-canary exclusion, optimistic profile conflicts, current-session protection, targeted
+revocation, and logout-all against isolated PostgreSQL.
 
 `scripts/copy-ui-styles.mjs` is the UI package prebuild step. It copies the statically reviewed
 source stylesheet byte-for-byte into `packages/ui/dist`; `scripts/verify-workspace-build.mjs` checks
 that parity, imports the built UI module, and includes the CSS and style entry points in the required
 artifact inventory before auditing the Web shell.
+
+`scripts/remove-next-type-duplicates.mjs` runs before the Web TypeScript check and removes only
+number-suffixed conflict copies inside Next.js generated type directories when their bytes exactly
+match the canonical peer. A missing or different peer fails closed rather than deleting uncertain
+content.
 
 It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
 inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server

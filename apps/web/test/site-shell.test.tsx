@@ -12,6 +12,7 @@ const render = () =>
       brandTagline: "Configured tagline",
       locale: "en",
       messages: getMessages("en"),
+      numerologyEnabled: true,
     }),
   );
 
@@ -35,7 +36,9 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('href="/en/tarot/one-card"');
     expect(html).toContain('href="/en/tarot/three-card"');
     expect(html).toContain('href="/en/sanctuary"');
+    expect(html).toContain('href="/en/readings/numerology"');
     expect(html).toContain('href="/en/account"');
+    expect(html).toContain('aria-busy="true"');
     expect(html).toContain("rituvia-sanctuary-orb.png");
     expect(html).toContain("A free ritual path always remains");
     expect(html).not.toContain('data-connection-state="offline"');
@@ -52,7 +55,7 @@ describe("server-rendered public shell", () => {
       true,
     );
     expect(html).not.toMatch(/href="https?:/u);
-    expect(html).not.toMatch(/href="\/en\/(?:astrology|numerology|pricing)/u);
+    expect(html).not.toMatch(/href="\/en\/(?:readings\/astrology|pricing)/u);
     expect(html).not.toMatch(/<(?:form|input|textarea)\b/u);
   });
 
@@ -72,9 +75,25 @@ describe("server-rendered public shell", () => {
         brandTagline: "",
         locale: "en",
         messages: getMessages("en"),
+        numerologyEnabled: true,
       }),
     );
 
     expect(html).not.toContain('class="footer-tagline"');
+  });
+
+  it("hides the calculator entry when the approved catalog gate is closed", () => {
+    const html = renderToStaticMarkup(
+      createElement(SiteShell, {
+        brandName: "Configured Brand",
+        brandTagline: "Configured tagline",
+        locale: "en",
+        messages: getMessages("en"),
+        numerologyEnabled: false,
+      }),
+    );
+
+    expect(html).not.toContain('href="/en/readings/numerology"');
+    expect(html).not.toContain("Numerology calculator");
   });
 });

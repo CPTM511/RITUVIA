@@ -2,6 +2,8 @@ import { parseReflectionRitualCreateRequestV1 } from "@rituvia/domain";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deriveSessionCsrfToken } from "../server/session-csrf";
+
 const harness = vi.hoisted(() => {
   class ApplicationError extends Error {
     readonly code:
@@ -27,7 +29,13 @@ const harness = vi.hoisted(() => {
       this.retryAfterSeconds = retryAfterSeconds;
     }
   }
-  return { ApplicationError, create: vi.fn(), get: vi.fn(), merge: vi.fn() };
+  return {
+    ApplicationError,
+    create: vi.fn(),
+    get: vi.fn(),
+    getV2: vi.fn(),
+    merge: vi.fn(),
+  };
 });
 
 vi.mock("../server/account-auth", () => ({
@@ -43,12 +51,17 @@ vi.mock("../server/reflection-loop", () => ({
   getWebRitualSession: harness.get,
   ReflectionLoopApplicationError: harness.ApplicationError,
 }));
+vi.mock("../server/ritual-journal", () => ({
+  getWebRitualSessionV2: harness.getV2,
+}));
 
 import { GET } from "../app/api/v1/ritual-sessions/[ritualSessionId]/route";
 import { POST, ritualSessionApiPath } from "../app/api/v1/ritual-sessions/route";
 
 const token = "b".repeat(43);
 const accountToken = "c".repeat(43);
+const csrfToken = deriveSessionCsrfToken(token);
+const accountCsrfToken = deriveSessionCsrfToken(accountToken);
 const idempotencyKey = "bcdefghijklmnopqrstuvw";
 const intentionId = "22222222-2222-4222-8222-222222222222";
 const ritualSessionId = "33333333-3333-4333-8333-333333333333";
@@ -80,6 +93,7 @@ const post = (
       "idempotency-key": idempotencyKey,
       origin: "https://example.test",
       "sec-fetch-site": "same-origin",
+      "x-csrf-token": csrfToken,
       ...headers,
     },
     method: "POST",
@@ -102,6 +116,7 @@ describe("free ritual session API", () => {
       return { kind: "created", resource };
     });
     harness.get.mockResolvedValue(resource);
+    harness.getV2.mockResolvedValue(null);
     harness.merge.mockResolvedValue("created");
   });
 
@@ -129,31 +144,27 @@ describe("free ritual session API", () => {
     expect(harness.get).toHaveBeenCalledWith(ritualSessionId, token);
   });
 
-  it("passes only server cookies to the paid-object entitlement gate", async () => {
+  it("requires an explicit merge before accepting both account and anonymous cookies", async () => {
     const paidBody = { ...body, objectCode: "mindful_incense" };
-    harness.create.mockRejectedValueOnce(new harness.ApplicationError("entitlement_required"));
     const response = await POST(
       post(JSON.stringify(paidBody), {
         cookie: `__Host-rituvia-anonymous-session=${token}; __Host-rituvia-account-session=${accountToken}`,
       }),
     );
 
-    expect(response.status).toBe(402);
+    expect(response.status).toBe(409);
     await expect(response.json()).resolves.toMatchObject({
-      code: "REFLECTION_ENTITLEMENT_REQUIRED",
+      code: "REFLECTION_CONFLICT",
     });
-    expect(harness.create).toHaveBeenCalledWith(paidBody, idempotencyKey, token, accountToken);
-    expect(harness.merge).toHaveBeenCalledWith({
-      accountSessionToken: accountToken,
-      anonymousSessionToken: token,
-      idempotencyKey: `reflection_link_${token}`,
-    });
+    expect(harness.create).not.toHaveBeenCalled();
+    expect(harness.merge).not.toHaveBeenCalled();
   });
 
   it("allows an account-only principal without reviving the anonymous token", async () => {
     const response = await POST(
       post(JSON.stringify(body), {
         cookie: `__Host-rituvia-account-session=${accountToken}`,
+        "x-csrf-token": accountCsrfToken,
       }),
     );
 

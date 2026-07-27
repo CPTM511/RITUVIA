@@ -57,15 +57,22 @@ const MVP_TABLES = Object.freeze([
   "app_user",
   "auth_challenge",
   "auth_identity",
+  "auth_start_rate_limit",
   "commerce_order",
   "commerce_order_line",
   "entitlement",
   "intention",
   "journal_entry",
   "ledger_entry",
+  "passkey_credential",
   "payment_attempt",
   "payment_event",
+  "private_journal_entry",
+  "revisit",
+  "revisit_operation",
+  "ritual_pass",
   "ritual_session",
+  "ritual_session_v2",
 ]);
 
 const openPools = new Set();
@@ -180,6 +187,21 @@ const verifySeed = async (pool) => {
   assert.deepEqual(result.rows, EXPECTED_SEEDS);
 };
 
+const readExpectedMigrationNames = async () => {
+  const manifest = JSON.parse(
+    await readFile(new URL("../prisma/migration-manifest.json", import.meta.url), "utf8"),
+  );
+  const names = Object.keys(manifest.files ?? {})
+    .flatMap((filePath) => {
+      const match = /^migrations\/([^/]+)\/migration\.sql$/u.exec(filePath);
+      return match?.[1] === undefined ? [] : [match[1]];
+    })
+    .sort();
+  assert.ok(names.length > 0);
+  assert.equal(new Set(names).size, names.length);
+  return names;
+};
+
 const verifyMigrationState = async (pool) => {
   const result = await pool.query(`
     SELECT migration_name AS "migrationName", finished_at AS "finishedAt", rolled_back_at AS "rolledBackAt"
@@ -188,18 +210,7 @@ const verifyMigrationState = async (pool) => {
   `);
   assert.deepEqual(
     result.rows.map(({ migrationName }) => migrationName),
-    [
-      "202607160001_foundation",
-      "202607170001_feature_flag_registry",
-      "202607170002_anonymous_identity_baseline",
-      "202607170003_tarot_reading_persistence",
-      "202607170004_tarot_reading_report",
-      "202607180001_interpretation_generation",
-      "202607180002_interpretation_verification",
-      "202607180003_account_identity",
-      "202607180004_reflection_loop",
-      "202607180005_commerce",
-    ],
+    await readExpectedMigrationNames(),
   );
   for (const row of result.rows) {
     assert.ok(row.finishedAt instanceof Date);
@@ -234,6 +245,11 @@ const verifyMigrationState = async (pool) => {
       roles: ["rituvia_feature_flag_writer"],
     },
     {
+      command: "INSERT",
+      policyName: "feature_flag_version_astrology_append",
+      roles: ["rituvia_feature_flag_writer"],
+    },
+    {
       command: "SELECT",
       policyName: "feature_flag_version_read",
       roles: ["rituvia_feature_flag_reader"],
@@ -264,13 +280,13 @@ const verifyMigrationState = async (pool) => {
     },
     {
       forceRowSecurity: true,
-      policyCount: 3,
+      policyCount: 5,
       rowSecurity: true,
       tableName: "interpretation",
     },
     {
       forceRowSecurity: true,
-      policyCount: 2,
+      policyCount: 4,
       rowSecurity: true,
       tableName: "interpretation_verification",
     },
@@ -291,11 +307,18 @@ const verifyProductTablesStartEmpty = async (pool) => {
            (SELECT count(*)::int FROM app_user) AS users,
            (SELECT count(*)::int FROM auth_identity) AS "authIdentities",
            (SELECT count(*)::int FROM auth_challenge) AS "authChallenges",
+           (SELECT count(*)::int FROM auth_start_rate_limit) AS "authStartRateLimits",
            (SELECT count(*)::int FROM account_session) AS "accountSessions",
            (SELECT count(*)::int FROM account_subject_link) AS "accountSubjectLinks",
+           (SELECT count(*)::int FROM passkey_credential) AS "passkeyCredentials",
            (SELECT count(*)::int FROM intention) AS intentions,
            (SELECT count(*)::int FROM ritual_session) AS "ritualSessions",
+           (SELECT count(*)::int FROM ritual_session_v2) AS "ritualSessionsV2",
+           (SELECT count(*)::int FROM ritual_pass) AS "ritualPasses",
            (SELECT count(*)::int FROM journal_entry) AS "journalEntries",
+           (SELECT count(*)::int FROM private_journal_entry) AS "privateJournalEntries",
+           (SELECT count(*)::int FROM revisit) AS revisits,
+           (SELECT count(*)::int FROM revisit_operation) AS "revisitOperations",
            (SELECT count(*)::int FROM commerce_order) AS "commerceOrders",
            (SELECT count(*)::int FROM commerce_order_line) AS "commerceOrderLines",
            (SELECT count(*)::int FROM payment_attempt) AS "paymentAttempts",
@@ -310,6 +333,7 @@ const verifyProductTablesStartEmpty = async (pool) => {
     anonymousSubjects: 0,
     authChallenges: 0,
     authIdentities: 0,
+    authStartRateLimits: 0,
     commerceOrderLines: 0,
     commerceOrders: 0,
     consents: 0,
@@ -322,9 +346,15 @@ const verifyProductTablesStartEmpty = async (pool) => {
     ledgerEntries: 0,
     paymentAttempts: 0,
     paymentEvents: 0,
+    passkeyCredentials: 0,
+    privateJournalEntries: 0,
+    revisitOperations: 0,
+    revisits: 0,
     readings: 0,
     reports: 0,
     ritualSessions: 0,
+    ritualSessionsV2: 0,
+    ritualPasses: 0,
     users: 0,
     verifications: 0,
   });
@@ -395,7 +425,10 @@ const verifyRoleRestrictions = async (databaseUrl) => {
     );
     assert.deepEqual(
       tablePrivileges.rows,
-      MVP_TABLES.map((tableName) => ({ privileges: ["INSERT", "SELECT"], tableName })),
+      MVP_TABLES.map((tableName) => ({
+        privileges: tableName === "ritual_pass" ? ["SELECT"] : ["INSERT", "SELECT"],
+        tableName,
+      })),
     );
 
     const updatePrivileges = await client.query(
@@ -411,7 +444,7 @@ const verifyRoleRestrictions = async (databaseUrl) => {
       [MVP_TABLES],
     );
     assert.deepEqual(updatePrivileges.rows, [
-      { columns: ["last_seen_at", "revoked_at"], tableName: "account_session" },
+      { columns: ["last_seen_at", "revoked_at", "token_hash"], tableName: "account_session" },
       {
         columns: [
           "age_attested_at",
@@ -420,12 +453,41 @@ const verifyRoleRestrictions = async (databaseUrl) => {
           "last_active_at",
           "locale",
           "profile_version",
+          "status",
           "time_zone",
         ],
         tableName: "app_user",
       },
-      { columns: ["consumed_at"], tableName: "auth_challenge" },
-      { columns: ["last_sign_in_at"], tableName: "auth_identity" },
+      {
+        columns: [
+          "consumed_at",
+          "email_ciphertext",
+          "email_nonce",
+          "email_tag",
+          "encryption_key_version",
+          "previous_session_hash",
+          "provider_subject",
+          "return_to",
+          "state_hash",
+          "token_hash",
+        ],
+        tableName: "auth_challenge",
+      },
+      {
+        columns: [
+          "encryption_key_version",
+          "last_sign_in_at",
+          "provider_subject",
+          "verified_email_ciphertext",
+          "verified_email_nonce",
+          "verified_email_tag",
+        ],
+        tableName: "auth_identity",
+      },
+      {
+        columns: ["request_count", "window_started_at"],
+        tableName: "auth_start_rate_limit",
+      },
       {
         columns: ["refunded_minor", "status", "updated_at"],
         tableName: "commerce_order",
@@ -434,10 +496,118 @@ const verifyRoleRestrictions = async (databaseUrl) => {
         columns: ["granted_at", "revoked_at", "source_order_line_id", "status", "version"],
         tableName: "entitlement",
       },
-      { columns: ["state", "updated_at"], tableName: "payment_attempt" },
+      {
+        columns: [
+          "archived_at",
+          "completed_at",
+          "deleted_at",
+          "encryption_key_version",
+          "intention_code",
+          "intention_text_ciphertext",
+          "intention_text_nonce",
+          "intention_text_tag",
+          "last_mutation_key_hash",
+          "last_mutation_request_hash",
+          "privacy_state",
+          "reminder_preference",
+          "revision",
+          "revisit_date",
+          "small_action_ciphertext",
+          "small_action_nonce",
+          "small_action_tag",
+          "status",
+          "time_zone",
+          "updated_at",
+        ],
+        tableName: "intention",
+      },
+      {
+        columns: [
+          "encryption_key_version",
+          "reflection_ciphertext",
+          "reflection_nonce",
+          "reflection_tag",
+        ],
+        tableName: "journal_entry",
+      },
+      {
+        columns: [
+          "credential_id",
+          "last_used_at",
+          "public_key",
+          "revoked_at",
+          "rp_id",
+          "sign_count",
+        ],
+        tableName: "passkey_credential",
+      },
+      {
+        columns: ["provider_checkout_url", "state", "updated_at"],
+        tableName: "payment_attempt",
+      },
       {
         columns: ["order_id", "payment_attempt_id", "processed_at", "processing_state"],
         tableName: "payment_event",
+      },
+      {
+        columns: [
+          "deleted_at",
+          "encryption_key_version",
+          "last_mutation_key_hash",
+          "last_mutation_request_hash",
+          "reflection_ciphertext",
+          "reflection_nonce",
+          "reflection_tag",
+          "revision",
+          "updated_at",
+        ],
+        tableName: "private_journal_entry",
+      },
+      {
+        columns: [
+          "archived_at",
+          "completed_at",
+          "completion_ciphertext",
+          "completion_key_version",
+          "completion_nonce",
+          "completion_tag",
+          "deleted_at",
+          "intention_text_ciphertext",
+          "intention_text_nonce",
+          "intention_text_tag",
+          "outcome_tags",
+          "quiet_hours_end",
+          "quiet_hours_start",
+          "revision",
+          "schedule_kind",
+          "scheduled_local_date",
+          "small_action_ciphertext",
+          "small_action_nonce",
+          "small_action_tag",
+          "snapshot_key_version",
+          "status",
+          "time_zone",
+          "updated_at",
+        ],
+        tableName: "revisit",
+      },
+      {
+        columns: ["consumed_at", "ritual_session_id", "status"],
+        tableName: "ritual_pass",
+      },
+      {
+        columns: [
+          "abandoned_at",
+          "completed_at",
+          "current_step_code",
+          "elapsed_seconds",
+          "last_mutation_key_hash",
+          "last_mutation_request_hash",
+          "paused_at",
+          "revision",
+          "status",
+        ],
+        tableName: "ritual_session_v2",
       },
     ]);
 
@@ -520,6 +690,155 @@ const verifyConstraintsAndTransactions = async (pool) => {
     "23514",
     "seed_manifest_is_synthetic_check",
   );
+  await expectPostgresError(
+    () =>
+      pool.query(
+        `INSERT INTO auth_start_rate_limit
+           (scope, key_hash, window_started_at, request_count)
+         VALUES ('network', $1, CURRENT_TIMESTAMP, 1)`,
+        [Buffer.alloc(32, 1)],
+      ),
+    "23514",
+    "auth_start_rate_limit_scope_check",
+  );
+  await expectPostgresError(
+    () =>
+      pool.query(
+        `INSERT INTO auth_start_rate_limit
+           (scope, key_hash, window_started_at, request_count)
+         VALUES ('global', $1, CURRENT_TIMESTAMP, 1)`,
+        [Buffer.alloc(31, 1)],
+      ),
+    "23514",
+    "auth_start_rate_limit_key_check",
+  );
+  await expectPostgresError(
+    () =>
+      pool.query(
+        `INSERT INTO auth_start_rate_limit
+           (scope, key_hash, window_started_at, request_count)
+         VALUES ('global', $1, CURRENT_TIMESTAMP, 0)`,
+        [Buffer.alloc(32, 2)],
+      ),
+    "23514",
+    "auth_start_rate_limit_count_check",
+  );
+  await expectPostgresError(
+    () =>
+      pool.query(
+        `INSERT INTO auth_challenge (
+           provider_key, provider_subject, email_ciphertext, email_nonce, email_tag,
+           encryption_key_version, token_hash, state_hash, previous_session_hash,
+           return_to, expires_at
+         ) VALUES (
+           'local.passwordless.v1', $1, $2, $3, $4, 'local.account-email.v1',
+           $5, $6, $7, '/en/account', CURRENT_TIMESTAMP + INTERVAL '5 minutes'
+         )`,
+        [
+          `local.${"a".repeat(64)}`,
+          Buffer.alloc(32, 3),
+          Buffer.alloc(12, 4),
+          Buffer.alloc(16, 5),
+          Buffer.alloc(32, 6),
+          Buffer.alloc(32, 7),
+          Buffer.alloc(31, 8),
+        ],
+      ),
+    "23514",
+    "auth_challenge_previous_session_hash_check",
+  );
+
+  const accountConstraintTransaction = await pool.connect();
+  try {
+    await accountConstraintTransaction.query("BEGIN");
+    const user = await accountConstraintTransaction.query(
+      `INSERT INTO app_user (email_verified_at)
+       VALUES (CURRENT_TIMESTAMP)
+       RETURNING id`,
+    );
+    const identity = await accountConstraintTransaction.query(
+      `INSERT INTO auth_identity (
+         user_id, provider_key, provider_subject, verified_email_ciphertext,
+         verified_email_nonce, verified_email_tag, encryption_key_version,
+         verified_at, last_sign_in_at
+       ) VALUES (
+         $1, 'local.passwordless.v1', $2, $3, $4, $5, 'local.account-email.v1',
+         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+       )
+       RETURNING id`,
+      [
+        user.rows[0].id,
+        `local.${"b".repeat(64)}`,
+        Buffer.alloc(32, 9),
+        Buffer.alloc(12, 10),
+        Buffer.alloc(16, 11),
+      ],
+    );
+    const expectPasskeyConstraint = async (query, constraint) => {
+      await accountConstraintTransaction.query("SAVEPOINT passkey_constraint");
+      try {
+        await expectPostgresError(query, "23514", constraint);
+      } finally {
+        await accountConstraintTransaction.query("ROLLBACK TO SAVEPOINT passkey_constraint");
+      }
+    };
+    await expectPasskeyConstraint(
+      () =>
+        accountConstraintTransaction.query(
+          `INSERT INTO passkey_credential (
+             auth_identity_id, credential_id, public_key, rp_id
+           ) VALUES ($1, $2, $3, 'rituvia.local')`,
+          [identity.rows[0].id, Buffer.alloc(15, 12), Buffer.alloc(32, 13)],
+        ),
+      "passkey_credential_material_check",
+    );
+    await expectPasskeyConstraint(
+      () =>
+        accountConstraintTransaction.query(
+          `INSERT INTO passkey_credential (
+             auth_identity_id, credential_id, public_key, rp_id
+           ) VALUES ($1, $2, $3, 'Bad Host')`,
+          [identity.rows[0].id, Buffer.alloc(16, 14), Buffer.alloc(32, 15)],
+        ),
+      "passkey_credential_rp_check",
+    );
+    await expectPasskeyConstraint(
+      () =>
+        accountConstraintTransaction.query(
+          `INSERT INTO passkey_credential (
+             auth_identity_id, credential_id, public_key, rp_id, sign_count
+           ) VALUES ($1, $2, $3, 'rituvia.local', -1)`,
+          [identity.rows[0].id, Buffer.alloc(16, 16), Buffer.alloc(32, 17)],
+        ),
+      "passkey_credential_lifecycle_check",
+    );
+    await accountConstraintTransaction.query("ROLLBACK");
+  } finally {
+    accountConstraintTransaction.release();
+  }
+
+  const rateRaceKey = randomBytes(32);
+  const rateContenders = await Promise.all(
+    Array.from({ length: 8 }, () =>
+      pool.query(
+        `INSERT INTO auth_start_rate_limit (
+           scope, key_hash, window_started_at, request_count
+         ) VALUES ('identifier', $1, CURRENT_TIMESTAMP, 1)
+         ON CONFLICT (scope, key_hash) DO UPDATE
+            SET request_count = auth_start_rate_limit.request_count + 1
+         RETURNING request_count AS "requestCount"`,
+        [rateRaceKey],
+      ),
+    ),
+  );
+  assert.equal(Math.max(...rateContenders.map((result) => result.rows[0]?.requestCount ?? 0)), 8);
+  const rateRaceResult = await pool.query(
+    `SELECT request_count AS "requestCount"
+       FROM auth_start_rate_limit
+      WHERE scope = 'identifier' AND key_hash = $1`,
+    [rateRaceKey],
+  );
+  assert.deepEqual(rateRaceResult.rows, [{ requestCount: 8 }]);
 
   const transaction = await pool.connect();
   try {

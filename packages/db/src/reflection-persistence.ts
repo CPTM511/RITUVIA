@@ -1,13 +1,19 @@
 import {
+  parseReflectionIntentionCreateRequestV2,
   parseReflectionIntentionCreateRequestV1,
+  parseReflectionIntentionMutationRequestV1,
   parseReflectionJournalCreateRequestV1,
   parseReflectionRitualCreateRequestV1,
   reflectionIntentionSchemaVersion,
+  reflectionIntentionV2SchemaVersion,
   reflectionJournalSchemaVersion,
   reflectionPolicyVersion,
   reflectionRitualSchemaVersion,
   type ReflectionIntentionCreateRequestV1,
+  type ReflectionIntentionCreateRequestV2,
   type ReflectionIntentionCode,
+  type ReflectionIntentionMutationRequestV1,
+  type ReflectionIntentionStatus,
   type ReflectionJournalCreateRequestV1,
   type ReflectionRitualCreateRequestV1,
   type ReflectionRitualObjectCode,
@@ -27,7 +33,9 @@ export const reflectionPersistenceErrorCodes = Object.freeze([
   "REFLECTION_NOT_FOUND",
   "REFLECTION_CHAIN_INVALID",
   "REFLECTION_IDEMPOTENCY_CONFLICT",
+  "REFLECTION_MUTATION_CONFLICT",
   "REFLECTION_RITUAL_DAILY_LIMIT",
+  "REFLECTION_SCHEDULE_INVALID",
   "REFLECTION_PERSISTENCE_UNAVAILABLE",
 ] as const);
 
@@ -67,10 +75,19 @@ export type PreparedReflectionCreate = Readonly<{
 export type PreparedPrivateReflectionCreate = PreparedReflectionCreate &
   Readonly<{ encrypted: ReflectionCiphertext }>;
 
+export type PreparedPrivateIntentionV2Write = PreparedReflectionCreate &
+  Readonly<{
+    encryptedIntentionText: ReflectionCiphertext;
+    encryptedSmallAction: ReflectionCiphertext;
+  }>;
+
 export type ReflectionPrepareContext<Request> = Readonly<{
   request: Request;
   subjectId: string;
 }>;
+
+export type ReflectionIntentionV2PrepareContext<Request> = ReflectionPrepareContext<Request> &
+  Readonly<{ resourceId: string }>;
 
 export type ReflectionPrincipalTokens = Readonly<{
   accountSessionToken?: string | undefined;
@@ -88,6 +105,30 @@ export type PersistedReflectionIntention = Readonly<{
   readingId: string | null;
   schemaVersion: typeof reflectionIntentionSchemaVersion;
   subjectId: string;
+}>;
+
+export type PersistedReflectionIntentionV2 = Readonly<{
+  archivedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  deletedAt: string | null;
+  encryptedIntentionText: ReflectionCiphertext;
+  encryptedSmallAction: ReflectionCiphertext;
+  expiresAt: string;
+  id: string;
+  intentionCode: ReflectionIntentionCode;
+  locale: "en";
+  policyVersion: typeof reflectionPolicyVersion;
+  privacyState: "private";
+  readingId: string | null;
+  reminderPreference: "none";
+  revisitDate: string | null;
+  revision: number;
+  schemaVersion: typeof reflectionIntentionV2SchemaVersion;
+  status: ReflectionIntentionStatus;
+  subjectId: string;
+  timeZone: string | null;
+  updatedAt: string;
 }>;
 
 export type PersistedReflectionRitual = Readonly<{
@@ -119,6 +160,14 @@ export type ResolvedReflectionIntention = Readonly<{
   intention: PersistedReflectionIntention;
   kind: "created" | "replayed";
 }>;
+export type ResolvedReflectionIntentionV2 = Readonly<{
+  intention: PersistedReflectionIntentionV2;
+  kind: "created" | "replayed";
+}>;
+export type MutatedReflectionIntentionV2 = Readonly<{
+  intention: PersistedReflectionIntentionV2 | null;
+  kind: "mutated" | "replayed";
+}>;
 export type ResolvedReflectionRitual = Readonly<{
   kind: "created" | "replayed";
   ritual: PersistedReflectionRitual;
@@ -135,6 +184,9 @@ export type ReflectionPersistence = Readonly<{
   getJournal(
     input: Readonly<{ id: string; principal: ReflectionPrincipalTokens }>,
   ): Promise<PersistedReflectionJournal | null>;
+  getIntentionV2(
+    input: Readonly<{ id: string; principal: ReflectionPrincipalTokens }>,
+  ): Promise<PersistedReflectionIntentionV2 | null>;
   getRitual(
     input: Readonly<{ id: string; principal: ReflectionPrincipalTokens }>,
   ): Promise<PersistedReflectionRitual | null>;
@@ -147,6 +199,28 @@ export type ReflectionPersistence = Readonly<{
       principal: ReflectionPrincipalTokens;
     }>,
   ): Promise<ResolvedReflectionIntention>;
+  resolveIntentionV2(
+    input: Readonly<{
+      prepare: (
+        context: ReflectionIntentionV2PrepareContext<ReflectionIntentionCreateRequestV2>,
+      ) => Promise<PreparedPrivateIntentionV2Write> | PreparedPrivateIntentionV2Write;
+      request: unknown;
+      principal: ReflectionPrincipalTokens;
+    }>,
+  ): Promise<ResolvedReflectionIntentionV2>;
+  mutateIntentionV2(
+    input: Readonly<{
+      id: string;
+      prepare: (
+        context: ReflectionIntentionV2PrepareContext<ReflectionIntentionMutationRequestV1>,
+      ) =>
+        | Promise<PreparedPrivateIntentionV2Write | PreparedReflectionCreate>
+        | PreparedPrivateIntentionV2Write
+        | PreparedReflectionCreate;
+      request: unknown;
+      principal: ReflectionPrincipalTokens;
+    }>,
+  ): Promise<MutatedReflectionIntentionV2>;
   resolveJournal(
     input: Readonly<{
       prepare: (
@@ -198,7 +272,9 @@ type IntentionOwnerRow = Readonly<{ expiresAt: Date; subjectId: string }>;
 
 type IntentionRow = Readonly<{
   canonicalRequestHash: Uint8Array;
+  contractVersion: string;
   createdAt: Date;
+  deletedAt: Date | null;
   encryptionKeyVersion: string;
   expiresAt: Date;
   id: string;
@@ -211,7 +287,41 @@ type IntentionRow = Readonly<{
   smallActionCiphertext: Uint8Array;
   smallActionNonce: Uint8Array;
   smallActionTag: Uint8Array;
+  status: string;
   subjectId: string;
+}>;
+
+type IntentionV2Row = Readonly<{
+  archivedAt: Date | null;
+  canonicalRequestHash: Uint8Array;
+  completedAt: Date | null;
+  createdAt: Date;
+  deletedAt: Date | null;
+  encryptionKeyVersion: string;
+  expiresAt: Date;
+  id: string;
+  idempotencyKeyHash: Uint8Array;
+  intentionCode: string;
+  intentionTextCiphertext: Uint8Array | null;
+  intentionTextNonce: Uint8Array | null;
+  intentionTextTag: Uint8Array | null;
+  lastMutationKeyHash: Uint8Array | null;
+  lastMutationRequestHash: Uint8Array | null;
+  locale: string;
+  policyVersion: string;
+  privacyState: string;
+  readingId: string | null;
+  reminderPreference: string;
+  revisitDate: Date | null;
+  revision: number;
+  schemaVersion: string;
+  smallActionCiphertext: Uint8Array;
+  smallActionNonce: Uint8Array;
+  smallActionTag: Uint8Array;
+  status: string;
+  subjectId: string;
+  timeZone: string | null;
+  updatedAt: Date;
 }>;
 
 type RitualRow = Readonly<{
@@ -257,10 +367,49 @@ const intentionSelect = Prisma.sql`
          intention.small_action_tag AS "smallActionTag",
          intention.encryption_key_version AS "encryptionKeyVersion",
          intention.schema_version AS "schemaVersion",
+         intention.contract_version AS "contractVersion",
          intention.policy_version AS "policyVersion",
          intention.idempotency_key_hash AS "idempotencyKeyHash",
          intention.canonical_request_hash AS "canonicalRequestHash",
          intention.created_at AS "createdAt",
+         intention.deleted_at AS "deletedAt",
+         intention.expires_at AS "expiresAt",
+         intention.status,
+         COALESCE(reading.locale, 'en') AS locale
+    FROM intention
+    LEFT JOIN reading ON reading.id = intention.reading_id
+                     AND reading.anonymous_subject_id = intention.anonymous_subject_id
+`;
+
+const intentionV2Select = Prisma.sql`
+  SELECT intention.id,
+         intention.anonymous_subject_id AS "subjectId",
+         intention.reading_id AS "readingId",
+         intention.intention_code AS "intentionCode",
+         intention.intention_text_ciphertext AS "intentionTextCiphertext",
+         intention.intention_text_nonce AS "intentionTextNonce",
+         intention.intention_text_tag AS "intentionTextTag",
+         intention.small_action_ciphertext AS "smallActionCiphertext",
+         intention.small_action_nonce AS "smallActionNonce",
+         intention.small_action_tag AS "smallActionTag",
+         intention.encryption_key_version AS "encryptionKeyVersion",
+         intention.contract_version AS "schemaVersion",
+         intention.policy_version AS "policyVersion",
+         intention.privacy_state AS "privacyState",
+         intention.reminder_preference AS "reminderPreference",
+         intention.revisit_date AS "revisitDate",
+         intention.time_zone AS "timeZone",
+         intention.status,
+         intention.revision,
+         intention.idempotency_key_hash AS "idempotencyKeyHash",
+         intention.canonical_request_hash AS "canonicalRequestHash",
+         intention.last_mutation_key_hash AS "lastMutationKeyHash",
+         intention.last_mutation_request_hash AS "lastMutationRequestHash",
+         intention.created_at AS "createdAt",
+         intention.updated_at AS "updatedAt",
+         intention.completed_at AS "completedAt",
+         intention.archived_at AS "archivedAt",
+         intention.deleted_at AS "deletedAt",
          intention.expires_at AS "expiresAt",
          COALESCE(reading.locale, 'en') AS locale
     FROM intention
@@ -434,16 +583,38 @@ const parsePreparedPrivate = (
   return Object.freeze({ ...prepared, encrypted: Object.freeze({ ...encrypted }) });
 };
 
+const parsePreparedIntentionV2 = (
+  value: PreparedPrivateIntentionV2Write,
+): PreparedPrivateIntentionV2Write => {
+  const prepared = parsePrepared(value);
+  const encryptedIntentionText = parseCiphertext(value.encryptedIntentionText);
+  const encryptedSmallAction = parseCiphertext(value.encryptedSmallAction);
+  if (
+    encryptedIntentionText.keyVersion !== prepared.idempotencyKeyVersion ||
+    encryptedSmallAction.keyVersion !== prepared.idempotencyKeyVersion
+  ) {
+    return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+  }
+  return Object.freeze({
+    ...prepared,
+    encryptedIntentionText,
+    encryptedSmallAction,
+  });
+};
+
 const parseIntentionRow = (row: IntentionRow): PersistedReflectionIntention => {
   if (
     !uuidPattern.test(row.id) ||
     !uuidPattern.test(row.subjectId) ||
     (row.readingId !== null && !uuidPattern.test(row.readingId)) ||
     row.locale !== "en" ||
+    row.contractVersion !== reflectionIntentionSchemaVersion ||
     row.schemaVersion !== reflectionIntentionSchemaVersion ||
     row.policyVersion !== reflectionPolicyVersion ||
     !identifierPattern.test(row.encryptionKeyVersion) ||
     !reflectionIntentionCode(row.intentionCode) ||
+    row.deletedAt !== null ||
+    row.status !== "active" ||
     row.expiresAt <= row.createdAt
   ) {
     return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
@@ -465,6 +636,68 @@ const parseIntentionRow = (row: IntentionRow): PersistedReflectionIntention => {
     readingId: row.readingId,
     schemaVersion: reflectionIntentionSchemaVersion,
     subjectId: row.subjectId,
+  });
+};
+
+const parseIntentionV2Row = (row: IntentionV2Row): PersistedReflectionIntentionV2 => {
+  if (
+    !uuidPattern.test(row.id) ||
+    !uuidPattern.test(row.subjectId) ||
+    (row.readingId !== null && !uuidPattern.test(row.readingId)) ||
+    row.locale !== "en" ||
+    row.schemaVersion !== reflectionIntentionV2SchemaVersion ||
+    row.policyVersion !== reflectionPolicyVersion ||
+    row.privacyState !== "private" ||
+    row.reminderPreference !== "none" ||
+    !identifierPattern.test(row.encryptionKeyVersion) ||
+    !reflectionIntentionCode(row.intentionCode) ||
+    (row.status !== "active" && row.status !== "completed" && row.status !== "archived") ||
+    !Number.isSafeInteger(row.revision) ||
+    row.revision < 1 ||
+    row.updatedAt < row.createdAt ||
+    row.expiresAt <= row.updatedAt ||
+    (row.revisitDate === null) !== (row.timeZone === null) ||
+    (row.timeZone !== null && (row.timeZone.length < 1 || row.timeZone.length > 100)) ||
+    row.intentionTextCiphertext === null ||
+    row.intentionTextNonce === null ||
+    row.intentionTextTag === null
+  ) {
+    return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+  }
+  const encryptedIntentionText = parseCiphertext({
+    ciphertext: row.intentionTextCiphertext,
+    keyVersion: row.encryptionKeyVersion,
+    nonce: row.intentionTextNonce,
+    tag: row.intentionTextTag,
+  });
+  const encryptedSmallAction = parseCiphertext({
+    ciphertext: row.smallActionCiphertext,
+    keyVersion: row.encryptionKeyVersion,
+    nonce: row.smallActionNonce,
+    tag: row.smallActionTag,
+  });
+  return Object.freeze({
+    archivedAt: row.archivedAt?.toISOString() ?? null,
+    completedAt: row.completedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    deletedAt: row.deletedAt?.toISOString() ?? null,
+    encryptedIntentionText,
+    encryptedSmallAction,
+    expiresAt: row.expiresAt.toISOString(),
+    id: row.id,
+    intentionCode: row.intentionCode,
+    locale: "en",
+    policyVersion: reflectionPolicyVersion,
+    privacyState: "private",
+    readingId: row.readingId,
+    reminderPreference: "none",
+    revisitDate: row.revisitDate?.toISOString().slice(0, 10) ?? null,
+    revision: row.revision,
+    schemaVersion: reflectionIntentionV2SchemaVersion,
+    status: row.status,
+    subjectId: row.subjectId,
+    timeZone: row.timeZone,
+    updatedAt: row.updatedAt.toISOString(),
   });
 };
 
@@ -570,10 +803,48 @@ const retryAfterUtcMidnight = (observedAt: Date): number => {
   return Math.max(1, Math.ceil((next - observedAt.getTime()) / 1_000));
 };
 
+const calendarDateInTimeZone = (instant: Date, timeZone: string): string => {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      calendar: "gregory",
+      day: "2-digit",
+      month: "2-digit",
+      timeZone,
+      year: "numeric",
+    }).formatToParts(instant);
+    const values = new Map(parts.map((part) => [part.type, part.value]));
+    const year = values.get("year");
+    const month = values.get("month");
+    const day = values.get("day");
+    if (
+      year === undefined ||
+      month === undefined ||
+      day === undefined ||
+      !/^[0-9]{4}$/u.test(year) ||
+      !/^[0-9]{2}$/u.test(month) ||
+      !/^[0-9]{2}$/u.test(day)
+    ) {
+      return fail("REFLECTION_SCHEDULE_INVALID");
+    }
+    return `${year}-${month}-${day}`;
+  } catch {
+    return fail("REFLECTION_SCHEDULE_INVALID");
+  }
+};
+
+const revisitDateIsFuture = (
+  revisitDate: string | null,
+  timeZone: string | null,
+  observedAt: Date,
+): boolean =>
+  revisitDate === null ||
+  (timeZone !== null && revisitDate > calendarDateInTimeZone(observedAt, timeZone));
+
 const lookupIntention = async (
   transaction: Prisma.TransactionClient,
   principal: ActiveReflectionPrincipal,
   id: string,
+  lockForUpdate = false,
 ): Promise<IntentionRow | null> => {
   const ownership =
     principal.kind === "anonymous"
@@ -584,14 +855,58 @@ const lookupIntention = async (
             JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
            WHERE link.user_id = ${principal.userId}::uuid
              AND link.anonymous_subject_id = intention.anonymous_subject_id
+             AND link.privacy_deleted_at IS NULL
              AND subject.expires_at > CURRENT_TIMESTAMP
         )`;
   const rows = await transaction.$queryRaw<IntentionRow[]>`
     ${intentionSelect}
      WHERE intention.id = ${id}::uuid
        AND ${ownership}
+       AND (
+         intention.contract_version = ${reflectionIntentionSchemaVersion}
+         OR (
+           intention.contract_version = ${reflectionIntentionV2SchemaVersion}
+           AND intention.status IN ('active', 'completed')
+           AND intention.deleted_at IS NULL
+         )
+       )
        AND intention.expires_at > CURRENT_TIMESTAMP
      LIMIT 2
+     ${lockForUpdate ? Prisma.sql`FOR UPDATE OF intention` : Prisma.empty}
+  `;
+  if (rows.length > 1) return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+  return rows[0] ?? null;
+};
+
+const lookupIntentionV2 = async (
+  transaction: Prisma.TransactionClient,
+  principal: ActiveReflectionPrincipal,
+  id: string,
+  includeDeleted = false,
+  lockForUpdate = false,
+): Promise<IntentionV2Row | null> => {
+  const ownership =
+    principal.kind === "anonymous"
+      ? Prisma.sql`intention.anonymous_subject_id = ${principal.subjectId}::uuid`
+      : Prisma.sql`EXISTS (
+          SELECT 1
+            FROM account_subject_link AS link
+            JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
+           WHERE link.user_id = ${principal.userId}::uuid
+             AND link.anonymous_subject_id = intention.anonymous_subject_id
+             AND link.privacy_deleted_at IS NULL
+             AND subject.expires_at > CURRENT_TIMESTAMP
+        )`;
+  const deletion = includeDeleted ? Prisma.sql`TRUE` : Prisma.sql`intention.deleted_at IS NULL`;
+  const rows = await transaction.$queryRaw<IntentionV2Row[]>`
+    ${intentionV2Select}
+     WHERE intention.id = ${id}::uuid
+       AND ${ownership}
+       AND intention.contract_version = ${reflectionIntentionV2SchemaVersion}
+       AND ${deletion}
+       AND intention.expires_at > CURRENT_TIMESTAMP
+     LIMIT 2
+     ${lockForUpdate ? Prisma.sql`FOR UPDATE OF intention` : Prisma.empty}
   `;
   if (rows.length > 1) return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
   return rows[0] ?? null;
@@ -611,6 +926,7 @@ const lookupRitual = async (
             JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
            WHERE link.user_id = ${principal.userId}::uuid
              AND link.anonymous_subject_id = ritual_session.anonymous_subject_id
+             AND link.privacy_deleted_at IS NULL
              AND subject.expires_at > CURRENT_TIMESTAMP
         )`;
   const rows = await transaction.$queryRaw<RitualRow[]>`
@@ -638,6 +954,7 @@ const lookupJournal = async (
             JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
            WHERE link.user_id = ${principal.userId}::uuid
              AND link.anonymous_subject_id = journal_entry.anonymous_subject_id
+             AND link.privacy_deleted_at IS NULL
              AND subject.expires_at > CURRENT_TIMESTAMP
         )`;
   const rows = await transaction.$queryRaw<JournalRow[]>`
@@ -650,6 +967,55 @@ const lookupJournal = async (
   `;
   if (rows.length > 1) return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
   return rows[0] ?? null;
+};
+
+const resolveIntentionOwner = async (
+  transaction: Prisma.TransactionClient,
+  active: ActiveReflectionPrincipal,
+  readingId: string | null,
+): Promise<IntentionOwnerRow> => {
+  if (readingId === null) {
+    if (active.kind === "anonymous") {
+      return Object.freeze({ expiresAt: active.expiresAt, subjectId: active.subjectId });
+    }
+    const owners = await transaction.$queryRaw<IntentionOwnerRow[]>`
+      SELECT subject.id AS "subjectId", subject.expires_at AS "expiresAt"
+        FROM account_subject_link AS link
+        JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
+       WHERE link.user_id = ${active.userId}::uuid
+         AND link.privacy_deleted_at IS NULL
+         AND subject.expires_at > CURRENT_TIMESTAMP
+       ORDER BY link.created_at DESC, link.id DESC
+       LIMIT 1
+    `;
+    if (owners[0] === undefined) return fail("REFLECTION_SESSION_UNAVAILABLE");
+    return owners[0];
+  }
+  const readingOwnership =
+    active.kind === "anonymous"
+      ? Prisma.sql`reading.anonymous_subject_id = ${active.subjectId}::uuid`
+      : Prisma.sql`EXISTS (
+          SELECT 1
+            FROM account_subject_link AS link
+            JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.anonymous_subject_id = reading.anonymous_subject_id
+             AND link.privacy_deleted_at IS NULL
+             AND subject.expires_at > CURRENT_TIMESTAMP
+        )`;
+  const rows = await transaction.$queryRaw<ReadingOwnerRow[]>`
+    SELECT id, anonymous_subject_id AS "subjectId", expires_at AS "expiresAt"
+      FROM reading
+     WHERE id = ${readingId}::uuid
+       AND ${readingOwnership}
+       AND status = 'facts_ready'
+       AND expires_at > CURRENT_TIMESTAMP
+     LIMIT 2
+  `;
+  if (rows.length !== 1 || rows[0] === undefined) {
+    return fail(rows.length === 0 ? "REFLECTION_NOT_FOUND" : "REFLECTION_PERSISTENCE_UNAVAILABLE");
+  }
+  return rows[0];
 };
 
 export const assertReflectionRuntimeDatabasePrivileges = async (
@@ -666,6 +1032,8 @@ export const assertReflectionRuntimeDatabasePrivileges = async (
       canReadIntention: boolean;
       canReadJournal: boolean;
       canReadRitual: boolean;
+      canUpdateIntention: boolean;
+      canDeleteIntention: boolean;
       canUseSchema: boolean;
     }>
   >(Prisma.sql`
@@ -677,6 +1045,29 @@ export const assertReflectionRuntimeDatabasePrivileges = async (
            has_table_privilege(current_user, 'public.app_user', 'SELECT') AS "canReadAppUser",
            has_table_privilege(current_user, 'public.intention', 'SELECT') AS "canReadIntention",
            has_table_privilege(current_user, 'public.intention', 'INSERT') AS "canInsertIntention",
+           (
+             has_column_privilege(current_user, 'public.intention', 'intention_code', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'intention_text_ciphertext', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'intention_text_nonce', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'intention_text_tag', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'small_action_ciphertext', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'small_action_nonce', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'small_action_tag', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'encryption_key_version', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'privacy_state', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'reminder_preference', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'revisit_date', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'time_zone', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'status', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'revision', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'last_mutation_key_hash', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'last_mutation_request_hash', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'updated_at', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'completed_at', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'archived_at', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.intention', 'deleted_at', 'UPDATE')
+           ) AS "canUpdateIntention",
+           has_table_privilege(current_user, 'public.intention', 'DELETE') AS "canDeleteIntention",
            has_table_privilege(current_user, 'public.ritual_session', 'SELECT') AS "canReadRitual",
            has_table_privilege(current_user, 'public.ritual_session', 'INSERT') AS "canInsertRitual",
            has_table_privilege(current_user, 'public.journal_entry', 'SELECT') AS "canReadJournal",
@@ -692,6 +1083,8 @@ export const assertReflectionRuntimeDatabasePrivileges = async (
     !row.canReadAppUser ||
     !row.canReadIntention ||
     !row.canInsertIntention ||
+    !row.canUpdateIntention ||
+    row.canDeleteIntention ||
     !row.canReadRitual ||
     !row.canInsertRitual ||
     !row.canReadJournal ||
@@ -744,6 +1137,13 @@ export const createReflectionPersistence = (
       parse: parseIntentionRow,
       principal,
     })) as PersistedReflectionIntention | null;
+  const getIntentionV2: ReflectionPersistence["getIntentionV2"] = async ({ id, principal }) =>
+    (await privateGet({
+      id,
+      lookup: lookupIntentionV2,
+      parse: parseIntentionV2Row,
+      principal,
+    })) as PersistedReflectionIntentionV2 | null;
   const getRitual: ReflectionPersistence["getRitual"] = async ({ id, principal }) =>
     (await privateGet({
       id,
@@ -778,6 +1178,7 @@ export const createReflectionPersistence = (
                   FROM account_subject_link AS link
                   JOIN anonymous_subject AS subject ON subject.id = link.anonymous_subject_id
                  WHERE link.user_id = ${active.userId}::uuid
+                   AND link.privacy_deleted_at IS NULL
                    AND subject.expires_at > CURRENT_TIMESTAMP
                  ORDER BY link.created_at DESC, link.id DESC
                  LIMIT 1
@@ -796,6 +1197,7 @@ export const createReflectionPersistence = (
                         ON subject.id = link.anonymous_subject_id
                      WHERE link.user_id = ${active.userId}::uuid
                        AND link.anonymous_subject_id = reading.anonymous_subject_id
+                       AND link.privacy_deleted_at IS NULL
                        AND subject.expires_at > CURRENT_TIMESTAMP
                   )`;
             const readingRows = await transaction.$queryRaw<ReadingOwnerRow[]>`
@@ -912,6 +1314,298 @@ export const createReflectionPersistence = (
     }
   };
 
+  const resolveIntentionV2: ReflectionPersistence["resolveIntentionV2"] = async (input) => {
+    const request = parseReflectionIntentionCreateRequestV2(input.request);
+    await attest();
+    let callbackFailure: unknown;
+    try {
+      return await database.$transaction(
+        async (transaction) => {
+          const active = await resolveActivePrincipal(transaction, input.principal);
+          if (active === null) return fail("REFLECTION_SESSION_UNAVAILABLE");
+          if (!revisitDateIsFuture(request.revisitDate, request.timeZone, active.observedAt)) {
+            return fail("REFLECTION_SCHEDULE_INVALID");
+          }
+          const owner = await resolveIntentionOwner(transaction, active, request.readingId);
+          const resourceRows = await transaction.$queryRaw<Array<{ id: string }>>`
+            SELECT gen_random_uuid()::text AS id
+          `;
+          const resourceId = resourceRows[0]?.id;
+          if (
+            resourceRows.length !== 1 ||
+            resourceId === undefined ||
+            !uuidPattern.test(resourceId)
+          ) {
+            return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+          }
+          let prepared: PreparedPrivateIntentionV2Write;
+          try {
+            prepared = parsePreparedIntentionV2(
+              await input.prepare({
+                request,
+                resourceId,
+                subjectId: owner.subjectId,
+              }),
+            );
+          } catch (error) {
+            callbackFailure = error;
+            throw error;
+          }
+          const idempotencyHash = digestBytes(prepared.idempotencyKeyDigest);
+          const canonicalHash = digestBytes(prepared.canonicalRequestDigest);
+          const historical = await transaction.$queryRaw<IntentionV2Row[]>`
+            ${intentionV2Select}
+             WHERE intention.anonymous_subject_id = ${owner.subjectId}::uuid
+               AND intention.idempotency_key_hash = ${idempotencyHash}
+               AND intention.contract_version = ${reflectionIntentionV2SchemaVersion}
+               AND intention.deleted_at IS NULL
+               AND intention.expires_at > CURRENT_TIMESTAMP
+             LIMIT 2
+          `;
+          if (historical.length > 1) return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+          if (historical[0] !== undefined) {
+            if (!bytesEqual(historical[0].canonicalRequestHash, canonicalHash)) {
+              return fail("REFLECTION_IDEMPOTENCY_CONFLICT");
+            }
+            return Object.freeze({
+              intention: parseIntentionV2Row(historical[0]),
+              kind: "replayed" as const,
+            });
+          }
+          const retentionExpiresAt = new Date(
+            active.observedAt.getTime() + policy.retentionSeconds * 1_000,
+          );
+          const principalExpiresAt =
+            active.kind === "anonymous" && active.expiresAt < owner.expiresAt
+              ? active.expiresAt
+              : owner.expiresAt;
+          const expiresAt =
+            retentionExpiresAt < principalExpiresAt ? retentionExpiresAt : principalExpiresAt;
+          const inserted = await transaction.$queryRaw<Array<{ id: string }>>`
+            INSERT INTO intention (
+              id, anonymous_subject_id, reading_id, intention_code,
+              intention_text_ciphertext, intention_text_nonce, intention_text_tag,
+              small_action_ciphertext, small_action_nonce, small_action_tag,
+              encryption_key_version, schema_version, contract_version, policy_version, privacy_state,
+              reminder_preference, revisit_date, time_zone, status, revision,
+              idempotency_key_hash, canonical_request_hash, created_at, updated_at, expires_at
+            ) VALUES (
+              ${resourceId}::uuid, ${owner.subjectId}::uuid, ${request.readingId}::uuid,
+              ${request.intentionCode}, ${prepared.encryptedIntentionText.ciphertext},
+              ${prepared.encryptedIntentionText.nonce}, ${prepared.encryptedIntentionText.tag},
+              ${prepared.encryptedSmallAction.ciphertext}, ${prepared.encryptedSmallAction.nonce},
+              ${prepared.encryptedSmallAction.tag}, ${prepared.encryptedIntentionText.keyVersion},
+              ${reflectionIntentionSchemaVersion}, ${reflectionIntentionV2SchemaVersion},
+              ${policy.policyVersion}, 'private', 'none',
+              ${request.revisitDate}::date, ${request.timeZone}, 'active', 1,
+              ${idempotencyHash}, ${canonicalHash}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+              ${expiresAt}
+            ) ON CONFLICT (anonymous_subject_id, idempotency_key_hash) DO NOTHING
+            RETURNING id
+          `;
+          if (inserted.length === 0) {
+            const replay = await transaction.$queryRaw<IntentionV2Row[]>`
+              ${intentionV2Select}
+               WHERE intention.anonymous_subject_id = ${owner.subjectId}::uuid
+                 AND intention.idempotency_key_hash = ${idempotencyHash}
+                 AND intention.contract_version = ${reflectionIntentionV2SchemaVersion}
+                 AND intention.deleted_at IS NULL
+                 AND intention.expires_at > CURRENT_TIMESTAMP
+               LIMIT 2
+            `;
+            if (replay.length !== 1 || replay[0] === undefined) {
+              return fail("REFLECTION_IDEMPOTENCY_CONFLICT");
+            }
+            if (!bytesEqual(replay[0].canonicalRequestHash, canonicalHash)) {
+              return fail("REFLECTION_IDEMPOTENCY_CONFLICT");
+            }
+            return Object.freeze({
+              intention: parseIntentionV2Row(replay[0]),
+              kind: "replayed" as const,
+            });
+          }
+          if (inserted.length !== 1 || inserted[0]?.id !== resourceId) {
+            return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+          }
+          const row = await lookupIntentionV2(transaction, active, resourceId);
+          if (row === null) return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+          return Object.freeze({
+            intention: parseIntentionV2Row(row),
+            kind: "created" as const,
+          });
+        },
+        { maxWait: 5_000, timeout: 10_000 },
+      );
+    } catch (error) {
+      if (error === callbackFailure) throw error;
+      if (error instanceof ReflectionPersistenceError) throw error;
+      throw new ReflectionPersistenceError("REFLECTION_PERSISTENCE_UNAVAILABLE");
+    }
+  };
+
+  const mutateIntentionV2: ReflectionPersistence["mutateIntentionV2"] = async (input) => {
+    if (!uuidPattern.test(input.id)) return fail("REFLECTION_NOT_FOUND");
+    const request = parseReflectionIntentionMutationRequestV1(input.request);
+    await attest();
+    let callbackFailure: unknown;
+    try {
+      return await database.$transaction(
+        async (transaction) => {
+          const active = await resolveActivePrincipal(transaction, input.principal);
+          if (active === null) return fail("REFLECTION_SESSION_UNAVAILABLE");
+          if (
+            request.action === "edit" &&
+            !revisitDateIsFuture(request.revisitDate, request.timeZone, active.observedAt)
+          ) {
+            return fail("REFLECTION_SCHEDULE_INVALID");
+          }
+          const current = await lookupIntentionV2(transaction, active, input.id, true, true);
+          if (current === null) return fail("REFLECTION_NOT_FOUND");
+          let prepared: PreparedPrivateIntentionV2Write | PreparedReflectionCreate;
+          try {
+            const candidate = await input.prepare({
+              request,
+              resourceId: input.id,
+              subjectId: current.subjectId,
+            });
+            prepared =
+              request.action === "edit"
+                ? parsePreparedIntentionV2(candidate as PreparedPrivateIntentionV2Write)
+                : parsePrepared(candidate);
+          } catch (error) {
+            callbackFailure = error;
+            throw error;
+          }
+          const mutationKeyHash = digestBytes(prepared.idempotencyKeyDigest);
+          const mutationRequestHash = digestBytes(prepared.canonicalRequestDigest);
+          if (
+            current.lastMutationKeyHash !== null &&
+            bytesEqual(current.lastMutationKeyHash, mutationKeyHash)
+          ) {
+            if (
+              current.lastMutationRequestHash === null ||
+              !bytesEqual(current.lastMutationRequestHash, mutationRequestHash)
+            ) {
+              return fail("REFLECTION_IDEMPOTENCY_CONFLICT");
+            }
+            return Object.freeze({
+              intention: current.deletedAt === null ? parseIntentionV2Row(current) : null,
+              kind: "replayed" as const,
+            });
+          }
+          if (current.deletedAt !== null || current.revision !== request.expectedRevision) {
+            return fail("REFLECTION_MUTATION_CONFLICT");
+          }
+          const transitionAccepted =
+            request.action === "edit" || request.action === "complete"
+              ? current.status === "active"
+              : request.action === "archive"
+                ? current.status === "active" || current.status === "completed"
+                : true;
+          if (!transitionAccepted) return fail("REFLECTION_MUTATION_CONFLICT");
+
+          let updated: Array<{ id: string }>;
+          if (request.action === "edit") {
+            const encrypted = prepared as PreparedPrivateIntentionV2Write;
+            updated = await transaction.$queryRaw<Array<{ id: string }>>`
+              UPDATE intention
+                 SET intention_code = ${request.intentionCode},
+                     intention_text_ciphertext = ${encrypted.encryptedIntentionText.ciphertext},
+                     intention_text_nonce = ${encrypted.encryptedIntentionText.nonce},
+                     intention_text_tag = ${encrypted.encryptedIntentionText.tag},
+                     small_action_ciphertext = ${encrypted.encryptedSmallAction.ciphertext},
+                     small_action_nonce = ${encrypted.encryptedSmallAction.nonce},
+                     small_action_tag = ${encrypted.encryptedSmallAction.tag},
+                     encryption_key_version = ${encrypted.encryptedIntentionText.keyVersion},
+                     privacy_state = 'private',
+                     reminder_preference = 'none',
+                     revisit_date = ${request.revisitDate}::date,
+                     time_zone = ${request.timeZone},
+                     revision = revision + 1,
+                     last_mutation_key_hash = ${mutationKeyHash},
+                     last_mutation_request_hash = ${mutationRequestHash},
+                     updated_at = CURRENT_TIMESTAMP
+               WHERE id = ${input.id}::uuid
+                 AND anonymous_subject_id = ${current.subjectId}::uuid
+                 AND contract_version = ${reflectionIntentionV2SchemaVersion}
+                 AND revision = ${request.expectedRevision}
+                 AND status = 'active'
+                 AND deleted_at IS NULL
+                 AND expires_at > CURRENT_TIMESTAMP
+               RETURNING id
+            `;
+          } else if (request.action === "complete") {
+            updated = await transaction.$queryRaw<Array<{ id: string }>>`
+              UPDATE intention
+                 SET status = 'completed',
+                     completed_at = CURRENT_TIMESTAMP,
+                     revision = revision + 1,
+                     last_mutation_key_hash = ${mutationKeyHash},
+                     last_mutation_request_hash = ${mutationRequestHash},
+                     updated_at = CURRENT_TIMESTAMP
+               WHERE id = ${input.id}::uuid
+                 AND anonymous_subject_id = ${current.subjectId}::uuid
+                 AND contract_version = ${reflectionIntentionV2SchemaVersion}
+                 AND revision = ${request.expectedRevision}
+                 AND status = 'active'
+                 AND deleted_at IS NULL
+                 AND expires_at > CURRENT_TIMESTAMP
+               RETURNING id
+            `;
+          } else if (request.action === "archive") {
+            updated = await transaction.$queryRaw<Array<{ id: string }>>`
+              UPDATE intention
+                 SET status = 'archived',
+                     archived_at = CURRENT_TIMESTAMP,
+                     revision = revision + 1,
+                     last_mutation_key_hash = ${mutationKeyHash},
+                     last_mutation_request_hash = ${mutationRequestHash},
+                     updated_at = CURRENT_TIMESTAMP
+               WHERE id = ${input.id}::uuid
+                 AND anonymous_subject_id = ${current.subjectId}::uuid
+                 AND contract_version = ${reflectionIntentionV2SchemaVersion}
+                 AND revision = ${request.expectedRevision}
+                 AND status IN ('active', 'completed')
+                 AND deleted_at IS NULL
+                 AND expires_at > CURRENT_TIMESTAMP
+               RETURNING id
+            `;
+          } else {
+            updated = await transaction.$queryRaw<Array<{ id: string }>>`
+              UPDATE intention
+                 SET deleted_at = CURRENT_TIMESTAMP,
+                     revision = revision + 1,
+                     last_mutation_key_hash = ${mutationKeyHash},
+                     last_mutation_request_hash = ${mutationRequestHash},
+                     updated_at = CURRENT_TIMESTAMP
+               WHERE id = ${input.id}::uuid
+                 AND anonymous_subject_id = ${current.subjectId}::uuid
+                 AND contract_version = ${reflectionIntentionV2SchemaVersion}
+                 AND revision = ${request.expectedRevision}
+                 AND deleted_at IS NULL
+                 AND expires_at > CURRENT_TIMESTAMP
+               RETURNING id
+            `;
+          }
+          if (updated.length !== 1 || updated[0]?.id !== input.id) {
+            return fail("REFLECTION_MUTATION_CONFLICT");
+          }
+          const row = await lookupIntentionV2(transaction, active, input.id, true);
+          if (row === null) return fail("REFLECTION_PERSISTENCE_UNAVAILABLE");
+          return Object.freeze({
+            intention: row.deletedAt === null ? parseIntentionV2Row(row) : null,
+            kind: "mutated" as const,
+          });
+        },
+        { maxWait: 5_000, timeout: 10_000 },
+      );
+    } catch (error) {
+      if (error === callbackFailure) throw error;
+      if (error instanceof ReflectionPersistenceError) throw error;
+      throw new ReflectionPersistenceError("REFLECTION_PERSISTENCE_UNAVAILABLE");
+    }
+  };
+
   const resolveRitual: ReflectionPersistence["resolveRitual"] = async (input) => {
     const request = parseReflectionRitualCreateRequestV1(input.request);
     await attest();
@@ -921,8 +1615,14 @@ export const createReflectionPersistence = (
         async (transaction) => {
           const active = await resolveActivePrincipal(transaction, input.principal);
           if (active === null) return fail("REFLECTION_SESSION_UNAVAILABLE");
-          const intention = await lookupIntention(transaction, active, request.intentionId);
+          const intention = await lookupIntention(transaction, active, request.intentionId, true);
           if (intention === null) return fail("REFLECTION_NOT_FOUND");
+          if (
+            intention.contractVersion === reflectionIntentionV2SchemaVersion &&
+            intention.status !== "active"
+          ) {
+            return fail("REFLECTION_NOT_FOUND");
+          }
           const subjectId = intention.subjectId;
           let prepared: PreparedReflectionCreate;
           try {
@@ -1131,9 +1831,12 @@ export const createReflectionPersistence = (
 
   return Object.freeze({
     getIntention,
+    getIntentionV2,
     getJournal,
     getRitual,
+    mutateIntentionV2,
     resolveIntention,
+    resolveIntentionV2,
     resolveJournal,
     resolveRitual,
   });

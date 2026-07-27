@@ -1,23 +1,31 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const harness = vi.hoisted(() => ({ start: vi.fn() }));
-
-vi.mock("../server/account-auth", () => ({
-  startWebAccountAuth: harness.start,
-  WebAccountAuthError: class extends Error {
+const harness = vi.hoisted(() => {
+  class AuthError extends Error {
     readonly code: string;
-    constructor(code: string) {
+    readonly retryAfterSeconds: number | undefined;
+    constructor(code: string, retryAfterSeconds?: number) {
       super("synthetic");
       this.code = code;
+      this.retryAfterSeconds = retryAfterSeconds;
     }
-  },
+  }
+  return { AuthError, start: vi.fn() };
+});
+
+vi.mock("../server/account-auth", () => ({
+  accountAuthStateCookieName: "__Host-rituvia-auth-state",
+  accountSessionCookieName: "__Host-rituvia-account-session",
+  startWebAccountAuth: harness.start,
+  WebAccountAuthError: harness.AuthError,
 }));
 vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({ brand: { canonicalOrigin: "https://example.test" } }),
 }));
 
 import { POST } from "../app/api/v1/auth/start/route";
+import { WebAccountAuthError } from "../server/account-auth";
 
 const request = (body: string, headers: Record<string, string> = {}) =>
   new NextRequest("https://example.test/api/v1/auth/start", {
@@ -35,23 +43,42 @@ const request = (body: string, headers: Record<string, string> = {}) =>
 describe("account auth start route", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns a no-store local callback without reflecting the email", async () => {
+  it("returns a uniform accepted local preview without reflecting email or bearer material", async () => {
     harness.start.mockResolvedValue({
-      callbackUrl: "https://example.test/api/v1/auth/callback?challenge=safe&token=secret",
-      expiresAt: "2026-07-18T00:10:00.000Z",
+      accepted: true,
+      expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      localPreviewPath: "/api/v1/auth/local-preview",
+      stateToken: "s".repeat(43),
     });
     const response = await POST(
       request(JSON.stringify({ email: "demo@example.test", returnTo: "/en/account" })),
     );
     const text = await response.text();
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(202);
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(text).not.toContain("demo@example.test");
+    expect(text).not.toContain("s".repeat(43));
+    expect(text).not.toContain("token");
+    expect(response.headers.get("set-cookie")).toContain("__Host-rituvia-auth-state=");
+    expect(response.headers.get("set-cookie")).toContain("SameSite=lax");
     expect(harness.start).toHaveBeenCalledWith({
       email: "demo@example.test",
+      previousSessionToken: undefined,
       returnTo: "/en/account",
     });
+  });
+
+  it("returns a bounded rate-limit response without a preview or state cookie", async () => {
+    harness.start.mockRejectedValue(new WebAccountAuthError("rate_limited", 42));
+    const response = await POST(
+      request(JSON.stringify({ email: "person@example.com", returnTo: "/en/account" })),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("42");
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(await response.json()).toEqual({ code: "ACCOUNT_AUTH_RATE_LIMITED", status: 429 });
   });
 
   it.each([

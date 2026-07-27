@@ -24,6 +24,7 @@ const knownEnvironmentVariables = [
   "BRAND_SOCIAL_HANDLES",
   "BRAND_ASSET_MANIFEST",
   "DATABASE_URL",
+  "PRIVACY_DELETION_DATABASE_URL",
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
   "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
@@ -31,9 +32,18 @@ const knownEnvironmentVariables = [
   "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
   "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
   "RITUVIA_AUTH_DATA_KEY_V1",
+  "RITUVIA_AUTH_START_GLOBAL_LIMIT",
+  "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
+  "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
   "RITUVIA_PAYMENT_PROVIDER",
+  "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
+  "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
+  "RITUVIA_PRIVACY_EXPORT_KEY_V1",
+  "RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS",
+  "RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS",
+  "RITUVIA_PRIVACY_EXPORT_TTL_SECONDS",
   "RITUVIA_PRIVATE_CONTENT_KEY_V1",
   "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
   "RITUVIA_REFLECTION_POLICY_VERSION",
@@ -49,6 +59,7 @@ const identifier = randomUUID().replaceAll("-", "");
 const publicCanary = `public-brand-${identifier}`;
 const senderCanary = `server-sender-${identifier}@invalid.example`;
 const databaseCanary = `database-secret-${identifier}`;
+const privacyDeletionDatabaseCanary = `privacy-deletion-database-secret-${identifier}`;
 const invalidCanary = `invalid-database-${identifier}`;
 const forgedRequestCanary = `forged-request-${identifier}`;
 const forgedTraceCanary = `forged-trace-${identifier}`;
@@ -56,13 +67,16 @@ const privateQueryCanary = `private-query-${identifier}`;
 const privateQuestionCanary = `private-question-${identifier}`;
 const anonymousSessionTokenCanary = "a".repeat(43);
 const databaseUrl = `postgresql://local:${databaseCanary}@127.0.0.1:5432/app`;
+const privacyDeletionDatabaseUrl = `postgresql://privacy-delete:${privacyDeletionDatabaseCanary}@127.0.0.1:5432/app`;
 const secretCanaries = [
   senderCanary,
   databaseCanary,
+  privacyDeletionDatabaseCanary,
   invalidCanary,
   privateQueryCanary,
   privateQuestionCanary,
   databaseUrl,
+  privacyDeletionDatabaseUrl,
 ];
 
 const redact = (value) => {
@@ -101,6 +115,7 @@ const createEnvironment = (overrides = {}) => {
     BRAND_NAME: publicCanary,
     BRAND_TRANSACTIONAL_SENDER: senderCanary,
     DATABASE_URL: databaseUrl,
+    PRIVACY_DELETION_DATABASE_URL: privacyDeletionDatabaseUrl,
     NEXT_TELEMETRY_DISABLED: "1",
     ...overrides,
   };
@@ -189,6 +204,7 @@ const assertDeliveryBoundary = async (nextRoot) => {
     "BRAND_SUPPORT_EMAIL",
     "BRAND_TRANSACTIONAL_SENDER",
     "DATABASE_URL",
+    "PRIVACY_DELETION_DATABASE_URL",
     "RITUVIA",
   ]) {
     if (await containsCanary(staticFiles, forbiddenClientLiteral)) {
@@ -446,6 +462,14 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     fail(`Cold non-canonical locale request returned HTTP ${uppercaseCold.status}, expected 404.`);
   }
   const publicPaths = ["/en", "/en/methodology", "/en/safety", "/en/privacy"];
+  const crawlPaths = [
+    ...publicPaths,
+    "/en/numerology",
+    "/en/numerology/life-path-number",
+    "/en/numerology/birthday-number",
+    "/en/numerology/personal-year-number",
+    "/en/numerology/master-numbers",
+  ];
   const publicPages = await Promise.all(
     publicPaths.map((pathname) =>
       fetchBuiltWeb(webProcess, port, pathname, {
@@ -617,7 +641,7 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   const sitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
     redirect: "manual",
   });
-  const expectedSitemapUrls = publicPaths.map(
+  const expectedSitemapUrls = crawlPaths.map(
     (pathname) => `<loc>https://example.test${pathname}</loc>`,
   );
   if (
@@ -637,7 +661,9 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     sitemap.cacheControl !== "no-store, max-age=0" ||
     !expectedSitemapUrls.every((url) => sitemap.html.includes(url)) ||
     sitemap.html.match(/<loc>/gu)?.length !== expectedSitemapUrls.length ||
-    /(?:\.rsc|\.segments|<lastmod>|\/account|\/journal|\/checkout|\/intake)/u.test(sitemap.html)
+    sitemap.html.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/gu)?.length !==
+      expectedSitemapUrls.length ||
+    /(?:\.rsc|\.segments|\/account|\/journal|\/checkout|\/intake)/u.test(sitemap.html)
   ) {
     fail("Production robots or sitemap violated the finite crawl inventory.");
   }

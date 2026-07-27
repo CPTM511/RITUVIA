@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
 import { loadPublicShellState } from "./server/public-shell-state";
+import { loadNumerologyAvailability } from "./server/numerology-state";
 import { loadQuestionIntakeAvailability } from "./server/question-intake-state";
 import { loadTarotReadingAvailability } from "./server/tarot-reading-state";
 import { getWebRuntimeConfiguration } from "./config/server";
@@ -16,7 +17,9 @@ import {
   localeAccountPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
+  localeNumerologyPath,
   localeQuestionIntakePath,
+  localeRevisitPath,
   localeSanctuaryPath,
   localeSignInPath,
   localeTarotOneCardPath,
@@ -53,6 +56,7 @@ const shellContentSecurityPolicy = [
 
 const noIndexDirective = "noindex, nofollow, noarchive";
 const anonymousSessionApiPathname = "/api/v1/anonymous/session";
+const numerologyCalculationApiPathname = "/api/v1/numerology/calculate";
 const questionIntakeApiPathname = "/api/v1/intake/evaluate";
 const tarotReadingApiPathname = "/api/v1/readings/tarot";
 const tarotReadingPathPattern =
@@ -62,6 +66,7 @@ const tarotReadingReportPathPattern =
 const tarotInterpretationPathPattern =
   /^\/api\/v1\/readings\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/interpretation$/u;
 const questionIntakePagePathname = localeQuestionIntakePath("en");
+const numerologyPagePathname = localeNumerologyPath("en");
 const tarotReadingPagePathnames = Object.freeze([
   localeTarotOneCardPath("en"),
   localeTarotThreeCardPath("en"),
@@ -70,6 +75,7 @@ const privateExperiencePagePathnames = Object.freeze([
   localeAccountPath("en"),
   localeCheckoutReturnPath("en"),
   localeLocalCheckoutPath("en"),
+  localeRevisitPath("en"),
   localeSanctuaryPath("en"),
   localeSignInPath("en"),
 ]);
@@ -77,23 +83,54 @@ const uuidPathPart = "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["POST"], pattern: /^\/api\/v1\/auth\/account-merge$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/callback$/u, query: "auth_callback" },
+  { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
-  { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements)$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements|ritual-objects)$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/(?:intentions|journal-entries|ritual-sessions)$/u },
+  { methods: ["GET", "POST"], pattern: /^\/api\/v1\/revisits$/u },
   {
     methods: ["GET"],
-    pattern: new RegExp(
-      `^/api/v1/(?:intentions|journal-entries|ritual-sessions)/${uuidPathPart}$`,
-      "u",
-    ),
+    pattern: new RegExp(`^/api/v1/(?:journal-entries|ritual-sessions)/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/intentions/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}/complete$`, "u"),
+  },
+  {
+    methods: ["GET", "POST"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}/reminder$`, "u"),
   },
   { methods: ["GET", "PATCH"], pattern: /^\/api\/v1\/me$/u },
-  { methods: ["GET"], pattern: /^\/api\/v1\/me\/(?:readings|sessions)$/u },
+  { methods: ["GET", "POST"], pattern: /^\/api\/v1\/me\/consents$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/revisit-reminders$/u },
+  {
+    methods: ["GET"],
+    pattern: /^\/api\/v1\/me\/(?:history|readings)$/u,
+    query: "account_history",
+  },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/sessions$/u },
   { methods: ["DELETE"], pattern: new RegExp(`^/api/v1/me/sessions/${uuidPathPart}$`, "u") },
   { methods: ["POST"], pattern: /^\/api\/v1\/orders$/u },
   { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
   { methods: ["POST"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}/checkout$`, "u") },
+  { methods: ["POST"], pattern: /^\/api\/v1\/privacy\/(?:deletions|export)$/u },
+  {
+    methods: ["GET"],
+    pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}/download$`, "u"),
+  },
   {
     methods: ["POST"],
     pattern: /^\/api\/v1\/webhooks\/payments\/(?:local|stripe)$/u,
@@ -114,6 +151,22 @@ const hasExactAuthCallbackQuery = (request: NextRequest): boolean => {
   );
 };
 
+const hasExactAccountHistoryQuery = (request: NextRequest): boolean => {
+  if (request.nextUrl.search === "") return true;
+  const entries = [...request.nextUrl.searchParams.entries()];
+  const keys = new Set(entries.map(([key]) => key));
+  return (
+    entries.length >= 1 &&
+    entries.length <= 2 &&
+    keys.size === entries.length &&
+    [...keys].every((key) => key === "cursor" || key === "limit") &&
+    (request.nextUrl.searchParams.get("limit") === null ||
+      /^(?:[1-9]|[1-4][0-9]|50)$/u.test(request.nextUrl.searchParams.get("limit") ?? "")) &&
+    (request.nextUrl.searchParams.get("cursor") === null ||
+      /^[A-Za-z0-9_-]{1,512}$/u.test(request.nextUrl.searchParams.get("cursor") ?? ""))
+  );
+};
+
 const classifyReviewedMvpApi = (
   request: NextRequest,
 ): Readonly<{ reviewed: boolean; webhook: boolean }> => {
@@ -128,7 +181,9 @@ const classifyReviewedMvpApi = (
     const queryAllowed =
       "query" in route && route.query === "auth_callback"
         ? hasExactAuthCallbackQuery(request)
-        : request.nextUrl.search === "";
+        : "query" in route && route.query === "account_history"
+          ? hasExactAccountHistoryQuery(request)
+          : request.nextUrl.search === "";
     if (!queryAllowed) return { reviewed: false, webhook: false };
     return { reviewed: true, webhook: "webhook" in route && route.webhook === true };
   }
@@ -221,6 +276,11 @@ const isQuestionIntakePagePathname = (pathname: string): boolean =>
   pathname === `${questionIntakePagePathname}.rsc` ||
   pathname.startsWith(`${questionIntakePagePathname}.segments/`);
 
+const isNumerologyPagePathname = (pathname: string): boolean =>
+  pathname === numerologyPagePathname ||
+  pathname === `${numerologyPagePathname}.rsc` ||
+  pathname.startsWith(`${numerologyPagePathname}.segments/`);
+
 const isTarotReadingPagePathname = (pathname: string): boolean =>
   tarotReadingPagePathnames.some(
     (pagePathname) =>
@@ -273,6 +333,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const discovery = isPublicDiscoveryPathname(pathname);
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
   const anonymousSessionApi = pathname === anonymousSessionApiPathname;
+  const numerologyCalculationApi = pathname === numerologyCalculationApiPathname;
   const questionIntakeApi = pathname === questionIntakeApiPathname;
   const tarotReadingCreateApi = pathname === tarotReadingApiPathname;
   const tarotReadingReadApi = tarotReadingPathPattern.test(pathname);
@@ -280,6 +341,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const tarotInterpretationApi = tarotInterpretationPathPattern.test(pathname);
   const tarotReadingApi =
     tarotReadingCreateApi || tarotReadingReadApi || tarotReadingReportApi || tarotInterpretationApi;
+  const numerologyDocument = isNumerologyPagePathname(pathname);
   const questionIntakeDocument = isQuestionIntakePagePathname(pathname);
   const tarotReadingDocument = isTarotReadingPagePathname(pathname);
   const privateExperienceDocument = matchesPrivateExperienceDocument(pathname);
@@ -299,6 +361,11 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     request.method === "POST" &&
     request.nextUrl.search === "" &&
     !frameworkRepresentation;
+  const reviewedNumerologyRequest =
+    numerologyCalculationApi &&
+    request.method === "POST" &&
+    request.nextUrl.search === "" &&
+    !frameworkRepresentation;
   const reviewedTarotReadingRequest =
     tarotReadingApi &&
     ((tarotReadingCreateApi && request.method === "POST") ||
@@ -312,6 +379,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const invalidRequest =
     !infrastructure &&
     !reviewedAnonymousSessionRequest &&
+    !reviewedNumerologyRequest &&
     !reviewedQuestionIntakeRequest &&
     !reviewedTarotReadingRequest &&
     !reviewedMvpApi.reviewed &&
@@ -323,10 +391,12 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !invalidRequest &&
     (publicDocument ||
       reviewedAnonymousSessionRequest ||
+      reviewedNumerologyRequest ||
       reviewedQuestionIntakeRequest ||
       reviewedTarotReadingRequest ||
       (reviewedMvpApi.reviewed && !reviewedMvpApi.webhook) ||
       reviewedPrivateExperienceDocument ||
+      numerologyDocument ||
       questionIntakeDocument ||
       tarotReadingDocument ||
       (discovery && configuration.deploymentEnvironment === "production"));
@@ -334,6 +404,10 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const intakeAvailability =
     !invalidRequest && (questionIntakeDocument || reviewedQuestionIntakeRequest)
       ? loadQuestionIntakeAvailability()
+      : "disabled";
+  const numerologyAvailability =
+    !invalidRequest && (numerologyDocument || reviewedNumerologyRequest)
+      ? loadNumerologyAvailability()
       : "disabled";
   const tarotReadingAvailability =
     !invalidRequest && (reviewedTarotReadingRequest || tarotReadingDocument)
@@ -344,13 +418,16 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !publicDocument &&
     !discovery &&
     !anonymousSessionApi &&
+    !numerologyCalculationApi &&
     !questionIntakeApi &&
     !tarotReadingApi &&
     !reviewedMvpApi.reviewed &&
     !privateExperienceDocument &&
+    !numerologyDocument &&
     !questionIntakeDocument &&
     !tarotReadingDocument;
   const enabledDocument = publicDocument && shellState === "enabled";
+  const enabledNumerology = shellState === "enabled" && numerologyAvailability === "enabled";
   const enabledQuestionIntake = shellState === "enabled" && intakeAvailability === "enabled";
   const enabledTarotReading = shellState === "enabled" && tarotReadingAvailability === "enabled";
   const response =
@@ -360,6 +437,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
         ? discoveryResponse(request, shellState ?? "disabled")
         : infrastructure ||
             enabledDocument ||
+            (numerologyDocument && enabledNumerology) ||
+            (reviewedNumerologyRequest && enabledNumerology) ||
             (questionIntakeDocument && enabledQuestionIntake) ||
             (tarotReadingDocument && enabledTarotReading) ||
             (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
@@ -390,6 +469,8 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   }
   if (
     anonymousSessionApi ||
+    numerologyCalculationApi ||
+    numerologyDocument ||
     questionIntakeApi ||
     questionIntakeDocument ||
     tarotReadingApi ||

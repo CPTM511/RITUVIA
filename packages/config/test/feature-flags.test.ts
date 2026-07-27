@@ -44,6 +44,7 @@ describe("typed feature-flag registry", () => {
     expect(featureFlagRegistryVersion).toBe(1);
     expect(featureFlagKeys).toEqual([
       "content.regional_tradition",
+      "experience.astrology",
       "experience.public_shell",
       "market.country_activation",
       "payments.crypto_checkout",
@@ -96,6 +97,25 @@ describe("typed feature-flag registry", () => {
       version: 1,
     });
     expect(Object.isFrozen(evaluation)).toBe(true);
+  });
+
+  it("requires the approved astrology method reference before enabling calculation", () => {
+    const evaluator = createEvaluator([
+      createRecord("experience.astrology", {
+        approvalReference: "OWN-015:D-070",
+        state: "on",
+      }),
+    ]);
+
+    expect(evaluator.evaluate("experience.astrology", {}).enabled).toBe(true);
+    expect(() =>
+      createEvaluator([
+        createRecord("experience.astrology", {
+          approvalReference: null,
+          state: "on",
+        }),
+      ]),
+    ).toThrow(ConfigurationError);
   });
 
   it("requires exact owner-gate evidence and explicit country scope for checkout", () => {

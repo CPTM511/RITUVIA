@@ -1,22 +1,23 @@
-import { ReflectionError } from "@rituvia/domain";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { ReflectionError, RevisitContractError } from "@rituvia/domain";
+import { NextRequest, NextResponse } from "next/server";
 
 import { getWebRuntimeConfiguration } from "../../../../config/server";
-import {
-  accountSessionCookieName,
-  mergeWebAnonymousSubject,
-} from "../../../../server/account-auth";
+import { accountSessionCookieName } from "../../../../server/account-auth";
 import { ReflectionLoopApplicationError } from "../../../../server/reflection-loop";
+import {
+  deriveSessionCsrfToken,
+  hasValidSessionCsrfToken,
+  sessionCsrfHeaderName,
+} from "../../../../server/session-csrf";
 
 export const reflectionSessionCookieName = "__Host-rituvia-anonymous-session";
-export const reflectionMaximumBodyBytes = 2_048;
+export const reflectionMaximumBodyBytes = 16_384;
 export const reflectionIdempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
 export const reflectionResourceIdPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
-type ReflectionResourceKind = "intention" | "journal" | "ritual";
+type ReflectionResourceKind = "intention" | "journal" | "revisit" | "ritual";
 
 export type ReflectionProblemCode =
   | "REFLECTION_BODY_INVALID"
@@ -27,6 +28,7 @@ export type ReflectionProblemCode =
   | "REFLECTION_IDEMPOTENCY_KEY_INVALID"
   | "REFLECTION_NOT_FOUND"
   | "REFLECTION_REQUEST_REJECTED"
+  | "REFLECTION_SCHEDULE_INVALID"
   | "REFLECTION_SESSION_REQUIRED"
   | "REFLECTION_UNAVAILABLE";
 
@@ -176,6 +178,8 @@ const resourceLabel = (kind: ReflectionResourceKind): string => {
       return "intention";
     case "journal":
       return "journal entry";
+    case "revisit":
+      return "Revisit";
     case "ritual":
       return "ritual session";
   }
@@ -218,8 +222,24 @@ export const reflectionApplicationProblem = (
         status: 402,
         title: "Ritual object entitlement required",
       });
+    case "invalid":
+      return reflectionProblem(request, {
+        code: "REFLECTION_BODY_INVALID",
+        detail: "The request body is invalid.",
+        instance: input.instance,
+        status: 400,
+        title: "Invalid request body",
+      });
     case "not_found":
       return reflectionNotFoundProblem(request, input.instance);
+    case "schedule_invalid":
+      return reflectionProblem(request, {
+        code: "REFLECTION_SCHEDULE_INVALID",
+        detail: "Choose a future Revisit date inside the private retention window.",
+        instance: input.instance,
+        status: 422,
+        title: "Invalid Revisit schedule",
+      });
     case "session_required":
       return reflectionProblem(request, {
         code: "REFLECTION_SESSION_REQUIRED",
@@ -255,10 +275,19 @@ export type ReflectionCreateFunction<Resource> = (
   accountSessionToken?: string | undefined,
 ) => Promise<Readonly<{ kind: "created" | "replayed"; resource: Resource }>>;
 
+export type ReflectionMutationFunction<Resource> = (
+  id: string,
+  body: unknown,
+  idempotencyKey: string,
+  anonymousSessionToken: string | undefined,
+  accountSessionToken?: string | undefined,
+) => Promise<Readonly<{ kind: "mutated" | "replayed"; resource: Resource | null }>>;
+
 export const handleReflectionCreate = async <Resource>(
   request: NextRequest,
   input: Readonly<{
     create: ReflectionCreateFunction<Resource>;
+    csrfRequired?: boolean;
     kind: ReflectionResourceKind;
     path: string;
   }>,
@@ -316,15 +345,30 @@ export const handleReflectionCreate = async <Resource>(
       title: "Private session required",
     });
   }
+  if (
+    input.csrfRequired === true &&
+    !hasValidSessionCsrfToken(request.headers.get(sessionCsrfHeaderName), [
+      accountSessionToken,
+      anonymousSessionToken,
+    ])
+  ) {
+    return reflectionProblem(request, {
+      code: "REFLECTION_REQUEST_REJECTED",
+      detail: "The private reflection request was rejected.",
+      instance: input.path,
+      status: 403,
+      title: "Request rejected",
+    });
+  }
   try {
     const body = await readReflectionBoundedJson(request);
-    const mergedAnonymousSubject =
-      accountSessionToken !== undefined && anonymousSessionToken !== undefined;
-    if (mergedAnonymousSubject) {
-      await mergeWebAnonymousSubject({
-        accountSessionToken,
-        anonymousSessionToken,
-        idempotencyKey: `reflection_link_${anonymousSessionToken}`,
+    if (accountSessionToken !== undefined && anonymousSessionToken !== undefined) {
+      return reflectionProblem(request, {
+        code: "REFLECTION_CONFLICT",
+        detail: "Complete the private account merge before creating this reflection.",
+        instance: input.path,
+        status: 409,
+        title: "Account merge required",
       });
     }
     const result =
@@ -334,18 +378,17 @@ export const handleReflectionCreate = async <Resource>(
     const response = applyReflectionPrivateHeaders(
       NextResponse.json(result.resource, { status: result.kind === "created" ? 201 : 200 }),
     );
-    if (mergedAnonymousSubject) {
-      response.cookies.set({
-        expires: new Date(0),
-        httpOnly: true,
-        maxAge: 0,
-        name: reflectionSessionCookieName,
-        path: "/",
-        sameSite: "strict",
-        secure: true,
-        value: "",
+    const responseSessionToken = accountSessionToken ?? anonymousSessionToken;
+    if (responseSessionToken === undefined) {
+      return reflectionProblem(request, {
+        code: "REFLECTION_SESSION_REQUIRED",
+        detail: "A private anonymous session is required.",
+        instance: input.path,
+        status: 401,
+        title: "Private session required",
       });
     }
+    response.headers.set(sessionCsrfHeaderName, deriveSessionCsrfToken(responseSessionToken));
     return response;
   } catch (error) {
     if (error instanceof ReflectionBodyTooLargeError) {
@@ -357,7 +400,11 @@ export const handleReflectionCreate = async <Resource>(
         title: "Request too large",
       });
     }
-    if (error instanceof ReflectionError || error instanceof SyntaxError) {
+    if (
+      error instanceof ReflectionError ||
+      error instanceof RevisitContractError ||
+      error instanceof SyntaxError
+    ) {
       return reflectionProblem(request, {
         code: "REFLECTION_BODY_INVALID",
         detail: "The request body is invalid.",
@@ -435,4 +482,230 @@ export const handleReflectionGet = async <Resource>(
       title: "Private reflection unavailable",
     });
   }
+};
+
+export const handleReflectionList = async <Resource>(
+  request: NextRequest,
+  input: Readonly<{
+    kind: ReflectionResourceKind;
+    list: (
+      anonymousSessionToken: string | undefined,
+      accountSessionToken?: string | undefined,
+    ) => Promise<readonly Resource[]>;
+    path: string;
+  }>,
+): Promise<NextResponse> => {
+  if (request.nextUrl.pathname !== input.path || !hasAcceptedReflectionPrivateRead(request)) {
+    return reflectionNotFoundProblem(request, input.path);
+  }
+  const anonymousSessionToken = request.cookies.get(reflectionSessionCookieName)?.value;
+  const accountSessionToken = request.cookies.get(accountSessionCookieName)?.value;
+  if (anonymousSessionToken === undefined && accountSessionToken === undefined) {
+    return reflectionNotFoundProblem(request, input.path);
+  }
+  try {
+    const resources =
+      accountSessionToken === undefined
+        ? await input.list(anonymousSessionToken)
+        : await input.list(anonymousSessionToken, accountSessionToken);
+    return applyReflectionPrivateHeaders(NextResponse.json({ items: resources }));
+  } catch (error) {
+    if (error instanceof ReflectionLoopApplicationError) {
+      if (error.code === "not_found" || error.code === "session_required") {
+        return reflectionNotFoundProblem(request, input.path);
+      }
+      return reflectionApplicationProblem(request, {
+        error,
+        instance: input.path,
+        kind: input.kind,
+      });
+    }
+    return reflectionProblem(request, {
+      code: "REFLECTION_UNAVAILABLE",
+      detail: `The private ${resourceLabel(input.kind)} is temporarily unavailable.`,
+      instance: input.path,
+      status: 503,
+      title: "Private reflection unavailable",
+    });
+  }
+};
+
+const mutationSession = (request: NextRequest) =>
+  Object.freeze({
+    accountSessionToken: request.cookies.get(accountSessionCookieName)?.value,
+    anonymousSessionToken: request.cookies.get(reflectionSessionCookieName)?.value,
+  });
+
+export const handleReflectionMutation = async <Resource>(
+  request: NextRequest,
+  input: Readonly<{
+    id: string;
+    kind: ReflectionResourceKind;
+    mutate: ReflectionMutationFunction<Resource>;
+    path: string;
+  }>,
+): Promise<NextResponse> => {
+  if (
+    request.nextUrl.pathname !== input.path ||
+    request.nextUrl.search !== "" ||
+    !reflectionResourceIdPattern.test(input.id) ||
+    !hasAcceptedReflectionPostOrigin(request)
+  ) {
+    return reflectionProblem(request, {
+      code: "REFLECTION_REQUEST_REJECTED",
+      detail: "The private reflection request was rejected.",
+      instance: input.path,
+      status: 403,
+      title: "Request rejected",
+    });
+  }
+  const metadata = classifyReflectionJsonRequest(request);
+  if (metadata !== "accepted") {
+    return reflectionProblem(request, {
+      code: metadata === "too_large" ? "REFLECTION_BODY_TOO_LARGE" : "REFLECTION_BODY_INVALID",
+      detail:
+        metadata === "too_large"
+          ? "The request body is too large."
+          : "The request body is invalid.",
+      instance: input.path,
+      status: metadata === "too_large" ? 413 : 400,
+      title: metadata === "too_large" ? "Request too large" : "Invalid request body",
+    });
+  }
+  const idempotencyKey = request.headers.get("idempotency-key");
+  if (idempotencyKey === null || !reflectionIdempotencyKeyPattern.test(idempotencyKey)) {
+    return reflectionProblem(request, {
+      code: "REFLECTION_IDEMPOTENCY_KEY_INVALID",
+      detail: "A valid idempotency key is required.",
+      instance: input.path,
+      status: 400,
+      title: "Invalid idempotency key",
+    });
+  }
+  const session = mutationSession(request);
+  if (session.anonymousSessionToken === undefined && session.accountSessionToken === undefined) {
+    return reflectionNotFoundProblem(request, input.path);
+  }
+  if (
+    !hasValidSessionCsrfToken(request.headers.get(sessionCsrfHeaderName), [
+      session.accountSessionToken,
+      session.anonymousSessionToken,
+    ])
+  ) {
+    return reflectionProblem(request, {
+      code: "REFLECTION_REQUEST_REJECTED",
+      detail: "The private reflection request was rejected.",
+      instance: input.path,
+      status: 403,
+      title: "Request rejected",
+    });
+  }
+  try {
+    const body = await readReflectionBoundedJson(request);
+    if (session.accountSessionToken !== undefined && session.anonymousSessionToken !== undefined) {
+      return reflectionProblem(request, {
+        code: "REFLECTION_CONFLICT",
+        detail: "Complete the private account merge before changing this reflection.",
+        instance: input.path,
+        status: 409,
+        title: "Account merge required",
+      });
+    }
+    const result =
+      session.accountSessionToken === undefined
+        ? await input.mutate(input.id, body, idempotencyKey, session.anonymousSessionToken)
+        : await input.mutate(
+            input.id,
+            body,
+            idempotencyKey,
+            session.anonymousSessionToken,
+            session.accountSessionToken,
+          );
+    const response =
+      result.resource === null
+        ? applyReflectionPrivateHeaders(new NextResponse(null, { status: 204 }))
+        : applyReflectionPrivateHeaders(NextResponse.json(result.resource));
+    const responseSessionToken = session.accountSessionToken ?? session.anonymousSessionToken;
+    if (responseSessionToken !== undefined) {
+      response.headers.set(sessionCsrfHeaderName, deriveSessionCsrfToken(responseSessionToken));
+    }
+    return response;
+  } catch (error) {
+    if (error instanceof ReflectionBodyTooLargeError) {
+      return reflectionProblem(request, {
+        code: "REFLECTION_BODY_TOO_LARGE",
+        detail: "The request body is too large.",
+        instance: input.path,
+        status: 413,
+        title: "Request too large",
+      });
+    }
+    if (
+      error instanceof ReflectionError ||
+      error instanceof RevisitContractError ||
+      error instanceof SyntaxError
+    ) {
+      return reflectionProblem(request, {
+        code: "REFLECTION_BODY_INVALID",
+        detail: "The request body is invalid.",
+        instance: input.path,
+        status: 400,
+        title: "Invalid request body",
+      });
+    }
+    if (error instanceof ReflectionLoopApplicationError) {
+      return reflectionApplicationProblem(request, {
+        error,
+        instance: input.path,
+        kind: input.kind,
+      });
+    }
+    return reflectionProblem(request, {
+      code: "REFLECTION_UNAVAILABLE",
+      detail: `The private ${resourceLabel(input.kind)} is temporarily unavailable.`,
+      instance: input.path,
+      status: 503,
+      title: "Private reflection unavailable",
+    });
+  }
+};
+
+const revisionHeaderPattern = /^"revision-([1-9][0-9]{0,9})"$/u;
+
+export const handleReflectionDelete = async (
+  request: NextRequest,
+  input: Readonly<{
+    id: string;
+    kind: ReflectionResourceKind;
+    mutate: ReflectionMutationFunction<unknown>;
+    path: string;
+    schemaVersion: string;
+  }>,
+): Promise<NextResponse> => {
+  const revision = request.headers.get("if-match")?.match(revisionHeaderPattern)?.[1];
+  if (
+    request.body !== null ||
+    request.headers.get("content-type") !== null ||
+    revision === undefined
+  ) {
+    return reflectionProblem(request, {
+      code: "REFLECTION_BODY_INVALID",
+      detail: "The request body is invalid.",
+      instance: input.path,
+      status: 400,
+      title: "Invalid request body",
+    });
+  }
+  const headers = new Headers(request.headers);
+  headers.set("content-type", "application/json");
+  const synthetic = new NextRequest(request.url, {
+    headers,
+    method: "PATCH",
+    body: JSON.stringify({
+      action: "delete",
+      expectedRevision: Number(revision),
+      schemaVersion: input.schemaVersion,
+    }),
+  });
+  return handleReflectionMutation(synthetic, input);
 };

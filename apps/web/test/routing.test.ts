@@ -13,6 +13,8 @@ import {
   localeCheckoutReturnPath,
   localePublicPagePath,
   localeLocalCheckoutPath,
+  localeNumerologyLibraryPath,
+  localeNumerologyPath,
   localeQuestionIntakePath,
   localeSanctuaryPath,
   localeSectionPath,
@@ -42,6 +44,8 @@ describe("Web locale routing", () => {
     expect(localeQuestionIntakePath("en")).toBe("/en/intake");
     expect(localeTarotOneCardPath("en")).toBe("/en/tarot/one-card");
     expect(localeTarotThreeCardPath("en")).toBe("/en/tarot/three-card");
+    expect(localeNumerologyPath("en")).toBe("/en/readings/numerology");
+    expect(localeNumerologyLibraryPath("en")).toBe("/en/numerology");
     expect(localeSanctuaryPath("en")).toBe("/en/sanctuary");
     expect(localeSignInPath("en")).toBe("/en/sign-in");
     expect(localeAccountPath("en")).toBe("/en/account");
@@ -60,6 +64,11 @@ describe("Web locale routing", () => {
       "/en/methodology",
       "/en/safety",
       "/en/privacy",
+      "/en/numerology",
+      "/en/numerology/life-path-number",
+      "/en/numerology/birthday-number",
+      "/en/numerology/personal-year-number",
+      "/en/numerology/master-numbers",
     ]);
     expect(publicDiscoveryPathnames).toEqual(["/robots.txt", "/sitemap.xml"]);
   });
@@ -82,6 +91,11 @@ describe("Web locale routing", () => {
       "/en/methodology.segments/_full.segment.rsc",
       "/en/safety",
       "/en/privacy",
+      "/en/numerology",
+      "/en/numerology.rsc",
+      "/en/numerology/life-path-number",
+      "/en/numerology/life-path-number.rsc",
+      "/en/numerology/life-path-number.segments/_full.segment.rsc",
     ]) {
       expect(isPublicShellPathname(pathname)).toBe(true);
     }
@@ -93,6 +107,8 @@ describe("Web locale routing", () => {
       "/en/privacy.rsc/extra",
       "/en/privacy.segments",
       "/en/unknown",
+      "/en/numerology/number-1",
+      "/en/numerology/life-path-number/",
     ]) {
       expect(isPublicShellPathname(pathname)).toBe(false);
     }

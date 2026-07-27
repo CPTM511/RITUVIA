@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import type { ShellMessages } from "../_i18n/messages";
 import {
+  localeNumerologyPath,
   localePublicPagePath,
   localeSanctuaryPath,
   localeTarotOneCardPath,
@@ -18,9 +19,16 @@ type SiteShellProps = Readonly<{
   brandTagline: string;
   locale: Locale;
   messages: ShellMessages;
+  numerologyEnabled: boolean;
 }>;
 
-export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShellProps) {
+export function SiteShell({
+  brandName,
+  brandTagline,
+  locale,
+  messages,
+  numerologyEnabled,
+}: SiteShellProps) {
   const content = messages.home;
 
   return (
@@ -77,7 +85,9 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
             <h2 id={oracleHeadingId}>{content.oracle.title}</h2>
             <p className="section-introduction">{content.oracle.introduction}</p>
           </div>
-          <div className="oracle-card-grid">
+          <div
+            className={`oracle-card-grid${numerologyEnabled ? " oracle-card-grid-expanded" : ""}`}
+          >
             <article className="oracle-card oracle-card-featured">
               <p className="eyebrow">{content.oracle.oneCard.eyebrow}</p>
               <h3>{content.oracle.oneCard.title}</h3>
@@ -105,6 +115,17 @@ export function SiteShell({ brandName, brandTagline, locale, messages }: SiteShe
                 {content.oracle.sanctuary.action}
               </ActionLink>
             </article>
+            {numerologyEnabled ? (
+              <article className="oracle-card">
+                <p className="eyebrow">{content.oracle.numerology.eyebrow}</p>
+                <h3>{content.oracle.numerology.title}</h3>
+                <p>{content.oracle.numerology.description}</p>
+                <p className="oracle-note">{content.oracle.numerology.note}</p>
+                <ActionLink href={localeNumerologyPath(locale)} variant="secondary">
+                  {content.oracle.numerology.action}
+                </ActionLink>
+              </article>
+            ) : null}
           </div>
         </section>
 

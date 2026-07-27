@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import type { TarotDrawExecutionV1 } from "@rituvia/divination";
 import { resolveTarotDrawV1, tarotDrawRulesVersion } from "@rituvia/divination";
-import type { TarotReadingReportRequestV1 } from "@rituvia/domain";
+import type { TarotReadingReportRequest } from "@rituvia/domain";
 import { describe, expect, it, vi } from "vitest";
 
 const cryptoHarness = vi.hoisted(() => ({ bytes: [0] as number[], offset: 0 }));
@@ -49,6 +49,7 @@ const keyring = Object.freeze({
 });
 const subjectId = "11111111-1111-4111-8111-111111111111";
 const readingId = "22222222-2222-4222-8222-222222222222";
+const interpretationRequestId = "33333333-3333-4333-8333-333333333333";
 const request = Object.freeze({
   locale: "en" as const,
   readingType: "one_card" as const,
@@ -219,7 +220,7 @@ describe("tarot reading cryptography", () => {
       owner: string,
       reportedReadingId: string,
       policyVersion: string,
-      report: TarotReadingReportRequestV1,
+      report: TarotReadingReportRequest,
     ) =>
       cryptography.deriveReportRequestDigest(
         cryptography.activeVersion,
@@ -247,6 +248,11 @@ describe("tarot reading cryptography", () => {
         category: "rights",
         schemaVersion: "tarot-reading-report.v1",
         target: { kind: "position", positionId: "perspective" },
+      }),
+      derive(subjectId, readingId, "test.tarot-reading-report.v1", {
+        category: "cultural",
+        schemaVersion: "tarot-reading-report.v2",
+        target: { interpretationRequestId, kind: "interpretation" },
       }),
     ];
 

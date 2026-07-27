@@ -684,6 +684,31 @@ export const verifyWebShellBuild = async (
     },
     { artifact: "en/safety", dynamicRoute: "/[locale]/[page]", pathname: "/en/safety" },
     { artifact: "en/privacy", dynamicRoute: "/[locale]/[page]", pathname: "/en/privacy" },
+    {
+      artifact: "en/numerology",
+      dynamicRoute: "/[locale]/numerology",
+      pathname: "/en/numerology",
+    },
+    {
+      artifact: "en/numerology/life-path-number",
+      dynamicRoute: "/[locale]/numerology/[slug]",
+      pathname: "/en/numerology/life-path-number",
+    },
+    {
+      artifact: "en/numerology/birthday-number",
+      dynamicRoute: "/[locale]/numerology/[slug]",
+      pathname: "/en/numerology/birthday-number",
+    },
+    {
+      artifact: "en/numerology/personal-year-number",
+      dynamicRoute: "/[locale]/numerology/[slug]",
+      pathname: "/en/numerology/personal-year-number",
+    },
+    {
+      artifact: "en/numerology/master-numbers",
+      dynamicRoute: "/[locale]/numerology/[slug]",
+      pathname: "/en/numerology/master-numbers",
+    },
   ];
   const routeInputs = await Promise.all(
     routes.map(async (route) => ({

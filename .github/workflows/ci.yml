@@ -134,6 +134,20 @@ jobs:
           version: 11.13.1
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      - name: Verify native supply chain and sanitizers
+        run: pnpm test:astrology-native-security -- --allow-download
+      - name: Query native commit vulnerabilities
+        run: pnpm test:astrology-native-sca -- --allow-network
+      - name: Rehearse native Corresponding Source offline rebuild
+        run: pnpm test:astrology-native-corresponding-source -- --allow-download
+      - name: Rehearse complete release Corresponding Source
+        run: >-
+          component_archive=packages/astrology-engine-native/.native-cache/corresponding-source/rituvia-native-corresponding-source.tar;
+          component_sha256="$(sha256sum "$component_archive" | cut -d ' ' -f1)";
+          pnpm test:release-corresponding-source --
+          --expected-revision "$GITHUB_SHA"
+          --component-archive "$component_archive"
+          --component-archive-sha256 "$component_sha256"
       - name: Audit dependencies
         run: pnpm audit --audit-level=high
       - name: Scan current repository content

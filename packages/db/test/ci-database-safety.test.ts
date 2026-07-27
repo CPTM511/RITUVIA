@@ -27,6 +27,8 @@ describe("CI database safety", () => {
     expect(migratorUrl.username).toBe("rituvia_ci_migrator");
     expect(migratorUrl.searchParams.get("application_name")).toBe("rituvia_ci_migrator");
     expect(new URL(environment.controlUrl).username).toBe("rituvia_ci_config_writer");
+    expect(new URL(environment.privacyDeletionUrl).username).toBe("rituvia_privacy_deletion");
+    expect(new URL(environment.adminServiceUrl).username).toBe("rituvia_admin_service");
     expect(
       assertSyntheticSeedTarget({
         appEnvironment: "test",

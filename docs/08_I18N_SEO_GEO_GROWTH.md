@@ -114,6 +114,15 @@ Allow cultural adaptation where literal translation would mislead. Record deviat
 - Locale/alphabet methodology pages.
 - Worked examples using synthetic names/data.
 
+The first approved English cluster is intentionally smaller than the general roadmap inventory:
+`/en/numerology` links to substantive Life Path, Birthday Number, Personal Year, and master-number
+guides. The private calculator remains at `/en/readings/numerology` and is not indexable. The
+twelve approved number profiles are editorial and AI source records, not public routes; creating
+keyword-substitution profile pages requires a new quality review rather than automatic expansion.
+All five public documents use synthetic date examples, exact RITUVIA V1 arithmetic, visible
+source/review notes, canonical and `hreflang` metadata, breadcrumbs, JSON-LD, sitemap timestamps,
+and explicit non-scientific/non-predictive boundaries.
+
 ### Ritual/reflection clusters
 
 - Intentions, journaling prompts, symbolic ritual guides, mindful pauses, occasion rituals.
@@ -184,6 +193,12 @@ Avoid high-pressure “your soulmate is…” ads, crisis targeting, protected/s
 - Frequency caps, quiet hours, locale/time zone, unsubscribe, and preference center.
 - Lock-screen-safe subject lines; no private question, ritual, or relationship detail by default.
 - No re-engagement that uses fear or claims the user's energy/window is closing.
+
+RIT-045 activates only an English once-only Revisit email contract for signed-in accounts. The
+fixed subject, preview, body, and private-route action contain no reflection details and remain
+safe for lock screens. Locale is reread at claim/authorization time and unsupported locales fail
+closed. RIT-104 owns reviewed localized templates and fallback previews; production legal copy,
+email domain/provider, and sending remain owner-gated.
 
 ## 13. Ethical conversion
 

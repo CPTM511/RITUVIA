@@ -1,0 +1,339 @@
+{
+  "catalogId": "rituvia.numerology.date-reduction.en",
+  "contentType": "numerology_rule_catalog",
+  "editorial": {
+    "approvalReference": "OWN-011:option-a:2026-07-25",
+    "authorId": "product.codex",
+    "changeReason": "Extract the approved golden-prototype date rules into a strict engine-ready source record.",
+    "effectiveDate": "2026-07-23",
+    "requiredApprovalRole": "owner",
+    "reviewDueDate": "2027-07-23",
+    "reviewedDate": "2026-07-25",
+    "reviewerId": "owner",
+    "reviewerRole": "owner",
+    "status": "approved",
+    "supersedes": null
+  },
+  "locale": "en",
+  "method": "numerology",
+  "ruleSets": [
+    {
+      "calendar": {
+        "canonicalDateFormat": "YYYY-MM-DD",
+        "localizedCalendarConversion": "unsupported",
+        "system": "proleptic_gregorian"
+      },
+      "calculationRules": [
+        {
+          "calculationCode": "life_path",
+          "formula": "sum_iso_birth_date_digits",
+          "inputFields": ["birth_date"],
+          "limitations": [
+            "This is the RITUVIA V1 product method, not a universal or scientifically validated system.",
+            "The canonical birth date must already be represented in the proleptic Gregorian calendar."
+          ],
+          "reductionPolicy": {
+            "id": "rituvia.decimal-reduction",
+            "version": "1.0.0"
+          },
+          "ruleId": "rituvia.life-path",
+          "sources": [
+            {
+              "id": "rituvia.production-prototype.numerology",
+              "version": "1.0.0"
+            }
+          ],
+          "targetYearSource": "not_applicable",
+          "title": "Life Path Number",
+          "version": "1.0.0",
+          "workedExamples": [
+            {
+              "id": "life-path.ordinary",
+              "version": "1.0.0"
+            },
+            {
+              "id": "life-path.master",
+              "version": "1.0.0"
+            }
+          ]
+        },
+        {
+          "calculationCode": "birthday_number",
+          "formula": "sum_birth_day_digits",
+          "inputFields": ["birth_date"],
+          "limitations": [
+            "Only the day-of-month digits are used after the date boundary validates the full birth date.",
+            "The result is a symbolic reflection input and cannot establish identity, personality, or destiny."
+          ],
+          "reductionPolicy": {
+            "id": "rituvia.decimal-reduction",
+            "version": "1.0.0"
+          },
+          "ruleId": "rituvia.birthday-number",
+          "sources": [
+            {
+              "id": "rituvia.production-prototype.numerology",
+              "version": "1.0.0"
+            }
+          ],
+          "targetYearSource": "not_applicable",
+          "title": "Birthday Number",
+          "version": "1.0.0",
+          "workedExamples": [
+            {
+              "id": "birthday-number.ordinary",
+              "version": "1.0.0"
+            },
+            {
+              "id": "birthday-number.master",
+              "version": "1.0.0"
+            }
+          ]
+        },
+        {
+          "calculationCode": "personal_year",
+          "formula": "sum_birth_month_day_and_target_year_digits",
+          "inputFields": ["birth_date", "target_year"],
+          "limitations": [
+            "The target year is an explicit calculation input and must never be inferred from an ambient server or browser clock.",
+            "The calculation does not predict events and must be displayed as a bounded reflective convention."
+          ],
+          "reductionPolicy": {
+            "id": "rituvia.decimal-reduction",
+            "version": "1.0.0"
+          },
+          "ruleId": "rituvia.personal-year",
+          "sources": [
+            {
+              "id": "rituvia.production-prototype.numerology",
+              "version": "1.0.0"
+            }
+          ],
+          "targetYearSource": "explicit_integer_input",
+          "title": "Personal Year",
+          "version": "1.0.0",
+          "workedExamples": [
+            {
+              "id": "personal-year.ordinary",
+              "version": "1.0.0"
+            },
+            {
+              "id": "personal-year.master",
+              "version": "1.0.0"
+            }
+          ]
+        }
+      ],
+      "contentType": "numerology_rule_set",
+      "editorial": {
+        "approvalReference": "OWN-011:option-a:2026-07-25",
+        "authorId": "product.codex",
+        "changeReason": "Make the approved date arithmetic, master-number behavior, and locale limits explicit.",
+        "effectiveDate": "2026-07-23",
+        "requiredApprovalRole": "owner",
+        "reviewDueDate": "2027-07-23",
+        "reviewedDate": "2026-07-25",
+        "reviewerId": "owner",
+        "reviewerRole": "owner",
+        "status": "approved",
+        "supersedes": null
+      },
+      "localePolicy": {
+        "canonicalCalculationInput": "ascii_iso_date",
+        "dateRulesApplyAcrossLocales": true,
+        "nameMapping": "unsupported",
+        "reviewedContentLocales": ["en"],
+        "silentTransliteration": "forbidden",
+        "supportedNameScripts": []
+      },
+      "method": "numerology",
+      "privacy": {
+        "analyticsAllowed": false,
+        "birthDateClassification": "sensitive",
+        "logsAllowed": false,
+        "nameCollection": "not_applicable",
+        "urlAllowed": false
+      },
+      "reductionPolicies": [
+        {
+          "base": 10,
+          "policyId": "rituvia.decimal-reduction",
+          "preserveExactTotals": [11, 22, 33],
+          "preserveOnEveryStep": true,
+          "repeatWhile": "greater_than_nine_and_not_preserved",
+          "stepOperation": "sum_ascii_decimal_digits",
+          "version": "1.0.0"
+        }
+      ],
+      "ruleSetId": "rituvia.date-reduction",
+      "sources": [
+        {
+          "id": "rituvia.production-prototype.numerology",
+          "version": "1.0.0"
+        }
+      ],
+      "title": "RITUVIA Date Reduction",
+      "tradition": "RITUVIA product method adapted from selected Western numerology conventions",
+      "version": "1.0.0",
+      "workedExamples": [
+        {
+          "birthDate": "1984-07-19",
+          "canonicalDigits": "19840719",
+          "exampleId": "life-path.ordinary",
+          "initialValue": 39,
+          "masterNumberPreserved": false,
+          "reductionSteps": [39, 12, 3],
+          "result": 3,
+          "rule": {
+            "id": "rituvia.life-path",
+            "version": "1.0.0"
+          },
+          "targetYear": null,
+          "version": "1.0.0"
+        },
+        {
+          "birthDate": "1999-09-01",
+          "canonicalDigits": "19990901",
+          "exampleId": "life-path.master",
+          "initialValue": 38,
+          "masterNumberPreserved": true,
+          "reductionSteps": [38, 11],
+          "result": 11,
+          "rule": {
+            "id": "rituvia.life-path",
+            "version": "1.0.0"
+          },
+          "targetYear": null,
+          "version": "1.0.0"
+        },
+        {
+          "birthDate": "1990-11-28",
+          "canonicalDigits": "28",
+          "exampleId": "birthday-number.ordinary",
+          "initialValue": 28,
+          "masterNumberPreserved": false,
+          "reductionSteps": [28, 10, 1],
+          "result": 1,
+          "rule": {
+            "id": "rituvia.birthday-number",
+            "version": "1.0.0"
+          },
+          "targetYear": null,
+          "version": "1.0.0"
+        },
+        {
+          "birthDate": "1990-11-22",
+          "canonicalDigits": "22",
+          "exampleId": "birthday-number.master",
+          "initialValue": 22,
+          "masterNumberPreserved": true,
+          "reductionSteps": [22],
+          "result": 22,
+          "rule": {
+            "id": "rituvia.birthday-number",
+            "version": "1.0.0"
+          },
+          "targetYear": null,
+          "version": "1.0.0"
+        },
+        {
+          "birthDate": "1990-11-28",
+          "canonicalDigits": "11282025",
+          "exampleId": "personal-year.ordinary",
+          "initialValue": 21,
+          "masterNumberPreserved": false,
+          "reductionSteps": [21, 3],
+          "result": 3,
+          "rule": {
+            "id": "rituvia.personal-year",
+            "version": "1.0.0"
+          },
+          "targetYear": 2025,
+          "version": "1.0.0"
+        },
+        {
+          "birthDate": "1990-11-28",
+          "canonicalDigits": "11282026",
+          "exampleId": "personal-year.master",
+          "initialValue": 22,
+          "masterNumberPreserved": true,
+          "reductionSteps": [22],
+          "result": 22,
+          "rule": {
+            "id": "rituvia.personal-year",
+            "version": "1.0.0"
+          },
+          "targetYear": 2026,
+          "version": "1.0.0"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": "numerology-rule-catalog.v1",
+  "sources": [
+    {
+      "claims": [
+        {
+          "claimCode": "date-formulas",
+          "statement": "The approved prototype sums canonical date digits for Life Path, day digits for Birthday Number, and month, day, and target-year digits for Personal Year."
+        },
+        {
+          "claimCode": "master-numbers",
+          "statement": "The approved prototype preserves exact totals 11, 22, and 33 at every reduction step."
+        },
+        {
+          "claimCode": "name-limit",
+          "statement": "The approved prototype warns that Latin-letter name mapping does not apply to Chinese or other scripts; RITUVIA V1 therefore excludes name calculations."
+        }
+      ],
+      "creator": "RITUVIA",
+      "editorial": {
+        "approvalReference": "owner-approved-production-pack:2026-07-23",
+        "authorId": "product.codex",
+        "changeReason": "Record the exact owner-approved prototype algorithm and its explicit limitations.",
+        "effectiveDate": "2026-07-23",
+        "requiredApprovalRole": "owner",
+        "reviewDueDate": "2027-07-23",
+        "reviewedDate": "2026-07-23",
+        "reviewerId": "owner",
+        "reviewerRole": "owner",
+        "status": "approved",
+        "supersedes": null
+      },
+      "identifier": "sha256:e9d75c9c118be64cc779d182f01ec332d150b520fa9f0eb497f58fbf5fea5740",
+      "knownDisagreements": [
+        "Numerology traditions differ on whether date components are reduced separately or as one digit sequence.",
+        "Numerology traditions differ on which master numbers are preserved and at which reduction steps.",
+        "Name-number mappings are alphabet-specific and cannot be treated as universal across scripts."
+      ],
+      "language": "en",
+      "publisher": "RITUVIA repository",
+      "rights": {
+        "allowedUses": [
+          "engine_calculation",
+          "internal_validation",
+          "public_display",
+          "commercial_use",
+          "translation"
+        ],
+        "evidenceReference": "docs/codex/rituvia-production-2026-07-23/source/RITUVIA_WALLET_STRIPE_CRYPTO_AI_UPDATED_PROTOTYPE_2026-07-23.html",
+        "status": "owned",
+        "territory": "worldwide",
+        "version": "1.0.0"
+      },
+      "sourceId": "rituvia.production-prototype.numerology",
+      "sourceType": "original",
+      "title": "RITUVIA owner-approved production prototype numerology algorithm",
+      "tradition": "RITUVIA product method adapted from selected Western numerology conventions",
+      "version": "1.0.0"
+    }
+  ],
+  "title": "RITUVIA English Date Numerology Rules",
+  "usePolicy": {
+    "aiInterpretationAllowed": false,
+    "engineCalculationAllowed": true,
+    "indexingAllowed": false,
+    "publicPublicationAllowed": false
+  },
+  "version": "1.0.0"
+}

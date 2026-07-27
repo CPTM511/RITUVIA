@@ -5,6 +5,7 @@ import { publicPagePathname, type PublicPageId, type PublicPageSlug } from "./pu
 export {
   indexablePublicPageIds,
   indexablePublicPagePathnames,
+  indexablePublicPageRecords,
   isIndexablePublicPagePathname,
   isPublicDiscoveryPathname,
   isPublicShellPathname,
@@ -42,8 +43,17 @@ export const localeTarotOneCardPath = (locale: Locale): LocalActionHref =>
 export const localeTarotThreeCardPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/tarot/three-card`);
 
+export const localeNumerologyPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/readings/numerology`);
+
+export const localeNumerologyLibraryPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/numerology`);
+
 export const localeSanctuaryPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/sanctuary`);
+
+export const localeRevisitPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/revisit`);
 
 export const localeSignInPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/sign-in`);

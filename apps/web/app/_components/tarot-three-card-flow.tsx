@@ -7,6 +7,7 @@ import type { LocalActionHref } from "@rituvia/ui";
 type TarotThreeCardFlowProps = Readonly<{
   messages: TarotThreeCardMessages;
   methodologyHref: LocalActionHref;
+  sanctuaryHref: LocalActionHref;
 }>;
 
 export function TarotThreeCardFlow(props: TarotThreeCardFlowProps) {

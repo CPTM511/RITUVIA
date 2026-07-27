@@ -1,4 +1,4 @@
-import { indexablePublicPagePathnames } from "./public-routes";
+import { indexablePublicPagePathnames, indexablePublicPageRecords } from "./public-routes";
 
 export type DeploymentEnvironment = "local" | "preview" | "production" | "staging";
 export type PublicShellState = "disabled" | "enabled" | "unavailable";
@@ -47,10 +47,10 @@ export const createSitemapXml = (input: CrawlPolicyInput): string | null => {
     return null;
   }
 
-  const entries = indexablePublicPagePathnames
+  const entries = indexablePublicPageRecords
     .map(
-      (pathname) =>
-        `  <url><loc>${escapeXmlText(canonicalUrl(input.canonicalOrigin, pathname))}</loc></url>`,
+      ({ lastModified, pathname }) =>
+        `  <url><loc>${escapeXmlText(canonicalUrl(input.canonicalOrigin, pathname))}</loc><lastmod>${lastModified}</lastmod></url>`,
     )
     .join("\n");
 

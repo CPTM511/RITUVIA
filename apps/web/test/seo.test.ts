@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { indexablePublicPagePathnames } from "../app/_i18n/public-routes";
+import {
+  indexablePublicPagePathnames,
+  indexablePublicPageRecords,
+} from "../app/_i18n/public-routes";
 import { createRobotsText, createSitemapXml } from "../app/_i18n/seo";
 
 const input = {
@@ -20,6 +23,11 @@ describe("finite public crawl policy", () => {
         "Allow: /en/methodology$",
         "Allow: /en/safety$",
         "Allow: /en/privacy$",
+        "Allow: /en/numerology$",
+        "Allow: /en/numerology/life-path-number$",
+        "Allow: /en/numerology/birthday-number$",
+        "Allow: /en/numerology/personal-year-number$",
+        "Allow: /en/numerology/master-numbers$",
         "Allow: /_next/static/",
         "Allow: /icon.svg$",
         "Allow: /sitemap.xml$",
@@ -31,6 +39,8 @@ describe("finite public crawl policy", () => {
     expect(robots).not.toContain("account");
     expect(robots).not.toContain("journal");
     expect(robots).not.toContain("checkout");
+    expect(robots).not.toContain("/en/readings/numerology");
+    expect(robots).not.toContain("/en/numerology/number-");
     expect(robots).not.toContain("/_next/image");
   });
 
@@ -58,8 +68,15 @@ describe("finite public crawl policy", () => {
     expect(locations).toEqual(
       indexablePublicPagePathnames.map((pathname) => `https://example.test${pathname}`),
     );
-    expect(new Set(locations)).toHaveLength(4);
-    expect(sitemap).not.toContain("<lastmod>");
+    expect(new Set(locations)).toHaveLength(indexablePublicPagePathnames.length);
+    const lastModified = [...(sitemap ?? "").matchAll(/<lastmod>([^<]+)<\/lastmod>/gu)].map(
+      ([, value]) => value,
+    );
+    expect(lastModified).toEqual(
+      indexablePublicPageRecords.map(({ lastModified }) => lastModified),
+    );
+    expect(sitemap).not.toContain("/en/readings/numerology");
+    expect(sitemap).not.toContain("/en/numerology/number-");
     expect(locations.join("\n")).not.toMatch(
       /(?:\.rsc|\.segments|\?|#|\/account|\/journal|\/checkout)/u,
     );

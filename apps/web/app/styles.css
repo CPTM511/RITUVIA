@@ -60,7 +60,7 @@ a:hover {
   text-decoration-thickness: 0.12em;
 }
 
-:where(a, select):focus-visible {
+:where(a, select, summary):focus-visible {
   border-radius: 0.35rem;
   outline: 0.2rem solid var(--focus-ring);
   outline-offset: 0.2rem;
@@ -498,6 +498,165 @@ h3 {
   font-weight: 700;
 }
 
+.numerology-main {
+  inline-size: min(100% - 2rem, 76rem);
+}
+
+.numerology-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(0, 1.28fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.numerology-form,
+.numerology-result {
+  display: grid;
+  min-inline-size: 0;
+  gap: 1.5rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.5rem;
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.numerology-result {
+  min-block-size: 27rem;
+}
+
+.numerology-result:focus {
+  outline: 0.2rem solid var(--focus-ring);
+  outline-offset: 0.2rem;
+}
+
+.numerology-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.numerology-noscript,
+.numerology-progress {
+  margin: 0;
+  color: var(--ink-secondary);
+}
+
+.numerology-empty {
+  align-self: center;
+  max-inline-size: 34rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.numerology-empty-symbol {
+  display: grid;
+  inline-size: 4rem;
+  block-size: 4rem;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--accent-gold);
+  font-family: var(--font-display);
+  font-size: 2rem;
+}
+
+.numerology-result-heading h2 {
+  margin-block-start: 0.35rem;
+}
+
+.numerology-result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.numerology-result-card {
+  min-inline-size: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-elevated);
+}
+
+.numerology-result-card h3 {
+  margin-block-start: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 550;
+}
+
+.numerology-result-value {
+  margin: 0;
+  color: var(--accent-gold);
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 4.75rem);
+  line-height: 1;
+}
+
+.numerology-formula,
+.numerology-method dl {
+  display: grid;
+  gap: 0.9rem;
+  margin: 1.25rem 0 0;
+}
+
+.numerology-formula > div,
+.numerology-method dl > div {
+  min-inline-size: 0;
+}
+
+.numerology-formula dt,
+.numerology-method dt {
+  color: var(--ink-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.numerology-formula dd,
+.numerology-method dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.numerology-formula code,
+.numerology-method code {
+  color: inherit;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.numerology-master-note {
+  padding: 0.75rem;
+  border-inline-start: 0.2rem solid var(--accent-gold);
+  background: var(--brand-soft);
+  color: var(--ink-secondary);
+  font-size: 0.875rem;
+}
+
+.numerology-method {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 1rem;
+  background: var(--surface-muted);
+}
+
+.numerology-method summary {
+  display: flex;
+  min-block-size: 2.75rem;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.numerology-method summary:focus-visible {
+  outline: 0.2rem solid var(--focus-ring);
+  outline-offset: 0.2rem;
+}
+
 .tarot-reading-main {
   inline-size: min(100% - 2rem, 68rem);
   margin-inline: auto;
@@ -834,6 +993,166 @@ h3 {
   color: var(--ink-on-brand-secondary);
 }
 
+.numerology-library-main {
+  padding-block-end: clamp(4rem, 8vw, 7rem);
+}
+
+.numerology-library-hero {
+  max-inline-size: 72rem;
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.numerology-library-hero h1 {
+  max-inline-size: 20ch;
+}
+
+.numerology-library-answer {
+  max-inline-size: 68ch;
+  color: var(--ink-secondary);
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+}
+
+.numerology-library-boundary {
+  max-inline-size: 68ch;
+  padding: 1rem 1.25rem;
+  border-inline-start: 0.2rem solid var(--accent-gold);
+  background: var(--surface-panel);
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+.numerology-guide-section > h2,
+.numerology-related-guides > h2 {
+  max-inline-size: none;
+  font-family: inherit;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.numerology-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block-start: 1.5rem;
+}
+
+.numerology-guide-card,
+.numerology-guide-content > section,
+.numerology-source-note,
+.numerology-related-guides {
+  min-inline-size: 0;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-panel);
+}
+
+.numerology-guide-card h3 {
+  margin-block-start: 0;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+}
+
+.numerology-guide-card h3 a,
+.numerology-related-guides a {
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  align-items: center;
+  color: var(--ink-primary);
+  text-decoration-color: var(--accent-gold);
+  text-decoration-thickness: 0.12rem;
+  text-underline-offset: 0.2rem;
+}
+
+.numerology-guide-card p,
+.numerology-guide-content p,
+.numerology-guide-content li,
+.numerology-source-note p,
+.numerology-source-note li,
+.numerology-related-guides li {
+  color: var(--ink-secondary);
+}
+
+.numerology-guide-example {
+  margin-block-end: 0;
+}
+
+.numerology-source-note {
+  margin-block-start: 1rem;
+}
+
+.numerology-source-note h2,
+.numerology-guide-content h2 {
+  max-inline-size: none;
+  font-family: inherit;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.numerology-guide-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.numerology-guide-content > .numerology-source-note {
+  grid-column: 1 / -1;
+  margin-block-start: 0;
+}
+
+.numerology-guide-content ul,
+.numerology-source-note ul,
+.numerology-related-guides ul {
+  padding-inline-start: 1.25rem;
+}
+
+.numerology-example {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+}
+
+.numerology-example div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.numerology-example dt {
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.numerology-example dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.numerology-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-block-start: 1rem;
+}
+
+.numerology-library-actions .rvt-action--primary {
+  color: var(--action-primary-ink);
+}
+
+.numerology-related-guides {
+  margin-block-start: clamp(2.5rem, 6vw, 4rem);
+}
+
+.numerology-related-guides ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+}
+
 .no-script-note {
   margin-block: 0;
   padding: 0.75rem 1rem;
@@ -900,6 +1219,10 @@ h3 {
   gap: 1rem;
 }
 
+.oracle-card-grid-expanded {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .oracle-card {
   display: flex;
   min-inline-size: 0;
@@ -951,9 +1274,13 @@ h3 {
 }
 
 .sanctuary-preview-art {
+  inline-size: 100%;
+  max-inline-size: 33.5rem;
   max-block-size: 42rem;
+  aspect-ratio: 1122 / 1402;
   border: 1px solid var(--line-subtle);
   border-radius: 2rem;
+  justify-self: center;
   overflow: hidden;
   box-shadow: var(--shadow-soft);
 }
@@ -1007,6 +1334,344 @@ h3 {
   grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
   gap: 1.25rem;
   align-items: start;
+}
+
+.ritual-experience {
+  min-block-size: calc(100dvh - 2rem);
+  scroll-margin-block-start: 6rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 50% 20%, rgb(233 202 119 / 10%), transparent 36rem), var(--brand-deep);
+  box-shadow: var(--shadow-soft);
+  color: var(--ink-primary);
+  overflow: clip;
+}
+
+.ritual-experience-shell {
+  display: grid;
+  min-block-size: inherit;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  padding: clamp(1rem, 4vw, 2rem);
+}
+
+.ritual-experience-header {
+  position: sticky;
+  z-index: 2;
+  inset-block-start: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 1.25rem;
+  background: rgb(6 7 17 / 92%);
+  backdrop-filter: blur(0.75rem);
+}
+
+.ritual-experience-header h2,
+.ritual-experience-completion h3 {
+  margin-block-start: 0.35rem;
+  scroll-margin-block-start: 7.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 500;
+}
+
+.ritual-experience-header h2:focus,
+.ritual-experience-completion:focus-within {
+  outline: 0.2rem solid var(--focus-ring);
+  outline-offset: 0.25rem;
+}
+
+.ritual-experience-header-actions,
+.ritual-experience-actions,
+.ritual-experience-mode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.ritual-experience-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  color: var(--ink-secondary);
+}
+
+.ritual-experience-meta > p {
+  max-inline-size: 70ch;
+  margin: 0;
+}
+
+.ritual-experience-meta dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.ritual-experience-meta dl > div {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 1rem;
+  background: var(--surface-elevated);
+}
+
+.ritual-experience-meta dt {
+  color: var(--ink-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.ritual-experience-meta dd {
+  margin: 0.2rem 0 0;
+  color: var(--ink-primary);
+  font-weight: 750;
+}
+
+.ritual-experience-mode-actions {
+  justify-content: space-between;
+}
+
+.ritual-experience-mode-actions p {
+  max-inline-size: 64ch;
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 0.9rem;
+}
+
+.ritual-experience-body {
+  display: grid;
+  min-block-size: 24rem;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.ritual-visual,
+.ritual-step {
+  min-inline-size: 0;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.5rem;
+  background: rgb(6 7 17 / 72%);
+}
+
+.ritual-visual {
+  display: grid;
+  grid-template-rows: minmax(18rem, 1fr) auto;
+  align-items: center;
+  text-align: center;
+}
+
+.ritual-visual > p {
+  max-inline-size: 56ch;
+  margin: 1rem auto 0;
+  color: var(--ink-secondary);
+  font-size: 0.9rem;
+}
+
+.ritual-visual-surface {
+  position: relative;
+  display: grid;
+  min-block-size: 18rem;
+  place-items: center;
+  border-radius: 1rem;
+  background:
+    radial-gradient(ellipse at 50% 75%, rgb(233 202 119 / 16%), transparent 32%),
+    linear-gradient(180deg, rgb(255 255 255 / 2%), transparent);
+  overflow: hidden;
+}
+
+.ritual-candle {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.ritual-candle-body {
+  inline-size: 3rem;
+  block-size: 7rem;
+  border-radius: 0.5rem 0.5rem 0.8rem 0.8rem;
+  background: linear-gradient(90deg, #d7d4ca, #fffaf0 46%, #c5c2b9);
+  box-shadow: 0 1.2rem 3rem rgb(233 202 119 / 20%);
+}
+
+.ritual-candle-flame {
+  inline-size: 1.45rem;
+  block-size: 2.7rem;
+  margin-block-end: -0.2rem;
+  border-radius: 70% 35% 65% 45%;
+  background: linear-gradient(180deg, #fff4b8, #f3bd4d 55%, #e77b36);
+  box-shadow: 0 0 2rem rgb(243 189 77 / 68%);
+  transform-origin: 50% 100%;
+  animation: ritual-flame 3.4s ease-in-out infinite;
+}
+
+.ritual-incense {
+  position: relative;
+  display: block;
+  inline-size: 8rem;
+  block-size: 14rem;
+}
+
+.ritual-incense-stick {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-start: 50%;
+  inline-size: 0.3rem;
+  block-size: 8rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e2b36a, #725138);
+  transform: rotate(-8deg);
+  transform-origin: 50% 100%;
+}
+
+.ritual-incense-smoke {
+  position: absolute;
+  inset-inline-start: 50%;
+  inline-size: 3.5rem;
+  block-size: 6rem;
+  border: 0.2rem solid transparent;
+  border-inline-start-color: rgb(223 228 236 / 58%);
+  border-radius: 50%;
+  opacity: 0.7;
+  transform: translateX(-25%);
+  animation: ritual-smoke 5s ease-in-out infinite;
+}
+
+.ritual-incense-smoke--one {
+  inset-block-start: 1.5rem;
+}
+
+.ritual-incense-smoke--two {
+  inset-block-start: 0;
+  animation-delay: -2.5s;
+  transform: translateX(-65%) scale(0.78);
+}
+
+.ritual-step {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ritual-step-progress {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 0.8rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ritual-step h3 {
+  margin-block-start: 0.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 4vw, 2.7rem);
+  font-weight: 500;
+}
+
+.ritual-step > p:not(.ritual-step-progress, .sanctuary-private-note) {
+  color: var(--ink-secondary);
+  font-size: 1.05rem;
+}
+
+.ritual-step .ritual-experience-actions {
+  margin-block-start: auto;
+  padding-block-start: 2rem;
+}
+
+.ritual-experience[data-mode="linear"] .ritual-experience-body {
+  grid-template-columns: minmax(0, 48rem);
+  justify-content: center;
+}
+
+.ritual-experience[data-mode="linear"] .ritual-visual {
+  display: none;
+}
+
+.ritual-experience[data-paused="true"] .ritual-visual-surface {
+  filter: saturate(0.7);
+}
+
+.ritual-experience[data-paused="true"] :is(.ritual-candle-flame, .ritual-incense-smoke) {
+  animation-play-state: paused;
+}
+
+.ritual-experience-completion {
+  display: grid;
+  max-inline-size: 46rem;
+  align-content: center;
+  justify-self: center;
+  padding: clamp(2rem, 8vw, 5rem);
+  text-align: center;
+}
+
+.ritual-experience-completion > p:not(.eyebrow, .ritual-experience-completion-mark) {
+  color: var(--ink-secondary);
+  font-size: 1.05rem;
+}
+
+.ritual-experience-completion-mark {
+  margin: 0;
+  color: var(--accent-gold);
+  font-size: 2rem;
+}
+
+.ritual-experience-completion .ritual-experience-actions {
+  justify-content: center;
+  margin-block-start: 1.5rem;
+}
+
+.sanctuary-noscript {
+  grid-column: 1 / -1;
+}
+
+.sanctuary-noscript article {
+  margin-block-start: 1.5rem;
+  padding-block-start: 1.5rem;
+  border-block-start: 1px solid var(--line-subtle);
+}
+
+.sanctuary-noscript li + li {
+  margin-block-start: 0.75rem;
+}
+
+.sanctuary-noscript li span {
+  display: block;
+  margin-block-start: 0.2rem;
+  color: var(--ink-secondary);
+}
+
+@keyframes ritual-flame {
+  0%,
+  100% {
+    transform: rotate(-2deg) scale(0.98);
+  }
+
+  50% {
+    transform: rotate(2deg) scale(1.03);
+  }
+}
+
+@keyframes ritual-smoke {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateX(-35%) translateY(1rem) scale(0.82);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: translateX(-65%) translateY(-1rem) scale(1);
+  }
 }
 
 .sanctuary-scene {
@@ -1138,12 +1803,35 @@ h3 {
   outline-offset: 0.2rem;
 }
 
+.sanctuary-theme-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.sanctuary-private-note {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 0.85rem;
+}
+
+.sanctuary-intention-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .ritual-item-list,
 .sanctuary-status,
 .checkout-return-status {
   display: grid;
   gap: 0.75rem;
   margin-block-start: 1.5rem;
+}
+
+.sanctuary-status:focus-visible {
+  border-radius: 1rem;
+  outline: 0.2rem solid var(--focus-ring);
+  outline-offset: 0.2rem;
 }
 
 .ritual-item-card {
@@ -1255,15 +1943,109 @@ h3 {
   color: var(--ink-secondary);
 }
 
-.account-history-panel {
-  position: sticky;
-  inset-block-start: 6.25rem;
+.account-control-stack {
+  display: grid;
+  gap: 1.25rem;
+  min-inline-size: 0;
 }
 
-.account-history-panel h2 {
+.account-history-panel h2,
+.account-consent-panel h2,
+.account-sessions-panel h2 {
   font-family: inherit;
   font-size: 1.4rem;
   font-weight: 800;
+}
+
+.account-consent-list {
+  display: grid;
+  gap: 1rem;
+  margin-block-start: 1.25rem;
+}
+
+.account-consent-note {
+  padding: 0.85rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 0.85rem;
+  background: var(--surface-elevated);
+  font-size: 0.85rem;
+}
+
+.account-control-status {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-empty-state {
+  padding: 1rem;
+  border: 1px dashed var(--line-subtle);
+  border-radius: 0.85rem;
+  background: var(--surface-elevated);
+}
+
+.account-history-list,
+.account-session-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.account-history-list li,
+.account-session-list li {
+  min-inline-size: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 0.85rem;
+  background: var(--surface-elevated);
+}
+
+.account-history-list li {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.account-history-list span,
+.account-history-list time,
+.account-session-list dt,
+.account-session-list dd {
+  color: var(--ink-secondary);
+}
+
+.account-history-list time {
+  font-size: 0.85rem;
+}
+
+.account-session-list li {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.account-session-list dl {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.7rem 0 0;
+}
+
+.account-session-list dl > div {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+  gap: 0.65rem;
+}
+
+.account-session-list dt,
+.account-session-list dd {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.account-session-list dd {
+  overflow-wrap: anywhere;
+}
+
+.account-history-panel > .rvt-action,
+.account-sessions-panel > .rvt-action {
+  margin-block-start: 1rem;
 }
 
 .checkout-return-panel {
@@ -1309,6 +2091,8 @@ h3 {
   .path-list,
   .principles-grid,
   .information-sections,
+  .numerology-guide-content,
+  .numerology-guide-grid,
   .oracle-card-grid,
   .question-intake-form .rvt-radio-group__options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1316,15 +2100,24 @@ h3 {
 
   .sanctuary-preview-inner,
   .sanctuary-flow,
+  .numerology-layout,
   .sign-in-layout,
   .account-layout {
     grid-template-columns: 1fr;
   }
 
-  .sanctuary-scene,
-  .account-history-panel {
+  .sanctuary-scene {
     position: relative;
     inset-block-start: auto;
+  }
+
+  .ritual-experience-body,
+  .ritual-experience-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .ritual-experience-meta dl {
+    justify-content: flex-start;
   }
 }
 
@@ -1368,7 +2161,11 @@ h3 {
   .path-list,
   .principles-grid,
   .information-sections,
+  .numerology-guide-content,
+  .numerology-guide-grid,
+  .numerology-related-guides ul,
   .oracle-card-grid,
+  .numerology-result-grid,
   .question-intake-form .rvt-radio-group__options,
   .tarot-form .rvt-radio-group__options,
   .tarot-reflection-grid,
@@ -1386,6 +2183,7 @@ h3 {
   }
 
   .sanctuary-preview-art {
+    max-inline-size: 25.5rem;
     max-block-size: 32rem;
   }
 
@@ -1394,9 +2192,27 @@ h3 {
   }
 
   .ritual-item-card .rvt-action,
+  .ritual-experience-actions .rvt-action,
+  .ritual-experience-header-actions .rvt-action,
+  .ritual-experience-mode-actions .rvt-action,
   .sanctuary-completion-actions .rvt-action,
   .account-actions .rvt-action,
   .checkout-return-actions .rvt-action {
+    inline-size: 100%;
+  }
+
+  .ritual-experience {
+    min-block-size: calc(100dvh - 1rem);
+    border-radius: 1rem;
+  }
+
+  .ritual-experience-header,
+  .ritual-experience-mode-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ritual-experience-header-actions {
     inline-size: 100%;
   }
 
@@ -1416,13 +2232,160 @@ h3 {
 
   .question-intake-form,
   .question-intake-result,
+  .numerology-form,
+  .numerology-result,
   .tarot-panel {
     border-radius: 1rem;
   }
 
   .tarot-actions .rvt-action,
+  .numerology-actions .rvt-action,
   .tarot-completion .rvt-action {
     inline-size: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ritual-candle-flame,
+  .ritual-incense-smoke {
+    animation: none;
+  }
+}
+
+.revisit-main {
+  display: grid;
+  gap: 2rem;
+}
+
+.revisit-experience {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.revisit-empty,
+.revisit-schedule,
+.revisit-card {
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-elevated);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.revisit-schedule form,
+.revisit-card form,
+.revisit-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.revisit-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.revisit-list > h2 {
+  margin-block-end: 0;
+}
+
+.revisit-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.revisit-card header > * {
+  margin-block: 0.25rem;
+}
+
+.revisit-original {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.revisit-original > div {
+  border-inline-start: 0.25rem solid var(--accent-sage);
+  padding-inline-start: 0.75rem;
+}
+
+.revisit-original dt {
+  color: var(--ink-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.revisit-original dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.revisit-choice-grid,
+.revisit-tag-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.revisit-choice-grid label,
+.revisit-quiet-hours label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.revisit-choice-grid label {
+  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 2.75rem;
+}
+
+.revisit-choice-grid input {
+  block-size: 1.25rem;
+  inline-size: 1.25rem;
+}
+
+.revisit-quiet-hours {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.revisit-quiet-hours input {
+  min-block-size: 2.75rem;
+}
+
+.revisit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.revisit-reminder-control {
+  border: 1px solid var(--line-subtle);
+  border-radius: 0.875rem;
+  background: var(--surface-muted);
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.revisit-reminder-control > p {
+  margin: 0;
+}
+
+.revisit-completion-text {
+  border-radius: 0.75rem;
+  background: var(--surface-muted);
+  overflow-wrap: anywhere;
+  padding: 1rem;
+  white-space: pre-wrap;
+}
+
+@media (min-width: 56rem) {
+  .revisit-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .revisit-list > h2,
+  .revisit-list > p {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1434,6 +2397,15 @@ h3 {
   .information-section,
   .information-status,
   .information-next,
+  .numerology-guide-card,
+  .numerology-guide-content > section,
+  .numerology-library-boundary,
+  .numerology-related-guides,
+  .numerology-source-note,
+  .numerology-form,
+  .numerology-result,
+  .numerology-result-card,
+  .numerology-method,
   .question-intake-form,
   .question-intake-result,
   .tarot-panel,
@@ -1448,6 +2420,9 @@ h3 {
   .sanctuary-scene,
   .sanctuary-panel,
   .sanctuary-completion,
+  .ritual-experience,
+  .ritual-visual,
+  .ritual-step,
   .ritual-item-card,
   .account-panel,
   .sign-in-panel,

@@ -382,3 +382,307 @@ effective until this register links it. Do not rewrite historical rationale; sup
   isolated milestone slices, while one consolidated record preserves the distinction between local
   product evidence and unapproved production payment, legal, provider, or launch state.
 - **Date:** 2026-07-18
+
+### [D-045 — Production pack precedence and Phase 0 reconciliation](records/decisions/D-045.md)
+
+- **Decision:** Install the owner-supplied 2026-07-23 production source-of-truth pack with only the
+  repository-required deterministic LF normalization for its security matrix, execute one Phase 0
+  repository reality audit before more feature work, apply its safety/security invariants and
+  golden UI contract to future changes, and adapt its SQL/OpenAPI to the existing modular
+  TypeScript/PostgreSQL architecture rather than replacing or duplicating it.
+- **Reason:** The new production contracts materially supersede older product details and require
+  a verified reuse/gap/security plan before continuing RIT-037 or introducing wallet, Credit,
+  payment, AI, or bilingual production behavior.
+- **Date:** 2026-07-23
+
+### [D-046 — Split exact interpretation reporting from history and paid regeneration](records/decisions/D-046.md)
+
+- **Decision:** Re-scope RIT-037 to an owner-scoped categorical report bound to one exact
+  displayable interpretation result through the existing reading report boundary; add no
+  history/list or regeneration/start behavior, and defer paid Deep Reading creation, version
+  history, and regeneration until a separate Credits transaction task can reserve, consume, or
+  release Credits exactly once.
+- **Reason:** The production pack makes AI an explicit paid Deep Reading capability, while the
+  repository does not yet have the required Credit reservation/projection authority and currently
+  constrains interpretation generation to one. Extending history or the old free safe-off POST
+  boundary would encode the wrong transaction model and risk duplicate or uncharged generation.
+- **Date:** 2026-07-23
+
+### [D-047 — Production ritual catalog and legacy replay separation](records/decisions/D-047.md)
+
+- **Decision:** Use production-pack ritual codes for a new versioned source-governed catalog;
+  distinguish free objects, permanent objects, and consumable rituals through abstract access
+  requirements; retain the historical `reflection-ritual.v1` code set unchanged; and map every
+  legacy code only for exact historical replay, including `golden_intention_bowl` to
+  `golden_bowl`. Keep Credit, payment, entitlement fulfillment, pass consumption, and durable
+  session snapshots outside the read-only catalog domain until their sequenced transactional
+  foundations exist.
+- **Reason:** Silent renaming would corrupt historical meaning, treating passes as permanent
+  ownership would violate the production contract, and allowing ritual content to carry money or
+  efficacy authority would cross commerce and safety boundaries.
+- **Date:** 2026-07-24
+
+### [D-048 — Additive ritual lifecycle and durable-pause boundary](records/decisions/D-048.md)
+
+- **Decision:** Preserve historical ritual/journal tables unchanged; add separate v2 lifecycle,
+  private-journal, and consumable-pass tables; resolve exact catalog/access authority on the
+  server; consume a pass only in the session-creation transaction; bind new journal ciphertext to
+  owner and journal ID; and map visible Sanctuary exit to durable pause rather than abandonment.
+- **Reason:** Relaxing v1 constraints would corrupt replay, split pass writes can double-spend, and
+  terminal abandonment conflicts with the approved “leave for now” interaction.
+- **Date:** 2026-07-24
+
+### [D-049 — Local-calendar Revisit and reminder-safe boundary](records/decisions/D-049.md)
+
+- **Decision:** Represent a Revisit by local calendar date plus IANA time zone; support next-day,
+  seven-day, and custom scheduling; snapshot original intention/action under resource-bound
+  encryption; bind only the intention in v1; store optional quiet hours while reminder preference
+  remains none and channel remains null; treat the date as an invitation rather than an unlock;
+  and use independently versioned ciphertext plus an append-only operation ledger for revisioned
+  reschedule, completion, archive, and soft deletion without any delivery adapter.
+- **Reason:** A fixed UTC instant can shift the chosen return day across DST, reusing only the
+  intention date cannot preserve or complete a comparison, and activating reminders would cross
+  consent, copy, operations, and production-email gates owned by RIT-045.
+- **Date:** 2026-07-24
+
+### [D-050 — Layered local verification with milestone full-suite gates](records/decisions/D-050.md)
+
+- **Decision:** Use targeted affected-area tests during implementation and ordinary task closure;
+  reserve the complete workspace matrix for milestone integration tasks such as RIT-047, release
+  candidates, broad shared-runtime/toolchain changes, or explicit risk triggers. Reuse prior
+  passing evidence only when all tested inputs remain unchanged, while CI may retain broader
+  mandatory pull-request gates.
+- **Reason:** Repeating more than fifteen hundred unaffected unit tests plus every integration and
+  browser gate after each small edit consumes time and output without proportional confidence.
+- **Date:** 2026-07-24
+
+### [D-051 — Safe-off consented-anonymous core-loop analytics baseline](records/decisions/D-051.md)
+
+- **Decision:** Define WMRS v1 as distinct consented anonymous subjects with at least one
+  reading-rooted qualifying Tarot reflection session in a rolling seven-day UTC window; keep
+  qualifying sessions separate, freeze nine strict allowlisted events, derive purpose-scoped keyed
+  pseudonyms, require exact current optional analytics consent, and keep all production collection,
+  persistence, browser ingestion, vendors, retention, deletion, account merge, and backfill
+  hard safe-off.
+- **Reason:** The repository can prove event privacy and metric arithmetic without converting the
+  necessary anonymous cookie into analytics consent or creating unapproved data-retention and
+  production-activation obligations.
+- **Date:** 2026-07-24
+
+### [D-052 — Safe-off authentication provider and hardened session boundary](records/decisions/D-052.md)
+
+- **Decision:** Keep authentication behind a local-only closed capability adapter; return only a
+  constant local preview path and `HttpOnly` state; enforce database-atomic global plus bounded
+  keyed identifier-bucket start limits; bind previous-session rotation at challenge start; require
+  session-derived CSRF and durable revocation; and add passkey persistence constraints without
+  activating WebAuthn.
+- **Reason:** This closes enumeration, bearer exposure, login-flooding, fixation, CSRF, and false
+  logout gaps without collecting network fingerprints or crossing production provider, passkey,
+  retention, deployment, or public-launch approval gates.
+- **Date:** 2026-07-24
+
+### [D-053 — Immutable subject bridge with recoverable account-session rotation](records/decisions/D-053.md)
+
+- **Decision:** Preserve immutable anonymous ownership behind one append-only account link; commit
+  authentication and optional merge atomically; bind merge evidence to both source sessions and the
+  exact keyed request; derive one recoverable successor session for same-source/same-key retries;
+  and prohibit opportunistic merge inside reflection mutations.
+- **Reason:** This prevents duplicate history, cross-account claims, partial callback state,
+  discarded replacement credentials, and unrecoverable response-loss retries without copying
+  private rows or storing a bearer in audit data.
+- **Date:** 2026-07-24
+
+### [D-054 — Read-time private history with timestamp-only session controls](records/decisions/D-054.md)
+
+- **Decision:** Project currently retained reflection history at read time through immutable
+  account-subject links; expose minimal metadata only; preserve optimistic profile revisions; list
+  sessions with lifecycle timestamps but no device fingerprint data; and prohibit targeted
+  revocation of the current session.
+- **Reason:** This provides useful account recovery and security controls without copying private
+  rows, indexing private prose, extending retention, enabling cross-account authority, or adding a
+  new tracking surface.
+- **Date:** 2026-07-24
+
+### [D-055 — Recently authenticated encrypted privacy export boundary](records/decisions/D-055.md)
+
+- **Decision:** Preserve an immutable per-session authentication instant across merge rotation;
+  require recent authentication for export request, metadata, and download; snapshot all retained
+  implemented account-linked data through explicit allowlists; package matching JSON and Markdown;
+  store only dedicated-key account/export/expiry-bound ciphertext; require session-CSRF download;
+  and keep privacy audit append-only.
+- **Reason:** This prevents stale-auth refresh, cross-account disclosure, bearer-URL leakage,
+  plaintext backup exposure, omitted retained data, mutable completion evidence, and key-purpose
+  coupling without prematurely duplicating the future worker/object-storage infrastructure.
+- **Date:** 2026-07-25
+
+### [D-056 — Immediate access revocation and crypto-shredding deletion boundary](records/decisions/D-056.md)
+
+- **Decision:** Require recent authentication and exact-scope idempotency; revoke affected
+  sessions, privacy-delete ownership links, crypto-shred implemented private ciphertext, destroy
+  export artifacts, and pseudonymize/revoke account identity for whole-account deletion while
+  preserving only pseudonymous derived, consent, commerce, security, and privacy evidence under
+  existing source retention.
+- **Reason:** Immediate authorization revocation plus targeted ciphertext destruction removes
+  recoverable private text without breaking restrictive financial/audit relationships or
+  inventing final legal retention, KMS, provider, backup, deployment, or launch policy.
+- **Date:** 2026-07-25
+
+### [D-057 — Safe-off admin authorization and passkey-assurance foundation](records/decisions/D-057.md)
+
+- **Decision:** Centralize a finite default-deny admin role/action matrix; require active owner
+  authority, recent authentication, same-identity live passkey assurance, and typed confirmation
+  for append-only role changes; commit mutation plus digest-only hash-chained audit evidence in one
+  serializable transaction; and keep MFA issuance, production enrollment, and admin routes safe-off.
+- **Reason:** This prevents magic-link-only escalation, cross-identity MFA, mutable privilege
+  history, private-value audit leakage, mutation without evidence, and broad database access
+  without crossing WebAuthn/provider/deployment approval gates.
+- **Date:** 2026-07-25
+
+### [D-058 — Request-scoped privacy deletion and composed security gate](records/decisions/D-058.md)
+
+- **Decision:** Admit privacy routes through an exact proxy allowlist, reject cross-site export
+  metadata reads, bind the dedicated deletion login to one transaction-local request-token hash
+  enforced by a security-barrier view and row-level policies, and compose the Milestone 5 security
+  slices into one focused gate while running the complete workspace matrix only once at closure.
+- **Reason:** Separately passing slices did not prevent proxy omissions, cross-site read attempts,
+  or broad direct use of the deletion credential; database-bound request scope preserves
+  least-privilege defense in depth without repeatedly running unrelated tests.
+- **Date:** 2026-07-25
+
+### [D-059 — Immutable successor Country Policy registry](records/decisions/D-059.md)
+
+- **Decision:** Resolve country from stronger billing/account/reliable-geolocation evidence with
+  conflicts denied; evaluate one immutable reviewed successor-chain head; separate fiat and crypto
+  approval references; persist the complete strict policy document under bounded read-only runtime
+  access; and implement kill switch/rollback by appending successors while staging/production stay
+  empty and safe-off.
+- **Reason:** Hardcoded per-product rules could not govern service/legal/data behavior, mutable
+  policy would erase provenance, IP/locale could bypass stronger facts, and one payment gate could
+  accidentally authorize another.
+- **Date:** 2026-07-25
+
+### [D-060 — Immutable catalog registry and legacy checkout quarantine](records/decisions/D-060.md)
+
+- **Decision:** Store one strict immutable locale-aware catalog with exact Credit terms and fiat
+  prices only for packs/Plus; seed local/CI only; serve it through the public catalog endpoint; and
+  quarantine the obsolete direct-object USD checkout as a local replay/test fixture rather than a
+  product source.
+- **Reason:** The old four-price list conflicts with the owner-approved Credit model, cannot express
+  exact contents or compliance scope, and could expose incorrect prices even when payment remains
+  disabled.
+- **Date:** 2026-07-25
+
+### [D-061 — Additive v2 commercial transactions and append-only Credits](records/decisions/D-061.md)
+
+- **Decision:** Keep legacy direct-USD commerce replay unchanged; add provider-neutral v2
+  order/payment-attempt states, exact-request idempotency, append-only integer Credit
+  ledger/reservations/allocations/projection, and source-specific Plus/permanent entitlements.
+- **Reason:** Extending the legacy fixture would preserve the wrong product model and unsafe
+  refund/dispute coupling, while mutable balances cannot prove allocation, concurrency, expiry, or
+  reversal integrity.
+- **Date:** 2026-07-25
+
+### [D-062 — Account-owned purpose consent and immediate data-flow withdrawal](records/decisions/D-062.md)
+
+- **Decision:** Keep analytics, AI personalization, and model improvement in separate exact-version
+  account-owned append-only sequences; serialize mutations, deny runtime history changes, and
+  reread current consent at each sensitive data-flow boundary so committed withdrawal applies
+  across sessions immediately.
+- **Reason:** Linked anonymous grants and mutable/cached booleans can revive stale authority, erase
+  evidence, or keep private-data processing active after withdrawal; an account authority closes
+  that gap without activating external analytics, AI, training, marketing, or notifications.
+- **Date:** 2026-07-25
+
+### [D-063 — Account-owned once-only Revisit reminder and safe-off delivery](records/decisions/D-063.md)
+
+- **Decision:** Keep Revisit v1 reminder fields inert; add one account-owned once-only English email
+  preference, privacy-minimal PostgreSQL queue, send-time authorization, bounded retry/dead-letter,
+  fixed lock-screen-safe copy, and provider-neutral adapter that remains disabled outside tests.
+- **Reason:** Delivery consent must not inherit analytics/AI consent or expose private reflection
+  content, and a mutable/browser-local reminder cannot prove withdrawal, duplicate suppression,
+  ownership, deletion, retry, or once-only delivery.
+- **Date:** 2026-07-25
+
+### [D-064 — Approved RITUVIA V1 date-numerology method](records/decisions/D-064.md)
+
+- **Decision:** Sum canonical Gregorian date digits for Life Path, begin Birthday Number from the
+  day integer, use an explicit target year for Personal Year, preserve exact 11/22/33 totals at
+  every reduction step, and exclude names, transliteration, non-ASCII calculation input, and
+  non-Gregorian conversion from V1.
+- **Reason:** One explicit versioned method preserves prototype fidelity, deterministic replay,
+  formula transparency, locale safety, and historical compatibility without presenting a
+  numerology convention as universal or scientific.
+- **Date:** 2026-07-25
+
+### [D-065 — Approved English numerology interpretation and publication pack](records/decisions/D-065.md)
+
+- **Decision:** Approve the checksummed English thirty-six-entry interpretation corpus, owned
+  source-rights inventory, exact prompt/fallback/reviewer records, five-page public education
+  cluster, and optional six-Credit `year_reflection` mapping while keeping AI and fulfillment
+  activation safe-off.
+- **Reason:** One versioned approval completes the content, safety, rights, and SEO contracts
+  without turning profile records into doorway pages or crossing provider, payment, deployment, or
+  public-launch gates.
+- **Date:** 2026-07-25
+
+### [D-066 — Select Swiss Ephemeris Professional for Western astrology](records/decisions/D-066.md)
+
+- **Decision:** Select Swiss Ephemeris library 2.10.03 and separately pin the
+  `v2.10.3final` source/data snapshot behind a pure provider-neutral interface; target the June
+  2026 Professional Unlimited License while keeping selection V1 permanently production-safe-off
+  and requiring independent evidence authorization before native integration.
+- **Reason:** Swiss Ephemeris supplies the required astrology-specific deterministic calculations
+  and self-hosted replayability, but its AGPL path is incompatible with the current repository,
+  its commercial path has no SLA or warranty, and its native implementation requires separate
+  legal, supply-chain, build, integrity, and runtime evidence.
+- **Date:** 2026-07-25
+
+### [D-067 — Versioned self-hosted location and historical time-zone boundary](records/decisions/D-067.md)
+
+- **Decision:** Use a provider-neutral pure location/time-zone contract with a self-hosted
+  GeoNames snapshot as the intended source, exact provider/data digest and Node/ICU/tzdata
+  provenance, explicit fold/gap outcomes, and private bounded HMAC-keyed Web caching; add no HTTP
+  route until OWN-014 resolves the planned GET conflict.
+- **Reason:** Reproducible natal facts require historical rules and traceable place data, while
+  birthplace queries cannot enter URLs, logs, shared caches, or silent current-offset/first-result
+  fallbacks.
+- **Date:** 2026-07-26
+
+### [D-068 — Privacy-safe astrology location-search HTTP contract](records/decisions/D-068.md)
+
+- **Decision:** Replace the rejected URL-query GET with an authenticated same-origin,
+  session-CSRF-protected, rate-limited POST JSON contract using no-store responses, redacted
+  telemetry, no raw-query retention, and no shared cache.
+- **Reason:** Birth-location search is private input; the route must remain useful without placing
+  sensitive queries in URLs, logs, analytics, durable storage, or public/shared caches.
+- **Date:** 2026-07-26
+
+### [D-069 — Adopt AGPLv3 for RITUVIA and Swiss Ephemeris](records/decisions/D-069.md)
+
+- **Decision:** License the complete RITUVIA deliverable project under `AGPL-3.0-only`, use Swiss
+  Ephemeris through its AGPL path, publish exact deployed Corresponding Source, and preserve all
+  native supply-chain and production-safe-off gates while superseding the planned Professional
+  License purchase.
+- **Reason:** The owner explicitly accepts whole-project source publication, removing the
+  commercial contract requirement without weakening source provenance, reproducibility,
+  correctness, security, or public-launch review.
+- **Date:** 2026-07-26
+
+### [D-070 — Approved conservative Western astrology V1 calculation method](records/decisions/D-070.md)
+
+- **Decision:** Use tropical zodiac, eleven selected bodies including True Node, exact-time
+  Placidus houses, fixed major-aspect orbs, strict approximate/unknown-time suppression, and
+  unavailable-without-partial-facts behavior for polar/house failure.
+- **Reason:** One owner-approved checksummed convention makes natal facts replayable without hidden
+  defaults, invented unknown-time placements, mixed house systems, or misleading partial results.
+- **Date:** 2026-07-26
+
+### [D-071 — Canonicalize the astrology kill-switch persistence key](records/decisions/D-071.md)
+
+- **Decision:** Use `experience.astrology` as the canonical registry and PostgreSQL key while
+  treating historical `astrology_enabled` text as the superseded semantic label for the same
+  default-off control.
+- **Reason:** The immutable feature-flag schema requires hierarchical dotted keys; an additive RLS
+  policy preserves that constraint and enables a real staging drill without rewriting history or
+  activating production.
+- **Date:** 2026-07-26

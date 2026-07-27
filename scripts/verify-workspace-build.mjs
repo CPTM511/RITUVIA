@@ -19,13 +19,36 @@ const requiredArtifacts = [
   "apps/web/.next/server/app/en/intake.html",
   "apps/web/.next/server/app/en/tarot/one-card.html",
   "apps/web/.next/server/app/en/tarot/three-card.html",
+  "apps/web/.next/server/app/[locale]/account/page.js",
+  "apps/web/.next/server/app/[locale]/revisit/page.js",
+  "apps/web/.next/server/app/[locale]/sanctuary/page.js",
+  "apps/web/.next/server/app/[locale]/sign-in/page.js",
   "apps/web/.next/server/app/icon.svg.body",
   "apps/web/.next/server/app/api/v1/anonymous/session/route.js",
+  "apps/web/.next/server/app/api/v1/auth/account-merge/route.js",
+  "apps/web/.next/server/app/api/v1/auth/callback/route.js",
+  "apps/web/.next/server/app/api/v1/auth/local-preview/route.js",
+  "apps/web/.next/server/app/api/v1/auth/logout/route.js",
+  "apps/web/.next/server/app/api/v1/auth/logout-all/route.js",
+  "apps/web/.next/server/app/api/v1/auth/start/route.js",
   "apps/web/.next/server/app/api/v1/intake/evaluate/route.js",
   "apps/web/.next/server/app/api/v1/readings/tarot/route.js",
   "apps/web/.next/server/app/api/v1/readings/[readingId]/route.js",
   "apps/web/.next/server/app/api/v1/readings/[readingId]/report/route.js",
   "apps/web/.next/server/app/api/v1/readings/[readingId]/interpretation/route.js",
+  "apps/web/.next/server/app/api/v1/intentions/route.js",
+  "apps/web/.next/server/app/api/v1/intentions/[intentionId]/route.js",
+  "apps/web/.next/server/app/api/v1/journal-entries/route.js",
+  "apps/web/.next/server/app/api/v1/journal-entries/[journalEntryId]/route.js",
+  "apps/web/.next/server/app/api/v1/me/route.js",
+  "apps/web/.next/server/app/api/v1/me/sessions/[sessionId]/route.js",
+  "apps/web/.next/server/app/api/v1/revisits/route.js",
+  "apps/web/.next/server/app/api/v1/revisits/[revisitId]/route.js",
+  "apps/web/.next/server/app/api/v1/revisits/[revisitId]/complete/route.js",
+  "apps/web/.next/server/app/api/v1/ritual-objects/route.js",
+  "apps/web/.next/server/app/api/v1/ritual-sessions/route.js",
+  "apps/web/.next/server/app/api/v1/ritual-sessions/[ritualSessionId]/route.js",
+  "apps/web/.next/server/app/api/v1/ritual-sessions/[ritualSessionId]/complete/route.js",
   "apps/worker/dist/main.js",
   "apps/worker/dist/runtime.d.ts",
   "apps/worker/dist/runtime.js",
@@ -37,6 +60,8 @@ const requiredArtifacts = [
   "packages/config/dist/server.js",
   "packages/db/dist/client.d.ts",
   "packages/db/dist/client.js",
+  "packages/db/dist/account-identity.d.ts",
+  "packages/db/dist/account-identity.js",
   "packages/db/dist/anonymous-identity.d.ts",
   "packages/db/dist/anonymous-identity.js",
   "packages/db/dist/feature-flags.d.ts",
@@ -53,6 +78,8 @@ const requiredArtifacts = [
   "packages/domain/dist/identity.js",
   "packages/domain/dist/question-intake.d.ts",
   "packages/domain/dist/question-intake.js",
+  "packages/domain/dist/ritual.d.ts",
+  "packages/domain/dist/ritual.js",
   "packages/domain/dist/tarot-reading.d.ts",
   "packages/domain/dist/tarot-reading.js",
   "packages/domain/dist/tarot-reading-report.d.ts",
@@ -71,6 +98,8 @@ const requiredArtifacts = [
   "packages/ai/dist/generation.js",
   "packages/ai/dist/interpretation.d.ts",
   "packages/ai/dist/interpretation.js",
+  "packages/ai/dist/numerology-interpretation.d.ts",
+  "packages/ai/dist/numerology-interpretation.js",
   "packages/ai/dist/provider.d.ts",
   "packages/ai/dist/provider.js",
   "packages/ai/dist/prompt.d.ts",
@@ -81,6 +110,14 @@ const requiredArtifacts = [
   "packages/ai/dist/safety.js",
   "packages/ai/dist/verification.d.ts",
   "packages/ai/dist/verification.js",
+  "packages/analytics/dist/contracts.d.ts",
+  "packages/analytics/dist/contracts.js",
+  "packages/analytics/dist/index.d.ts",
+  "packages/analytics/dist/index.js",
+  "packages/analytics/dist/ledger.d.ts",
+  "packages/analytics/dist/ledger.js",
+  "packages/analytics/dist/metrics.d.ts",
+  "packages/analytics/dist/metrics.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/redaction.d.ts",
@@ -171,6 +208,9 @@ const divinationModule = await import(
   pathToFileURL(`${process.cwd()}/packages/divination/dist/index.js`)
 );
 const aiModule = await import(pathToFileURL(`${process.cwd()}/packages/ai/dist/index.js`));
+const analyticsModule = await import(
+  pathToFileURL(`${process.cwd()}/packages/analytics/dist/index.js`)
+);
 const configBrandModule = await import(
   pathToFileURL(`${process.cwd()}/packages/config/dist/brand.js`)
 );
@@ -205,6 +245,29 @@ if (
   domainModule.tarotReadingCreateSchemaVersion !== "tarot-reading-create.v1"
 ) {
   throw new Error("The domain build omitted its anonymous identity and consent contracts.");
+}
+
+const ritualCatalogSource = JSON.parse(
+  await readFile("content/traditions/ritual/rituvia-original.en.v1.json", "utf8"),
+);
+if (
+  typeof domainModule.parseRitualCatalogV1 !== "function" ||
+  typeof domainModule.ritualCatalogItemDefinitionFor !== "function" ||
+  typeof domainModule.ritualLegacyDefinitionFor !== "function"
+) {
+  throw new TypeError("The domain build omitted its versioned ritual catalog boundary.");
+}
+const builtRitualCatalog = domainModule.parseRitualCatalogV1(ritualCatalogSource);
+if (
+  builtRitualCatalog.catalogId !== "rituvia-original-secular" ||
+  builtRitualCatalog.version !== "1.0.0" ||
+  builtRitualCatalog.items.length !== 11 ||
+  builtRitualCatalog.templates.length !== 8 ||
+  domainModule.ritualLegacyDefinitionFor(builtRitualCatalog, "candle")?.code !== "free_candle" ||
+  domainModule.ritualLegacyDefinitionFor(builtRitualCatalog, "golden_intention_bowl")?.code !==
+    "golden_bowl"
+) {
+  throw new TypeError("The compiled ritual catalog is incomplete or historically incompatible.");
 }
 
 if (
@@ -326,6 +389,26 @@ if (
   typeof aiModule.issueInterpretationGenerationAuthorizationV1 !== "undefined"
 ) {
   throw new TypeError("The AI build omitted its versioned provider or tarot contracts.");
+}
+
+if (
+  typeof analyticsModule.parseCoreLoopEvent !== "function" ||
+  typeof analyticsModule.createBoundedInMemoryCoreLoopEventLedger !== "function" ||
+  typeof analyticsModule.projectCoreLoopMetrics !== "function" ||
+  analyticsModule.coreLoopEventSchemaVersion !== "core-loop-event.v1" ||
+  analyticsModule.wmrsDefinitionVersion !== "wmrs.consent-anonymous.v1"
+) {
+  throw new TypeError("The analytics build omitted its privacy-safe core-loop contracts.");
+}
+if (
+  typeof aiModule.prepareNumerologyInterpretationV1 !== "function" ||
+  typeof aiModule.prepareNumerologyInterpretationCandidateV1 !== "function" ||
+  typeof aiModule.verifyNumerologyInterpretationCandidateV1 !== "function" ||
+  aiModule.numerologyInterpretationInputSchemaVersion !== "numerology-interpretation-input.v1" ||
+  aiModule.numerologyInterpretationOutputSchemaVersion !== "numerology-interpretation-output.v1" ||
+  aiModule.numerologyInterpretationSafetyPolicyVersion !== "numerology-interpretation-safety.en.v1"
+) {
+  throw new TypeError("The AI build omitted its safe-off numerology interpretation contracts.");
 }
 const tarotInterpretationFixture = JSON.parse(
   await readFile("packages/ai/test/fixtures/tarot-interpretation-v1.json", "utf8"),
@@ -1464,5 +1547,5 @@ if (
 
 const privateAudits = [privateIntakeAudit, ...privateTarotAudits];
 console.log(
-  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and three private experience pages; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, ...privateAudits.map(({ htmlGzipBytes }) => htmlGzipBytes))} B, CSS ${Math.max(webShellBuild.cssGzipBytes, ...privateAudits.map(({ cssGzipBytes }) => cssGzipBytes))} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, ...privateAudits.map(({ javascriptGzipBytes }) => javascriptGzipBytes))} B.`,
+  `Verified ${requiredArtifacts.length} workspace build artifacts and runtime exports; ${webShellBuild.routes.length} public pages and five private experience pages; maximum gzip: HTML ${Math.max(webShellBuild.htmlGzipBytes, ...privateAudits.map(({ htmlGzipBytes }) => htmlGzipBytes))} B, CSS ${Math.max(webShellBuild.cssGzipBytes, ...privateAudits.map(({ cssGzipBytes }) => cssGzipBytes))} B, JS ${Math.max(webShellBuild.javascriptGzipBytes, ...privateAudits.map(({ javascriptGzipBytes }) => javascriptGzipBytes))} B.`,
 );

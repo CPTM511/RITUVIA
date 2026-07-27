@@ -12,7 +12,7 @@ import {
 } from "@rituvia/divination";
 import {
   parseTarotReadingCreateRequestV1,
-  parseTarotReadingReportRequestV1,
+  parseTarotReadingReportRequest,
   tarotReadingCreateSchemaVersion,
   type TarotReadingType,
 } from "@rituvia/domain";
@@ -31,6 +31,11 @@ import {
   tarotReadingResponseSchemaVersion,
   type TarotReadingPublicResponseV2,
 } from "../app/_contracts/tarot-reading-response";
+import {
+  captureCoreLoopAnalytics,
+  safeOffWebCoreLoopAnalytics,
+  type WebCoreLoopAnalytics,
+} from "./core-loop-analytics";
 import { projectTarotReadingPresentationV1 } from "./tarot-reading-presentation";
 
 export const tarotReadingPolicySchemaVersion = "tarot-reading-policy.v1" as const;
@@ -174,9 +179,11 @@ export const createTarotReadingApplicationService = (
     integrityKeys: TarotReadingIntegrityKeyringInput;
     persistence: TarotReadingPersistence;
     policy: TarotReadingPolicyV1;
+    analytics?: WebCoreLoopAnalytics;
   }>,
 ) => {
   const policy = parsePolicy(input.policy);
+  const analytics = input.analytics ?? safeOffWebCoreLoopAnalytics;
   if (
     input.persistence.limits.maximumReadingsPerWindow !== policy.maximumReadingsPerWindow ||
     input.persistence.limits.policyVersion !== policy.policyVersion ||
@@ -457,9 +464,42 @@ export const createTarotReadingApplicationService = (
         request,
         token: sessionToken,
       });
+      const response = await verifyReading(resolved.reading);
+      if (resolved.kind === "created") {
+        await captureCoreLoopAnalytics(analytics, {
+          anonymousSessionToken: sessionToken,
+          eventName: "reading_started",
+          locale: response.locale,
+          occurredAt: response.createdAt,
+          properties: {
+            modality: "tarot",
+            readingPolicyVersion: response.readingPolicyVersion,
+            readingType: response.readingType,
+          },
+          reflectionRoot: { kind: "reading", readingId: response.readingId },
+          semanticReference: response.readingId,
+          source: "server",
+        });
+        await captureCoreLoopAnalytics(analytics, {
+          anonymousSessionToken: sessionToken,
+          eventName: "reading_deterministic_completed",
+          locale: response.locale,
+          occurredAt: response.createdAt,
+          properties: {
+            catalogVersion: policy.catalog.version,
+            engineVersion: tarotDrawRulesVersion,
+            modality: "tarot",
+            readingPolicyVersion: response.readingPolicyVersion,
+            readingType: response.readingType,
+          },
+          reflectionRoot: { kind: "reading", readingId: response.readingId },
+          semanticReference: response.readingId,
+          source: "server",
+        });
+      }
       return Object.freeze({
         kind: resolved.kind,
-        response: await verifyReading(resolved.reading),
+        response,
       });
     } catch (error) {
       if (error instanceof TarotReadingApplicationError) throw error;
@@ -490,10 +530,18 @@ export const createTarotReadingApplicationService = (
     }
   };
 
-  const get = async (readingId: string, sessionToken: string) => {
+  const get = async (
+    readingId: string,
+    sessionToken: string,
+    ownerType: "account" | "anonymous" = "anonymous",
+  ) => {
     if (!uuidV4Pattern.test(readingId)) return null;
     try {
-      const reading = await input.persistence.get({ readingId, token: sessionToken });
+      const reading = await input.persistence.get({
+        ...(ownerType === "account" ? { ownerType } : {}),
+        readingId,
+        token: sessionToken,
+      });
       return reading === null ? null : await verifyReading(reading);
     } catch (error) {
       if (error instanceof TarotReadingApplicationError) throw error;
@@ -516,7 +564,7 @@ export const createTarotReadingApplicationService = (
     sessionToken: string,
   ) => {
     if (!uuidV4Pattern.test(readingId)) throw new TarotReadingApplicationError("not_found");
-    const request = parseTarotReadingReportRequestV1(requestInput);
+    const request = parseTarotReadingReportRequest(requestInput);
     try {
       return await input.persistence.report({
         prepare: ({

@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { Client } from "pg";
 
+import { assertAdminSecurityRuntimeDatabasePrivileges } from "../src/admin-security.js";
 import {
   assertAnonymousIdentityRuntimeDatabasePrivileges,
   createAnonymousIdentityService,
@@ -18,9 +19,15 @@ import { assertTarotReadingRuntimeDatabasePrivileges } from "../src/tarot-readin
 
 const APP_ROLE = "rituvia_ci_app";
 const CONTROL_ROLE = "rituvia_ci_config_writer";
+const PRIVACY_DELETION_ROLE = "rituvia_privacy_deletion";
+const ADMIN_SERVICE_ROLE = "rituvia_admin_service";
 const MIGRATOR_ROLE = "rituvia_ci_migrator";
 const FLAG_READER_ROLE = "rituvia_feature_flag_reader";
 const FLAG_WRITER_ROLE = "rituvia_feature_flag_writer";
+const COUNTRY_POLICY_READER_ROLE = "rituvia_country_policy_reader";
+const COUNTRY_POLICY_WRITER_ROLE = "rituvia_country_policy_writer";
+const CATALOG_READER_ROLE = "rituvia_catalog_reader";
+const CATALOG_WRITER_ROLE = "rituvia_catalog_writer";
 const IDENTITY_READER_ROLE = "rituvia_identity_reader";
 const IDENTITY_WRITER_ROLE = "rituvia_identity_writer";
 const READING_READER_ROLE = "rituvia_tarot_reading_reader";
@@ -120,9 +127,13 @@ const runPrisma = (label: string, args: readonly string[]): void => {
   if (
     result.status !== 0 ||
     result.error !== undefined ||
-    [environment.appPassword, environment.controlPassword, environment.migratorPassword].some(
-      (secret) => result.stdout.includes(secret) || result.stderr.includes(secret),
-    )
+    [
+      environment.appPassword,
+      environment.adminServicePassword,
+      environment.controlPassword,
+      environment.privacyDeletionPassword,
+      environment.migratorPassword,
+    ].some((secret) => result.stdout.includes(secret) || result.stderr.includes(secret))
   ) {
     throw new Error(`Prisma command failed during ${label}.`);
   }
@@ -175,6 +186,10 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     for (const roleName of [
       FLAG_READER_ROLE,
       FLAG_WRITER_ROLE,
+      COUNTRY_POLICY_READER_ROLE,
+      COUNTRY_POLICY_WRITER_ROLE,
+      CATALOG_READER_ROLE,
+      CATALOG_WRITER_ROLE,
       IDENTITY_READER_ROLE,
       IDENTITY_WRITER_ROLE,
       READING_READER_ROLE,
@@ -194,6 +209,8 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     for (const [roleName, password] of [
       [APP_ROLE, environment.appPassword],
       [CONTROL_ROLE, environment.controlPassword],
+      [PRIVACY_DELETION_ROLE, environment.privacyDeletionPassword],
+      [ADMIN_SERVICE_ROLE, environment.adminServicePassword],
       [MIGRATOR_ROLE, environment.migratorPassword],
     ] as const) {
       const formatted = await admin.query<{ statement: string }>(
@@ -207,6 +224,14 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
     await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE} TO ${MIGRATOR_ROLE}`);
+    await admin.query(`GRANT ${COUNTRY_POLICY_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${COUNTRY_POLICY_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(
+      `GRANT ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE} TO ${MIGRATOR_ROLE}`,
+    );
+    await admin.query(`GRANT ${CATALOG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${CATALOG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE} TO ${MIGRATOR_ROLE}`);
     await admin.query(`GRANT ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(`GRANT ${READING_READER_ROLE}, ${READING_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(
@@ -240,17 +265,37 @@ const grantRuntimePrivileges = async (): Promise<void> => {
   await admin.connect();
   try {
     await admin.query(`REVOKE ALL ON DATABASE ${DATABASE_NAME} FROM PUBLIC`);
-    await admin.query(`REVOKE ALL ON DATABASE ${DATABASE_NAME} FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
-    await admin.query(`GRANT CONNECT ON DATABASE ${DATABASE_NAME} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
-    await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
-    await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
-    await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `REVOKE ALL ON DATABASE ${DATABASE_NAME} FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT CONNECT ON DATABASE ${DATABASE_NAME} TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
+    await admin.query(
+      `REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
     await admin.query(`GRANT SELECT ON TABLE "_prisma_migrations", seed_manifest TO ${APP_ROLE}`);
     await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
     await admin.query(`GRANT INSERT ON TABLE feature_flag_version TO ${FLAG_WRITER_ROLE}`);
+    await admin.query(
+      `GRANT SELECT ON TABLE country_policy_version TO ${COUNTRY_POLICY_READER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE country_policy_version TO ${COUNTRY_POLICY_WRITER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT ON TABLE catalog_version, catalog_product, catalog_product_localization, catalog_price TO ${CATALOG_READER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE catalog_version, catalog_product, catalog_product_localization, catalog_price TO ${CATALOG_WRITER_ROLE}`,
+    );
     await admin.query(
       `GRANT SELECT ON TABLE anonymous_subject, anonymous_session, consent_record, anonymous_session_issuance_gate TO ${IDENTITY_READER_ROLE}`,
     );
@@ -289,19 +334,55 @@ const grantRuntimePrivileges = async (): Promise<void> => {
       `GRANT INSERT (anonymous_subject_id, candidate_digest, candidate_digest_scope, deterministic_checks_version, expires_at, finalization_digest, interpretation_id, metadata_schema_version, output, output_digest, output_digest_scope, output_schema_version, policy_approval_reference, policy_checksum_sha256, policy_id, policy_version, result_schema_version, reviewer_approval_reference, reviewer_checksum_sha256, reviewer_id, reviewer_model_id, reviewer_model_version, reviewer_policy_approval_reference, reviewer_policy_checksum_sha256, reviewer_policy_id, reviewer_policy_version, reviewer_provider_id, reviewer_provider_version, reviewer_version, runtime_approval_reference, runtime_checksum_sha256, runtime_id, runtime_version, status, verification_timeout_ms) ON TABLE interpretation_verification TO ${VERIFICATION_WRITER_ROLE}`,
     );
     await admin.query(
-      `GRANT SELECT, INSERT ON TABLE app_user, auth_identity, auth_challenge, account_session TO ${APP_ROLE}`,
+      `GRANT SELECT, INSERT ON TABLE app_user, auth_identity, auth_challenge, auth_start_rate_limit, account_session, passkey_credential TO ${APP_ROLE}`,
     );
     await admin.query(
-      `GRANT UPDATE (last_active_at, age_attested_at, age_policy_version, profile_version, display_name, locale, time_zone) ON TABLE app_user TO ${APP_ROLE}`,
+      `GRANT UPDATE (status, last_active_at, age_attested_at, age_policy_version, profile_version, display_name, locale, time_zone) ON TABLE app_user TO ${APP_ROLE}`,
     );
-    await admin.query(`GRANT UPDATE (last_sign_in_at) ON TABLE auth_identity TO ${APP_ROLE}`);
-    await admin.query(`GRANT UPDATE (consumed_at) ON TABLE auth_challenge TO ${APP_ROLE}`);
     await admin.query(
-      `GRANT UPDATE (last_seen_at, revoked_at) ON TABLE account_session TO ${APP_ROLE}`,
+      `GRANT UPDATE (last_sign_in_at, provider_subject, verified_email_ciphertext, verified_email_nonce, verified_email_tag, encryption_key_version) ON TABLE auth_identity TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (provider_subject, email_ciphertext, email_nonce, email_tag, encryption_key_version, token_hash, state_hash, previous_session_hash, return_to, consumed_at) ON TABLE auth_challenge TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (window_started_at, request_count) ON TABLE auth_start_rate_limit TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (token_hash, last_seen_at, revoked_at) ON TABLE account_session TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (credential_id, public_key, rp_id, last_used_at, sign_count, revoked_at) ON TABLE passkey_credential TO ${APP_ROLE}`,
     );
     await admin.query(`GRANT SELECT, INSERT ON TABLE account_subject_link TO ${APP_ROLE}`);
     await admin.query(
+      `GRANT UPDATE (privacy_deleted_at, privacy_deletion_request_id) ON TABLE account_subject_link TO ${APP_ROLE}`,
+    );
+    await admin.query(
       `GRANT SELECT, INSERT ON TABLE intention, ritual_session, journal_entry TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (intention_code, intention_text_ciphertext, intention_text_nonce, intention_text_tag, small_action_ciphertext, small_action_nonce, small_action_tag, encryption_key_version, privacy_state, reminder_preference, revisit_date, time_zone, status, revision, last_mutation_key_hash, last_mutation_request_hash, updated_at, completed_at, archived_at, deleted_at) ON TABLE intention TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (reflection_ciphertext, reflection_nonce, reflection_tag, encryption_key_version) ON TABLE journal_entry TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT, INSERT ON TABLE ritual_session_v2, private_journal_entry TO ${APP_ROLE}`,
+    );
+    await admin.query(`GRANT SELECT ON TABLE ritual_pass TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (status, current_step_code, elapsed_seconds, revision, paused_at, completed_at, abandoned_at, last_mutation_key_hash, last_mutation_request_hash) ON TABLE ritual_session_v2 TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (reflection_ciphertext, reflection_nonce, reflection_tag, encryption_key_version, revision, last_mutation_key_hash, last_mutation_request_hash, updated_at, deleted_at) ON TABLE private_journal_entry TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (status, consumed_at, ritual_session_id) ON TABLE ritual_pass TO ${APP_ROLE}`,
+    );
+    await admin.query(`GRANT SELECT, INSERT ON TABLE revisit, revisit_operation TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (intention_text_ciphertext, intention_text_nonce, intention_text_tag, small_action_ciphertext, small_action_nonce, small_action_tag, snapshot_key_version, schedule_kind, scheduled_local_date, time_zone, quiet_hours_start, quiet_hours_end, completion_ciphertext, completion_nonce, completion_tag, completion_key_version, outcome_tags, status, revision, updated_at, completed_at, archived_at, deleted_at) ON TABLE revisit TO ${APP_ROLE}`,
     );
     await admin.query(
       `GRANT SELECT ON TABLE commerce_order, commerce_order_line, payment_attempt, payment_event, ledger_entry, entitlement TO ${APP_ROLE}`,
@@ -312,7 +393,9 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     await admin.query(
       `GRANT UPDATE (status, refunded_minor, updated_at) ON TABLE commerce_order TO ${APP_ROLE}`,
     );
-    await admin.query(`GRANT UPDATE (state, updated_at) ON TABLE payment_attempt TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT UPDATE (state, provider_checkout_url, updated_at) ON TABLE payment_attempt TO ${APP_ROLE}`,
+    );
     await admin.query(
       `GRANT UPDATE (order_id, payment_attempt_id, processed_at, processing_state) ON TABLE payment_event TO ${APP_ROLE}`,
     );
@@ -320,10 +403,68 @@ const grantRuntimePrivileges = async (): Promise<void> => {
       `GRANT UPDATE (source_order_line_id, status, granted_at, revoked_at, version) ON TABLE entitlement TO ${APP_ROLE}`,
     );
     await admin.query(
+      `GRANT SELECT, INSERT ON TABLE privacy_export, privacy_export_artifact, privacy_export_audit TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT ON TABLE auth_identity_suppression, privacy_deletion_request TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT ON TABLE app_user, account_session, account_subject_link, anonymous_session, intention, journal_entry, private_journal_entry, revisit, interpretation, interpretation_verification, privacy_export, privacy_export_artifact, auth_identity, commerce_order, payment_attempt, auth_challenge, passkey_credential, privacy_deletion_request, privacy_deletion_completion, auth_identity_suppression TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE privacy_deletion_request, privacy_deletion_completion, auth_identity_suppression TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (last_seen_at, token_hash, revoked_at) ON TABLE account_session TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (privacy_deleted_at, privacy_deletion_request_id) ON TABLE account_subject_link TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (revoked_at) ON TABLE anonymous_session TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (small_action_ciphertext, small_action_nonce, small_action_tag, intention_text_ciphertext, intention_text_nonce, intention_text_tag, encryption_key_version) ON TABLE intention TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (reflection_ciphertext, reflection_nonce, reflection_tag, encryption_key_version) ON TABLE journal_entry, private_journal_entry TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (intention_text_ciphertext, intention_text_nonce, intention_text_tag, small_action_ciphertext, small_action_nonce, small_action_tag, snapshot_key_version, completion_ciphertext, completion_nonce, completion_tag, completion_key_version) ON TABLE revisit TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (fallback_output, finalization_hash) ON TABLE interpretation TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (output, candidate_digest, output_digest, finalization_digest) ON TABLE interpretation_verification TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (provider_checkout_url) ON TABLE payment_attempt TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (provider_subject, email_ciphertext, email_nonce, email_tag, encryption_key_version, token_hash, state_hash, previous_session_hash, return_to, consumed_at) ON TABLE auth_challenge TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (credential_id, public_key, rp_id, revoked_at) ON TABLE passkey_credential TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (provider_subject, verified_email_ciphertext, verified_email_nonce, verified_email_tag, encryption_key_version) ON TABLE auth_identity TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (status, display_name, locale, time_zone, age_attested_at, age_policy_version, profile_version, last_active_at) ON TABLE app_user TO ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(`GRANT DELETE ON TABLE privacy_export_artifact TO ${PRIVACY_DELETION_ROLE}`);
+    await admin.query(
+      `GRANT SELECT ON TABLE app_user, account_session, passkey_credential, admin_role_assignment, admin_role_revocation, admin_mfa_assertion, admin_audit_event TO ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE admin_role_assignment, admin_role_revocation, admin_audit_event TO ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -374,6 +515,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     statement_timeout: 30_000,
   });
   const runtimeDatabase = createDatabaseClient(environment.appUrl);
+  const adminServiceDatabase = createDatabaseClient(environment.adminServiceUrl);
   const controlDatabase = createDatabaseClient(environment.controlUrl);
   const migratorDatabase = createDatabaseClient(environment.migratorUrl);
   const preselectedRuntimeUrl = new URL(environment.adminUrl);
@@ -386,6 +528,11 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     await assertAnonymousIdentityRuntimeDatabasePrivileges(runtimeDatabase);
     await assertTarotReadingRuntimeDatabasePrivileges(runtimeDatabase);
     await assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase);
+    await assertAdminSecurityRuntimeDatabasePrivileges(adminServiceDatabase);
+    await assert.rejects(
+      assertAdminSecurityRuntimeDatabasePrivileges(runtimeDatabase),
+      /Admin security storage is unavailable/u,
+    );
     await assert.rejects(
       assertFeatureFlagRuntimeDatabasePrivileges(controlDatabase),
       /runtime database privileges are unsafe/u,
@@ -754,6 +901,11 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         roles: [FLAG_WRITER_ROLE],
       },
       {
+        command: "INSERT",
+        policyName: "feature_flag_version_astrology_append",
+        roles: [FLAG_WRITER_ROLE],
+      },
+      {
         command: "SELECT",
         policyName: "feature_flag_version_read",
         roles: [FLAG_READER_ROLE],
@@ -895,6 +1047,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       control.end(),
       migrator.end(),
       runtimeDatabase.$disconnect(),
+      adminServiceDatabase.$disconnect(),
       controlDatabase.$disconnect(),
       migratorDatabase.$disconnect(),
       preselectedRuntimeDatabase.$disconnect(),

@@ -49,6 +49,7 @@ import {
   readTarotReadingResumeId,
   storeTarotReadingResumeId,
 } from "./tarot-reading-resume-storage";
+import { storeSanctuaryReadingHandoff } from "./reading-sanctuary-handoff";
 
 const TarotInterpretationPanel = lazy(async () => {
   const interpretationPanel = await import("./tarot-interpretation-panel");
@@ -146,12 +147,14 @@ export type TarotReadingFlowProps = Readonly<{
   messages: TarotReadingMessages;
   methodologyHref: LocalActionHref;
   readingType: TarotReadingType;
+  sanctuaryHref: LocalActionHref;
 }>;
 
 export function TarotReadingFlow({
   messages,
   methodologyHref,
   readingType,
+  sanctuaryHref,
 }: TarotReadingFlowProps) {
   const flowSlug = readingType === "one_card" ? "one-card" : "three-card";
   const flowId = `tarot-${flowSlug}`;
@@ -648,6 +651,7 @@ export function TarotReadingFlow({
             <TarotInterpretationPanel
               key={response.readingId}
               messages={messages.result.interpretation}
+              reportMessages={messages.result.report}
               readingId={response.readingId}
             />
           </Suspense>
@@ -678,6 +682,19 @@ export function TarotReadingFlow({
           />
           <div className="tarot-completion">
             <p>{messages.result.completion}</p>
+            <p>{messages.result.sanctuaryBoundary}</p>
+            <a
+              className="rvt-action rvt-action--primary"
+              href={sanctuaryHref}
+              onClick={() => {
+                const storage = getSessionResumeStorage();
+                if (storage !== null) {
+                  storeSanctuaryReadingHandoff(storage, response.readingId);
+                }
+              }}
+            >
+              {messages.result.sanctuaryAction}
+            </a>
             <ActionLink href={methodologyHref} variant="secondary">
               {messages.result.methodologyAction}
             </ActionLink>

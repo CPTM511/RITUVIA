@@ -17,6 +17,8 @@ test-results/
 .rituvia-config-boundary-*/
 .local/
 packages/db/src/generated/prisma/
+packages/astrology-engine-native/.native-cache/
+.release-cache/
 
 __pycache__/
 *.py[cod]

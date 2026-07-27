@@ -103,3 +103,33 @@ export const listWebAccountReadings = async (input: {
     return mapError(error);
   }
 };
+
+export const listWebAccountHistory = async (input: {
+  cursor?:
+    | Readonly<{
+        occurredAt: string;
+        resourceId: string;
+        sourceType:
+          | "intention"
+          | "journal"
+          | "journal_legacy"
+          | "reading"
+          | "revisit"
+          | "ritual"
+          | "ritual_legacy";
+      }>
+    | undefined;
+  limit: number;
+  sessionToken: string | undefined;
+}) => {
+  if (input.sessionToken === undefined) throw new WebAccountError("session_unavailable");
+  try {
+    return await loadWebAccountIdentityService().listHistory({
+      cursor: input.cursor,
+      limit: input.limit,
+      sessionToken: input.sessionToken,
+    });
+  } catch (error) {
+    return mapError(error);
+  }
+};

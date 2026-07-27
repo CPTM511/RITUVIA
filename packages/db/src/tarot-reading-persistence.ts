@@ -1,8 +1,9 @@
 import {
   parseTarotReadingCreateRequestV1,
-  parseTarotReadingReportRequestV1,
+  parseTarotReadingReportRequest,
+  tarotReadingReportSchemaVersion,
   type TarotReadingCreateRequestV1,
-  type TarotReadingReportRequestV1,
+  type TarotReadingReportRequest,
   type TarotReadingType,
 } from "@rituvia/domain";
 
@@ -127,7 +128,7 @@ export type PreparedTarotReadingReport = Readonly<{
 export type TarotReadingReportPrepareContext = Readonly<{
   readingId: string;
   reportPolicyVersion: string;
-  request: TarotReadingReportRequestV1;
+  request: TarotReadingReportRequest;
   subjectId: string;
 }>;
 
@@ -163,7 +164,13 @@ export type ResolvedTarotReadingReport = Readonly<{
 }>;
 
 export type TarotReadingPersistence = Readonly<{
-  get(input: Readonly<{ readingId: string; token: string }>): Promise<PersistedTarotReading | null>;
+  get(
+    input: Readonly<{
+      ownerType?: "account" | "anonymous";
+      readingId: string;
+      token: string;
+    }>,
+  ): Promise<PersistedTarotReading | null>;
   limits: TarotReadingLimitPolicy;
   report(
     input: Readonly<{
@@ -234,6 +241,12 @@ type ReadingReportRow = Readonly<{
   id: string;
 }>;
 
+type InterpretationReportTargetRow = Readonly<{
+  id: string;
+  parentStatus: "fallback" | "pending_verification";
+  verificationStatus: "safe_replacement" | "verified" | null;
+}>;
+
 type ExecutionSnapshot = Readonly<{
   bytesConsumed: number;
   catalogId: string;
@@ -254,11 +267,16 @@ type TarotPrivilegeAttestation = Readonly<{
   canMutateDraw: boolean;
   canMutateReading: boolean;
   canInsertReport: boolean;
+  hasExactReportInsertColumns: boolean;
   canMutateReport: boolean;
   canReadDraw: boolean;
   canReadIdentity: boolean;
+  canReadInterpretation: boolean;
   canReadReading: boolean;
   canReadReport: boolean;
+  canReadVerification: boolean;
+  canReadAccountOwnership: boolean;
+  canTouchAccountSession: boolean;
   databaseOwner: string;
   privilegedRole: boolean;
   reachableOwnerOrPrivilegedRole: boolean;
@@ -280,7 +298,11 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
                 WHERE oid = ANY(ARRAY[
                   'public.reading'::regclass,
                   'public.tarot_draw'::regclass,
-                  'public.reading_report'::regclass
+                  'public.reading_report'::regclass,
+                  'public.interpretation'::regclass,
+                  'public.interpretation_verification'::regclass,
+                  'public.account_session'::regclass,
+                  'public.account_subject_link'::regclass
                 ])
              ) AS table_owner_oids
     ), reachable_roles AS (
@@ -297,6 +319,14 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
            has_schema_privilege(current_user, 'public', 'CREATE') AS "canCreateInSchema",
            (has_table_privilege(current_user, 'public.anonymous_subject', 'SELECT')
              AND has_table_privilege(current_user, 'public.anonymous_session', 'SELECT')) AS "canReadIdentity",
+           (has_table_privilege(current_user, 'public.account_session', 'SELECT')
+             AND has_table_privilege(current_user, 'public.account_subject_link', 'SELECT')) AS "canReadAccountOwnership",
+           has_column_privilege(
+             current_user,
+             'public.account_session',
+             'last_seen_at',
+             'UPDATE'
+           ) AS "canTouchAccountSession",
            has_table_privilege(current_user, 'public.reading', 'SELECT') AS "canReadReading",
            has_table_privilege(current_user, 'public.reading', 'INSERT') AS "canInsertReading",
            (has_table_privilege(current_user, 'public.reading', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
@@ -306,9 +336,47 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
            (has_table_privilege(current_user, 'public.tarot_draw', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
              OR has_any_column_privilege(current_user, 'public.tarot_draw', 'UPDATE')) AS "canMutateDraw",
            has_table_privilege(current_user, 'public.reading_report', 'SELECT') AS "canReadReport",
-           has_table_privilege(current_user, 'public.reading_report', 'INSERT') AS "canInsertReport",
+           has_any_column_privilege(current_user, 'public.reading_report', 'INSERT') AS "canInsertReport",
+           NOT EXISTS (
+             SELECT 1
+               FROM pg_attribute AS attribute
+              WHERE attribute.attrelid = 'public.reading_report'::regclass
+                AND attribute.attnum > 0
+                AND NOT attribute.attisdropped
+                AND has_column_privilege(
+                  current_user,
+                  attribute.attrelid,
+                  attribute.attname,
+                  'INSERT'
+                ) IS DISTINCT FROM (
+                  attribute.attname = ANY(ARRAY[
+                    'reading_id',
+                    'anonymous_subject_id',
+                    'category',
+                    'target_kind',
+                    'target_position_id',
+                    'interpretation_id',
+                    'interpretation_parent_status',
+                    'interpretation_verification_status',
+                    'report_request_schema_version',
+                    'schema_version',
+                    'report_policy_version',
+                    'idempotency_key_version',
+                    'idempotency_key_hash',
+                    'canonical_request_hash',
+                    'created_at',
+                    'expires_at'
+                  ])
+                )
+           ) AS "hasExactReportInsertColumns",
            (has_table_privilege(current_user, 'public.reading_report', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
              OR has_any_column_privilege(current_user, 'public.reading_report', 'UPDATE')) AS "canMutateReport",
+           has_table_privilege(current_user, 'public.interpretation', 'SELECT') AS "canReadInterpretation",
+           (has_column_privilege(current_user, 'public.interpretation_verification', 'interpretation_id', 'SELECT')
+             AND has_column_privilege(current_user, 'public.interpretation_verification', 'anonymous_subject_id', 'SELECT')
+             AND has_column_privilege(current_user, 'public.interpretation_verification', 'expires_at', 'SELECT')
+             AND has_column_privilege(current_user, 'public.interpretation_verification', 'parent_status', 'SELECT')
+             AND has_column_privilege(current_user, 'public.interpretation_verification', 'status', 'SELECT')) AS "canReadVerification",
            (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
               FROM pg_roles WHERE rolname = current_user) AS "privilegedRole",
            EXISTS (
@@ -339,13 +407,18 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
     !row.canInsertDraw ||
     !row.canInsertReading ||
     !row.canInsertReport ||
+    !row.hasExactReportInsertColumns ||
     row.canMutateDraw ||
     row.canMutateReading ||
     row.canMutateReport ||
     !row.canReadDraw ||
+    !row.canReadAccountOwnership ||
     !row.canReadIdentity ||
+    !row.canReadInterpretation ||
     !row.canReadReading ||
     !row.canReadReport ||
+    !row.canReadVerification ||
+    !row.canTouchAccountSession ||
     row.privilegedRole ||
     row.reachableOwnerOrPrivilegedRole
   ) {
@@ -792,20 +865,55 @@ export const createTarotReadingPersistence = (
     await assertTarotReadingRuntimeDatabasePrivileges(database);
   };
 
-  const get: TarotReadingPersistence["get"] = async ({ readingId, token }) => {
+  const get: TarotReadingPersistence["get"] = async ({
+    ownerType = "anonymous",
+    readingId,
+    token,
+  }) => {
     if (!uuidPattern.test(readingId)) return null;
     await attest();
     try {
       return await database.$transaction(async (transaction) => {
-        const active = await resolveActiveSession(transaction, token);
-        if (active === null) return null;
-        const rows = await transaction.$queryRaw<ReadingRow[]>`
-          ${readingSelect}
-           WHERE reading.id = ${readingId}::uuid
-             AND reading.anonymous_subject_id = ${active.subjectId}::uuid
-             AND reading.expires_at > CURRENT_TIMESTAMP
-           LIMIT 2
-        `;
+        let rows: ReadingRow[];
+        if (ownerType === "anonymous") {
+          const active = await resolveActiveSession(transaction, token);
+          if (active === null) return null;
+          rows = await transaction.$queryRaw<ReadingRow[]>`
+            ${readingSelect}
+             WHERE reading.id = ${readingId}::uuid
+               AND reading.anonymous_subject_id = ${active.subjectId}::uuid
+               AND reading.expires_at > CURRENT_TIMESTAMP
+             LIMIT 2
+          `;
+        } else {
+          const hash = await tokenHash(token);
+          if (hash === null) return null;
+          rows = await transaction.$queryRaw<ReadingRow[]>`
+            WITH active_account AS (
+              UPDATE account_session AS session
+                 SET last_seen_at = LEAST(CURRENT_TIMESTAMP, session.expires_at)
+                FROM app_user
+               WHERE session.token_hash = ${hash}
+                 AND session.token_hash_version = 1
+                 AND session.revoked_at IS NULL
+                 AND session.expires_at > CURRENT_TIMESTAMP
+                 AND app_user.id = session.user_id
+                 AND app_user.status = 'active'
+               RETURNING session.user_id
+            )
+            ${readingSelect}
+            JOIN anonymous_subject AS subject
+              ON subject.id = reading.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = reading.anonymous_subject_id
+            JOIN active_account ON active_account.user_id = link.user_id
+             WHERE reading.id = ${readingId}::uuid
+               AND link.privacy_deleted_at IS NULL
+               AND reading.expires_at > CURRENT_TIMESTAMP
+               AND subject.expires_at > CURRENT_TIMESTAMP
+             LIMIT 2
+          `;
+        }
         if (rows.length === 0) return null;
         if (rows.length !== 1 || rows[0] === undefined) {
           throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
@@ -822,7 +930,7 @@ export const createTarotReadingPersistence = (
     if (!uuidPattern.test(input.readingId)) {
       throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
     }
-    const request = parseTarotReadingReportRequestV1(input.request);
+    const request = parseTarotReadingReportRequest(input.request);
     await attest();
     let callbackFailure: unknown;
     try {
@@ -846,19 +954,6 @@ export const createTarotReadingPersistence = (
             throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
           }
           const reading = persistedReading(readingRows[0]);
-          if (request.target.kind === "position") {
-            const requestedPositionId = request.target.positionId;
-            const execution = parseExecution(readingRows[0].execution, reading.readingType);
-            const root = record(execution.value);
-            const facts = root === null ? null : record(root.facts);
-            const positions = facts?.positions;
-            if (
-              !Array.isArray(positions) ||
-              !positions.some((value) => record(value)?.positionId === requestedPositionId)
-            ) {
-              throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
-            }
-          }
 
           let prepared: PreparedTarotReadingReport;
           try {
@@ -906,6 +1001,73 @@ export const createTarotReadingPersistence = (
             return Object.freeze({ kind: "replayed" as const });
           }
 
+          if (request.target.kind === "position") {
+            const requestedPositionId = request.target.positionId;
+            const execution = parseExecution(readingRows[0].execution, reading.readingType);
+            const root = record(execution.value);
+            const facts = root === null ? null : record(root.facts);
+            const positions = facts?.positions;
+            if (
+              !Array.isArray(positions) ||
+              !positions.some((value) => record(value)?.positionId === requestedPositionId)
+            ) {
+              throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
+            }
+          }
+          let interpretationTarget: InterpretationReportTargetRow | null = null;
+          if (request.target.kind === "interpretation") {
+            const interpretationRows = await transaction.$queryRaw<InterpretationReportTargetRow[]>`
+              SELECT interpretation.id,
+                     interpretation.status AS "parentStatus",
+                     CASE
+                       WHEN interpretation.status = 'pending_verification'
+                       THEN verification.status
+                       ELSE NULL
+                     END AS "verificationStatus"
+                FROM interpretation
+                LEFT JOIN interpretation_verification AS verification
+                  ON verification.interpretation_id = interpretation.id
+                 AND verification.anonymous_subject_id = interpretation.anonymous_subject_id
+                 AND verification.expires_at = interpretation.expires_at
+                 AND verification.parent_status = interpretation.status
+               WHERE interpretation.request_id = ${request.target.interpretationRequestId}::uuid
+                 AND interpretation.reading_id = ${reading.id}::uuid
+                 AND interpretation.anonymous_subject_id = ${active.subjectId}::uuid
+                 AND interpretation.expires_at = ${new Date(reading.expiresAt)}
+                 AND interpretation.expires_at > CURRENT_TIMESTAMP
+                 AND (
+                   (
+                     interpretation.status = 'fallback'
+                     AND interpretation.fallback_output IS NOT NULL
+                     AND interpretation.finalization_hash IS NOT NULL
+                     AND interpretation.completed_at IS NOT NULL
+                   )
+                   OR (
+                     interpretation.status = 'pending_verification'
+                     AND verification.status IN ('verified', 'safe_replacement')
+                   )
+                 )
+               LIMIT 2
+            `;
+            if (interpretationRows.length === 0) {
+              throw new TarotReadingPersistenceError("TAROT_READING_NOT_FOUND");
+            }
+            if (
+              interpretationRows.length !== 1 ||
+              interpretationRows[0] === undefined ||
+              !uuidPattern.test(interpretationRows[0].id) ||
+              (interpretationRows[0].parentStatus === "pending_verification" &&
+                !["verified", "safe_replacement"].includes(
+                  interpretationRows[0].verificationStatus ?? "",
+                )) ||
+              (interpretationRows[0].parentStatus === "fallback" &&
+                interpretationRows[0].verificationStatus !== null)
+            ) {
+              throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
+            }
+            interpretationTarget = Object.freeze({ ...interpretationRows[0] });
+          }
+
           const activeCandidate = prepared.candidates.find(
             ({ idempotencyKeyVersion }) =>
               idempotencyKeyVersion === prepared.activeIdempotencyKeyVersion,
@@ -915,14 +1077,23 @@ export const createTarotReadingPersistence = (
           }
           const targetPositionId =
             request.target.kind === "position" ? request.target.positionId : null;
+          const storedTargetKind =
+            request.target.kind === "interpretation" ? "reading" : request.target.kind;
+          const interpretationId = interpretationTarget?.id ?? null;
+          const interpretationParentStatus = interpretationTarget?.parentStatus ?? null;
+          const interpretationVerificationStatus = interpretationTarget?.verificationStatus ?? null;
           const inserted = await transaction.$queryRaw<Array<{ id: string }>>`
             INSERT INTO reading_report (
               reading_id, anonymous_subject_id, category, target_kind, target_position_id,
+              interpretation_id, interpretation_parent_status,
+              interpretation_verification_status, report_request_schema_version,
               schema_version, report_policy_version, idempotency_key_version,
               idempotency_key_hash, canonical_request_hash, created_at, expires_at
             ) VALUES (
               ${reading.id}::uuid, ${active.subjectId}::uuid, ${request.category},
-              ${request.target.kind}, ${targetPositionId}, ${request.schemaVersion},
+              ${storedTargetKind}, ${targetPositionId}, ${interpretationId}::uuid,
+              ${interpretationParentStatus}, ${interpretationVerificationStatus},
+              ${request.schemaVersion}, ${tarotReadingReportSchemaVersion},
               ${policy.reportPolicyVersion}, ${activeCandidate.idempotencyKeyVersion},
               ${digestBytes(activeCandidate.idempotencyKeyDigest)},
               ${digestBytes(activeCandidate.canonicalRequestDigest)}, CURRENT_TIMESTAMP,

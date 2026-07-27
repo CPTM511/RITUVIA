@@ -7,6 +7,7 @@ export const featureFlagRegistryVersion = 1 as const;
 
 export const featureFlagKeys = Object.freeze([
   "content.regional_tradition",
+  "experience.astrology",
   "experience.public_shell",
   "market.country_activation",
   "payments.crypto_checkout",
@@ -15,7 +16,7 @@ export const featureFlagKeys = Object.freeze([
 
 export type FeatureFlagKey = (typeof featureFlagKeys)[number];
 export type FeatureFlagState = "off" | "on";
-export type FeatureFlagApprovalGate = "OWN-002" | "OWN-004" | "OWN-006" | "OWN-007";
+export type FeatureFlagApprovalGate = "OWN-002" | "OWN-004" | "OWN-006" | "OWN-007" | "OWN-015";
 export type FeatureFlagRequiredScope = "country" | "country-and-locale" | "none";
 
 export type FeatureFlagDefinition = Readonly<{
@@ -32,6 +33,18 @@ export type FeatureFlagDefinition = Readonly<{
 
 export const featureFlagRegistry: Readonly<Record<FeatureFlagKey, FeatureFlagDefinition>> =
   Object.freeze({
+    "experience.astrology": Object.freeze({
+      approvalGate: "OWN-015",
+      cleanupReference: "RIT-093",
+      createdOn: "2026-07-26",
+      defaultState: "off",
+      lifecycle: "active",
+      owner: "product",
+      purpose:
+        "Kill-switch all natal calculation composition until release evidence and owner deployment approval pass.",
+      removalOn: "2027-07-26",
+      requiredScope: "none",
+    }),
     "content.regional_tradition": Object.freeze({
       approvalGate: "OWN-007",
       cleanupReference: "RIT-157",
@@ -215,6 +228,8 @@ const definitionForFlag = (flagKey: FeatureFlagKey): FeatureFlagDefinition => {
   switch (flagKey) {
     case "content.regional_tradition":
       return featureFlagRegistry["content.regional_tradition"];
+    case "experience.astrology":
+      return featureFlagRegistry["experience.astrology"];
     case "experience.public_shell":
       return featureFlagRegistry["experience.public_shell"];
     case "market.country_activation":

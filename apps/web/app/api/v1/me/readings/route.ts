@@ -11,6 +11,8 @@ const headers = Object.freeze({
   "cache-control": "private, no-store, max-age=0",
   "x-robots-tag": "noindex, nofollow, noarchive",
 });
+const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const utcInstantPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 
 const parseCursor = (
   value: string | null,
@@ -27,7 +29,14 @@ const parseCursor = (
     throw new TypeError();
   }
   const candidate = parsed as Record<string, unknown>;
-  if (typeof candidate.createdAt !== "string" || typeof candidate.readingId !== "string") {
+  if (
+    typeof candidate.createdAt !== "string" ||
+    !utcInstantPattern.test(candidate.createdAt) ||
+    !Number.isFinite(Date.parse(candidate.createdAt)) ||
+    new Date(candidate.createdAt).toISOString() !== candidate.createdAt ||
+    typeof candidate.readingId !== "string" ||
+    !uuidV4Pattern.test(candidate.readingId)
+  ) {
     throw new TypeError();
   }
   return Object.freeze({ createdAt: candidate.createdAt, readingId: candidate.readingId });

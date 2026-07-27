@@ -2,22 +2,29 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { anonymousSessionCookieName } from "../../anonymous/session/route";
-import { getWebRuntimeConfiguration } from "../../../../../config/server";
 import {
-  accountSessionCookieName,
+  accountAuthStateCookieName,
   completeWebAccountAuth,
-  mergeWebAnonymousSubject,
+  hasMatchingAccountAuthState,
   WebAccountAuthError,
 } from "../../../../../server/account-auth";
+import {
+  accountAuthPrivateHeaders,
+  clearAccountAuthStateCookie,
+  finalizeAccountAuth,
+} from "../_http";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const privateHeaders = Object.freeze({
-  "cache-control": "private, no-store, max-age=0",
-  "referrer-policy": "no-referrer",
-  "x-robots-tag": "noindex, nofollow, noarchive",
-});
+const problem = (status: 400 | 409 | 503, code: string, clearState: boolean): NextResponse => {
+  const response = NextResponse.json(
+    { code, status },
+    { headers: accountAuthPrivateHeaders, status },
+  );
+  if (clearState) clearAccountAuthStateCookie(response);
+  return response;
+};
 
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
   const entries = [...request.nextUrl.searchParams.entries()];
@@ -31,70 +38,30 @@ export const GET = async (request: NextRequest): Promise<NextResponse> => {
     entries[2]?.[0] !== "token" ||
     challengeId === null ||
     state === null ||
-    token === null
+    token === null ||
+    !hasMatchingAccountAuthState(state, request.cookies.get(accountAuthStateCookieName)?.value)
   ) {
-    return NextResponse.json(
-      { code: "ACCOUNT_AUTH_CALLBACK_INVALID", status: 400 },
-      { headers: privateHeaders, status: 400 },
-    );
+    return problem(400, "ACCOUNT_AUTH_CALLBACK_INVALID", true);
   }
   try {
-    const anonymousSessionToken = request.cookies.get(anonymousSessionCookieName)?.value;
     const completed = await completeWebAccountAuth({
+      anonymousSessionToken: request.cookies.get(anonymousSessionCookieName)?.value,
       challengeId,
-      previousSessionToken: request.cookies.get(accountSessionCookieName)?.value,
       state,
       token,
     });
-    if (anonymousSessionToken !== undefined) {
-      await mergeWebAnonymousSubject({
-        accountSessionToken: completed.sessionToken,
-        anonymousSessionToken,
-        idempotencyKey: `auth_callback_${completed.sessionToken}`,
-      });
-    }
-    const response = NextResponse.redirect(
-      new URL(completed.returnTo, getWebRuntimeConfiguration().brand.canonicalOrigin),
-      303,
-    );
-    for (const [name, value] of Object.entries(privateHeaders)) response.headers.set(name, value);
-    const expires = new Date(completed.context.expiresAt);
-    response.cookies.set({
-      expires,
-      httpOnly: true,
-      maxAge: Math.max(1, Math.floor((expires.getTime() - Date.now()) / 1_000)),
-      name: accountSessionCookieName,
-      path: "/",
-      sameSite: "strict",
-      secure: true,
-      value: completed.sessionToken,
-    });
-    if (anonymousSessionToken !== undefined) {
-      response.cookies.set({
-        expires: new Date(0),
-        httpOnly: true,
-        maxAge: 0,
-        name: anonymousSessionCookieName,
-        path: "/",
-        sameSite: "strict",
-        secure: true,
-        value: "",
-      });
-    }
-    return response;
+    return await finalizeAccountAuth(request, completed);
   } catch (error) {
-    return NextResponse.json(
-      {
-        code:
-          error instanceof WebAccountAuthError && error.code === "invalid"
-            ? "ACCOUNT_AUTH_CALLBACK_INVALID"
-            : "ACCOUNT_AUTH_UNAVAILABLE",
-        status: error instanceof WebAccountAuthError && error.code === "invalid" ? 400 : 503,
-      },
-      {
-        headers: privateHeaders,
-        status: error instanceof WebAccountAuthError && error.code === "invalid" ? 400 : 503,
-      },
+    const conflict = error instanceof WebAccountAuthError && error.code === "conflict";
+    const invalid = error instanceof WebAccountAuthError && error.code === "invalid";
+    return problem(
+      invalid ? 400 : conflict ? 409 : 503,
+      invalid
+        ? "ACCOUNT_AUTH_CALLBACK_INVALID"
+        : conflict
+          ? "ACCOUNT_AUTH_MERGE_CONFLICT"
+          : "ACCOUNT_AUTH_UNAVAILABLE",
+      invalid,
     );
   }
 };

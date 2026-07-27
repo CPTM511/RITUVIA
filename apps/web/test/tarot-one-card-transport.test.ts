@@ -243,6 +243,32 @@ describe("same-session tarot resume transport", () => {
     expect(String(calls[0]?.[0])).not.toMatch(/anonymous\/session|readings\/tarot/iu);
   });
 
+  it("invokes a native-compatible fetcher without an object receiver", async () => {
+    const body = createTarotOneCardResponseFixture();
+    const calls: Array<[RequestInfo | URL, RequestInit | undefined]> = [];
+    const receivers: unknown[] = [];
+    const fetcher = function (
+      this: unknown,
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> {
+      calls.push([input, init]);
+      receivers.push(this);
+      return Promise.resolve(Response.json(body, { status: 200 }));
+    } as typeof fetch;
+
+    await expect(
+      executeTarotReadingResume({
+        fetcher,
+        readingId: body.readingId,
+        readingType: "one_card",
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual(body);
+    expect(receivers).toEqual([undefined]);
+    expect(calls).toHaveLength(1);
+  });
+
   it.each([
     [404, "not_found"],
     [503, "unavailable"],

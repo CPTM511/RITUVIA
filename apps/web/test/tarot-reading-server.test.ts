@@ -3,12 +3,13 @@ import { readFile } from "node:fs/promises";
 import { parseTarotCatalogV1, parseTarotDrawExecutionV1 } from "@rituvia/divination";
 import {
   parseTarotReadingCreateRequestV1,
-  parseTarotReadingReportRequestV1,
+  parseTarotReadingReportRequest,
   questionIntakeThemeCodes,
 } from "@rituvia/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTarotCatalogChecksum } from "../server/tarot-reading-crypto";
+import type { WebCoreLoopAnalytics } from "../server/core-loop-analytics";
 import {
   createTarotReadingApplicationService,
   tarotReadingPolicySchemaVersion,
@@ -153,6 +154,7 @@ const otherSubjectId = "22222222-2222-4222-8222-222222222222";
 const token = "a".repeat(43);
 const otherToken = "b".repeat(43);
 const idempotencyKey = "abcdefghijklmnopqrstuv";
+const interpretationRequestId = "99999999-9999-4999-8999-999999999999";
 const key = (byte: number): string => Buffer.alloc(32, byte).toString("base64url");
 const request = Object.freeze({
   locale: "en" as const,
@@ -168,6 +170,11 @@ const reportRequest = Object.freeze({
   category: "cultural" as const,
   schemaVersion: "tarot-reading-report.v1" as const,
   target: Object.freeze({ kind: "reading" as const }),
+});
+const interpretationReportRequest = Object.freeze({
+  category: "safety" as const,
+  schemaVersion: "tarot-reading-report.v2" as const,
+  target: Object.freeze({ interpretationRequestId, kind: "interpretation" as const }),
 });
 
 const createFakePersistence = (maximumReadingsPerWindow = 3, retryAfterSeconds = 31) => {
@@ -199,7 +206,7 @@ const createFakePersistence = (maximumReadingsPerWindow = 3, retryAfterSeconds =
       ) {
         throw new FakePersistenceError("TAROT_READING_NOT_FOUND");
       }
-      const parsedRequest = parseTarotReadingReportRequestV1(requestInput);
+      const parsedRequest = parseTarotReadingReportRequest(requestInput);
       const prepared = await prepare({
         readingId,
         reportPolicyVersion: "test.tarot-reading-report.v1",
@@ -308,6 +315,7 @@ const createFakePersistence = (maximumReadingsPerWindow = 3, retryAfterSeconds =
 };
 
 const serviceFixture = (input?: {
+  analytics?: WebCoreLoopAnalytics;
   limit?: number;
   persistenceLimits?: Partial<TarotReadingPersistence["limits"]>;
   rawCatalog?: unknown;
@@ -350,6 +358,7 @@ const serviceFixture = (input?: {
         });
   const provider = { load: vi.fn().mockResolvedValue(catalog) };
   const service = createTarotReadingApplicationService({
+    ...(input?.analytics === undefined ? {} : { analytics: input.analytics }),
     catalogProvider: provider,
     clock: () => new Date("2026-07-17T12:00:00.000Z"),
     integrityKeys: {
@@ -381,6 +390,23 @@ describe("tarot reading application service", () => {
     },
   );
 
+  it("emits reading start and deterministic completion only for a created reading", async () => {
+    const capture = vi.fn<WebCoreLoopAnalytics["capture"]>(async () => true);
+    const { service } = serviceFixture({ analytics: { capture } });
+
+    const created = await service.create(request, idempotencyKey, token);
+    const replayed = await service.create(request, idempotencyKey, token);
+
+    expect(created.kind).toBe("created");
+    expect(replayed.kind).toBe("replayed");
+    expect(capture).toHaveBeenCalledTimes(2);
+    expect(capture.mock.calls.map(([event]) => event.eventName)).toEqual([
+      "reading_started",
+      "reading_deterministic_completed",
+    ]);
+    expect(JSON.stringify(capture.mock.calls)).not.toContain(request.themeCode);
+  });
+
   it("records and replays one categorical owner-bound report without loading the catalog again", async () => {
     const { fake, provider, service } = serviceFixture();
     const created = await service.create(request, idempotencyKey, token);
@@ -401,6 +427,24 @@ describe("tarot reading application service", () => {
 
     expect(report).toEqual({ kind: "created" });
     expect(replay).toEqual({ kind: "replayed" });
+    expect(fake.reports).toHaveLength(1);
+    expect(provider.load).not.toHaveBeenCalled();
+  });
+
+  it("binds an exact interpretation target without loading content or starting generation", async () => {
+    const { fake, provider, service } = serviceFixture();
+    const created = await service.create(request, idempotencyKey, token);
+    provider.load.mockClear();
+
+    await expect(
+      service.report(
+        created.response.readingId,
+        interpretationReportRequest,
+        "interpretationreportkey",
+        token,
+      ),
+    ).resolves.toEqual({ kind: "created" });
+
     expect(fake.reports).toHaveLength(1);
     expect(provider.load).not.toHaveBeenCalled();
   });

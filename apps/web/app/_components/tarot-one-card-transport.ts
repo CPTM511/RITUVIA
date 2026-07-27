@@ -165,7 +165,8 @@ export const executeTarotReadingResume = async (
   }>,
 ): Promise<TarotReadingPublicResponseV2> => {
   if (!isTarotReadingId(input.readingId)) return failResume("invalid");
-  const response = await input.fetcher(`/api/v1/readings/${input.readingId}`, {
+  const fetcher = input.fetcher;
+  const response = await fetcher(`/api/v1/readings/${input.readingId}`, {
     cache: "no-store",
     credentials: "same-origin",
     method: "GET",

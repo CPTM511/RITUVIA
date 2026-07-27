@@ -51,9 +51,15 @@ const databaseUrlPath = path.join(localRoot, "database-url");
 const ADMIN_ROLE = "rituvia_local_admin";
 const APP_ROLE = "rituvia_app";
 const CONTROL_ROLE = "rituvia_config_writer";
+const PRIVACY_DELETION_ROLE = "rituvia_privacy_deletion";
+const ADMIN_SERVICE_ROLE = "rituvia_admin_service";
 const MIGRATOR_ROLE = "rituvia_migrator";
 const FLAG_READER_ROLE = "rituvia_feature_flag_reader";
 const FLAG_WRITER_ROLE = "rituvia_feature_flag_writer";
+const COUNTRY_POLICY_READER_ROLE = "rituvia_country_policy_reader";
+const COUNTRY_POLICY_WRITER_ROLE = "rituvia_country_policy_writer";
+const CATALOG_READER_ROLE = "rituvia_catalog_reader";
+const CATALOG_WRITER_ROLE = "rituvia_catalog_writer";
 const IDENTITY_READER_ROLE = "rituvia_identity_reader";
 const IDENTITY_WRITER_ROLE = "rituvia_identity_writer";
 const READING_READER_ROLE = "rituvia_tarot_reading_reader";
@@ -361,6 +367,8 @@ const createCredentials = async () => {
     adminPassword: randomBytes(32).toString("base64url"),
     appPassword: randomBytes(32).toString("base64url"),
     controlPassword: randomBytes(32).toString("base64url"),
+    privacyDeletionPassword: randomBytes(32).toString("base64url"),
+    adminServicePassword: randomBytes(32).toString("base64url"),
     migratorPassword: randomBytes(32).toString("base64url"),
   };
   await writeFile(credentialsPath, `${JSON.stringify(credentials, null, 2)}\n`, {
@@ -388,6 +396,8 @@ const assertCredentials = (credentials) => {
   assertBaseCredentials(credentials);
   if (
     !secretPattern.test(credentials.controlPassword ?? "") ||
+    !secretPattern.test(credentials.privacyDeletionPassword ?? "") ||
+    !secretPattern.test(credentials.adminServicePassword ?? "") ||
     !secretPattern.test(credentials.migratorPassword ?? "")
   ) {
     throw genericFailure("Local PostgreSQL credentials are invalid.");
@@ -404,6 +414,12 @@ const upgradeCredentials = async () => {
     controlPassword: secretPattern.test(existing.controlPassword ?? "")
       ? existing.controlPassword
       : randomBytes(32).toString("base64url"),
+    privacyDeletionPassword: secretPattern.test(existing.privacyDeletionPassword ?? "")
+      ? existing.privacyDeletionPassword
+      : randomBytes(32).toString("base64url"),
+    adminServicePassword: secretPattern.test(existing.adminServicePassword ?? "")
+      ? existing.adminServicePassword
+      : randomBytes(32).toString("base64url"),
     migratorPassword: secretPattern.test(existing.migratorPassword ?? "")
       ? existing.migratorPassword
       : randomBytes(32).toString("base64url"),
@@ -411,6 +427,8 @@ const upgradeCredentials = async () => {
   assertCredentials(upgraded);
   if (
     upgraded.controlPassword !== existing.controlPassword ||
+    upgraded.privacyDeletionPassword !== existing.privacyDeletionPassword ||
+    upgraded.adminServicePassword !== existing.adminServicePassword ||
     upgraded.migratorPassword !== existing.migratorPassword
   ) {
     await writeManagedFileAtomically(
@@ -586,6 +604,8 @@ const buildDatabaseUrl = (runtime, databaseName, role = APP_ROLE) => {
     [ADMIN_ROLE]: runtime.credentials.adminPassword,
     [APP_ROLE]: runtime.credentials.appPassword,
     [CONTROL_ROLE]: runtime.credentials.controlPassword,
+    [PRIVACY_DELETION_ROLE]: runtime.credentials.privacyDeletionPassword,
+    [ADMIN_SERVICE_ROLE]: runtime.credentials.adminServicePassword,
     [MIGRATOR_ROLE]: runtime.credentials.migratorPassword,
   };
   const password = passwords[role];
@@ -814,13 +834,21 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     await admin.query(`REASSIGN OWNED BY ${APP_ROLE} TO ${MIGRATOR_ROLE}`);
     await admin.query(`ALTER SCHEMA public OWNER TO ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM PUBLIC`);
-    await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
-    await admin.query(`GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
-    await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
-    await admin.query(`REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}`);
-    await admin.query(`GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
+    await admin.query(
+      `REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
     const foundationTables = await admin.query(
       `SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS migrations,
@@ -838,6 +866,28 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     if (featureFlagTable.rows[0]?.present === true) {
       await admin.query(`GRANT SELECT ON TABLE feature_flag_version TO ${FLAG_READER_ROLE}`);
       await admin.query(`GRANT INSERT ON TABLE feature_flag_version TO ${FLAG_WRITER_ROLE}`);
+    }
+    const countryPolicyTable = await admin.query(
+      "SELECT to_regclass('public.country_policy_version') IS NOT NULL AS present",
+    );
+    if (countryPolicyTable.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT ON TABLE country_policy_version TO ${COUNTRY_POLICY_READER_ROLE}`,
+      );
+      await admin.query(
+        `GRANT INSERT ON TABLE country_policy_version TO ${COUNTRY_POLICY_WRITER_ROLE}`,
+      );
+    }
+    const catalogTable = await admin.query(
+      "SELECT to_regclass('public.catalog_version') IS NOT NULL AS present",
+    );
+    if (catalogTable.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT ON TABLE catalog_version, catalog_product, catalog_product_localization, catalog_price TO ${CATALOG_READER_ROLE}`,
+      );
+      await admin.query(
+        `GRANT INSERT ON TABLE catalog_version, catalog_product, catalog_product_localization, catalog_price TO ${CATALOG_WRITER_ROLE}`,
+      );
     }
     const identityTables = await admin.query(
       "SELECT to_regclass('public.anonymous_subject') IS NOT NULL AS present",
@@ -874,7 +924,12 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
           ? "reading, tarot_draw, reading_report"
           : "reading, tarot_draw";
       await admin.query(`GRANT SELECT ON TABLE ${readingRelations} TO ${READING_READER_ROLE}`);
-      await admin.query(`GRANT INSERT ON TABLE ${readingRelations} TO ${READING_WRITER_ROLE}`);
+      await admin.query(`GRANT INSERT ON TABLE reading, tarot_draw TO ${READING_WRITER_ROLE}`);
+      if (reportTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT INSERT (anonymous_subject_id, canonical_request_hash, category, created_at, expires_at, idempotency_key_hash, idempotency_key_version, interpretation_id, interpretation_parent_status, interpretation_verification_status, reading_id, report_policy_version, report_request_schema_version, schema_version, target_kind, target_position_id) ON TABLE reading_report TO ${READING_WRITER_ROLE}`,
+        );
+      }
     }
     const interpretationTable = await admin.query(
       "SELECT to_regclass('public.interpretation') IS NOT NULL AS present",
@@ -900,21 +955,76 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       );
     }
     const accountTables = await admin.query(
-      "SELECT to_regclass('public.app_user') IS NOT NULL AS present",
+      `SELECT to_regclass('public.app_user') IS NOT NULL AS present,
+              to_regclass('public.account_consent_record') IS NOT NULL AS "consentPresent",
+              to_regclass('public.revisit_reminder_subscription') IS NOT NULL AS "reminderPresent",
+              to_regclass('public.auth_start_rate_limit') IS NOT NULL AS "rateLimitPresent",
+              to_regclass('public.passkey_credential') IS NOT NULL AS "passkeyPresent",
+              to_regclass('public.birth_profile') IS NOT NULL AS "birthProfilePresent",
+              to_regclass('public.astrology_calculation') IS NOT NULL
+                AS "astrologyCalculationPresent"`,
     );
     if (accountTables.rows[0]?.present === true) {
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE app_user, auth_identity, auth_challenge, account_session TO ${APP_ROLE}`,
       );
       await admin.query(
-        `GRANT UPDATE (last_active_at, age_attested_at, age_policy_version, profile_version, display_name, locale, time_zone) ON TABLE app_user TO ${APP_ROLE}`,
+        `GRANT UPDATE (status, last_active_at, age_attested_at, age_policy_version, profile_version, display_name, locale, time_zone) ON TABLE app_user TO ${APP_ROLE}`,
       );
-      await admin.query(`GRANT UPDATE (last_sign_in_at) ON TABLE auth_identity TO ${APP_ROLE}`);
-      await admin.query(`GRANT UPDATE (consumed_at) ON TABLE auth_challenge TO ${APP_ROLE}`);
       await admin.query(
-        `GRANT UPDATE (last_seen_at, revoked_at) ON TABLE account_session TO ${APP_ROLE}`,
+        `GRANT UPDATE (last_sign_in_at, provider_subject, verified_email_ciphertext, verified_email_nonce, verified_email_tag, encryption_key_version) ON TABLE auth_identity TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (provider_subject, email_ciphertext, email_nonce, email_tag, encryption_key_version, token_hash, state_hash, previous_session_hash, return_to, consumed_at) ON TABLE auth_challenge TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (token_hash, last_seen_at, revoked_at) ON TABLE account_session TO ${APP_ROLE}`,
       );
       await admin.query(`GRANT SELECT, INSERT ON TABLE account_subject_link TO ${APP_ROLE}`);
+      if (accountTables.rows[0]?.consentPresent === true) {
+        await admin.query(`GRANT SELECT, INSERT ON TABLE account_consent_record TO ${APP_ROLE}`);
+      }
+      if (accountTables.rows[0]?.birthProfilePresent === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE birth_profile, birth_profile_operation TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (time_certainty, payload_ciphertext, payload_nonce, payload_tag, encryption_key_version, digest_key_version, canonical_payload_digest, revision, updated_at, deleted_at) ON TABLE birth_profile TO ${APP_ROLE}`,
+        );
+      }
+      if (accountTables.rows[0]?.astrologyCalculationPresent === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE astrology_calculation, astrology_calculation_operation TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT INSERT (id, user_id, birth_profile_id, birth_profile_revision, birth_profile_payload_digest, status, time_certainty, method_version, aspect_policy_version, method_catalog_digest, input_snapshot_digest, timezone_provenance_digest, engine_provenance_version, engine_build_provenance, facts_ciphertext, facts_nonce, facts_tag, encryption_key_version, digest_key_version, keyed_facts_digest, created_at) ON TABLE astrology_calculation TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT INSERT (user_id, astrology_calculation_id, action, idempotency_key_digest, canonical_request_digest, created_at) ON TABLE astrology_calculation_operation TO ${APP_ROLE}`,
+        );
+      }
+      if (accountTables.rows[0]?.reminderPresent === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE revisit_reminder_subscription, revisit_reminder_operation TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (recipient_identity_id, schema_version, notice_version, channel, frequency, locale, preference_state, delivery_state, attempt_count, next_attempt_at, lease_token_hash, leased_until, last_failure_code, provider_message_reference, updated_at, delivered_at, unsubscribed_at, dead_lettered_at) ON TABLE revisit_reminder_subscription TO ${APP_ROLE}`,
+        );
+      }
+      if (
+        accountTables.rows[0]?.rateLimitPresent === true &&
+        accountTables.rows[0]?.passkeyPresent === true
+      ) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE auth_start_rate_limit, passkey_credential TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (window_started_at, request_count) ON TABLE auth_start_rate_limit TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (credential_id, public_key, rp_id, last_used_at, sign_count, revoked_at) ON TABLE passkey_credential TO ${APP_ROLE}`,
+        );
+      }
     }
     const reflectionTables = await admin.query(
       "SELECT to_regclass('public.intention') IS NOT NULL AS present",
@@ -923,6 +1033,41 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE intention, ritual_session, journal_entry TO ${APP_ROLE}`,
       );
+      await admin.query(
+        `GRANT UPDATE (intention_code, intention_text_ciphertext, intention_text_nonce, intention_text_tag, small_action_ciphertext, small_action_nonce, small_action_tag, encryption_key_version, privacy_state, reminder_preference, revisit_date, time_zone, status, revision, last_mutation_key_hash, last_mutation_request_hash, updated_at, completed_at, archived_at, deleted_at) ON TABLE intention TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (reflection_ciphertext, reflection_nonce, reflection_tag, encryption_key_version) ON TABLE journal_entry TO ${APP_ROLE}`,
+      );
+      const ritualPassTable = await admin.query(
+        "SELECT to_regclass('public.ritual_pass') IS NOT NULL AS present",
+      );
+      if (ritualPassTable.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE ritual_session_v2, private_journal_entry TO ${APP_ROLE}`,
+        );
+        await admin.query(`GRANT SELECT ON TABLE ritual_pass TO ${APP_ROLE}`);
+        await admin.query(
+          `GRANT UPDATE (status, current_step_code, elapsed_seconds, revision, paused_at, completed_at, abandoned_at, last_mutation_key_hash, last_mutation_request_hash) ON TABLE ritual_session_v2 TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (reflection_ciphertext, reflection_nonce, reflection_tag, encryption_key_version, revision, last_mutation_key_hash, last_mutation_request_hash, updated_at, deleted_at) ON TABLE private_journal_entry TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (status, consumed_at, ritual_session_id) ON TABLE ritual_pass TO ${APP_ROLE}`,
+        );
+      }
+      const revisitTable = await admin.query(
+        "SELECT to_regclass('public.revisit') IS NOT NULL AS present",
+      );
+      if (revisitTable.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE revisit, revisit_operation TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (intention_text_ciphertext, intention_text_nonce, intention_text_tag, small_action_ciphertext, small_action_nonce, small_action_tag, snapshot_key_version, schedule_kind, scheduled_local_date, time_zone, quiet_hours_start, quiet_hours_end, completion_ciphertext, completion_nonce, completion_tag, completion_key_version, outcome_tags, status, revision, updated_at, completed_at, archived_at, deleted_at) ON TABLE revisit TO ${APP_ROLE}`,
+        );
+      }
     }
     const commerceTables = await admin.query(
       "SELECT to_regclass('public.commerce_order') IS NOT NULL AS present",
@@ -937,7 +1082,9 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT UPDATE (status, refunded_minor, updated_at) ON TABLE commerce_order TO ${APP_ROLE}`,
       );
-      await admin.query(`GRANT UPDATE (state, updated_at) ON TABLE payment_attempt TO ${APP_ROLE}`);
+      await admin.query(
+        `GRANT UPDATE (state, provider_checkout_url, updated_at) ON TABLE payment_attempt TO ${APP_ROLE}`,
+      );
       await admin.query(
         `GRANT UPDATE (order_id, payment_attempt_id, processed_at, processing_state) ON TABLE payment_event TO ${APP_ROLE}`,
       );
@@ -945,11 +1092,139 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         `GRANT UPDATE (source_order_line_id, status, granted_at, revoked_at, version) ON TABLE entitlement TO ${APP_ROLE}`,
       );
     }
+    const commercialTransactionTables = await admin.query(
+      "SELECT to_regclass('public.commercial_order_v2') IS NOT NULL AS present",
+    );
+    if (commercialTransactionTables.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (status, refunded_minor, updated_at, paid_at, refund_requested_at, refunded_at) ON TABLE commercial_order_v2 TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (state, provider_checkout_id, provider_checkout_url, provider_payment_intent_id, updated_at, completed_at) ON TABLE commercial_payment_attempt_v2 TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (status, consumed_at, released_at, expired_at) ON TABLE credit_reservation TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (subscription_available, promotional_available, purchased_available, reserved, version, updated_at) ON TABLE credit_projection TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (status, frozen_at, revoked_at, version) ON TABLE commercial_entitlement_v2 TO ${APP_ROLE}`,
+      );
+    }
+    const privacyExportTables = await admin.query(
+      "SELECT to_regclass('public.privacy_export') IS NOT NULL AS present",
+    );
+    if (privacyExportTables.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT, INSERT ON TABLE privacy_export, privacy_export_artifact, privacy_export_audit TO ${APP_ROLE}`,
+      );
+    }
+    const privacyDeletionTables = await admin.query(
+      "SELECT to_regclass('public.privacy_deletion_request') IS NOT NULL AS present",
+    );
+    if (privacyDeletionTables.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT ON TABLE privacy_deletion_authorized_user TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT SELECT ON TABLE auth_identity_suppression, privacy_deletion_request TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT SELECT ON TABLE app_user, account_session, account_subject_link, anonymous_session, intention, journal_entry, private_journal_entry, revisit, interpretation, interpretation_verification, privacy_export, privacy_export_artifact, auth_identity, commerce_order, payment_attempt, auth_challenge, passkey_credential, privacy_deletion_request, privacy_deletion_completion, auth_identity_suppression TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      if (accountTables.rows[0]?.birthProfilePresent === true) {
+        await admin.query(`GRANT SELECT ON TABLE birth_profile TO ${PRIVACY_DELETION_ROLE}`);
+        await admin.query(
+          `GRANT UPDATE (payload_ciphertext, payload_nonce, payload_tag, encryption_key_version, canonical_payload_digest, revision, updated_at, deleted_at) ON TABLE birth_profile TO ${PRIVACY_DELETION_ROLE}`,
+        );
+      }
+      if (accountTables.rows[0]?.astrologyCalculationPresent === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE astrology_calculation TO ${PRIVACY_DELETION_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (facts_ciphertext, facts_nonce, facts_tag, encryption_key_version, digest_key_version, keyed_facts_digest, privacy_deleted_at) ON TABLE astrology_calculation TO ${PRIVACY_DELETION_ROLE}`,
+        );
+      }
+      if (commercialTransactionTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${PRIVACY_DELETION_ROLE}`,
+        );
+      }
+      await admin.query(
+        `GRANT INSERT ON TABLE privacy_deletion_request, privacy_deletion_completion, auth_identity_suppression TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (last_seen_at, token_hash, revoked_at) ON TABLE account_session TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (privacy_deleted_at, privacy_deletion_request_id) ON TABLE account_subject_link TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      if (accountTables.rows[0]?.reminderPresent === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE revisit_reminder_subscription TO ${PRIVACY_DELETION_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (preference_state, delivery_state, next_attempt_at, lease_token_hash, leased_until, last_failure_code, provider_message_reference, updated_at, delivered_at, unsubscribed_at, dead_lettered_at) ON TABLE revisit_reminder_subscription TO ${PRIVACY_DELETION_ROLE}`,
+        );
+      }
+      await admin.query(
+        `GRANT UPDATE (revoked_at) ON TABLE anonymous_session TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (small_action_ciphertext, small_action_nonce, small_action_tag, intention_text_ciphertext, intention_text_nonce, intention_text_tag, encryption_key_version) ON TABLE intention TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (reflection_ciphertext, reflection_nonce, reflection_tag, encryption_key_version) ON TABLE journal_entry, private_journal_entry TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (intention_text_ciphertext, intention_text_nonce, intention_text_tag, small_action_ciphertext, small_action_nonce, small_action_tag, snapshot_key_version, completion_ciphertext, completion_nonce, completion_tag, completion_key_version) ON TABLE revisit TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (fallback_output, finalization_hash) ON TABLE interpretation TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (output, candidate_digest, output_digest, finalization_digest) ON TABLE interpretation_verification TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (provider_checkout_url) ON TABLE payment_attempt TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (provider_subject, email_ciphertext, email_nonce, email_tag, encryption_key_version, token_hash, state_hash, previous_session_hash, return_to, consumed_at) ON TABLE auth_challenge TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (credential_id, public_key, rp_id, revoked_at) ON TABLE passkey_credential TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (provider_subject, verified_email_ciphertext, verified_email_nonce, verified_email_tag, encryption_key_version) ON TABLE auth_identity TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT UPDATE (status, display_name, locale, time_zone, age_attested_at, age_policy_version, profile_version, last_active_at) ON TABLE app_user TO ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `GRANT DELETE ON TABLE privacy_export_artifact TO ${PRIVACY_DELETION_ROLE}`,
+      );
+    }
+    const adminSecurityTables = await admin.query(
+      "SELECT to_regclass('public.admin_role_assignment') IS NOT NULL AS present",
+    );
+    if (adminSecurityTables.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT ON TABLE app_user, account_session, passkey_credential, admin_role_assignment, admin_role_revocation, admin_mfa_assertion, admin_audit_event TO ${ADMIN_SERVICE_ROLE}`,
+      );
+      await admin.query(
+        `GRANT INSERT ON TABLE admin_role_assignment, admin_role_revocation, admin_audit_event TO ${ADMIN_SERVICE_ROLE}`,
+      );
+    }
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -963,6 +1238,10 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
   try {
     await ensureGroupRole(admin, FLAG_READER_ROLE);
     await ensureGroupRole(admin, FLAG_WRITER_ROLE);
+    await ensureGroupRole(admin, COUNTRY_POLICY_READER_ROLE);
+    await ensureGroupRole(admin, COUNTRY_POLICY_WRITER_ROLE);
+    await ensureGroupRole(admin, CATALOG_READER_ROLE);
+    await ensureGroupRole(admin, CATALOG_WRITER_ROLE);
     await ensureGroupRole(admin, IDENTITY_READER_ROLE);
     await ensureGroupRole(admin, IDENTITY_WRITER_ROLE);
     await ensureGroupRole(admin, READING_READER_ROLE);
@@ -973,11 +1252,27 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
     await ensureGroupRole(admin, VERIFICATION_WRITER_ROLE);
     await ensureLoginRole(admin, APP_ROLE, runtime.credentials.appPassword);
     await ensureLoginRole(admin, CONTROL_ROLE, runtime.credentials.controlPassword);
+    await ensureLoginRole(
+      admin,
+      PRIVACY_DELETION_ROLE,
+      runtime.credentials.privacyDeletionPassword,
+    );
+    await ensureLoginRole(admin, ADMIN_SERVICE_ROLE, runtime.credentials.adminServicePassword);
     await ensureLoginRole(admin, MIGRATOR_ROLE, runtime.credentials.migratorPassword);
     await admin.query(`GRANT ${FLAG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
     await admin.query(`GRANT ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE} TO ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ${FLAG_WRITER_ROLE} FROM ${APP_ROLE}`);
+    await admin.query(`GRANT ${COUNTRY_POLICY_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${COUNTRY_POLICY_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(
+      `GRANT ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE} TO ${MIGRATOR_ROLE}`,
+    );
+    await admin.query(`REVOKE ${COUNTRY_POLICY_WRITER_ROLE} FROM ${APP_ROLE}`);
+    await admin.query(`GRANT ${CATALOG_READER_ROLE} TO ${APP_ROLE}, ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${CATALOG_WRITER_ROLE} TO ${CONTROL_ROLE}`);
+    await admin.query(`GRANT ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE} TO ${MIGRATOR_ROLE}`);
+    await admin.query(`REVOKE ${CATALOG_WRITER_ROLE} FROM ${APP_ROLE}`);
     await admin.query(`GRANT ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(`GRANT ${READING_READER_ROLE}, ${READING_WRITER_ROLE} TO ${APP_ROLE}`);
     await admin.query(
@@ -1008,7 +1303,7 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
     const privileges = await admin.query(
       `SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls
          FROM pg_roles WHERE rolname = ANY($1::text[])`,
-      [[APP_ROLE, CONTROL_ROLE, MIGRATOR_ROLE]],
+      [[APP_ROLE, CONTROL_ROLE, PRIVACY_DELETION_ROLE, ADMIN_SERVICE_ROLE, MIGRATOR_ROLE]],
     );
     for (const role of privileges.rows) {
       if (
@@ -1386,6 +1681,8 @@ const createTestDatabase = async (runtime) => {
   let active = true;
   const databaseUrl = buildDatabaseUrl(runtime, databaseName);
   const controlDatabaseUrl = buildDatabaseUrl(runtime, databaseName, CONTROL_ROLE);
+  const privacyDeletionDatabaseUrl = buildDatabaseUrl(runtime, databaseName, PRIVACY_DELETION_ROLE);
+  const adminServiceDatabaseUrl = buildDatabaseUrl(runtime, databaseName, ADMIN_SERVICE_ROLE);
   const migrationDatabaseUrl = buildDatabaseUrl(runtime, databaseName, MIGRATOR_ROLE);
   assertExactLocalDatabaseUrl(databaseUrl, databaseName, runtime.credentials.appPassword);
   assertExactLocalDatabaseUrl(
@@ -1393,6 +1690,18 @@ const createTestDatabase = async (runtime) => {
     databaseName,
     runtime.credentials.controlPassword,
     CONTROL_ROLE,
+  );
+  assertExactLocalDatabaseUrl(
+    privacyDeletionDatabaseUrl,
+    databaseName,
+    runtime.credentials.privacyDeletionPassword,
+    PRIVACY_DELETION_ROLE,
+  );
+  assertExactLocalDatabaseUrl(
+    adminServiceDatabaseUrl,
+    databaseName,
+    runtime.credentials.adminServicePassword,
+    ADMIN_SERVICE_ROLE,
   );
   assertExactLocalDatabaseUrl(
     migrationDatabaseUrl,
@@ -1405,6 +1714,8 @@ const createTestDatabase = async (runtime) => {
     databaseName,
     databaseUrl,
     controlDatabaseUrl,
+    privacyDeletionDatabaseUrl,
+    adminServiceDatabaseUrl,
     migrationDatabaseUrl,
     async attest() {
       if (!active) throw genericFailure("Test database handle is no longer active.");
@@ -1605,6 +1916,11 @@ export const withLocalPostgresLease = async (operation) =>
           runtime,
           DEVELOPMENT_DATABASE,
           MIGRATOR_ROLE,
+        ),
+        developmentPrivacyDeletionDatabaseUrl: buildDatabaseUrl(
+          runtime,
+          DEVELOPMENT_DATABASE,
+          PRIVACY_DELETION_ROLE,
         ),
         createTestDatabase: () => createTestDatabase(runtime),
       }),

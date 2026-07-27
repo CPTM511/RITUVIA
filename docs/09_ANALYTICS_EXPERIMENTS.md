@@ -15,6 +15,25 @@ A distinct user/anonymous subject counts once per qualifying session when, withi
 
 Define session boundaries, identity merge, bot filtering, consent scope, and late-arriving events before implementation.
 
+### WMRS v1 implementation baseline
+
+- Window: rolling UTC `[asOf - 7 days, asOf)`, using event time.
+- Unit: distinct consented anonymous analytics subject, counted once even with multiple qualifying
+  reflection sessions.
+- Reflection session: one server-authoritative Tarot reading and its purpose-scoped pseudonymous
+  root key.
+- Qualification: deterministic reading completion followed by intention creation, ritual
+  completion, private journal creation, or Revisit completion in the same window.
+- Diagnostic: report qualifying reflection-session count separately; it is not WMRS.
+- Identity: no anonymous-to-account merge until RIT-051; no cross-purpose identifiers.
+- Bot handling: unavailable in v1 and disclosed as a data-quality limitation.
+- Late data: recompute the bounded window by event time and expose late-observation count.
+- Consent: only exact current `optional_product_analytics` consent; absent, denied, withdrawn,
+  stale, or malformed state is excluded and emits no event.
+
+This baseline is implemented as a synthetic, safe-off contract. It does not activate production
+analytics or establish legal notice, retention, deletion, vendor, or backfill policy.
+
 ## 3. Metric tree
 
 ### Reach
@@ -65,6 +84,12 @@ Define session boundaries, identity merge, bot filtering, consent scope, and lat
 ## 4. Event taxonomy
 
 Use versioned names and typed properties. Suggested events:
+
+RIT-046 freezes the current core-loop subset to `reading_started`,
+`reading_deterministic_completed`, `interpretation_viewed`, `intention_created`, `ritual_started`,
+`ritual_completed`, `journal_entry_created`, `revisit_scheduled`, and `revisit_completed`.
+`interpretation_viewed` is intentionally distinct from generation completion: a generated result
+is not counted as seen. The viewed contract has no active browser queue, beacon, or endpoint.
 
 ### Acquisition/content
 
@@ -138,6 +163,10 @@ Allowlist only:
 - Content/prompt/model/engine/policy version.
 - Paid/free and entitlement category.
 
+The RIT-046 minimum deliberately excludes theme and safety state even though broader future
+taxonomies may permit reviewed categorical forms; the combination can reveal sensitive context in
+small cohorts.
+
 Never include raw prayer, question, intention, journal, name, birth date/time/place, email, exact location, card data, crypto address, crisis text, or AI full prompt/output in product analytics.
 
 ## 6. Identity and consent
@@ -148,6 +177,8 @@ Never include raw prayer, question, intention, journal, name, birth date/time/pl
 - Essential operational telemetry is separated from optional product/marketing analytics.
 - Provide deletion/suppression behavior where required.
 - Do not use cross-site ad trackers on private product flows without explicit reviewed need.
+- The current runtime adapter is a no-op until exact notice, retention/deletion, sink, and
+  production activation receive owner approval.
 
 ## 7. Funnels
 

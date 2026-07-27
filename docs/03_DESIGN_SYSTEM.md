@@ -101,10 +101,14 @@ Every component needs stories/examples for default, hover, focus, disabled, load
 ## 10. Sanctuary rendering tiers
 
 1. **Accessible linear mode:** text, buttons, image/alt text, no animation required.
-2. **Standard 2D mode:** CSS/SVG/canvas animation and ambient audio.
+2. **Standard 2D mode:** CSS/SVG/canvas presentation; any future ambient audio is optional and
+   requires explicit opt-in.
 3. **Enhanced mode:** optional richer rendering after performance proof.
 
 Do not make WebGL or high-end graphics a launch dependency. Never block completion because a device cannot render an effect.
+The initial free candle and incense ship with no audio surface, derive both tiers from the same
+ordered controls, make pause/resume and exit continuously available, disable nonessential motion
+under reduced-motion preferences, and preserve a complete no-JavaScript text fallback.
 
 ## 11. Illustration and imagery
 

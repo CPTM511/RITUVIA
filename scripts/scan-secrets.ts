@@ -3,9 +3,9 @@ import { lstat, readFile, readlink } from "node:fs/promises";
 import path from "node:path";
 
 import {
+  classifyReviewedStaticAsset,
   createSecretFinding,
-  isReviewedLargeStaticAsset,
-  isReviewedLargeStaticAssetPath,
+  isReviewedStaticAssetPath,
   scanSecretBuffer,
   type SecretFinding,
 } from "./secret-policy.js";
@@ -40,11 +40,25 @@ for (const filePath of files) {
     throw error;
   }
   if (metadata.isDirectory()) continue;
-  if (metadata.size > MAX_FILE_BYTES) {
-    if (metadata.isFile() && isReviewedLargeStaticAssetPath(filePath)) {
-      const buffer = await readFile(absolutePath);
-      if (isReviewedLargeStaticAsset(filePath, buffer)) continue;
+  if (isReviewedStaticAssetPath(filePath)) {
+    const decision = classifyReviewedStaticAsset(
+      filePath,
+      metadata.isFile() ? await readFile(absolutePath) : null,
+    );
+    switch (decision) {
+      case "accepted":
+        continue;
+      case "content-mismatch":
+        findings.push(createSecretFinding("reviewed-static-asset-content-mismatch", filePath));
+        continue;
+      case "type-mismatch":
+        findings.push(createSecretFinding("reviewed-static-asset-type-mismatch", filePath));
+        continue;
+      case "not-reviewed":
+        throw new TypeError("Reviewed static asset classification drifted.");
     }
+  }
+  if (metadata.size > MAX_FILE_BYTES) {
     findings.push(createSecretFinding("file-too-large-to-scan", filePath));
     continue;
   }

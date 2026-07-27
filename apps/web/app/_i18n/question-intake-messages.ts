@@ -26,7 +26,7 @@ export type QuestionIntakeMessages = Readonly<{
   themes: Readonly<Record<QuestionIntakeThemeCode, string>>;
   suggestions: Readonly<Record<QuestionIntakeSuggestionCode, string>>;
   outcomes: Readonly<{
-    allowed: Readonly<{ message: string; reset: string; title: string }>;
+    allowed: Readonly<{ continue: string; message: string; reset: string; title: string }>;
     blocked: Readonly<{ message: string; title: string; useSuggestion: string }>;
     crisis: Readonly<{ message: string; title: string }>;
     error: Readonly<{ message: string; retry: string; title: string }>;
@@ -85,8 +85,9 @@ const englishQuestionIntakeMessages = {
   },
   outcomes: {
     allowed: {
+      continue: "Continue to a private one-card reflection",
       message:
-        "This theme and question fit the current reflection boundary. No reading has been created or saved; that step will arrive in a later product slice.",
+        "This theme and question fit the current reflection boundary. Continue only if a symbolic perspective would be useful; your question will not be copied into the reading request.",
       reset: "Review another question",
       title: "Ready for a bounded reflection",
     },

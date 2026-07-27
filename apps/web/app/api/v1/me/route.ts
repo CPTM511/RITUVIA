@@ -8,6 +8,8 @@ import {
   updateWebAccountProfile,
   WebAccountError,
 } from "../../../../server/account";
+import { deriveSessionCsrfToken, sessionCsrfHeaderName } from "../../../../server/session-csrf";
+import { hasValidAccountSessionCsrf } from "../auth/_http";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,8 +19,17 @@ const privateHeaders = Object.freeze({
   "x-robots-tag": "noindex, nofollow, noarchive",
 });
 
-const responseFor = (profile: Awaited<ReturnType<typeof getWebAccountProfile>>) =>
-  NextResponse.json({ ...profile, schemaVersion: 1 }, { headers: privateHeaders, status: 200 });
+const responseFor = (
+  profile: Awaited<ReturnType<typeof getWebAccountProfile>>,
+  sessionToken: string,
+) => {
+  const response = NextResponse.json(
+    { ...profile, schemaVersion: 1 },
+    { headers: privateHeaders, status: 200 },
+  );
+  response.headers.set(sessionCsrfHeaderName, deriveSessionCsrfToken(sessionToken));
+  return response;
+};
 
 const problem = (error: unknown) => {
   const unauthorized = error instanceof WebAccountError && error.code === "session_unavailable";
@@ -41,10 +52,9 @@ const problem = (error: unknown) => {
 };
 
 export const GET = async (request: NextRequest): Promise<NextResponse> => {
+  const sessionToken = request.cookies.get(accountSessionCookieName)?.value;
   try {
-    return responseFor(
-      await getWebAccountProfile(request.cookies.get(accountSessionCookieName)?.value),
-    );
+    return responseFor(await getWebAccountProfile(sessionToken), sessionToken!);
   } catch (error) {
     return problem(error);
   }
@@ -54,6 +64,7 @@ export const PATCH = async (request: NextRequest): Promise<NextResponse> => {
   if (
     request.headers.get("origin") !== getWebRuntimeConfiguration().brand.canonicalOrigin ||
     ![null, "same-origin"].includes(request.headers.get("sec-fetch-site")) ||
+    !hasValidAccountSessionCsrf(request) ||
     request.headers.get("content-type") !== "application/json"
   ) {
     return NextResponse.json(
@@ -81,11 +92,13 @@ export const PATCH = async (request: NextRequest): Promise<NextResponse> => {
     );
   }
   try {
+    const sessionToken = request.cookies.get(accountSessionCookieName)?.value;
     return responseFor(
       await updateWebAccountProfile({
         request: body,
-        sessionToken: request.cookies.get(accountSessionCookieName)?.value,
+        sessionToken,
       }),
+      sessionToken!,
     );
   } catch (error) {
     return problem(error);

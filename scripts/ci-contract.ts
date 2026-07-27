@@ -13,6 +13,11 @@ const actionPins = Object.freeze({
   "pnpm/action-setup": "0ebf47130e4866e96fce0953f49152a61190b271",
 });
 const expectedJobs = Object.freeze({ database: 20, quality: 30, security: 15 });
+const releaseCorrespondingSourceCommand =
+  `component_archive=packages/astrology-engine-native/.native-cache/corresponding-source/rituvia-native-corresponding-source.tar; ` +
+  `component_sha256="$(sha256sum "$component_archive" | cut -d ' ' -f1)"; ` +
+  `pnpm test:release-corresponding-source -- --expected-revision "$GITHUB_SHA" ` +
+  `--component-archive "$component_archive" --component-archive-sha256 "$component_sha256"`;
 const expectedRunCommands = Object.freeze({
   database: Object.freeze(["pnpm install --frozen-lockfile", "pnpm test:ci-database"]),
   quality: Object.freeze([
@@ -36,6 +41,10 @@ const expectedRunCommands = Object.freeze({
     "node scripts/run-pinned-ci-tool.mjs actionlint .github/workflows/ci.yml",
     "node scripts/run-pinned-ci-tool.mjs gitleaks",
     "pnpm install --frozen-lockfile",
+    "pnpm test:astrology-native-security -- --allow-download",
+    "pnpm test:astrology-native-sca -- --allow-network",
+    "pnpm test:astrology-native-corresponding-source -- --allow-download",
+    releaseCorrespondingSourceCommand,
     "pnpm audit --audit-level=high",
     "pnpm scan:secrets",
   ]),
@@ -61,6 +70,10 @@ const expectedStepSignatures = Object.freeze({
     "run:node scripts/run-pinned-ci-tool.mjs gitleaks",
     "uses:pnpm/action-setup",
     "run:pnpm install --frozen-lockfile",
+    "run:pnpm test:astrology-native-security -- --allow-download",
+    "run:pnpm test:astrology-native-sca -- --allow-network",
+    "run:pnpm test:astrology-native-corresponding-source -- --allow-download",
+    `run:${releaseCorrespondingSourceCommand}`,
     "run:pnpm audit --audit-level=high",
     "run:pnpm scan:secrets",
   ]),
@@ -129,8 +142,15 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
       "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
     test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
-    "test:accessibility": "node scripts/verify-web-accessibility.mjs",
+    "test:accessibility":
+      "node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs",
     "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
+    "test:astrology-native-corresponding-source":
+      "pnpm --filter @rituvia/astrology-engine-native native:verify-corresponding-source",
+    "test:astrology-native-sca": "pnpm --filter @rituvia/astrology-engine-native native:verify-sca",
+    "test:astrology-native-security":
+      "pnpm --filter @rituvia/astrology-engine-native native:verify-security",
+    "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",
   });
   if (!isRecord(scripts)) return [{ location: "package.json#scripts", rule: "ci-scripts" }];
   return Object.entries(expected).flatMap(([name, command]) =>

@@ -1,3 +1,5 @@
+import { indexableNumerologyPathnames } from "./numerology-public-routes";
+
 export const publicPageSlugs = Object.freeze(["methodology", "safety", "privacy"] as const);
 
 export type PublicPageSlug = (typeof publicPageSlugs)[number];
@@ -14,8 +16,23 @@ export const parsePublicPageSlug = (value: string | null | undefined): PublicPag
 export const publicPagePathname = (locale: "en", page: PublicPageId): string =>
   page === "home" ? `/${locale}` : `/${locale}/${page}`;
 
+export const indexablePublicPageRecords = Object.freeze([
+  ...indexablePublicPageIds.map((page) =>
+    Object.freeze({
+      lastModified: page === "home" ? "2026-07-25" : "2026-07-23",
+      pathname: publicPagePathname("en", page),
+    }),
+  ),
+  ...indexableNumerologyPathnames.map((pathname) =>
+    Object.freeze({
+      lastModified: "2026-07-25",
+      pathname,
+    }),
+  ),
+]);
+
 export const indexablePublicPagePathnames = Object.freeze(
-  indexablePublicPageIds.map((page) => publicPagePathname("en", page)),
+  indexablePublicPageRecords.map(({ pathname }) => pathname),
 );
 
 export const isIndexablePublicPagePathname = (pathname: string): boolean =>

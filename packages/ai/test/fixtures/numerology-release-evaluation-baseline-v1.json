@@ -1,0 +1,12 @@
+{
+  "evaluatorPolicyVersion": "numerology-release-evaluation-policy.v1",
+  "executionMode": "synthetic_safe_off",
+  "externalRequests": 0,
+  "paidCalls": 0,
+  "schemaVersion": "numerology-release-evaluation-baseline.v1",
+  "suite": {
+    "checksum": "sha256:200d067a2f779e639578ebefbb20d4a2e60ca565d4fedd1ab9249098d9d88cb0",
+    "id": "rituvia.numerology.release-evaluation.en",
+    "version": "1.0.0"
+  }
+}

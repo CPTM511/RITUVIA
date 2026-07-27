@@ -8,6 +8,7 @@ import { getMessages } from "../../../_i18n/messages";
 import { getTarotThreeCardMessages } from "../../../_i18n/tarot-three-card-messages";
 import {
   localePublicPagePath,
+  localeSanctuaryPath,
   parseLocale,
   supportedLocales,
   type Locale,
@@ -58,6 +59,7 @@ export default async function TarotThreeCardPage({ params }: TarotThreeCardPageP
         <TarotThreeCardFlow
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}
+          sanctuaryHref={localeSanctuaryPath(locale)}
         />
       </main>
     </PublicSiteFrame>

@@ -296,4 +296,29 @@ const summary = Object.freeze({
 });
 
 process.stdout.write(`${JSON.stringify(summary)}\n`);
-if (!result.releaseEligible) process.exitCode = 1;
+if (!result.releaseEligible) {
+  process.exitCode = 1;
+} else {
+  const numerologyExecution = spawnSync(
+    process.execPath,
+    ["--import", "tsx", path.join(root, "scripts/verify-numerology-ai-release-evals.ts")],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env: {
+        CI: "true",
+        HOME: "/tmp",
+        NO_COLOR: "1",
+        PATH: process.env.PATH ?? "",
+      },
+      maxBuffer: 8 * 1024 * 1024,
+      timeout: 120_000,
+    },
+  );
+  if (typeof numerologyExecution.stdout === "string") {
+    process.stdout.write(numerologyExecution.stdout);
+  }
+  if (numerologyExecution.error !== undefined || numerologyExecution.status !== 0) {
+    throw new TypeError("Numerology AI release evaluation failed.");
+  }
+}

@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deriveSessionCsrfToken } from "../server/session-csrf";
+
 const harness = vi.hoisted(() => {
   class WebError extends Error {
     readonly code: string;
@@ -12,7 +14,9 @@ const harness = vi.hoisted(() => {
   return { get: vi.fn(), update: vi.fn(), WebError };
 });
 vi.mock("../server/account-auth", () => ({
+  accountAuthStateCookieName: "__Host-rituvia-auth-state",
   accountSessionCookieName: "__Host-rituvia-account-session",
+  mergeWebAnonymousSubject: vi.fn(),
 }));
 vi.mock("../server/account", () => ({
   getWebAccountProfile: harness.get,
@@ -49,6 +53,7 @@ describe("current account route", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-csrf-token")).toBe(deriveSessionCsrfToken("s".repeat(43)));
     expect(await response.json()).toEqual({ ...account, schemaVersion: 1 });
     expect(harness.get).toHaveBeenCalledWith("s".repeat(43));
   });
@@ -71,6 +76,7 @@ describe("current account route", () => {
           cookie: "__Host-rituvia-account-session=" + "s".repeat(43),
           origin: "https://example.test",
           "sec-fetch-site": "same-origin",
+          "x-csrf-token": deriveSessionCsrfToken("s".repeat(43)),
         },
         method: "PATCH",
       }),
@@ -110,6 +116,7 @@ describe("current account route", () => {
           cookie: "__Host-rituvia-account-session=" + "s".repeat(43),
           origin: "https://example.test",
           "sec-fetch-site": "same-origin",
+          "x-csrf-token": deriveSessionCsrfToken("s".repeat(43)),
         },
         method: "PATCH",
       }),
@@ -140,11 +147,37 @@ describe("current account route", () => {
           cookie: "__Host-rituvia-account-session=" + "s".repeat(43),
           origin: "https://example.test",
           "sec-fetch-site": "same-origin",
+          "x-csrf-token": deriveSessionCsrfToken("s".repeat(43)),
         },
         method: "PATCH",
       }),
     );
     expect(invalid.status).toBe(400);
     expect(await invalid.json()).toEqual({ code: "ACCOUNT_PROFILE_INPUT_INVALID", status: 400 });
+  });
+
+  it("rejects a profile mutation without session-bound CSRF", async () => {
+    const body = JSON.stringify({
+      displayName: null,
+      locale: "en",
+      profileVersion: 1,
+      schemaVersion: 1,
+      timeZone: "UTC",
+    });
+    const response = await PATCH(
+      new NextRequest("https://example.test/api/v1/me", {
+        body,
+        headers: {
+          "content-type": "application/json",
+          cookie: "__Host-rituvia-account-session=" + "s".repeat(43),
+          origin: "https://example.test",
+          "sec-fetch-site": "same-origin",
+        },
+        method: "PATCH",
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(harness.update).not.toHaveBeenCalled();
   });
 });

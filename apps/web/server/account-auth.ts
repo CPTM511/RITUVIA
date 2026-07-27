@@ -1,9 +1,12 @@
 import "server-only";
 
+import { timingSafeEqual } from "node:crypto";
+
 import {
   AccountIdentityError,
   createAccountIdentityService,
   type AccountIdentityService,
+  type AccountMergeStatus,
   type AccountSessionContext,
 } from "@rituvia/db";
 
@@ -17,17 +20,36 @@ import {
 } from "./auth-provider";
 
 export const accountSessionCookieName = "__Host-rituvia-account-session";
+export const accountAuthStateCookieName = "__Host-rituvia-auth-state";
+const accountAuthStatePattern = /^[A-Za-z0-9_-]{43}$/u;
+
+export const hasMatchingAccountAuthState = (
+  suppliedState: string | null,
+  cookieState: string | undefined,
+): boolean => {
+  if (
+    suppliedState === null ||
+    cookieState === undefined ||
+    !accountAuthStatePattern.test(suppliedState) ||
+    !accountAuthStatePattern.test(cookieState)
+  ) {
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(suppliedState, "utf8"), Buffer.from(cookieState, "utf8"));
+};
 
 export type WebAccountAuthErrorCode =
-  "conflict" | "invalid" | "session_unavailable" | "unavailable";
+  "conflict" | "invalid" | "rate_limited" | "session_unavailable" | "unavailable";
 
 export class WebAccountAuthError extends Error {
   readonly code: WebAccountAuthErrorCode;
+  readonly retryAfterSeconds: number | undefined;
 
-  constructor(code: WebAccountAuthErrorCode) {
+  constructor(code: WebAccountAuthErrorCode, retryAfterSeconds?: number) {
     super("The account authentication operation failed.");
     this.name = "WebAccountAuthError";
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -85,6 +107,9 @@ const mapError = (error: unknown): never => {
     ) {
       throw new WebAccountAuthError("invalid");
     }
+    if (error.code === "ACCOUNT_AUTH_RATE_LIMITED") {
+      throw new WebAccountAuthError("rate_limited", error.retryAfterSeconds);
+    }
     if (error.code === "ACCOUNT_SESSION_UNAVAILABLE") {
       throw new WebAccountAuthError("session_unavailable");
     }
@@ -97,30 +122,85 @@ const mapError = (error: unknown): never => {
 
 export const startWebAccountAuth = async (input: {
   email: unknown;
+  previousSessionToken?: string | undefined;
   returnTo: unknown;
-}): Promise<Readonly<{ callbackUrl: string; expiresAt: string }>> => {
+}): Promise<
+  Readonly<{
+    accepted: true;
+    expiresAt: string;
+    localPreviewPath: "/api/v1/auth/local-preview";
+    stateToken: string;
+  }>
+> => {
   try {
-    const started = loadProvider().start(input);
-    await loadWebAccountIdentityService().createChallenge(started);
-    return Object.freeze({ callbackUrl: started.callbackUrl, expiresAt: started.expiresAt });
+    const provider = loadProvider();
+    const started = provider.startEmailMagicLink(input);
+    await loadWebAccountIdentityService().createChallenge({
+      ...started,
+      previousSessionToken: input.previousSessionToken,
+    });
+    provider.stageLocalPreview(started);
+    return Object.freeze({
+      accepted: true,
+      expiresAt: started.expiresAt,
+      localPreviewPath: "/api/v1/auth/local-preview",
+      stateToken: started.state,
+    });
   } catch (error) {
     return mapError(error);
   }
 };
 
+export const completeWebLocalPreviewAuth = async (input: {
+  anonymousSessionToken?: string | undefined;
+  stateToken: string | undefined;
+}): Promise<
+  Readonly<{
+    context: AccountSessionContext;
+    mergeStatus: AccountMergeStatus | null;
+    returnTo: string;
+    sessionToken: string;
+  }>
+> => {
+  if (input.stateToken === undefined) throw new WebAccountAuthError("invalid");
+  const provider = loadProvider();
+  const started = provider.readLocalPreview(input.stateToken);
+  if (started === null) throw new WebAccountAuthError("invalid");
+  const completed = await completeWebAccountAuth({
+    anonymousSessionToken: input.anonymousSessionToken,
+    challengeId: started.challengeId,
+    state: started.state,
+    token: started.token,
+  });
+  provider.consumeLocalPreview(input.stateToken);
+  return completed;
+};
+
 export const completeWebAccountAuth = async (input: {
+  anonymousSessionToken?: string | undefined;
   challengeId: string;
-  previousSessionToken?: string | undefined;
   state: string;
   token: string;
 }): Promise<
-  Readonly<{ context: AccountSessionContext; returnTo: string; sessionToken: string }>
+  Readonly<{
+    context: AccountSessionContext;
+    mergeStatus: AccountMergeStatus | null;
+    returnTo: string;
+    sessionToken: string;
+  }>
 > => {
   try {
     const sessionToken = loadProvider().issueSessionToken();
     const completed = await loadWebAccountIdentityService().consumeChallenge({
+      ...(input.anonymousSessionToken === undefined
+        ? {}
+        : {
+            anonymousMerge: {
+              anonymousSessionToken: input.anonymousSessionToken,
+              idempotencyKey: `auth_callback_${input.challengeId}`,
+            },
+          }),
       challengeId: input.challengeId,
-      previousSessionToken: input.previousSessionToken,
       sessionToken,
       state: input.state,
       token: input.token,
@@ -169,16 +249,23 @@ export const mergeWebAnonymousSubject = async (input: {
   accountSessionToken: string | undefined;
   anonymousSessionToken: string | undefined;
   idempotencyKey: string;
-}): Promise<"created" | "replayed"> => {
+}): Promise<
+  Readonly<{
+    context: AccountSessionContext;
+    sessionToken: string;
+    status: AccountMergeStatus;
+  }>
+> => {
   if (input.accountSessionToken === undefined || input.anonymousSessionToken === undefined) {
     throw new WebAccountAuthError("conflict");
   }
   try {
-    return await loadWebAccountIdentityService().mergeAnonymousSubject({
+    const merged = await loadWebAccountIdentityService().mergeAnonymousSubject({
       accountSessionToken: input.accountSessionToken,
       anonymousSessionToken: input.anonymousSessionToken,
       idempotencyKey: input.idempotencyKey,
     });
+    return merged;
   } catch (error) {
     return mapError(error);
   }

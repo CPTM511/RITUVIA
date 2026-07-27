@@ -12,7 +12,7 @@ import {
   type TarotDrawFactsV1,
   type TarotExecutionVerifierV1,
 } from "@rituvia/divination";
-import type { TarotReadingCreateRequestV1, TarotReadingReportRequestV1 } from "@rituvia/domain";
+import type { TarotReadingCreateRequestV1, TarotReadingReportRequest } from "@rituvia/domain";
 
 export const tarotReadingIntegritySchemeVersion = "hmac-sha256.tarot-reading.v1" as const;
 export const tarotReadingIntegrityPayloadVersion = "tarot-reading-integrity-payload.v1" as const;
@@ -230,7 +230,7 @@ export const createTarotReadingCryptography = (input: TarotReadingIntegrityKeyri
     subjectId: string,
     readingId: string,
     reportPolicyVersion: string,
-    request: TarotReadingReportRequestV1,
+    request: TarotReadingReportRequest,
   ): string => {
     if (
       !idPattern.test(subjectId) ||

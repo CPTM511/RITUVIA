@@ -2,6 +2,12 @@
 
 Read `AGENTS.md` first. These files are canonical by concern:
 
+For product, UI, wallet, Credits, payment, AI, security, database, API, testing, and release work
+introduced or changed after 2026-07-23, first read the dated production source-of-truth pack at
+`codex/rituvia-production-2026-07-23/00_START_HERE.md` and the Phase 0 reconciliation at
+`reports/RITUVIA_PHASE_0_REALITY_AUDIT_2026-07-23.md`. D-045 records its precedence over older
+conflicting product details while preserving stricter repository safety and approval gates.
+
 1. `00_PROJECT_CHARTER.md` — why the product exists and its boundaries.
 2. `01_PRODUCT_REQUIREMENTS.md` — complete launch behavior.
 3. `02_USER_EXPERIENCE.md` — journeys, states, accessibility, commerce UX.

@@ -63,6 +63,11 @@ const moduleDefinitions = Object.freeze([
   { kind: "package", name: "@rituvia/ui", root: "packages/ui" },
   { kind: "package", name: "@rituvia/i18n", root: "packages/i18n" },
   { kind: "package", name: "@rituvia/divination", root: "packages/divination" },
+  {
+    kind: "package",
+    name: "@rituvia/astrology-engine-native",
+    root: "packages/astrology-engine-native",
+  },
   { kind: "package", name: "@rituvia/ai", root: "packages/ai" },
   { kind: "package", name: "@rituvia/payments", root: "packages/payments" },
   {
@@ -88,6 +93,7 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
     new Set([
       "@rituvia/ai",
       "@rituvia/analytics",
+      "@rituvia/astrology-engine-native",
       "@rituvia/config",
       "@rituvia/country-policy",
       "@rituvia/db",
@@ -104,6 +110,7 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
     "@rituvia/admin",
     new Set([
       "@rituvia/analytics",
+      "@rituvia/astrology-engine-native",
       "@rituvia/config",
       "@rituvia/country-policy",
       "@rituvia/db",
@@ -133,10 +140,11 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
   ],
   ["@rituvia/config", new Set()],
   ["@rituvia/domain", new Set()],
-  ["@rituvia/db", new Set(["@rituvia/domain"])],
+  ["@rituvia/db", new Set(["@rituvia/domain", "@rituvia/security"])],
   ["@rituvia/ui", new Set(["@rituvia/i18n"])],
   ["@rituvia/i18n", new Set(["@rituvia/domain"])],
   ["@rituvia/divination", new Set(["@rituvia/domain"])],
+  ["@rituvia/astrology-engine-native", new Set(["@rituvia/divination"])],
   [
     "@rituvia/ai",
     new Set([
@@ -175,6 +183,7 @@ const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>(
   ["@rituvia/ui", new Set(["react", "react-dom"])],
   ["@rituvia/i18n", new Set()],
   ["@rituvia/divination", new Set()],
+  ["@rituvia/astrology-engine-native", new Set(["server-only"])],
   ["@rituvia/ai", new Set()],
   ["@rituvia/payments", new Set()],
   ["@rituvia/country-policy", new Set()],
@@ -186,6 +195,10 @@ const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>(
 const allowedRuntimeNodeBuiltins = new Map<string, ReadonlySet<string>>([
   ["@rituvia/web", new Set(["node:crypto", "node:perf_hooks", "node:url"])],
   ["@rituvia/worker", new Set(["node:url"])],
+  [
+    "@rituvia/astrology-engine-native",
+    new Set(["node:child_process", "node:crypto", "node:fs/promises", "node:path"]),
+  ],
 ]);
 const dependencySections = Object.freeze([
   "dependencies",
@@ -230,7 +243,15 @@ const reviewedWebDatabaseTestFiles = new Set([
 ]);
 const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
   ["node:buffer", new Set(["packages/config/src/server.ts"])],
-  ["node:crypto", new Set(["packages/db/src/account-identity.ts"])],
+  [
+    "node:crypto",
+    new Set([
+      "packages/db/src/account-consent.ts",
+      "packages/db/src/account-identity.ts",
+      "packages/db/src/admin-security.ts",
+      "packages/db/src/revisit-reminder.ts",
+    ]),
+  ],
 ]);
 export const expectedWebFeatureFlagCompositionSource = `import "server-only";
 
@@ -566,7 +587,20 @@ const reviewedComputedDataAccesses = new Map<string, ReadonlySet<string>>([
   ["apps/web/server/payment-provider.ts", new Set(["input.priceIds|request.metadata.productCode"])],
   ["packages/config/src/server.ts", new Set(["record|key"])],
   ["packages/db/src/account-identity.ts", new Set(["left|index", "right|index"])],
+  ["packages/db/src/account-consent.ts", new Set(["left|index", "right|index"])],
+  ["packages/db/src/revisit-reminder.ts", new Set(["left|index", "right|index"])],
+  ["packages/domain/src/revisit-reminder.ts", new Set(["keys|index", "sortedExpected|index"])],
   ["packages/db/src/commerce-persistence.ts", new Set(["left|index", "right|index"])],
+  [
+    "packages/divination/src/astrology-natal.ts",
+    new Set(["astrologyZodiacSigns|signIndex", "placements|firstIndex", "placements|secondIndex"]),
+  ],
+  ["packages/astrology-engine-native/src/index.ts", new Set(["houseCode|request.houseSystem"])],
+]);
+
+const reviewedRawOutputRuntimeFiles = new Set(["packages/astrology-engine-native/src/index.ts"]);
+const reviewedUnsafeCodeLoadingRuntimeFiles = new Set([
+  "packages/astrology-engine-native/src/index.ts",
 ]);
 
 const isReviewedComputedDataRead = (
@@ -1810,7 +1844,11 @@ export const auditArchitecture = (
     if (!parsed.frameworkConfigStatic) {
       add(findings, "framework-config-dynamic", file.path);
     }
-    if (parsed.unsafeCodeLoading && isRuntimeDependencyFile(file.path)) {
+    if (
+      parsed.unsafeCodeLoading &&
+      isRuntimeDependencyFile(file.path) &&
+      !reviewedUnsafeCodeLoadingRuntimeFiles.has(file.path)
+    ) {
       add(findings, "unsafe-code-loading", file.path);
       serverTaintedFiles.add(file.path);
     }
@@ -1832,7 +1870,11 @@ export const auditArchitecture = (
       add(findings, "console-outside-observability-adapter", file.path);
       serverTaintedFiles.add(file.path);
     }
-    if (parsed.rawOutputAccess && isRuntimeDependencyFile(file.path)) {
+    if (
+      parsed.rawOutputAccess &&
+      isRuntimeDependencyFile(file.path) &&
+      !reviewedRawOutputRuntimeFiles.has(file.path)
+    ) {
       add(findings, "raw-output-outside-observability-sink", file.path);
       serverTaintedFiles.add(file.path);
     }

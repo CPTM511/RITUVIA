@@ -8,6 +8,7 @@ import { getMessages } from "../../../_i18n/messages";
 import { getTarotOneCardMessages } from "../../../_i18n/tarot-one-card-messages";
 import {
   localePublicPagePath,
+  localeSanctuaryPath,
   parseLocale,
   supportedLocales,
   type Locale,
@@ -58,6 +59,7 @@ export default async function TarotOneCardPage({ params }: TarotOneCardPageProps
         <TarotOneCardFlow
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}
+          sanctuaryHref={localeSanctuaryPath(locale)}
         />
       </main>
     </PublicSiteFrame>

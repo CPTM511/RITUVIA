@@ -3,6 +3,23 @@ const publicRouteArtifacts = Object.freeze([
   Object.freeze({ artifact: "en/methodology", pathname: "/en/methodology" }),
   Object.freeze({ artifact: "en/safety", pathname: "/en/safety" }),
   Object.freeze({ artifact: "en/privacy", pathname: "/en/privacy" }),
+  Object.freeze({ artifact: "en/numerology", pathname: "/en/numerology" }),
+  Object.freeze({
+    artifact: "en/numerology/life-path-number",
+    pathname: "/en/numerology/life-path-number",
+  }),
+  Object.freeze({
+    artifact: "en/numerology/birthday-number",
+    pathname: "/en/numerology/birthday-number",
+  }),
+  Object.freeze({
+    artifact: "en/numerology/personal-year-number",
+    pathname: "/en/numerology/personal-year-number",
+  }),
+  Object.freeze({
+    artifact: "en/numerology/master-numbers",
+    pathname: "/en/numerology/master-numbers",
+  }),
 ]);
 
 const privateRouteArtifacts = Object.freeze([
@@ -12,6 +29,8 @@ const privateRouteArtifacts = Object.freeze([
 ]);
 
 const routeArtifacts = Object.freeze([...publicRouteArtifacts, ...privateRouteArtifacts]);
+const sanctuaryImagePath = "/images/rituvia-sanctuary-orb.png";
+const sanctuaryImageWidths = new Set([256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840]);
 
 export const publicAccessibilitySmokeRoutes = Object.freeze(
   publicRouteArtifacts.map(({ pathname }) => pathname),
@@ -104,6 +123,27 @@ export const resolveAccessibilityArtifactRequest = (rawUrl) => {
       contentType: "image/svg+xml",
       relativePath: "server/app/icon.svg.body",
       type: "icon",
+    });
+  }
+
+  if (url.pathname === "/_next/image") {
+    const keys = [...url.searchParams.keys()];
+    const width = Number(url.searchParams.get("w"));
+    if (
+      keys.length !== 3 ||
+      !["q", "url", "w"].every(
+        (key) => url.searchParams.getAll(key).length === 1 && keys.includes(key),
+      ) ||
+      url.searchParams.get("url") !== sanctuaryImagePath ||
+      url.searchParams.get("q") !== "75" ||
+      !sanctuaryImageWidths.has(width)
+    ) {
+      return null;
+    }
+    return Object.freeze({
+      contentType: "image/png",
+      relativePath: sanctuaryImagePath.slice(1),
+      type: "public-image",
     });
   }
 

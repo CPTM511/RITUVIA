@@ -27,6 +27,33 @@
 | Decision | D-042 | Private durable-only tarot interpretation polling boundary | [decisions/D-042.md](./decisions/D-042.md) |
 | Decision | D-043 | Fixed synthetic AI release evaluation gate | [decisions/D-043.md](./decisions/D-043.md) |
 | Decision | D-044 | Lumora-reference local commercial MVP consolidation | [decisions/D-044.md](./decisions/D-044.md) |
+| Decision | D-045 | Production pack precedence and Phase 0 reconciliation | [decisions/D-045.md](./decisions/D-045.md) |
+| Decision | D-046 | Split exact interpretation reporting from history and paid regeneration | [decisions/D-046.md](./decisions/D-046.md) |
+| Decision | D-047 | Production ritual catalog and legacy replay separation | [decisions/D-047.md](./decisions/D-047.md) |
+| Decision | D-048 | Additive ritual lifecycle and durable-pause boundary | [decisions/D-048.md](./decisions/D-048.md) |
+| Decision | D-049 | Local-calendar Revisit and reminder-safe boundary | [decisions/D-049.md](./decisions/D-049.md) |
+| Decision | D-050 | Layered local verification with milestone full-suite gates | [decisions/D-050.md](./decisions/D-050.md) |
+| Decision | D-051 | Safe-off consented-anonymous core-loop analytics baseline | [decisions/D-051.md](./decisions/D-051.md) |
+| Decision | D-052 | Safe-off authentication provider and hardened session boundary | [decisions/D-052.md](./decisions/D-052.md) |
+| Decision | D-053 | Immutable subject bridge with recoverable account-session rotation | [decisions/D-053.md](./decisions/D-053.md) |
+| Decision | D-054 | Read-time private history with timestamp-only session controls | [decisions/D-054.md](./decisions/D-054.md) |
+| Decision | D-055 | Recently authenticated encrypted privacy export boundary | [decisions/D-055.md](./decisions/D-055.md) |
+| Decision | D-056 | Immediate access revocation and crypto-shredding deletion boundary | [decisions/D-056.md](./decisions/D-056.md) |
+| Decision | D-057 | Safe-off admin authorization and passkey-assurance foundation | [decisions/D-057.md](./decisions/D-057.md) |
+| Decision | D-058 | Request-scoped privacy deletion and composed security gate | [decisions/D-058.md](./decisions/D-058.md) |
+| Decision | D-059 | Immutable successor Country Policy registry | [decisions/D-059.md](./decisions/D-059.md) |
+| Decision | D-060 | Immutable catalog registry and legacy checkout quarantine | [decisions/D-060.md](./decisions/D-060.md) |
+| Decision | D-061 | Additive v2 commercial transactions and append-only Credits | [decisions/D-061.md](./decisions/D-061.md) |
+| Decision | D-062 | Account-owned purpose consent and immediate data-flow withdrawal | [decisions/D-062.md](./decisions/D-062.md) |
+| Decision | D-063 | Account-owned once-only Revisit reminder and safe-off delivery | [decisions/D-063.md](./decisions/D-063.md) |
+| Decision | D-064 | Approved RITUVIA V1 date-numerology method | [decisions/D-064.md](./decisions/D-064.md) |
+| Decision | D-065 | Approved English numerology interpretation and publication pack | [decisions/D-065.md](./decisions/D-065.md) |
+| Decision | D-066 | Select Swiss Ephemeris Professional for Western astrology | [decisions/D-066.md](./decisions/D-066.md) |
+| Decision | D-067 | Versioned self-hosted location and historical time-zone boundary | [decisions/D-067.md](./decisions/D-067.md) |
+| Decision | D-068 | Privacy-safe astrology location-search HTTP contract | [decisions/D-068.md](./decisions/D-068.md) |
+| Decision | D-069 | Adopt AGPLv3 for RITUVIA and Swiss Ephemeris | [decisions/D-069.md](./decisions/D-069.md) |
+| Decision | D-070 | Approved conservative Western astrology V1 calculation method | [decisions/D-070.md](./decisions/D-070.md) |
+| Decision | D-071 | Canonicalize the astrology kill-switch persistence key | [decisions/D-071.md](./decisions/D-071.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -42,6 +69,7 @@
 | Task | RIT-025 | Private one-card tarot reflection flow | [tasks/RIT-025.md](./tasks/RIT-025.md) |
 | Task | RIT-026 | Private three-card tarot reflection flow | [tasks/RIT-026.md](./tasks/RIT-026.md) |
 | Task | RIT-027 | Tarot limits, explicit new reflection, and categorical report control | [tasks/RIT-027.md](./tasks/RIT-027.md) |
+| Task | RIT-028 | Deterministic tarot browser acceptance matrix | [tasks/RIT-028.md](./tasks/RIT-028.md) |
 | Task | RIT-029 | Private same-session tarot result resume | [tasks/RIT-029.md](./tasks/RIT-029.md) |
 | Task | RIT-030 | Provider-neutral AI and Tarot interpretation contracts | [tasks/RIT-030.md](./tasks/RIT-030.md) |
 | Task | RIT-031 | Curated content retrieval and prompt versioning | [tasks/RIT-031.md](./tasks/RIT-031.md) |
@@ -50,6 +78,36 @@
 | Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
 | Task | RIT-035 | Tarot AI interpretation polling UX | [tasks/RIT-035.md](./tasks/RIT-035.md) |
 | Task | RIT-036 | Fixed AI regression and adversarial release evaluations | [tasks/RIT-036.md](./tasks/RIT-036.md) |
+| Task | RIT-037 | Exact-version interpretation reporting | [tasks/RIT-037.md](./tasks/RIT-037.md) |
+| Task | RIT-040 | Intention domain and composer | [tasks/RIT-040.md](./tasks/RIT-040.md) |
+| Task | RIT-041 | Ritual template and object domain | [tasks/RIT-041.md](./tasks/RIT-041.md) |
+| Task | RIT-042 | Accessible free candle and incense Sanctuary | [tasks/RIT-042.md](./tasks/RIT-042.md) |
+| Task | RIT-043 | Transactional ritual completion and private journal | [tasks/RIT-043.md](./tasks/RIT-043.md) |
+| Task | RIT-044 | Revisit scheduling and completion | [tasks/RIT-044.md](./tasks/RIT-044.md) |
+| Task | RIT-045 | Consented transactional Revisit reminder adapter | [tasks/RIT-045.md](./tasks/RIT-045.md) |
+| Task | RIT-046 | Privacy-safe core-loop analytics and WMRS | [tasks/RIT-046.md](./tasks/RIT-046.md) |
+| Task | RIT-047 | Anonymous full-loop browser acceptance | [tasks/RIT-047.md](./tasks/RIT-047.md) |
+| Task | RIT-050 | Authentication provider abstraction and secure account sessions | [tasks/RIT-050.md](./tasks/RIT-050.md) |
+| Task | RIT-051 | Idempotent anonymous-to-account merge | [tasks/RIT-051.md](./tasks/RIT-051.md) |
+| Task | RIT-052 | Account history, settings, and session management | [tasks/RIT-052.md](./tasks/RIT-052.md) |
+| Task | RIT-053 | Privacy export workflow | [tasks/RIT-053.md](./tasks/RIT-053.md) |
+| Task | RIT-054 | Selective and account deletion workflow | [tasks/RIT-054.md](./tasks/RIT-054.md) |
+| Task | RIT-055 | Consent and AI-Personalization Controls | [tasks/RIT-055.md](./tasks/RIT-055.md) |
+| Task | RIT-056 | Admin roles, MFA requirement, and audit foundation | [tasks/RIT-056.md](./tasks/RIT-056.md) |
+| Task | RIT-057 | Identity, privacy, and authorization security suite | [tasks/RIT-057.md](./tasks/RIT-057.md) |
+| Task | RIT-060 | Versioned Country Policy Engine | [tasks/RIT-060.md](./tasks/RIT-060.md) |
+| Task | RIT-061 | Immutable Catalog, Product, and Price Registry | [tasks/RIT-061.md](./tasks/RIT-061.md) |
+| Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
+| Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
+| Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
+| Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
+| Task | RIT-083 | Numerology AI interpretation and evaluations | [tasks/RIT-083.md](./tasks/RIT-083.md) |
+| Task | RIT-084 | Curated numerology SEO cluster | [tasks/RIT-084.md](./tasks/RIT-084.md) |
+| Task | RIT-090 | Select and document licensed astrology engine | [tasks/RIT-090.md](./tasks/RIT-090.md) |
+| Task | RIT-091 | Location and historical time-zone adapter | [tasks/RIT-091.md](./tasks/RIT-091.md) |
+| Task | RIT-092 | Encrypted birth profile and uncertainty model | [tasks/RIT-092.md](./tasks/RIT-092.md) |
+| Task | RIT-093 | Astrology engine adapter and natal facts | [tasks/RIT-093.md](./tasks/RIT-093.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
+| Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.

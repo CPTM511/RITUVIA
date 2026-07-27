@@ -1,0 +1,65 @@
+{
+  "cases": [
+    {
+      "expected": {
+        "body": "saturn",
+        "distanceAu": 10.134852865203161,
+        "latitudeDegrees": 0.6792935409621468,
+        "longitudeDegrees": 130.92046253987542,
+        "longitudeSpeedDegreesPerDay": 0.1283355038267546,
+        "returnedEphemerisFlags": 258
+      },
+      "input": {
+        "utcInstant": "1888-08-08T12:00:00.000Z"
+      },
+      "sourceSection": "1.1.226",
+      "tolerances": {
+        "distanceAu": 0.000001,
+        "latitudeDegrees": 0.000001,
+        "longitudeDegrees": 0.00001,
+        "longitudeSpeedDegreesPerDay": 0.0000001
+      },
+      "vectorId": "setest.saturn.swieph-speed.1888-08-08"
+    },
+    {
+      "expected": {
+        "anglesDegrees": {
+          "armc": 141.22257111142613,
+          "ascendant": 207.62957306984887,
+          "midheaven": 138.7944265883531,
+          "vertex": 62.739438547680265
+        },
+        "cuspsDegrees": [
+          207.62957306984887, 231.24116396673125, 264.28625781273473, 318.7944265883531,
+          352.82544670888757, 13.853256260210173, 27.629573069848902, 51.24116396673128,
+          84.28625781273473, 138.7944265883531, 172.82544670888757, 193.8532562602102
+        ]
+      },
+      "input": {
+        "houseSystem": "placidus",
+        "latitudeE6": 66500000,
+        "longitudeE6": 0,
+        "utcInstant": "2013-02-10T23:59:59.764Z"
+      },
+      "sourceSection": "6.1.1",
+      "tolerances": {
+        "anglesDegrees": 0.001,
+        "cuspsDegrees": 0.001
+      },
+      "vectorId": "setest.placidus.66_5n.2013-02-11"
+    }
+  ],
+  "evidenceClassification": "authoritative_upstream_regression_not_independent_astronomical_truth",
+  "notes": [
+    "setest stores Julian UT while the RITUVIA contract accepts UTC; the Placidus UTC instant is adjusted so Swiss UTC-to-UT conversion resolves to the exact upstream Julian day.",
+    "The upstream Saturn expectation does not identify its ephemeris-file inventory. Tolerances cover the observed difference against RITUVIA's separately checksummed sepl_18.se1 while remaining strict enough to reject alternate-engine fallback or gross drift."
+  ],
+  "libraryVersion": "2.10.03",
+  "schemaVersion": "astrology-reference-corpus.v1",
+  "source": {
+    "path": "setest/t.exp",
+    "sha256": "ab645fefcbff0578bb6319cbad7a3ca8a3d29f509db8a012bc2f480f34fd0dfb",
+    "sourceCommit": "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f",
+    "sourceSnapshotTag": "v2.10.3final"
+  }
+}

@@ -21,7 +21,9 @@ describe("reflection persistence", () => {
     const expiresAt = new Date("2026-07-25T12:00:00.000Z");
     const row = {
       canonicalRequestHash: digestBytes(0x11),
+      contractVersion: "reflection-intention.v1",
       createdAt: observedAt,
+      deletedAt: null,
       encryptionKeyVersion: "test.reflection.v1",
       expiresAt,
       id: intentionId,
@@ -34,6 +36,7 @@ describe("reflection persistence", () => {
       smallActionCiphertext: new Uint8Array([7]),
       smallActionNonce: new Uint8Array(12).fill(8),
       smallActionTag: new Uint8Array(16).fill(9),
+      status: "active",
       subjectId,
     };
     let transactionNumber = 0;
@@ -66,6 +69,8 @@ describe("reflection persistence", () => {
           canReadIntention: true,
           canReadJournal: true,
           canReadRitual: true,
+          canUpdateIntention: true,
+          canDeleteIntention: false,
           canUseSchema: true,
         },
       ]),

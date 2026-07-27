@@ -14,8 +14,14 @@ describe("local passwordless account provider", () => {
       deploymentEnvironment: "local",
       now: () => new Date("2026-07-18T00:00:00.000Z"),
     });
-    const first = provider.start({ email: "Demo@Example.Test", returnTo: "/en/account" });
-    const second = provider.start({ email: "demo@example.test", returnTo: "/en/account" });
+    const first = provider.startEmailMagicLink({
+      email: "Demo@Example.Test",
+      returnTo: "/en/account",
+    });
+    const second = provider.startEmailMagicLink({
+      email: "demo@example.test",
+      returnTo: "/en/account",
+    });
 
     expect(first).toMatchObject({
       email: "demo@example.test",
@@ -33,6 +39,15 @@ describe("local passwordless account provider", () => {
     expect(second.token).not.toBe(first.token);
     expect(second.state).not.toBe(first.state);
     expect(provider.issueSessionToken()).toMatch(/^[A-Za-z0-9_-]{43}$/u);
+    expect(provider.capabilities).toEqual({
+      emailMagicLink: "active",
+      passkey: "schema_ready",
+    });
+    provider.stageLocalPreview(first);
+    expect(provider.readLocalPreview(first.state)).toEqual(first);
+    expect(provider.consumeLocalPreview(first.state)).toBe(true);
+    expect(provider.readLocalPreview(first.state)).toBeNull();
+    expect(provider.consumeLocalPreview(first.state)).toBe(false);
   });
 
   it.each(["preview", "staging", "production"] as const)(
@@ -48,19 +63,22 @@ describe("local passwordless account provider", () => {
     },
   );
 
-  it("rejects real email domains, external returns, and non-canonical origins", () => {
+  it("accepts normalized email without account enumeration but rejects unsafe input", () => {
     const provider = createAccountAuthProvider({
       canonicalOrigin: "https://example.test",
       challengeTtlSeconds: 600,
       deploymentEnvironment: "local",
     });
-    expect(() => provider.start({ email: "person@example.com", returnTo: "/en/account" })).toThrow(
-      AccountAuthProviderInputError,
-    );
+    expect(
+      provider.startEmailMagicLink({ email: "Person@Example.com", returnTo: "/en/account" }).email,
+    ).toBe("person@example.com");
     expect(() =>
-      provider.start({ email: "person@example.test", returnTo: "https://foreign.test" }),
+      provider.startEmailMagicLink({
+        email: "person@example.test",
+        returnTo: "https://foreign.test",
+      }),
     ).toThrow(AccountAuthProviderInputError);
-    expect(() => provider.start({ email: "not-an-email", returnTo: "/en" })).toThrow(
+    expect(() => provider.startEmailMagicLink({ email: "not-an-email", returnTo: "/en" })).toThrow(
       AccountAuthProviderInputError,
     );
     expect(() =>
@@ -78,13 +96,13 @@ describe("local passwordless account provider", () => {
       challengeTtlSeconds: 600,
       deploymentEnvironment: "local",
     });
-    const checkout = provider.start({
+    const checkout = provider.startEmailMagicLink({
       email: "person@example.test",
       returnTo: "/en/checkout/local?checkout_id=local_checkout.123",
     });
     expect(checkout.returnTo).toBe("/en/checkout/local?checkout_id=local_checkout.123");
     expect(() =>
-      provider.start({
+      provider.startEmailMagicLink({
         email: "person@example.test",
         returnTo: "/en/checkout/local?checkout_id=bad&next=https://foreign.test",
       }),

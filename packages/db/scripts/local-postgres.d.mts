@@ -7,6 +7,8 @@ export type LocalPostgresTestDatabase = Readonly<{
   databaseUrl: string;
   drop(): Promise<void>;
   migrationDatabaseUrl: string;
+  privacyDeletionDatabaseUrl: string;
+  adminServiceDatabaseUrl: string;
 }>;
 
 export type LocalPostgresLease = Readonly<{

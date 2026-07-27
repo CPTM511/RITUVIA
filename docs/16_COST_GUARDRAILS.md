@@ -42,6 +42,20 @@ The owner sets configuration for:
 
 No automation raises these limits or creates a new paid vendor without approval.
 
+D-069 supersedes D-066's planned CHF 700 Professional License with whole-project
+`AGPL-3.0-only`; no license payment or countersigned commercial contract is budgeted. AGPL does not
+provide private support, uptime, response-time, correctness, or fitness commitments. RITUVIA owns
+availability and MTTR, so operating budgets must include Corresponding Source packaging,
+compatibility review, native-build maintenance, validation, incident response, and replacement
+capacity rather than assuming vendor support.
+
+D-067 selects a self-hosted GeoNames export as the intended location source and rejects public
+Nominatim or a request-priced hosted time-zone API as a default production dependency. This avoids
+per-request provider spend and sending private birth-location queries to a remote service, but
+RITUVIA owns snapshot import/update, attribution, local search indexing, storage, memory, latency,
+monitoring, rollback, and abuse-control costs. No paid geocoding vendor or production snapshot is
+activated by RIT-091.
+
 ## 5. AI cost controls
 
 - Use the smallest model that passes the quality/safety eval for a task; reserve the strongest reasoning model for architecture, safety, complex interpretation, and review.

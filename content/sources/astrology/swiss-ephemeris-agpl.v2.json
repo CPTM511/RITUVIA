@@ -1,0 +1,131 @@
+{
+  "activationPolicy": {
+    "allowAutomaticEphemerisFallback": false,
+    "featureFlag": "experience.astrology",
+    "localIntegrationAllowed": true,
+    "productionActivation": "forbidden_until_release_evidence",
+    "runtimeNetworkAllowed": false
+  },
+  "adapter": {
+    "interfaceId": "rituvia.astrology.ephemeris-adapter",
+    "interfaceOwner": "@rituvia/divination",
+    "interfaceVersion": "1.0.0",
+    "nativeImplementationPackage": "@rituvia/astrology-engine-native",
+    "providerTypesForbiddenInPurePackage": true
+  },
+  "contentType": "astrology_engine_open_source_selection",
+  "dataPolicy": {
+    "ephemerisFiles": [
+      {
+        "path": "ephe/semo_18.se1",
+        "sha256": "1aca59fbd7f73d3882768a847890304261051c5ed965b952b4c9d7c5951833a4"
+      },
+      {
+        "path": "ephe/sepl_18.se1",
+        "sha256": "20aa1c1d68d98895493aef8a4d67d596823309d55078f6d7a9bdbe0d0c7e8d80"
+      }
+    ],
+    "inventorySha256": "8f3e2a81b3b36e0754bc8f11658f429fa41026a8afef204bbdab8bcd506bb66b",
+    "runtimeDelivery": "checksum_pinned_read_only_build_artifact"
+  },
+  "engine": {
+    "libraryReleaseDate": "2022-08-27",
+    "libraryVersion": "2.10.03",
+    "name": "Swiss Ephemeris",
+    "sourceCommit": "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f",
+    "sourceSnapshotTag": "v2.10.3final"
+  },
+  "evidence": [
+    {
+      "code": "owner_agpl_approval",
+      "reference": "D-069:owner-approval:2026-07-26",
+      "status": "verified"
+    },
+    {
+      "code": "whole_project_agpl_license",
+      "reference": "LICENSE:AGPL-3.0-only",
+      "status": "verified"
+    },
+    {
+      "code": "upstream_source_inventory",
+      "reference": "RIT-093:vendor-manifest:243abfacc299ce27834878002ece248e1226aba5194676fb5c13f0ab57f2c9fd",
+      "status": "verified"
+    },
+    {
+      "code": "ephemeris_data_inventory",
+      "reference": "RIT-093:data-inventory:8f3e2a81b3b36e0754bc8f11658f429fa41026a8afef204bbdab8bcd506bb66b",
+      "status": "verified"
+    },
+    {
+      "code": "compiler_and_flags_inventory",
+      "reference": "RIT-093:native-build-metadata",
+      "status": "verified"
+    },
+    {
+      "code": "reproducible_native_build",
+      "reference": "RIT-093:darwin-arm64-double-build",
+      "status": "verified"
+    },
+    {
+      "code": "native_sbom",
+      "reference": "RIT-093:generated-native-sbom",
+      "status": "verified"
+    },
+    {
+      "code": "abi_version",
+      "reference": "RIT-093:darwin-arm64-c-cli-v1",
+      "status": "verified"
+    },
+    {
+      "code": "engine_flag_runtime_verification",
+      "reference": "RIT-093:j2000-seflg-swieph-258",
+      "status": "verified"
+    },
+    {
+      "code": "reference_chart_tolerance",
+      "reference": "RIT-093:independent-astronomy-engine-corpus:f8d5f0a74d07241a015ee4d07cae92f561bc89bf3e1dc3c3d06d7cbf6f557e3d",
+      "status": "verified"
+    }
+  ],
+  "license": {
+    "correspondingSource": {
+      "buildAndInstallScriptsRequired": true,
+      "deployedVersionMatchRequired": true,
+      "networkSourceLinkRequired": true,
+      "upstreamArchivesRequiredAtRelease": true
+    },
+    "model": "GNU Affero General Public License",
+    "ownerApprovalReference": "D-069:owner-approval:2026-07-26",
+    "professionalContractRequired": false,
+    "spdx": "AGPL-3.0-only",
+    "wholeProjectLicense": "AGPL-3.0-only"
+  },
+  "requiredReleaseEvidence": [
+    "owner_agpl_approval",
+    "whole_project_agpl_license",
+    "upstream_source_inventory",
+    "ephemeris_data_inventory",
+    "compiler_and_flags_inventory",
+    "reproducible_native_build",
+    "native_sbom",
+    "abi_version",
+    "engine_flag_runtime_verification",
+    "reference_chart_tolerance",
+    "supply_chain_and_license_review",
+    "corresponding_source_dry_run",
+    "staging_kill_switch_exercise"
+  ],
+  "schemaVersion": "astrology-engine-selection.v2",
+  "selectionId": "rituvia.astrology.engine.swiss-ephemeris",
+  "status": "agpl_approved_local_integration",
+  "supersedes": {
+    "schemaVersion": "astrology-engine-selection.v1",
+    "version": "1.0.0"
+  },
+  "upstreamManifest": {
+    "archiveSha256": "22bca6e62b0f245ec33a72a2dd637c99f12a5f8e5f0c6003eeca6ec11e36236e",
+    "manifestPath": "packages/astrology-engine-native/native/vendor-manifest.json",
+    "manifestSha256": "243abfacc299ce27834878002ece248e1226aba5194676fb5c13f0ab57f2c9fd"
+  },
+  "version": "2.0.0"
+}

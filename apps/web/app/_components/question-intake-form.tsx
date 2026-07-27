@@ -11,6 +11,7 @@ import {
   type QuestionIntakeThemeCode,
 } from "@rituvia/domain";
 import {
+  ActionLink,
   Button,
   createUiControlId,
   createUiControlName,
@@ -19,6 +20,7 @@ import {
   RadioGroup,
   TextAreaField,
   type AlertTone,
+  type LocalActionHref,
 } from "@rituvia/ui";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -125,9 +127,10 @@ const resultOutcomeMessages = (
 
 type QuestionIntakeFormProps = Readonly<{
   messages: QuestionIntakeMessages;
+  readingHref: LocalActionHref;
 }>;
 
-export function QuestionIntakeForm({ messages }: QuestionIntakeFormProps) {
+export function QuestionIntakeForm({ messages, readingHref }: QuestionIntakeFormProps) {
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
     () => true,
@@ -354,7 +357,10 @@ export function QuestionIntakeForm({ messages }: QuestionIntakeFormProps) {
           {outcome.state === "reframed" || outcome.state === "blocked" ? (
             <Button label={useSuggestionLabel} onPress={adoptSuggestion} tone="secondary" />
           ) : outcome.state === "allowed" ? (
-            <Button label={messages.outcomes.allowed.reset} onPress={reset} tone="secondary" />
+            <div className="question-intake-actions">
+              <ActionLink href={readingHref}>{messages.outcomes.allowed.continue}</ActionLink>
+              <Button label={messages.outcomes.allowed.reset} onPress={reset} tone="secondary" />
+            </div>
           ) : null}
         </section>
       ) : null}

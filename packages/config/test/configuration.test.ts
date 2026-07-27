@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { describe, expect, it } from "vitest";
 
 import { createBrandConfiguration, parseClientBrandConfiguration } from "../src/brand.js";
@@ -80,6 +81,8 @@ describe("server and client configuration boundary", () => {
     expect(serverEnvironmentVariables).toEqual([
       ...buildEnvironmentVariables,
       "DATABASE_URL",
+      "PRIVACY_DELETION_DATABASE_URL",
+      "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
       "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
@@ -87,9 +90,18 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
       "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
       "RITUVIA_AUTH_DATA_KEY_V1",
+      "RITUVIA_AUTH_START_GLOBAL_LIMIT",
+      "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
+      "RITUVIA_AUTH_START_WINDOW_SECONDS",
       "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
       "RITUVIA_PAYMENT_PROVIDER",
+      "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
+      "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
+      "RITUVIA_PRIVACY_EXPORT_KEY_V1",
+      "RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS",
+      "RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS",
+      "RITUVIA_PRIVACY_EXPORT_TTL_SECONDS",
       "RITUVIA_PRIVATE_CONTENT_KEY_V1",
       "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
       "RITUVIA_REFLECTION_POLICY_VERSION",
@@ -107,6 +119,8 @@ describe("server and client configuration boundary", () => {
     const configuration = parseServerConfiguration({
       APP_ENV: "staging",
       DATABASE_URL: "postgresql://local:password@127.0.0.1:5432/app",
+      PRIVACY_DELETION_DATABASE_URL: "postgresql://privacy-delete:password@127.0.0.1:5432/app",
+      RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: "/srv/rituvia/astrology/build-metadata.json",
       BRAND_NAME: "Configurable Brand",
       BRAND_SHORT_NAME: "CB",
       BRAND_LEGAL_ENTITY: "Private Legal Entity",
@@ -131,9 +145,32 @@ describe("server and client configuration boundary", () => {
     ]);
     expect(JSON.stringify(configuration.client)).not.toContain(serverOnlyCanary);
     expect(JSON.stringify(configuration.client)).not.toContain("DATABASE_URL");
+    expect(configuration.privacyDeletionDatabaseUrl).toContain("privacy-delete");
+    expect(configuration.astrologyNativeBuildMetadataPath).toBe(
+      "/srv/rituvia/astrology/build-metadata.json",
+    );
     expect(Object.isFrozen(configuration)).toBe(true);
     expect(Object.isFrozen(configuration.client)).toBe(true);
     expect(Object.isFrozen(configuration.client.brand.socialHandles)).toBe(true);
+  });
+
+  it("keeps native astrology safe-off and accepts only an absolute metadata JSON path", () => {
+    expect(parseServerConfiguration({}).astrologyNativeBuildMetadataPath).toBeUndefined();
+    expect(
+      parseServerConfiguration({
+        RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: "/srv/rituvia/astrology/build-metadata.json",
+      }).astrologyNativeBuildMetadataPath,
+    ).toBe("/srv/rituvia/astrology/build-metadata.json");
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: "../private/build-metadata.json",
+      }),
+    ).toThrowError("RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: "/srv/rituvia/../private/build-metadata.json",
+      }),
+    ).toThrowError("RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH:invalid");
   });
 
   it("keeps anonymous sessions safe-off until one complete explicit policy is supplied", () => {
@@ -157,6 +194,106 @@ describe("server and client configuration boundary", () => {
       ttlSeconds: 86_400,
     });
     expect(Object.isFrozen(configuration.anonymousSessionPolicy)).toBe(true);
+  });
+
+  it("keeps account auth safe-off and validates bounded database rate controls", () => {
+    expect(parseServerConfiguration({}).accountIdentityPolicy).toBeUndefined();
+    expect(() =>
+      parseServerConfiguration({ RITUVIA_AUTH_START_IDENTIFIER_LIMIT: "5" }),
+    ).toThrowError("RITUVIA_AUTH_DATA_KEY_V1:missing, RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1:missing");
+
+    const configuration = parseServerConfiguration({
+      RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+      RITUVIA_AUTH_START_GLOBAL_LIMIT: "200",
+      RITUVIA_AUTH_START_IDENTIFIER_LIMIT: "4",
+      RITUVIA_AUTH_START_WINDOW_SECONDS: "600",
+      RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+    });
+    expect(configuration.accountIdentityPolicy).toMatchObject({
+      challengeTtlSeconds: 900,
+      sessionTtlSeconds: 2_592_000,
+      startGlobalLimit: 200,
+      startIdentifierLimit: 4,
+      startWindowSeconds: 600,
+    });
+    expect(Object.isFrozen(configuration.accountIdentityPolicy)).toBe(true);
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+        RITUVIA_AUTH_START_IDENTIFIER_LIMIT: "10001",
+        RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+      }),
+    ).toThrowError("RITUVIA_AUTH_START_IDENTIFIER_LIMIT:invalid");
+  });
+
+  it("keeps privacy export safe-off until one complete independently keyed policy exists", () => {
+    expect(parseServerConfiguration({}).privacyExport).toBeUndefined();
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+      }),
+    ).toThrowError(
+      "RITUVIA_PRIVACY_EXPORT_KEY_V1:missing, RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS:missing, RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS:missing",
+    );
+    const key = Buffer.alloc(32, 9).toString("base64url");
+    const configuration = parseServerConfiguration({
+      RITUVIA_PRIVACY_EXPORT_KEY_V1: key,
+      RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+    });
+    expect(configuration.privacyExport).toMatchObject({
+      artifactTtlSeconds: 900,
+      encryptionKeyVersion: "privacy-export.v1",
+      recentAuthenticationSeconds: 900,
+      requestWindowSeconds: 3600,
+    });
+    expect(configuration.privacyExport?.artifactKey).toEqual(new Uint8Array(32).fill(9));
+    expect(Object.isFrozen(configuration.privacyExport)).toBe(true);
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_PRIVACY_EXPORT_KEY_V1: key,
+        RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+        RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+        RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "60",
+      }),
+    ).toThrowError("RITUVIA_PRIVACY_EXPORT_TTL_SECONDS:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_AUTH_DATA_KEY_V1: key,
+        RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+        RITUVIA_PRIVACY_EXPORT_KEY_V1: key,
+        RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+        RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+        RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+      }),
+    ).toThrowError("RITUVIA_PRIVACY_EXPORT_KEY_V1:invalid");
+  });
+
+  it("keeps privacy deletion safe-off until both bounded policy windows exist", () => {
+    expect(parseServerConfiguration({}).privacyDeletionPolicy).toBeUndefined();
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "900",
+      }),
+    ).toThrowError("RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS:missing");
+    const configuration = parseServerConfiguration({
+      PRIVACY_DELETION_DATABASE_URL: "postgresql://privacy-delete:password@127.0.0.1:5432/app",
+      RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
+    });
+    expect(configuration.privacyDeletionPolicy).toEqual({
+      recentAuthenticationSeconds: 900,
+      requestWindowSeconds: 3600,
+    });
+    expect(configuration.privacyDeletionDatabaseUrl).toContain("privacy-delete");
+    expect(Object.isFrozen(configuration.privacyDeletionPolicy)).toBe(true);
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "86401",
+        RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
+      }),
+    ).toThrowError("RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS:invalid");
   });
 
   it("keeps question intake safe-off and requires an owner reference for production", () => {

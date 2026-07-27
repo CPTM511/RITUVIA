@@ -24,6 +24,20 @@ Protect private spiritual/reflection data, identity, money, entitlements, conten
 
 Maintain a versioned threat model and update it for every major feature/provider.
 
+### Astrology location privacy
+
+- Treat place queries, selected birth locations, local birth time, coordinates, and derived UTC
+  instants as private birth-profile data.
+- Never put a raw place query in a URL, browser history, access/error logs, analytics, traces,
+  shared cache, or public metadata. The planned GET route remains unimplemented pending OWN-014.
+- Normalize and bound search, require explicit selection when results are not unique, and reread an
+  opaque provider location ID before resolution; never accept client-authored coordinates or zone.
+- Use only bounded process-memory search caching with HMAC-only keys, exact provider/data-version
+  partitioning, at most 64 entries and 15 minutes, timeout cancellation, failure eviction, and
+  stable redacted errors.
+- Fail unavailable on provider/runtime/version failure. Never substitute browser zone, current
+  offset, first/nearest result, remote fallback, or UTC.
+
 ## 3. Identity and authorization
 
 - Prefer phishing-resistant passkeys and magic links with secure expiration/one-time use; social auth is adapter-based.
@@ -34,6 +48,44 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Admin requires MFA/passkey, recent re-auth for sensitive actions, least privilege, and audit.
 - Test every object endpoint for cross-user access.
 - Provide session/device revocation.
+
+### Account authentication baseline
+
+- Accept valid magic-link starts uniformly with `202`; never vary the response by account
+  existence or return email, token, state, or a tokenized local callback.
+- Keep the development preview adapter hard-disabled outside local. It exposes one constant
+  no-query preview route and consumes the one-time challenge through an `HttpOnly`,
+  `SameSite=Lax`, host-only state cookie.
+- Encrypt normalized email and store only versioned hashes for challenge token/state, previous
+  session, and final session bearer. Challenge completion is short-lived, one-time, and replay
+  safe.
+- Enforce one database-atomic global start limit plus a bounded keyed identifier-bucket limit.
+  Store no plaintext email, IP, user-agent, device fingerprint, or arbitrary abuse attributes.
+- Create a fresh session after authentication and revoke only a matching active prior session for
+  the same account. Account cookies are host-only `Secure`, `HttpOnly`, `SameSite=Strict`, and use
+  fixed absolute expiry.
+- Bootstrap a one-way session-bound CSRF token from `GET /api/v1/me`, retain it only in browser
+  memory, and require it for account/profile mutations, merge, logout, logout-all, and targeted
+  session revocation.
+- Merge anonymous ownership only during authentication completion or the dedicated account-merge
+  endpoint. Challenge consumption, account/session creation, link insertion, and anonymous-session
+  revocation commit or roll back together. Explicit merge rotates the account session, returns a
+  CSRF token bound to the successor cookie, and exact same-source/same-key retries recover the same
+  successor after a dropped response.
+- Bind append-only merge evidence to the target user, anonymous subject, source anonymous session,
+  source account session, keyed idempotency digest, and canonical request digest. Reject a
+  different account, source session, or key without revoking either caller.
+- Do not clear the account cookie when durable logout/revocation storage is unavailable; report a
+  retryable dependency failure so the browser does not claim a server session ended.
+- Resolve account history only from the active account session and immutable subject links; accept
+  no client user/subject identifier. Select minimal metadata from currently visible source rows,
+  keep private prose out of list responses, URLs, browser storage, logs, analytics, metadata, and
+  screenshots, and preserve indistinguishable cross-owner/missing detail responses.
+- List active sessions with timestamps only. Do not collect or infer device names, location, IP,
+  user agent, fingerprint, or trust score for this control. Targeted revocation cannot revoke the
+  current session, cannot cross accounts, and must commit before the UI reports success.
+- Treat passkeys as schema-ready only until RP/origin, registration/assertion, recovery,
+  attestation, UX, provider, and production activation are separately approved.
 
 ### Anonymous-session baseline
 
@@ -46,6 +98,10 @@ Maintain a versioned threat model and update it for every major feature/provider
   of optional analytics, personalization, marketing, or model-improvement consent.
 - Keep optional consent append-only per purpose and notice version. Absence, denial, withdrawal,
   malformed history, an expired subject/session, or a stale notice fails closed.
+- Keep signed-in analytics, AI personalization, and model-improvement consent in independent
+  account-owned append-only sequences. Recheck the exact current purpose and notice at each
+  sensitive data-flow boundary; do not cache consent at login, page load, queue creation, or
+  purchase. A committed withdrawal must stop later reads immediately.
 - Require exact same-origin request evidence, an empty request body, and a high-entropy idempotency
   key at the only anonymous-session endpoint. Do not expose subject/session IDs or the token in the
   response body, URLs, logs, analytics, or public error details.
@@ -64,8 +120,17 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Escape output; sanitize allowed rich text; no arbitrary HTML.
 - Content Security Policy, frame protection, secure headers, HTTPS/HSTS in production.
 - CSRF protection for state-changing cookie-authenticated requests.
+- Bootstrap a session-bound one-way CSRF token from the anonymous-session response, keep it only in
+  memory, and require it together with exact Origin/Sec-Fetch-Site checks on intention mutations.
 - Strict CORS; no wildcard credentials.
 - URL allowlists and egress controls for server fetches.
+- Native SCA sends only the immutable upstream commit to a bounded OSV query, rejects malformed or
+  duplicate findings, and fails on every returned vulnerability record. A zero-record response is
+  evidence of that query, not a guarantee of complete C/C++ advisory coverage.
+- Native Corresponding Source rehearsals include exact checksum-attested vendor source/data,
+  verify the extracted inventory, block curl during the rebuild, and compare complete engine
+  metadata. Component rehearsal artifacts stay ignored and cannot substitute for clean public
+  deployed-version source.
 - File upload type/size/content validation, malware scanning where needed, private storage, signed URLs.
 - Do not expose stack traces or internal identifiers to clients.
 - Secure error codes with correlation IDs.
@@ -76,6 +141,8 @@ Maintain a versioned threat model and update it for every major feature/provider
 - No secrets in Git, build logs, issue text, screenshots, analytics, or client bundles.
 - Separate provider keys and least privilege.
 - Rotation runbook and key versioning for encrypted fields.
+- Separate the active encryption key version from the retained digest-key version so encryption
+  rotation cannot change idempotency or canonical-request hashes for live records.
 - Webhook secret overlap during rotation.
 - Detect committed secrets in CI and pre-commit.
 - Production secret access is an owner approval gate.
@@ -134,6 +201,66 @@ Implement workflows for:
 - Objection/restriction where applicable.
 
 Requests require identity verification, status/deadline tracking, audit, and clear handling of legally retained financial/security records.
+
+RIT-053 records one immutable authentication instant per account session and preserves it across
+anonymous-merge bearer rotation. Privacy export request, metadata, and download all require that
+the requesting session itself remains within the configured recent-authentication window; another
+device's sign-in cannot refresh it. Creation is same-account serialized and rate-limited,
+idempotent, owner-scoped, and session-CSRF protected.
+
+The export builder uses explicit category/field allowlists and decrypts private content only inside
+the authorized Web server boundary. It emits matching machine-readable JSON and human-readable
+Markdown, then stores only dedicated-key AES-256-GCM ciphertext bound to account, export, schema,
+key version, creation, and expiry. Downloads are authenticated POST responses with private
+no-store/noindex headers, never bearer URLs. Request, one-per-request artifact, and audit rows are
+append-only; runtime has no update/delete privilege and audit remains private-content free.
+Production worker/object storage, final retention, legal copy, and delivery remain owner-gated.
+
+RIT-054 implements a recent-authenticated, same-origin/session-CSRF deletion boundary with exact
+scope idempotency and account-level serialization. Selective deletion immediately revokes linked
+anonymous authority, privacy-marks ownership links, destroys private ciphertext/generated prose
+with non-decryptable tombstones, and deletes encrypted export artifacts while leaving the account
+usable for new data. Account deletion additionally clears direct profile and temporary checkout
+capability data, stores a one-way provider suppression record, tombstones identity material,
+revokes all sessions/passkeys, and supports only exact completion replay through the revoked
+request token. Export completion shares the account fence so a pre-deletion snapshot cannot
+recreate an artifact.
+
+Financial/ledger, consent, security, privacy request, suppression, and completion evidence remains
+pseudonymous and append-only under existing source retention. Final retention periods,
+provider-side erasure, backup expiry, production migration, legal copy, deployment, and launch
+remain owner-gated.
+
+RIT-045 keeps service-reminder authority separate from optional analytics, personalization, model
+improvement, and marketing consent. Subscribe/unsubscribe writes are account-owned, exact-version,
+same-origin/session-CSRF protected, and successful only after database commit. The queue stores
+identifiers and versions only. Claim and pre-provider authorization both reread active account,
+ownership link, Revisit/intention lifecycle, locale, local date/time zone, quiet hours, preference,
+contract version, and lease. Unsubscribe clears a live lease; privacy deletion atomically
+cancels all account reminder rows before identity tombstoning. Fixed subject/preview/body omit all
+private reflection content. Provider rejection, timeout, lease expiry, retries, and dead letters
+use finite codes and identifier-free observability events. Production provider credentials,
+recipient resolution, domain reputation, legal copy, metrics/alerts, and sending remain disabled.
+
+Deletion uses a separate `PRIVACY_DELETION_DATABASE_URL` whose login has exact destructive column
+grants and deletion-only RLS policies. The ordinary application/interpretation runtime retains
+only the read access needed for identity suppression and export-finalization fencing; it cannot
+delete export artifacts or rewrite verification output.
+
+RIT-057 hardens that role so the presented deletion bearer is hashed and installed only as a
+transaction-local PostgreSQL setting. A security-barrier view resolves the hash to one account,
+and row-level policies restrict every deletion query and mutation to that account. Direct
+cross-user SELECT and UPDATE attempts with the dedicated credential are exercised by the isolated
+database gate. Privacy API methods and paths are explicitly admitted by the Web proxy, while
+export metadata reads reject cross-site request metadata and preserve private empty failures.
+
+The composed identity/privacy/authorization gate covers account authentication, merge, account
+controls, export, deletion, admin policy, redaction, analytics, metadata, PostgreSQL recovery, and
+real-browser export-to-deletion behavior. The admin service remains safe-off with no production
+credential, route, UI, enrollment, or WebAuthn assertion issuer. Before any admin activation,
+role mutation and audit append require a reviewed database-bound privileged procedure or
+equivalent database-enforced step-up capability; possession of a service credential alone is not
+approved production authority.
 
 ## 11. Reliability objectives
 
@@ -220,7 +347,7 @@ Traffic, latency, errors, saturation, queue depth/age, job failures, database po
 
 Propagate correlation through Web → database/outbox → worker → provider. Strip sensitive attributes.
 
-The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its current `http.proxy_handoff` span measures successful proxy handoff only; it does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. A real database/outbox/queue reader does not exist yet, so the tested Web → Worker → provider chain is protocol evidence, not a deployed asynchronous path. Baggage and tracestate are not accepted or propagated.
+The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its current `http.proxy_handoff` span measures successful proxy handoff only; it does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. RIT-045 adds one narrow database-backed Revisit reminder reader/lease state machine, but it is not wired to the generic trace carrier, a scheduler process, production metrics, or a provider. Other Web → Worker → provider chains remain protocol evidence rather than deployed asynchronous paths. Baggage and tracestate are not accepted or propagated.
 
 Production metrics, alert routes, retention, sampling, external exporters, and error-monitoring vendors remain later owner-reviewed work.
 

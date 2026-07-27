@@ -13,6 +13,7 @@ describe("private one-card server render", () => {
       createElement(TarotOneCardFlow, {
         messages: getTarotOneCardMessages("en"),
         methodologyHref: createLocalActionHref("/en/methodology"),
+        sanctuaryHref: createLocalActionHref("/en/sanctuary"),
       }),
     );
 
@@ -40,6 +41,25 @@ describe("private one-card server render", () => {
     expect(html.match(/<option\b/gu)).toHaveLength(9);
     expect(html).toContain('value="reading"');
     expect(html).toContain('value="single"');
+    expect(html).not.toMatch(/textarea|name="(?:question|comment|journal|prayer)/iu);
+  });
+
+  it("server-renders an exact interpretation report without exposing its request identifier", () => {
+    const messages = getTarotOneCardMessages("en");
+    const interpretationRequestId = "44444444-4444-4444-8444-444444444444";
+    const html = renderToStaticMarkup(
+      createElement(TarotReadingReport, {
+        interpretationRequestId,
+        messages: messages.result.report,
+        positions: [],
+        readingId: "33333333-3333-4333-8333-333333333333",
+      }),
+    );
+
+    expect(html).toContain("Report an issue with this interpretation");
+    expect(html).toContain("The displayed interpretation");
+    expect(html.match(/<select\b/gu)).toHaveLength(1);
+    expect(html).not.toContain(interpretationRequestId);
     expect(html).not.toMatch(/textarea|name="(?:question|comment|journal|prayer)/iu);
   });
 });

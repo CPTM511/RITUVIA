@@ -6,6 +6,7 @@ import { SanctuaryFlow } from "../../_components/sanctuary-flow";
 import { getMessages } from "../../_i18n/messages";
 import {
   localeAccountPath,
+  localeRevisitPath,
   localeSanctuaryPath,
   localeSignInPath,
   localeTarotOneCardPath,
@@ -64,6 +65,7 @@ export default async function SanctuaryPage({ params }: SanctuaryPageProps) {
           accountHref={localeAccountPath(locale)}
           messages={messages}
           readingHref={localeTarotOneCardPath(locale)}
+          revisitHref={localeRevisitPath(locale)}
           sanctuaryHref={localeSanctuaryPath(locale)}
           signInHref={localeSignInPath(locale)}
         />

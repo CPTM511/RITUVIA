@@ -20,13 +20,24 @@ const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 const opaqueTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 const idempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
+const identifierPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const returnToPattern = /^\/en(?:\/(?:account|account\/history))?$/u;
 const maximumHistoryPageSize = 50;
+const accountHistorySourceTypes = new Set<AccountHistorySourceType>([
+  "intention",
+  "journal",
+  "journal_legacy",
+  "reading",
+  "revisit",
+  "ritual",
+  "ritual_legacy",
+]);
 
 export const accountIdentityErrorCodes = Object.freeze([
   "ACCOUNT_AUTH_INVALID",
   "ACCOUNT_AUTH_EXPIRED",
   "ACCOUNT_AUTH_REPLAYED",
+  "ACCOUNT_AUTH_RATE_LIMITED",
   "ACCOUNT_SESSION_UNAVAILABLE",
   "ACCOUNT_DISABLED",
   "ACCOUNT_PROFILE_INVALID",
@@ -44,6 +55,8 @@ const errorMessage = (code: AccountIdentityErrorCode): string => {
     case "ACCOUNT_AUTH_EXPIRED":
     case "ACCOUNT_AUTH_REPLAYED":
       return "The sign-in request is unavailable.";
+    case "ACCOUNT_AUTH_RATE_LIMITED":
+      return "The sign-in request is temporarily unavailable.";
     case "ACCOUNT_SESSION_UNAVAILABLE":
       return "The account session is unavailable.";
     case "ACCOUNT_DISABLED":
@@ -63,11 +76,13 @@ const errorMessage = (code: AccountIdentityErrorCode): string => {
 
 export class AccountIdentityError extends Error {
   readonly code: AccountIdentityErrorCode;
+  readonly retryAfterSeconds: number | undefined;
 
-  constructor(code: AccountIdentityErrorCode) {
+  constructor(code: AccountIdentityErrorCode, retryAfterSeconds?: number) {
     super(errorMessage(code));
     this.name = "AccountIdentityError";
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -77,6 +92,9 @@ export type AccountIdentityPolicy = Readonly<{
   encryptionKeyVersion: string;
   providerSubjectHmacKey: Uint8Array;
   sessionTtlSeconds: number;
+  startGlobalLimit: number;
+  startIdentifierLimit: number;
+  startWindowSeconds: number;
 }>;
 
 export type AccountSessionContext = Readonly<{
@@ -118,24 +136,81 @@ export type AccountReadingPage = Readonly<{
   nextCursor: Readonly<{ createdAt: string; readingId: string }> | null;
 }>;
 
+export const accountHistoryResourceTypes = Object.freeze([
+  "reading",
+  "intention",
+  "ritual",
+  "journal",
+  "revisit",
+] as const);
+
+export type AccountHistoryResourceType = (typeof accountHistoryResourceTypes)[number];
+
+export type AccountHistorySourceType =
+  "intention" | "journal" | "journal_legacy" | "reading" | "revisit" | "ritual" | "ritual_legacy";
+
+export type AccountHistorySummary = Readonly<{
+  occurredAt: string;
+  resourceId: string;
+  resourceType: AccountHistoryResourceType;
+  status:
+    "abandoned" | "active" | "archived" | "completed" | "facts_ready" | "paused" | "scheduled";
+  readingType: "one_card" | "three_card" | null;
+  themeCode: string | null;
+}>;
+
+export type AccountHistoryPage = Readonly<{
+  items: readonly AccountHistorySummary[];
+  nextCursor: Readonly<{
+    occurredAt: string;
+    resourceId: string;
+    sourceType: AccountHistorySourceType;
+  }> | null;
+}>;
+
+export type AccountMergeStatus = "created" | "replayed";
+
 export type AccountIdentityService = Readonly<{
   consumeChallenge(input: {
+    anonymousMerge?:
+      | Readonly<{
+          anonymousSessionToken: string;
+          idempotencyKey: string;
+        }>
+      | undefined;
     challengeId: string;
-    previousSessionToken?: string | undefined;
     sessionToken: string;
     state: string;
     token: string;
-  }): Promise<Readonly<{ context: AccountSessionContext; returnTo: string }>>;
+  }): Promise<
+    Readonly<{
+      context: AccountSessionContext;
+      mergeStatus: AccountMergeStatus | null;
+      returnTo: string;
+    }>
+  >;
   createChallenge(input: {
     challengeId: string;
     email: string;
     expiresAt: string;
+    previousSessionToken?: string | undefined;
     providerKey: string;
     returnTo: string;
     state: string;
     token: string;
   }): Promise<void>;
   getProfile(sessionToken: string): Promise<AccountProfile>;
+  listHistory(input: {
+    cursor?:
+      | Readonly<{
+          occurredAt: string;
+          resourceId: string;
+          sourceType: AccountHistorySourceType;
+        }>
+      | undefined;
+    limit: number;
+    sessionToken: string;
+  }): Promise<AccountHistoryPage>;
   listReadings(input: {
     cursor?: Readonly<{ createdAt: string; readingId: string }> | undefined;
     limit: number;
@@ -146,7 +221,13 @@ export type AccountIdentityService = Readonly<{
     accountSessionToken: string;
     anonymousSessionToken: string;
     idempotencyKey: string;
-  }): Promise<"created" | "replayed">;
+  }): Promise<
+    Readonly<{
+      context: AccountSessionContext;
+      sessionToken: string;
+      status: AccountMergeStatus;
+    }>
+  >;
   resolveSession(token: string): Promise<AccountSessionContext | null>;
   revokeAllSessions(token: string): Promise<boolean>;
   revokeSession(input: { sessionId: string; token: string }): Promise<boolean>;
@@ -160,12 +241,14 @@ type ChallengeRow = Readonly<{
   emailTag: Uint8Array;
   encryptionKeyVersion: string;
   expiresAt: Date;
+  previousSessionHash: Uint8Array | null;
   providerKey: string;
   providerSubject: string;
   returnTo: string;
 }>;
 
 type SessionRow = Readonly<{
+  authenticatedAt: Date | null;
   authIdentityId: string;
   expiresAt: Date;
   providerKey: string;
@@ -184,6 +267,16 @@ type ProfileRow = Readonly<{
   timeZone: string;
 }>;
 
+type RateLimitRow = Readonly<{
+  requestCount: number;
+  retryAfterSeconds: number;
+}>;
+
+type PreparedAccountMerge = Readonly<{
+  anonymousHash: Uint8Array<ArrayBuffer>;
+  idempotencyKeyHash: Uint8Array<ArrayBuffer>;
+}>;
+
 const validatePolicy = (policy: AccountIdentityPolicy): AccountIdentityPolicy => {
   if (
     !Number.isSafeInteger(policy.challengeTtlSeconds) ||
@@ -192,6 +285,16 @@ const validatePolicy = (policy: AccountIdentityPolicy): AccountIdentityPolicy =>
     !Number.isSafeInteger(policy.sessionTtlSeconds) ||
     policy.sessionTtlSeconds < 300 ||
     policy.sessionTtlSeconds > 2_592_000 ||
+    !Number.isSafeInteger(policy.startGlobalLimit) ||
+    policy.startGlobalLimit < 1 ||
+    policy.startGlobalLimit > 100_000 ||
+    !Number.isSafeInteger(policy.startIdentifierLimit) ||
+    policy.startIdentifierLimit < 1 ||
+    policy.startIdentifierLimit > 10_000 ||
+    policy.startIdentifierLimit > policy.startGlobalLimit ||
+    !Number.isSafeInteger(policy.startWindowSeconds) ||
+    policy.startWindowSeconds < 60 ||
+    policy.startWindowSeconds > 86_400 ||
     !(policy.emailEncryptionKey instanceof Uint8Array) ||
     policy.emailEncryptionKey.byteLength !== 32 ||
     !(policy.providerSubjectHmacKey instanceof Uint8Array) ||
@@ -249,17 +352,33 @@ const parseUuidV4 = (value: unknown): string => {
 const importProviderSubjectHmacKey = async (key: Uint8Array): Promise<webcrypto.CryptoKey> =>
   webcrypto.subtle.importKey("raw", key, { hash: "SHA-256", name: "HMAC" }, false, ["sign"]);
 
+const keyedIdentifierDigest = async (
+  scope: string,
+  value: string,
+  key: webcrypto.CryptoKey,
+): Promise<Uint8Array<ArrayBuffer>> =>
+  new Uint8Array(
+    await webcrypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(`rituvia.${scope}.v1:${value}`),
+    ),
+  ) as Uint8Array<ArrayBuffer>;
+
+const keyedRateBucketDigest = async (
+  value: string,
+  key: webcrypto.CryptoKey,
+): Promise<Uint8Array<ArrayBuffer>> => {
+  const identifierDigest = await keyedIdentifierDigest("auth-start-rate-identifier", value, key);
+  const bucket = Buffer.from(identifierDigest.slice(0, 2)).toString("hex");
+  return keyedIdentifierDigest("auth-start-rate-bucket", bucket, key);
+};
+
 const providerSubjectForEmail = async (
   email: string,
   key: webcrypto.CryptoKey,
 ): Promise<string> => {
-  const digest = new Uint8Array(
-    await webcrypto.subtle.sign(
-      "HMAC",
-      key,
-      new TextEncoder().encode(`rituvia.local-passwordless.v1:${email}`),
-    ),
-  );
+  const digest = await keyedIdentifierDigest("local-passwordless", email, key);
   const suffix = Buffer.from(digest).toString("hex");
   return parseAuthProviderSubject(`local.${suffix}`);
 };
@@ -376,6 +495,7 @@ const resolveActiveSession = async (
       SELECT session.id AS "sessionId",
              session.user_id AS "userId",
              session.auth_identity_id AS "authIdentityId",
+             session.authenticated_at AS "authenticatedAt",
              session.expires_at AS "expiresAt",
              identity.provider_key AS "providerKey"
         FROM account_session AS session
@@ -403,7 +523,12 @@ const isDatabaseConflict = (error: unknown): boolean =>
   typeof error === "object" &&
   error !== null &&
   "code" in error &&
-  (error.code === "P2002" || error.code === "23505");
+  (error.code === "P2002" ||
+    error.code === "23505" ||
+    (error.code === "P2010" &&
+      "message" in error &&
+      typeof error.message === "string" &&
+      error.message.includes("Code: `23505`")));
 
 export const createAccountIdentityService = (
   database: PrismaClient,
@@ -413,16 +538,64 @@ export const createAccountIdentityService = (
   const emailKeyPromise = importEmailKey(policy.emailEncryptionKey);
   const providerSubjectHmacKeyPromise = importProviderSubjectHmacKey(policy.providerSubjectHmacKey);
 
+  const enforceStartLimit = async (
+    transaction: Prisma.TransactionClient,
+    input: Readonly<{
+      keyHash: Uint8Array<ArrayBuffer>;
+      limit: number;
+      scope: "global" | "identifier";
+    }>,
+  ): Promise<void> => {
+    const rows = await transaction.$queryRaw<RateLimitRow[]>`
+      INSERT INTO auth_start_rate_limit (
+        scope, key_hash, window_started_at, request_count
+      ) VALUES (
+        ${input.scope}, ${input.keyHash}, CURRENT_TIMESTAMP, 1
+      )
+      ON CONFLICT (scope, key_hash) DO UPDATE
+         SET window_started_at = CASE
+               WHEN auth_start_rate_limit.window_started_at
+                    + make_interval(secs => ${policy.startWindowSeconds}) <= CURRENT_TIMESTAMP
+                 THEN CURRENT_TIMESTAMP
+               ELSE auth_start_rate_limit.window_started_at
+             END,
+             request_count = CASE
+               WHEN auth_start_rate_limit.window_started_at
+                    + make_interval(secs => ${policy.startWindowSeconds}) <= CURRENT_TIMESTAMP
+                 THEN 1
+               ELSE auth_start_rate_limit.request_count + 1
+             END
+      RETURNING request_count AS "requestCount",
+                GREATEST(
+                  1,
+                  CEIL(EXTRACT(EPOCH FROM (
+                    window_started_at + make_interval(secs => ${policy.startWindowSeconds})
+                    - CURRENT_TIMESTAMP
+                  )))::integer
+                ) AS "retryAfterSeconds"
+    `;
+    const row = rows[0];
+    if (
+      rows.length !== 1 ||
+      row === undefined ||
+      !Number.isSafeInteger(row.requestCount) ||
+      !Number.isSafeInteger(row.retryAfterSeconds)
+    ) {
+      throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
+    }
+    if (row.requestCount > input.limit) {
+      throw new AccountIdentityError("ACCOUNT_AUTH_RATE_LIMITED", row.retryAfterSeconds);
+    }
+  };
+
   const createChallenge: AccountIdentityService["createChallenge"] = async (input) => {
     if (!uuidV4Pattern.test(input.challengeId) || !returnToPattern.test(input.returnTo)) {
       throw new AccountIdentityError("ACCOUNT_AUTH_INVALID");
     }
     const providerKey = parseAuthProviderKey(input.providerKey);
     const email = normalizeAccountEmail(input.email);
-    const providerSubject = await providerSubjectForEmail(
-      email,
-      await providerSubjectHmacKeyPromise,
-    );
+    const providerSubjectHmacKey = await providerSubjectHmacKeyPromise;
+    const providerSubject = await providerSubjectForEmail(email, providerSubjectHmacKey);
     const token = parseOpaqueToken(input.token);
     const state = parseOpaqueToken(input.state);
     const expiresAt = new Date(parseAccountUtcInstant(input.expiresAt));
@@ -432,7 +605,16 @@ export const createAccountIdentityService = (
     ) {
       throw new AccountIdentityError("ACCOUNT_AUTH_INVALID");
     }
-    const [tokenHash, stateHash, encryptedEmail] = await Promise.all([
+    const previousSessionBytes =
+      input.previousSessionToken === undefined ? null : tokenBytes(input.previousSessionToken);
+    const [
+      tokenHash,
+      stateHash,
+      encryptedEmail,
+      globalRateKeyHash,
+      identifierRateKeyHash,
+      previousSessionHash,
+    ] = await Promise.all([
       sha256(token),
       sha256(state),
       emailKeyPromise.then((key) =>
@@ -442,39 +624,179 @@ export const createAccountIdentityService = (
           `rituvia.account-email.v1:challenge:${input.challengeId}:${providerKey}:${providerSubject}:${policy.encryptionKeyVersion}`,
         ),
       ),
+      keyedIdentifierDigest("auth-start-rate", "global", providerSubjectHmacKey),
+      keyedRateBucketDigest(email, providerSubjectHmacKey),
+      previousSessionBytes === null ? Promise.resolve(null) : sha256(previousSessionBytes),
     ]);
     try {
-      await database.$executeRaw`
-        INSERT INTO auth_challenge (
-          id, provider_key, provider_subject, email_ciphertext, email_nonce, email_tag,
-          encryption_key_version, token_hash, token_hash_version, state_hash,
-          return_to, created_at, expires_at, attempt_count
-        ) VALUES (
-          ${input.challengeId}::uuid, ${providerKey}, ${providerSubject},
-          ${encryptedEmail.ciphertext}, ${encryptedEmail.nonce}, ${encryptedEmail.tag},
-          ${policy.encryptionKeyVersion}, ${tokenHash}, 1, ${stateHash},
-          ${input.returnTo}, CURRENT_TIMESTAMP, ${expiresAt}, 0
-        )
-      `;
+      await database.$transaction(async (transaction) => {
+        await enforceStartLimit(transaction, {
+          keyHash: globalRateKeyHash,
+          limit: policy.startGlobalLimit,
+          scope: "global",
+        });
+        await enforceStartLimit(transaction, {
+          keyHash: identifierRateKeyHash,
+          limit: policy.startIdentifierLimit,
+          scope: "identifier",
+        });
+        await transaction.$executeRaw`
+          INSERT INTO auth_challenge (
+            id, provider_key, provider_subject, email_ciphertext, email_nonce, email_tag,
+            encryption_key_version, token_hash, token_hash_version, state_hash,
+            previous_session_hash, return_to, created_at, expires_at, attempt_count
+          ) VALUES (
+            ${input.challengeId}::uuid, ${providerKey}, ${providerSubject},
+            ${encryptedEmail.ciphertext}, ${encryptedEmail.nonce}, ${encryptedEmail.tag},
+            ${policy.encryptionKeyVersion}, ${tokenHash}, 1, ${stateHash},
+            ${previousSessionHash},
+            ${input.returnTo}, CURRENT_TIMESTAMP, ${expiresAt}, 0
+          )
+        `;
+      });
     } catch (error) {
+      if (error instanceof AccountIdentityError) throw error;
       if (isDatabaseConflict(error)) throw new AccountIdentityError("ACCOUNT_AUTH_REPLAYED");
       throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
     }
+  };
+
+  const prepareAccountMerge = async (
+    anonymousSessionToken: string,
+    idempotencyKey: string,
+  ): Promise<PreparedAccountMerge> => {
+    if (!idempotencyKeyPattern.test(idempotencyKey)) {
+      throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+    }
+    const anonymousToken = tokenBytes(anonymousSessionToken);
+    if (anonymousToken === null) throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+    const [anonymousHash, idempotencyKeyHash] = await Promise.all([
+      sha256(anonymousToken),
+      sha256(idempotencyKey),
+    ]);
+    return Object.freeze({ anonymousHash, idempotencyKeyHash });
+  };
+
+  const mergePreparedAnonymousSubject = async (
+    transaction: Prisma.TransactionClient,
+    account: SessionRow,
+    prepared: PreparedAccountMerge,
+  ): Promise<AccountMergeStatus> => {
+    const anonymous = await transaction.$queryRaw<
+      Array<
+        Readonly<{
+          anonymousSubjectId: string;
+          revokedAt: Date | null;
+          sourceSessionId: string;
+        }>
+      >
+    >`
+      SELECT session.id AS "sourceSessionId",
+             session.anonymous_subject_id AS "anonymousSubjectId",
+             session.revoked_at AS "revokedAt"
+        FROM anonymous_session AS session
+        JOIN anonymous_subject AS subject ON subject.id = session.anonymous_subject_id
+       WHERE session.token_hash = ${prepared.anonymousHash}
+         AND session.token_hash_version = 1
+         AND session.expires_at > CURRENT_TIMESTAMP
+         AND subject.expires_at > CURRENT_TIMESTAMP
+       FOR UPDATE OF session, subject
+    `;
+    const subject = anonymous[0];
+    if (anonymous.length !== 1 || subject === undefined) {
+      throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+    }
+    const canonicalRequestHash = await sha256(
+      `rituvia.account-subject-link.v1:${subject.anonymousSubjectId}`,
+    );
+    const findExisting = () =>
+      transaction.$queryRaw<
+        Array<
+          Readonly<{
+            anonymousSubjectId: string;
+            canonicalRequestHash: Uint8Array;
+            idempotencyKeyHash: Uint8Array;
+            privacyDeletedAt: Date | null;
+            sourceAccountSessionId: string | null;
+            userId: string;
+          }>
+        >
+      >`
+        SELECT user_id AS "userId", anonymous_subject_id AS "anonymousSubjectId",
+               idempotency_key_hash AS "idempotencyKeyHash",
+               canonical_request_hash AS "canonicalRequestHash",
+               privacy_deleted_at AS "privacyDeletedAt",
+               source_account_session_id AS "sourceAccountSessionId"
+          FROM account_subject_link
+         WHERE anonymous_subject_id = ${subject.anonymousSubjectId}::uuid
+            OR (
+              user_id = ${account.userId}::uuid
+              AND idempotency_key_hash = ${prepared.idempotencyKeyHash}
+            )
+      `;
+    const validateReplay = (
+      existing: Awaited<ReturnType<typeof findExisting>>,
+    ): AccountMergeStatus => {
+      const replay = existing[0];
+      if (
+        existing.length !== 1 ||
+        replay === undefined ||
+        replay.userId !== account.userId ||
+        replay.anonymousSubjectId !== subject.anonymousSubjectId ||
+        replay.sourceAccountSessionId !== account.sessionId ||
+        replay.privacyDeletedAt !== null ||
+        !bytesEqual(replay.idempotencyKeyHash, prepared.idempotencyKeyHash) ||
+        !bytesEqual(replay.canonicalRequestHash, canonicalRequestHash)
+      ) {
+        throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+      }
+      return "replayed";
+    };
+
+    const existing = await findExisting();
+    let status: AccountMergeStatus;
+    if (existing.length > 0) {
+      status = validateReplay(existing);
+    } else {
+      if (subject.revokedAt !== null) {
+        throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+      }
+      const inserted = await transaction.$queryRaw<Array<{ id: string }>>`
+        INSERT INTO account_subject_link (
+          user_id, anonymous_subject_id, idempotency_key_hash,
+          canonical_request_hash, source_session_id, source_account_session_id, created_at
+        ) VALUES (
+          ${account.userId}::uuid, ${subject.anonymousSubjectId}::uuid,
+          ${prepared.idempotencyKeyHash}, ${canonicalRequestHash},
+          ${subject.sourceSessionId}::uuid, ${account.sessionId}::uuid, CURRENT_TIMESTAMP
+        )
+        ON CONFLICT DO NOTHING
+        RETURNING id
+      `;
+      status = inserted.length === 1 ? "created" : validateReplay(await findExisting());
+    }
+    await transaction.$executeRaw`
+      UPDATE anonymous_session SET revoked_at = COALESCE(revoked_at, CURRENT_TIMESTAMP)
+       WHERE anonymous_subject_id = ${subject.anonymousSubjectId}::uuid
+         AND revoked_at IS NULL
+    `;
+    return status;
   };
 
   const consumeChallenge: AccountIdentityService["consumeChallenge"] = async (input) => {
     if (!uuidV4Pattern.test(input.challengeId)) {
       throw new AccountIdentityError("ACCOUNT_AUTH_INVALID");
     }
-    const [challengeHash, stateHash, sessionHash, previousHash] = await Promise.all([
+    const [challengeHash, stateHash, sessionHash, preparedMerge] = await Promise.all([
       sha256(parseOpaqueToken(input.token)),
       sha256(parseOpaqueToken(input.state)),
       sha256(parseOpaqueToken(input.sessionToken)),
-      input.previousSessionToken === undefined
+      input.anonymousMerge === undefined
         ? Promise.resolve(null)
-        : tokenBytes(input.previousSessionToken) === null
-          ? Promise.resolve(null)
-          : sha256(tokenBytes(input.previousSessionToken)!),
+        : prepareAccountMerge(
+            input.anonymousMerge.anonymousSessionToken,
+            input.anonymousMerge.idempotencyKey,
+          ),
     ]);
     try {
       return await database.$transaction(async (transaction) => {
@@ -490,6 +812,7 @@ export const createAccountIdentityService = (
            RETURNING provider_key AS "providerKey", provider_subject AS "providerSubject",
                      email_ciphertext AS "emailCiphertext", email_nonce AS "emailNonce",
                      email_tag AS "emailTag", encryption_key_version AS "encryptionKeyVersion",
+                     previous_session_hash AS "previousSessionHash",
                      return_to AS "returnTo", expires_at AS "expiresAt", consumed_at AS "consumedAt"
         `;
         const challenge = challenges[0];
@@ -513,6 +836,24 @@ export const createAccountIdentityService = (
           await emailKeyPromise,
           `rituvia.account-email.v1:challenge:${input.challengeId}:${providerKey}:${providerSubject}:${policy.encryptionKeyVersion}`,
         );
+        await transaction.$executeRaw`
+          SELECT pg_advisory_xact_lock(
+            hashtextextended(${`${providerKey}:${providerSubject}`}, 54055)
+          )
+        `;
+        const providerSubjectSuppressionHash = await sha256(`${providerKey}:${providerSubject}`);
+        const suppressions = await transaction.$queryRaw<Array<{ blocked: boolean }>>`
+          SELECT TRUE AS blocked
+            FROM auth_identity_suppression
+           WHERE provider_key = ${providerKey}
+             AND provider_subject_hash = ${providerSubjectSuppressionHash}
+        `;
+        if (suppressions.length > 1) {
+          throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
+        }
+        if (suppressions.length === 1) {
+          throw new AccountIdentityError("ACCOUNT_DISABLED");
+        }
         const existing = await transaction.$queryRaw<
           Array<Readonly<{ authIdentityId: string; status: string; userId: string }>>
         >`
@@ -573,11 +914,11 @@ export const createAccountIdentityService = (
         }
         parseUserId(userId);
         parseAuthIdentityId(authIdentityId);
-        if (previousHash !== null) {
+        if (challenge.previousSessionHash !== null) {
           await transaction.$executeRaw`
             UPDATE account_session
                SET revoked_at = CURRENT_TIMESTAMP
-             WHERE token_hash = ${previousHash}
+             WHERE token_hash = ${challenge.previousSessionHash}
                AND user_id = ${userId}::uuid
                AND revoked_at IS NULL
                AND expires_at >= CURRENT_TIMESTAMP
@@ -586,22 +927,31 @@ export const createAccountIdentityService = (
         const sessions = await transaction.$queryRaw<SessionRow[]>`
           INSERT INTO account_session (
             user_id, auth_identity_id, token_hash, token_hash_version,
-            created_at, expires_at, last_seen_at
+            authenticated_at, created_at, expires_at, last_seen_at
           ) VALUES (
             ${userId}::uuid, ${authIdentityId}::uuid, ${sessionHash}, 1,
-            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
             CURRENT_TIMESTAMP + make_interval(secs => ${policy.sessionTtlSeconds}),
             CURRENT_TIMESTAMP
           )
           RETURNING id AS "sessionId", user_id AS "userId",
-                    auth_identity_id AS "authIdentityId", expires_at AS "expiresAt",
+                    auth_identity_id AS "authIdentityId",
+                    authenticated_at AS "authenticatedAt", expires_at AS "expiresAt",
                     ${providerKey}::text AS "providerKey"
         `;
         const session = sessions[0];
         if (sessions.length !== 1 || session === undefined) {
           throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
         }
-        return Object.freeze({ context: context(session), returnTo: challenge.returnTo });
+        const mergeStatus =
+          preparedMerge === null
+            ? null
+            : await mergePreparedAnonymousSubject(transaction, session, preparedMerge);
+        return Object.freeze({
+          context: context(session),
+          mergeStatus,
+          returnTo: challenge.returnTo,
+        });
       });
     } catch (error) {
       if (error instanceof AccountIdentityError) throw error;
@@ -742,6 +1092,7 @@ export const createAccountIdentityService = (
         UPDATE account_session SET revoked_at = CURRENT_TIMESTAMP
          WHERE id = ${input.sessionId}::uuid
            AND user_id = ${active.userId}::uuid
+           AND id <> ${active.sessionId}::uuid
            AND revoked_at IS NULL
            AND expires_at >= CURRENT_TIMESTAMP
          RETURNING id
@@ -764,107 +1115,295 @@ export const createAccountIdentityService = (
     });
 
   const mergeAnonymousSubject: AccountIdentityService["mergeAnonymousSubject"] = async (input) => {
-    if (!idempotencyKeyPattern.test(input.idempotencyKey)) {
-      throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
-    }
-    const anonymousToken = tokenBytes(input.anonymousSessionToken);
-    if (anonymousToken === null) throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
-    const [anonymousHash, idempotencyKeyHash] = await Promise.all([
-      sha256(anonymousToken),
-      sha256(input.idempotencyKey),
+    const accountToken = tokenBytes(input.accountSessionToken);
+    if (accountToken === null) throw new AccountIdentityError("ACCOUNT_SESSION_UNAVAILABLE");
+    const providerSubjectHmacKey = await providerSubjectHmacKeyPromise;
+    const [preparedMerge, accountSessionHash, replacementSessionBytes] = await Promise.all([
+      prepareAccountMerge(input.anonymousSessionToken, input.idempotencyKey),
+      sha256(accountToken),
+      keyedIdentifierDigest(
+        "account-merge-session",
+        [input.accountSessionToken, input.anonymousSessionToken, input.idempotencyKey].join(
+          "\u0000",
+        ),
+        providerSubjectHmacKey,
+      ),
     ]);
-    let conflictRetried = false;
-    for (;;) {
-      try {
-        return await database.$transaction(async (transaction) => {
-          const account = await resolveActiveSession(transaction, input.accountSessionToken);
-          if (account === null) throw new AccountIdentityError("ACCOUNT_SESSION_UNAVAILABLE");
-          const anonymous = await transaction.$queryRaw<
-            Array<
-              Readonly<{
-                anonymousSubjectId: string;
-                revokedAt: Date | null;
-                sourceSessionId: string;
-              }>
-            >
-          >`
-          SELECT session.id AS "sourceSessionId",
-                 session.anonymous_subject_id AS "anonymousSubjectId",
-                 session.revoked_at AS "revokedAt"
-            FROM anonymous_session AS session
-            JOIN anonymous_subject AS subject ON subject.id = session.anonymous_subject_id
-           WHERE session.token_hash = ${anonymousHash}
+    const sessionToken = Buffer.from(replacementSessionBytes).toString("base64url");
+    const replacementSessionHash = await sha256(replacementSessionBytes);
+    try {
+      return await database.$transaction(async (transaction) => {
+        const accounts = await transaction.$queryRaw<
+          Array<SessionRow & Readonly<{ revokedAt: Date | null }>>
+        >`
+          SELECT session.id AS "sessionId", session.user_id AS "userId",
+                 session.auth_identity_id AS "authIdentityId",
+                 session.authenticated_at AS "authenticatedAt",
+                 session.expires_at AS "expiresAt", session.revoked_at AS "revokedAt",
+                 identity.provider_key AS "providerKey"
+            FROM account_session AS session
+            JOIN app_user AS account ON account.id = session.user_id
+            JOIN auth_identity AS identity ON identity.id = session.auth_identity_id
+           WHERE session.token_hash = ${accountSessionHash}
              AND session.token_hash_version = 1
              AND session.expires_at > CURRENT_TIMESTAMP
-             AND subject.expires_at > CURRENT_TIMESTAMP
-           FOR UPDATE OF session, subject
+             AND account.status = 'active'
+           FOR UPDATE OF session
         `;
-          const subject = anonymous[0];
-          if (anonymous.length !== 1 || subject === undefined) {
-            throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
-          }
-          const canonicalRequestHash = await sha256(
-            `rituvia.account-subject-link.v1:${subject.anonymousSubjectId}`,
-          );
-          const existing = await transaction.$queryRaw<
-            Array<
-              Readonly<{
-                anonymousSubjectId: string;
-                canonicalRequestHash: Uint8Array;
-                idempotencyKeyHash: Uint8Array;
-                userId: string;
-              }>
-            >
-          >`
-          SELECT user_id AS "userId", anonymous_subject_id AS "anonymousSubjectId",
-                 idempotency_key_hash AS "idempotencyKeyHash",
-                 canonical_request_hash AS "canonicalRequestHash"
-            FROM account_subject_link
-           WHERE anonymous_subject_id = ${subject.anonymousSubjectId}::uuid
-              OR (user_id = ${account.userId}::uuid AND idempotency_key_hash = ${idempotencyKeyHash})
-        `;
-          if (existing.length > 0) {
-            const replay = existing[0];
-            if (
-              existing.length !== 1 ||
-              replay === undefined ||
-              replay.userId !== account.userId ||
-              replay.anonymousSubjectId !== subject.anonymousSubjectId ||
-              !bytesEqual(replay.canonicalRequestHash, canonicalRequestHash)
-            ) {
-              throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
-            }
-            return "replayed" as const;
-          }
-          if (subject.revokedAt !== null) {
-            throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
-          }
-          await transaction.$executeRaw`
-          INSERT INTO account_subject_link (
-            user_id, anonymous_subject_id, idempotency_key_hash,
-            canonical_request_hash, source_session_id, created_at
-          ) VALUES (
-            ${account.userId}::uuid, ${subject.anonymousSubjectId}::uuid, ${idempotencyKeyHash},
-            ${canonicalRequestHash}, ${subject.sourceSessionId}::uuid, CURRENT_TIMESTAMP
-          )
-        `;
-          await transaction.$executeRaw`
-          UPDATE anonymous_session SET revoked_at = CURRENT_TIMESTAMP
-           WHERE anonymous_subject_id = ${subject.anonymousSubjectId}::uuid
-             AND revoked_at IS NULL
-        `;
-          return "created" as const;
-        });
-      } catch (error) {
-        if (error instanceof AccountIdentityError) throw error;
-        if (isDatabaseConflict(error) && !conflictRetried) {
-          conflictRetried = true;
-          continue;
+        const account = accounts[0];
+        if (accounts.length !== 1 || account === undefined) {
+          throw new AccountIdentityError("ACCOUNT_SESSION_UNAVAILABLE");
         }
-        if (isDatabaseConflict(error)) throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
-        throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
-      }
+        const status = await mergePreparedAnonymousSubject(transaction, account, preparedMerge);
+        const sessions =
+          status === "created"
+            ? await transaction.$queryRaw<SessionRow[]>`
+                INSERT INTO account_session (
+                  user_id, auth_identity_id, token_hash, token_hash_version,
+                  authenticated_at, created_at, expires_at, last_seen_at
+                ) VALUES (
+                  ${account.userId}::uuid, ${account.authIdentityId}::uuid,
+                  ${replacementSessionHash}, 1, ${account.authenticatedAt}, CURRENT_TIMESTAMP,
+                  CURRENT_TIMESTAMP + make_interval(secs => ${policy.sessionTtlSeconds}),
+                  CURRENT_TIMESTAMP
+                )
+                RETURNING id AS "sessionId", user_id AS "userId",
+                          auth_identity_id AS "authIdentityId", expires_at AS "expiresAt",
+                          authenticated_at AS "authenticatedAt",
+                          ${account.providerKey}::text AS "providerKey"
+              `
+            : await transaction.$queryRaw<SessionRow[]>`
+                SELECT session.id AS "sessionId", session.user_id AS "userId",
+                       session.auth_identity_id AS "authIdentityId",
+                       session.authenticated_at AS "authenticatedAt",
+                       session.expires_at AS "expiresAt",
+                       ${account.providerKey}::text AS "providerKey"
+                  FROM account_session AS session
+                 WHERE session.token_hash = ${replacementSessionHash}
+                   AND session.token_hash_version = 1
+                   AND session.user_id = ${account.userId}::uuid
+                   AND session.revoked_at IS NULL
+                   AND session.expires_at > CURRENT_TIMESTAMP
+                 FOR UPDATE
+              `;
+        const replacement = sessions[0];
+        if (sessions.length !== 1 || replacement === undefined) {
+          throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
+        }
+        if (status === "created") {
+          if (account.revokedAt !== null) {
+            throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+          }
+          const revoked = await transaction.$executeRaw`
+            UPDATE account_session SET revoked_at = CURRENT_TIMESTAMP
+             WHERE id = ${account.sessionId}::uuid
+               AND user_id = ${account.userId}::uuid
+               AND revoked_at IS NULL
+               AND expires_at > CURRENT_TIMESTAMP
+          `;
+          if (revoked !== 1) {
+            throw new AccountIdentityError("ACCOUNT_SESSION_UNAVAILABLE");
+          }
+        }
+        return Object.freeze({ context: context(replacement), sessionToken, status });
+      });
+    } catch (error) {
+      if (error instanceof AccountIdentityError) throw error;
+      if (isDatabaseConflict(error)) throw new AccountIdentityError("ACCOUNT_MERGE_CONFLICT");
+      throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
     }
+  };
+
+  const listHistory: AccountIdentityService["listHistory"] = async (input) => {
+    if (
+      !Number.isSafeInteger(input.limit) ||
+      input.limit < 1 ||
+      input.limit > maximumHistoryPageSize
+    ) {
+      throw new TypeError("Account history page size is invalid.");
+    }
+    const cursor =
+      input.cursor === undefined
+        ? undefined
+        : Object.freeze({
+            occurredAt: new Date(parseAccountUtcInstant(input.cursor.occurredAt)),
+            resourceId: parseUuidV4(input.cursor.resourceId),
+            sourceType: accountHistorySourceTypes.has(input.cursor.sourceType)
+              ? input.cursor.sourceType
+              : (() => {
+                  throw new TypeError("Account history cursor source is invalid.");
+                })(),
+          });
+    type HistoryRow = Readonly<{
+      occurredAt: Date;
+      readingType: string | null;
+      resourceId: string;
+      resourceType: string;
+      sourceType: string;
+      status: string;
+      themeCode: string | null;
+    }>;
+    return database.$transaction(async (transaction) => {
+      const active = await resolveActiveSession(transaction, input.sessionToken);
+      if (active === null) throw new AccountIdentityError("ACCOUNT_SESSION_UNAVAILABLE");
+      const rows = await transaction.$queryRaw<HistoryRow[]>`
+        WITH account_history AS (
+          SELECT reading.id AS resource_id, reading.created_at AS occurred_at,
+                 'reading'::text AS source_type, 'reading'::text AS resource_type,
+                 reading.status::text AS status, reading.reading_type::text AS reading_type,
+                 reading.theme_code::text AS theme_code
+            FROM reading
+            JOIN anonymous_subject AS subject ON subject.id = reading.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = reading.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND reading.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+          UNION ALL
+          SELECT intention.id, intention.created_at, 'intention'::text, 'intention'::text,
+                 intention.status::text, NULL::text, NULL::text
+            FROM intention
+            JOIN anonymous_subject AS subject ON subject.id = intention.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = intention.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND intention.deleted_at IS NULL
+             AND intention.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+          UNION ALL
+          SELECT ritual.id, ritual.started_at, 'ritual_legacy'::text, 'ritual'::text,
+                 CASE WHEN ritual.completed_at IS NULL THEN 'active' ELSE 'completed' END,
+                 NULL::text, NULL::text
+            FROM ritual_session AS ritual
+            JOIN anonymous_subject AS subject ON subject.id = ritual.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = ritual.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND ritual.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+          UNION ALL
+          SELECT ritual.id, ritual.started_at, 'ritual'::text, 'ritual'::text,
+                 ritual.status::text, NULL::text, NULL::text
+            FROM ritual_session_v2 AS ritual
+            JOIN anonymous_subject AS subject ON subject.id = ritual.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = ritual.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND ritual.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+          UNION ALL
+          SELECT journal.id, journal.created_at, 'journal_legacy'::text, 'journal'::text,
+                 'active'::text, NULL::text, NULL::text
+            FROM journal_entry AS journal
+            JOIN anonymous_subject AS subject ON subject.id = journal.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = journal.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND journal.deleted_at IS NULL
+             AND journal.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+          UNION ALL
+          SELECT journal.id, journal.created_at, 'journal'::text, 'journal'::text,
+                 'active'::text, NULL::text, NULL::text
+            FROM private_journal_entry AS journal
+            JOIN anonymous_subject AS subject ON subject.id = journal.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = journal.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND journal.deleted_at IS NULL
+             AND journal.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+          UNION ALL
+          SELECT revisit.id, revisit.created_at, 'revisit'::text, 'revisit'::text,
+                 revisit.status::text, NULL::text, NULL::text
+            FROM revisit
+            JOIN intention ON intention.id = revisit.intention_id
+                          AND intention.anonymous_subject_id = revisit.anonymous_subject_id
+            JOIN anonymous_subject AS subject ON subject.id = revisit.anonymous_subject_id
+            JOIN account_subject_link AS link
+              ON link.anonymous_subject_id = revisit.anonymous_subject_id
+           WHERE link.user_id = ${active.userId}::uuid
+             AND link.privacy_deleted_at IS NULL
+             AND revisit.deleted_at IS NULL
+             AND intention.deleted_at IS NULL
+             AND revisit.expires_at > CURRENT_TIMESTAMP
+             AND subject.expires_at > CURRENT_TIMESTAMP
+        )
+        SELECT resource_id AS "resourceId", occurred_at AS "occurredAt",
+               source_type AS "sourceType", resource_type AS "resourceType",
+               status, reading_type AS "readingType", theme_code AS "themeCode"
+          FROM account_history
+         WHERE (
+           ${cursor?.occurredAt ?? null}::timestamptz IS NULL
+           OR (occurred_at, source_type, resource_id) <
+              (${cursor?.occurredAt ?? null}::timestamptz,
+               ${cursor?.sourceType ?? null}::text,
+               ${cursor?.resourceId ?? null}::uuid)
+         )
+         ORDER BY occurred_at DESC, source_type DESC, resource_id DESC
+         LIMIT ${input.limit + 1}
+      `;
+      const hasMore = rows.length > input.limit;
+      const selected = rows.slice(0, input.limit);
+      const items = selected.map((row): AccountHistorySummary => {
+        if (
+          !accountHistoryResourceTypes.includes(row.resourceType as AccountHistoryResourceType) ||
+          !accountHistorySourceTypes.has(row.sourceType as AccountHistorySourceType)
+        ) {
+          throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
+        }
+        const resourceType = row.resourceType as AccountHistoryResourceType;
+        const validStatus =
+          (resourceType === "reading" && row.status === "facts_ready") ||
+          (resourceType === "intention" &&
+            ["active", "archived", "completed"].includes(row.status)) ||
+          (resourceType === "ritual" &&
+            ["abandoned", "active", "completed", "paused"].includes(row.status)) ||
+          (resourceType === "journal" && row.status === "active") ||
+          (resourceType === "revisit" &&
+            ["archived", "completed", "scheduled"].includes(row.status));
+        if (
+          !validStatus ||
+          (resourceType === "reading" &&
+            row.readingType !== "one_card" &&
+            row.readingType !== "three_card") ||
+          (resourceType === "reading" &&
+            (row.themeCode === null || !identifierPattern.test(row.themeCode))) ||
+          (resourceType !== "reading" && (row.readingType !== null || row.themeCode !== null))
+        ) {
+          throw new AccountIdentityError("ACCOUNT_IDENTITY_UNAVAILABLE");
+        }
+        return Object.freeze({
+          occurredAt: parseAccountUtcInstant(row.occurredAt.toISOString()),
+          readingType:
+            row.readingType === "one_card" || row.readingType === "three_card"
+              ? row.readingType
+              : null,
+          resourceId: parseUuidV4(row.resourceId),
+          resourceType,
+          status: row.status as AccountHistorySummary["status"],
+          themeCode: row.themeCode,
+        });
+      });
+      const last = selected.at(-1);
+      return Object.freeze({
+        items: Object.freeze(items),
+        nextCursor:
+          hasMore && last !== undefined
+            ? Object.freeze({
+                occurredAt: parseAccountUtcInstant(last.occurredAt.toISOString()),
+                resourceId: parseUuidV4(last.resourceId),
+                sourceType: last.sourceType as AccountHistorySourceType,
+              })
+            : null,
+      });
+    });
   };
 
   const listReadings: AccountIdentityService["listReadings"] = async (input) => {
@@ -894,6 +1433,8 @@ export const createAccountIdentityService = (
           JOIN account_subject_link AS link
             ON link.anonymous_subject_id = reading.anonymous_subject_id
          WHERE link.user_id = ${active.userId}::uuid
+           AND link.privacy_deleted_at IS NULL
+           AND reading.expires_at > CURRENT_TIMESTAMP
            AND (
              ${cursor?.createdAt ?? null}::timestamptz IS NULL
              OR (reading.created_at, reading.id) <
@@ -929,6 +1470,7 @@ export const createAccountIdentityService = (
     consumeChallenge,
     createChallenge,
     getProfile,
+    listHistory,
     listReadings,
     listSessions,
     mergeAnonymousSubject,

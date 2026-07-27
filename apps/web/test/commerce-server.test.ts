@@ -11,7 +11,7 @@ import type { CommerceTransitionResult } from "@rituvia/db";
 import {
   createCommerceApplicationService,
   getWebCommerceCatalog,
-  webCommerceLocalPolicyRules,
+  webCommerceLocalPolicyVersions,
 } from "../server/commerce";
 import {
   createWebPaymentProviderRegistry,
@@ -27,7 +27,12 @@ const uuidFactory = () => {
   return () => `00000000-0000-4000-8000-${String(sequence++).padStart(12, "0")}`;
 };
 
-const createHarness = (input: { ageAttested?: boolean } = {}) => {
+const createHarness = (
+  input: {
+    ageAttested?: boolean;
+    policyVersions?: typeof webCommerceLocalPolicyVersions;
+  } = {},
+) => {
   let now = "2026-07-18T12:00:00.000Z";
   let order: PersistedCommerceOrder | null = null;
   let entitlement: PersistedEntitlement | null = null;
@@ -130,7 +135,9 @@ const createHarness = (input: { ageAttested?: boolean } = {}) => {
     },
     canonicalOrigin,
     clock: () => now,
-    countryPolicyRules: webCommerceLocalPolicyRules,
+    countryPolicies: {
+      read: async () => input.policyVersions ?? webCommerceLocalPolicyVersions,
+    },
     environment: "local",
     idFactory: uuidFactory(),
     paymentProviders: registry,
@@ -197,6 +204,19 @@ describe("commerce application service", () => {
     });
     expect(created.order).toMatchObject({ amountMinor: 99, currencyCode: "USD" });
     expect(eligible.order?.entitlementCode).toBe("sanctuary.mindful_incense");
+    expect(eligible.order?.countryPolicyVersion).toBe("local.us.commerce.v1");
+  });
+
+  it("fails closed when the country policy registry has no active version", async () => {
+    const harness = createHarness({ policyVersions: [] });
+    await expect(
+      harness.service.createOrder({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { productCode: "mindful_incense" },
+        sessionToken,
+      }),
+    ).rejects.toMatchObject({ code: "not_eligible" });
+    expect(harness.persistence.createOrder).not.toHaveBeenCalled();
   });
 
   it("reuses one active hosted checkout instead of creating another provider session", async () => {

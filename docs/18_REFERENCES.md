@@ -49,6 +49,52 @@ Before selecting/activating any vendor, add a source record with:
 
 This applies to auth, AI, payments, crypto, tax/MoR, database, hosting, queue, storage, email, analytics, monitoring, geocoding/time zone, astrology engine, fonts, artwork, and content sources.
 
+### Swiss Ephemeris selection checked 2026-07-26
+
+- Licensing and activation conditions: https://www.astro.com/swisseph/swephinfo_e.htm
+- GNU Affero General Public License v3: https://www.gnu.org/licenses/agpl-3.0.html
+- June 2026 Professional Unlimited License contract:
+  https://www.astro.com/swisseph/secont_e.pdf
+
+### Independent astronomy comparison checked 2026-07-27
+
+- Astronomy Engine source and validation description:
+  https://github.com/cosinekitty/astronomy
+- Pinned JavaScript package `2.1.19` and MIT metadata:
+  https://www.npmjs.com/package/astronomy-engine/v/2.1.19
+- NASA/JPL Horizons observer ecliptic-of-date semantics:
+  https://ssd.jpl.nasa.gov/horizons/manual.html
+- Current price page: https://www.astro.com/swisseph/swephprice_e.htm
+- Library `2.10.03` programming history and `2022-08-27` release date:
+  https://www.astro.com/swisseph/swephprg.htm
+- Official source/data repository and separately pinned `v2.10.3final` snapshot:
+  https://github.com/aloistr/swisseph
+- Repository record:
+  `content/sources/astrology/swiss-ephemeris-agpl.v2.json`
+
+The library release and source/data snapshot are separate provenance fields. The exact snapshot
+tag/commit and per-file checksums are pinned. D-069 records the owner's whole-project AGPL approval;
+it does not activate production. Method approval, independent reference vectors, commit-level SCA,
+the local Linux sanitizer/fuzzer gate, and kill-switch evidence are complete. Exact clean
+release-revision Corresponding Source, release CI evidence, and public source-link delivery remain
+pending. The Professional contract and price links remain historical comparison sources.
+
+### Location and historical time-zone sources checked 2026-07-26
+
+- GeoNames export and CC BY terms: https://www.geonames.org/export/
+- GeoNames downloadable dumps: https://download.geonames.org/export/dump/
+- Google Time Zone API historical limitation:
+  https://developers.google.com/maps/documentation/timezone/requests-timezone
+- OpenStreetMap Foundation public Nominatim usage policy:
+  https://operations.osmfoundation.org/policies/nominatim/
+- Node.js `process.versions` runtime/ICU/tzdata provenance:
+  https://nodejs.org/download/release/v24.11.0/docs/api/process.html
+
+D-067 selects a self-hosted GeoNames export as the intended production source and pins the
+historical resolver to Node `24.18.0`, ICU `78.3`, and tzdata `2026b`. No production GeoNames
+snapshot is imported: exact snapshot date, file inventory, SHA-256 digest, attribution placement,
+update/rollback procedure, search-index limits, and operations evidence remain required.
+
 ## 5. Legal/trademark sources
 
 Formal brand clearance should use official WIPO, USPTO, EUIPO, UKIPO, and local registries, plus counsel and domain/company/app-store searches. A lack of public-web results is not clearance. Record execution evidence in `docs/19_NAME_CLEARANCE_WORKSHEET.md`.

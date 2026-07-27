@@ -71,6 +71,7 @@ export type HomeMessages = Readonly<{
   }>;
   oracle: Readonly<{
     eyebrow: string;
+    numerology: OracleMethod;
     title: string;
     introduction: string;
     oneCard: OracleMethod;
@@ -181,6 +182,14 @@ const englishMessages = {
       title: "Choose today's entry point.",
       introduction:
         "Each reading keeps the random draw separate from the interpretation and ends with a calm stopping point.",
+      numerology: {
+        eyebrow: "Every step visible",
+        title: "Numerology calculator",
+        description:
+          "Calculate Life Path, Birthday Number, and Personal Year through one reviewed date method.",
+        action: "Calculate my numbers",
+        note: "Free · anonymous · no saved birth data",
+      },
       oneCard: {
         eyebrow: "A focused pause",
         title: "One-card reflection",

@@ -1,11 +1,14 @@
 import {
+  parseReflectionIntentionCreateRequestV2,
   parseReflectionIntentionCreateRequestV1,
+  parseReflectionIntentionMutationRequestV1,
   parseReflectionJournalCreateRequestV1,
   parseReflectionRitualCreateRequestV1,
 } from "@rituvia/domain";
 import {
   ReflectionPersistenceError,
   type PersistedReflectionIntention,
+  type PersistedReflectionIntentionV2,
   type PersistedReflectionJournal,
   type PersistedReflectionRitual,
   type ReflectionPersistence,
@@ -34,6 +37,7 @@ const createCryptography = () =>
   createPrivateContentCryptography(
     {
       activeKeyVersion: "private-content.v1",
+      digestKeyVersion: "private-content.v1",
       keys: [{ key: new Uint8Array(32).fill(17), version: "private-content.v1" }],
     },
     () => new Uint8Array(12).fill(23),
@@ -76,6 +80,9 @@ const fixture = () => {
     async getIntention({ id }) {
       return id === intentionId ? (intention ?? null) : null;
     },
+    async getIntentionV2() {
+      return null;
+    },
     async getJournal({ id }) {
       return id === journalEntryId ? (journal ?? null) : null;
     },
@@ -98,6 +105,12 @@ const fixture = () => {
         subjectId,
       });
       return Object.freeze({ intention, kind: "created" as const });
+    },
+    async resolveIntentionV2() {
+      throw new Error("unused v2 intention create");
+    },
+    async mutateIntentionV2() {
+      throw new Error("unused v2 intention mutation");
     },
     async resolveJournal({ prepare, request }) {
       const parsed = parseReflectionJournalCreateRequestV1(request);
@@ -139,7 +152,9 @@ const fixture = () => {
 describe("reflection-loop application service", () => {
   it("completes the anonymous reading-to-revisit loop without returning owner identifiers", async () => {
     const fake = fixture();
+    const capture = vi.fn(async () => true);
     const service = createReflectionLoopApplicationService({
+      analytics: { capture },
       authorizeRitualObject: fake.authorizeRitualObject,
       cryptography: createCryptography(),
       persistence: fake.persistence,
@@ -170,6 +185,16 @@ describe("reflection-loop application service", () => {
     expect(Object.keys(intention.resource)).not.toContain("subjectId");
     expect(Object.keys(journal.resource)).not.toContain("anonymousSubjectId");
     expect(fake.authorizeRitualObject).not.toHaveBeenCalled();
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "intention_created",
+        properties: { intentionCode: fake.intentionRequest.intentionCode },
+        reflectionRoot: { kind: "reading", readingId },
+      }),
+    );
+    expect(JSON.stringify(capture.mock.calls)).not.toContain(fake.intentionRequest.smallAction);
+    expect(JSON.stringify(capture.mock.calls)).not.toContain(fake.journalRequest.reflection);
 
     const encryptedAction = fake.storedIntention()?.encryptedSmallAction;
     const encryptedJournal = fake.storedJournal()?.encryptedReflection;
@@ -186,6 +211,144 @@ describe("reflection-loop application service", () => {
     await expect(service.getJournal(journalEntryId, sessionToken)).resolves.toEqual(
       journal.resource,
     );
+  });
+
+  it("encrypts, edits, and soft deletes a private v2 intention with resource binding", async () => {
+    const base = fixture();
+    let stored: PersistedReflectionIntentionV2 | undefined;
+    const persistence: ReflectionPersistence = Object.freeze({
+      ...base.persistence,
+      async getIntentionV2({ id }) {
+        return id === intentionId && stored?.deletedAt === null ? stored : null;
+      },
+      async resolveIntentionV2({ prepare, request }) {
+        const parsed = parseReflectionIntentionCreateRequestV2(request);
+        const prepared = await prepare({ request: parsed, resourceId: intentionId, subjectId });
+        stored = Object.freeze({
+          archivedAt: null,
+          completedAt: null,
+          createdAt,
+          deletedAt: null,
+          encryptedIntentionText: prepared.encryptedIntentionText,
+          encryptedSmallAction: prepared.encryptedSmallAction,
+          expiresAt,
+          id: intentionId,
+          intentionCode: parsed.intentionCode,
+          locale: "en",
+          policyVersion: "reflection-loop.en.v1",
+          privacyState: "private",
+          readingId: parsed.readingId,
+          reminderPreference: "none",
+          revisitDate: parsed.revisitDate,
+          revision: 1,
+          schemaVersion: "reflection-intention.v2",
+          status: "active",
+          subjectId,
+          timeZone: parsed.timeZone,
+          updatedAt: createdAt,
+        });
+        return Object.freeze({ intention: stored, kind: "created" as const });
+      },
+      async mutateIntentionV2({ prepare, request }) {
+        if (stored === undefined) throw new Error("missing v2 intention");
+        const parsed = parseReflectionIntentionMutationRequestV1(request);
+        const prepared = await prepare({ request: parsed, resourceId: intentionId, subjectId });
+        stored =
+          parsed.action === "delete"
+            ? Object.freeze({
+                ...stored,
+                deletedAt: completedAt,
+                revision: stored.revision + 1,
+                updatedAt: completedAt,
+              })
+            : parsed.action === "edit" && "encryptedIntentionText" in prepared
+              ? Object.freeze({
+                  ...stored,
+                  encryptedIntentionText: prepared.encryptedIntentionText,
+                  encryptedSmallAction: prepared.encryptedSmallAction,
+                  intentionCode: parsed.intentionCode,
+                  revisitDate: parsed.revisitDate,
+                  revision: stored.revision + 1,
+                  timeZone: parsed.timeZone,
+                  updatedAt: completedAt,
+                })
+              : stored;
+        return Object.freeze({
+          intention: parsed.action === "delete" ? null : stored,
+          kind: "mutated" as const,
+        });
+      },
+    });
+    const service = createReflectionLoopApplicationService({
+      authorizeRitualObject: base.authorizeRitualObject,
+      cryptography: createCryptography(),
+      persistence,
+    });
+    const created = await service.createIntention(
+      {
+        intentionCode: "calm_clarity",
+        intentionText: "I intend to pause before I respond.",
+        locale: "en",
+        privacyState: "private",
+        readingId,
+        reminderPreference: "none",
+        revisitDate: "2026-08-01",
+        schemaVersion: "reflection-intention.v2",
+        smallAction: "Take three slow breaths.",
+        timeZone: "Asia/Shanghai",
+      },
+      idempotencyKey,
+      sessionToken,
+    );
+
+    expect(created.resource).toMatchObject({
+      intentionText: "I intend to pause before I respond.",
+      revision: 1,
+      status: "active",
+    });
+    expect(
+      Buffer.from(stored?.encryptedIntentionText.ciphertext ?? []).toString("utf8"),
+    ).not.toContain("pause before");
+    expect(
+      Buffer.from(stored?.encryptedSmallAction.ciphertext ?? []).toString("utf8"),
+    ).not.toContain("slow breaths");
+
+    const edited = await service.mutateIntention(
+      intentionId,
+      {
+        action: "edit",
+        expectedRevision: 1,
+        intentionCode: "courage_action",
+        intentionText: "I intend to make the call I can make.",
+        privacyState: "private",
+        reminderPreference: "none",
+        revisitDate: null,
+        schemaVersion: "reflection-intention-mutation.v1",
+        smallAction: "Write the first sentence.",
+        timeZone: null,
+      },
+      `${idempotencyKey}-edit`,
+      sessionToken,
+    );
+    expect(edited.resource).toMatchObject({
+      intentionText: "I intend to make the call I can make.",
+      revision: 2,
+      smallAction: "Write the first sentence.",
+    });
+
+    await expect(
+      service.mutateIntention(
+        intentionId,
+        {
+          action: "delete",
+          expectedRevision: 2,
+          schemaVersion: "reflection-intention-mutation.v1",
+        },
+        `${idempotencyKey}-delete`,
+        sessionToken,
+      ),
+    ).resolves.toEqual({ kind: "mutated", resource: null });
+    await expect(service.getIntention(intentionId, sessionToken)).resolves.toBeNull();
   });
 
   it("requires an active linked-account entitlement for paid ritual objects", async () => {

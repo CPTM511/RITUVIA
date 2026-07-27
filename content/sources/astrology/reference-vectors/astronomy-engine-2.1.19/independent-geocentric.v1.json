@@ -1,0 +1,287 @@
+{
+  "schemaVersion": "astrology-independent-reference-corpus.v1",
+  "evidenceClassification": "independent_open_source_implementation_comparison",
+  "coordinateContract": {
+    "description": "Geocentric apparent true ecliptic-of-date positions with light-time and aberration.",
+    "astronomyEngineCalls": ["GeoVector(body, date, true)", "Ecliptic(vector)"],
+    "excludedRituviaBodies": ["true_node"],
+    "observer": "earth_center"
+  },
+  "generator": {
+    "packageName": "astronomy-engine",
+    "packageVersion": "2.1.19",
+    "gitCommit": "61dc07020aaa6885d2c7f688a4d82beaf6edb9ef",
+    "license": "MIT",
+    "npmIntegrity": "sha512-8yWKNf7UeNbH458h3sAJ6ZgAjE5jTXp/mNNRFoC20j2SHwZIjAQeEsBB2Q3uCFRaTCCJRv33K2XhkhZQMXoX6w==",
+    "publishedAt": "2023-12-14T18:20:31.621Z",
+    "repository": "https://github.com/cosinekitty/astronomy",
+    "validationStatement": "The independent project states a plus-or-minus one arcminute design target and validation against NOVAS and JPL Horizons."
+  },
+  "tolerances": { "distanceRelative": 0.001, "latitudeDegrees": 0.02, "longitudeDegrees": 0.02 },
+  "cases": [
+    {
+      "caseId": "astronomy-engine.geocentric.01",
+      "utcInstant": "1801-01-01T00:00:00.000Z",
+      "expected": [
+        {
+          "body": "sun",
+          "distanceAu": 0.983171717379,
+          "latitudeDegrees": -0.000303025415,
+          "longitudeDegrees": 280.180090903833
+        },
+        {
+          "body": "moon",
+          "distanceAu": 0.002706188524,
+          "latitudeDegrees": 4.961223900229,
+          "longitudeDegrees": 109.427776505095
+        },
+        {
+          "body": "mercury",
+          "distanceAu": 1.042369132916,
+          "latitudeDegrees": 1.700005321404,
+          "longitudeDegrees": 257.560521731846
+        },
+        {
+          "body": "venus",
+          "distanceAu": 1.222883841558,
+          "latitudeDegrees": -1.821975282324,
+          "longitudeDegrees": 316.538885278413
+        },
+        {
+          "body": "mars",
+          "distanceAu": 0.778953306437,
+          "latitudeDegrees": 1.644166035054,
+          "longitudeDegrees": 41.760047414692
+        },
+        {
+          "body": "jupiter",
+          "distanceAu": 4.336809529301,
+          "latitudeDegrees": 0.533561499283,
+          "longitudeDegrees": 121.858122124317
+        },
+        {
+          "body": "saturn",
+          "distanceAu": 8.442166047937,
+          "latitudeDegrees": 1.242201311699,
+          "longitudeDegrees": 143.367539369841
+        },
+        {
+          "body": "uranus",
+          "distanceAu": 18.146446846722,
+          "latitudeDegrees": 0.748904341736,
+          "longitudeDegrees": 181.894571029716
+        },
+        {
+          "body": "neptune",
+          "distanceAu": 30.928909753191,
+          "latitudeDegrees": 1.737583260344,
+          "longitudeDegrees": 228.730242536662
+        },
+        {
+          "body": "pluto",
+          "distanceAu": 41.731447005717,
+          "latitudeDegrees": -12.385203209107,
+          "longitudeDegrees": 332.713741698301
+        }
+      ]
+    },
+    {
+      "caseId": "astronomy-engine.geocentric.02",
+      "utcInstant": "1888-08-08T12:00:00.000Z",
+      "expected": [
+        {
+          "body": "sun",
+          "distanceAu": 1.013641573334,
+          "latitudeDegrees": -0.00030115809,
+          "longitudeDegrees": 136.298650589414
+        },
+        {
+          "body": "moon",
+          "distanceAu": 0.002541855288,
+          "latitudeDegrees": 2.222015312651,
+          "longitudeDegrees": 145.426606076674
+        },
+        {
+          "body": "mercury",
+          "distanceAu": 1.128260292937,
+          "latitudeDegrees": 0.436793203395,
+          "longitudeDegrees": 120.857587652002
+        },
+        {
+          "body": "venus",
+          "distanceAu": 1.709879061195,
+          "latitudeDegrees": 1.400206729269,
+          "longitudeDegrees": 143.963184467747
+        },
+        {
+          "body": "mars",
+          "distanceAu": 1.189977174637,
+          "latitudeDegrees": -1.273966617101,
+          "longitudeDegrees": 219.335227890483
+        },
+        {
+          "body": "jupiter",
+          "distanceAu": 5.059475182393,
+          "latitudeDegrees": 0.724071569007,
+          "longitudeDegrees": 236.881261358474
+        },
+        {
+          "body": "saturn",
+          "distanceAu": 10.134948909297,
+          "latitudeDegrees": 0.676748865844,
+          "longitudeDegrees": 130.919888596575
+        },
+        {
+          "body": "uranus",
+          "distanceAu": 18.900831187359,
+          "latitudeDegrees": 0.628325459069,
+          "longitudeDegrees": 194.151125050992
+        },
+        {
+          "body": "neptune",
+          "distanceAu": 30.083639544534,
+          "latitudeDegrees": -1.662205193249,
+          "longitudeDegrees": 62.129506185786
+        },
+        {
+          "body": "pluto",
+          "distanceAu": 48.586609024409,
+          "latitudeDegrees": -12.038920322678,
+          "longitudeDegrees": 65.847238876727
+        }
+      ]
+    },
+    {
+      "caseId": "astronomy-engine.geocentric.03",
+      "utcInstant": "2000-01-01T12:00:00.000Z",
+      "expected": [
+        {
+          "body": "sun",
+          "distanceAu": 0.98331391159,
+          "latitudeDegrees": 0.000001120504,
+          "longitudeDegrees": 280.368738639819
+        },
+        {
+          "body": "moon",
+          "distanceAu": 0.002690145139,
+          "latitudeDegrees": 5.170789330458,
+          "longitudeDegrees": 223.323891127474
+        },
+        {
+          "body": "mercury",
+          "distanceAu": 1.415483983804,
+          "latitudeDegrees": -0.995066626926,
+          "longitudeDegrees": 271.888912066463
+        },
+        {
+          "body": "venus",
+          "distanceAu": 1.137643260694,
+          "latitudeDegrees": 2.065996604246,
+          "longitudeDegrees": 241.565232940362
+        },
+        {
+          "body": "mars",
+          "distanceAu": 1.849524251733,
+          "latitudeDegrees": -1.068082029631,
+          "longitudeDegrees": 327.963899077903
+        },
+        {
+          "body": "jupiter",
+          "distanceAu": 4.620819589385,
+          "latitudeDegrees": -1.260453007956,
+          "longitudeDegrees": 25.254199844874
+        },
+        {
+          "body": "saturn",
+          "distanceAu": 8.651826724794,
+          "latitudeDegrees": -2.444809723354,
+          "longitudeDegrees": 40.396124137178
+        },
+        {
+          "body": "uranus",
+          "distanceAu": 20.725997138189,
+          "latitudeDegrees": -0.659660663603,
+          "longitudeDegrees": 314.806104627161
+        },
+        {
+          "body": "neptune",
+          "distanceAu": 31.023135603505,
+          "latitudeDegrees": 0.237148224291,
+          "longitudeDegrees": 303.195442059473
+        },
+        {
+          "body": "pluto",
+          "distanceAu": 31.065901508135,
+          "latitudeDegrees": 10.855210704887,
+          "longitudeDegrees": 251.454735159914
+        }
+      ]
+    },
+    {
+      "caseId": "astronomy-engine.geocentric.04",
+      "utcInstant": "2050-06-01T00:00:00.000Z",
+      "expected": [
+        {
+          "body": "sun",
+          "distanceAu": 1.013860050571,
+          "latitudeDegrees": 0.000110825508,
+          "longitudeDegrees": 70.73334943522
+        },
+        {
+          "body": "moon",
+          "distanceAu": 0.002650646509,
+          "latitudeDegrees": -2.884536025526,
+          "longitudeDegrees": 197.622465895791
+        },
+        {
+          "body": "mercury",
+          "distanceAu": 1.100111688942,
+          "latitudeDegrees": -2.176826079775,
+          "longitudeDegrees": 50.834298196535
+        },
+        {
+          "body": "venus",
+          "distanceAu": 1.210130277464,
+          "latitudeDegrees": 2.013497158153,
+          "longitudeDegrees": 107.080643779572
+        },
+        {
+          "body": "mars",
+          "distanceAu": 0.688870212434,
+          "latitudeDegrees": -2.810762389407,
+          "longitudeDegrees": 316.06697749744
+        },
+        {
+          "body": "jupiter",
+          "distanceAu": 5.875273063742,
+          "latitudeDegrees": 0.569709427265,
+          "longitudeDegrees": 121.532340501943
+        },
+        {
+          "body": "saturn",
+          "distanceAu": 9.390093374886,
+          "latitudeDegrees": -0.448574557211,
+          "longitudeDegrees": 308.77734297479
+        },
+        {
+          "body": "uranus",
+          "distanceAu": 18.14922820219,
+          "latitudeDegrees": 0.774411353123,
+          "longitudeDegrees": 166.629459857367
+        },
+        {
+          "body": "neptune",
+          "distanceAu": 30.798359789936,
+          "latitudeDegrees": -1.661702759112,
+          "longitudeDegrees": 56.387171623683
+        },
+        {
+          "body": "pluto",
+          "distanceAu": 41.521322274401,
+          "latitudeDegrees": -12.958116000569,
+          "longitudeDegrees": 340.671009405828
+        }
+      ]
+    }
+  ]
+}

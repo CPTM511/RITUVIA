@@ -53,7 +53,7 @@ A server-side policy snapshot controls:
 type CountryPolicy = {
   version: string;
   country: string;
-  status: 'disabled' | 'content_only' | 'free_only' | 'paid';
+  status: "disabled" | "content_only" | "free_only" | "paid";
   minimumAge: number;
   modalities: string[];
   prohibitedClaims: string[];
@@ -71,7 +71,7 @@ type CountryPolicy = {
     providerRoute?: string;
     approvedAssets?: string[];
   };
-  taxMode: 'provider' | 'merchant_of_record' | 'internal_reviewed';
+  taxMode: "provider" | "merchant_of_record" | "internal_reviewed";
   refundPolicyVersion: string;
   dataFlags: string[];
   marketingFlags: string[];
@@ -79,6 +79,14 @@ type CountryPolicy = {
 ```
 
 Country is determined using a hierarchy of billing country, account declaration, reliable geolocation signal, and provider evidence. Do not use IP alone to bypass billing/legal facts. Record the policy version on reading/purchase fulfillment.
+
+The implemented V1 registry is append-only and selects one active successor-chain head for the
+country/environment. Billing, declared, and reliable geolocation conflicts fail closed; locale and
+weak geolocation cannot authorize paid service. Every active version has a mandatory review time.
+Fiat and crypto use independent owner-approval references (`OWN-002` and `OWN-006` respectively),
+so enabling one route cannot authorize the other. A disabled successor is the kill switch; rollback
+is another immutable successor. Only a synthetic local policy is seeded. Staging and production
+remain empty and therefore deny paid authorization until separately approved policy publication.
 
 ## 5. Order model
 
@@ -94,6 +102,9 @@ Internal order is created before provider checkout and is authoritative for:
 
 Client-provided amounts or entitlement claims are ignored.
 
+RIT-062 implements this as additive `commercial_order_v2` and `commercial_order_item_v2`
+foundations. The obsolete direct-object USD tables remain historical local replay only.
+
 ## 6. Payment state machine
 
 ```text
@@ -101,14 +112,17 @@ created
   -> checkout_created
   -> pending
   -> paid
-  -> partially_refunded | refunded | disputed
-  -> chargeback_won | chargeback_lost
+  -> refund_requested | partially_refunded | refunded | disputed
 
 created/checkout_created/pending
   -> failed | canceled | expired
 ```
 
 Transitions are explicit, validated, and audit-logged. Provider status does not map one-to-one; adapters normalize it.
+
+Payment attempts use their own smaller
+`created -> checkout_created -> pending -> succeeded|failed|expired|cancelled` state machine.
+Refund and dispute aggregates remain later tasks and never rewrite an attempt into a refund state.
 
 ## 7. Webhook security and idempotency
 
@@ -123,6 +137,12 @@ Transitions are explicit, validated, and audit-logged. Provider status does not 
 - Provide manual replay and immutable event timeline.
 
 ## 8. Internal ledger and reconciliation
+
+The RIT-062 Credit foundation uses append-only grant/reserve/release/consume/reverse/expire entries,
+hard-expiry reservations, exact source allocations, and a nonnegative transactionally maintained
+projection. Subscription Credits are allocated before promotional and purchased Credits. The
+application role can insert ledger facts but cannot update or delete them. Provider-event,
+payment-settlement, refund/dispute, outbox, and reconciliation records remain later tasks.
 
 Use append-only ledger/reconciliation records for:
 

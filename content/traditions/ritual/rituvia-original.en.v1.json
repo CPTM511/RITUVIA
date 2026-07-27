@@ -1,0 +1,448 @@
+{
+  "catalogId": "rituvia-original-secular",
+  "items": [
+    {
+      "access": {
+        "kind": "free",
+        "requirementCode": null
+      },
+      "accessibilityLabelKey": "ritual.item.free_candle.accessibility_label",
+      "code": "free_candle",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "free_object",
+      "labelKey": "ritual.item.free_candle.label",
+      "presentationEnhancements": [],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "free-candle-pause",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "free",
+        "requirementCode": null
+      },
+      "accessibilityLabelKey": "ritual.item.free_incense.accessibility_label",
+      "code": "free_incense",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "free_object",
+      "labelKey": "ritual.item.free_incense.label",
+      "presentationEnhancements": [],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "free-incense-pause",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "permanent_entitlement",
+        "requirementCode": "permanent-object.mindful_incense"
+      },
+      "accessibilityLabelKey": "ritual.item.mindful_incense.accessibility_label",
+      "code": "mindful_incense",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "permanent_object",
+      "labelKey": "ritual.item.mindful_incense.label",
+      "presentationEnhancements": ["art", "animation", "audio", "persistence"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "permanent-object-pause",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "permanent_entitlement",
+        "requirementCode": "permanent-object.moonlit_lotus"
+      },
+      "accessibilityLabelKey": "ritual.item.moonlit_lotus.accessibility_label",
+      "code": "moonlit_lotus",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "permanent_object",
+      "labelKey": "ritual.item.moonlit_lotus.label",
+      "presentationEnhancements": ["art", "animation", "arrangement", "collection", "persistence"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "permanent-object-pause",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "permanent_entitlement",
+        "requirementCode": "permanent-object.amethyst_guardian"
+      },
+      "accessibilityLabelKey": "ritual.item.amethyst_guardian.accessibility_label",
+      "code": "amethyst_guardian",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "permanent_object",
+      "labelKey": "ritual.item.amethyst_guardian.label",
+      "presentationEnhancements": ["art", "animation", "memory", "collection", "persistence"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "permanent-object-pause",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "permanent_entitlement",
+        "requirementCode": "permanent-object.golden_bowl"
+      },
+      "accessibilityLabelKey": "ritual.item.golden_bowl.accessibility_label",
+      "code": "golden_bowl",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "permanent_object",
+      "labelKey": "ritual.item.golden_bowl.label",
+      "presentationEnhancements": [
+        "art",
+        "animation",
+        "arrangement",
+        "duration",
+        "memory",
+        "collection",
+        "persistence"
+      ],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "permanent-object-pause",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "consumable_pass",
+        "requirementCode": "ritual-pass.guided_light"
+      },
+      "accessibilityLabelKey": "ritual.item.guided_light.accessibility_label",
+      "code": "guided_light",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "consumable_ritual",
+      "labelKey": "ritual.item.guided_light.label",
+      "presentationEnhancements": ["art", "animation", "audio", "duration"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "guided-light",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "consumable_pass",
+        "requirementCode": "ritual-pass.offering"
+      },
+      "accessibilityLabelKey": "ritual.item.offering.accessibility_label",
+      "code": "offering",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "consumable_ritual",
+      "labelKey": "ritual.item.offering.label",
+      "presentationEnhancements": ["art", "animation", "arrangement", "duration"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "symbolic-offering",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "consumable_pass",
+        "requirementCode": "ritual-pass.moon_phase"
+      },
+      "accessibilityLabelKey": "ritual.item.moon_phase.accessibility_label",
+      "code": "moon_phase",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "consumable_ritual",
+      "labelKey": "ritual.item.moon_phase.label",
+      "presentationEnhancements": ["art", "animation", "audio", "duration", "memory"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "moon-phase-reflection",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "consumable_pass",
+        "requirementCode": "ritual-pass.relationship_release"
+      },
+      "accessibilityLabelKey": "ritual.item.relationship_release.accessibility_label",
+      "code": "relationship_release",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "consumable_ritual",
+      "labelKey": "ritual.item.relationship_release.label",
+      "presentationEnhancements": ["art", "animation", "audio", "duration", "memory"],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "relationship-release",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    },
+    {
+      "access": {
+        "kind": "consumable_pass",
+        "requirementCode": "ritual-pass.annual_open_close"
+      },
+      "accessibilityLabelKey": "ritual.item.annual_open_close.accessibility_label",
+      "code": "annual_open_close",
+      "experienceScope": "symbolic_reflection_only",
+      "externalOutcome": "not_guaranteed",
+      "kind": "consumable_ritual",
+      "labelKey": "ritual.item.annual_open_close.label",
+      "presentationEnhancements": [
+        "art",
+        "animation",
+        "audio",
+        "arrangement",
+        "duration",
+        "memory",
+        "collection"
+      ],
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "schemaVersion": "ritual-catalog-item.v1",
+      "status": "active",
+      "template": {
+        "code": "annual-open-close",
+        "version": "1.0.0"
+      },
+      "version": "1.0.0"
+    }
+  ],
+  "legacyMappings": [
+    {
+      "legacyCode": "candle",
+      "schemaVersion": "ritual-legacy-mapping.v1",
+      "target": {
+        "code": "free_candle",
+        "version": "1.0.0"
+      },
+      "use": "historical_replay_only"
+    },
+    {
+      "legacyCode": "incense",
+      "schemaVersion": "ritual-legacy-mapping.v1",
+      "target": {
+        "code": "free_incense",
+        "version": "1.0.0"
+      },
+      "use": "historical_replay_only"
+    },
+    {
+      "legacyCode": "mindful_incense",
+      "schemaVersion": "ritual-legacy-mapping.v1",
+      "target": {
+        "code": "mindful_incense",
+        "version": "1.0.0"
+      },
+      "use": "historical_replay_only"
+    },
+    {
+      "legacyCode": "moonlit_lotus",
+      "schemaVersion": "ritual-legacy-mapping.v1",
+      "target": {
+        "code": "moonlit_lotus",
+        "version": "1.0.0"
+      },
+      "use": "historical_replay_only"
+    },
+    {
+      "legacyCode": "amethyst_guardian",
+      "schemaVersion": "ritual-legacy-mapping.v1",
+      "target": {
+        "code": "amethyst_guardian",
+        "version": "1.0.0"
+      },
+      "use": "historical_replay_only"
+    },
+    {
+      "legacyCode": "golden_intention_bowl",
+      "schemaVersion": "ritual-legacy-mapping.v1",
+      "target": {
+        "code": "golden_bowl",
+        "version": "1.0.0"
+      },
+      "use": "historical_replay_only"
+    }
+  ],
+  "publicationId": "rituvia-original.en.2026-07-23",
+  "publications": [
+    {
+      "approvalReference": "D-045",
+      "audience": "adult",
+      "authorReference": "rituvia.product",
+      "changeReasonCode": "initial_production_pack_adaptation",
+      "effectiveOn": "2026-07-23",
+      "id": "rituvia-original.en.2026-07-23",
+      "locale": "en",
+      "method": "rituvia_original_secular",
+      "requiredApprovalRole": "product_safety",
+      "reviewDueOn": "2027-07-23",
+      "rightsStatus": "owned",
+      "safetyRisk": "low",
+      "schemaVersion": "ritual-publication.v1",
+      "sourceReferences": [
+        "docs/codex/rituvia-production-2026-07-23/contracts/catalog.json",
+        "docs/12_CONTENT_GOVERNANCE.md"
+      ],
+      "status": "approved",
+      "supersedes": null
+    }
+  ],
+  "schemaVersion": "ritual-catalog.v1",
+  "templates": [
+    {
+      "audioDefault": "off",
+      "code": "free-candle-pause",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "brief",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "grounded_pause",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "light", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.free_candle_pause.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "free-incense-pause",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "brief",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "grounded_pause",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "light", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.free_incense_pause.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "permanent-object-pause",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "standard",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "grounded_pause",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "place", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.permanent_object_pause.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "guided-light",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "standard",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "guided_reflection",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "light", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.guided_light.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "symbolic-offering",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "standard",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "symbolic_offering",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "place", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.symbolic_offering.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "moon-phase-reflection",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "standard",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "seasonal_reflection",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "place", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.moon_phase_reflection.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "relationship-release",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "standard",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "relationship_release",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "place", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.relationship_release.text_alternative",
+      "version": "1.0.0"
+    },
+    {
+      "audioDefault": "off",
+      "code": "annual-open-close",
+      "completionMode": "reflective_acknowledgement",
+      "durationClass": "standard",
+      "linearAlternative": true,
+      "publicationId": "rituvia-original.en.2026-07-23",
+      "purposeCode": "annual_reflection",
+      "reducedMotionMode": "static_equivalent",
+      "schemaVersion": "ritual-template.v1",
+      "steps": ["prepare", "place", "breathe", "pause", "complete"],
+      "textAlternativeKey": "ritual.template.annual_open_close.text_alternative",
+      "version": "1.0.0"
+    }
+  ],
+  "version": "1.0.0"
+}

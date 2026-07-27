@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-07-18. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-07-25. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -543,7 +543,7 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - `db:setup`, the exact-confirmation local development reset, default non-disclosing `db:url`, and `db:stop` pass. No production, preview, staging, remote, or arbitrary ambient database URL is accepted by these lifecycle commands.
 - One active GitHub Actions workflow has exact read-only triggers, immutable actions, GitHub-hosted runners, ordered non-skippable steps, synchronized Node/pnpm versions, a pinned single-browser install followed by the accessibility smoke in the existing Quality job, and no secrets, artifacts, write permissions, or deployment environment. Codex examples live outside the workflow directory.
 - A fresh PostgreSQL 17 CI-shaped run proves run-derived exact target guards, checksums, private service addressing, separated non-superuser roles, deterministic client generation, idempotent migration deployment and seed, exact migration inventory/status/drift, feature-flag activation/append-only constraints, registry coexistence, runtime DDL denial, and rollback. Historical migration bytes are compared with the trusted event baseline and dangerous SQL is rejected.
-- Current-tree secret policy, repository-independent Gitleaks configuration, full-history scan wiring, and high-severity dependency audit are fail-closed. The current npm audit reports no known vulnerability after exact patched transitive overrides.
+- Current-tree secret policy, repository-independent Gitleaks configuration, full-history scan wiring, and high-severity dependency audit are fail-closed. The current audit has zero critical/high findings after exact Next.js, Sharp, PostCSS, and fast-uri patches; one moderate Prisma-tooling `@hono/node-server` Windows `serve-static` advisory remains outside the product runtime.
 
 ## Validation commands
 
@@ -889,7 +889,11 @@ When sources conflict, stop that decision, document the conflict, recommend a re
 5. Restate the task outcome, constraints, acceptance criteria, files likely to change, tests, risks, and rollback before writing.
 6. Use subagents for independent read-heavy exploration, review, test analysis, threat modeling, localization review, or research. Keep one primary writer. Permit parallel writers only on clearly disjoint files.
 7. Implement the smallest complete vertical slice. Avoid speculative abstractions and broad rewrites.
-8. Run the narrowest relevant checks first, then the full required quality gate.
+8. Run the narrowest relevant checks first. Close ordinary tasks with affected-package and
+   task-specific gates; reserve the complete workspace unit/integration/browser matrix for
+   milestone integration tasks, release candidates, broad shared-infrastructure changes, or an
+   explicit risk trigger. Reuse prior passing evidence only when its source, dependency, toolchain,
+   and configuration inputs are unchanged.
 9. Review the diff for security, privacy, payments, accessibility, localization, performance, analytics, and cultural-safety regressions.
 10. Update tests, documentation, `BACKLOG.md`, `PROJECT_STATUS.md`, and `DECISIONS.md` when a decision changed.
 11. Finish with a concise report: outcome, files changed, verification, unresolved risks, migration/rollback notes, and the next recommended backlog item.
@@ -916,6 +920,19 @@ A task is `Done` only when all applicable conditions are true:
 - No unresolved critical/high security issue is introduced.
 
 Passing tests alone does not make a task done.
+
+### Layered local verification
+
+- During implementation, run only tests directly covering changed behavior and its immediate
+  contracts.
+- At ordinary task closure, run formatting, linting, type checking, architecture/evidence checks,
+  and the relevant unit, integration, database, browser, accessibility, security, payment, or AI
+  gates for the affected slice.
+- Run the complete workspace suite at milestone integration tasks such as `RIT-047`, release
+  candidates, broad dependency/toolchain/shared-runtime changes, or when focused evidence reveals
+  cross-cutting risk.
+- CI may continue to run a broader mandatory matrix on every pull request. Local bounded output and
+  targeted reruns do not weaken release gates.
 
 ## 7. Architecture constraints
 
@@ -1025,23 +1042,282 @@ Use this order:
 - **State updated:** backlog/status/decision changes.
 - **Next:** one recommended ready task.
 
+## 16. 2026-07-23 production source-of-truth pack
+
+The owner-approved production build pack is committed under
+`docs/codex/rituvia-production-2026-07-23/`. For product, UI, wallet, Credits, payment, AI,
+security, database, API, testing, and production-readiness work introduced or changed after
+2026-07-23, read that pack in the order defined by its `00_START_HERE.md`.
+
+The pack's safety and security invariants override older conflicting product details. Its golden
+prototype and screenshot baselines are authoritative for approved visual behavior and reviewed
+English/Simplified Chinese copy, but never for browser-local simulations or backend design.
+Existing repository architecture must be audited and reused rather than replaced or duplicated.
+
+Do not update golden screenshots without a written ADR, before/after evidence, and explicit owner
+approval. Keep live Stripe, real crypto collection, production AI with private content, public
+production release, legal/policy activation, and irreversible production migration behind the
+existing human approval gates.
+
 ---
 
 # File: `PROJECT_STATUS.md`
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-18
+**Last reconciled:** 2026-07-25
 
-**Stage:** The owner-directed RIT-158 local commercial MVP is complete and running from its
-production build at `http://127.0.0.1:4175/en`. Direct Sanctuary visits can complete a standalone
-intention, free ritual, and private journal, and new local Tarot draws use the complete 22-card
-Major Arcana from the Lumora prototype using Rider-Waite-Smith ordering. Its product shape follows
-the prototype and business plan while the repository's safety, privacy, payment, and human-
-approval floors remain authoritative. Production activation, provider onboarding, and public
-launch remain separately gated.
+**Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
+reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
+composer, RIT-041 ritual template/object domain, RIT-042 accessible free Sanctuary, and RIT-043
+transactional ritual lifecycle/private journal, and RIT-044 private Revisit lifecycle are
+complete. RIT-046 privacy-safe core-loop analytics and RIT-047 continuous anonymous full-loop
+browser acceptance are complete. RIT-050 secure account-session hardening is complete over the
+existing local-only account foundation, RIT-051 idempotent anonymous-to-account merge is complete,
+RIT-052 account history/settings/session management, RIT-053 encrypted privacy export, RIT-054
+selective/account deletion, RIT-056 admin roles/MFA/audit foundation, and RIT-057 integrated
+identity/privacy/authorization security closure are complete. RIT-060 immutable Country Policy
+Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
+transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
+still blocks RIT-063; RIT-045 consented transactional Revisit reminders are complete. OWN-011
+option A is approved through D-064, and RIT-080 is complete with an engine-ready English
+date-numerology catalog, source records, worked vectors, exact Life Path/Birthday/Personal Year
+rules, explicit target year, 11/22/33 preservation, and name/locale exclusions. RIT-081 is complete
+with a pure version-bound engine, strict ASCII ISO date and four-digit target-year request,
+manual proleptic-Gregorian validation, immutable visible formula evidence, exact OWN-011 approval
+pinning, all approved vectors, 11/22/33 and century/leap/zero boundaries, unsupported-script
+rejection, serialized-facts recomputation, hostile-object rejection, all 146,097 valid dates in a
+complete 400-year Gregorian parser cycle, and a 2,923-date full-calculation traversal. RIT-082 is
+complete as an anonymous English calculator at `/en/readings/numerology`, with an independently
+gated approved catalog, same-origin bounded private API, explicit target year, visible formula and
+version evidence, no name input or persistence, and focused mobile/keyboard/offline/axe browser
+acceptance. RIT-083 is the next highest-priority Ready item. The
+repository remains
+a local production-capable foundation, not a public production service. The new golden UI,
+bilingual route inventory, wallet/SIWE, Credits
+provider-backed Credit fulfillment, subscriptions, Coinbase checkout, provider-backed Deep Readings, production privacy
+delivery/retention operations, outbox/reconciliation, and operational beta gates are not
+implemented or activated. The pinned
+configuration-boundary, production-artifact accessibility, and full PostgreSQL foundation suites
+pass in the owner's unrestricted shell. The owner-approved obsolete source duplicate has been
+removed, and Web type checking now safely removes only byte-identical number-suffixed copies from
+Next.js generated type directories.
 
-**Release:** Local commercial MVP (production artifact, not a public production deployment)
+RIT-050 provides a closed production-replaceable authentication-provider capability boundary,
+uniform `202` magic-link starts, a constant local-only preview route with `HttpOnly` state,
+privacy-minimal database-atomic global and bounded keyed identifier-bucket rate controls,
+short-lived one-time hashed challenges, same-account previous-session rotation, fixed-expiry
+host-only secure account cookies, session-bound CSRF, durable logout/revoke failure behavior, and
+passkey-ready credential constraints. Focused provider/service/route/proxy tests, all 15
+PostgreSQL migrations with concurrency/privilege/restore evidence, a 115-artifact production
+build, and the dedicated real-browser authentication gate pass. Production email, OAuth, WebAuthn
+ceremony, wallet identity, deployment, and public launch remain inactive.
+
+RIT-051 preserves immutable anonymous ownership through one append-only account link instead of
+copying private rows. Authentication completion now consumes the challenge, creates the
+account/session, links optional anonymous history, and revokes anonymous sessions in one
+transaction. Explicit post-login merge binds both source sessions and the exact keyed request,
+derives one recoverable successor session, rotates CSRF/cookies, and returns that same successor
+for concurrent or dropped-response retries. Composite PostgreSQL foreign keys, hash-only evidence,
+runtime update/delete denial, focused 65-test coverage, an isolated 16-migration merge gate, the
+115-artifact build, and the real-browser merge/retry flow pass. Reflection mutations no longer
+perform hidden credential rotation.
+
+RIT-052 adds one responsive private account surface for strict profile preferences, bounded
+account-linked reflection history, and timestamp-only active-session controls. History is a
+read-time projection over currently retained linked readings, intentions, legacy/v2 rituals,
+legacy/v2 journals, and Revisits; it accepts no client owner identifier and returns no private
+prose. Exact linked readings can be restored through account authorization using UUID-only
+tab-scoped handoff. Profile changes retain optimistic conflict protection. Targeted revocation
+cannot revoke the current session or cross accounts, and all logout actions report success only
+after durable storage. Focused parser/route/service/proxy/UI and cross-resource IDOR tests, the
+isolated PostgreSQL account-control gate, affected package builds, and the 320px
+keyboard/accessibility/privacy Chromium gate pass without repeating the unrelated full unit
+matrix. No migration, retention change, device fingerprinting, export/deletion, production
+provider, deployment, or golden screenshot update is introduced.
+
+RIT-055 adds independent exact-version `optional_product_analytics`, `ai_personalization`, and
+`model_improvement` account controls backed by one append-only per-purpose sequence rather than
+profile booleans or linked anonymous grants. Exact replay, same-key conflict, account serialization,
+bounded fail-closed evaluation, cross-account denial, and select/insert-only runtime privileges are
+enforced in PostgreSQL. The private account UI reports success only after commit, and every AI
+selected-excerpt gate rereads current account state so a withdrawal is visible across sessions
+immediately. Privacy exports now distinguish account and anonymous consent evidence. Focused
+domain/Web tests, all 24 migrations, the isolated consent database gate, and the account-control
+mobile/accessibility browser gate pass. Production analytics, provider private-content AI,
+real-user model improvement, marketing, notification delivery, final legal text, deployment, and
+launch remain safe-off owner gates.
+
+RIT-045 adds one account-owned, once-only English email reminder preference without changing the
+RIT-044 Revisit v1 contract. A strict private API records committed subscribe/unsubscribe state and
+append-only idempotency evidence; anonymous discovery returns an explicit safe empty state. The
+database-backed queue claims one due row with `SKIP LOCKED`, rereads account, ownership, Revisit,
+time-zone, quiet-hours, locale, contract-version, and lease authority immediately before delivery,
+then completes once or applies bounded retry/dead-letter handling. Jobs contain identifiers and
+versions only, and fixed lock-screen-safe copy excludes question, intention, ritual, journal,
+relationship, and health details. Privacy export includes reminder state/history; privacy deletion
+cancels pending or leased work atomically. Focused 177-test coverage, all 25 migrations, isolated
+reminder/export/deletion PostgreSQL gates, affected builds, architecture, Revisit and continuous
+core-loop Chromium, and the 39-scan accessibility boundary pass. The only configured provider is
+hard safe-off; production email provider/domain, reviewed legal copy, other locales, operations
+alerts, deployment, and public sending remain owner-gated.
+
+RIT-053 adds recent-authenticated, same-origin/session-CSRF account export request, metadata, and
+download routes. One consistent allowlisted snapshot covers all currently retained implemented
+account-linked categories, decrypts private fields only inside the authorized Web builder, and
+emits matching JSON and Markdown. A dedicated AES-256-GCM key binds account/export/schema/key/
+creation/expiry, while immutable request, one-per-request artifact, and private-content-free audit
+rows keep lifecycle evidence append-only under runtime select/insert-only privileges. Existing
+sessions with no authentication instant must reauthenticate; merge rotation preserves the
+original instant. Focused 48-test coverage, the isolated 17-migration PostgreSQL gate, migration/
+architecture/CI/secret checks, and affected DB/Web production builds pass. Production worker/
+object storage, KMS activation, final retention/legal text, deployment, and public launch remain
+owner-gated.
+
+RIT-054 adds strict recent-authenticated selective-private-content and account deletion. It
+serializes by account, binds replay to exact scope/idempotency/session evidence, revokes linked
+anonymous authority, privacy-marks every account-subject link, replaces implemented encrypted
+private prose and fallback interpretation output with non-decryptable tombstones, destroys export
+artifacts, and prevents stale export completion. Account scope also suppresses future provider
+identity recreation, tombstones authentication/profile data, revokes all sessions/passkeys, and
+retains only explicit pseudonymous consent/commerce/security/privacy evidence. A dedicated
+`rituvia_privacy_deletion` database login and RLS policies keep destructive privileges out of the
+ordinary application/interpretation role. Focused 50-test unit evidence, isolated PostgreSQL
+deletion/export gates, configuration isolation, migration, architecture, CI, secret, lint, type,
+and affected DB/Web production builds pass; the full identity/privacy matrix remains reserved for
+RIT-057.
+
+RIT-056 adds a dependency-free, finite, default-deny admin role/action policy and an isolated
+database authorization kernel. Owner-only role grants/revocations require an active recent account
+session, same-user/session/auth-identity live passkey assertion, and exact typed confirmation.
+Grants, revocations, and successful or denied privileged attempts are append-only. Audit rows store
+only controlled identifiers, changed-field names, and before/after digests in a serialized
+predecessor hash chain; audit failure rolls back the role mutation. A dedicated
+`rituvia_admin_service` login cannot issue MFA assertions, mutate audit evidence, or read private
+journals. Focused 11-test policy/config evidence and the isolated 19-migration PostgreSQL
+grant/revoke/rollback/privilege/restore gate pass. Production WebAuthn ceremony, admin routes/UI,
+role enrollment, support private-content grants, audit retention, deployment, and launch remain
+safe-off owner gates.
+
+RIT-057 composes authentication, anonymous merge, account controls, encrypted export,
+crypto-shredding deletion, admin authorization, metadata, analytics, redaction, PostgreSQL
+recovery, and production-artifact browser behavior into one independently runnable security gate.
+The Web proxy now admits privacy routes by exact method/path, export metadata rejects cross-site
+reads, and the deletion login is bound by a transaction-local request-token hash plus
+security-barrier view and RLS to one account. Direct cross-user deletion-role reads and mutations
+are denied. Focused `472/472` tests, specialized database/browser gates, the one-time `1644/1644`
+workspace unit suite, 34-case AI eval, all 20 migrations with restore, 115-artifact production
+build, complete accessibility matrix, and high-severity dependency audit pass. PostCSS and
+brace-expansion advisories are fixed through pinned overrides plus one reviewed minimatch
+compatibility patch; two moderate advisories remain outside this task's critical/high threshold.
+Admin production activation still requires a database-bound privileged procedure or equivalent
+database-enforced step-up, approved WebAuthn/enrollment, and an owner-approved credential.
+
+RIT-060 replaces the Web-only per-product payment tuple as the authorization source with one strict
+`country-policy-version.v1` contract covering service status, age, modalities, products,
+subscriptions, fiat/crypto capabilities, disclosures/legal versions, tax/refund configuration,
+data/locale/support/marketing constraints, approval evidence, effective windows, and mandatory
+review. Billing, declared, and reliable-geolocation conflicts fail closed; locale or weak
+geolocation cannot authorize paid service. Fiat and crypto require independent owner references.
+PostgreSQL stores immutable policy documents under dedicated reader/writer capabilities; disabled
+and rollback behavior append one successor chain. Commerce loads and strictly parses the registry
+and records the exact version on orders. The only seed is synthetic local policy; preview, staging,
+and production remain empty and paid behavior therefore stays safe-off. Focused 114-test commerce,
+policy, feature-flag, payment, and persistence coverage, the isolated 21-migration policy
+PostgreSQL/seed/privilege/restore gate, configuration/architecture/migration/CI/secret/record
+checks, and Country Policy/DB/Web builds pass. Per D-050, the complete workspace matrix remains
+reserved for RIT-069 or a release candidate.
+
+RIT-061 adds one strict `catalog-version.v1` contract over the owner-approved 2026-07-23 product
+set: 21 Credit packs, Plus plans, Deep Readings, permanent/free objects, and consumable rituals,
+with exact English/Simplified Chinese contents and five positive integer USD prices only for packs
+and Plus. The four obsolete direct-USD ritual-object prices no longer feed the public catalog;
+their signed local checkout remains quarantined as a historical replay/test fixture. Four
+immutable PostgreSQL registries store source evidence, products, localizations, and price scope
+under dedicated append/read capabilities. Only the synthetic local/CI catalog is seeded;
+preview/staging/production remain empty. The Web catalog endpoint performs live privilege
+attestation, strict parsing, exact active-version selection, and finite `503` failure, while the
+current Sanctuary keeps its tested free candle/incense fallback until RIT-066. Focused 67-test
+commercial/Web evidence, isolated 22-migration catalog and Country Policy database gates,
+configuration/architecture/migration/CI/secret/lint/type checks, and Domain/Payments/DB/Web
+production builds pass without repeating the complete workspace matrix.
+
+RIT-062 leaves the quarantined direct-object USD fixture untouched and adds a provider-neutral v2
+transaction foundation. Canonical order states own refund/dispute projection, while payment
+attempts terminate at succeeded/failed/expired/cancelled. Exact-request idempotency covers orders,
+attempts, reservations, ledger operations, and entitlements. Positive-integer append-only Credit
+facts record grant/reserve/release/consume/reverse/expire evidence; hard-expiry reservations and
+exact allocations consume subscription, promotional, then purchased sources, while a nonnegative
+projection remains rebuildable. Plus and permanent-object entitlements require different
+authoritative sources. Focused state/property tests and an isolated 23-migration PostgreSQL gate
+prove 20-way concurrency accepts exactly six reservations against six Credits, invalid
+state/provider/source rows fail, ordinary runtime cannot update/delete ledger evidence, and
+logical restore passes. No provider checkout, webhook, automatic fulfillment, subscription,
+refund, reconciliation, production migration, deployment, or public launch is activated.
+
+RIT-046 adds a strict nine-event `@rituvia/analytics` contract, bounded synthetic event ledger,
+purpose-scoped keyed pseudonyms, deterministic funnel/late-event projection, and WMRS v1 as
+distinct consented anonymous subjects with at least one qualifying reading-rooted session in a
+rolling seven-day UTC window. Reading and linked reflection application services create only
+non-replayed server-authoritative safe event intents. Exact optional-product-analytics consent is
+required by the tested Web adapter; runtime composition remains a hard no-op because legal notice,
+retention/deletion, browser viewed-event ingestion, durable storage/export, bot filtering, account
+merge, vendor, and production activation are not approved.
+
+RIT-037 is deliberately limited to a non-spending owner-scoped categorical report bound to one
+exact displayable result through the existing reading report boundary. It does not add history,
+lineage, or a generation/regeneration route. Paid Deep Reading creation, version history, and
+regeneration remain deferred until a separate server-authoritative Credits
+ledger/reservation/projection task is accepted.
+
+RIT-037 reuses the existing report route: the browser interpretation operation UUID drives a strict
+v2 request, the database resolves it to one exact owner/reading-scoped displayable interpretation,
+and only immutable categorical evidence is persisted. Verified, safe-replacement, fallback,
+hidden-target, idempotency, race, least-privilege, constraint, restore, configuration, build, and
+Chromium gates pass. Dynamic validation also corrected a nullable CHECK weakness and a native
+`fetch` receiver defect before closure.
+
+RIT-028 closes the M2 browser-evidence gap with six deterministic production-artifact scenarios
+covering exact one-card and ordered three-card results, zero-request reveal, whole-reading and
+canonical-position categorical reports, offline recovery, same-key service retry, calm rate-limit
+stop, UUID-only refresh resume, stale private-result clearing, desktop/mobile reflow, keyboard,
+RTL, reduced motion, touch targets, axe, storage, and same-origin network boundaries. Supporting
+screenshots use only reviewed synthetic fixtures and do not alter owner-gated golden baselines.
+Dynamic validation corrected the resume transport's native `fetch` receiver and added a visible
+focus ring for semantic `summary` controls.
+
+RIT-040 adds a strict backward-compatible private intention contract with user-authored intention
+text and one small action, deterministic non-echoing coercive-control reframing, optional revisit
+date and time zone with reminders fixed off, owner/resource-bound authenticated encryption, and
+optimistic edit/complete/archive/soft-delete lifecycle behavior. The current production artifact
+passes the complete composer flow at 320px, dark mode, reduced motion, RTL, and offline recovery;
+archive prevents a new ritual, deletion immediately hides the resource, and private prose never
+enters browser storage, URLs, request digests, logs, analytics, or public metadata.
+
+RIT-042 adds equally prominent free candle and incense experiences sourced from the canonical
+ritual catalog. One ordered state model drives standard 2D and accessible linear modes with audio
+absent, reduced-motion-safe static presentation, explicit exit and completion, focus
+entry/restoration, and a complete no-JavaScript fallback.
+
+RIT-043 replaces the temporary final-only write with a server-authoritative owner-scoped lifecycle.
+The start transaction snapshots the exact approved catalog item, template, publication, and access
+rule; permits anonymous/account free starts; checks active permanent entitlements; and locks and
+consumes at most one matching pass atomically. Active, paused, completed, and abandoned states use
+revisioned idempotent mutations, while visible Sanctuary exit durably pauses. Completed sessions
+can create, edit, read, and soft-delete an encrypted owner/resource-bound private journal entry.
+Historical v1 replay remains unchanged. Pass issuance/reversal/refund, production KMS activation,
+deployment, and production payment/catalog activation remain separate tasks or owner gates.
+
+RIT-044 adds one owner-scoped private Revisit per intention with next-day, seven-day, or custom
+future local-calendar scheduling, separately stored IANA time zone, inert optional quiet hours,
+and reminders fixed off. It snapshots the exact original intention/action under authenticated
+encryption, permits early/on-time/late factual completion under independently versioned
+ciphertext, and supports revisioned reschedule, archive, and terminal soft deletion through an
+append-only idempotency ledger. Parent deletion hides the child immediately. The current production
+artifact passes offline recovery, 320px, RTL, reduced motion, touch, axe, request, console,
+storage/metadata privacy, and redacted screenshot evidence without enabling delivery or analytics.
+
+**Release:** Phase 0 audit baseline over the local commercial MVP; no public production deployment
 
 **Working brand:** RITUVIA, pending formal trademark/domain/language clearance.
 
@@ -1080,9 +1356,9 @@ launch remain separately gated.
   test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow,
   a persistent online/offline/online advisory announcement, and same-origin-only requests. Real
   interpretation acceptance additionally covers explicit start, failure/manual retry, held
-  processing, verified output, offline zero-start/reconnect, reviewed fallback, screenshots, and
-  exact request ledgers; gradient/background contrast incompletes are compensated by token-level
-  contrast tests.
+  processing, verified output, offline zero-start/reconnect, reviewed fallback, exact v2
+  categorical reports for both durable displayable outcomes, screenshots, and exact request
+  ledgers; gradient/background contrast incompletes are compensated by token-level contrast tests.
 - Cancellable Worker runtime and framework-independent domain package boundary.
 - Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
 - Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
@@ -1100,10 +1376,39 @@ launch remain separately gated.
 - One application/database-matched tarot quota authority with a three-per-hour local acceptance
   baseline, database-clock atomic enforcement, replay-before-quota behavior, bounded `Retry-After`,
   no immediate limit retry, explicit new-reflection transitions, and previous-result preservation.
-- Exact owner-bound `POST /api/v1/readings/{uuid}/report` plus a private categorical report control
-  with six approved categories, whole/position targets, independent idempotency, empty `204`
-  create/replay, indistinguishable private `404`, changed-reuse `409`, no free text, no analytics,
-  no reading-quota use, inherited expiry, append-only persistence, and least-privilege runtime access.
+- Exact owner-bound `POST /api/v1/readings/{uuid}/report` plus private categorical report controls
+  with six approved categories, backward-compatible whole/position targets, and a strict v2 exact
+  interpretation-operation target resolved only to a durable verified, safe-replacement, or
+  authorized fallback result. Independent idempotency, empty `204` create/replay,
+  indistinguishable private `404`, changed-reuse `409`, no free text, no analytics, no
+  reading-quota use, inherited expiry, append-only persistence, immutable composite target
+  constraints, and exact least-privilege runtime access are enforced.
+- Strict backward-compatible private intention v2 creation plus owner-scoped PATCH/DELETE
+  resources with normalized user-owned text, a small real-world action, deterministic
+  coercive-control reframing, optional revisit date/time zone, explicit no-reminder state,
+  independent resource-bound ciphertexts, optimistic revision conflicts, idempotent replay,
+  active/completed/archived/soft-deleted lifecycle enforcement, and exact least-privilege runtime
+  columns. The Sanctuary composer exposes reviewed templates, privacy/reminder disclosures,
+  agency-safe replacement, edit/complete/archive/delete confirmations, offline/error states, and
+  ritual prevention after archive/delete.
+- A source-governed `ritual-catalog.v1` defines eight immutable accessible templates and 11
+  canonical items: always-free candle/incense, four permanent objects, and five consumable
+  rituals. Strict contracts fix symbolic-only/no-guarantee semantics, closed presentation
+  enhancements, exact publication/template/access references, and explicit mappings for all six
+  historical `reflection-ritual.v1` codes. `GET /api/v1/ritual-objects` exposes only the validated
+  read-only catalog with no price, Credit, payment, ownership, or efficacy authority; historical
+  session creation remains unchanged pending the transactional persistence slice.
+- The private Sanctuary renders the canonical free candle and incense through a focused inline
+  stage with equivalent standard 2D and accessible linear controls, audio off, pausable
+  nonessential motion, reduced-motion defaulting, Escape/focus restoration, durable
+  start/pause/resume/completion, offline same-step retry, responsive RTL-safe layout, and reviewed
+  static fallback.
+- Additive owner-scoped `ritual_session_v2`, `ritual_pass`, and `private_journal_entry` persistence
+  keeps historical v1 rows immutable while enforcing exact catalog/access provenance, one open
+  session per owner/intention, transactional pass consumption, optimistic lifecycle revisions,
+  encrypted journal create/update/read/soft-delete, exact least privileges, and non-empty logical
+  restore evidence. No pass issuance, refund/reversal, production KMS, or production activation is
+  included.
 - Tab-scoped one-card and three-card result resume using only per-type strict UUID V4 values,
   owner-scoped no-store GET, explicit no-redraw reveal, definitive stale-ID clearing, transient
   manual recovery, storage-denied degradation, previous-result preservation, and database-clock
@@ -1180,16 +1485,21 @@ launch remain separately gated.
   consent/privacy-control UI, per-client abuse strategy, anonymous export/deletion workflow, or
   complete production private-resource authorization surface; the current session policy is
   required configuration and safe-off when absent.
-- A country-specific crisis-resource program, an approved real classifier, intake persistence,
-  question-bearing analytics, or an intake-to-reading continuation; the owner-approved English
-  lexical baseline and the RIT-032 safety contract remain safe-off.
+- A country-specific crisis-resource program, an approved real classifier, intake persistence, or
+  question-bearing analytics; the owner-approved English lexical baseline and the RIT-032 safety
+  contract remain safe-off. The local anonymous intake can continue to Tarot without transferring
+  the private question.
 - A production-approved payment-provider route, real provider-unavailable classifier, offline
   cache/synchronization layer, or generic partial/degraded network state machine. The local Stripe
   adapter and signed simulator are implementation evidence only; the connection notice remains a
   `navigator.onLine` advisory.
 - Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
-- Production metrics, alerts, retention/sampling policy, vendor exporters, and a real persisted outbox/queue consumer; the current Worker carrier path is a reviewed protocol and sealed adapter boundary, not a deployed queue.
+- Production metrics, alerts, retention/sampling policy, vendor exporters, durable analytics
+  storage/outbox, viewed-event ingestion, or a real persisted queue consumer; the RIT-046 analytics
+  package and Web adapter are synthetic safe-off evidence. RIT-045 has one narrow PostgreSQL-backed
+  Revisit reminder queue and sealed safe-off adapter, but no production provider, generic queue
+  runtime, scheduler process, delivery metrics/alerts, or deployed asynchronous service.
 - Approved legal entity, legal terms, privacy notices, or tax configuration.
 - Formal trademark clearance or secured canonical domain.
 - Payment-provider written underwriting approval.
@@ -1222,6 +1532,28 @@ launch remain separately gated.
 
 These owner decisions do not block independent local engineering foundation work.
 
+## Current verification status
+
+- `pnpm test:configuration-boundary` passes typed environment parsing, fail-closed startup,
+  server-only imports, and client-delivery secret isolation.
+- `pnpm test:accessibility` passes four public and three private routes with 39 shared axe scans,
+  460 reviewed contrast nodes, six deterministic Tarot scenarios, two Tarot screenshots, and three
+  free-ritual axe scans plus one supporting candle screenshot,
+  forward/reverse keyboard focus, expanded text, desktop/mobile RTL, connectivity, create/reveal,
+  retry/limit/resume/report, interpretation, both free rituals and modes, pause/exit/completion,
+  stable-key offline/error retry, 44px targets, theme, no-JavaScript, storage, and local-request
+  checks.
+- `pnpm test:database-foundation` passes local PostgreSQL attestation, all MVP migrations, seed,
+  least privilege, RLS, constraints, transaction/race/reset/restore behavior, anonymous identity,
+  tarot reporting, interpretation claim/replay/fencing/fallback behavior, and intention
+  ownership/encryption/idempotency/concurrency/lifecycle/negative-constraint behavior.
+- Codex reran all three environment-dependent commands in the unrestricted local environment after
+  the prior approval infrastructure blocker was removed. They use loopback-only test services and
+  do not access production, deploy, or call paid providers.
+- The obsolete owner-untracked `apps/web/server/tarot-reading-state 2.ts` safe-off stub was removed
+  after comparison proved that the canonical implementation fully supersedes it. The two
+  D-030-excluded QA report copies remain untouched.
+
 ## Queue authority
 
 `BACKLOG.md` alone determines the executable next task from priority, status, dependencies, and
@@ -1229,6 +1561,24 @@ owner gates. This dated capability snapshot intentionally does not copy a task I
 remains above and task history stays in Git and durable records.
 
 ## Current quality state
+
+On 2026-07-24, the production-pack ZIP, golden prototype, machine-readable contracts, 18
+screenshots, and manifest verifier retain their declared integrity checks. The current tree passes
+CI structure, the architecture policy, durable-record validation, 15 immutable migration
+policy files, generated evidence, instruction validation, exact-static-asset secret policy,
+formatting, lint, 12-package type checking, 1,587 unit/contract tests in 115 files, and 145 fixed AI
+release assertions. With `BRAND_CANONICAL_ORIGIN=http://127.0.0.1:4175`, all 12 production build
+tasks pass and the verifier checks 103 artifacts/exports, four public pages, and five private
+experience pages. The current configuration-boundary, production-artifact accessibility, and full
+PostgreSQL foundation suites pass in the unrestricted local environment; historical RIT-158 runs
+remain separately identified rather than substituted for this current evidence.
+
+RIT-047 adds one production-artifact Chromium context that navigates in the same tab from safe
+intake through deterministic Tarot, exact-reading intention handoff, free reduced-motion ritual,
+private journal, and Revisit completion/deletion. It proves mobile keyboard and focus behavior,
+RTL reflow, touch targets, zero serious/critical Axe findings, stable-key manual recovery, no
+automatic mutation retries, no account or payment request, and continuous private-canary isolation
+across URL/history, storage, metadata, console, screenshots, and request boundaries.
 
 RIT-158 passes the production-artifact Playwright flow from anonymous reading through intention,
 free ritual, encrypted journal, account merge, fresh account, 18+ attestation, four exact prices,
@@ -1244,16 +1594,18 @@ unexpected HTTP failures; four signed-out `401` responses from `/api/v1/me` and
 `/api/v1/entitlements` were expected and classified.
 
 The pinned Node.js 24 runtime passes formatting, lint with zero warnings, strict type checking
-across all 11 workspace tasks, 1,433 unit/contract tests in 105 files plus the focused standalone-
-intention persistence regression, 145 fixed AI release
-assertions, the 288-file/11-module architecture gate, all 11 immutable-migration policy files, the
-tracked/unignored secret scan, and all 11 production build tasks. The isolated PostgreSQL 17 matrix
-on port 55435 applies all 10 migrations, redeploys and seeds idempotently, and verifies MVP schema,
-least privileges, RLS, constraints, concurrency, guarded reset, privacy canaries, and non-empty
-logical dump/restore without touching unrelated PostgreSQL instances.
+across all 12 workspace tasks, the prior milestone's 1,587 unit/contract tests in 115 files, 145
+fixed AI release assertions, the architecture gate, all 17 immutable migration-policy files, the
+tracked/unignored secret scan, and all 12 production build tasks. RIT-050 adds a current focused
+213-test authentication/proxy result, while RIT-051 adds 65 focused tests and the isolated
+16-migration merge gate instead of repeating the complete unit suite. The prior full PostgreSQL 17
+matrix verifies MVP schema, least privileges, RLS, constraints, concurrency, guarded reset,
+privacy canaries, and non-empty logical dump/restore without touching unrelated PostgreSQL
+instances.
 
-The build verifier checks 80 artifacts and narrowed exports, including exact UI stylesheet parity,
-all four canonical pages, all three private experience pages, the intake/reading APIs, the anonymous-session route, identity and
+The build verifier checks 115 artifacts and narrowed exports, including exact UI stylesheet parity,
+all four canonical pages, all five private experience pages, the intake/reading APIs, the
+anonymous-session and account-authentication routes, identity and
 question-intake domain/database exports, the divination parser, safe-off fixture assessment,
 deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
 the compiled AI Tarot input/output fixture, provider/version exports, published-content retrieval,
@@ -1261,11 +1613,12 @@ prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation
 authorization binding, non-exported authorization issuers, provider-neutral generation and
 authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
 atomic interpretation claim/finalization/verification persistence, the private interpretation route,
-and the icon. Maximum Web output is 7,511 B gzip HTML, 7,356 B gzip CSS, 230,076 B gzip JavaScript,
-and 356 B raw icon.
+and the icon. Maximum Web output is 7,705 B gzip HTML, 8,931 B gzip CSS, 230,675 B gzip JavaScript,
+and 356 B raw icon. The narrowed exports now also include the compiled strict ritual domain,
+Git-authored catalog parse, and read-only ritual-object route.
 Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
 traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 288 source files across 11 active modules and keeps module,
+The architecture verifier audits 330 source files across 12 active modules and keeps module,
 runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
 
 RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
@@ -1372,12 +1725,13 @@ The production Web matrix proves restrictive browser headers, server correlation
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
 isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
 mobile, and same-origin coverage. Fresh production-artifact acceptance passes all four public routes
-plus the private intake, one-card, and three-card pages with 31 blocking Axe scans, exact
-selector-level review for 306 gradient/background `color-contrast` incomplete nodes plus independent
+plus the private intake, one-card, and three-card pages with 39 blocking Axe scans, exact
+selector-level review for 459 gradient/background `color-contrast` incomplete nodes plus independent
 token contrast tests, complete forward/reverse focus, skip-link transfer, 44px targets, 40%
 expansion, desktop/mobile RTL, dark/reduced-motion/no-JS states, a persistent
-online/offline/online advisory announcement, exact interpretation retry/polling/verified/fallback/
-offline scenarios, screenshots, and local-only requests. CLI Playwright also verifies all four
+online/offline/online advisory announcement, six exact deterministic create/reveal/retry/limit/
+resume/report scenarios, exact interpretation retry/polling/verified/fallback/offline scenarios,
+two supporting screenshots, and local-only requests. CLI Playwright also verifies all four
 synthetic state variants at 320px, RTL, and dark mode with zero console errors.
 
 The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
@@ -1388,7 +1742,10 @@ expiry/runtime revocation, bounded full-ledger consent validation and withdrawal
 idempotency races, privacy-minimal global capacity, injected privilege-drift denial, exact identity
 column privileges, and exact restored-history behavior and attestation. Repository architecture,
 CI/toolchain, historical migration, current-tree/full-history secret,
-actionlint, and dependency gates pass; the npm audit reports no known vulnerabilities. Independent
+actionlint and dependency gates pass. The current dependency audit reports zero critical/high and
+one moderate advisory in Prisma's transitive `@hono/node-server` tooling path for Windows
+`serve-static`; RITUVIA does not expose that adapter as a product runtime or static-file server.
+Independent
 accessibility, architecture, localization, and security review found no remaining local-slice P0/P1;
 the intentionally global issuance gate and required pre-gate catalog attestation remain explicit
 production-abuse/load P2 release risks and are not accepted as complete production admission
@@ -1942,6 +2299,237 @@ effective until this register links it. Do not rewrite historical rationale; sup
   product evidence and unapproved production payment, legal, provider, or launch state.
 - **Date:** 2026-07-18
 
+### [D-045 — Production pack precedence and Phase 0 reconciliation](records/decisions/D-045.md)
+
+- **Decision:** Install the owner-supplied 2026-07-23 production source-of-truth pack with only the
+  repository-required deterministic LF normalization for its security matrix, execute one Phase 0
+  repository reality audit before more feature work, apply its safety/security invariants and
+  golden UI contract to future changes, and adapt its SQL/OpenAPI to the existing modular
+  TypeScript/PostgreSQL architecture rather than replacing or duplicating it.
+- **Reason:** The new production contracts materially supersede older product details and require
+  a verified reuse/gap/security plan before continuing RIT-037 or introducing wallet, Credit,
+  payment, AI, or bilingual production behavior.
+- **Date:** 2026-07-23
+
+### [D-046 — Split exact interpretation reporting from history and paid regeneration](records/decisions/D-046.md)
+
+- **Decision:** Re-scope RIT-037 to an owner-scoped categorical report bound to one exact
+  displayable interpretation result through the existing reading report boundary; add no
+  history/list or regeneration/start behavior, and defer paid Deep Reading creation, version
+  history, and regeneration until a separate Credits transaction task can reserve, consume, or
+  release Credits exactly once.
+- **Reason:** The production pack makes AI an explicit paid Deep Reading capability, while the
+  repository does not yet have the required Credit reservation/projection authority and currently
+  constrains interpretation generation to one. Extending history or the old free safe-off POST
+  boundary would encode the wrong transaction model and risk duplicate or uncharged generation.
+- **Date:** 2026-07-23
+
+### [D-047 — Production ritual catalog and legacy replay separation](records/decisions/D-047.md)
+
+- **Decision:** Use production-pack ritual codes for a new versioned source-governed catalog;
+  distinguish free objects, permanent objects, and consumable rituals through abstract access
+  requirements; retain the historical `reflection-ritual.v1` code set unchanged; and map every
+  legacy code only for exact historical replay, including `golden_intention_bowl` to
+  `golden_bowl`. Keep Credit, payment, entitlement fulfillment, pass consumption, and durable
+  session snapshots outside the read-only catalog domain until their sequenced transactional
+  foundations exist.
+- **Reason:** Silent renaming would corrupt historical meaning, treating passes as permanent
+  ownership would violate the production contract, and allowing ritual content to carry money or
+  efficacy authority would cross commerce and safety boundaries.
+- **Date:** 2026-07-24
+
+### [D-048 — Additive ritual lifecycle and durable-pause boundary](records/decisions/D-048.md)
+
+- **Decision:** Preserve historical ritual/journal tables unchanged; add separate v2 lifecycle,
+  private-journal, and consumable-pass tables; resolve exact catalog/access authority on the
+  server; consume a pass only in the session-creation transaction; bind new journal ciphertext to
+  owner and journal ID; and map visible Sanctuary exit to durable pause rather than abandonment.
+- **Reason:** Relaxing v1 constraints would corrupt replay, split pass writes can double-spend, and
+  terminal abandonment conflicts with the approved “leave for now” interaction.
+- **Date:** 2026-07-24
+
+### [D-049 — Local-calendar Revisit and reminder-safe boundary](records/decisions/D-049.md)
+
+- **Decision:** Represent a Revisit by local calendar date plus IANA time zone; support next-day,
+  seven-day, and custom scheduling; snapshot original intention/action under resource-bound
+  encryption; bind only the intention in v1; store optional quiet hours while reminder preference
+  remains none and channel remains null; treat the date as an invitation rather than an unlock;
+  and use independently versioned ciphertext plus an append-only operation ledger for revisioned
+  reschedule, completion, archive, and soft deletion without any delivery adapter.
+- **Reason:** A fixed UTC instant can shift the chosen return day across DST, reusing only the
+  intention date cannot preserve or complete a comparison, and activating reminders would cross
+  consent, copy, operations, and production-email gates owned by RIT-045.
+- **Date:** 2026-07-24
+
+### [D-050 — Layered local verification with milestone full-suite gates](records/decisions/D-050.md)
+
+- **Decision:** Use targeted affected-area tests during implementation and ordinary task closure;
+  reserve the complete workspace matrix for milestone integration tasks such as RIT-047, release
+  candidates, broad shared-runtime/toolchain changes, or explicit risk triggers. Reuse prior
+  passing evidence only when all tested inputs remain unchanged, while CI may retain broader
+  mandatory pull-request gates.
+- **Reason:** Repeating more than fifteen hundred unaffected unit tests plus every integration and
+  browser gate after each small edit consumes time and output without proportional confidence.
+- **Date:** 2026-07-24
+
+### [D-051 — Safe-off consented-anonymous core-loop analytics baseline](records/decisions/D-051.md)
+
+- **Decision:** Define WMRS v1 as distinct consented anonymous subjects with at least one
+  reading-rooted qualifying Tarot reflection session in a rolling seven-day UTC window; keep
+  qualifying sessions separate, freeze nine strict allowlisted events, derive purpose-scoped keyed
+  pseudonyms, require exact current optional analytics consent, and keep all production collection,
+  persistence, browser ingestion, vendors, retention, deletion, account merge, and backfill
+  hard safe-off.
+- **Reason:** The repository can prove event privacy and metric arithmetic without converting the
+  necessary anonymous cookie into analytics consent or creating unapproved data-retention and
+  production-activation obligations.
+- **Date:** 2026-07-24
+
+### [D-052 — Safe-off authentication provider and hardened session boundary](records/decisions/D-052.md)
+
+- **Decision:** Keep authentication behind a local-only closed capability adapter; return only a
+  constant local preview path and `HttpOnly` state; enforce database-atomic global plus bounded
+  keyed identifier-bucket start limits; bind previous-session rotation at challenge start; require
+  session-derived CSRF and durable revocation; and add passkey persistence constraints without
+  activating WebAuthn.
+- **Reason:** This closes enumeration, bearer exposure, login-flooding, fixation, CSRF, and false
+  logout gaps without collecting network fingerprints or crossing production provider, passkey,
+  retention, deployment, or public-launch approval gates.
+- **Date:** 2026-07-24
+
+### [D-053 — Immutable subject bridge with recoverable account-session rotation](records/decisions/D-053.md)
+
+- **Decision:** Preserve immutable anonymous ownership behind one append-only account link; commit
+  authentication and optional merge atomically; bind merge evidence to both source sessions and the
+  exact keyed request; derive one recoverable successor session for same-source/same-key retries;
+  and prohibit opportunistic merge inside reflection mutations.
+- **Reason:** This prevents duplicate history, cross-account claims, partial callback state,
+  discarded replacement credentials, and unrecoverable response-loss retries without copying
+  private rows or storing a bearer in audit data.
+- **Date:** 2026-07-24
+
+### [D-054 — Read-time private history with timestamp-only session controls](records/decisions/D-054.md)
+
+- **Decision:** Project currently retained reflection history at read time through immutable
+  account-subject links; expose minimal metadata only; preserve optimistic profile revisions; list
+  sessions with lifecycle timestamps but no device fingerprint data; and prohibit targeted
+  revocation of the current session.
+- **Reason:** This provides useful account recovery and security controls without copying private
+  rows, indexing private prose, extending retention, enabling cross-account authority, or adding a
+  new tracking surface.
+- **Date:** 2026-07-24
+
+### [D-055 — Recently authenticated encrypted privacy export boundary](records/decisions/D-055.md)
+
+- **Decision:** Preserve an immutable per-session authentication instant across merge rotation;
+  require recent authentication for export request, metadata, and download; snapshot all retained
+  implemented account-linked data through explicit allowlists; package matching JSON and Markdown;
+  store only dedicated-key account/export/expiry-bound ciphertext; require session-CSRF download;
+  and keep privacy audit append-only.
+- **Reason:** This prevents stale-auth refresh, cross-account disclosure, bearer-URL leakage,
+  plaintext backup exposure, omitted retained data, mutable completion evidence, and key-purpose
+  coupling without prematurely duplicating the future worker/object-storage infrastructure.
+- **Date:** 2026-07-25
+
+### [D-056 — Immediate access revocation and crypto-shredding deletion boundary](records/decisions/D-056.md)
+
+- **Decision:** Require recent authentication and exact-scope idempotency; revoke affected
+  sessions, privacy-delete ownership links, crypto-shred implemented private ciphertext, destroy
+  export artifacts, and pseudonymize/revoke account identity for whole-account deletion while
+  preserving only pseudonymous derived, consent, commerce, security, and privacy evidence under
+  existing source retention.
+- **Reason:** Immediate authorization revocation plus targeted ciphertext destruction removes
+  recoverable private text without breaking restrictive financial/audit relationships or
+  inventing final legal retention, KMS, provider, backup, deployment, or launch policy.
+- **Date:** 2026-07-25
+
+### [D-057 — Safe-off admin authorization and passkey-assurance foundation](records/decisions/D-057.md)
+
+- **Decision:** Centralize a finite default-deny admin role/action matrix; require active owner
+  authority, recent authentication, same-identity live passkey assurance, and typed confirmation
+  for append-only role changes; commit mutation plus digest-only hash-chained audit evidence in one
+  serializable transaction; and keep MFA issuance, production enrollment, and admin routes safe-off.
+- **Reason:** This prevents magic-link-only escalation, cross-identity MFA, mutable privilege
+  history, private-value audit leakage, mutation without evidence, and broad database access
+  without crossing WebAuthn/provider/deployment approval gates.
+- **Date:** 2026-07-25
+
+### [D-058 — Request-scoped privacy deletion and composed security gate](records/decisions/D-058.md)
+
+- **Decision:** Admit privacy routes through an exact proxy allowlist, reject cross-site export
+  metadata reads, bind the dedicated deletion login to one transaction-local request-token hash
+  enforced by a security-barrier view and row-level policies, and compose the Milestone 5 security
+  slices into one focused gate while running the complete workspace matrix only once at closure.
+- **Reason:** Separately passing slices did not prevent proxy omissions, cross-site read attempts,
+  or broad direct use of the deletion credential; database-bound request scope preserves
+  least-privilege defense in depth without repeatedly running unrelated tests.
+- **Date:** 2026-07-25
+
+### [D-059 — Immutable successor Country Policy registry](records/decisions/D-059.md)
+
+- **Decision:** Resolve country from stronger billing/account/reliable-geolocation evidence with
+  conflicts denied; evaluate one immutable reviewed successor-chain head; separate fiat and crypto
+  approval references; persist the complete strict policy document under bounded read-only runtime
+  access; and implement kill switch/rollback by appending successors while staging/production stay
+  empty and safe-off.
+- **Reason:** Hardcoded per-product rules could not govern service/legal/data behavior, mutable
+  policy would erase provenance, IP/locale could bypass stronger facts, and one payment gate could
+  accidentally authorize another.
+- **Date:** 2026-07-25
+
+### [D-060 — Immutable catalog registry and legacy checkout quarantine](records/decisions/D-060.md)
+
+- **Decision:** Store one strict immutable locale-aware catalog with exact Credit terms and fiat
+  prices only for packs/Plus; seed local/CI only; serve it through the public catalog endpoint; and
+  quarantine the obsolete direct-object USD checkout as a local replay/test fixture rather than a
+  product source.
+- **Reason:** The old four-price list conflicts with the owner-approved Credit model, cannot express
+  exact contents or compliance scope, and could expose incorrect prices even when payment remains
+  disabled.
+- **Date:** 2026-07-25
+
+### [D-061 — Additive v2 commercial transactions and append-only Credits](records/decisions/D-061.md)
+
+- **Decision:** Keep legacy direct-USD commerce replay unchanged; add provider-neutral v2
+  order/payment-attempt states, exact-request idempotency, append-only integer Credit
+  ledger/reservations/allocations/projection, and source-specific Plus/permanent entitlements.
+- **Reason:** Extending the legacy fixture would preserve the wrong product model and unsafe
+  refund/dispute coupling, while mutable balances cannot prove allocation, concurrency, expiry, or
+  reversal integrity.
+- **Date:** 2026-07-25
+
+### [D-062 — Account-owned purpose consent and immediate data-flow withdrawal](records/decisions/D-062.md)
+
+- **Decision:** Keep analytics, AI personalization, and model improvement in separate exact-version
+  account-owned append-only sequences; serialize mutations, deny runtime history changes, and
+  reread current consent at each sensitive data-flow boundary so committed withdrawal applies
+  across sessions immediately.
+- **Reason:** Linked anonymous grants and mutable/cached booleans can revive stale authority, erase
+  evidence, or keep private-data processing active after withdrawal; an account authority closes
+  that gap without activating external analytics, AI, training, marketing, or notifications.
+- **Date:** 2026-07-25
+
+### [D-063 — Account-owned once-only Revisit reminder and safe-off delivery](records/decisions/D-063.md)
+
+- **Decision:** Keep Revisit v1 reminder fields inert; add one account-owned once-only English email
+  preference, privacy-minimal PostgreSQL queue, send-time authorization, bounded retry/dead-letter,
+  fixed lock-screen-safe copy, and provider-neutral adapter that remains disabled outside tests.
+- **Reason:** Delivery consent must not inherit analytics/AI consent or expose private reflection
+  content, and a mutable/browser-local reminder cannot prove withdrawal, duplicate suppression,
+  ownership, deletion, retry, or once-only delivery.
+- **Date:** 2026-07-25
+
+### [D-064 — Approved RITUVIA V1 date-numerology method](records/decisions/D-064.md)
+
+- **Decision:** Sum canonical Gregorian date digits for Life Path, begin Birthday Number from the
+  day integer, use an explicit target year for Personal Year, preserve exact 11/22/33 totals at
+  every reduction step, and exclude names, transliteration, non-ASCII calculation input, and
+  non-Gregorian conversion from V1.
+- **Reason:** One explicit versioned method preserves prototype fidelity, deterministic replay,
+  formula transparency, locale safety, and historical compatibility without presenting a
+  numerology convention as universal or scientific.
+- **Date:** 2026-07-25
+
 ---
 
 # File: `ROADMAP.md`
@@ -2194,146 +2782,183 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 
 ## Task queue
 
-| ID      | Milestone | Priority | Status  | Task                                                                      | Dependencies                            | Primary role  | Done when                                                                                                         |
-| ------- | --------- | -------: | ------- | ------------------------------------------------------------------------- | --------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------- |
-| RIT-000 | M0        |       P0 | Done    | Audit repository and establish evidence baseline                          | None                                    | architect     | Repository reality is documented; setup gaps and exact M0 plan are committed; status/backlog reconciled.          |
-| RIT-001 | M0        |       P0 | Done    | Create pnpm/Turborepo strict TypeScript monorepo                          | RIT-000                                 | backend       | Clean install, lint, typecheck, unit test, and build work from a fresh clone.                                     |
-| RIT-002 | M0        |       P0 | Done    | Add environment validation and brand configuration                        | RIT-001                                 | backend       | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded.              |
-| RIT-003 | M0        |       P0 | Done    | Create local PostgreSQL and Prisma foundation                             | RIT-001                                 | backend       | Local database starts reproducibly; initial migration and synthetic seed/test reset pass.                         |
-| RIT-004 | M0        |       P0 | Blocked | Create test harness and CI quality gates                                  | RIT-001,RIT-003,OWN-008                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                                |
-| RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                   | RIT-001                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                               |
-| RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                       |
-| RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                         | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                                  |
-| RIT-008 | M0        |       P1 | Planned | Create preview/staging/production environment documentation               | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.            |
-| RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                            |
-| RIT-010 | M1        |       P0 | Done    | Implement accessible Web shell and locale-prefixed routing                | RIT-001,RIT-002,RIT-007                 | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                        |
-| RIT-011 | M1        |       P0 | Done    | Implement design tokens and accessible component primitives               | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                        |
-| RIT-012 | M1        |       P0 | Done    | Build product positioning, methodology, safety, and privacy public pages  | RIT-010,RIT-011                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                       |
-| RIT-013 | M1        |       P1 | Done    | Add SEO metadata, canonical, robots, and sitemap foundation               | RIT-010                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                              |
-| RIT-014 | M1        |       P1 | Done    | Add accessibility and pseudolocale CI smoke                               | RIT-010,RIT-011                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                        |
-| RIT-015 | M1        |       P1 | Done    | Create error, empty, offline, and provider-unavailable patterns           | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                                   |
-| RIT-016 | M1        |       P2 | Planned | Clean up the public-shell rollout flag                                    | RIT-010,RIT-014                         | backend       | Flag is retired safe-off for one registry compatibility window, then removed with old history ignored.            |
-| RIT-020 | M2        |       P0 | Done    | Implement anonymous subject/session and consent baseline                  | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                      |
-| RIT-021 | M2        |       P0 | Done    | Implement safe question/theme intake rules and UX                         | RIT-020,RIT-012,OWN-009                 | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                           |
-| RIT-022 | M2        |       P0 | Done    | Create versioned tarot deck, spread, and content schema                   | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.                  |
-| RIT-023 | M2        |       P0 | Done    | Implement deterministic server-authoritative tarot engine                 | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                              |
-| RIT-024 | M2        |       P0 | Done    | Implement tarot reading application service and API                       | RIT-020,RIT-021,RIT-023                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                               |
-| RIT-025 | M2        |       P0 | Done    | Build one-card tarot intake, draw, and result UI                          | RIT-011,RIT-024                         | frontend      | Anonymous mobile user reaches a useful deterministic result in under three minutes.                               |
-| RIT-026 | M2        |       P1 | Done    | Build three-card Situation/Action/Possibility flow                        | RIT-025                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                             |
-| RIT-027 | M2        |       P1 | Done    | Add tarot limits, calm redraw behavior, and report control                | RIT-024,RIT-025,RIT-026,OWN-010         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                             |
-| RIT-028 | M2        |       P1 | Planned | Add deterministic tarot E2E and visual/accessibility tests                | RIT-025,RIT-026,RIT-027,RIT-029         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error/resume/report scenarios.                              |
-| RIT-029 | M2        |       P1 | Done   | Add private same-session tarot result resume                              | RIT-027                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage. |
-| RIT-030 | M3        |       P0 | Done    | Define AI provider interfaces and typed interpretation schemas            | RIT-001,RIT-023                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                      |
-| RIT-031 | M3        |       P0 | Done    | Implement curated content retrieval and prompt versioning                 | RIT-022,RIT-030                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                            |
-| RIT-032 | M3        |       P0 | Done    | Implement pre-generation high-stakes and crisis policy                   | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                            |
-| RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                 | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                      |
-| RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                        | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.            |
-| RIT-035 | M3        |       P0 | Done    | Build tarot AI interpretation streaming/polling UX                        | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                             |
-| RIT-036 | M3        |       P0 | Done    | Create AI fixed regression and adversarial eval suite                     | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                |
-| RIT-037 | M3        |       P1 | Ready   | Add interpretation regeneration/report/version history                    | RIT-035,RIT-036                         | backend       | Regeneration is limited, version-linked, reportable, and does not alter facts.                                    |
-| RIT-038 | M3        |       P1 | Planned | Add AI cost, latency, fallback, and safety dashboards                     | RIT-006,RIT-033                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                    |
-| RIT-040 | M4        |       P0 | Planned | Implement intention domain and composer                                   | RIT-025                                 | product       | User-owned intention/action, coercive-control reframing, privacy, edit/archive/delete pass.                       |
-| RIT-041 | M4        |       P0 | Planned | Implement ritual template and object domain                               | RIT-003,RIT-011                         | backend       | Free/paid-capable objects are versioned; efficacy claims are structurally impossible.                             |
-| RIT-042 | M4        |       P0 | Planned | Build accessible free candle and incense sanctuary                        | RIT-040,RIT-041                         | frontend      | Linear and 2D modes, reduced motion/audio off, exit/completion, graceful degradation pass.                        |
-| RIT-043 | M4        |       P0 | Planned | Implement ritual completion and private journal                           | RIT-042                                 | backend       | Encrypted/minimized records, autosave/error/delete, and no sensitive analytics pass.                              |
-| RIT-044 | M4        |       P0 | Planned | Implement revisit scheduling and completion                               | RIT-040,RIT-043                         | backend       | User-controlled schedule/time-zone/quiet-hours and non-prophetic comparison pass.                                 |
-| RIT-045 | M4        |       P1 | Planned | Implement consented transactional reminder adapter                        | RIT-044,RIT-002                         | operations    | Opt-in, frequency, unsubscribe, locale, lock-screen-safe copy, and delivery failure pass.                         |
-| RIT-046 | M4        |       P0 | Planned | Instrument privacy-safe core loop and WMRS events                         | RIT-040,RIT-043,RIT-044                 | backend       | Typed allowlisted events reconstruct funnel without private free text.                                            |
-| RIT-047 | M4        |       P0 | Planned | Add full-loop anonymous E2E tests                                         | RIT-042,RIT-043,RIT-044,RIT-046         | qa_security   | Question through revisit passes mobile, keyboard, reduced motion, failure, and deletion states.                   |
-| RIT-050 | M5        |       P0 | Planned | Implement auth provider abstraction and secure account sessions           | RIT-003,RIT-010                         | backend       | Magic link/passkey-ready sessions, enumeration/rate protections, revoke/logout pass.                              |
-| RIT-051 | M5        |       P0 | Planned | Implement idempotent anonymous-to-account merge                           | RIT-020,RIT-050                         | backend       | Concurrent merge preserves ownership/history once and has rollback/audit tests.                                   |
-| RIT-052 | M5        |       P0 | Planned | Build account history, settings, and session management                   | RIT-050,RIT-051                         | frontend      | User can view/manage own data and sessions; IDOR tests cover all resources.                                       |
-| RIT-053 | M5        |       P0 | Planned | Implement privacy export workflow                                         | RIT-050,RIT-043                         | backend       | Verified request creates encrypted expiring human/machine-readable export with audit.                             |
-| RIT-054 | M5        |       P0 | Planned | Implement selective and account deletion workflow                         | RIT-050,RIT-053                         | backend       | Deletion propagates by policy, preserves required finance/audit, and is testable/recoverable.                     |
-| RIT-055 | M5        |       P1 | Planned | Implement consent and AI-personalization controls                         | RIT-050,RIT-030                         | product       | Separate purpose/version consent and withdrawal affect data flow immediately.                                     |
-| RIT-056 | M5        |       P0 | Planned | Create admin roles, MFA requirement, and audit log foundation             | RIT-050,RIT-003                         | qa_security   | Least privilege, recent reauth, safe diffs, and privileged-action tests pass.                                     |
-| RIT-057 | M5        |       P0 | Planned | Run identity/privacy/authorization security suite                         | RIT-051,RIT-052,RIT-053,RIT-054,RIT-056 | qa_security   | Cross-user, token, CSRF, export, deletion, logs, metadata tests have no critical findings.                        |
-| RIT-060 | M6        |       P0 | Planned | Implement versioned Country Policy Engine                                 | RIT-007,RIT-003                         | payments_risk | Server policy controls service/product/payment/age/disclosures and records version.                               |
-| RIT-061 | M6        |       P0 | Planned | Implement catalog, product, price, and exact digital contents             | RIT-060,RIT-003                         | payments_risk | Immutable versions, integer money, locale/country/refund/tax fields and admin seed pass.                          |
-| RIT-062 | M6        |       P0 | Planned | Implement order, payment attempt, ledger, and entitlement domain          | RIT-061                                 | backend       | State machines/constraints/idempotency/reversal have unit/property/integration tests.                             |
-| RIT-063 | M6        |       P0 | Planned | Implement first fiat hosted-checkout sandbox adapter                      | RIT-062,OWN-002                         | payments_risk | Approved sandbox creates server-priced checkout through provider adapter.                                         |
-| RIT-064 | M6        |       P0 | Planned | Implement signed payment webhook ingestion and processing                 | RIT-063                                 | backend       | Raw signature, replay, duplicate, out-of-order, mismatch, outbox processing pass.                                 |
-| RIT-065 | M6        |       P0 | Planned | Implement entitlement grant/revoke and purchase restoration               | RIT-062,RIT-064                         | backend       | Verified state grants exactly once and reverses per refund/dispute terms.                                         |
-| RIT-066 | M6        |       P0 | Planned | Build product detail, checkout return, and order status UX                | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                       |
-| RIT-067 | M6        |       P0 | Planned | Implement reconciliation and discrepancy cases                            | RIT-064,RIT-065                         | operations    | Scheduled comparison detects missing/mismatched payment, order, entitlement, payout states.                       |
-| RIT-068 | M6        |       P0 | Planned | Implement refund request and sandbox refund path                          | RIT-065,RIT-067                         | payments_risk | Versioned eligibility, audit, entitlement impact, duplicate/retry handling pass.                                  |
-| RIT-069 | M6        |       P0 | Planned | Run full payment integrity matrix                                         | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                 |
-| RIT-070 | M7        |       P0 | Planned | Implement subscription lifecycle and entitlements                         | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                  |
-| RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                  | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                 |
-| RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                       |
-| RIT-073 | M7        |       P0 | Planned | Build commerce admin and immutable event timeline                         | RIT-056,RIT-067,RIT-070                 | backend       | Authorized owner can inspect/reconcile/refund with reauth, reason, limits, audit.                                 |
-| RIT-074 | M7        |       P1 | Planned | Implement dispute/chargeback records and support workflow                 | RIT-067,RIT-073                         | payments_risk | Evidence uses commerce facts, not private journals; entitlement and audit behavior pass.                          |
-| RIT-075 | M7        |       P1 | Planned | Add payment/provider kill switches and failover contract                  | RIT-060,RIT-063                         | operations    | Provider/country/method can be safely disabled; no implicit unapproved fallback.                                  |
-| RIT-080 | M8        |       P0 | Planned | Define numerology rule sets and source records                            | RIT-003                                 | product       | Life Path/Birthday/Personal Year rules, examples, master numbers, locale limits approved.                         |
-| RIT-081 | M8        |       P0 | Planned | Implement deterministic numerology engine                                 | RIT-080                                 | backend       | Formula steps and fixed/property tests cover edge dates and unsupported scripts.                                  |
-| RIT-082 | M8        |       P0 | Planned | Build public numerology calculators and result UI                         | RIT-011,RIT-081                         | frontend      | Transparent formula, accessible result, privacy-safe optional persistence pass.                                   |
-| RIT-083 | M8        |       P1 | Planned | Add numerology AI interpretation and evals                                | RIT-033,RIT-034,RIT-081                 | ai_safety     | AI cannot change numbers; content/source/safety/locale tests pass.                                                |
-| RIT-084 | M8        |       P1 | Planned | Publish curated numerology SEO cluster                                    | RIT-013,RIT-080,RIT-082                 | growth_seo    | Unique useful pages, examples, source notes, schema/internal links pass quality checks.                           |
-| RIT-090 | M9        |       P0 | Blocked | Select and document licensed astrology engine                             | OWN-003                                 | architect     | Owner-approved license/provider, rights, data, cost, SLA, exit path recorded.                                     |
-| RIT-091 | M9        |       P0 | Planned | Implement location and historical time-zone adapter                       | RIT-090                                 | backend       | Disambiguation, historical DST, provider version, caching/privacy and fixtures pass.                              |
-| RIT-092 | M9        |       P0 | Planned | Implement encrypted birth profile and uncertainty model                   | RIT-050,RIT-091                         | backend       | Exact/approx/unknown time, original/UTC/source, export/delete and privacy tests pass.                             |
-| RIT-093 | M9        |       P0 | Planned | Implement astrology engine adapter and natal facts                        | RIT-090,RIT-091,RIT-092                 | backend       | Reference charts within tolerance; engine/license/input versions stored.                                          |
-| RIT-094 | M9        |       P0 | Planned | Build natal chart and textual table UI                                    | RIT-011,RIT-093                         | frontend      | Accessible visual/table, confidence, mobile/zoom/keyboard and no-color-only encoding pass.                        |
-| RIT-095 | M9        |       P1 | Planned | Add natal interpretation, fact verifier, and evals                        | RIT-033,RIT-034,RIT-093                 | ai_safety     | No invented placement/aspect/personality certainty; uncertainty and source tests pass.                            |
-| RIT-096 | M9        |       P1 | Planned | Publish curated astrology education cluster                               | RIT-013,RIT-093                         | growth_seo    | Definitions/calculators/source/methodology and no unsupported prediction pass.                                    |
-| RIT-100 | M10       |       P0 | Planned | Complete ICU i18n and content/translation workflow                        | RIT-010,RIT-012                         | localization  | Messages/content/glossary/status/source version and missing-key gates work end to end.                            |
-| RIT-101 | M10       |       P0 | Planned | Complete RTL architecture and Arabic pseudotranslation QA                 | RIT-100,RIT-011                         | localization  | Layout, icons, charts, forms, dialogs, email, share cards pass RTL/a11y tests.                                    |
-| RIT-102 | M10       |       P1 | Planned | Add CJK and Devanagari typography/input QA                                | RIT-100                                 | localization  | Font/line break/input/name/date behavior passes representative tests.                                             |
-| RIT-103 | M10       |       P0 | Planned | Implement localized routes, slugs, hreflang, sitemaps, and redirects      | RIT-013,RIT-100                         | growth_seo    | Canonical matrices and stale slug redirects pass automated crawl tests.                                           |
-| RIT-104 | M10       |       P1 | Planned | Localize transactional email/reminder/support templates                   | RIT-045,RIT-100                         | localization  | Locale/time-zone/quiet-hours, safe subject, fallback, unsubscribe and preview pass.                               |
-| RIT-105 | M10       |       P0 | Blocked | Select first Tier 1 locale and country beta                               | OWN-004,RIT-100                         | product       | Owner selects evidence-backed locale/countries and approved review/support path.                                  |
-| RIT-106 | M10       |       P0 | Planned | Complete reviewed Tier 1 locale closed beta content                       | RIT-105,RIT-103,RIT-104                 | localization  | Core flow/legal/safety/payment copy is reviewed; no mixed language or missing support.                            |
-| RIT-110 | M11       |       P0 | Planned | Implement structured editorial content repository and publishing workflow | RIT-012,RIT-100                         | product       | Source/license/review/version/localization/deprecation and preview/publish gates work.                            |
-| RIT-111 | M11       |       P0 | Planned | Build tarot card library and spread guide cluster                         | RIT-022,RIT-110                         | growth_seo    | Curated pages provide unique utility, source notes, internal links, schema, accessibility.                        |
-| RIT-112 | M11       |       P1 | Planned | Build ritual and reflection guide cluster                                 | RIT-110,RIT-042                         | growth_seo    | Secular/tradition-specific sources and no efficacy claims pass editorial review.                                  |
-| RIT-113 | M11       |       P1 | Planned | Implement programmatic page inventory and quality gate                    | RIT-103,RIT-110                         | growth_seo    | Only curated unique pages index; duplicate/thin/cannibalized pages are blocked/noindex.                           |
-| RIT-114 | M11       |       P1 | Planned | Implement structured data and search crawl validation                     | RIT-103,RIT-111                         | growth_seo    | Visible-content-matching schema, robots, sitemap, canonical, hreflang and crawl tests pass.                       |
-| RIT-115 | M11       |       P1 | Planned | Implement redacted localized share cards                                  | RIT-025,RIT-100                         | frontend      | Preview/redaction/alt/canonical and private metadata leak tests pass.                                             |
-| RIT-116 | M11       |       P1 | Planned | Add GEO answer/source/entity templates and QA                             | RIT-110,RIT-111                         | growth_seo    | Answer-first pages distinguish fact/tradition/interpretation and expose truthful source/review metadata.          |
-| RIT-117 | M11       |       P1 | Planned | Create SEO/GEO performance and freshness operations                       | RIT-114,RIT-116                         | operations    | Index/crawl/query/referral/content review metrics and safe gap briefs are automated.                              |
-| RIT-120 | M12       |       P0 | Planned | Complete owner/admin operational dashboard                                | RIT-038,RIT-073,RIT-117                 | operations    | Health, revenue, core loop, AI, queue, support, cost and approvals use source/freshness labels.                   |
-| RIT-121 | M12       |       P0 | Planned | Finalize threat model and remediate launch findings                       | RIT-057,RIT-069,RIT-095                 | qa_security   | Versioned threat model covers all integrations; no critical/high launch findings.                                 |
-| RIT-122 | M12       |       P0 | Planned | Implement rate limits, bot defense, abuse and denial-of-wallet controls   | RIT-024,RIT-033,RIT-063                 | qa_security   | Expensive/auth/checkout/support/privacy endpoints resist scripted abuse without sensitive profiling.              |
-| RIT-123 | M12       |       P0 | Planned | Implement backups and isolated restore test                               | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                      |
-| RIT-124 | M12       |       P0 | Planned | Implement SLOs, alerts, runbooks, and status controls                     | RIT-006,RIT-067                         | operations    | Actionable alerts link runbooks; kill switches/read-only mode and trace correlation are rehearsed.                |
-| RIT-125 | M12       |       P1 | Planned | Implement support, privacy, safety, and content report queues             | RIT-056,RIT-068,RIT-110                 | operations    | Triage/SLA/escalation/permissions and draft automation preserve private-data boundaries.                          |
-| RIT-126 | M12       |       P1 | Planned | Implement daily, weekly, and monthly Codex automation                     | RIT-004,RIT-120,RIT-124                 | operations    | Read-only checks/briefs/PRs run with structured output and no gated production actions.                           |
-| RIT-127 | M12       |       P0 | Planned | Implement cost budgets, allocation, and anomaly controls                  | RIT-038,RIT-067,RIT-120                 | operations    | Per-provider/feature budgets and approved degradation/alerts prevent runaway spend.                               |
-| RIT-128 | M12       |       P0 | Planned | Run incident tabletop and dependency/provider failure game day            | RIT-123,RIT-124,RIT-125                 | qa_security   | Security/payment/AI/outage scenarios produce evidence, fixes, and updated runbooks.                               |
-| RIT-130 | M13       |       P0 | Planned | Prepare closed beta release evidence and invite controls                  | RIT-047,RIT-057,RIT-121,RIT-124         | product       | Scope, cohorts, consent, support, metrics, rollback and known risks are approved.                                 |
-| RIT-131 | M13       |       P0 | Planned | Run English closed beta and reconcile data quality                        | RIT-130                                 | operations    | Qualitative/quantitative evidence is collected ethically; metric definitions and gaps validated.                  |
-| RIT-132 | M13       |       P0 | Planned | Remediate beta safety, UX, accessibility, and reliability findings        | RIT-131                                 | qa_security   | All launch-blocking findings are closed with regression tests and user-impact evidence.                           |
-| RIT-140 | M14       |       P0 | Blocked | Complete paid-launch external approvals                                   | OWN-001,OWN-002,OWN-004,OWN-005,RIT-132 | product       | Brand/entity/legal/tax/payment/country/budget approvals are recorded.                                             |
-| RIT-141 | M14       |       P0 | Planned | Configure production payment, tax, legal, and country policy              | RIT-140,RIT-069,RIT-075                 | payments_risk | Exact approved settings are configured in staging, reviewed, and protected by owner gate.                         |
-| RIT-142 | M14       |       P0 | Planned | Run complete launch and rollback rehearsal                                | RIT-123,RIT-124,RIT-141                 | qa_security   | Release evidence, migration, smoke, payment, AI, privacy, backup, rollback all pass.                              |
-| RIT-143 | M14       |       P0 | Blocked | Owner production go/no-go and limited rollout                             | RIT-142                                 | operations    | Owner approves; progressive launch thresholds and monitoring window are recorded.                                 |
-| RIT-144 | M14       |       P0 | Planned | Complete post-launch verification and economics baseline                  | RIT-143                                 | operations    | Health, core loop, payment, refund, AI, support, cost and contribution are reconciled.                            |
-| RIT-145 | M14       |       P2 | Planned | Clean up country and fiat-checkout rollout flags                          | RIT-075,RIT-144                         | backend       | Both flags are retired safe-off for one registry window, then removed after rollback evidence passes.             |
-| RIT-150 | M15       |       P1 | Planned | Create evidence-led locale/country expansion scorecard                    | RIT-144                                 | product       | Search, retention, payment, legal, culture, support and economics determine ranked candidates.                    |
-| RIT-151 | M15       |       P1 | Blocked | Pilot hosted non-custodial crypto checkout                                | RIT-144,OWN-006                         | payments_risk | Separate provider/legal/country/asset approval and full payment tests pass.                                       |
-| RIT-152 | M15       |       P2 | Planned | Evaluate additional tarot/report/ritual products                          | RIT-144                                 | product       | User need, ethics, content rights, economics and experiments justify exact product.                               |
-| RIT-153 | M15       |       P2 | Blocked | Propose first regional tradition pack                                     | RIT-144,OWN-007                         | localization  | Named experts/sources/rights/method/local law/payment/support/evals are approved.                                 |
-| RIT-154 | M15       |       P2 | Planned | Review architecture scaling evidence                                      | RIT-144                                 | architect     | Measured load/failure/deployment evidence determines whether any service extraction is warranted.                 |
-| RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                 | RIT-151                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence.       |
-| RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                      | RIT-031,RIT-110,RIT-153                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.        |
-| RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                              | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.       |
-| RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP          | RIT-025,RIT-029,RIT-036                 | product       | Direct Sanctuary completion and new 22-card Major Arcana draws pass production-artifact Playwright while exact old-catalog replay and production gates remain closed. |
-| OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance       | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                    |
-| OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval           | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                |
-| OWN-003 | External  |       P0 | Blocked | Select and license astrology engine/provider                              | None                                    | owner         | Commercial rights, usage, data, cost, SLA, attribution and exit are approved.                                     |
-| OWN-004 | External  |       P0 | Blocked | Select company, legal launch markets, tax/MoR, and counsel                | None                                    | owner         | Entity, countries, age, terms/privacy/refund/tax path and reviewer are documented.                                |
-| OWN-005 | External  |       P0 | Blocked | Set operating and launch budget limits                                    | None                                    | owner         | Monthly, AI, infrastructure, refund/fraud and marketing budgets are configured.                                   |
-| OWN-006 | External  |       P1 | Blocked | Approve crypto provider, countries, assets, refund, and legal path        | None                                    | owner         | Written approval and non-custodial architecture scope are recorded.                                               |
-| OWN-007 | External  |       P2 | Blocked | Approve regional-tradition expert and source program                      | None                                    | owner         | Qualified reviewers, sources, rights, scope, language and compensation are documented.                            |
-| OWN-008 | External  |       P0 | Blocked | Configure the GitHub remote and enforce CI checks                         | None                                    | owner         | Remote, workflow-change protection, and all three required CI jobs are configured and one hosted run passes.      |
-| OWN-009 | External  |       P0 | Done    | Approve English question-intake safety language and activation policy     | None                                    | owner         | Exact copy, English scope, generic emergency-resource strategy, and production-activation reference are recorded. |
-| OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                  | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded. |
+| ID      | Milestone | Priority | Status  | Task                                                                        | Dependencies                            | Primary role  | Done when                                                                                                                                                                                                                            |
+| ------- | --------- | -------: | ------- | --------------------------------------------------------------------------- | --------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RIT-000 | M0        |       P0 | Done    | Audit repository and establish evidence baseline                            | None                                    | architect     | Repository reality is documented; setup gaps and exact M0 plan are committed; status/backlog reconciled.                                                                                                                             |
+| RIT-001 | M0        |       P0 | Done    | Create pnpm/Turborepo strict TypeScript monorepo                            | RIT-000                                 | backend       | Clean install, lint, typecheck, unit test, and build work from a fresh clone.                                                                                                                                                        |
+| RIT-002 | M0        |       P0 | Done    | Add environment validation and brand configuration                          | RIT-001                                 | backend       | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded.                                                                                                                                 |
+| RIT-003 | M0        |       P0 | Done    | Create local PostgreSQL and Prisma foundation                               | RIT-001                                 | backend       | Local database starts reproducibly; initial migration and synthetic seed/test reset pass.                                                                                                                                            |
+| RIT-004 | M0        |       P0 | Blocked | Create test harness and CI quality gates                                    | RIT-001,RIT-003,OWN-008                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                                                                                                                                                   |
+| RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                     | RIT-001                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                                                                                                                                                  |
+| RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                  | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                                                                                                                                          |
+| RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                           | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                                                                                                                                                     |
+| RIT-008 | M0        |       P1 | Planned | Create preview/staging/production environment documentation                 | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                               |
+| RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                  | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                                                                                                                                               |
+| RIT-010 | M1        |       P0 | Done    | Implement accessible Web shell and locale-prefixed routing                  | RIT-001,RIT-002,RIT-007                 | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                                                                                                                                           |
+| RIT-011 | M1        |       P0 | Done    | Implement design tokens and accessible component primitives                 | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                                                                                                                                           |
+| RIT-012 | M1        |       P0 | Done    | Build product positioning, methodology, safety, and privacy public pages    | RIT-010,RIT-011                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                                                                                                                                          |
+| RIT-013 | M1        |       P1 | Done    | Add SEO metadata, canonical, robots, and sitemap foundation                 | RIT-010                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                                                                                                                                                 |
+| RIT-014 | M1        |       P1 | Done    | Add accessibility and pseudolocale CI smoke                                 | RIT-010,RIT-011                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                                                                                                                                           |
+| RIT-015 | M1        |       P1 | Done    | Create error, empty, offline, and provider-unavailable patterns             | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                                                                                                                                                      |
+| RIT-016 | M1        |       P2 | Planned | Clean up the public-shell rollout flag                                      | RIT-010,RIT-014                         | backend       | Flag is retired safe-off for one registry compatibility window, then removed with old history ignored.                                                                                                                               |
+| RIT-020 | M2        |       P0 | Done    | Implement anonymous subject/session and consent baseline                    | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                                                                                                                                         |
+| RIT-021 | M2        |       P0 | Done    | Implement safe question/theme intake rules and UX                           | RIT-020,RIT-012,OWN-009                 | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                                                                                                                                              |
+| RIT-022 | M2        |       P0 | Done    | Create versioned tarot deck, spread, and content schema                     | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.                                                                                                                                     |
+| RIT-023 | M2        |       P0 | Done    | Implement deterministic server-authoritative tarot engine                   | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                                                                                                                                                 |
+| RIT-024 | M2        |       P0 | Done    | Implement tarot reading application service and API                         | RIT-020,RIT-021,RIT-023                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                                                                                                                                                  |
+| RIT-025 | M2        |       P0 | Done    | Build one-card tarot intake, draw, and result UI                            | RIT-011,RIT-024                         | frontend      | Anonymous mobile user reaches a useful deterministic result in under three minutes.                                                                                                                                                  |
+| RIT-026 | M2        |       P1 | Done    | Build three-card Situation/Action/Possibility flow                          | RIT-025                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                                                                                                                                                |
+| RIT-027 | M2        |       P1 | Done    | Add tarot limits, calm redraw behavior, and report control                  | RIT-024,RIT-025,RIT-026,OWN-010         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                                                                                                                                                |
+| RIT-028 | M2        |       P1 | Done    | Add deterministic tarot E2E and visual/accessibility tests                  | RIT-025,RIT-026,RIT-027,RIT-029         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error/resume/report scenarios.                                                                                                                                                |
+| RIT-029 | M2        |       P1 | Done    | Add private same-session tarot result resume                                | RIT-027                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage.                                                                                                        |
+| RIT-030 | M3        |       P0 | Done    | Define AI provider interfaces and typed interpretation schemas              | RIT-001,RIT-023                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                                                                                                                                         |
+| RIT-031 | M3        |       P0 | Done    | Implement curated content retrieval and prompt versioning                   | RIT-022,RIT-030                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                                                                                                                                               |
+| RIT-032 | M3        |       P0 | Done    | Implement pre-generation high-stakes and crisis policy                      | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                                                                                                                                               |
+| RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                   | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                                                                                                                                         |
+| RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                          | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.                                                                                                                               |
+| RIT-035 | M3        |       P0 | Done    | Build tarot AI interpretation streaming/polling UX                          | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                                                                                                                                                |
+| RIT-036 | M3        |       P0 | Done    | Create AI fixed regression and adversarial eval suite                       | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                                                                                                                                   |
+| RIT-037 | M3        |       P1 | Done    | Add exact-version interpretation reporting                                  | RIT-027,RIT-034,RIT-159                 | backend       | Exact owner/reading-bound categorical reporting passes contract, API, PostgreSQL race/restore/privilege, configuration, build, and Chromium accessibility gates without regeneration or private-output disclosure.                   |
+| RIT-038 | M3        |       P1 | Planned | Add AI cost, latency, fallback, and safety dashboards                       | RIT-006,RIT-033                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                                                                                                                                       |
+| RIT-040 | M4        |       P0 | Done    | Implement intention domain and composer                                     | RIT-025                                 | product       | User-owned intention/action, coercive-control reframing, privacy, edit/archive/delete pass.                                                                                                                                          |
+| RIT-041 | M4        |       P0 | Done    | Implement ritual template and object domain                                 | RIT-003,RIT-011                         | backend       | Free/paid-capable objects are versioned; efficacy claims are structurally impossible.                                                                                                                                                |
+| RIT-042 | M4        |       P0 | Done    | Build accessible free candle and incense sanctuary                          | RIT-040,RIT-041                         | frontend      | Linear and 2D modes, reduced motion/audio off, exit/completion, graceful degradation pass.                                                                                                                                           |
+| RIT-043 | M4        |       P0 | Done    | Implement ritual completion and private journal                             | RIT-042                                 | backend       | Exact catalog/access snapshots, atomic entitlement/pass start, encrypted/minimized records, lifecycle failures, deletion, and no sensitive analytics pass.                                                                           |
+| RIT-044 | M4        |       P0 | Done    | Implement revisit scheduling and completion                                 | RIT-040,RIT-043                         | backend       | User-controlled schedule/time-zone/quiet-hours and non-prophetic comparison pass.                                                                                                                                                    |
+| RIT-045 | M4        |       P1 | Done    | Implement consented transactional reminder adapter                          | RIT-044,RIT-002,RIT-055                 | operations    | Account-owned once-only email opt-in/withdrawal, locale/time-zone/quiet-hours authorization, lock-screen-safe copy, retry/dead-letter handling, privacy deletion/export, and safe-off provider evidence pass.                        |
+| RIT-046 | M4        |       P0 | Done    | Instrument privacy-safe core loop and WMRS events                           | RIT-040,RIT-043,RIT-044                 | backend       | Typed allowlisted events reconstruct funnel without private free text.                                                                                                                                                               |
+| RIT-047 | M4        |       P0 | Done    | Add full-loop anonymous E2E tests                                           | RIT-042,RIT-043,RIT-044,RIT-046         | qa_security   | Question through revisit passes mobile, keyboard, reduced motion, failure, and deletion states.                                                                                                                                      |
+| RIT-050 | M5        |       P0 | Done    | Implement auth provider abstraction and secure account sessions             | RIT-003,RIT-010                         | backend       | Magic link/passkey-ready sessions, enumeration/rate protections, revoke/logout pass.                                                                                                                                                 |
+| RIT-051 | M5        |       P0 | Done    | Implement idempotent anonymous-to-account merge                             | RIT-020,RIT-050                         | backend       | Concurrent merge preserves ownership/history once and has rollback/audit tests.                                                                                                                                                      |
+| RIT-052 | M5        |       P0 | Done    | Build account history, settings, and session management                     | RIT-050,RIT-051                         | frontend      | User can view/manage own data and sessions; IDOR tests cover all resources.                                                                                                                                                          |
+| RIT-053 | M5        |       P0 | Done    | Implement privacy export workflow                                           | RIT-050,RIT-043                         | backend       | Recent-auth owner scope, complete retained-data package, dedicated-key expiring ciphertext, append-only lifecycle evidence, routes, focused tests, PostgreSQL gate, and affected builds pass.                                        |
+| RIT-054 | M5        |       P0 | Done    | Implement selective and account deletion workflow                           | RIT-050,RIT-053                         | backend       | Recent-authenticated selective/account deletion crypto-shreds implemented private content, revokes authority, preserves required pseudonymous evidence, fences exports, and passes focused route/database/privilege/build gates.     |
+| RIT-055 | M5        |       P1 | Done    | Implement consent and AI-personalization controls                           | RIT-050,RIT-030                         | product       | Account-owned append-only analytics/personalization/model-improvement purposes, exact notice versions, cross-session immediate withdrawal, strict API/UI, privacy export, and safe-off external paths pass focused gates.            |
+| RIT-056 | M5        |       P0 | Done    | Create admin roles, MFA requirement, and audit log foundation               | RIT-050,RIT-003                         | qa_security   | Default-deny role matrix, same-identity passkey MFA, recent reauth, append-only grants/revocations, digest-only hash-chain audit, atomic rollback, least-privilege DB role, and focused PostgreSQL recovery gates pass.              |
+| RIT-057 | M5        |       P0 | Done    | Run identity/privacy/authorization security suite                           | RIT-051,RIT-052,RIT-053,RIT-054,RIT-056 | qa_security   | Exact proxy/same-origin boundaries, request-scoped deletion RLS, cross-user/token/CSRF/export/deletion/log/metadata tests, recovery, production browser flows, and the one-time milestone matrix pass with no critical/high finding. |
+| RIT-060 | M6        |       P0 | Done    | Implement versioned Country Policy Engine                                   | RIT-007,RIT-003                         | payments_risk | Strict immutable server policy, country-evidence hierarchy, independent fiat/crypto approvals, DB-backed kill/rollback chain, exact order version, focused PostgreSQL and build gates pass.                                          |
+| RIT-061 | M6        |       P0 | Done    | Implement catalog, product, price, and exact digital contents               | RIT-060,RIT-003                         | payments_risk | Immutable catalog/product/localization/price versions, exact Credit terms, integer USD, local-only seed, bounded DB reader, Web fail-closed endpoint, focused DB/build gates pass.                                                   |
+| RIT-062 | M6        |       P0 | Done    | Implement order, payment attempt, ledger, and entitlement domain            | RIT-061                                 | backend       | Canonical v2 states, exact idempotency, append-only Credits/reservations/allocations, source-specific entitlements, 20-way no-overspend concurrency, least privilege, and restore pass.                                              |
+| RIT-063 | M6        |       P0 | Planned | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-002                         | payments_risk | Approved sandbox creates server-priced checkout through provider adapter.                                                                                                                                                            |
+| RIT-064 | M6        |       P0 | Planned | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Raw signature, replay, duplicate, out-of-order, mismatch, outbox processing pass.                                                                                                                                                    |
+| RIT-065 | M6        |       P0 | Planned | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Verified state grants exactly once and reverses per refund/dispute terms.                                                                                                                                                            |
+| RIT-066 | M6        |       P0 | Planned | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                          |
+| RIT-067 | M6        |       P0 | Planned | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Scheduled comparison detects missing/mismatched payment, order, entitlement, payout states.                                                                                                                                          |
+| RIT-068 | M6        |       P0 | Planned | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Versioned eligibility, audit, entitlement impact, duplicate/retry handling pass.                                                                                                                                                     |
+| RIT-069 | M6        |       P0 | Planned | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                                                                                                                                    |
+| RIT-070 | M7        |       P0 | Planned | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                                                                                                                                     |
+| RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                    |
+| RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                          |
+| RIT-073 | M7        |       P0 | Planned | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Authorized owner can inspect/reconcile/refund with reauth, reason, limits, audit.                                                                                                                                                    |
+| RIT-074 | M7        |       P1 | Planned | Implement dispute/chargeback records and support workflow                   | RIT-067,RIT-073                         | payments_risk | Evidence uses commerce facts, not private journals; entitlement and audit behavior pass.                                                                                                                                             |
+| RIT-075 | M7        |       P1 | Planned | Add payment/provider kill switches and failover contract                    | RIT-060,RIT-063                         | operations    | Provider/country/method can be safely disabled; no implicit unapproved fallback.                                                                                                                                                     |
+| RIT-080 | M8        |       P0 | Done    | Define numerology rule sets and source records                              | RIT-003,OWN-011                         | product       | Life Path/Birthday/Personal Year rules, examples, master numbers, locale limits approved.                                                                                                                                            |
+| RIT-081 | M8        |       P0 | Done    | Implement deterministic numerology engine                                   | RIT-080                                 | backend       | Formula steps and fixed/property tests cover edge dates and unsupported scripts.                                                                                                                                                     |
+| RIT-082 | M8        |       P0 | Done    | Build public numerology calculators and result UI                           | RIT-011,RIT-081                         | frontend      | Anonymous exact-year calculation, transparent formulas, accessible recovery states, and zero implicit persistence pass.                                                                                                              |
+| RIT-083 | M8        |       P1 | Ready   | Add numerology AI interpretation and evals                                  | RIT-033,RIT-034,RIT-081                 | ai_safety     | AI cannot change numbers; content/source/safety/locale tests pass.                                                                                                                                                                   |
+| RIT-084 | M8        |       P1 | Planned | Publish curated numerology SEO cluster                                      | RIT-013,RIT-080,RIT-082                 | growth_seo    | Unique useful pages, examples, source notes, schema/internal links pass quality checks.                                                                                                                                              |
+| RIT-090 | M9        |       P0 | Blocked | Select and document licensed astrology engine                               | OWN-003                                 | architect     | Owner-approved license/provider, rights, data, cost, SLA, exit path recorded.                                                                                                                                                        |
+| RIT-091 | M9        |       P0 | Planned | Implement location and historical time-zone adapter                         | RIT-090                                 | backend       | Disambiguation, historical DST, provider version, caching/privacy and fixtures pass.                                                                                                                                                 |
+| RIT-092 | M9        |       P0 | Planned | Implement encrypted birth profile and uncertainty model                     | RIT-050,RIT-091                         | backend       | Exact/approx/unknown time, original/UTC/source, export/delete and privacy tests pass.                                                                                                                                                |
+| RIT-093 | M9        |       P0 | Planned | Implement astrology engine adapter and natal facts                          | RIT-090,RIT-091,RIT-092                 | backend       | Reference charts within tolerance; engine/license/input versions stored.                                                                                                                                                             |
+| RIT-094 | M9        |       P0 | Planned | Build natal chart and textual table UI                                      | RIT-011,RIT-093                         | frontend      | Accessible visual/table, confidence, mobile/zoom/keyboard and no-color-only encoding pass.                                                                                                                                           |
+| RIT-095 | M9        |       P1 | Planned | Add natal interpretation, fact verifier, and evals                          | RIT-033,RIT-034,RIT-093                 | ai_safety     | No invented placement/aspect/personality certainty; uncertainty and source tests pass.                                                                                                                                               |
+| RIT-096 | M9        |       P1 | Planned | Publish curated astrology education cluster                                 | RIT-013,RIT-093                         | growth_seo    | Definitions/calculators/source/methodology and no unsupported prediction pass.                                                                                                                                                       |
+| RIT-100 | M10       |       P0 | Planned | Complete ICU i18n and content/translation workflow                          | RIT-010,RIT-012                         | localization  | Messages/content/glossary/status/source version and missing-key gates work end to end.                                                                                                                                               |
+| RIT-101 | M10       |       P0 | Planned | Complete RTL architecture and Arabic pseudotranslation QA                   | RIT-100,RIT-011                         | localization  | Layout, icons, charts, forms, dialogs, email, share cards pass RTL/a11y tests.                                                                                                                                                       |
+| RIT-102 | M10       |       P1 | Planned | Add CJK and Devanagari typography/input QA                                  | RIT-100                                 | localization  | Font/line break/input/name/date behavior passes representative tests.                                                                                                                                                                |
+| RIT-103 | M10       |       P0 | Planned | Implement localized routes, slugs, hreflang, sitemaps, and redirects        | RIT-013,RIT-100                         | growth_seo    | Canonical matrices and stale slug redirects pass automated crawl tests.                                                                                                                                                              |
+| RIT-104 | M10       |       P1 | Planned | Localize transactional email/reminder/support templates                     | RIT-045,RIT-100                         | localization  | Locale/time-zone/quiet-hours, safe subject, fallback, unsubscribe and preview pass.                                                                                                                                                  |
+| RIT-105 | M10       |       P0 | Blocked | Select first Tier 1 locale and country beta                                 | OWN-004,RIT-100                         | product       | Owner selects evidence-backed locale/countries and approved review/support path.                                                                                                                                                     |
+| RIT-106 | M10       |       P0 | Planned | Complete reviewed Tier 1 locale closed beta content                         | RIT-105,RIT-103,RIT-104                 | localization  | Core flow/legal/safety/payment copy is reviewed; no mixed language or missing support.                                                                                                                                               |
+| RIT-110 | M11       |       P0 | Planned | Implement structured editorial content repository and publishing workflow   | RIT-012,RIT-100                         | product       | Source/license/review/version/localization/deprecation and preview/publish gates work.                                                                                                                                               |
+| RIT-111 | M11       |       P0 | Planned | Build tarot card library and spread guide cluster                           | RIT-022,RIT-110                         | growth_seo    | Curated pages provide unique utility, source notes, internal links, schema, accessibility.                                                                                                                                           |
+| RIT-112 | M11       |       P1 | Planned | Build ritual and reflection guide cluster                                   | RIT-110,RIT-042                         | growth_seo    | Secular/tradition-specific sources and no efficacy claims pass editorial review.                                                                                                                                                     |
+| RIT-113 | M11       |       P1 | Planned | Implement programmatic page inventory and quality gate                      | RIT-103,RIT-110                         | growth_seo    | Only curated unique pages index; duplicate/thin/cannibalized pages are blocked/noindex.                                                                                                                                              |
+| RIT-114 | M11       |       P1 | Planned | Implement structured data and search crawl validation                       | RIT-103,RIT-111                         | growth_seo    | Visible-content-matching schema, robots, sitemap, canonical, hreflang and crawl tests pass.                                                                                                                                          |
+| RIT-115 | M11       |       P1 | Planned | Implement redacted localized share cards                                    | RIT-025,RIT-100                         | frontend      | Preview/redaction/alt/canonical and private metadata leak tests pass.                                                                                                                                                                |
+| RIT-116 | M11       |       P1 | Planned | Add GEO answer/source/entity templates and QA                               | RIT-110,RIT-111                         | growth_seo    | Answer-first pages distinguish fact/tradition/interpretation and expose truthful source/review metadata.                                                                                                                             |
+| RIT-117 | M11       |       P1 | Planned | Create SEO/GEO performance and freshness operations                         | RIT-114,RIT-116                         | operations    | Index/crawl/query/referral/content review metrics and safe gap briefs are automated.                                                                                                                                                 |
+| RIT-120 | M12       |       P0 | Planned | Complete owner/admin operational dashboard                                  | RIT-038,RIT-073,RIT-117                 | operations    | Health, revenue, core loop, AI, queue, support, cost and approvals use source/freshness labels.                                                                                                                                      |
+| RIT-121 | M12       |       P0 | Planned | Finalize threat model and remediate launch findings                         | RIT-057,RIT-069,RIT-095                 | qa_security   | Versioned threat model covers all integrations; no critical/high launch findings.                                                                                                                                                    |
+| RIT-122 | M12       |       P0 | Planned | Implement rate limits, bot defense, abuse and denial-of-wallet controls     | RIT-024,RIT-033,RIT-063                 | qa_security   | Expensive/auth/checkout/support/privacy endpoints resist scripted abuse without sensitive profiling.                                                                                                                                 |
+| RIT-123 | M12       |       P0 | Planned | Implement backups and isolated restore test                                 | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                         |
+| RIT-124 | M12       |       P0 | Planned | Implement SLOs, alerts, runbooks, and status controls                       | RIT-006,RIT-067                         | operations    | Actionable alerts link runbooks; kill switches/read-only mode and trace correlation are rehearsed.                                                                                                                                   |
+| RIT-125 | M12       |       P1 | Planned | Implement support, privacy, safety, and content report queues               | RIT-056,RIT-068,RIT-110                 | operations    | Triage/SLA/escalation/permissions and draft automation preserve private-data boundaries.                                                                                                                                             |
+| RIT-126 | M12       |       P1 | Planned | Implement daily, weekly, and monthly Codex automation                       | RIT-004,RIT-120,RIT-124                 | operations    | Read-only checks/briefs/PRs run with structured output and no gated production actions.                                                                                                                                              |
+| RIT-127 | M12       |       P0 | Planned | Implement cost budgets, allocation, and anomaly controls                    | RIT-038,RIT-067,RIT-120                 | operations    | Per-provider/feature budgets and approved degradation/alerts prevent runaway spend.                                                                                                                                                  |
+| RIT-128 | M12       |       P0 | Planned | Run incident tabletop and dependency/provider failure game day              | RIT-123,RIT-124,RIT-125                 | qa_security   | Security/payment/AI/outage scenarios produce evidence, fixes, and updated runbooks.                                                                                                                                                  |
+| RIT-130 | M13       |       P0 | Planned | Prepare closed beta release evidence and invite controls                    | RIT-047,RIT-057,RIT-121,RIT-124         | product       | Scope, cohorts, consent, support, metrics, rollback and known risks are approved.                                                                                                                                                    |
+| RIT-131 | M13       |       P0 | Planned | Run English closed beta and reconcile data quality                          | RIT-130                                 | operations    | Qualitative/quantitative evidence is collected ethically; metric definitions and gaps validated.                                                                                                                                     |
+| RIT-132 | M13       |       P0 | Planned | Remediate beta safety, UX, accessibility, and reliability findings          | RIT-131                                 | qa_security   | All launch-blocking findings are closed with regression tests and user-impact evidence.                                                                                                                                              |
+| RIT-140 | M14       |       P0 | Blocked | Complete paid-launch external approvals                                     | OWN-001,OWN-002,OWN-004,OWN-005,RIT-132 | product       | Brand/entity/legal/tax/payment/country/budget approvals are recorded.                                                                                                                                                                |
+| RIT-141 | M14       |       P0 | Planned | Configure production payment, tax, legal, and country policy                | RIT-140,RIT-069,RIT-075                 | payments_risk | Exact approved settings are configured in staging, reviewed, and protected by owner gate.                                                                                                                                            |
+| RIT-142 | M14       |       P0 | Planned | Run complete launch and rollback rehearsal                                  | RIT-123,RIT-124,RIT-141                 | qa_security   | Release evidence, migration, smoke, payment, AI, privacy, backup, rollback all pass.                                                                                                                                                 |
+| RIT-143 | M14       |       P0 | Blocked | Owner production go/no-go and limited rollout                               | RIT-142                                 | operations    | Owner approves; progressive launch thresholds and monitoring window are recorded.                                                                                                                                                    |
+| RIT-144 | M14       |       P0 | Planned | Complete post-launch verification and economics baseline                    | RIT-143                                 | operations    | Health, core loop, payment, refund, AI, support, cost and contribution are reconciled.                                                                                                                                               |
+| RIT-145 | M14       |       P2 | Planned | Clean up country and fiat-checkout rollout flags                            | RIT-075,RIT-144                         | backend       | Both flags are retired safe-off for one registry window, then removed after rollback evidence passes.                                                                                                                                |
+| RIT-150 | M15       |       P1 | Planned | Create evidence-led locale/country expansion scorecard                      | RIT-144                                 | product       | Search, retention, payment, legal, culture, support and economics determine ranked candidates.                                                                                                                                       |
+| RIT-151 | M15       |       P1 | Blocked | Pilot hosted non-custodial crypto checkout                                  | RIT-144,OWN-006                         | payments_risk | Separate provider/legal/country/asset approval and full payment tests pass.                                                                                                                                                          |
+| RIT-152 | M15       |       P2 | Planned | Evaluate additional tarot/report/ritual products                            | RIT-144                                 | product       | User need, ethics, content rights, economics and experiments justify exact product.                                                                                                                                                  |
+| RIT-153 | M15       |       P2 | Blocked | Propose first regional tradition pack                                       | RIT-144,OWN-007                         | localization  | Named experts/sources/rights/method/local law/payment/support/evals are approved.                                                                                                                                                    |
+| RIT-154 | M15       |       P2 | Planned | Review architecture scaling evidence                                        | RIT-144                                 | architect     | Measured load/failure/deployment evidence determines whether any service extraction is warranted.                                                                                                                                    |
+| RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                   | RIT-151                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence.                                                                                                                          |
+| RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                        | RIT-031,RIT-110,RIT-153                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.                                                                                                                           |
+| RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                                | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.                                                                                                                          |
+| RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP            | RIT-025,RIT-029,RIT-036                 | product       | Direct Sanctuary completion and new 22-card Major Arcana draws pass production-artifact Playwright while exact old-catalog replay and production gates remain closed.                                                                |
+| RIT-159 | Audit     |       P0 | Done    | Install and reconcile the 2026-07-23 production source-of-truth pack        | RIT-158                                 | architect     | Pack integrity, repository capability/gap/security matrix, schema/API adaptation plan, current quality gates, browser evidence, and truthful status reconciliation pass without activating production providers.                     |
+| OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance         | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                                                                                                                                       |
+| OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval             | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                                                                                                                                   |
+| OWN-003 | External  |       P0 | Blocked | Select and license astrology engine/provider                                | None                                    | owner         | Commercial rights, usage, data, cost, SLA, attribution and exit are approved.                                                                                                                                                        |
+| OWN-004 | External  |       P0 | Blocked | Select company, legal launch markets, tax/MoR, and counsel                  | None                                    | owner         | Entity, countries, age, terms/privacy/refund/tax path and reviewer are documented.                                                                                                                                                   |
+| OWN-005 | External  |       P0 | Blocked | Set operating and launch budget limits                                      | None                                    | owner         | Monthly, AI, infrastructure, refund/fraud and marketing budgets are configured.                                                                                                                                                      |
+| OWN-006 | External  |       P1 | Blocked | Approve crypto provider, countries, assets, refund, and legal path          | None                                    | owner         | Written approval and non-custodial architecture scope are recorded.                                                                                                                                                                  |
+| OWN-007 | External  |       P2 | Blocked | Approve regional-tradition expert and source program                        | None                                    | owner         | Qualified reviewers, sources, rights, scope, language and compensation are documented.                                                                                                                                               |
+| OWN-008 | External  |       P0 | Blocked | Configure the GitHub remote and enforce CI checks                           | None                                    | owner         | Remote, workflow-change protection, and all three required CI jobs are configured and one hosted run passes.                                                                                                                         |
+| OWN-009 | External  |       P0 | Done    | Approve English question-intake safety language and activation policy       | None                                    | owner         | Exact copy, English scope, generic emergency-resource strategy, and production-activation reference are recorded.                                                                                                                    |
+| OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                    | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded.                                                                                                           |
+| OWN-011 | External  |       P0 | Done    | Approve the exact RITUVIA V1 date-numerology method                         | None                                    | owner         | Life Path aggregation, Birthday reduction, explicit Personal Year target, 11/22/33 preservation, source scope, and name/locale exclusions are approved.                                                                              |
 
 ## Backlog maintenance
 
 RIT-158 is the single consolidated local-MVP exception authorized by D-044. It does not mark the
 broader M4-M7 production tasks complete or bypass their legal, privacy, payment, operational, or
 release criteria.
+
+RIT-159 completed the owner-directed Phase 0 reconciliation required by the production
+source-of-truth pack dated 2026-07-23. The owner reran the configuration-boundary, accessibility,
+and PostgreSQL foundation suites in an unrestricted shell with the pinned toolchain; all three
+passed after the accessibility gate exposed and the repository corrected real contrast-policy,
+RTL clipping, readiness, CSP, image-route, and account-request acceptance defects. The obsolete
+untracked `apps/web/server/tarot-reading-state 2.ts` duplicate has been removed; the
+D-030-excluded QA report copies remain untouched. D-046 subsequently reconciled RIT-037's
+regeneration/version-history scope with the production pack's Deep Reading and Credits
+dependencies.
+
+RIT-037 is complete under D-046. The strict v2 report request binds the browser-held interpretation
+operation UUID to one exact owner/reading-scoped durable displayable interpretation while retaining
+the v1 reading/position contract. PostgreSQL concurrency, restore, least-privilege, immutable-target,
+configuration, production build, and Chromium accessibility/request-ledger gates pass. No history,
+generation, regeneration, provider call, payment, or Credits capability was added. Paid Deep
+Reading creation, version history, and regeneration still require a later explicit task after the
+server-authoritative Credits transaction foundation exists.
+
+RIT-028 is complete with six deterministic production-artifact browser scenarios and two
+supporting screenshots. RIT-040 is complete with a strict backward-compatible private intention
+contract, agency-preserving reframing, encrypted persistence, optimistic lifecycle mutations, and
+production-artifact browser acceptance. RIT-041 is complete with a strict versioned ritual catalog,
+always-free candle/incense, structurally distinct permanent-object and consumable-pass access,
+claim-safe source-governed templates, explicit legacy replay mappings, and a read-only public
+projection that carries no commerce authority. RIT-042 is complete with equally prominent free
+candle/incense experiences, shared standard 2D and linear controls, reduced-motion and audio-off
+behavior, explicit exit/completion, static fallback, and production-artifact
+privacy/accessibility acceptance. RIT-043 is complete with additive owner-scoped lifecycle,
+server-authoritative catalog/access snapshots, transactional entitlement/pass enforcement,
+durable pause/resume/completion, and encrypted private-journal create/edit/delete behavior. Pass
+issuance, reversal, refunds, and production activation remain outside this slice. RIT-044 is
+complete with owner-scoped local-calendar scheduling, encrypted original/completion snapshots,
+append-only idempotency, reminder-safe quiet hours, lifecycle mutations, and production-artifact
+privacy/accessibility evidence. RIT-046 is now the next eligible highest-priority item.
 
 When adding a task, include an outcome rather than a vague activity, explicit dependencies, a primary review role, and testable completion. Do not remove completed tasks; archive them to a dated release log only after a release if this file becomes unwieldy. Owner tasks remain blocked until the owner supplies evidence; Codex may prepare dossiers and code but may not mark external approval complete.
 
@@ -2485,6 +3110,26 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-042 | Private durable-only tarot interpretation polling boundary | [decisions/D-042.md](./decisions/D-042.md) |
 | Decision | D-043 | Fixed synthetic AI release evaluation gate | [decisions/D-043.md](./decisions/D-043.md) |
 | Decision | D-044 | Lumora-reference local commercial MVP consolidation | [decisions/D-044.md](./decisions/D-044.md) |
+| Decision | D-045 | Production pack precedence and Phase 0 reconciliation | [decisions/D-045.md](./decisions/D-045.md) |
+| Decision | D-046 | Split exact interpretation reporting from history and paid regeneration | [decisions/D-046.md](./decisions/D-046.md) |
+| Decision | D-047 | Production ritual catalog and legacy replay separation | [decisions/D-047.md](./decisions/D-047.md) |
+| Decision | D-048 | Additive ritual lifecycle and durable-pause boundary | [decisions/D-048.md](./decisions/D-048.md) |
+| Decision | D-049 | Local-calendar Revisit and reminder-safe boundary | [decisions/D-049.md](./decisions/D-049.md) |
+| Decision | D-050 | Layered local verification with milestone full-suite gates | [decisions/D-050.md](./decisions/D-050.md) |
+| Decision | D-051 | Safe-off consented-anonymous core-loop analytics baseline | [decisions/D-051.md](./decisions/D-051.md) |
+| Decision | D-052 | Safe-off authentication provider and hardened session boundary | [decisions/D-052.md](./decisions/D-052.md) |
+| Decision | D-053 | Immutable subject bridge with recoverable account-session rotation | [decisions/D-053.md](./decisions/D-053.md) |
+| Decision | D-054 | Read-time private history with timestamp-only session controls | [decisions/D-054.md](./decisions/D-054.md) |
+| Decision | D-055 | Recently authenticated encrypted privacy export boundary | [decisions/D-055.md](./decisions/D-055.md) |
+| Decision | D-056 | Immediate access revocation and crypto-shredding deletion boundary | [decisions/D-056.md](./decisions/D-056.md) |
+| Decision | D-057 | Safe-off admin authorization and passkey-assurance foundation | [decisions/D-057.md](./decisions/D-057.md) |
+| Decision | D-058 | Request-scoped privacy deletion and composed security gate | [decisions/D-058.md](./decisions/D-058.md) |
+| Decision | D-059 | Immutable successor Country Policy registry | [decisions/D-059.md](./decisions/D-059.md) |
+| Decision | D-060 | Immutable catalog registry and legacy checkout quarantine | [decisions/D-060.md](./decisions/D-060.md) |
+| Decision | D-061 | Additive v2 commercial transactions and append-only Credits | [decisions/D-061.md](./decisions/D-061.md) |
+| Decision | D-062 | Account-owned purpose consent and immediate data-flow withdrawal | [decisions/D-062.md](./decisions/D-062.md) |
+| Decision | D-063 | Account-owned once-only Revisit reminder and safe-off delivery | [decisions/D-063.md](./decisions/D-063.md) |
+| Decision | D-064 | Approved RITUVIA V1 date-numerology method | [decisions/D-064.md](./decisions/D-064.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -2500,6 +3145,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-025 | Private one-card tarot reflection flow | [tasks/RIT-025.md](./tasks/RIT-025.md) |
 | Task | RIT-026 | Private three-card tarot reflection flow | [tasks/RIT-026.md](./tasks/RIT-026.md) |
 | Task | RIT-027 | Tarot limits, explicit new reflection, and categorical report control | [tasks/RIT-027.md](./tasks/RIT-027.md) |
+| Task | RIT-028 | Deterministic tarot browser acceptance matrix | [tasks/RIT-028.md](./tasks/RIT-028.md) |
 | Task | RIT-029 | Private same-session tarot result resume | [tasks/RIT-029.md](./tasks/RIT-029.md) |
 | Task | RIT-030 | Provider-neutral AI and Tarot interpretation contracts | [tasks/RIT-030.md](./tasks/RIT-030.md) |
 | Task | RIT-031 | Curated content retrieval and prompt versioning | [tasks/RIT-031.md](./tasks/RIT-031.md) |
@@ -2508,7 +3154,31 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-034 | Post-generation fact and safety verification | [tasks/RIT-034.md](./tasks/RIT-034.md) |
 | Task | RIT-035 | Tarot AI interpretation polling UX | [tasks/RIT-035.md](./tasks/RIT-035.md) |
 | Task | RIT-036 | Fixed AI regression and adversarial release evaluations | [tasks/RIT-036.md](./tasks/RIT-036.md) |
+| Task | RIT-037 | Exact-version interpretation reporting | [tasks/RIT-037.md](./tasks/RIT-037.md) |
+| Task | RIT-040 | Intention domain and composer | [tasks/RIT-040.md](./tasks/RIT-040.md) |
+| Task | RIT-041 | Ritual template and object domain | [tasks/RIT-041.md](./tasks/RIT-041.md) |
+| Task | RIT-042 | Accessible free candle and incense Sanctuary | [tasks/RIT-042.md](./tasks/RIT-042.md) |
+| Task | RIT-043 | Transactional ritual completion and private journal | [tasks/RIT-043.md](./tasks/RIT-043.md) |
+| Task | RIT-044 | Revisit scheduling and completion | [tasks/RIT-044.md](./tasks/RIT-044.md) |
+| Task | RIT-045 | Consented transactional Revisit reminder adapter | [tasks/RIT-045.md](./tasks/RIT-045.md) |
+| Task | RIT-046 | Privacy-safe core-loop analytics and WMRS | [tasks/RIT-046.md](./tasks/RIT-046.md) |
+| Task | RIT-047 | Anonymous full-loop browser acceptance | [tasks/RIT-047.md](./tasks/RIT-047.md) |
+| Task | RIT-050 | Authentication provider abstraction and secure account sessions | [tasks/RIT-050.md](./tasks/RIT-050.md) |
+| Task | RIT-051 | Idempotent anonymous-to-account merge | [tasks/RIT-051.md](./tasks/RIT-051.md) |
+| Task | RIT-052 | Account history, settings, and session management | [tasks/RIT-052.md](./tasks/RIT-052.md) |
+| Task | RIT-053 | Privacy export workflow | [tasks/RIT-053.md](./tasks/RIT-053.md) |
+| Task | RIT-054 | Selective and account deletion workflow | [tasks/RIT-054.md](./tasks/RIT-054.md) |
+| Task | RIT-055 | Consent and AI-Personalization Controls | [tasks/RIT-055.md](./tasks/RIT-055.md) |
+| Task | RIT-056 | Admin roles, MFA requirement, and audit foundation | [tasks/RIT-056.md](./tasks/RIT-056.md) |
+| Task | RIT-057 | Identity, privacy, and authorization security suite | [tasks/RIT-057.md](./tasks/RIT-057.md) |
+| Task | RIT-060 | Versioned Country Policy Engine | [tasks/RIT-060.md](./tasks/RIT-060.md) |
+| Task | RIT-061 | Immutable Catalog, Product, and Price Registry | [tasks/RIT-061.md](./tasks/RIT-061.md) |
+| Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
+| Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
+| Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
+| Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
+| Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
@@ -3081,6 +3751,8 @@ Target: a motivated user can reach the first useful result within three minutes 
 - Explain privacy and boundaries in one short line.
 - Show a gentle safe-reframing response when needed.
 - Allow “continue without writing a question.”
+- An allowed result offers an explicit same-tab action into the one-card flow without copying the
+  private question into the reading request, URL, metadata, storage, or analytics.
 
 ### Draw screen
 
@@ -3101,6 +3773,9 @@ Target: a motivated user can reach the first useful result within three minutes 
 8. Save/share/report controls.
 
 Do not hide the core result behind payment after the draw. Paid depth must be described before purchase and preserve a useful free result.
+The intention action stores only the exact displayed reading UUID in tab-scoped storage. Sanctuary
+resolves that owner-scoped reading before creating an intention and clears the handoff after
+success, rather than guessing from the newest unrelated reading.
 
 ## 5. Numerology interaction
 
@@ -3145,14 +3820,41 @@ Do not hide the core result behind payment after the draw. Paid depth must be de
 - Free object remains equally prominent and dignified.
 - Ritual completion uses calm affirmation, not claims that a wish was sent/granted.
 - Permit accessibility mode with a linear text/button experience.
+- The free candle and incense use one ordered interaction model in standard 2D and accessible
+  linear modes. Both modes expose the same pause/resume, exit, step, and completion actions without
+  requiring animation, audio, dragging, precision, or timing.
+- Audio is off and absent from the initial free experience. Reduced-motion preference defaults to
+  the linear path, while CSS image or animation failure leaves the complete text-and-button path
+  available.
+- Entering the focused inline stage moves focus to its title; Escape or the visible exit returns
+  focus to the selected object. Exiting, going offline, or encountering a completion error keeps
+  the private intention in memory.
+- RIT-042 sends no ritual request before explicit completion. Its final action temporarily uses the
+  historical `reflection-ritual.v1` boundary; RIT-043 owns durable start/pause/resume provenance,
+  exact catalog/access snapshots, transactional pass handling, and the final lifecycle contract.
 
 ## 9. Journal and revisit
 
 - Journal editor starts with optional prompts, never a mandatory mood score.
 - Autosave locally/server-side with clear state.
 - Provide privacy reminder and lock-screen-safe notification defaults.
-- Revisit compares the user's words and actions; it does not reinterpret events as proof of prophecy.
-- Provide archive and completion, not only streak continuation.
+- Sanctuary can hand an intention to `/en/revisit` through one opaque UUID held only in tab-scoped
+  storage. The Revisit page reloads all private prose from the owner-scoped server boundary and
+  removes that UUID after scheduling.
+- Scheduling offers tomorrow, seven days, or a custom future local calendar date plus an editable
+  IANA time zone. The local date remains stable across daylight-saving changes.
+- Optional quiet hours are stored only as an inert future preference. Reminder preference is fixed
+  to `none`, the channel is null, and this flow sends no email, push, SMS, webhook, or in-app
+  notification.
+- The selected date is an invitation, not an unlock. A user may complete before, on, or after it,
+  comparing the encrypted original intention/action snapshot with what actually happened without
+  treating the result as proof of prophecy.
+- Completion accepts a private factual reflection plus up to three bounded user-owned outcome tags.
+  Provide explicit reschedule, archive, soft-delete, retry, offline, empty, and conflict behavior;
+  archive is terminal except for deletion and no streak continuation is required.
+- Deleting a journal entry restores focus to the journal editor. Opening Revisit completion moves
+  focus to the reflection field, and successful schedule, completion, or deletion moves focus to
+  the announced status.
 
 ## 10. Commerce UX
 
@@ -3162,6 +3864,26 @@ Do not hide the core result behind payment after the draw. Paid depth must be de
 - Return from checkout to a resilient confirmation state that can recover from delayed webhooks.
 - Show “Payment received—access is being confirmed” rather than granting from URL query parameters.
 - Make cancel/refund/support paths easy to find.
+
+## 10A. Private account control
+
+- The account page keeps profile preferences, minimal linked history, and active-session controls
+  in one responsive private surface.
+- History is a bounded chronological summary across every anonymous subject already linked to the
+  account. It labels resource type, coarse lifecycle state, approved reading theme, and time only;
+  it never lists questions, intention text, journal prose, Revisit reflection, email, or identity
+  data.
+- A reading summary can restore that exact owner-authorized reading by placing only its UUID in
+  tab-scoped storage. Other resource summaries are informational until their dedicated account
+  restoration flow is implemented.
+- Profile changes use optimistic revision protection. A change made in another session produces a
+  visible conflict and requires reloading rather than silently overwriting it.
+- Session cards distinguish this session from other active sessions using sign-in, last-active,
+  and expiry times only. Do not display or collect device names, locations, IP addresses, user
+  agents, fingerprints, or inferred trust.
+- Targeted sign-out is available only for another session. Current-session sign-out and all-session
+  sign-out remain explicit, confirmable actions and never claim success if durable revocation
+  fails.
 
 ## 11. Global and locale UX
 
@@ -3342,10 +4064,14 @@ Every component needs stories/examples for default, hover, focus, disabled, load
 ## 10. Sanctuary rendering tiers
 
 1. **Accessible linear mode:** text, buttons, image/alt text, no animation required.
-2. **Standard 2D mode:** CSS/SVG/canvas animation and ambient audio.
+2. **Standard 2D mode:** CSS/SVG/canvas presentation; any future ambient audio is optional and
+   requires explicit opt-in.
 3. **Enhanced mode:** optional richer rendering after performance proof.
 
 Do not make WebGL or high-end graphics a launch dependency. Never block completion because a device cannot render an effect.
+The initial free candle and incense ship with no audio surface, derive both tiers from the same
+ordered controls, make pause/resume and exit continuously available, disable nonessential motion
+under reduced-motion preferences, and preserve a complete no-JavaScript text fallback.
 
 ## 11. Illustration and imagery
 
@@ -3432,6 +4158,11 @@ content/
 
 A separate `apps/admin` is optional. Prefer a protected route group in `apps/web` until isolation, deployment, or bundle needs justify separation.
 
+`@rituvia/analytics` currently implements only strict core-loop event contracts, bounded synthetic
+test storage, and deterministic funnel/WMRS projections. Web composition supplies purpose-scoped
+identity and consent checks; production collection, persistence, browser ingestion, vendors, and
+network export remain safe-off.
+
 ## 4. System context
 
 ```mermaid
@@ -3479,6 +4210,10 @@ Owns intentions, actions, journals, revisit schedules, and ritual completion.
 ### Sanctuary/catalog
 
 Owns ritual object definitions, rendering metadata, collections, and required entitlements. It does not decide whether a payment succeeded.
+The versioned ritual catalog distinguishes free objects, permanent objects, and consumable ritual
+experiences. It exposes only abstract access requirements; Commerce remains authoritative for
+Credit cost, fulfillment, permanent entitlement state, and atomic pass consumption. Historical
+reflection codes resolve through exact replay mappings rather than being silently renamed.
 
 ### Commerce
 
@@ -3576,6 +4311,14 @@ Job envelope MUST include:
 - No raw sensitive free text unless the job's purpose requires it and the payload is encrypted/short-lived.
 
 Classify jobs as at-most-once, at-least-once, or effectively-once through idempotency. Define retry/backoff/dead-letter and manual replay behavior.
+
+RIT-045 implements one narrow effectively-once Revisit email job using the
+`revisit_reminder_subscription` table as both current preference and privacy-minimal queue. Claims
+use database time, `FOR UPDATE SKIP LOCKED`, a hashed lease token, three attempts, bounded
+deterministic backoff, and terminal dead-letter state. The Worker receives only account-safe
+identifiers and exact versions, reauthorizes immediately before provider use, and uses the
+subscription ID as the stable provider idempotency key. This is not a generic queue platform; the
+only composed provider is hard disabled and no production scheduler or email vendor is activated.
 
 ## 11. Environment strategy
 
@@ -3702,14 +4445,14 @@ Use a managed Web platform plus managed PostgreSQL, Redis-compatible queue/cache
 
 ## 2. Data classes
 
-| Class | Examples | Default handling |
-|---|---|---|
-| Public | Published articles, card library, product catalog | Cacheable/indexable after publication |
-| Internal | Feature flags, aggregate metrics, non-sensitive ops data | Authorized staff only |
-| Personal | Email, locale, purchase history, account IDs | Access control, encryption in transit/at rest |
+| Class              | Examples                                                                                | Default handling                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Public             | Published articles, card library, product catalog                                       | Cacheable/indexable after publication                                                             |
+| Internal           | Feature flags, aggregate metrics, non-sensitive ops data                                | Authorized staff only                                                                             |
+| Personal           | Email, locale, purchase history, account IDs                                            | Access control, encryption in transit/at rest                                                     |
 | Sensitive personal | Birth date/time/place, prayer, question, intention, journal, relationship/health themes | Field-level/application encryption where practical, strict access, redacted logs, no ad analytics |
-| Payment/security | Provider customer IDs, event payloads, fraud signals, audit logs | Restricted access, integrity controls, retention policy |
-| Secret | API keys, signing secrets, private keys | Secret manager only; never database/source/log |
+| Payment/security   | Provider customer IDs, event payloads, fraud signals, audit logs                        | Restricted access, integrity controls, retention policy                                           |
+| Secret             | API keys, signing secrets, private keys                                                 | Secret manager only; never database/source/log                                                    |
 
 ## 3. Core entities
 
@@ -3720,12 +4463,18 @@ Use a managed Web platform plus managed PostgreSQL, Redis-compatible queue/cache
 - `id` UUID.
 - `created_at`, fixed `expires_at`, `last_seen_at`, and the approved expiry-policy version.
 - `country_policy_version_id` nullable.
-- `merged_user_id` nullable.
-- `merge_idempotency_key` nullable unique.
+- Anonymous-owned history keeps this immutable identifier after account conversion; ownership is
+  resolved through one append-only `account_subject_link` rather than rewriting private rows.
 
 Current optional-consent state is derived independently for each purpose from the highest valid
 append-only `consent_record` sequence. There is no singular mutable consent pointer on the
 anonymous subject; absence, a stale notice version, denial, or withdrawal is not consent.
+
+Signed-in optional consent uses the separate append-only `account_consent_record` authority. The
+current controls are `optional_product_analytics`, `ai_personalization`, and `model_improvement`,
+each with an exact independent notice version. Account login, anonymous merge, purchase, or another
+purpose's grant cannot create consent. Every data-flow check rereads current state; withdrawal
+therefore applies after its database commit rather than after a later login or page load.
 
 Do not store fingerprinting data beyond narrowly justified abuse controls.
 
@@ -3738,11 +4487,65 @@ Do not store fingerprinting data beyond narrowly justified abuse controls.
 - `locale`, `time_zone`.
 - `created_at`, `last_active_at`.
 - `age_attestation_at` / verification state where required.
-- `personalization_opt_in`, `model_improvement_opt_in` as separate consent fields.
+- Personalization and model-improvement state is derived from separate append-only consent
+  purposes, not mutable profile booleans.
 
-#### `auth_identity`, `session`, `role_assignment`
+#### `auth_identity`, `auth_challenge`, `account_session`
 
-Store provider subject references, session hashes/metadata, and roles. Never store plaintext magic tokens.
+- `auth_identity` stores a provider key and keyed provider subject plus encrypted verified email;
+  normalized email and provider secrets are never stored in plaintext.
+- `auth_challenge` stores only hashes of the one-time token, browser state, and optional previous
+  account session, with an absolute short expiry and one consumed timestamp.
+- `account_session` stores only a versioned bearer digest, immutable authentication instant, fixed
+  expiry, bounded last-seen time, and revocation time. The raw bearer exists only in a host-only
+  secure cookie. Merge rotation preserves the source authentication instant rather than treating a
+  new bearer as a new authentication.
+- Completion creates a fresh session and may revoke only the still-active same-user session whose
+  digest was captured when the challenge started.
+
+#### `account_subject_link`
+
+- Exactly one row may bind an anonymous subject to one account.
+- Stores only opaque user/subject/session identifiers, a keyed idempotency digest, a canonical
+  request digest, and creation time; no bearer, email, private content, or client prose.
+- Source anonymous session must belong to the linked subject, and source account session must
+  belong to the linked user. Runtime can select/insert but cannot update/delete audit rows.
+- Privacy deletion adds a nullable completion-bound deletion request and timestamp. Every account
+  authorization query requires both ownership and an absent privacy-deletion timestamp.
+- Authentication completion creates the account/session/link and revokes anonymous sessions in one
+  transaction. Explicit post-login merge derives one deterministic successor bearer with a
+  server-held HMAC key, stores only its digest, revokes the source account session, and returns the
+  same successor for an exact same-source/same-key retry.
+
+#### Account history projection
+
+- Account history is a read-time owner-scoped projection over retained readings, intentions,
+  legacy/v2 ritual sessions, legacy/v2 journals, and Revisits reachable through
+  `account_subject_link`; it is not a copied account-owned history table.
+- The projection selects only opaque resource ID, resource type, coarse lifecycle status,
+  occurrence time, and reading type/theme where applicable. It excludes ciphertext, decrypted
+  prose, account identity, merge evidence, and bearer material.
+- Visibility reuses each source row's existing expiry, soft-deletion, parent-deletion, and subject
+  expiry rules. Creating the projection does not extend retention or revive deleted data.
+- Pagination is stable and bounded by descending occurrence time, internal source discriminator,
+  and UUID. The discriminator exists only inside the opaque cursor and is not client authority.
+- Session listings are a projection of active, unrevoked `account_session` rows and expose only
+  opaque session ID plus created, last-seen, and expiry timestamps. Targeted revocation excludes
+  the current session and remains owner-scoped.
+
+#### `auth_start_rate_limit`
+
+- Database-atomic fixed-window counters keyed by scope plus a 32-byte keyed digest.
+- One global row and a re-HMACed 16-bit identifier bucket bound storage to 65,537 rows.
+- No plaintext email, IP address, user agent, device fingerprint, or free text.
+- Runtime may insert/read and update only window/count columns; it cannot delete or alter the key.
+
+#### `passkey_credential`
+
+- Provider-neutral owner identity, globally unique credential ID, bounded public-key material,
+  canonical RP ID, nonnegative sign count, created/last-used/revoked timestamps.
+- The current capability is schema-ready only. No WebAuthn ceremony, attestation policy, or
+  production passkey activation is implied.
 
 #### `consent_record`
 
@@ -3750,6 +4553,15 @@ Append-only record of purpose, versioned notice, locale, decision, source, seque
 idempotency digest, canonical request digest, and same-subject/same-purpose withdrawal reference.
 The baseline never stores notice copy or treats the strictly necessary session cookie as optional
 consent.
+
+#### `account_consent_record`
+
+Append-only account-owned purpose/version ledger with a contiguous per-purpose sequence,
+idempotency and canonical-request digests, and same-account/same-purpose withdrawal references.
+The application runtime can select and insert but cannot update or delete these records. Histories
+over the bounded evaluation limit fail closed. Privacy exports include both anonymous-subject and
+account-owned consent records with explicit owner type; privacy deletion retains this evidence
+under the existing consent-history category.
 
 ### profile
 
@@ -3847,69 +4659,178 @@ Source unit/version, locale, translated content, machine/human origin, reviewer,
 - Theme code.
 - Reading link nullable.
 - Small action text encrypted.
-- Status and privacy state.
+- Active/completed/archived status, optimistic revision, soft-deletion timestamp, and private-only
+  privacy state.
 - Revisit date/time-zone.
+- Explicit reminder preference; `none` is the only RIT-040 value and does not activate delivery.
+- Historical v1 rows retain their original contract and ciphertext unchanged through the additive
+  v2 migration.
+- Soft deletion is terminal for owner reads and create replay. Row locking serializes lifecycle
+  mutation with ritual creation so a committed archive/delete cannot be bypassed by an older
+  transaction.
+- A revisit date is validated as future at create/edit time in its IANA time zone; a date becoming
+  historical never blocks complete, archive, or delete.
+
+#### Ritual catalog source
+
+- Git-authored `ritual-catalog.v1` definitions use production-pack codes and immutable versions.
+- Every template references approved English original-secular publication evidence with author,
+  reviewer/approval, rights, safety class, effective date, review date, and source references.
+- Every item is exactly one of `free_object`, `permanent_object`, or `consumable_ritual`, with a
+  matching free, permanent-entitlement, or consumable-pass requirement.
+- Contracts expose localization keys and closed interaction/presentation enums, not arbitrary
+  ritual prose, price, Credit cost, payment authority, ownership, efficacy, or outcome fields.
+- `reflection-ritual.v1` codes remain historical. Exact replay mappings include `candle` to
+  `free_candle`, `incense` to `free_incense`, and `golden_intention_bowl` to `golden_bowl`.
 
 #### `ritual_session`
 
-- Owner, intention/reading link.
-- Ritual template/version.
-- Object IDs and entitlement snapshots.
-- Started/completed timestamps; coarse duration bucket rather than invasive event stream.
-- Accessibility/audio/motion mode categorical values.
-- Optional encrypted closing reflection.
+- Historical `reflection-ritual.v1` rows remain unchanged, including their daily uniqueness and
+  exact legacy object codes.
+
+#### `ritual_session_v2`
+
+- Owner and intention composite identity.
+- Exact catalog, item, publication, template, and access snapshots fixed at start.
+- Active, paused, completed, or abandoned state; current step, coarse elapsed seconds, optimistic
+  revision, and timestamp-consistent lifecycle fields.
+- Free starts require only an active owner. Permanent starts resolve an active account
+  entitlement. Consumable starts reference one `ritual_pass`.
+- One owner/intention can have at most one active or paused v2 session.
+- The browser does not persist private intention, journal, or ritual progress content in Web
+  Storage; visible exit records a durable pause.
+
+#### `ritual_pass`
+
+- Linked account owner, exact access-requirement code, and immutable commerce order-line source.
+- Available, consumed, or reversed lifecycle with one optional v2 ritual-session reference.
+- Runtime has read and narrow consume-only update privileges; issuance and reversal remain outside
+  RIT-043.
+- Pass selection, v2 session insertion, and pass consumption share one database transaction, so a
+  failed start leaves the pass available.
 
 #### `journal_entry`
 
-- Owner.
-- Encrypted title/body.
-- Links to reading/intention/ritual/revisit.
-- User tags; non-clinical mood code optional.
-- Created/updated/deleted timestamps.
-- Search index strategy must preserve privacy and deletion.
+- Historical `reflection-journal.v1` rows remain unchanged and readable through their exact
+  historical contract.
+
+#### `private_journal_entry`
+
+- Owner, linked intention, and required completed `ritual_session_v2`.
+- AES-256-GCM ciphertext, nonce, tag, and key version; authenticated context binds owner and
+  journal resource ID.
+- Owner-scoped idempotency digests, optimistic revision, updated timestamp, inherited expiry, and
+  immediately hidden soft deletion.
+- Runtime can update only ciphertext and lifecycle columns and cannot physically delete rows.
+- Journal prose is excluded from URLs, logs, analytics, browser storage, and public metadata.
 
 #### `revisit`
 
-Original resource links, scheduled state, reminder consent/channel, completion reflection, outcome tags owned by user.
+- Owner and intention composite identity, with at most one scheduled row per owner/intention.
+- Exact intention text, small action, and intention revision snapshot under owner/resource-bound
+  AES-256-GCM authenticated encryption and an explicit snapshot key version.
+- Next-day, seven-day, or custom schedule kind; local calendar date and validated IANA time zone
+  are stored separately so daylight-saving transitions cannot move the chosen day.
+- Reminder preference is fixed to `none` and channel to null. Optional start/end local quiet hours
+  are inert policy data only and do not create an outbox or delivery request.
+- Scheduled, completed, and archived lifecycle with optimistic revision, inherited expiry,
+  terminal soft deletion, and database-clock `isDue` projection. Due state is informational:
+  completion remains valid before, on, or after the selected date.
+- Completion reflection uses independent owner/resource-bound ciphertext and key version; outcome
+  tags are a duplicate-free bounded set of non-clinical user-owned codes.
+- Deleting the linked intention immediately hides the Revisit. Runtime roles cannot physically
+  delete rows or read ciphertext columns directly.
+
+#### `revisit_operation`
+
+- Append-only owner/resource-scoped idempotency ledger for schedule, reschedule, complete, archive,
+  and soft-delete operations.
+- Each row binds operation kind, key, canonical request digest, resulting revision, status, and
+  creation time. Same-key exact replay returns the recorded resource while changed reuse conflicts.
+- Runtime can insert but cannot update or delete ledger rows; schedule and mutation writes share one
+  transaction with the corresponding operation record.
+
+#### `revisit_reminder_subscription`
+
+- One optional account-owned row per Revisit; RIT-044 remains fixed to `reminderPreference: none`
+  and does not itself create delivery authority.
+- Exact `revisit-reminder-preference.v1`, English locale, email channel, and once-only frequency;
+  current preference is subscribed or unsubscribed and delivery is pending, leased, retry-wait,
+  delivered, dead-lettered, or cancelled.
+- Queue payload is the row identity plus account, ownership-link, Revisit, and recipient-identity
+  identifiers. It contains no email address, question, intention, action, ritual, journal,
+  relationship, or generated prose.
+- Claiming uses database date/time-zone, 09:00 local due threshold, stored quiet hours,
+  `SKIP LOCKED`, hashed bounded leases, three attempts, and deterministic retry. Delivery requires a
+  second live authorization check; committed unsubscribe and privacy deletion clear any lease.
+- Runtime can update only finite preference/queue columns and cannot delete the row. Privacy export
+  includes user-visible preference, delivery, failure, provider-reference, timestamp, and operation
+  evidence while excluding lease and idempotency hashes.
+
+#### `revisit_reminder_operation`
+
+- Append-only account/Revisit-scoped subscribe and unsubscribe evidence with hashed idempotency key,
+  canonical request hash, exact resulting preference/delivery state, and database timestamp.
+- Exact same-key replay returns the recorded result even after later preference changes; changed
+  reuse conflicts. Runtime can select/insert but cannot update or delete history.
 
 ### catalog and commerce
 
-#### `catalog_product`
+#### `catalog_version`, `catalog_product`, `catalog_product_localization`, `catalog_price`
 
-Stable product code, type, entitlement definition, status, country/locale constraints, exact digital contents, tax category, refund class, and immutable versions.
+- `catalog_version` is an immutable environment-scoped publication with source checksum/reference,
+  owner evidence, supported/default locales, effective/review windows, and predecessor version.
+- `catalog_product` uses a strict product kind and term union: packs grant Credits; Plus allocates
+  Credits monthly; Deep Readings/permanent objects/consumable rituals cost Credits; free objects
+  have no price or Credit cost.
+- `catalog_product_localization` binds each exact product version to one reviewed BCP 47 locale,
+  title, description, and non-empty exact-digital-contents list.
+- `catalog_price` exists only for Credit packs and Plus plans and binds positive integer minor
+  units, ISO currency, cadence, country/provider eligibility, tax category, refund-policy version,
+  and an effective `[from, until)` window.
+- The RIT-061 seed is synthetic local/CI-only. Production pricing, countries, tax/refund policy, and
+  providers remain empty until their owner gates are satisfied.
 
-#### `price`
+#### `commercial_order_v2`, `commercial_order_item_v2`
 
-Product version, currency, amount minor units, billing cadence, provider references, country scope, tax behavior, effective dates. Never use floating point for money.
-
-#### `order`, `order_line`
-
-- Immutable price/product/policy snapshots.
-- User/anonymous owner.
+- Additive successor to the quarantined legacy local-commerce replay tables.
+- Immutable catalog/price/product/Country Policy/terms/refund and exact-content snapshots.
+- Account owner; paid anonymous fulfillment remains unsupported.
 - Amounts in minor units: subtotal, discount, tax, total, refunded.
-- Currency and states.
-- Idempotency key.
-- Provider customer/payment references (not secrets).
+- Canonical created/checkout/pending/paid/failure/refund/dispute states and lifecycle timestamps.
+- Versioned idempotency digest plus canonical request digest; changed-key reuse conflicts.
 
-#### `payment_attempt`
+#### `commercial_payment_attempt_v2`
 
-Provider, checkout/session reference, state, amount/currency, quote expiry, failure code category, timestamps.
+Provider/environment, exact order, attempt number, checkout/payment reference, integer
+amount/currency, expected crypto network/asset where applicable, hard expiry, and exact
+idempotency. Attempts terminate at payment success/failure/expiry/cancellation; refunds and
+disputes are not attempt states.
 
 #### `payment_event`
 
 Immutable signed-webhook receipt metadata, provider event ID unique, payload encrypted/restricted, received/verified/processed timestamps, processing outcome.
 
-#### `ledger_entry`
+#### `credit_ledger_entry`, `credit_reservation`, `credit_allocation`, `credit_projection`
 
-Append-only debit/credit or balanced event representation for internal money/entitlement reconciliation. Never update historical entries; reverse them.
+- Credits are positive integers, non-transferable service entitlements and never cash, stored
+  value, cryptocurrency, or a client-authoritative balance.
+- Ledger facts are append-only grant/reserve/release/consume/reverse/expire operations with exact
+  user, product/order/reservation/source, policy/terms, expiry, and idempotency evidence.
+- Reservations bind one exact product and hard expiry. Allocations reference exact grants and
+  consume subscription, then promotional, then purchased Credits.
+- Projection rows are transactionally mutable for bounded reads but never negative and remain
+  reconstructable from ledger/reservation/allocation facts.
 
 #### `subscription`
 
 Provider subscription reference, plan/price snapshot, status, periods, cancel state, trial/grace/dunning state.
 
-#### `entitlement`
+#### `commercial_entitlement_v2`
 
-Owner, capability/object/product, source order/subscription, grant/revoke times, policy, and state. Unique constraints prevent double grants.
+Owner, exact product/fulfillment, authoritative source, pending/active/frozen/revoked timestamps,
+and exact idempotency. Plus must originate from an order; permanent objects must originate from a
+Credit consumption. Unique owner/type/fulfillment constraints prevent double grants.
 
 #### `refund`, `dispute`
 
@@ -3919,7 +4840,13 @@ Provider/internal references, amount, reason category, evidence/audit, approval 
 
 #### `country_policy_version`
 
-Country/region, effective dates, age, modalities, products, providers, methods, currencies, crypto, disclosures, legal docs, data flags, support/marketing constraints, status, approver.
+Immutable country/environment version with effective and mandatory review windows; predecessor
+version; service status; minimum age; modalities and prohibited claims; products/subscriptions;
+fiat providers, methods, currencies, and recurring permission; crypto provider/assets; required
+disclosures and legal-document versions; tax/refund configuration; data, locale, support, and
+marketing flags; independent legal, owner, provider, fiat, and crypto approval references; actor;
+and the complete strict versioned JSON policy document. Runtime access is bounded read-only.
+Kill-switch and rollback behavior append a successor rather than mutating history.
 
 #### `feature_flag`, `experiment`, `experiment_assignment`
 
@@ -3929,22 +4856,69 @@ Server-side scope and immutable assignment. Do not put sensitive free text in va
 
 Prefer external event pipeline with a strict allowlist. Internal copy, if any, stores pseudonymous subject, event name/version, safe categorical properties, timestamp, consent/purpose—not raw content.
 
+RIT-046 creates no database table or retained event row. Its bounded ledger is test-only; a future
+internal table or external pipeline requires approved retention, deletion/suppression, consent
+notice, transactional delivery, and production activation.
+
 #### `safety_event`
 
 Minimal category/severity/action/policy version, encrypted evidence reference if necessary, retention, reviewer state. Avoid storing unnecessary raw crisis content.
 
-#### `privacy_request`
+#### `privacy_export`, `privacy_export_artifact`, `privacy_export_audit`
 
-Type, identity verification, scope, state, deadlines, export artifact, deletion tombstone, audit.
+- One immutable account/session-owned idempotent request records explicit schema/key versions and
+  database-clock creation/expiry, with no user prose, bearer, or raw request key.
+- A separate one-per-request append-only artifact records AES-256-GCM ciphertext plus plaintext
+  integrity/size/count evidence and completion time. Authenticated data binds account, export ID,
+  schema, key version, creation, and expiry. Runtime has no update/delete privilege on requests,
+  requests or audit. The deletion workflow alone may physically remove encrypted artifacts;
+  ready/failed state is derived from artifact/audit existence and a post-request deletion fence
+  prevents an older export snapshot from finalizing afterward.
+- Export snapshots include every retained implemented account-linked category, including rows
+  hidden from ordinary product history by soft deletion or expiry. Explicit allowlists omit bearer,
+  token/idempotency/claim hashes, provider checkout URLs, credential public keys, and internal
+  payment object identifiers.
+- `privacy_export_audit` is append-only requested/completed/failed/download-authorized evidence
+  bound by composite account/export/session foreign keys. It contains no private content.
+- Legal retention periods, production object storage, worker delivery, and deletion remain
+  separately owner-gated.
+
+#### `privacy_deletion_request`, `privacy_deletion_completion`, `auth_identity_suppression`
+
+- One immutable request binds account, requesting session, exact scope, policy, replay-only session
+  digest, idempotency/canonical digests, fixed retained-category codes, and database time.
+- One append-only completion records only affected-row counts, completion time, and an evidence
+  digest. Exact account-scope replay can return this result after all ordinary sessions are revoked.
+- Deletion privacy-marks existing subject links, revokes linked anonymous sessions, replaces
+  private intention/journal/Revisit ciphertext and generated interpretation prose with fixed
+  non-user tombstones, destroys export artifacts, and removes temporary checkout capability URLs.
+- Account scope additionally tombstones profile/authentication material, revokes every account
+  session/passkey, and records an irreversible provider-subject suppression digest before changing
+  the stored identity. Suppression is checked under the same provider lock before account creation.
+- Stable account/subject IDs, derived reading metadata, consent history, commerce/ledger facts, and
+  security/privacy evidence remain under their existing source retention. No final legal duration
+  is introduced.
 
 #### `audit_log`
 
 Append-only actor, role, action, resource, before/after safe diff or encrypted reference, reason, request/trace ID, timestamp. Never include secrets.
 
+The RIT-056 admin foundation implements this as append-only `admin_audit_event` rows with finite
+actions/reasons, server-generated request ID, actor session and effective role, allow-listed
+changed field names, SHA-256 before/after state digests, and a serialized predecessor/event hash
+chain. Raw field values are not stored. `admin_role_assignment` and `admin_role_revocation`
+preserve grant history; one
+operator-only bootstrap owner is allowed, and the runtime service cannot create another
+unattributed owner. `admin_mfa_assertion` is bound by composite foreign keys to one matching
+user/session/auth identity/passkey and is read-only to the admin runtime. Production WebAuthn
+issuance, RP/origin policy, and retention remain safe-off owner gates.
+
 ## 4. Relationships and ownership
 
-- Every private record has exactly one owning `user_id` or `anonymous_subject_id` during pre-account use.
-- Account merge is a transaction/workflow that transfers allowed records and records provenance.
+- Every private record has exactly one immutable `user_id` or `anonymous_subject_id`; current
+  anonymous-first features retain subject ownership after account conversion.
+- Account authorization resolves linked anonymous subjects through `account_subject_link`; it does
+  not copy or rewrite history. A different account, source session, or idempotency key conflicts.
 - Shared/gift resources use explicit grants rather than changing ownership implicitly.
 - Deletion cascades are explicit by data category; money/audit records may be retained/pseudonymized where legally required.
 
@@ -3952,6 +4926,8 @@ Append-only actor, role, action, resource, before/after safe diff or encrypted r
 
 - Use database/storage encryption plus application/field-level encryption for sensitive free text and birth details where feasible.
 - Key versions and rotation are managed outside the database.
+- Private-content encryption may rotate to a new active key while idempotency and canonical-request
+  HMACs remain on a separately selected retained digest key version for the full record lifetime.
 - Never build plaintext full-text indexes over prayers/journals without a reviewed threat model.
 - If private search is needed, prefer client-side/local indexing or a narrowly scoped encrypted/search-token design after security review.
 
@@ -4290,7 +5266,7 @@ A server-side policy snapshot controls:
 type CountryPolicy = {
   version: string;
   country: string;
-  status: 'disabled' | 'content_only' | 'free_only' | 'paid';
+  status: "disabled" | "content_only" | "free_only" | "paid";
   minimumAge: number;
   modalities: string[];
   prohibitedClaims: string[];
@@ -4308,7 +5284,7 @@ type CountryPolicy = {
     providerRoute?: string;
     approvedAssets?: string[];
   };
-  taxMode: 'provider' | 'merchant_of_record' | 'internal_reviewed';
+  taxMode: "provider" | "merchant_of_record" | "internal_reviewed";
   refundPolicyVersion: string;
   dataFlags: string[];
   marketingFlags: string[];
@@ -4316,6 +5292,14 @@ type CountryPolicy = {
 ```
 
 Country is determined using a hierarchy of billing country, account declaration, reliable geolocation signal, and provider evidence. Do not use IP alone to bypass billing/legal facts. Record the policy version on reading/purchase fulfillment.
+
+The implemented V1 registry is append-only and selects one active successor-chain head for the
+country/environment. Billing, declared, and reliable geolocation conflicts fail closed; locale and
+weak geolocation cannot authorize paid service. Every active version has a mandatory review time.
+Fiat and crypto use independent owner-approval references (`OWN-002` and `OWN-006` respectively),
+so enabling one route cannot authorize the other. A disabled successor is the kill switch; rollback
+is another immutable successor. Only a synthetic local policy is seeded. Staging and production
+remain empty and therefore deny paid authorization until separately approved policy publication.
 
 ## 5. Order model
 
@@ -4331,6 +5315,9 @@ Internal order is created before provider checkout and is authoritative for:
 
 Client-provided amounts or entitlement claims are ignored.
 
+RIT-062 implements this as additive `commercial_order_v2` and `commercial_order_item_v2`
+foundations. The obsolete direct-object USD tables remain historical local replay only.
+
 ## 6. Payment state machine
 
 ```text
@@ -4338,14 +5325,17 @@ created
   -> checkout_created
   -> pending
   -> paid
-  -> partially_refunded | refunded | disputed
-  -> chargeback_won | chargeback_lost
+  -> refund_requested | partially_refunded | refunded | disputed
 
 created/checkout_created/pending
   -> failed | canceled | expired
 ```
 
 Transitions are explicit, validated, and audit-logged. Provider status does not map one-to-one; adapters normalize it.
+
+Payment attempts use their own smaller
+`created -> checkout_created -> pending -> succeeded|failed|expired|cancelled` state machine.
+Refund and dispute aggregates remain later tasks and never rewrite an attempt into a refund state.
 
 ## 7. Webhook security and idempotency
 
@@ -4360,6 +5350,12 @@ Transitions are explicit, validated, and audit-logged. Provider status does not 
 - Provide manual replay and immutable event timeline.
 
 ## 8. Internal ledger and reconciliation
+
+The RIT-062 Credit foundation uses append-only grant/reserve/release/consume/reverse/expire entries,
+hard-expiry reservations, exact source allocations, and a nonnegative transactionally maintained
+projection. Subscription Credits are allocated before promotional and purchased Credits. The
+application role can insert ledger facts but cannot update or delete them. Provider-event,
+payment-settlement, refund/dispute, outbox, and reconciliation records remain later tasks.
 
 Use append-only ledger/reconciliation records for:
 
@@ -4663,6 +5659,12 @@ Avoid high-pressure “your soulmate is…” ads, crisis targeting, protected/s
 - Lock-screen-safe subject lines; no private question, ritual, or relationship detail by default.
 - No re-engagement that uses fear or claims the user's energy/window is closing.
 
+RIT-045 activates only an English once-only Revisit email contract for signed-in accounts. The
+fixed subject, preview, body, and private-route action contain no reflection details and remain
+safe for lock screens. Locale is reread at claim/authorization time and unsupported locales fail
+closed. RIT-104 owns reviewed localized templates and fallback previews; production legal copy,
+email domain/provider, and sending remain owner-gated.
+
 ## 13. Ethical conversion
 
 Measure conversion while preserving autonomy:
@@ -4718,6 +5720,25 @@ A distinct user/anonymous subject counts once per qualifying session when, withi
 
 Define session boundaries, identity merge, bot filtering, consent scope, and late-arriving events before implementation.
 
+### WMRS v1 implementation baseline
+
+- Window: rolling UTC `[asOf - 7 days, asOf)`, using event time.
+- Unit: distinct consented anonymous analytics subject, counted once even with multiple qualifying
+  reflection sessions.
+- Reflection session: one server-authoritative Tarot reading and its purpose-scoped pseudonymous
+  root key.
+- Qualification: deterministic reading completion followed by intention creation, ritual
+  completion, private journal creation, or Revisit completion in the same window.
+- Diagnostic: report qualifying reflection-session count separately; it is not WMRS.
+- Identity: no anonymous-to-account merge until RIT-051; no cross-purpose identifiers.
+- Bot handling: unavailable in v1 and disclosed as a data-quality limitation.
+- Late data: recompute the bounded window by event time and expose late-observation count.
+- Consent: only exact current `optional_product_analytics` consent; absent, denied, withdrawn,
+  stale, or malformed state is excluded and emits no event.
+
+This baseline is implemented as a synthetic, safe-off contract. It does not activate production
+analytics or establish legal notice, retention, deletion, vendor, or backfill policy.
+
 ## 3. Metric tree
 
 ### Reach
@@ -4768,6 +5789,12 @@ Define session boundaries, identity merge, bot filtering, consent scope, and lat
 ## 4. Event taxonomy
 
 Use versioned names and typed properties. Suggested events:
+
+RIT-046 freezes the current core-loop subset to `reading_started`,
+`reading_deterministic_completed`, `interpretation_viewed`, `intention_created`, `ritual_started`,
+`ritual_completed`, `journal_entry_created`, `revisit_scheduled`, and `revisit_completed`.
+`interpretation_viewed` is intentionally distinct from generation completion: a generated result
+is not counted as seen. The viewed contract has no active browser queue, beacon, or endpoint.
 
 ### Acquisition/content
 
@@ -4841,6 +5868,10 @@ Allowlist only:
 - Content/prompt/model/engine/policy version.
 - Paid/free and entitlement category.
 
+The RIT-046 minimum deliberately excludes theme and safety state even though broader future
+taxonomies may permit reviewed categorical forms; the combination can reveal sensitive context in
+small cohorts.
+
 Never include raw prayer, question, intention, journal, name, birth date/time/place, email, exact location, card data, crypto address, crisis text, or AI full prompt/output in product analytics.
 
 ## 6. Identity and consent
@@ -4851,6 +5882,8 @@ Never include raw prayer, question, intention, journal, name, birth date/time/pl
 - Essential operational telemetry is separated from optional product/marketing analytics.
 - Provide deletion/suppression behavior where required.
 - Do not use cross-site ad trackers on private product flows without explicit reviewed need.
+- The current runtime adapter is a no-op until exact notice, retention/deletion, sink, and
+  production activation receive owner approval.
 
 ## 7. Funnels
 
@@ -4971,6 +6004,44 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Test every object endpoint for cross-user access.
 - Provide session/device revocation.
 
+### Account authentication baseline
+
+- Accept valid magic-link starts uniformly with `202`; never vary the response by account
+  existence or return email, token, state, or a tokenized local callback.
+- Keep the development preview adapter hard-disabled outside local. It exposes one constant
+  no-query preview route and consumes the one-time challenge through an `HttpOnly`,
+  `SameSite=Lax`, host-only state cookie.
+- Encrypt normalized email and store only versioned hashes for challenge token/state, previous
+  session, and final session bearer. Challenge completion is short-lived, one-time, and replay
+  safe.
+- Enforce one database-atomic global start limit plus a bounded keyed identifier-bucket limit.
+  Store no plaintext email, IP, user-agent, device fingerprint, or arbitrary abuse attributes.
+- Create a fresh session after authentication and revoke only a matching active prior session for
+  the same account. Account cookies are host-only `Secure`, `HttpOnly`, `SameSite=Strict`, and use
+  fixed absolute expiry.
+- Bootstrap a one-way session-bound CSRF token from `GET /api/v1/me`, retain it only in browser
+  memory, and require it for account/profile mutations, merge, logout, logout-all, and targeted
+  session revocation.
+- Merge anonymous ownership only during authentication completion or the dedicated account-merge
+  endpoint. Challenge consumption, account/session creation, link insertion, and anonymous-session
+  revocation commit or roll back together. Explicit merge rotates the account session, returns a
+  CSRF token bound to the successor cookie, and exact same-source/same-key retries recover the same
+  successor after a dropped response.
+- Bind append-only merge evidence to the target user, anonymous subject, source anonymous session,
+  source account session, keyed idempotency digest, and canonical request digest. Reject a
+  different account, source session, or key without revoking either caller.
+- Do not clear the account cookie when durable logout/revocation storage is unavailable; report a
+  retryable dependency failure so the browser does not claim a server session ended.
+- Resolve account history only from the active account session and immutable subject links; accept
+  no client user/subject identifier. Select minimal metadata from currently visible source rows,
+  keep private prose out of list responses, URLs, browser storage, logs, analytics, metadata, and
+  screenshots, and preserve indistinguishable cross-owner/missing detail responses.
+- List active sessions with timestamps only. Do not collect or infer device names, location, IP,
+  user agent, fingerprint, or trust score for this control. Targeted revocation cannot revoke the
+  current session, cannot cross accounts, and must commit before the UI reports success.
+- Treat passkeys as schema-ready only until RP/origin, registration/assertion, recovery,
+  attestation, UX, provider, and production activation are separately approved.
+
 ### Anonymous-session baseline
 
 - Generate 256-bit random bearer tokens and store only a versioned SHA-256 digest. Send the raw
@@ -4982,6 +6053,10 @@ Maintain a versioned threat model and update it for every major feature/provider
   of optional analytics, personalization, marketing, or model-improvement consent.
 - Keep optional consent append-only per purpose and notice version. Absence, denial, withdrawal,
   malformed history, an expired subject/session, or a stale notice fails closed.
+- Keep signed-in analytics, AI personalization, and model-improvement consent in independent
+  account-owned append-only sequences. Recheck the exact current purpose and notice at each
+  sensitive data-flow boundary; do not cache consent at login, page load, queue creation, or
+  purchase. A committed withdrawal must stop later reads immediately.
 - Require exact same-origin request evidence, an empty request body, and a high-entropy idempotency
   key at the only anonymous-session endpoint. Do not expose subject/session IDs or the token in the
   response body, URLs, logs, analytics, or public error details.
@@ -5000,6 +6075,8 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Escape output; sanitize allowed rich text; no arbitrary HTML.
 - Content Security Policy, frame protection, secure headers, HTTPS/HSTS in production.
 - CSRF protection for state-changing cookie-authenticated requests.
+- Bootstrap a session-bound one-way CSRF token from the anonymous-session response, keep it only in
+  memory, and require it together with exact Origin/Sec-Fetch-Site checks on intention mutations.
 - Strict CORS; no wildcard credentials.
 - URL allowlists and egress controls for server fetches.
 - File upload type/size/content validation, malware scanning where needed, private storage, signed URLs.
@@ -5012,6 +6089,8 @@ Maintain a versioned threat model and update it for every major feature/provider
 - No secrets in Git, build logs, issue text, screenshots, analytics, or client bundles.
 - Separate provider keys and least privilege.
 - Rotation runbook and key versioning for encrypted fields.
+- Separate the active encryption key version from the retained digest-key version so encryption
+  rotation cannot change idempotency or canonical-request hashes for live records.
 - Webhook secret overlap during rotation.
 - Detect committed secrets in CI and pre-commit.
 - Production secret access is an owner approval gate.
@@ -5070,6 +6149,66 @@ Implement workflows for:
 - Objection/restriction where applicable.
 
 Requests require identity verification, status/deadline tracking, audit, and clear handling of legally retained financial/security records.
+
+RIT-053 records one immutable authentication instant per account session and preserves it across
+anonymous-merge bearer rotation. Privacy export request, metadata, and download all require that
+the requesting session itself remains within the configured recent-authentication window; another
+device's sign-in cannot refresh it. Creation is same-account serialized and rate-limited,
+idempotent, owner-scoped, and session-CSRF protected.
+
+The export builder uses explicit category/field allowlists and decrypts private content only inside
+the authorized Web server boundary. It emits matching machine-readable JSON and human-readable
+Markdown, then stores only dedicated-key AES-256-GCM ciphertext bound to account, export, schema,
+key version, creation, and expiry. Downloads are authenticated POST responses with private
+no-store/noindex headers, never bearer URLs. Request, one-per-request artifact, and audit rows are
+append-only; runtime has no update/delete privilege and audit remains private-content free.
+Production worker/object storage, final retention, legal copy, and delivery remain owner-gated.
+
+RIT-054 implements a recent-authenticated, same-origin/session-CSRF deletion boundary with exact
+scope idempotency and account-level serialization. Selective deletion immediately revokes linked
+anonymous authority, privacy-marks ownership links, destroys private ciphertext/generated prose
+with non-decryptable tombstones, and deletes encrypted export artifacts while leaving the account
+usable for new data. Account deletion additionally clears direct profile and temporary checkout
+capability data, stores a one-way provider suppression record, tombstones identity material,
+revokes all sessions/passkeys, and supports only exact completion replay through the revoked
+request token. Export completion shares the account fence so a pre-deletion snapshot cannot
+recreate an artifact.
+
+Financial/ledger, consent, security, privacy request, suppression, and completion evidence remains
+pseudonymous and append-only under existing source retention. Final retention periods,
+provider-side erasure, backup expiry, production migration, legal copy, deployment, and launch
+remain owner-gated.
+
+RIT-045 keeps service-reminder authority separate from optional analytics, personalization, model
+improvement, and marketing consent. Subscribe/unsubscribe writes are account-owned, exact-version,
+same-origin/session-CSRF protected, and successful only after database commit. The queue stores
+identifiers and versions only. Claim and pre-provider authorization both reread active account,
+ownership link, Revisit/intention lifecycle, locale, local date/time zone, quiet hours, preference,
+contract version, and lease. Unsubscribe clears a live lease; privacy deletion atomically
+cancels all account reminder rows before identity tombstoning. Fixed subject/preview/body omit all
+private reflection content. Provider rejection, timeout, lease expiry, retries, and dead letters
+use finite codes and identifier-free observability events. Production provider credentials,
+recipient resolution, domain reputation, legal copy, metrics/alerts, and sending remain disabled.
+
+Deletion uses a separate `PRIVACY_DELETION_DATABASE_URL` whose login has exact destructive column
+grants and deletion-only RLS policies. The ordinary application/interpretation runtime retains
+only the read access needed for identity suppression and export-finalization fencing; it cannot
+delete export artifacts or rewrite verification output.
+
+RIT-057 hardens that role so the presented deletion bearer is hashed and installed only as a
+transaction-local PostgreSQL setting. A security-barrier view resolves the hash to one account,
+and row-level policies restrict every deletion query and mutation to that account. Direct
+cross-user SELECT and UPDATE attempts with the dedicated credential are exercised by the isolated
+database gate. Privacy API methods and paths are explicitly admitted by the Web proxy, while
+export metadata reads reject cross-site request metadata and preserve private empty failures.
+
+The composed identity/privacy/authorization gate covers account authentication, merge, account
+controls, export, deletion, admin policy, redaction, analytics, metadata, PostgreSQL recovery, and
+real-browser export-to-deletion behavior. The admin service remains safe-off with no production
+credential, route, UI, enrollment, or WebAuthn assertion issuer. Before any admin activation,
+role mutation and audit append require a reviewed database-bound privileged procedure or
+equivalent database-enforced step-up capability; possession of a service credential alone is not
+approved production authority.
 
 ## 11. Reliability objectives
 
@@ -5156,7 +6295,7 @@ Traffic, latency, errors, saturation, queue depth/age, job failures, database po
 
 Propagate correlation through Web → database/outbox → worker → provider. Strip sensitive attributes.
 
-The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its current `http.proxy_handoff` span measures successful proxy handoff only; it does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. A real database/outbox/queue reader does not exist yet, so the tested Web → Worker → provider chain is protocol evidence, not a deployed asynchronous path. Baggage and tracestate are not accepted or propagated.
+The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its current `http.proxy_handoff` span measures successful proxy handoff only; it does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. RIT-045 adds one narrow database-backed Revisit reminder reader/lease state machine, but it is not wired to the generic trace carrier, a scheduler process, production metrics, or a provider. Other Web → Worker → provider chains remain protocol evidence rather than deployed asynchronous paths. Baggage and tracestate are not accepted or propagated.
 
 Production metrics, alert routes, retention, sampling, external exporters, and error-monitoring vendors remain later owner-reviewed work.
 
@@ -5509,6 +6648,19 @@ Do not present one mapping as universally valid.
 - Safety considerations.
 - Completion language.
 - No efficacy guarantee.
+
+The first production-adapted schema is intentionally structural. Templates use closed purpose and
+interaction codes, audio-off defaults, static reduced-motion equivalents, linear alternatives,
+text-alternative localization keys, duration classes, and reflective completion. Catalog items
+reference an exact template and approved publication record, carry a fixed symbolic-only scope and
+no-external-outcome guarantee, and can declare only the reviewed art, animation, audio,
+arrangement, duration, memory, collection, or persistence presentation dimensions. Arbitrary
+instructions, descriptions, traditions, prices, Credit costs, ownership, efficacy, protection, or
+result fields are rejected rather than filtered after acceptance.
+
+The English original-secular catalog adapts the owner-supplied production-pack code inventory.
+Regional traditions, additional locales, or substantive ritual prose require their separate
+source, rights, cultural, translation, safety, and owner approval gates.
 - Commercial rights and cultural review.
 
 ## 10. Prohibited claims lexicon
@@ -5631,10 +6783,74 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
     the database-authoritative absolute expiry. Resume does not rotate or extend it.
   - Disabled/unconfigured storage fails closed; rejected, conflicting, capacity-limited, and
     unavailable requests use bounded no-store/noindex responses and never leak persistence detail.
+- `POST /api/v1/auth/start`
+  - Exact same-origin JSON with only normalized `email` and reviewed local `returnTo`.
+  - Returns the same `202` shape for every valid existing or unknown email:
+    `accepted`, absolute `expiresAt`, and a constant local-only
+    `/api/v1/auth/local-preview` path. It never returns email, token, state, provider subject, or
+    a tokenized callback.
+  - Sets a short-lived host-only `__Host-rituvia-auth-state` cookie with `Secure`, `HttpOnly`,
+    `SameSite=Lax`, and `Path=/`. Database-atomic global/identifier limits return `429` plus a
+    bounded `Retry-After`; unconfigured or non-local providers return `503`.
+- `GET /api/v1/auth/local-preview`
+  - Local development only, exact no-query route. Consumes the one-time challenge bound to the
+    `HttpOnly` state cookie and redirects with `303`; missing, expired, or replayed state fails
+    closed. It is not a production email-delivery contract.
+- `GET /api/v1/auth/callback?challenge=...&state=...&token=...`
+  - Reserved provider callback contract. Requires exact bounded query keys plus state equality with
+    the initiating `HttpOnly` cookie, consumes hashes once, and redirects with `303`.
+- Successful completion sets host-only `__Host-rituvia-account-session` with `Secure`, `HttpOnly`,
+  `SameSite=Strict`, `Path=/`, and fixed expiry, clears authentication state, and rotates only a
+  same-account previous session captured at start.
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/logout-all`
 - `POST /api/v1/auth/account-merge`
+  - Requires exact same-origin empty `POST`, both host-only session cookies, a session-bound
+    `X-CSRF-Token`, and a bounded `Idempotency-Key`.
+  - Creates or exactly replays one immutable anonymous-subject link, revokes anonymous sessions,
+    rotates the account session, clears the anonymous cookie, and returns `204` plus a successor
+    account cookie and successor-bound `X-CSRF-Token`.
+  - An exact retry using the original cookies and key returns the same successor cookie; a different
+    key, source account session, or account returns `409` without partial revocation.
 - `GET /api/v1/me`
+- `PATCH /api/v1/me`
+- `GET /api/v1/me/history?limit={1..50}&cursor={opaque}`
+- `GET /api/v1/me/readings?limit={1..50}&cursor={opaque}`
 - `GET /api/v1/me/sessions`
 - `DELETE /api/v1/me/sessions/{id}`
+- `GET /api/v1/me/consents`
+- `POST /api/v1/me/consents`
+
+`GET /api/v1/me` returns the account summary plus a one-way session-bound `X-CSRF-Token` header.
+`PATCH /me`, merge, logout, logout-all, and targeted session deletion require that exact token.
+Profile updates use the returned `profileVersion`; stale writes return `409`.
+
+`GET /api/v1/me/history` accepts no user or subject identifier. It returns schema version, bounded
+items, and an opaque next cursor. Items contain only resource ID/type, coarse status, occurrence
+time, and optional reading type/theme. Existing expiry, soft deletion, parent deletion, and subject
+expiry determine visibility. The reading-only endpoint remains a compatibility projection over the
+same linked ownership boundary.
+
+Session listing returns only current/other identity plus created, last-active, and expiry
+timestamps. Targeted deletion cannot revoke the current session. Unknown or cross-owner session
+deletion remains indistinguishable. Logout does not clear the browser cookie when durable
+server-side revocation is unavailable.
+
+Authentication completion accepts the current anonymous cookie as part of the same database
+transaction. On success it clears that cookie and exposes linked history through account-scoped
+queries. Merge conflict returns `409`; transient storage failure retains callback state for a safe
+retry. Reflection resource routes do not opportunistically merge or rotate credentials.
+An account cookie may authorize an exact linked reading detail request; anonymous and account
+ownership failures retain the same private `404`.
+
+Consent listing returns exactly the current technical controls for optional product analytics, AI
+personalization, and model improvement. Each carries its own exact notice version and defaults to
+not granted. Mutation requires exact same-origin/session-CSRF evidence, JSON content type, a
+bounded `Idempotency-Key`, and one strict purpose/version/granted body. Login, merge, purchase, or
+another purpose never grants consent. A false mutation records denial or withdrawal, and every
+sensitive data-flow check rereads the latest committed account sequence rather than trusting the
+browser or a cached session value. Production analytics, AI-provider private-content processing,
+training, marketing, and service-notification delivery remain separate safe-off capabilities.
 
 ### Safe intake
 
@@ -5653,7 +6869,9 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 ### Numerology
 
 - `POST /api/v1/readings/numerology`
-- Public pure calculator MAY use `POST /api/v1/calculators/numerology` without persistence.
+- Public pure calculator uses `POST /api/v1/numerology/calculate` without persistence. The exact V1
+  request is `birthDate`, `schemaVersion`, and an explicit four-digit `targetYear`; name input and
+  client-authored results are rejected.
 
 ### Astrology
 
@@ -5667,13 +6885,97 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 
 - `POST /api/v1/intentions`
 - `PATCH /api/v1/intentions/{id}`
+- `DELETE /api/v1/intentions/{id}`
+- `GET /api/v1/ritual-objects`
 - `POST /api/v1/ritual-sessions`
+- `GET /api/v1/ritual-sessions/{id}`
+- `PATCH /api/v1/ritual-sessions/{id}`
 - `POST /api/v1/ritual-sessions/{id}/complete`
 - `POST /api/v1/journal-entries`
+- `GET /api/v1/journal-entries/{id}`
 - `PATCH /api/v1/journal-entries/{id}`
 - `DELETE /api/v1/journal-entries/{id}`
+- `GET /api/v1/revisits`
 - `POST /api/v1/revisits`
+- `GET /api/v1/revisits/{id}`
+- `PATCH /api/v1/revisits/{id}`
+- `DELETE /api/v1/revisits/{id}`
 - `POST /api/v1/revisits/{id}/complete`
+
+Intention creation retains the strict historical v1 request while new composers use
+`reflection-intention.v2`: normalized agency-owned private text, a bounded small action,
+private-only visibility, optional revisit date plus IANA time zone, explicit no-reminder default,
+and an optional owner-scoped reading ID. A supplied revisit date must be later than the server
+observation date in the submitted IANA time zone. `POST`, `PATCH`, and `DELETE` require exact
+same-origin evidence plus a session-bound `X-CSRF-Token` kept only in browser memory. `PATCH` uses
+strict action-specific `reflection-intention-mutation.v1` bodies with an expected revision and
+idempotency key. `DELETE` requires an idempotency key plus an exact revision validator and performs
+owner-hidden soft deletion; unknown, cross-owner, expired, and deleted resources remain
+indistinguishable, and replaying the original create key after deletion cannot recover private
+text.
+
+`GET /api/v1/ritual-objects` returns the validated read-only `ritual-catalog.v1` source with exact
+publication, template, item, access-requirement, and historical-mapping versions. It contains the
+production-pack `free_candle`/`free_incense`, permanent-object, and consumable-ritual code sets but
+no price, Credit cost, payment, ownership, entitlement fulfillment, or pass-consumption
+authority. Historical `reflection-ritual.v1` request codes and resources remain unchanged and
+readable only through their exact historical contract.
+
+New starts use strict `ritual-session.v2` bodies containing only `intentionId`, canonical
+`itemCode`, and `schemaVersion`. The server resolves one active approved catalog item and persists
+its exact catalog, item, publication, template, and access snapshot. Free access accepts an active
+anonymous or account owner; permanent access requires a linked active entitlement; consumable
+access locks and consumes one matching pass in the same transaction that creates the session.
+Start replay is owner-scoped and idempotent, while changed key reuse conflicts.
+
+`PATCH /api/v1/ritual-sessions/{id}` accepts strict revision-checked pause, resume, or abandon
+mutations. `POST /api/v1/ritual-sessions/{id}/complete` accepts the same mutation contract with the
+`complete` action. Visible Sanctuary exit performs a durable pause rather than abandonment.
+Lifecycle resources expose only bounded coarse elapsed time, current step, status, revision, exact
+snapshot evidence, and timestamps; private owner reads remain no-store/noindex and
+indistinguishable from unknown, cross-owner, expired, or deleted resources.
+
+New linked journals use `private-journal.v2` create bodies and
+`private-journal-mutation.v1` update/delete contracts. Creation requires the same owner's completed
+v2 ritual and linked active intention. Reflection text is encrypted with owner- and
+journal-ID-bound authenticated context; optimistic update re-encrypts it and deletion creates an
+immediately hidden soft tombstone. All ritual and journal mutations require exact same-origin
+evidence, a session-derived CSRF token, bounded JSON, and stable idempotency keys.
+
+Revisit creation uses strict `reflection-revisit.v1` bodies containing one owned active v2
+`intentionId`, `next_day`, `seven_days`, or `custom` schedule kind, a custom local date only when
+required, an IANA time zone, optional valid quiet hours, `reminderPreference: "none"`, and a null
+channel. The server derives the local scheduled date, snapshots the exact encrypted
+intention/action/revision, and permits only one scheduled Revisit for that owner/intention.
+Collection and resource reads are bounded, private, no-store/noindex, owner-union scoped, and hide
+unknown, cross-owner, expired, deleted, or parent-deleted resources identically.
+
+Reschedule and archive use strict `reflection-revisit-mutation.v1` revision-checked `PATCH`
+requests. Completion uses the same mutation version at
+`POST /api/v1/revisits/{id}/complete`, accepts a private factual reflection plus at most three
+distinct allowlisted outcome tags, and remains valid before, on, or after the selected date.
+`DELETE` requires `If-Match`, CSRF, and an idempotency key and creates a terminal soft tombstone.
+Every write is recorded in an append-only operation ledger; exact same-key replay is stable and
+changed key reuse conflicts. Quiet hours remain inert and no reminder channel, delivery adapter,
+outbox job, analytics event, ritual link, or journal link exists in this contract.
+
+RIT-045 adds a separate account-owned reminder preference contract without changing those Revisit
+v1 fields:
+
+- `GET /api/v1/me/revisit-reminders` returns a bounded private collection with explicit
+  `accountAvailable`; anonymous users receive a safe `200` empty collection rather than a noisy
+  authorization failure.
+- `GET /api/v1/revisits/{id}/reminder` returns the current owner-scoped state or null.
+- `POST /api/v1/revisits/{id}/reminder` accepts exactly
+  `revisit-reminder-preference.v1`, `rituvia.revisit-reminder-notice.v1`, `email`, `once`, and
+  `subscribe` or `unsubscribe`. It requires an active account session, same-origin evidence,
+  session CSRF, JSON no larger than 1 KiB, and a stable idempotency key.
+
+Unknown/cross-owner resources are indistinguishable. Exact same-key replay returns the recorded
+result; changed reuse and mutation after delivery conflict. Responses expose only preference,
+delivery state, locale/version, Revisit ID, and recorded time—never email, lease token, provider
+payload, private prose, or internal failure detail. Production delivery is not an HTTP endpoint and
+the composed provider remains disabled.
 
 ### Catalog/commerce
 
@@ -5688,12 +6990,39 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 - `POST /api/v1/webhooks/payments/{provider}`
 - `POST /api/v1/webhooks/crypto/{provider}`
 
+`GET /api/v1/catalog` returns one complete `catalog-version.v1` document selected by server
+environment and database time. It includes immutable version/source evidence, reviewed locales,
+exact digital contents, Credit terms, and fiat price scope. The runtime first proves SELECT-only
+catalog privileges. Missing, stale, ambiguous, disabled, malformed, or unapproved environment data
+returns a finite `503 CATALOG_UNAVAILABLE` response with `no-store`; it never falls back to
+hardcoded prices. Country Policy separately authorizes country/product/provider use. The endpoint
+does not activate checkout or grant Credits/entitlements.
+
 ### Privacy/support
 
-- `POST /api/v1/privacy/exports`
+- `POST /api/v1/privacy/export`
 - `GET /api/v1/privacy/exports/{id}`
+- `POST /api/v1/privacy/exports/{id}/download`
 - `POST /api/v1/privacy/deletions`
 - `POST /api/v1/support/tickets`
+
+The export request has an empty body, exact same-origin/session-CSRF evidence, and a high-entropy
+idempotency key. It returns `202` private metadata only after recent authentication and a completed
+encrypted local artifact. Metadata accepts no owner identifier. Download is an owner-scoped
+same-origin POST so no bearer appears in a URL; it returns the versioned JSON package as an
+attachment only while the database-clock expiry and recent-authentication window remain valid.
+Every response is private/no-store/noindex.
+
+Deletion uses strict JSON `{ "scope": "private_content" | "account" }`, exact same-origin and
+session-derived CSRF evidence, a high-entropy idempotency key, configured rate/recent-auth windows,
+and an active account session. It returns `202` only after one atomic database completion and
+exposes version/scope/timestamps, fixed retained-category codes, and affected-row counts—never
+private content. Selective scope keeps the account session; account scope clears the cookie and
+revokes all ordinary sessions. A lost account-deletion response may be replayed only with the same
+revoked request token and exact idempotency key/scope.
+The route is safe-off unless both deletion policy windows and the dedicated
+`PRIVACY_DELETION_DATABASE_URL` are present; it never falls back to the ordinary application
+database credential.
 
 ### Admin
 
@@ -5828,6 +7157,23 @@ Tests are executable product memory. They must prove deterministic correctness, 
 
 ## 2. Test pyramid
 
+### Layered execution cadence
+
+- Inner loop: run the smallest test files or package commands that exercise the changed contract.
+- Ordinary task closure: run affected-package format, lint, type, architecture/evidence checks and
+  only the applicable integration, database, browser, accessibility, security, payment, or AI
+  suites.
+- Milestone integration and release: run the complete workspace matrix, including all unit tests,
+  PostgreSQL foundation, production build, accessibility/browser, AI, configuration, migration,
+  generated-evidence, and secret gates.
+- Trigger a complete matrix earlier when a change touches shared toolchain/runtime infrastructure,
+  cross-package public contracts, security-critical primitives used broadly, migration execution,
+  or when focused tests expose unexplained cross-cutting behavior.
+- Reuse prior passing evidence only when the tested source, dependencies, toolchain, configuration,
+  and generated inputs are unchanged. Record reused evidence and the reason it remains valid.
+- Keep command output bounded during iteration. Full logs belong in retained evidence artifacts,
+  not repeated chat output.
+
 ### Unit and property tests
 
 - Domain value objects, policies, state machines, calculators, formatters.
@@ -5859,6 +7205,82 @@ Tests are executable product memory. They must prove deterministic correctness, 
 - Privacy export/deletion.
 - Admin critical flow.
 - Mobile, keyboard, RTL, reduced motion, provider/AI failure.
+
+RIT-047 keeps the intention, ritual, and Revisit browser scripts independently runnable for
+diagnosis, then composes them with one continuous production-artifact Chromium journey in
+`test:accessibility`. The continuous gate must use one anonymous context and same-tab navigation,
+bind the exact displayed reading, inject stable-key manual recovery without automatic retry,
+complete and delete private reflection resources, and audit private canaries across every document
+transition. It is a deterministic first-party boundary acceptance test, not evidence that a
+deployed backend or production provider is active.
+
+RIT-050 adds `test:account-auth-browser` as a separate production-artifact gate using the real
+local PostgreSQL identity boundary. It verifies uniform start shapes, absence of browser-visible
+bearer material, exact local preview routing, cookie flags, one-time use, same-account rotation,
+old-token rejection, session-bound CSRF, durable logout, `429` retry behavior, 320px layout,
+keyboard completion, and serious/critical axe findings. It stays independently runnable and does
+not force the complete browser matrix during an ordinary authentication task.
+
+RIT-051 adds `test:account-merge-database` and extends the focused account-auth browser gate. The
+database gate deploys migrations twice and proves same-source/same-key concurrency returns one
+link and one deterministic successor; response-loss replay, different-key and cross-account
+conflicts, preexisting-history visibility, failure rollback, composite source-session provenance,
+hash-only audit evidence, and runtime update/delete denial. The browser gate proves successor
+cookie/CSRF rotation, anonymous-cookie clearing, original-token rejection, and exact dropped-
+response retry without running the unrelated complete workspace unit suite.
+
+RIT-052 adds `test:account-control-database` and `test:account-control-browser`. The isolated
+PostgreSQL gate proves stable multi-page history across linked subjects, all current reflection
+resource types, expiry/deletion filtering, cross-account exclusion, absence of private prose,
+optimistic profile conflicts, current-session protection, targeted revocation, logout-all, and
+unrelated-account survival. The production-artifact browser gate proves mobile/keyboard account
+settings, conflict feedback, current/other timestamp-only sessions, durable targeted/all-session
+logout, empty/error-safe history behavior, privacy, layout, and serious/critical accessibility
+checks. Focused route tests retain equal-shape cross-owner coverage for readings, intentions,
+rituals, journals, Revisits, sessions, orders, and entitlements; the complete workspace suite
+remains reserved for RIT-057.
+
+RIT-053 adds focused configuration, artifact-cryptography, package-builder, and HTTP route tests
+plus `test:privacy-export-database`. The isolated PostgreSQL gate deploys all migrations twice and
+proves merge-preserved authentication time, stale-auth denial, one same-account concurrent request,
+same-key replay, owner isolation, complete category shape, expiry, NULL artifact rejection,
+one-per-request artifact uniqueness, append-only request/artifact/audit privilege boundaries, and
+runtime update/delete denial. Builder tests prove
+authorized email/intention/journal/Revisit decryption, matching JSON/Markdown views, resource AAD
+binding, independent export keys, tamper failure, and ciphertext removal. The complete identity/
+privacy/authorization matrix remains reserved for RIT-057.
+
+RIT-054 adds focused configuration and strict HTTP route tests plus
+`test:privacy-deletion-database`. The isolated PostgreSQL gate deploys migrations twice and proves
+same-account dual-session serialization without deadlock, exact private/account replay including a
+dropped account response, scope conflict/rate control, link-denied history, anonymous/account
+session revocation, ciphertext canary destruction, export artifact destruction and finalize
+fencing, provider suppression and reauthentication denial, append-only completion, and runtime
+least privilege. A custom-format dump/restore then proves the deleted account remains disabled,
+exact terminal replay survives recovery, and no private canary reappears. The complete
+identity/privacy adversarial matrix remains reserved for RIT-057.
+
+RIT-045 adds focused Domain, Worker, Web route/server/proxy/message tests plus
+`test:revisit-reminder-database`. The isolated PostgreSQL gate deploys all migrations and proves
+account ownership, exact replay and changed-key conflict, old-key stable replay after withdrawal,
+quiet-hours suppression, one-winner concurrent claims, public mapping of leased state, live
+pre-provider authorization, stale lease rejection, bounded retry, terminal dead letter, immediate
+unsubscribe, once-only completion, privacy canary absence, append-only operations, and runtime
+update/delete denial. Existing privacy export/deletion gates prove the new table does not break
+least privilege. The focused Revisit browser verifies committed-only opt-in/out, no delivery
+request, offline/RTL/320px/touch/axe/privacy behavior; the continuous anonymous loop verifies the
+safe empty account state without console errors. The full unit matrix remains reserved for the
+next milestone/release trigger.
+
+RIT-057 adds `test:identity-privacy-authorization`, which composes focused authentication, merge,
+account-control, export, deletion, admin-policy, observability, analytics, metadata, PostgreSQL
+recovery, and production-artifact browser gates without hiding their stage labels. Its
+`test:privacy-control-browser` flow signs in, exports, reads metadata, downloads, deletes the
+account, proves old-session and export denial, replays the dropped deletion response, and checks
+browser/server privacy canaries. The deletion database gate also connects as the dedicated role
+and proves another account is invisible and immutable under the presented account's request token.
+At Milestone 5 closure the complete workspace unit/integration/accessibility/security matrix runs
+once; later documentation-only changes reuse that evidence under D-050.
 
 ### Non-functional
 
@@ -6058,7 +7480,7 @@ Use coverage to find gaps, not as a game:
 
 ## 12. CI gates
 
-Per PR, run the smallest affected matrix plus mandatory foundation:
+Per PR, CI runs the smallest affected matrix plus mandatory foundation:
 
 - Format/lint/type/architecture boundaries.
 - Unit/property.
@@ -6923,6 +8345,12 @@ Primary implementation tasks are `RIT-103`, `RIT-110`–`RIT-117`, `RIT-120`, `R
 
 Read `AGENTS.md` first. These files are canonical by concern:
 
+For product, UI, wallet, Credits, payment, AI, security, database, API, testing, and release work
+introduced or changed after 2026-07-23, first read the dated production source-of-truth pack at
+`codex/rituvia-production-2026-07-23/00_START_HERE.md` and the Phase 0 reconciliation at
+`reports/RITUVIA_PHASE_0_REALITY_AUDIT_2026-07-23.md`. D-045 records its precedence over older
+conflicting product details while preserving stricter repository safety and approval gates.
+
 1. `00_PROJECT_CHARTER.md` — why the product exists and its boundaries.
 2. `01_PRODUCT_REQUIREMENTS.md` — complete launch behavior.
 3. `02_USER_EXPERIENCE.md` — journeys, states, accessibility, commerce UX.
@@ -7402,13 +8830,13 @@ verifies non-empty logical dump/restore and reapplies/reattests the exact runtim
 The expand-only report migration adds `reading_report` and an owner-binding uniqueness constraint
 to `reading`. It creates no report, reading, identity, policy, retention value, or enabled feature.
 
-| Data                                                                 | Classification                    | Baseline handling                                                                                         |
-| -------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Report, reading, and anonymous-subject UUIDs                         | Personal pseudonymous             | Composite foreign key binds every report to the reading owner; runtime queries also require that owner    |
-| Category and whole-reading/canonical-position target                 | Personal categorical feedback     | Six bounded categories and no free text, question, interpretation, card payload, or arbitrary target      |
-| Schema/report-policy/idempotency-key versions                        | Internal policy/security provenance | Exact bounded identifiers; the schema does not select a production policy                                |
-| Keyed idempotency and canonical-request hashes                       | Security/internal                 | Fixed 32-byte digests only; no raw key or request body                                                    |
-| Created and expiry timestamps                                        | Personal operational metadata       | Report expiry is bounded by the existing owning reading expiry; no independent retention extension          |
+| Data                                                 | Classification                      | Baseline handling                                                                                      |
+| ---------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Report, reading, and anonymous-subject UUIDs         | Personal pseudonymous               | Composite foreign key binds every report to the reading owner; runtime queries also require that owner |
+| Category and whole-reading/canonical-position target | Personal categorical feedback       | Six bounded categories and no free text, question, interpretation, card payload, or arbitrary target   |
+| Schema/report-policy/idempotency-key versions        | Internal policy/security provenance | Exact bounded identifiers; the schema does not select a production policy                              |
+| Keyed idempotency and canonical-request hashes       | Security/internal                   | Fixed 32-byte digests only; no raw key or request body                                                 |
+| Created and expiry timestamps                        | Personal operational metadata       | Report expiry is bounded by the existing owning reading expiry; no independent retention extension     |
 
 Report creation locks and revalidates the active anonymous subject, loads only an unexpired reading
 for that subject, and validates a position target against the immutable stored draw. An unknown,
@@ -7428,6 +8856,128 @@ leaving the additive table and owner constraint intact. Dropping the table or co
 retention, or deleting production reports requires a later forward migration, current recovery
 evidence, privacy/legal review, and explicit owner approval. The focused integration suite preserves
 non-empty reports through logical dump/restore and reattests exact runtime grants.
+
+## RIT-060 country policy registry classification
+
+The expand-only migration adds one immutable `country_policy_version` registry. It activates no
+production country, product, provider, currency, crypto asset, legal text, tax mode, or refund
+policy. The only seeded row is a synthetic local-only policy guarded by the existing attested
+local/CI seed boundary.
+
+| Data                                                         | Classification                    | Baseline handling                                           |
+| ------------------------------------------------------------ | --------------------------------- | ----------------------------------------------------------- |
+| Country, environment, status, effective/review windows       | Internal policy                   | Mirrored indexed selectors; exact database constraints      |
+| Complete policy document                                     | Internal compliance configuration | Versioned JSONB; strict application parser; no user content |
+| Legal, owner, provider, fiat, and crypto approval references | Internal audit provenance         | References only; independent payment gates; no secrets      |
+| Actor, creation time, predecessor version                    | Internal audit provenance         | Append-only successor chain; no update/delete/truncate      |
+
+The application runtime inherits only the dedicated reader capability and performs a live
+ownership/privilege attestation before relying on the registry. The control identity may append
+rows but cannot mutate history. Row-level policy permits local synthetic rows only in `local`;
+written paid rows require the exact fiat and/or crypto owner-gate reference in the policy document.
+The strict parser still validates every field and fails closed if database data is malformed,
+overlapping without one successor head, stale, future, review-overdue, disabled, or unsupported.
+
+Rollback appends a new immutable successor that copies a prior approved policy and supersedes the
+disabled version. Emergency shutdown appends a disabled successor. Do not edit or delete the
+historical row. Production publication, legal/provider approval, credential use, deployment, and
+public launch remain explicit owner gates.
+
+## RIT-061 catalog registry classification
+
+The expand-only migration adds immutable `catalog_version`, `catalog_product`,
+`catalog_product_localization`, and `catalog_price` registries. It activates no production price,
+country, tax/refund policy, Stripe account, crypto route, subscription, Credit ledger, checkout, or
+entitlement. The only seeded catalog is synthetic and local/CI-only; its values are derived from the
+owner-approved production-pack contract but are not live pricing approval.
+
+| Data                                                          | Classification                           | Baseline handling                                                             |
+| ------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------- |
+| Product, version, kind, status, fulfillment code              | Public configuration                     | Strict finite values; immutable exact product version                         |
+| English/Simplified Chinese title, description, exact contents | Public product content                   | Locale-bound rows; no user or private reflection content                      |
+| Credit cost/grant/monthly allocation                          | Public service-entitlement configuration | Positive integers; Credits are non-transferable and have no cash value        |
+| USD amount, cadence, countries, provider eligibility          | Restricted commercial configuration      | Positive integer minor units; Country Policy remains the authorization source |
+| Tax category, refund policy, effective window                 | Restricted compliance configuration      | Version/reference only; no legal or production activation implied             |
+| Source checksum/reference, owner reference, actor/time        | Internal audit provenance                | Append-only immutable evidence                                                |
+
+The application runtime inherits only the dedicated catalog reader capability and performs live
+ownership/privilege attestation. The control identity can append reviewed successors but cannot
+update, delete, truncate, own, or administer catalog tables. Database constraints reject malformed
+identifiers/locales, invalid product Credit-term unions, non-positive/non-integer money, unknown
+provider codes, invalid effective windows, and broken product/version references. The mandatory
+application publication parser rejects unknown fields, product/price mismatches, duplicate
+identities, incomplete supported localizations, crypto subscription pricing, overlapping active
+country scopes, and ambiguous active catalogs before Web use.
+
+Rollback selects no active catalog or appends an immutable disabled/retired successor. Do not edit
+or delete catalog history. Production pricing, countries, taxes, refunds, providers, credentials,
+deployment, and public launch remain explicit owner gates.
+
+## RIT-062 commercial transaction foundation classification
+
+The expand-only migration creates empty provider-neutral v2 order/item/payment-attempt tables plus
+append-only Credit ledger, reservation, allocation, nonnegative projection, and source-specific
+entitlement records. It does not copy or reinterpret legacy local-commerce rows and does not
+activate a provider, country, price, webhook, fulfillment, subscription, refund, or production
+migration.
+
+| Data                                             | Classification               | Baseline handling                                               |
+| ------------------------------------------------ | ---------------------------- | --------------------------------------------------------------- |
+| Exact order/catalog/price/policy/terms snapshots | Restricted commercial        | Integer minor units; server-authoritative versions              |
+| Payment attempt/provider references              | Restricted operational       | No card, key, private content, or client success authority      |
+| Credit ledger/reservation/allocation             | Personal service entitlement | Positive integers; append-only; non-transferable; no cash value |
+| Credit projection                                | Personal derived operational | Nonnegative; transactionally maintained; rebuildable            |
+| Plus/permanent entitlement                       | Personal service entitlement | Exact source kind and unique owner/fulfillment                  |
+| Idempotency/canonical request digests            | Security/internal            | Fixed 32-byte digests only; no raw request key                  |
+
+Application runtime can insert authoritative transaction facts and update only finite projection
+columns. It cannot update or delete Credit ledger/allocation evidence. Privacy-deletion reads are
+restricted by request-scoped RLS through the owning order/reservation/user. Rollback stops all v2
+writes and retains rows for evidence; no destructive down migration is defined.
+
+## RIT-055 account consent controls classification
+
+The expand-only migration adds one account-owned append-only consent ledger. It does not alter
+anonymous consent history, activate analytics, send private content to an AI provider, enable
+model training, create marketing/service-notification permission, or approve legal notice text.
+
+| Data                                  | Classification              | Baseline handling                                           |
+| ------------------------------------- | --------------------------- | ----------------------------------------------------------- |
+| Account/purpose/sequence              | Personal privacy evidence   | Owner-scoped service reads; finite exact purposes           |
+| Notice version, locale, decision      | Restricted consent evidence | Exact current version; absence/stale/withdrawn fails closed |
+| Withdrawal reference and timestamp    | Restricted audit evidence   | Same-account/purpose append-only chain                      |
+| Idempotency/canonical request digests | Security/internal           | Fixed 32-byte digests; raw key/body excluded                |
+
+Application runtime receives `SELECT` and `INSERT` only and is attested before use; it cannot
+update, delete, truncate, own, or administer the ledger. Each mutation serializes on the account,
+and each data-flow decision rereads the bounded current history. Histories over 256 records fail
+closed while still permitting a later withdrawal record. Privacy export includes account and
+linked-anonymous consent evidence with explicit owner type.
+
+Rollback removes the Web/API/data-flow composition and stops new writes while retaining the
+append-only evidence. Dropping or rewriting consent history, changing retention, activating
+production analytics/AI/model improvement, publishing legal consent text, or deploying publicly
+requires a later reviewed decision and explicit owner approval.
+
+## RIT-045 transactional Revisit reminder classification
+
+The expand-only migration adds one account-owned reminder preference/queue row per Revisit and one
+append-only operation ledger. It does not change historical Revisit v1 rows, activate another
+locale, configure an email provider/domain, approve legal copy, or send a production message.
+
+| Data                                              | Classification                | Baseline handling                                               |
+| ------------------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| Account/link/Revisit/recipient identity IDs       | Personal operational          | Exact composite ownership; no email or private prose            |
+| Preference/channel/frequency/locale/version       | Restricted service preference | English email once-only; unsupported/stale state fails closed   |
+| Delivery/attempt/lease/failure/provider reference | Restricted operational        | Hashed lease; three attempts; bounded codes and terminal states |
+| Subscribe/unsubscribe operation history           | Restricted consent evidence   | Append-only exact result and database time                      |
+| Idempotency/canonical request digests             | Security/internal             | Fixed 32-byte digests; raw key/body excluded                    |
+
+Application runtime receives select/insert plus finite queue-state updates and cannot delete
+subscription rows or mutate/delete operation history. Privacy deletion receives only the columns
+needed to cancel and minimize delivery state. Privacy export includes user-visible reminder and
+operation evidence while excluding lease/idempotency hashes. Rollback disables routes/worker
+composition and stops claims while retaining rows; no destructive down migration is defined.
 
 ---
 
@@ -8721,7 +10271,7 @@ cover:
 - durable-record graph and generated-evidence integrity, formatting, lint, strict type checking,
   unit/contract tests, the fixed synthetic AI release evaluation, the production configuration
   boundary, architecture and migration policy, CI contract, production builds, and a pinned
-  Chromium/axe accessibility plus pseudolocale smoke;
+  Chromium/axe accessibility plus pseudolocale and free-ritual smoke;
 - Prisma generation, two idempotent migration deployments, two idempotent synthetic seeds,
   migration status/drift, constraints, transactions, and least-privilege attestation against a
   digest-pinned ephemeral PostgreSQL 17 service; and
@@ -9319,13 +10869,50 @@ and runs pinned Chromium plus axe. It blocks WCAG/best-practice violations and u
 results; verifies forward/reverse keyboard order, focus visibility, 44px targets, reduced motion,
 dark mode, no-JavaScript content, mobile reflow, at-least-40% test-only text expansion, and RTL
 mirroring; verifies a persistent live region through an online/offline/online advisory transition
-while retaining the already-loaded server content; and rejects nonlocal, failed, or error responses. Build first, then run
+while retaining the already-loaded server content; and rejects nonlocal, failed, or error responses.
+`scripts/verify-ritual-browser.mjs` then exercises both canonical free rituals against the same
+reviewed production artifact, including standard 2D and linear modes, pause/resume, exit focus,
+reduced motion, RTL, 320px reflow, offline zero-write behavior, stable-key completion retry,
+request/storage privacy, and a supporting screenshot. Build first, then run
 `pnpm test:accessibility`; CI enforces that ordering and installs only the Chromium headless shell.
+`scripts/verify-revisit-browser.mjs` exercises schedule, offline zero-write recovery, local-date
+reschedule, early completion, archive, and soft delete against that current production artifact.
+It also verifies reminders remain off, private canaries stay out of storage/metadata/console,
+keyboard-accessible controls, 320px RTL/reduced-motion layout, 44px targets, axe, and a redacted
+supporting screenshot.
+
+`scripts/verify-full-loop-browser.mjs` keeps one anonymous Chromium context across private question
+intake, deterministic Tarot, Sanctuary intention, a free reduced-motion ritual, private journal,
+and Revisit. It proves the real cross-page actions, UUID-only handoffs, same-key failure recovery,
+deletion, mobile keyboard/RTL/touch/axe behavior, and absence of private canaries from browser
+storage, history, metadata, console, or analytics requests. `pnpm test:accessibility` composes this
+continuous gate after the detailed Tarot, intention, ritual, and Revisit verifiers.
+
+`scripts/verify-account-auth-browser.mjs` is the focused RIT-050/RIT-051 browser gate. It uses the
+real local PostgreSQL account boundary to verify uniform sign-in starts, constant local preview
+routing, host-only secure cookies, atomic anonymous merge, exact dropped-response replay,
+previous-session rotation, successor-bound CSRF, durable logout, database rate limiting, mobile
+layout, keyboard completion, and serious/critical axe findings without running the complete browser
+matrix. `pnpm test:account-merge-database` separately verifies merge concurrency, ownership,
+history, rollback, audit provenance, and least privilege against an isolated PostgreSQL database.
+
+`scripts/verify-account-control-browser.mjs` is the focused RIT-052 production-artifact gate. It
+verifies profile save/conflict behavior, private history states, timestamp-only current/other
+sessions, durable targeted and all-session logout, 320px layout, keyboard flow, privacy, and
+serious/critical axe findings. `pnpm test:account-control-database` separately proves stable
+multi-resource history pagination, expiry/deletion filtering, cross-account isolation,
+private-canary exclusion, optimistic profile conflicts, current-session protection, targeted
+revocation, and logout-all against isolated PostgreSQL.
 
 `scripts/copy-ui-styles.mjs` is the UI package prebuild step. It copies the statically reviewed
 source stylesheet byte-for-byte into `packages/ui/dist`; `scripts/verify-workspace-build.mjs` checks
 that parity, imports the built UI module, and includes the CSS and style entry points in the required
 artifact inventory before auditing the Web shell.
+
+`scripts/remove-next-type-duplicates.mjs` runs before the Web TypeScript check and removes only
+number-suffixed conflict copies inside Next.js generated type directories when their bytes exactly
+match the canonical peer. A missing or different peer fails closed rather than deleting uncertain
+content.
 
 It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
 inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server

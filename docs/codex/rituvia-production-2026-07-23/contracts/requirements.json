@@ -1,0 +1,154 @@
+{
+  "version": "2026-07-23",
+  "requirements": [
+    {
+      "id": "PROD-001",
+      "area": "core",
+      "priority": "must",
+      "requirement": "Preserve Question → Interpretation → Intention → Ritual → Journal → Revisit.",
+      "acceptanceTests": [
+        "E2E-CORE-01"
+      ]
+    },
+    {
+      "id": "UI-001",
+      "area": "ui",
+      "priority": "must",
+      "requirement": "Production UI matches golden prototype and baselines without broad redesign.",
+      "acceptanceTests": [
+        "VIS-001",
+        "VIS-002",
+        "A11Y-001"
+      ]
+    },
+    {
+      "id": "AUTH-001",
+      "area": "auth",
+      "priority": "must",
+      "requirement": "All sessions are server-created, rotated, revocable and cookie-secured.",
+      "acceptanceTests": [
+        "SEC-AUTH-01",
+        "SEC-AUTH-02"
+      ]
+    },
+    {
+      "id": "WAL-001",
+      "area": "wallet",
+      "priority": "must",
+      "requirement": "SIWE challenge is domain/URI/chain/nonce/expiry bound and atomically single-use.",
+      "acceptanceTests": [
+        "SEC-WAL-01",
+        "SEC-WAL-02"
+      ]
+    },
+    {
+      "id": "WAL-002",
+      "area": "wallet",
+      "priority": "must",
+      "requirement": "Payment wallet never becomes login identity without explicit step-up link flow.",
+      "acceptanceTests": [
+        "SEC-WAL-06"
+      ]
+    },
+    {
+      "id": "PAY-001",
+      "area": "payments",
+      "priority": "must",
+      "requirement": "Client submits only product code and idempotency key; server controls amount and eligibility.",
+      "acceptanceTests": [
+        "SEC-PAY-01"
+      ]
+    },
+    {
+      "id": "PAY-002",
+      "area": "payments",
+      "priority": "must",
+      "requirement": "Only verified provider events grant Credits/subscriptions/entitlements.",
+      "acceptanceTests": [
+        "SEC-PAY-02",
+        "SEC-PAY-05",
+        "CONC-PAY-01"
+      ]
+    },
+    {
+      "id": "CRD-001",
+      "area": "credits",
+      "priority": "must",
+      "requirement": "Credit ledger is append-only and concurrent reservations cannot overspend.",
+      "acceptanceTests": [
+        "CONC-CRD-01",
+        "DB-CRD-01"
+      ]
+    },
+    {
+      "id": "CRD-002",
+      "area": "credits",
+      "priority": "must",
+      "requirement": "Failed AI generation releases reserved Credits exactly once.",
+      "acceptanceTests": [
+        "AI-FAIL-01",
+        "CONC-AI-01"
+      ]
+    },
+    {
+      "id": "AI-001",
+      "area": "ai",
+      "priority": "must",
+      "requirement": "Only Deep Readings call LLMs; deterministic facts and business authority remain outside AI.",
+      "acceptanceTests": [
+        "AI-SCOPE-01",
+        "AI-FACT-01"
+      ]
+    },
+    {
+      "id": "AI-002",
+      "area": "ai",
+      "priority": "must",
+      "requirement": "AI input/output passes product-specific safety and strict schema validation.",
+      "acceptanceTests": [
+        "AI-SAFE-01",
+        "AI-INJECT-01"
+      ]
+    },
+    {
+      "id": "DATA-001",
+      "area": "privacy",
+      "priority": "must",
+      "requirement": "Private content is field-encrypted and absent from logs, analytics, URLs and payment metadata.",
+      "acceptanceTests": [
+        "SEC-DATA-01",
+        "SEC-DATA-02"
+      ]
+    },
+    {
+      "id": "API-001",
+      "area": "authorization",
+      "priority": "must",
+      "requirement": "Every private object is owner-scoped with cross-user denial tests.",
+      "acceptanceTests": [
+        "SEC-BOLA-ALL"
+      ]
+    },
+    {
+      "id": "RIT-001",
+      "area": "sanctuary",
+      "priority": "must",
+      "requirement": "Permanent object remains owned; consumable ritual pass can start one session only.",
+      "acceptanceTests": [
+        "ENT-001",
+        "CONC-RIT-01"
+      ]
+    },
+    {
+      "id": "OPS-001",
+      "area": "operations",
+      "priority": "must",
+      "requirement": "Provider state is reconciled and backups/restores/kill switches are tested.",
+      "acceptanceTests": [
+        "OPS-REC-01",
+        "OPS-RESTORE-01",
+        "OPS-KILL-01"
+      ]
+    }
+  ]
+}

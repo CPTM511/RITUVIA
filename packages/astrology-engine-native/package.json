@@ -1,0 +1,30 @@
+{
+  "name": "@rituvia/astrology-engine-native",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "native:prepare": "node scripts/prepare-native.mjs",
+    "native:verify-corresponding-source": "node scripts/verify-corresponding-source.mjs",
+    "native:verify-sca": "node scripts/verify-native-sca.mjs",
+    "native:verify": "node scripts/verify-native.mjs",
+    "native:verify-security": "node scripts/verify-native-security.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rituvia/divination": "workspace:*",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "astronomy-engine": "2.1.19"
+  }
+}

@@ -6,7 +6,7 @@ import {
   accountSessionCookieName,
   logoutWebAccountSession,
 } from "../../../../../server/account-auth";
-import { hasNoAuthRequestBody } from "../_http";
+import { hasNoAuthRequestBody, hasValidAccountSessionCsrf } from "../_http";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,13 +16,16 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     request.headers.get("origin") === getWebRuntimeConfiguration().brand.canonicalOrigin &&
     (request.headers.get("sec-fetch-site") === null ||
       request.headers.get("sec-fetch-site") === "same-origin") &&
+    hasValidAccountSessionCsrf(request) &&
     (await hasNoAuthRequestBody(request));
   if (!sameOrigin) {
     return NextResponse.json({ code: "ACCOUNT_LOGOUT_REJECTED", status: 403 }, { status: 403 });
   }
-  await logoutWebAccountSession(request.cookies.get(accountSessionCookieName)?.value).catch(
-    () => false,
-  );
+  try {
+    await logoutWebAccountSession(request.cookies.get(accountSessionCookieName)?.value);
+  } catch {
+    return NextResponse.json({ code: "ACCOUNT_LOGOUT_UNAVAILABLE", status: 503 }, { status: 503 });
+  }
   const response = new NextResponse(null, { status: 204 });
   response.cookies.set({
     expires: new Date(0),

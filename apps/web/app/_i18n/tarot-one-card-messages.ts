@@ -71,6 +71,8 @@ export type TarotReadingMessages = Readonly<{
     reflectionTitle: string;
     replayed: string;
     restored: string;
+    sanctuaryAction: string;
+    sanctuaryBoundary: string;
     saved: string;
     tensionLabel: string;
     themesTitle: string;
@@ -125,6 +127,8 @@ export type TarotReadingMessages = Readonly<{
       conflict: string;
       disclosure: string;
       error: string;
+      interpretationDisclosure: string;
+      interpretationSummary: string;
       notFound: string;
       offline: string;
       retry: string;
@@ -136,6 +140,7 @@ export type TarotReadingMessages = Readonly<{
       success: string;
       summary: string;
       targetLabel: string;
+      targetInterpretation: string;
       targetPosition: string;
       targetReading: string;
       unavailable: string;
@@ -282,6 +287,9 @@ const englishTarotOneCardMessages = {
     replayed: "This was the same verified result from an earlier matching attempt.",
     restored:
       "This is the same fixed result restored for this private session. No card was redrawn.",
+    sanctuaryAction: "Continue to a private intention",
+    sanctuaryBoundary:
+      "Continue only if it feels useful. Sanctuary can link this fixed reading to an intention without copying private prose into browser storage.",
     saved:
       "This tab temporarily stores only this reading's random ID so the same fixed result can be restored after a refresh.",
     tensionLabel: "A tension to consider",
@@ -382,6 +390,9 @@ const englishTarotOneCardMessages = {
       disclosure:
         "Reports record only the selected category and target. There is no free-text field, and reporting does not redraw or change this result.",
       error: "The report was not recorded. Nothing will retry automatically.",
+      interpretationDisclosure:
+        "This report records only the selected category and the exact displayed interpretation request. It does not include the interpretation text, your private question, or journal content.",
+      interpretationSummary: "Report an issue with this interpretation",
       notFound: "This reading is no longer available to report in the current private session.",
       offline: "Reconnect before sending this report. Nothing will retry automatically.",
       retry: "Try the same report again",
@@ -393,6 +404,7 @@ const englishTarotOneCardMessages = {
       success: "Thank you. The report was recorded without your private question or journal text.",
       summary: "Report an issue with this reading",
       targetLabel: "Report target",
+      targetInterpretation: "The displayed interpretation",
       targetPosition: "Position: {position}",
       targetReading: "The whole reading",
       unavailable:

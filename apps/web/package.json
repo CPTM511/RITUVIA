@@ -7,11 +7,13 @@
     "build": "NEXT_TELEMETRY_DISABLED=1 next build",
     "dev": "NEXT_TELEMETRY_DISABLED=1 next dev",
     "start": "node start.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node ../../scripts/remove-next-type-duplicates.mjs && tsc --noEmit"
   },
   "dependencies": {
-    "@next/env": "16.2.10",
+    "@next/env": "16.2.11",
     "@rituvia/ai": "workspace:*",
+    "@rituvia/analytics": "workspace:*",
+    "@rituvia/astrology-engine-native": "workspace:*",
     "@rituvia/config": "workspace:*",
     "@rituvia/country-policy": "workspace:*",
     "@rituvia/db": "workspace:*",
@@ -20,7 +22,7 @@
     "@rituvia/observability": "workspace:*",
     "@rituvia/payments": "workspace:*",
     "@rituvia/ui": "workspace:*",
-    "next": "16.2.10",
+    "next": "16.2.11",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "server-only": "0.0.1",

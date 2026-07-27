@@ -1,7 +1,4 @@
-import {
-  parseTarotReadingCreateRequestV1,
-  parseTarotReadingReportRequestV1,
-} from "@rituvia/domain";
+import { parseTarotReadingCreateRequestV1, parseTarotReadingReportRequest } from "@rituvia/domain";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -34,6 +31,7 @@ import {
 } from "./fixtures/tarot-reading-response";
 
 const readingId = "33333333-3333-4333-8333-333333333333";
+const interpretationRequestId = "44444444-4444-4444-8444-444444444444";
 const idempotencyKey = "abcdefghijklmnopqrstuv";
 const token = "a".repeat(43);
 const requestBody = Object.freeze({
@@ -47,6 +45,11 @@ const reportBody = Object.freeze({
   category: "factual",
   schemaVersion: "tarot-reading-report.v1",
   target: Object.freeze({ kind: "reading" }),
+});
+const interpretationReportBody = Object.freeze({
+  category: "safety",
+  schemaVersion: "tarot-reading-report.v2",
+  target: Object.freeze({ interpretationRequestId, kind: "interpretation" }),
 });
 const reportCategories = Object.freeze([
   "factual",
@@ -118,7 +121,7 @@ describe("tarot reading API routes", () => {
     });
     harness.get.mockResolvedValue(responseBody);
     harness.report.mockImplementation(async (_readingId: string, input: unknown) => {
-      parseTarotReadingReportRequestV1(input);
+      parseTarotReadingReportRequest(input);
       return { kind: "created" };
     });
   });
@@ -151,6 +154,22 @@ describe("tarot reading API routes", () => {
 
     expect(response.status).toBe(204);
     expect(harness.report).toHaveBeenCalledWith(readingId, body, idempotencyKey, token);
+  });
+
+  it("accepts one exact interpretation target with the same empty private response", async () => {
+    const response = await POST_REPORT(
+      reportRequest(JSON.stringify(interpretationReportBody)),
+      getContext(),
+    );
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    expect(harness.report).toHaveBeenCalledWith(
+      readingId,
+      interpretationReportBody,
+      idempotencyKey,
+      token,
+    );
   });
 
   it.each([
@@ -202,6 +221,26 @@ describe("tarot reading API routes", () => {
     ],
     [
       JSON.stringify({ ...reportBody, target: { kind: "position", positionId: "Situation" } }),
+      400,
+      "TAROT_READING_REPORT_BODY_INVALID",
+    ],
+    [
+      JSON.stringify({
+        ...interpretationReportBody,
+        target: { interpretationRequestId: readingId, kind: "reading" },
+      }),
+      400,
+      "TAROT_READING_REPORT_BODY_INVALID",
+    ],
+    [
+      JSON.stringify({
+        ...interpretationReportBody,
+        target: {
+          interpretationRequestId,
+          kind: "interpretation",
+          note: "private-report-canary",
+        },
+      }),
       400,
       "TAROT_READING_REPORT_BODY_INVALID",
     ],
@@ -424,6 +463,18 @@ describe("tarot reading API routes", () => {
     expect(await expired.text()).toBe(unknownBody);
     expect(await crossOwner.text()).toBe(unknownBody);
     expect(harness.get).toHaveBeenCalledWith(readingId, token);
+  });
+
+  it("restores an account-linked reading through the account session only", async () => {
+    const response = await GET(
+      getRequest(readingId, {
+        cookie: `__Host-rituvia-account-session=${token}`,
+      }),
+      getContext(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(harness.get).toHaveBeenCalledWith(readingId, token, "account");
   });
 
   it("rejects invalid, cross-site, query, framework, and cookie-less reads before persistence", async () => {

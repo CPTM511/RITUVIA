@@ -60,7 +60,11 @@ When sources conflict, stop that decision, document the conflict, recommend a re
 5. Restate the task outcome, constraints, acceptance criteria, files likely to change, tests, risks, and rollback before writing.
 6. Use subagents for independent read-heavy exploration, review, test analysis, threat modeling, localization review, or research. Keep one primary writer. Permit parallel writers only on clearly disjoint files.
 7. Implement the smallest complete vertical slice. Avoid speculative abstractions and broad rewrites.
-8. Run the narrowest relevant checks first, then the full required quality gate.
+8. Run the narrowest relevant checks first. Close ordinary tasks with affected-package and
+   task-specific gates; reserve the complete workspace unit/integration/browser matrix for
+   milestone integration tasks, release candidates, broad shared-infrastructure changes, or an
+   explicit risk trigger. Reuse prior passing evidence only when its source, dependency, toolchain,
+   and configuration inputs are unchanged.
 9. Review the diff for security, privacy, payments, accessibility, localization, performance, analytics, and cultural-safety regressions.
 10. Update tests, documentation, `BACKLOG.md`, `PROJECT_STATUS.md`, and `DECISIONS.md` when a decision changed.
 11. Finish with a concise report: outcome, files changed, verification, unresolved risks, migration/rollback notes, and the next recommended backlog item.
@@ -87,6 +91,19 @@ A task is `Done` only when all applicable conditions are true:
 - No unresolved critical/high security issue is introduced.
 
 Passing tests alone does not make a task done.
+
+### Layered local verification
+
+- During implementation, run only tests directly covering changed behavior and its immediate
+  contracts.
+- At ordinary task closure, run formatting, linting, type checking, architecture/evidence checks,
+  and the relevant unit, integration, database, browser, accessibility, security, payment, or AI
+  gates for the affected slice.
+- Run the complete workspace suite at milestone integration tasks such as `RIT-047`, release
+  candidates, broad dependency/toolchain/shared-runtime changes, or when focused evidence reveals
+  cross-cutting risk.
+- CI may continue to run a broader mandatory matrix on every pull request. Local bounded output and
+  targeted reruns do not weaken release gates.
 
 ## 7. Architecture constraints
 
@@ -195,3 +212,20 @@ Use this order:
 - **Risk/approval:** remaining risk or owner gate; say `None` when none.
 - **State updated:** backlog/status/decision changes.
 - **Next:** one recommended ready task.
+
+## 16. 2026-07-23 production source-of-truth pack
+
+The owner-approved production build pack is committed under
+`docs/codex/rituvia-production-2026-07-23/`. For product, UI, wallet, Credits, payment, AI,
+security, database, API, testing, and production-readiness work introduced or changed after
+2026-07-23, read that pack in the order defined by its `00_START_HERE.md`.
+
+The pack's safety and security invariants override older conflicting product details. Its golden
+prototype and screenshot baselines are authoritative for approved visual behavior and reviewed
+English/Simplified Chinese copy, but never for browser-local simulations or backend design.
+Existing repository architecture must be audited and reused rather than replaced or duplicated.
+
+Do not update golden screenshots without a written ADR, before/after evidence, and explicit owner
+approval. Keep live Stripe, real crypto collection, production AI with private content, public
+production release, legal/policy activation, and irreversible production migration behind the
+existing human approval gates.

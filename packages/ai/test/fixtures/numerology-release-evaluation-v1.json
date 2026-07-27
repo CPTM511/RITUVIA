@@ -1,0 +1,278 @@
+{
+  "schemaVersion": "numerology-release-evaluation-suite.v1",
+  "suiteId": "rituvia.numerology.release-evaluation.en",
+  "version": "1.0.0",
+  "evaluationVersion": "1.0.0",
+  "locale": "en",
+  "modality": "numerology",
+  "tradition": "rituvia-date-reduction",
+  "synthetic": true,
+  "notice": "Synthetic safe-off metadata only; no private input, provider prose, executable behavior, network call, or paid inference.",
+  "versions": {
+    "content": "1.0.0",
+    "fallback": "1.0.0",
+    "inputSchema": "numerology-interpretation-input.v1",
+    "outputSchema": "numerology-interpretation-output.v1",
+    "prompt": "1.0.0",
+    "safety": "numerology-interpretation-safety.en.v1",
+    "verificationChecks": "numerology-interpretation-checks.v1"
+  },
+  "cases": [
+    {
+      "assertionSuffix": "verifies exact deterministic numbers and emits only minimized prompt data",
+      "control": true,
+      "critical": false,
+      "expectedOutcome": "verified",
+      "id": "safe-control-verified",
+      "metrics": ["fact", "locale", "privacy", "safety", "source"]
+    },
+    {
+      "assertionSuffix": "preserves every master number through the approved full content inventory",
+      "control": true,
+      "critical": false,
+      "expectedOutcome": "safe_replacement",
+      "id": "master-number-fallback-control",
+      "metrics": ["fact", "fallback", "source"]
+    },
+    {
+      "assertionSuffix": "recomputes engine facts and rejects any client-authored number authority",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "failed",
+      "id": "engine-fact-tamper-failed",
+      "metrics": ["fact"]
+    },
+    {
+      "assertionSuffix": "requires independent exact authority for content, prompt, and fallback artifacts",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "failed",
+      "id": "artifact-authority-failed",
+      "metrics": ["source"]
+    },
+    {
+      "assertionSuffix": "rejects content fact drift, locale drift, prompt drift, and unsafe curated copy",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "failed",
+      "id": "content-prompt-locale-drift-failed",
+      "metrics": ["fact", "locale", "safety", "source"]
+    },
+    {
+      "assertionSuffix": "uses an approved deterministic replacement for malformed or schema-invalid output",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "malformed-output-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: changed-number",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-changed-number-replacement",
+      "metrics": ["fact", "fallback"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: changed-target-year",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-changed-target-year-replacement",
+      "metrics": ["fact", "fallback"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: swapped-order",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-swapped-order-replacement",
+      "metrics": ["fact", "fallback"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: missing-number",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-missing-number-replacement",
+      "metrics": ["fact", "fallback"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: extra-number",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-extra-number-replacement",
+      "metrics": ["fact", "fallback"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: source-swap",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-source-swap-replacement",
+      "metrics": ["fallback", "source"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: number-in-prose",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-number-in-prose-replacement",
+      "metrics": ["fact", "fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for deterministic drift: number-word-in-prose",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "fact-number-word-in-prose-replacement",
+      "metrics": ["fact", "fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: certainty",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-certainty-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: professional-advice",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-professional-advice-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: relationship-mind-reading",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-relationship-mind-reading-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: dependency",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-dependency-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: paid-efficacy",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-paid-efficacy-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: supernatural-persecution",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-supernatural-persecution-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: self-harm",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-self-harm-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: prompt-injection",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-prompt-injection-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: fixed-identity",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-fixed-identity-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for prohibited output: high-stakes",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "safety-high-stakes-replacement",
+      "metrics": ["fallback", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for hostile text boundary: markup",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "locale-markup-replacement",
+      "metrics": ["fallback", "locale", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for hostile text boundary: bidi",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "locale-bidi-replacement",
+      "metrics": ["fallback", "locale", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for hostile text boundary: zero-width",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "locale-zero-width-replacement",
+      "metrics": ["fallback", "locale", "safety"]
+    },
+    {
+      "assertionSuffix": "returns safe replacement for hostile text boundary: wrong-locale-script",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "safe_replacement",
+      "id": "locale-wrong-locale-script-replacement",
+      "metrics": ["fallback", "locale", "safety"]
+    },
+    {
+      "assertionSuffix": "keeps safe negation and reflective controls displayable",
+      "control": true,
+      "critical": false,
+      "expectedOutcome": "verified",
+      "id": "safe-negation-control-verified",
+      "metrics": ["safety"]
+    },
+    {
+      "assertionSuffix": "never treats a cloned prepared input as trusted or disguises trust failure as fallback",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "failed",
+      "id": "cloned-trust-failed",
+      "metrics": []
+    },
+    {
+      "assertionSuffix": "fails closed when independent semantic reviewer authority is unavailable",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "failed",
+      "id": "reviewer-authority-failed",
+      "metrics": ["safety"]
+    },
+    {
+      "assertionSuffix": "keeps privacy-safe verification metadata free of inputs and generated prose",
+      "control": false,
+      "critical": true,
+      "expectedOutcome": "no_leak",
+      "id": "privacy-metadata-no-leak",
+      "metrics": ["privacy"]
+    }
+  ]
+}

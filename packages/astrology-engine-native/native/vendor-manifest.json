@@ -1,0 +1,111 @@
+{
+  "archive": {
+    "sha256": "22bca6e62b0f245ec33a72a2dd637c99f12a5f8e5f0c6003eeca6ec11e36236e",
+    "url": "https://github.com/aloistr/swisseph/archive/af9823fe7b06ffefe3d3968fdc5680be8b5eec5f.tar.gz"
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "b6345743292c516d07799dfad46f1a641e5270da2160cc4d6bd54594d6faa991"
+    },
+    {
+      "path": "agpl-3.0.txt",
+      "sha256": "0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0"
+    },
+    {
+      "path": "ephe/semo_18.se1",
+      "sha256": "1aca59fbd7f73d3882768a847890304261051c5ed965b952b4c9d7c5951833a4"
+    },
+    {
+      "path": "ephe/sepl_18.se1",
+      "sha256": "20aa1c1d68d98895493aef8a4d67d596823309d55078f6d7a9bdbe0d0c7e8d80"
+    },
+    {
+      "path": "swecl.c",
+      "sha256": "87c0df8da0292634709d0158d151f18b5c9c683a8941cc521e0de97a4a658565"
+    },
+    {
+      "path": "swedate.c",
+      "sha256": "6790e989a003cb6422080d9aecf3c6567a25030f5b5647fd749e5b16422cfac7"
+    },
+    {
+      "path": "swedate.h",
+      "sha256": "886b001815561f2c5f5e40418ce00d62377cb8962180c38062ac83bfdab77b38"
+    },
+    {
+      "path": "swedll.h",
+      "sha256": "cc33c8a26c28d7cba817012040f4ff68260b378d2149d66bf2c341cbb80549d1"
+    },
+    {
+      "path": "swehel.c",
+      "sha256": "e4c0c6513f468462227aacaf0a52b46a7dd95569e1b86ea7356c5c27cb0fb871"
+    },
+    {
+      "path": "swehouse.c",
+      "sha256": "bb17029e5fc2318885bcb8bfba72af3b7cd2d6437b4013195e953e35dd06c254"
+    },
+    {
+      "path": "swehouse.h",
+      "sha256": "7a91a007a4de0900ed6d234d74da421b2372d245b09a2ba8b74d6e2e054a200c"
+    },
+    {
+      "path": "swejpl.c",
+      "sha256": "fcbf71ceb85cdff5e59438d4f72acb19d67363a6d8ab0ba59ceafe95d1c1fef3"
+    },
+    {
+      "path": "swejpl.h",
+      "sha256": "f61ae6173b150f456540afba68500989c642506822e0397cf99c2cb7f50aac0d"
+    },
+    {
+      "path": "swemmoon.c",
+      "sha256": "d268760a942971471a8164d0753769caead9f39743589204966f7307675ef278"
+    },
+    {
+      "path": "swemplan.c",
+      "sha256": "d13502ca7b92e3e32317b67ba7f012d92fabd1d358c3394c094d5515a3567caa"
+    },
+    {
+      "path": "swemptab.h",
+      "sha256": "dc7595b81bd49e86a6204ed1e0a041c410a9de5c068fd1d90d350a82d604fb85"
+    },
+    {
+      "path": "swenut2000a.h",
+      "sha256": "83b0a2f569174b56c8e26971b00f85f5ae52265b34c1c53436c7122e0f1faad7"
+    },
+    {
+      "path": "sweodef.h",
+      "sha256": "a1187934c4d01d2c4e1464d62b8f541e60879fad97b0e478fb9fa76eb4fafa68"
+    },
+    {
+      "path": "sweph.c",
+      "sha256": "b172aad375f3a3327bf7d0090ffafc8b777363211e8d7b0ed18e4821939444f2"
+    },
+    {
+      "path": "sweph.h",
+      "sha256": "eab1d1727f85e88b2bcb8bc0df6c64c9f50430eb2a85a48e85ae1eb1250f769d"
+    },
+    {
+      "path": "swephexp.h",
+      "sha256": "53647b650504bbdec65166af1fbdb8580fa26a2ec821d5f50f032f5b0745b3cc"
+    },
+    {
+      "path": "swephlib.c",
+      "sha256": "19a30e5310498249edb9c1915ddc8f8a5bc9b59f74f90f34f281b174ea9e04eb"
+    },
+    {
+      "path": "swephlib.h",
+      "sha256": "29a151bb0c6adcb73fa73eff805b498c26bdffbb81e82d55e1b50f79218ea82a"
+    }
+  ],
+  "license": {
+    "noticePath": "LICENSE",
+    "spdx": "AGPL-3.0-only",
+    "textPath": "agpl-3.0.txt"
+  },
+  "schemaVersion": "rituvia-native-vendor-manifest.v1",
+  "source": {
+    "commit": "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f",
+    "repository": "https://github.com/aloistr/swisseph",
+    "tag": "v2.10.3final"
+  }
+}

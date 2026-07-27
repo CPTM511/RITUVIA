@@ -56,6 +56,7 @@ const request = Object.freeze({
 const idempotencyKey = "abcdefghijklmnopqrstuv";
 const sessionToken = "s".repeat(43);
 const readingId = "33333333-3333-4333-8333-333333333333";
+const interpretationRequestId = "44444444-4444-4444-8444-444444444444";
 
 describe("tarot reading web runtime", () => {
   beforeEach(() => {
@@ -93,6 +94,18 @@ describe("tarot reading web runtime", () => {
         sessionToken,
       ),
     ).resolves.toEqual({ kind: "created" });
+    await expect(
+      reportWebTarotReading(
+        readingId,
+        {
+          category: "safety",
+          schemaVersion: "tarot-reading-report.v2",
+          target: { interpretationRequestId, kind: "interpretation" },
+        },
+        idempotencyKey,
+        sessionToken,
+      ),
+    ).resolves.toEqual({ kind: "created" });
 
     expect(harness.createPersistence).toHaveBeenCalledWith(harness.database, {
       readingLimit: 12,
@@ -116,6 +129,16 @@ describe("tarot reading web runtime", () => {
     );
     expect(harness.create).toHaveBeenCalledWith(request, idempotencyKey, sessionToken);
     expect(harness.get).toHaveBeenCalledWith(readingId, sessionToken);
+    expect(harness.report).toHaveBeenLastCalledWith(
+      readingId,
+      {
+        category: "safety",
+        schemaVersion: "tarot-reading-report.v2",
+        target: { interpretationRequestId, kind: "interpretation" },
+      },
+      idempotencyKey,
+      sessionToken,
+    );
     const applicationInput = harness.createApplicationService.mock.calls[0]?.[0] as
       | Readonly<{
           catalogProvider: Readonly<{

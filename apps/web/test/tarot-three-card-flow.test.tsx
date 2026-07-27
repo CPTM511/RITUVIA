@@ -14,6 +14,7 @@ describe("private three-card server render", () => {
       createElement(TarotThreeCardFlow, {
         messages,
         methodologyHref: createLocalActionHref("/en/methodology"),
+        sanctuaryHref: createLocalActionHref("/en/sanctuary"),
       }),
     );
 

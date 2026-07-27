@@ -35,7 +35,7 @@
 - `db:setup`, the exact-confirmation local development reset, default non-disclosing `db:url`, and `db:stop` pass. No production, preview, staging, remote, or arbitrary ambient database URL is accepted by these lifecycle commands.
 - One active GitHub Actions workflow has exact read-only triggers, immutable actions, GitHub-hosted runners, ordered non-skippable steps, synchronized Node/pnpm versions, a pinned single-browser install followed by the accessibility smoke in the existing Quality job, and no secrets, artifacts, write permissions, or deployment environment. Codex examples live outside the workflow directory.
 - A fresh PostgreSQL 17 CI-shaped run proves run-derived exact target guards, checksums, private service addressing, separated non-superuser roles, deterministic client generation, idempotent migration deployment and seed, exact migration inventory/status/drift, feature-flag activation/append-only constraints, registry coexistence, runtime DDL denial, and rollback. Historical migration bytes are compared with the trusted event baseline and dangerous SQL is rejected.
-- Current-tree secret policy, repository-independent Gitleaks configuration, full-history scan wiring, and high-severity dependency audit are fail-closed. The current npm audit reports no known vulnerability after exact patched transitive overrides.
+- Current-tree secret policy, repository-independent Gitleaks configuration, full-history scan wiring, and high-severity dependency audit are fail-closed. The current audit has zero critical/high findings after exact Next.js, Sharp, PostCSS, and fast-uri patches; one moderate Prisma-tooling `@hono/node-server` Windows `serve-static` advisory remains outside the product runtime.
 
 ## Validation commands
 

@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deriveSessionCsrfToken } from "../server/session-csrf";
+
 const harness = vi.hoisted(() => {
   class SessionError extends Error {
     readonly code: "conflict" | "rate_limited" | "unavailable";
@@ -68,6 +70,7 @@ describe("anonymous session route", () => {
     expect(response.status).toBe(204);
     expect(await response.text()).toBe("");
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(response.headers.get("x-csrf-token")).toBe(deriveSessionCsrfToken(token));
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(setCookie).toContain(`${anonymousSessionCookieName}=${token}`);
     expect(setCookie).toContain("Path=/");
@@ -100,6 +103,7 @@ describe("anonymous session route", () => {
 
     expect(response.status).toBe(204);
     expect(response.headers.get("set-cookie")).toBeNull();
+    expect(response.headers.get("x-csrf-token")).toBe(deriveSessionCsrfToken(token));
     expect(harness.ensure).toHaveBeenCalledWith({ idempotencyKey, token });
   });
 

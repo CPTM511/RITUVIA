@@ -42,13 +42,24 @@ const anonymousSessionEnvironmentVariables = Object.freeze([
 export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
+  "PRIVACY_DELETION_DATABASE_URL",
+  "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
   ...anonymousSessionEnvironmentVariables,
   "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
   "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
   "RITUVIA_AUTH_DATA_KEY_V1",
+  "RITUVIA_AUTH_START_GLOBAL_LIMIT",
+  "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
+  "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
   "RITUVIA_PAYMENT_PROVIDER",
+  "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
+  "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
+  "RITUVIA_PRIVACY_EXPORT_KEY_V1",
+  "RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS",
+  "RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS",
+  "RITUVIA_PRIVACY_EXPORT_TTL_SECONDS",
   "RITUVIA_PRIVATE_CONTENT_KEY_V1",
   "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE",
   "RITUVIA_REFLECTION_POLICY_VERSION",
@@ -72,12 +83,16 @@ export type BuildConfiguration = Readonly<{
 export type ServerConfiguration = Readonly<{
   accountIdentityPolicy: AccountIdentityPolicyConfiguration | undefined;
   anonymousSessionPolicy: AnonymousSessionPolicyConfiguration | undefined;
+  astrologyNativeBuildMetadataPath: string | undefined;
   brand: BuildConfiguration["brand"];
   client: ClientConfiguration;
   databaseUrl: string | undefined;
   deploymentEnvironment: DeploymentEnvironment;
   payment: PaymentConfiguration | undefined;
   privateContentKeyring: PrivateContentKeyringConfiguration | undefined;
+  privacyDeletionPolicy: PrivacyDeletionPolicyConfiguration | undefined;
+  privacyDeletionDatabaseUrl: string | undefined;
+  privacyExport: PrivacyExportConfiguration | undefined;
   questionIntakeActivationReference: string | undefined;
   reflectionPolicy: ReflectionPolicyConfiguration | undefined;
   tarotReadingIntegrityKeyring: TarotReadingIntegrityKeyringConfiguration | undefined;
@@ -96,11 +111,28 @@ export type AccountIdentityPolicyConfiguration = Readonly<{
   encryptionKeyVersion: "auth-data.v1";
   providerSubjectHmacKey: Uint8Array;
   sessionTtlSeconds: number;
+  startGlobalLimit: number;
+  startIdentifierLimit: number;
+  startWindowSeconds: number;
 }>;
 
 export type PrivateContentKeyringConfiguration = Readonly<{
   activeKeyVersion: "private-content.v1";
+  digestKeyVersion: "private-content.v1";
   keys: readonly Readonly<{ key: Uint8Array; version: "private-content.v1" }>[];
+}>;
+
+export type PrivacyExportConfiguration = Readonly<{
+  artifactKey: Uint8Array;
+  artifactTtlSeconds: number;
+  encryptionKeyVersion: "privacy-export.v1";
+  recentAuthenticationSeconds: number;
+  requestWindowSeconds: number;
+}>;
+
+export type PrivacyDeletionPolicyConfiguration = Readonly<{
+  recentAuthenticationSeconds: number;
+  requestWindowSeconds: number;
 }>;
 
 export type ReflectionPolicyConfiguration = Readonly<{
@@ -179,9 +211,22 @@ const positiveSecondsSchema = z
   .pipe(z.number().int().min(60).max(34_560_000));
 
 const stripePriceIdsSchema = z.string().max(8_192);
+const absoluteMetadataPathSchema = z
+  .string()
+  .min(2)
+  .max(4_096)
+  .refine(
+    (value) =>
+      value.startsWith("/") &&
+      !value.includes("\0") &&
+      !value.split("/").includes("..") &&
+      value.endsWith(".json"),
+  );
 
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
+  PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
+  RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: absoluteMetadataPathSchema.optional(),
   RITUVIA_ACCOUNT_SESSION_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: z
     .string()
@@ -208,9 +253,33 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_AUTH_CHALLENGE_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_AUTH_DATA_KEY_V1: encodedSecretKeySchema.optional(),
+  RITUVIA_AUTH_START_GLOBAL_LIMIT: z
+    .string()
+    .regex(/^[1-9][0-9]{0,5}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100_000))
+    .optional(),
+  RITUVIA_AUTH_START_IDENTIFIER_LIMIT: z
+    .string()
+    .regex(/^[1-9][0-9]{0,3}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(10_000))
+    .optional(),
+  RITUVIA_AUTH_START_WINDOW_SECONDS: z
+    .string()
+    .regex(/^[1-9][0-9]{0,4}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(60).max(86_400))
+    .optional(),
   RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: encodedSecretKeySchema.optional(),
   RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: encodedSecretKeySchema.optional(),
   RITUVIA_PAYMENT_PROVIDER: z.enum(["local", "stripe"]).optional(),
+  RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: positiveSecondsSchema.optional(),
+  RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: positiveSecondsSchema.optional(),
+  RITUVIA_PRIVACY_EXPORT_KEY_V1: encodedSecretKeySchema.optional(),
+  RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: positiveSecondsSchema.optional(),
+  RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: positiveSecondsSchema.optional(),
+  RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_PRIVATE_CONTENT_KEY_V1: encodedSecretKeySchema.optional(),
   RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: z
     .string()
@@ -296,7 +365,10 @@ const parseAccountIdentityPolicy = (
   const configuredKeys = keyValues.filter((value) => value !== undefined).length;
   const hasTtlOverrides =
     parsed.RITUVIA_AUTH_CHALLENGE_TTL_SECONDS !== undefined ||
-    parsed.RITUVIA_ACCOUNT_SESSION_TTL_SECONDS !== undefined;
+    parsed.RITUVIA_ACCOUNT_SESSION_TTL_SECONDS !== undefined ||
+    parsed.RITUVIA_AUTH_START_GLOBAL_LIMIT !== undefined ||
+    parsed.RITUVIA_AUTH_START_IDENTIFIER_LIMIT !== undefined ||
+    parsed.RITUVIA_AUTH_START_WINDOW_SECONDS !== undefined;
   if (configuredKeys === 0 && !hasTtlOverrides) return undefined;
   if (configuredKeys !== keyValues.length) {
     throw new ConfigurationError("server", [
@@ -314,6 +386,9 @@ const parseAccountIdentityPolicy = (
     encryptionKeyVersion: "auth-data.v1",
     providerSubjectHmacKey: decodeSecretKey(parsed.RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1!),
     sessionTtlSeconds: parsed.RITUVIA_ACCOUNT_SESSION_TTL_SECONDS ?? 2_592_000,
+    startGlobalLimit: parsed.RITUVIA_AUTH_START_GLOBAL_LIMIT ?? 500,
+    startIdentifierLimit: parsed.RITUVIA_AUTH_START_IDENTIFIER_LIMIT ?? 5,
+    startWindowSeconds: parsed.RITUVIA_AUTH_START_WINDOW_SECONDS ?? 900,
   });
 };
 
@@ -345,6 +420,7 @@ const parseReflectionConfiguration = (
   return Object.freeze({
     keyring: Object.freeze({
       activeKeyVersion: "private-content.v1",
+      digestKeyVersion: "private-content.v1",
       keys: Object.freeze([Object.freeze({ key, version: "private-content.v1" as const })]),
     }),
     policy: Object.freeze({
@@ -353,6 +429,91 @@ const parseReflectionConfiguration = (
       revisitDelaySeconds: parsed.RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS ?? 86_400,
     }),
   });
+};
+
+const parsePrivacyExportConfiguration = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+): PrivacyExportConfiguration | undefined => {
+  const values = {
+    RITUVIA_PRIVACY_EXPORT_KEY_V1: parsed.RITUVIA_PRIVACY_EXPORT_KEY_V1,
+    RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: parsed.RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS,
+    RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS:
+      parsed.RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS,
+    RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: parsed.RITUVIA_PRIVACY_EXPORT_TTL_SECONDS,
+  } as const;
+  const present = Object.values(values).filter((value) => value !== undefined).length;
+  if (present === 0) return undefined;
+  if (present !== Object.keys(values).length) {
+    throw new ConfigurationError(
+      "server",
+      Object.entries(values)
+        .filter(([, value]) => value === undefined)
+        .map(([key]) => ({ code: "missing" as const, key })),
+    );
+  }
+  const artifactTtlSeconds = values.RITUVIA_PRIVACY_EXPORT_TTL_SECONDS!;
+  const recentAuthenticationSeconds = values.RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS!;
+  const requestWindowSeconds = values.RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS!;
+  if (
+    artifactTtlSeconds < 300 ||
+    artifactTtlSeconds > 604_800 ||
+    recentAuthenticationSeconds > 86_400 ||
+    requestWindowSeconds > 604_800
+  ) {
+    throw new ConfigurationError("server", [
+      {
+        code: "invalid",
+        key:
+          artifactTtlSeconds < 300 || artifactTtlSeconds > 604_800
+            ? "RITUVIA_PRIVACY_EXPORT_TTL_SECONDS"
+            : recentAuthenticationSeconds > 86_400
+              ? "RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS"
+              : "RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS",
+      },
+    ]);
+  }
+  return Object.freeze({
+    artifactKey: decodeSecretKey(values.RITUVIA_PRIVACY_EXPORT_KEY_V1!),
+    artifactTtlSeconds,
+    encryptionKeyVersion: "privacy-export.v1" as const,
+    recentAuthenticationSeconds,
+    requestWindowSeconds,
+  });
+};
+
+const parsePrivacyDeletionPolicy = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+): PrivacyDeletionPolicyConfiguration | undefined => {
+  const values = {
+    RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS:
+      parsed.RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS,
+    RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS:
+      parsed.RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS,
+  } as const;
+  const present = Object.values(values).filter((value) => value !== undefined).length;
+  if (present === 0) return undefined;
+  if (present !== Object.keys(values).length) {
+    throw new ConfigurationError(
+      "server",
+      Object.entries(values)
+        .filter(([, value]) => value === undefined)
+        .map(([key]) => ({ code: "missing" as const, key })),
+    );
+  }
+  const recentAuthenticationSeconds = values.RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS!;
+  const requestWindowSeconds = values.RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS!;
+  if (recentAuthenticationSeconds > 86_400 || requestWindowSeconds > 604_800) {
+    throw new ConfigurationError("server", [
+      {
+        code: "invalid",
+        key:
+          recentAuthenticationSeconds > 86_400
+            ? "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS"
+            : "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
+      },
+    ]);
+  }
+  return Object.freeze({ recentAuthenticationSeconds, requestWindowSeconds });
 };
 
 const stripeProductCodes = Object.freeze([
@@ -576,6 +737,12 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const build = parseBuildConfiguration(environment);
   const server = parseConfiguration("server", serverEnvironmentSchema, {
     DATABASE_URL: normalizeEnvironmentValue(environment.DATABASE_URL),
+    PRIVACY_DELETION_DATABASE_URL: normalizeEnvironmentValue(
+      environment.PRIVACY_DELETION_DATABASE_URL,
+    ),
+    RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: normalizeEnvironmentValue(
+      environment.RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH,
+    ),
     RITUVIA_ACCOUNT_SESSION_TTL_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_ACCOUNT_SESSION_TTL_SECONDS,
     ),
@@ -595,6 +762,15 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
       environment.RITUVIA_AUTH_CHALLENGE_TTL_SECONDS,
     ),
     RITUVIA_AUTH_DATA_KEY_V1: normalizeEnvironmentValue(environment.RITUVIA_AUTH_DATA_KEY_V1),
+    RITUVIA_AUTH_START_GLOBAL_LIMIT: normalizeEnvironmentValue(
+      environment.RITUVIA_AUTH_START_GLOBAL_LIMIT,
+    ),
+    RITUVIA_AUTH_START_IDENTIFIER_LIMIT: normalizeEnvironmentValue(
+      environment.RITUVIA_AUTH_START_IDENTIFIER_LIMIT,
+    ),
+    RITUVIA_AUTH_START_WINDOW_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_AUTH_START_WINDOW_SECONDS,
+    ),
     RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: normalizeEnvironmentValue(
       environment.RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1,
     ),
@@ -602,6 +778,24 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
       environment.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
     ),
     RITUVIA_PAYMENT_PROVIDER: normalizeEnvironmentValue(environment.RITUVIA_PAYMENT_PROVIDER),
+    RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS,
+    ),
+    RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS,
+    ),
+    RITUVIA_PRIVACY_EXPORT_KEY_V1: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_EXPORT_KEY_V1,
+    ),
+    RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS,
+    ),
+    RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS,
+    ),
+    RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_EXPORT_TTL_SECONDS,
+    ),
     RITUVIA_PRIVATE_CONTENT_KEY_V1: normalizeEnvironmentValue(
       environment.RITUVIA_PRIVATE_CONTENT_KEY_V1,
     ),
@@ -637,15 +831,36 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   }
 
   const reflection = parseReflectionConfiguration(server);
+  const accountIdentityPolicy = parseAccountIdentityPolicy(server);
+  const privacyExport = parsePrivacyExportConfiguration(server);
+  if (
+    privacyExport !== undefined &&
+    ((accountIdentityPolicy !== undefined &&
+      Buffer.from(privacyExport.artifactKey).equals(
+        Buffer.from(accountIdentityPolicy.emailEncryptionKey),
+      )) ||
+      (reflection.keyring !== undefined &&
+        reflection.keyring.keys.some(({ key }) =>
+          Buffer.from(privacyExport.artifactKey).equals(Buffer.from(key)),
+        )))
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_PRIVACY_EXPORT_KEY_V1" },
+    ]);
+  }
   return Object.freeze({
-    accountIdentityPolicy: parseAccountIdentityPolicy(server),
+    accountIdentityPolicy,
     anonymousSessionPolicy: parseAnonymousSessionPolicy(server, build.deploymentEnvironment),
+    astrologyNativeBuildMetadataPath: server.RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH,
     brand: build.brand,
     client: build.client,
     databaseUrl: server.DATABASE_URL,
     deploymentEnvironment: build.deploymentEnvironment,
     payment: parsePaymentConfiguration(server, build.deploymentEnvironment),
     privateContentKeyring: reflection.keyring,
+    privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
+    privacyDeletionDatabaseUrl: server.PRIVACY_DELETION_DATABASE_URL,
+    privacyExport,
     questionIntakeActivationReference,
     reflectionPolicy: reflection.policy,
     tarotReadingIntegrityKeyring: parseTarotReadingIntegrityKeyring(

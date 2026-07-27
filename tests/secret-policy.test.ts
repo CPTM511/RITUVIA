@@ -3,8 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
-  isReviewedLargeStaticAsset,
-  isReviewedLargeStaticAssetPath,
+  classifyReviewedStaticAsset,
+  isReviewedStaticAsset,
+  isReviewedStaticAssetPath,
   isSensitiveFilePath,
   scanSecretBuffer,
   scanSecretText,
@@ -61,6 +62,22 @@ describe("secret policy", () => {
     expect(scanSecretText(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}")).toHaveLength(
       0,
     );
+    expect(scanSecretBuffer("fixtures/no-nul.png", Buffer.from("printable bytes"))).toEqual([
+      {
+        fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/),
+        line: 1,
+        path: "fixtures/no-nul.png",
+        rule: "binary-content",
+      },
+    ]);
+    expect(scanSecretBuffer("fixtures/invalid-utf8.txt", Buffer.from([0xc3, 0x28]))).toEqual([
+      {
+        fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/),
+        line: 1,
+        path: "fixtures/invalid-utf8.txt",
+        rule: "binary-content",
+      },
+    ]);
   });
 
   it("reports only path, line, rule, and a non-secret fingerprint", () => {
@@ -75,17 +92,49 @@ describe("secret policy", () => {
     expect(Object.keys(finding ?? {}).sort()).toEqual(["fingerprint", "line", "path", "rule"]);
   });
 
-  it("allows only the exact reviewed large visual asset bytes", async () => {
+  it("allows only the exact reviewed visual asset bytes", async () => {
     const assetPath = "apps/web/public/images/rituvia-sanctuary-orb.png";
     const content = await readFile(path.resolve(import.meta.dirname, "..", assetPath));
     const changed = Buffer.from(content);
     changed[0] = changed[0] === 0 ? 1 : 0;
 
-    expect(isReviewedLargeStaticAssetPath(assetPath)).toBe(true);
-    expect(isReviewedLargeStaticAsset(assetPath, content)).toBe(true);
-    expect(isReviewedLargeStaticAsset(assetPath, changed)).toBe(false);
-    expect(isReviewedLargeStaticAsset("apps/web/public/images/unreviewed.png", content)).toBe(
-      false,
+    expect(isReviewedStaticAssetPath(assetPath)).toBe(true);
+    expect(isReviewedStaticAssetPath(assetPath.replaceAll("/", "\\"))).toBe(false);
+    expect(classifyReviewedStaticAsset(assetPath, null)).toBe("type-mismatch");
+    expect(isReviewedStaticAsset(assetPath, content)).toBe(true);
+    expect(classifyReviewedStaticAsset(assetPath, content)).toBe("accepted");
+    expect(isReviewedStaticAsset(assetPath, changed)).toBe(false);
+    expect(classifyReviewedStaticAsset(assetPath, changed)).toBe("content-mismatch");
+    expect(isReviewedStaticAsset("apps/web/public/images/unreviewed.png", content)).toBe(false);
+    expect(classifyReviewedStaticAsset("apps/web/public/images/unreviewed.png", content)).toBe(
+      "not-reviewed",
     );
+  });
+
+  it("allows every exact production-pack screenshot and rejects changed bytes", async () => {
+    const repositoryRoot = path.resolve(import.meta.dirname, "..");
+    const packRoot = path.join(repositoryRoot, "docs/codex/rituvia-production-2026-07-23");
+    const manifest = JSON.parse(
+      await readFile(path.join(packRoot, "source-manifest.json"), "utf8"),
+    ) as {
+      files: readonly Readonly<{ path: string }>[];
+    };
+    const screenshotPaths = manifest.files
+      .map((entry) => entry.path)
+      .filter((filePath) => filePath.startsWith("evidence/screenshots/"));
+
+    expect(screenshotPaths).toHaveLength(18);
+    for (const relativePath of screenshotPaths) {
+      const assetPath = `docs/codex/rituvia-production-2026-07-23/${relativePath}`;
+      const content = await readFile(path.join(packRoot, relativePath));
+      expect(isReviewedStaticAssetPath(assetPath), assetPath).toBe(true);
+      expect(isReviewedStaticAsset(assetPath, content), assetPath).toBe(true);
+    }
+
+    const changedPath =
+      "docs/codex/rituvia-production-2026-07-23/evidence/screenshots/mobile-sign-in-zh.png";
+    const changed = Buffer.from(await readFile(path.join(repositoryRoot, changedPath)));
+    changed[changed.length - 1] = changed[changed.length - 1] === 65 ? 66 : 65;
+    expect(isReviewedStaticAsset(changedPath, changed)).toBe(false);
   });
 });

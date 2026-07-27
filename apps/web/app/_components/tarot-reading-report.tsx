@@ -16,6 +16,7 @@ import {
 type ReportStatus = "idle" | "submitting" | "success" | TarotReadingReportFailure;
 
 export type TarotReadingReportProps = Readonly<{
+  interpretationRequestId?: string;
   messages: TarotReadingMessages["result"]["report"];
   positions: readonly Readonly<{ positionId: string; positionTitle: string }>[];
   readingId: string;
@@ -59,9 +60,16 @@ const failureMessage = (
   }
 };
 
-export function TarotReadingReport({ messages, positions, readingId }: TarotReadingReportProps) {
+export function TarotReadingReport({
+  interpretationRequestId,
+  messages,
+  positions,
+  readingId,
+}: TarotReadingReportProps) {
   const [category, setCategory] = useState<TarotReadingReportCategory | "">("");
-  const [target, setTarget] = useState("reading");
+  const [target, setTarget] = useState(
+    interpretationRequestId === undefined ? "reading" : "interpretation",
+  );
   const [operation, setOperation] = useState<TarotReadingReportOperation | null>(null);
   const [status, setStatus] = useState<ReportStatus>("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -87,7 +95,7 @@ export function TarotReadingReport({ messages, positions, readingId }: TarotRead
       return;
     }
     const position = positions.find(({ positionId }) => positionId === target);
-    if (target !== "reading" && position === undefined) {
+    if (interpretationRequestId === undefined && target !== "reading" && position === undefined) {
       setValidationError(messages.selectTarget);
       return;
     }
@@ -102,9 +110,14 @@ export function TarotReadingReport({ messages, positions, readingId }: TarotRead
           category,
           idempotencyKey: crypto.randomUUID(),
           target:
-            target === "reading"
-              ? Object.freeze({ kind: "reading" as const })
-              : Object.freeze({ kind: "position" as const, positionId: target }),
+            interpretationRequestId !== undefined
+              ? Object.freeze({
+                  interpretationRequestId,
+                  kind: "interpretation" as const,
+                })
+              : target === "reading"
+                ? Object.freeze({ kind: "reading" as const })
+                : Object.freeze({ kind: "position" as const, positionId: target }),
         });
       } catch {
         setStatus("error");
@@ -146,8 +159,14 @@ export function TarotReadingReport({ messages, positions, readingId }: TarotRead
 
   return (
     <details className="tarot-methodology tarot-report">
-      <summary>{messages.summary}</summary>
-      <p>{messages.disclosure}</p>
+      <summary>
+        {interpretationRequestId === undefined ? messages.summary : messages.interpretationSummary}
+      </summary>
+      <p>
+        {interpretationRequestId === undefined
+          ? messages.disclosure
+          : messages.interpretationDisclosure}
+      </p>
       <form aria-busy={status === "submitting" || undefined} onSubmit={submit}>
         <div className="tarot-report-fields">
           <label className="rvt-field">
@@ -175,40 +194,54 @@ export function TarotReadingReport({ messages, positions, readingId }: TarotRead
               ))}
             </select>
           </label>
-          <label className="rvt-field">
-            <span className="rvt-field__label">{messages.targetLabel}</span>
-            <select
-              className="rvt-field__control rvt-field__control--select"
-              aria-invalid={validationError === messages.selectTarget || undefined}
-              disabled={status === "submitting" || status === "success"}
-              onChange={(event) => {
-                setTarget(event.target.value);
-                resetOperation();
-              }}
-              value={target}
-            >
-              <option value="reading">{messages.targetReading}</option>
-              {positions.map((position) => (
-                <option key={position.positionId} value={position.positionId}>
-                  {messages.targetPosition.replace("{position}", position.positionTitle)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {interpretationRequestId === undefined ? (
+            <label className="rvt-field">
+              <span className="rvt-field__label">{messages.targetLabel}</span>
+              <select
+                className="rvt-field__control rvt-field__control--select"
+                aria-invalid={validationError === messages.selectTarget || undefined}
+                disabled={status === "submitting" || status === "success"}
+                onChange={(event) => {
+                  setTarget(event.target.value);
+                  resetOperation();
+                }}
+                value={target}
+              >
+                <option value="reading">{messages.targetReading}</option>
+                {positions.map((position) => (
+                  <option key={position.positionId} value={position.positionId}>
+                    {messages.targetPosition.replace("{position}", position.positionTitle)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p className="privacy-note">
+              <strong>{messages.targetLabel}:</strong> {messages.targetInterpretation}
+            </p>
+          )}
         </div>
         {validationError === null ? null : <p role="alert">{validationError}</p>}
         {status === "success" ? (
           <InlineAlert
             live="polite"
             message={messages.success}
-            title={messages.summary}
+            title={
+              interpretationRequestId === undefined
+                ? messages.summary
+                : messages.interpretationSummary
+            }
             tone="success"
           />
         ) : null}
         {failure === null ? null : (
           <InlineAlert
             message={failureMessage(failure, messages)}
-            title={messages.summary}
+            title={
+              interpretationRequestId === undefined
+                ? messages.summary
+                : messages.interpretationSummary
+            }
             live={failure === "conflict" || failure === "not_found" ? "assertive" : "polite"}
             tone="error"
           />

@@ -8,6 +8,8 @@ import { getMessages } from "../../_i18n/messages";
 import {
   localeSanctuaryPath,
   localeSignInPath,
+  localeTarotOneCardPath,
+  localeTarotThreeCardPath,
   parseLocale,
   supportedLocales,
   type Locale,
@@ -52,8 +54,10 @@ export default async function AccountPage({ params }: AccountPageProps) {
       <main className="experience-main account-main" id="main-content" tabIndex={-1}>
         <AccountExperience
           messages={getAccountMessages(locale).account}
+          oneCardHref={localeTarotOneCardPath(locale)}
           sanctuaryHref={localeSanctuaryPath(locale)}
           signInHref={localeSignInPath(locale)}
+          threeCardHref={localeTarotThreeCardPath(locale)}
         />
       </main>
     </PublicSiteFrame>

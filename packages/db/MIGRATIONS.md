@@ -144,13 +144,13 @@ verifies non-empty logical dump/restore and reapplies/reattests the exact runtim
 The expand-only report migration adds `reading_report` and an owner-binding uniqueness constraint
 to `reading`. It creates no report, reading, identity, policy, retention value, or enabled feature.
 
-| Data                                                                 | Classification                    | Baseline handling                                                                                         |
-| -------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Report, reading, and anonymous-subject UUIDs                         | Personal pseudonymous             | Composite foreign key binds every report to the reading owner; runtime queries also require that owner    |
-| Category and whole-reading/canonical-position target                 | Personal categorical feedback     | Six bounded categories and no free text, question, interpretation, card payload, or arbitrary target      |
-| Schema/report-policy/idempotency-key versions                        | Internal policy/security provenance | Exact bounded identifiers; the schema does not select a production policy                                |
-| Keyed idempotency and canonical-request hashes                       | Security/internal                 | Fixed 32-byte digests only; no raw key or request body                                                    |
-| Created and expiry timestamps                                        | Personal operational metadata       | Report expiry is bounded by the existing owning reading expiry; no independent retention extension          |
+| Data                                                 | Classification                      | Baseline handling                                                                                      |
+| ---------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Report, reading, and anonymous-subject UUIDs         | Personal pseudonymous               | Composite foreign key binds every report to the reading owner; runtime queries also require that owner |
+| Category and whole-reading/canonical-position target | Personal categorical feedback       | Six bounded categories and no free text, question, interpretation, card payload, or arbitrary target   |
+| Schema/report-policy/idempotency-key versions        | Internal policy/security provenance | Exact bounded identifiers; the schema does not select a production policy                              |
+| Keyed idempotency and canonical-request hashes       | Security/internal                   | Fixed 32-byte digests only; no raw key or request body                                                 |
+| Created and expiry timestamps                        | Personal operational metadata       | Report expiry is bounded by the existing owning reading expiry; no independent retention extension     |
 
 Report creation locks and revalidates the active anonymous subject, loads only an unexpired reading
 for that subject, and validates a position target against the immutable stored draw. An unknown,
@@ -170,3 +170,184 @@ leaving the additive table and owner constraint intact. Dropping the table or co
 retention, or deleting production reports requires a later forward migration, current recovery
 evidence, privacy/legal review, and explicit owner approval. The focused integration suite preserves
 non-empty reports through logical dump/restore and reattests exact runtime grants.
+
+## RIT-060 country policy registry classification
+
+The expand-only migration adds one immutable `country_policy_version` registry. It activates no
+production country, product, provider, currency, crypto asset, legal text, tax mode, or refund
+policy. The only seeded row is a synthetic local-only policy guarded by the existing attested
+local/CI seed boundary.
+
+| Data                                                         | Classification                    | Baseline handling                                           |
+| ------------------------------------------------------------ | --------------------------------- | ----------------------------------------------------------- |
+| Country, environment, status, effective/review windows       | Internal policy                   | Mirrored indexed selectors; exact database constraints      |
+| Complete policy document                                     | Internal compliance configuration | Versioned JSONB; strict application parser; no user content |
+| Legal, owner, provider, fiat, and crypto approval references | Internal audit provenance         | References only; independent payment gates; no secrets      |
+| Actor, creation time, predecessor version                    | Internal audit provenance         | Append-only successor chain; no update/delete/truncate      |
+
+The application runtime inherits only the dedicated reader capability and performs a live
+ownership/privilege attestation before relying on the registry. The control identity may append
+rows but cannot mutate history. Row-level policy permits local synthetic rows only in `local`;
+written paid rows require the exact fiat and/or crypto owner-gate reference in the policy document.
+The strict parser still validates every field and fails closed if database data is malformed,
+overlapping without one successor head, stale, future, review-overdue, disabled, or unsupported.
+
+Rollback appends a new immutable successor that copies a prior approved policy and supersedes the
+disabled version. Emergency shutdown appends a disabled successor. Do not edit or delete the
+historical row. Production publication, legal/provider approval, credential use, deployment, and
+public launch remain explicit owner gates.
+
+## RIT-061 catalog registry classification
+
+The expand-only migration adds immutable `catalog_version`, `catalog_product`,
+`catalog_product_localization`, and `catalog_price` registries. It activates no production price,
+country, tax/refund policy, Stripe account, crypto route, subscription, Credit ledger, checkout, or
+entitlement. The only seeded catalog is synthetic and local/CI-only; its values are derived from the
+owner-approved production-pack contract but are not live pricing approval.
+
+| Data                                                          | Classification                           | Baseline handling                                                             |
+| ------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------- |
+| Product, version, kind, status, fulfillment code              | Public configuration                     | Strict finite values; immutable exact product version                         |
+| English/Simplified Chinese title, description, exact contents | Public product content                   | Locale-bound rows; no user or private reflection content                      |
+| Credit cost/grant/monthly allocation                          | Public service-entitlement configuration | Positive integers; Credits are non-transferable and have no cash value        |
+| USD amount, cadence, countries, provider eligibility          | Restricted commercial configuration      | Positive integer minor units; Country Policy remains the authorization source |
+| Tax category, refund policy, effective window                 | Restricted compliance configuration      | Version/reference only; no legal or production activation implied             |
+| Source checksum/reference, owner reference, actor/time        | Internal audit provenance                | Append-only immutable evidence                                                |
+
+The application runtime inherits only the dedicated catalog reader capability and performs live
+ownership/privilege attestation. The control identity can append reviewed successors but cannot
+update, delete, truncate, own, or administer catalog tables. Database constraints reject malformed
+identifiers/locales, invalid product Credit-term unions, non-positive/non-integer money, unknown
+provider codes, invalid effective windows, and broken product/version references. The mandatory
+application publication parser rejects unknown fields, product/price mismatches, duplicate
+identities, incomplete supported localizations, crypto subscription pricing, overlapping active
+country scopes, and ambiguous active catalogs before Web use.
+
+Rollback selects no active catalog or appends an immutable disabled/retired successor. Do not edit
+or delete catalog history. Production pricing, countries, taxes, refunds, providers, credentials,
+deployment, and public launch remain explicit owner gates.
+
+## RIT-062 commercial transaction foundation classification
+
+The expand-only migration creates empty provider-neutral v2 order/item/payment-attempt tables plus
+append-only Credit ledger, reservation, allocation, nonnegative projection, and source-specific
+entitlement records. It does not copy or reinterpret legacy local-commerce rows and does not
+activate a provider, country, price, webhook, fulfillment, subscription, refund, or production
+migration.
+
+| Data                                             | Classification               | Baseline handling                                               |
+| ------------------------------------------------ | ---------------------------- | --------------------------------------------------------------- |
+| Exact order/catalog/price/policy/terms snapshots | Restricted commercial        | Integer minor units; server-authoritative versions              |
+| Payment attempt/provider references              | Restricted operational       | No card, key, private content, or client success authority      |
+| Credit ledger/reservation/allocation             | Personal service entitlement | Positive integers; append-only; non-transferable; no cash value |
+| Credit projection                                | Personal derived operational | Nonnegative; transactionally maintained; rebuildable            |
+| Plus/permanent entitlement                       | Personal service entitlement | Exact source kind and unique owner/fulfillment                  |
+| Idempotency/canonical request digests            | Security/internal            | Fixed 32-byte digests only; no raw request key                  |
+
+Application runtime can insert authoritative transaction facts and update only finite projection
+columns. It cannot update or delete Credit ledger/allocation evidence. Privacy-deletion reads are
+restricted by request-scoped RLS through the owning order/reservation/user. Rollback stops all v2
+writes and retains rows for evidence; no destructive down migration is defined.
+
+## RIT-055 account consent controls classification
+
+The expand-only migration adds one account-owned append-only consent ledger. It does not alter
+anonymous consent history, activate analytics, send private content to an AI provider, enable
+model training, create marketing/service-notification permission, or approve legal notice text.
+
+| Data                                  | Classification              | Baseline handling                                           |
+| ------------------------------------- | --------------------------- | ----------------------------------------------------------- |
+| Account/purpose/sequence              | Personal privacy evidence   | Owner-scoped service reads; finite exact purposes           |
+| Notice version, locale, decision      | Restricted consent evidence | Exact current version; absence/stale/withdrawn fails closed |
+| Withdrawal reference and timestamp    | Restricted audit evidence   | Same-account/purpose append-only chain                      |
+| Idempotency/canonical request digests | Security/internal           | Fixed 32-byte digests; raw key/body excluded                |
+
+Application runtime receives `SELECT` and `INSERT` only and is attested before use; it cannot
+update, delete, truncate, own, or administer the ledger. Each mutation serializes on the account,
+and each data-flow decision rereads the bounded current history. Histories over 256 records fail
+closed while still permitting a later withdrawal record. Privacy export includes account and
+linked-anonymous consent evidence with explicit owner type.
+
+Rollback removes the Web/API/data-flow composition and stops new writes while retaining the
+append-only evidence. Dropping or rewriting consent history, changing retention, activating
+production analytics/AI/model improvement, publishing legal consent text, or deploying publicly
+requires a later reviewed decision and explicit owner approval.
+
+## RIT-045 transactional Revisit reminder classification
+
+The expand-only migration adds one account-owned reminder preference/queue row per Revisit and one
+append-only operation ledger. It does not change historical Revisit v1 rows, activate another
+locale, configure an email provider/domain, approve legal copy, or send a production message.
+
+| Data                                              | Classification                | Baseline handling                                               |
+| ------------------------------------------------- | ----------------------------- | --------------------------------------------------------------- |
+| Account/link/Revisit/recipient identity IDs       | Personal operational          | Exact composite ownership; no email or private prose            |
+| Preference/channel/frequency/locale/version       | Restricted service preference | English email once-only; unsupported/stale state fails closed   |
+| Delivery/attempt/lease/failure/provider reference | Restricted operational        | Hashed lease; three attempts; bounded codes and terminal states |
+| Subscribe/unsubscribe operation history           | Restricted consent evidence   | Append-only exact result and database time                      |
+| Idempotency/canonical request digests             | Security/internal             | Fixed 32-byte digests; raw key/body excluded                    |
+
+Application runtime receives select/insert plus finite queue-state updates and cannot delete
+subscription rows or mutate/delete operation history. Privacy deletion receives only the columns
+needed to cancel and minimize delivery state. Privacy export includes user-visible reminder and
+operation evidence while excluding lease/idempotency hashes. Rollback disables routes/worker
+composition and stops claims while retaining rows; no destructive down migration is defined.
+
+## RIT-093 astrology calculation persistence classification
+
+The expand-only migration adds owner-scoped `astrology_calculation` rows and one append-only
+`astrology_calculation_operation` replay ledger. It creates no calculation, enables no astrology
+feature, changes no method, invokes no native engine, and performs no production activation.
+
+| Data                                                | Classification                     | Baseline handling                                                                             |
+| --------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| Account, calculation, and birth-profile UUIDs       | Personal pseudonymous              | Composite ownership and owner-filtered reads                                                  |
+| Birth-profile revision and canonical payload digest | Restricted private provenance      | Insert trigger requires the current active owned profile snapshot                             |
+| Status, time certainty, method/aspect versions      | Personal derived metadata          | Finite checksummed method semantics; no prediction or prose                                   |
+| Method catalog, input, and time-zone digests        | Restricted integrity provenance    | Fixed 32-byte digests only; no birth-place or birth-time plaintext                            |
+| Engine build provenance                             | Internal supply-chain provenance   | Exact bounded V1 JSON fields for engine, source/data, adapter, compiler, ABI, and SBOM replay |
+| Natal facts                                         | Restricted private derived content | AES-GCM ciphertext, nonce, tag, key version, and separately keyed facts digest only           |
+| Idempotency and canonical-request digests           | Security/internal                  | Fixed 32-byte digests; raw keys and request payloads are excluded                             |
+| Creation and privacy-deletion timestamps            | Personal operational metadata      | Database time; deletion is terminal for owner reads                                           |
+
+The application runtime receives exact `SELECT` and column-scoped `INSERT` capabilities on the two
+tables. It receives no update, delete, truncate, reference, trigger, maintain, ownership, schema
+create, database create, or role-administration path. Every persistence operation performs a live
+least-privilege attestation. Creation revalidates an active account session, locks the account replay
+scope, returns only exact same-key/same-request replay, and requires the active owned birth profile's
+expected revision, canonical encrypted-payload digest, and time certainty. The serializable
+transaction holds a share lock on that profile row through calculation and operation insertion;
+an RLS `WITH CHECK` independently rejects a direct insert whose active owned profile snapshot does
+not match. Database routines are intentionally not introduced because migration policy prohibits
+them. Calculations and operation evidence are never updated by the application runtime.
+
+Privacy export includes active encrypted calculation rows and complete replay provenance while
+excluding idempotency digests. Privacy deletion has a separate request-scoped RLS path that may only
+replace facts ciphertext, nonce, tag, keyed digest, and their key versions with deletion tombstones
+and set `privacy_deleted_at`. Completion evidence includes the affected calculation count.
+
+Adding `astrologyCalculations` changes the pre-release export contract from
+`privacy-export-package.v1` to `privacy-export-package.v2`. The application and isolated database
+fixtures create and consume V2 only; no production V1 artifact migration is executed or implied.
+If V1 artifacts exist in a later environment, a separately reviewed compatibility reader or
+forward re-export operation is required before activation.
+
+Rollback disables calculation composition and revokes/reapplies the runtime grants while retaining
+immutable encrypted history and operation evidence. The migration is additive and has no down
+migration. Dropping rows or tables, rewriting historical facts, changing retention, or running an
+irreversible production migration requires a later forward migration, current backup/restore
+evidence, privacy/legal review, and explicit owner approval.
+
+## RIT-093 astrology feature-flag registration
+
+The additive migration adds one insert policy for the canonical `experience.astrology` key. It
+does not insert a flag version or enable any environment. An `on` version requires registry V1,
+`OWN-015:` approval evidence, and empty country/locale scopes. The existing safe-off policy permits
+a newer emergency `off` version without waiting for approval; the append-only table, hierarchical
+key constraint, and reader/writer least-privilege roles remain unchanged.
+
+Historical `astrology_enabled` text is a superseded semantic label under D-071, not a valid
+PostgreSQL key. The isolated drill applies all 28 migrations, rejects the historical key and
+invalid activation evidence, records off-to-on-to-emergency-off history, proves runtime/control
+least privilege, and restores the same latest-off state from a logical dump. Rollback stops the
+writer and appends a newer off version if necessary; immutable flag history is not deleted.

@@ -73,6 +73,8 @@ Target: a motivated user can reach the first useful result within three minutes 
 - Explain privacy and boundaries in one short line.
 - Show a gentle safe-reframing response when needed.
 - Allow “continue without writing a question.”
+- An allowed result offers an explicit same-tab action into the one-card flow without copying the
+  private question into the reading request, URL, metadata, storage, or analytics.
 
 ### Draw screen
 
@@ -93,6 +95,9 @@ Target: a motivated user can reach the first useful result within three minutes 
 8. Save/share/report controls.
 
 Do not hide the core result behind payment after the draw. Paid depth must be described before purchase and preserve a useful free result.
+The intention action stores only the exact displayed reading UUID in tab-scoped storage. Sanctuary
+resolves that owner-scoped reading before creating an intention and clears the handoff after
+success, rather than guessing from the newest unrelated reading.
 
 ## 5. Numerology interaction
 
@@ -137,14 +142,41 @@ Do not hide the core result behind payment after the draw. Paid depth must be de
 - Free object remains equally prominent and dignified.
 - Ritual completion uses calm affirmation, not claims that a wish was sent/granted.
 - Permit accessibility mode with a linear text/button experience.
+- The free candle and incense use one ordered interaction model in standard 2D and accessible
+  linear modes. Both modes expose the same pause/resume, exit, step, and completion actions without
+  requiring animation, audio, dragging, precision, or timing.
+- Audio is off and absent from the initial free experience. Reduced-motion preference defaults to
+  the linear path, while CSS image or animation failure leaves the complete text-and-button path
+  available.
+- Entering the focused inline stage moves focus to its title; Escape or the visible exit returns
+  focus to the selected object. Exiting, going offline, or encountering a completion error keeps
+  the private intention in memory.
+- RIT-042 sends no ritual request before explicit completion. Its final action temporarily uses the
+  historical `reflection-ritual.v1` boundary; RIT-043 owns durable start/pause/resume provenance,
+  exact catalog/access snapshots, transactional pass handling, and the final lifecycle contract.
 
 ## 9. Journal and revisit
 
 - Journal editor starts with optional prompts, never a mandatory mood score.
 - Autosave locally/server-side with clear state.
 - Provide privacy reminder and lock-screen-safe notification defaults.
-- Revisit compares the user's words and actions; it does not reinterpret events as proof of prophecy.
-- Provide archive and completion, not only streak continuation.
+- Sanctuary can hand an intention to `/en/revisit` through one opaque UUID held only in tab-scoped
+  storage. The Revisit page reloads all private prose from the owner-scoped server boundary and
+  removes that UUID after scheduling.
+- Scheduling offers tomorrow, seven days, or a custom future local calendar date plus an editable
+  IANA time zone. The local date remains stable across daylight-saving changes.
+- Optional quiet hours are stored only as an inert future preference. Reminder preference is fixed
+  to `none`, the channel is null, and this flow sends no email, push, SMS, webhook, or in-app
+  notification.
+- The selected date is an invitation, not an unlock. A user may complete before, on, or after it,
+  comparing the encrypted original intention/action snapshot with what actually happened without
+  treating the result as proof of prophecy.
+- Completion accepts a private factual reflection plus up to three bounded user-owned outcome tags.
+  Provide explicit reschedule, archive, soft-delete, retry, offline, empty, and conflict behavior;
+  archive is terminal except for deletion and no streak continuation is required.
+- Deleting a journal entry restores focus to the journal editor. Opening Revisit completion moves
+  focus to the reflection field, and successful schedule, completion, or deletion moves focus to
+  the announced status.
 
 ## 10. Commerce UX
 
@@ -154,6 +186,26 @@ Do not hide the core result behind payment after the draw. Paid depth must be de
 - Return from checkout to a resilient confirmation state that can recover from delayed webhooks.
 - Show “Payment received—access is being confirmed” rather than granting from URL query parameters.
 - Make cancel/refund/support paths easy to find.
+
+## 10A. Private account control
+
+- The account page keeps profile preferences, minimal linked history, and active-session controls
+  in one responsive private surface.
+- History is a bounded chronological summary across every anonymous subject already linked to the
+  account. It labels resource type, coarse lifecycle state, approved reading theme, and time only;
+  it never lists questions, intention text, journal prose, Revisit reflection, email, or identity
+  data.
+- A reading summary can restore that exact owner-authorized reading by placing only its UUID in
+  tab-scoped storage. Other resource summaries are informational until their dedicated account
+  restoration flow is implemented.
+- Profile changes use optimistic revision protection. A change made in another session produces a
+  visible conflict and requires reloading rather than silently overwriting it.
+- Session cards distinguish this session from other active sessions using sign-in, last-active,
+  and expiry times only. Do not display or collect device names, locations, IP addresses, user
+  agents, fingerprints, or inferred trust.
+- Targeted sign-out is available only for another session. Current-session sign-out and all-session
+  sign-out remain explicit, confirmable actions and never claim success if durable revocation
+  fails.
 
 ## 11. Global and locale UX
 

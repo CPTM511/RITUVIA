@@ -1,0 +1,91 @@
+{
+  "approval": {
+    "approvalReference": "D-070:owner-approval:2026-07-26",
+    "approvedDate": "2026-07-26",
+    "reviewDueDate": "2027-07-26",
+    "reviewerId": "owner",
+    "reviewerRole": "owner",
+    "status": "approved"
+  },
+  "approximateTimePolicy": {
+    "aspectsPublished": false,
+    "centerInstantPositionsPublished": true,
+    "housesAndAnglesPublished": false,
+    "maximumWindowMinutes": 720,
+    "minimumWindowMinutes": 1,
+    "windowDisclosureRequired": true
+  },
+  "aspects": [
+    {
+      "angleDegrees": 0,
+      "inclusiveOrbDegrees": 8,
+      "name": "conjunction"
+    },
+    {
+      "angleDegrees": 60,
+      "inclusiveOrbDegrees": 4,
+      "name": "sextile"
+    },
+    {
+      "angleDegrees": 90,
+      "inclusiveOrbDegrees": 6,
+      "name": "square"
+    },
+    {
+      "angleDegrees": 120,
+      "inclusiveOrbDegrees": 6,
+      "name": "trine"
+    },
+    {
+      "angleDegrees": 180,
+      "inclusiveOrbDegrees": 8,
+      "name": "opposition"
+    }
+  ],
+  "aspectPolicyVersion": "rituvia-major-aspects.v1",
+  "bodies": [
+    "sun",
+    "moon",
+    "mercury",
+    "venus",
+    "mars",
+    "jupiter",
+    "saturn",
+    "uranus",
+    "neptune",
+    "pluto",
+    "true_node"
+  ],
+  "contentType": "astrology_calculation_method",
+  "engineRequirements": {
+    "automaticEphemerisFallbackAllowed": false,
+    "libraryVersion": "2.10.03",
+    "requiredEphemerisFlag": "SEFLG_SWIEPH",
+    "requestedEphemerisFlags": 258,
+    "sourceCommit": "af9823fe7b06ffefe3d3968fdc5680be8b5eec5f",
+    "sourceSnapshotTag": "v2.10.3final"
+  },
+  "housePolicy": {
+    "exactTimeHouseSystem": "placidus",
+    "fallbackHouseSystem": null,
+    "polarFailureBehavior": "unavailable_without_partial_facts"
+  },
+  "locale": "en",
+  "methodId": "rituvia.western-natal",
+  "methodVersion": "rituvia-western-natal.v1",
+  "node": "true_node",
+  "productBoundary": {
+    "claimType": "symbolic_self_reflection",
+    "deterministicFactsOnly": true,
+    "scientificOrPredictiveClaim": false,
+    "traditionScope": "western_astrology_product_convention"
+  },
+  "schemaVersion": "astrology-calculation-method.v1",
+  "unknownTimePolicy": {
+    "aspectsPublished": false,
+    "engineInvoked": false,
+    "housesAndAnglesPublished": false,
+    "placementsPublished": false
+  },
+  "zodiac": "tropical"
+}

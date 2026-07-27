@@ -100,6 +100,20 @@ Do not present one mapping as universally valid.
 - Safety considerations.
 - Completion language.
 - No efficacy guarantee.
+
+The first production-adapted schema is intentionally structural. Templates use closed purpose and
+interaction codes, audio-off defaults, static reduced-motion equivalents, linear alternatives,
+text-alternative localization keys, duration classes, and reflective completion. Catalog items
+reference an exact template and approved publication record, carry a fixed symbolic-only scope and
+no-external-outcome guarantee, and can declare only the reviewed art, animation, audio,
+arrangement, duration, memory, collection, or persistence presentation dimensions. Arbitrary
+instructions, descriptions, traditions, prices, Credit costs, ownership, efficacy, protection, or
+result fields are rejected rather than filtered after acceptance.
+
+The English original-secular catalog adapts the owner-supplied production-pack code inventory.
+Regional traditions, additional locales, or substantive ritual prose require their separate
+source, rights, cultural, translation, safety, and owner approval gates.
+
 - Commercial rights and cultural review.
 
 ## 10. Prohibited claims lexicon
@@ -148,6 +162,16 @@ No regional tradition launches merely because an LLM can generate text about it.
 - Automated checks detect unsupported numerical/historical claims, plagiarism-like overlap, banned claims, cultural mixing, and missing boundaries.
 - Human approval is required for sensitive publication classes.
 - Generated personalized interpretations follow `docs/06_AI_INTERPRETATION_SAFETY.md` and are not indexed.
+
+The first approved English numerology publication and interpretation source is
+`content/traditions/numerology/rituvia-symbolic-reflection.en.v1.json`. D-065 binds its exact
+version and digest, two owned-source rights records, author/reviewer metadata, thirty-six
+calculation/result entries, prompt, fallback, independent semantic-review registration, public
+route policy, and safe-off paid-product mapping. Public guides may project only reviewed
+educational fields. Personalized interpretation may project only the complete bounded entry set
+through the separate artifact integrity, authority, deterministic-fact, and safety boundary.
+Number profiles are non-indexed source records and must not be automatically published as SEO
+doorway pages.
 
 ## 14. Content corrections
 

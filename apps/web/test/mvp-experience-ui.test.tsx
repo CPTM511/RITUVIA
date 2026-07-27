@@ -11,10 +11,15 @@ import {
 } from "../app/_components/local-checkout";
 import {
   parseCatalogResponse,
+  parseFreeRitualCatalogResponse,
   resolveLatestReadingId,
   SanctuaryFlow,
   sanctuaryEndpoints,
 } from "../app/_components/sanctuary-flow";
+import {
+  sanctuaryReadingHandoffStorageKey,
+  storeSanctuaryReadingHandoff,
+} from "../app/_components/reading-sanctuary-handoff";
 import { SignInForm } from "../app/_components/sign-in-form";
 import { safeLocalReturnTo } from "../app/_contracts/reviewed-return-to";
 import { getAccountMessages } from "../app/_i18n/account-messages";
@@ -23,11 +28,14 @@ import {
   localeAccountPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
+  localeRevisitPath,
   localeSanctuaryPath,
   localeSignInPath,
   localeTarotOneCardPath,
+  localeTarotThreeCardPath,
 } from "../app/_i18n/routing";
 import { getSanctuaryMessages } from "../app/_i18n/sanctuary-messages";
+import { getWebRitualCatalog } from "../server/ritual-catalog";
 
 const uuid = "00000000-0000-4000-8000-000000000001";
 
@@ -51,6 +59,7 @@ describe("MVP client boundaries", () => {
         code: "moonlit_lotus",
         description: "One moonlit lotus · Private sanctuary use",
         name: "Moonlit lotus",
+        objectCode: "moonlit_lotus",
         owned: false,
         price: { amountMinor: 199, currency: "USD" },
       },
@@ -61,6 +70,11 @@ describe("MVP client boundaries", () => {
         schemaVersion: 1,
       }),
     ).toBeNull();
+  });
+
+  it("accepts only the approved canonical free ritual definitions", () => {
+    expect(parseFreeRitualCatalogResponse(getWebRitualCatalog())).toBe(true);
+    expect(parseFreeRitualCatalogResponse({ schemaVersion: "ritual-catalog.v1" })).toBe(false);
   });
 
   it("requires a valid private account response before showing account data", () => {
@@ -138,6 +152,7 @@ describe("MVP client boundaries", () => {
       intentions: "/api/v1/intentions",
       journalEntries: "/api/v1/journal-entries",
       orders: "/api/v1/orders",
+      ritualObjects: "/api/v1/ritual-objects",
       ritualSessions: "/api/v1/ritual-sessions",
     });
   });
@@ -158,6 +173,32 @@ describe("MVP client boundaries", () => {
     }) as unknown as typeof fetch;
 
     await expect(resolveLatestReadingId(fetcher, storage)).resolves.toBe(newer);
+  });
+
+  it("prefers the exact displayed reading handed to Sanctuary", async () => {
+    const selected = "00000000-0000-4000-8000-000000000004";
+    const newer = "00000000-0000-4000-8000-000000000005";
+    const values = new Map<string, string>([
+      ["rituvia.tarot.resume.one_card.v1", selected],
+      ["rituvia.tarot.resume.three_card.v1", newer],
+    ]);
+    expect(
+      storeSanctuaryReadingHandoff({ setItem: (key, value) => values.set(key, value) }, selected),
+    ).toBe(true);
+    expect(values.get(sanctuaryReadingHandoffStorageKey)).toBe(selected);
+
+    const fetcher = vi.fn(async (input: string | URL | Request) => {
+      const candidate = String(input).split("/").at(-1);
+      return Response.json({
+        createdAt: candidate === newer ? "2026-07-18T12:00:00.000Z" : "2026-07-18T11:00:00.000Z",
+        readingId: candidate,
+      });
+    }) as unknown as typeof fetch;
+
+    await expect(
+      resolveLatestReadingId(fetcher, { getItem: (key) => values.get(key) ?? null }),
+    ).resolves.toBe(selected);
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it("ignores stale saved reading identifiers", async () => {
@@ -190,8 +231,10 @@ describe("MVP server-rendered initial states", () => {
     const accountHtml = renderToStaticMarkup(
       createElement(AccountExperience, {
         messages: getAccountMessages("en").account,
+        oneCardHref: localeTarotOneCardPath("en"),
         sanctuaryHref: localeSanctuaryPath("en"),
         signInHref: localeSignInPath("en"),
+        threeCardHref: localeTarotThreeCardPath("en"),
       }),
     );
     const checkoutHtml = renderToStaticMarkup(
@@ -232,6 +275,7 @@ describe("MVP server-rendered initial states", () => {
         accountHref: localeAccountPath("en"),
         messages: getSanctuaryMessages("en"),
         readingHref: localeTarotOneCardPath("en"),
+        revisitHref: localeRevisitPath("en"),
         sanctuaryHref: localeSanctuaryPath("en"),
         signInHref: localeSignInPath("en"),
       }),
@@ -239,6 +283,9 @@ describe("MVP server-rendered initial states", () => {
 
     expect(html).toContain("rituvia-sanctuary-orb.png");
     expect(html).toContain("Loading available ritual objects");
+    expect(html).toContain("Free static ritual steps");
+    expect(html).toContain("Quiet candle");
+    expect(html).toContain("Quiet incense");
     expect(html).toContain("Set an intention");
     expect(html).toContain("Private reflection");
   });

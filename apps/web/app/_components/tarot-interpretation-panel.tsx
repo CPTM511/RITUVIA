@@ -16,11 +16,13 @@ import {
   executeTarotInterpretationStart,
   TarotInterpretationTransportError,
 } from "./tarot-interpretation-transport";
+import { TarotReadingReport } from "./tarot-reading-report";
 
 type Messages = TarotReadingMessages["result"]["interpretation"];
 
 export type TarotInterpretationPanelProps = Readonly<{
   messages: Messages;
+  reportMessages: TarotReadingMessages["result"]["report"];
   readingId: string;
 }>;
 
@@ -68,7 +70,11 @@ const timeHorizonLabel = (
   }
 };
 
-export function TarotInterpretationPanel({ messages, readingId }: TarotInterpretationPanelProps) {
+export function TarotInterpretationPanel({
+  messages,
+  reportMessages,
+  readingId,
+}: TarotInterpretationPanelProps) {
   const [state, dispatch] = useReducer(
     reduceTarotInterpretationState,
     initialTarotInterpretationState,
@@ -347,6 +353,14 @@ export function TarotInterpretationPanel({ messages, readingId }: TarotInterpret
                 <p>{messages.boundary}</p>
               </footer>
             </article>
+            {state.operationId === null ? null : (
+              <TarotReadingReport
+                interpretationRequestId={state.operationId}
+                messages={reportMessages}
+                positions={[]}
+                readingId={readingId}
+              />
+            )}
           </div>
         ) : null}
       </div>

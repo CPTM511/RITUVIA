@@ -182,6 +182,16 @@ describe("accessible UI primitives", () => {
     expect(text).toContain('dir="auto"');
     expect(text).toContain("Required");
 
+    const date = renderToStaticMarkup(
+      <TextField
+        id={createUiControlId("revisit-date")}
+        label="Revisit date"
+        minimum="2026-07-25"
+        type="date"
+      />,
+    );
+    expect(date).toContain('min="2026-07-25"');
+
     const textarea = renderToStaticMarkup(
       <TextAreaField dir="rtl" id={fieldId} label="Reflection" name={fieldName} readOnly />,
     );
@@ -261,6 +271,8 @@ describe("accessible UI primitives", () => {
       { maxLength: Number.NaN },
       { type: "file" },
       { type: "password" },
+      { minimum: "2026-07-25", type: "text" },
+      { minimum: "07/25/2026", type: "date" },
       { autoComplete: "current-password", type: "text" },
     ];
     for (const invalidProps of invalidTextProps) {

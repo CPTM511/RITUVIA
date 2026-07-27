@@ -6,6 +6,7 @@ const harness = vi.hoisted(() => ({
   end: vi.fn(),
   intakeAvailability: "disabled" as "disabled" | "enabled",
   loadPublicShellState: vi.fn(),
+  numerologyAvailability: "disabled" as "disabled" | "enabled",
   tarotReadingAvailability: "disabled" as "disabled" | "enabled",
 }));
 
@@ -15,6 +16,10 @@ vi.mock("../server/public-shell-state", () => ({
 
 vi.mock("../server/question-intake-state", () => ({
   loadQuestionIntakeAvailability: () => harness.intakeAvailability,
+}));
+
+vi.mock("../server/numerology-state", () => ({
+  loadNumerologyAvailability: () => harness.numerologyAvailability,
 }));
 
 vi.mock("../server/tarot-reading-state", () => ({
@@ -51,6 +56,7 @@ describe("public shell request and crawl gate", () => {
     vi.clearAllMocks();
     harness.deploymentEnvironment = "local";
     harness.intakeAvailability = "disabled";
+    harness.numerologyAvailability = "enabled";
     harness.tarotReadingAvailability = "disabled";
     harness.loadPublicShellState.mockResolvedValue("enabled");
   });
@@ -94,10 +100,104 @@ describe("public shell request and crawl gate", () => {
     expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
 
+  it("allows only the exact local authentication preview endpoint", async () => {
+    const reviewed = await proxy(request("/api/v1/auth/local-preview"));
+    const query = await proxy(request("/api/v1/auth/local-preview?token=private-canary"));
+    const post = await proxy(request("/api/v1/auth/local-preview", { method: "POST" }));
+    const trailingSlash = await proxy(request("/api/v1/auth/local-preview/"));
+
+    expect(reviewed.status).toBe(200);
+    expect(reviewed.headers.get("x-middleware-next")).toBe("1");
+    expect(reviewed.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    for (const rejected of [query, post, trailingSlash]) {
+      expect(rejected.status).toBe(404);
+      expect(await rejected.text()).toBe("");
+    }
+    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+  });
+
+  it("allows only bounded account history and reading-list queries", async () => {
+    for (const pathname of [
+      "/api/v1/me/history",
+      "/api/v1/me/history?limit=10",
+      "/api/v1/me/history?limit=10&cursor=abc_123",
+      "/api/v1/me/readings?cursor=abc_123",
+    ]) {
+      const response = await proxy(request(pathname));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+    for (const pathname of [
+      "/api/v1/me/history?limit=0",
+      "/api/v1/me/history?limit=51",
+      "/api/v1/me/history?cursor=private%20canary",
+      "/api/v1/me/history?limit=10&limit=9",
+      "/api/v1/me/history?userId=33333333-3333-4333-8333-333333333333",
+    ]) {
+      const response = await proxy(request(pathname));
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+    }
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(4);
+  });
+
+  it("allows only exact account consent read and mutation shapes", async () => {
+    for (const method of ["GET", "POST"] as const) {
+      const response = await proxy(request("/api/v1/me/consents", { method }));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+    for (const [method, pathname] of [
+      ["PATCH", "/api/v1/me/consents"],
+      ["GET", "/api/v1/me/consents?purpose=ai_personalization"],
+      ["POST", "/api/v1/me/consents/"],
+    ] as const) {
+      const response = await proxy(request(pathname, { method }));
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+    }
+  });
+
+  it("allows only exact privacy export and deletion API shapes", async () => {
+    const exportId = "33333333-3333-4333-8333-333333333333";
+    for (const [method, pathname] of [
+      ["POST", "/api/v1/privacy/export"],
+      ["GET", `/api/v1/privacy/exports/${exportId}`],
+      ["POST", `/api/v1/privacy/exports/${exportId}/download`],
+      ["POST", "/api/v1/privacy/deletions"],
+    ] as const) {
+      const response = await proxy(request(pathname, { method }));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+    for (const [method, pathname] of [
+      ["GET", "/api/v1/privacy/export"],
+      ["POST", `/api/v1/privacy/exports/${exportId}`],
+      ["GET", `/api/v1/privacy/exports/${exportId}/download`],
+      ["GET", "/api/v1/privacy/deletions"],
+      ["POST", "/api/v1/privacy/export/"],
+      ["GET", "/api/v1/privacy/exports/not-a-uuid"],
+      ["POST", `/api/v1/privacy/exports/${exportId}/download?private=canary`],
+    ] as const) {
+      const response = await proxy(request(pathname, { method }));
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+    }
+  });
+
   it("permits indexing only for production canonical HTML, never framework representations", async () => {
     harness.deploymentEnvironment = "production";
 
     const canonical = await proxy(request("/en/privacy", { headers: { accept: "text/html" } }));
+    const numerologyCanonical = await proxy(
+      request("/en/numerology/life-path-number", { headers: { accept: "text/html" } }),
+    );
+    const profileDoorway = await proxy(
+      request("/en/numerology/number-1", { headers: { accept: "text/html" } }),
+    );
     const reviewedRsc = await proxy(
       request("/en/privacy", {
         headers: { accept: "text/x-component", "next-router-prefetch": "1", rsc: "1" },
@@ -108,6 +208,10 @@ describe("public shell request and crawl gate", () => {
 
     expect(canonical.status).toBe(200);
     expect(canonical.headers.get("x-robots-tag")).toBeNull();
+    expect(numerologyCanonical.status).toBe(200);
+    expect(numerologyCanonical.headers.get("x-robots-tag")).toBeNull();
+    expect(profileDoorway.status).toBe(404);
+    expect(profileDoorway.headers.get("x-robots-tag")).toBe(noIndex);
     expect(reviewedRsc.status).toBe(200);
     expect(reviewedRsc.headers.get("x-robots-tag")).toBe(noIndex);
     expect(reviewedRsc.headers.get("cache-control")).toBe("private, no-store, max-age=0");
@@ -156,6 +260,19 @@ describe("public shell request and crawl gate", () => {
       );
     },
   );
+
+  it("keeps numerology closed while its independent catalog activation is absent", async () => {
+    harness.numerologyAvailability = "disabled";
+
+    const page = await proxy(request("/en/readings/numerology"));
+    const api = await proxy(request("/api/v1/numerology/calculate", { method: "POST" }));
+
+    expect(page.status).toBe(404);
+    expect(api.status).toBe(404);
+    expect(page.headers.get("cache-control")).toContain("no-store");
+    expect(api.headers.get("cache-control")).toContain("no-store");
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
+  });
 
   it("allows only the independently enabled private tarot create, owner read, report, and interpretation APIs", async () => {
     harness.tarotReadingAvailability = "enabled";
@@ -349,6 +466,57 @@ describe("public shell request and crawl gate", () => {
       expect(response.status).toBe(404);
       expect(response.headers.get("cache-control")).toContain("no-store");
       expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("allows only the exact anonymous numerology page and calculation API", async () => {
+    const page = await proxy(request("/en/readings/numerology"));
+    const reviewedRsc = await proxy(
+      request("/en/readings/numerology?_rsc=abc_123", { headers: { rsc: "1" } }),
+    );
+    const api = await proxy(request("/api/v1/numerology/calculate", { method: "POST" }));
+
+    for (const response of [page, reviewedRsc, api]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    ["GET", "/api/v1/numerology/calculate"],
+    ["OPTIONS", "/api/v1/numerology/calculate"],
+    ["POST", "/api/v1/numerology/calculate/"],
+    ["POST", "/api/v1/numerology/calculate?birthDate=private-canary"],
+    ["POST", "/api/v1/numerology/calculate.rsc"],
+    ["POST", "/en/readings/numerology"],
+    ["GET", "/en/readings/numerology/"],
+    ["GET", "/en/readings/numerology?birthDate=private-canary"],
+    ["GET", "/en/readings/numerology.rsc"],
+  ])("rejects unreviewed numerology variant %s %s before lookup", async (method, pathname) => {
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
+  });
+
+  it.each(["disabled", "unavailable"] as const)(
+    "keeps numerology closed when the public shell is %s",
+    async (state) => {
+      harness.loadPublicShellState.mockResolvedValue(state);
+
+      const page = await proxy(request("/en/readings/numerology"));
+      const api = await proxy(request("/api/v1/numerology/calculate", { method: "POST" }));
+
+      expect(page.status).toBe(404);
+      expect(api.status).toBe(404);
+      expect(page.headers.get("cache-control")).toContain("no-store");
+      expect(api.headers.get("cache-control")).toContain("no-store");
     },
   );
 

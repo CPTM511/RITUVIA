@@ -12,13 +12,22 @@ const keyVersionPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const sha256DigestPattern = /^sha256:[0-9a-f]{64}$/u;
 const nonceLength = 12;
 const authenticationTagLength = 16;
-const maximumPrivateContentBytes = 4_096;
+const maximumPrivateContentBytes = 12_000;
 const maximumAdditionalDataBytes = 1_024;
 
-export type PrivateContentPurpose = "intention.small_action" | "journal.reflection";
+export type PrivateContentPurpose =
+  | "astrology_calculation.payload"
+  | "birth_profile.payload"
+  | "intention.small_action"
+  | "intention.text"
+  | "journal.reflection"
+  | "revisit.action_snapshot"
+  | "revisit.completion"
+  | "revisit.intention_snapshot";
 
 export type PrivateContentKeyringInput = Readonly<{
   activeKeyVersion: string;
+  digestKeyVersion: string;
   keys: readonly Readonly<{ key: Uint8Array; version: string }>[];
 }>;
 
@@ -44,6 +53,7 @@ export class PrivateContentCryptoError extends Error {
 
 export type PrivateContentCryptography = Readonly<{
   activeKeyVersion: string;
+  digestKeyVersion: string;
   decrypt(
     input: Readonly<{
       context: PrivateContentEncryptionContext;
@@ -90,7 +100,14 @@ const parseContext = (value: PrivateContentEncryptionContext): Buffer => {
     !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(
       value.ownerSubjectId,
     ) ||
-    (value.purpose !== "intention.small_action" && value.purpose !== "journal.reflection") ||
+    (value.purpose !== "astrology_calculation.payload" &&
+      value.purpose !== "birth_profile.payload" &&
+      value.purpose !== "intention.small_action" &&
+      value.purpose !== "intention.text" &&
+      value.purpose !== "journal.reflection" &&
+      value.purpose !== "revisit.action_snapshot" &&
+      value.purpose !== "revisit.completion" &&
+      value.purpose !== "revisit.intention_snapshot") ||
     !/^[a-z0-9][a-z0-9.:_-]{0,255}$/u.test(value.resourceBinding)
   ) {
     return invalid();
@@ -121,6 +138,7 @@ export const createPrivateContentCryptography = (
     typeof input !== "object" ||
     input === null ||
     !keyVersionPattern.test(input.activeKeyVersion) ||
+    !keyVersionPattern.test(input.digestKeyVersion) ||
     !Array.isArray(input.keys)
   ) {
     return invalid();
@@ -138,7 +156,8 @@ export const createPrivateContentCryptography = (
         entry.key.byteLength !== 32,
     ) ||
     new Set(entries.map(({ version }) => version)).size !== entries.length ||
-    !entries.some(({ version }) => version === input.activeKeyVersion)
+    !entries.some(({ version }) => version === input.activeKeyVersion) ||
+    !entries.some(({ version }) => version === input.digestKeyVersion)
   ) {
     return invalid();
   }
@@ -155,6 +174,7 @@ export const createPrivateContentCryptography = (
     }),
   );
   const activeKeyVersion = input.activeKeyVersion;
+  const digestKeyVersion = input.digestKeyVersion;
 
   const keyFor = (version: string) => keys.get(version) ?? invalid();
 
@@ -164,11 +184,11 @@ export const createPrivateContentCryptography = (
         ownerSubjectId,
       ) ||
       value.length === 0 ||
-      Buffer.byteLength(value, "utf8") > 8_192
+      Buffer.byteLength(value, "utf8") > 16_384
     ) {
       return invalid();
     }
-    const valueDigest = createHmac("sha256", keyFor(activeKeyVersion).integrity)
+    const valueDigest = createHmac("sha256", keyFor(digestKeyVersion).integrity)
       .update(`rituvia\0${label}\0${ownerSubjectId}\0`, "utf8")
       .update(value, "utf8")
       .digest("hex");
@@ -177,6 +197,7 @@ export const createPrivateContentCryptography = (
 
   return Object.freeze({
     activeKeyVersion,
+    digestKeyVersion,
     decrypt({ context, encrypted }) {
       if (
         typeof encrypted !== "object" ||

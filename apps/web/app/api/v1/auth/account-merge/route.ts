@@ -8,7 +8,8 @@ import {
   mergeWebAnonymousSubject,
   WebAccountAuthError,
 } from "../../../../../server/account-auth";
-import { hasNoAuthRequestBody } from "../_http";
+import { deriveSessionCsrfToken, sessionCsrfHeaderName } from "../../../../../server/session-csrf";
+import { hasNoAuthRequestBody, hasValidAccountSessionCsrf } from "../_http";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,18 +19,31 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
   if (
     request.headers.get("origin") !== getWebRuntimeConfiguration().brand.canonicalOrigin ||
     ![null, "same-origin"].includes(request.headers.get("sec-fetch-site")) ||
+    !hasValidAccountSessionCsrf(request) ||
     !(await hasNoAuthRequestBody(request)) ||
     idempotencyKey === null
   ) {
     return NextResponse.json({ code: "ACCOUNT_MERGE_REJECTED", status: 403 }, { status: 403 });
   }
   try {
-    await mergeWebAnonymousSubject({
+    const merged = await mergeWebAnonymousSubject({
       accountSessionToken: request.cookies.get(accountSessionCookieName)?.value,
       anonymousSessionToken: request.cookies.get(anonymousSessionCookieName)?.value,
       idempotencyKey,
     });
     const response = new NextResponse(null, { status: 204 });
+    const expires = new Date(merged.context.expiresAt);
+    response.cookies.set({
+      expires,
+      httpOnly: true,
+      maxAge: Math.max(1, Math.floor((expires.getTime() - Date.now()) / 1_000)),
+      name: accountSessionCookieName,
+      path: "/",
+      sameSite: "strict",
+      secure: true,
+      value: merged.sessionToken,
+    });
+    response.headers.set(sessionCsrfHeaderName, deriveSessionCsrfToken(merged.sessionToken));
     response.cookies.set({
       expires: new Date(0),
       httpOnly: true,

@@ -6,6 +6,23 @@ Tests are executable product memory. They must prove deterministic correctness, 
 
 ## 2. Test pyramid
 
+### Layered execution cadence
+
+- Inner loop: run the smallest test files or package commands that exercise the changed contract.
+- Ordinary task closure: run affected-package format, lint, type, architecture/evidence checks and
+  only the applicable integration, database, browser, accessibility, security, payment, or AI
+  suites.
+- Milestone integration and release: run the complete workspace matrix, including all unit tests,
+  PostgreSQL foundation, production build, accessibility/browser, AI, configuration, migration,
+  generated-evidence, and secret gates.
+- Trigger a complete matrix earlier when a change touches shared toolchain/runtime infrastructure,
+  cross-package public contracts, security-critical primitives used broadly, migration execution,
+  or when focused tests expose unexplained cross-cutting behavior.
+- Reuse prior passing evidence only when the tested source, dependencies, toolchain, configuration,
+  and generated inputs are unchanged. Record reused evidence and the reason it remains valid.
+- Keep command output bounded during iteration. Full logs belong in retained evidence artifacts,
+  not repeated chat output.
+
 ### Unit and property tests
 
 - Domain value objects, policies, state machines, calculators, formatters.
@@ -37,6 +54,82 @@ Tests are executable product memory. They must prove deterministic correctness, 
 - Privacy export/deletion.
 - Admin critical flow.
 - Mobile, keyboard, RTL, reduced motion, provider/AI failure.
+
+RIT-047 keeps the intention, ritual, and Revisit browser scripts independently runnable for
+diagnosis, then composes them with one continuous production-artifact Chromium journey in
+`test:accessibility`. The continuous gate must use one anonymous context and same-tab navigation,
+bind the exact displayed reading, inject stable-key manual recovery without automatic retry,
+complete and delete private reflection resources, and audit private canaries across every document
+transition. It is a deterministic first-party boundary acceptance test, not evidence that a
+deployed backend or production provider is active.
+
+RIT-050 adds `test:account-auth-browser` as a separate production-artifact gate using the real
+local PostgreSQL identity boundary. It verifies uniform start shapes, absence of browser-visible
+bearer material, exact local preview routing, cookie flags, one-time use, same-account rotation,
+old-token rejection, session-bound CSRF, durable logout, `429` retry behavior, 320px layout,
+keyboard completion, and serious/critical axe findings. It stays independently runnable and does
+not force the complete browser matrix during an ordinary authentication task.
+
+RIT-051 adds `test:account-merge-database` and extends the focused account-auth browser gate. The
+database gate deploys migrations twice and proves same-source/same-key concurrency returns one
+link and one deterministic successor; response-loss replay, different-key and cross-account
+conflicts, preexisting-history visibility, failure rollback, composite source-session provenance,
+hash-only audit evidence, and runtime update/delete denial. The browser gate proves successor
+cookie/CSRF rotation, anonymous-cookie clearing, original-token rejection, and exact dropped-
+response retry without running the unrelated complete workspace unit suite.
+
+RIT-052 adds `test:account-control-database` and `test:account-control-browser`. The isolated
+PostgreSQL gate proves stable multi-page history across linked subjects, all current reflection
+resource types, expiry/deletion filtering, cross-account exclusion, absence of private prose,
+optimistic profile conflicts, current-session protection, targeted revocation, logout-all, and
+unrelated-account survival. The production-artifact browser gate proves mobile/keyboard account
+settings, conflict feedback, current/other timestamp-only sessions, durable targeted/all-session
+logout, empty/error-safe history behavior, privacy, layout, and serious/critical accessibility
+checks. Focused route tests retain equal-shape cross-owner coverage for readings, intentions,
+rituals, journals, Revisits, sessions, orders, and entitlements; the complete workspace suite
+remains reserved for RIT-057.
+
+RIT-053 adds focused configuration, artifact-cryptography, package-builder, and HTTP route tests
+plus `test:privacy-export-database`. The isolated PostgreSQL gate deploys all migrations twice and
+proves merge-preserved authentication time, stale-auth denial, one same-account concurrent request,
+same-key replay, owner isolation, complete category shape, expiry, NULL artifact rejection,
+one-per-request artifact uniqueness, append-only request/artifact/audit privilege boundaries, and
+runtime update/delete denial. Builder tests prove
+authorized email/intention/journal/Revisit decryption, matching JSON/Markdown views, resource AAD
+binding, independent export keys, tamper failure, and ciphertext removal. The complete identity/
+privacy/authorization matrix remains reserved for RIT-057.
+
+RIT-054 adds focused configuration and strict HTTP route tests plus
+`test:privacy-deletion-database`. The isolated PostgreSQL gate deploys migrations twice and proves
+same-account dual-session serialization without deadlock, exact private/account replay including a
+dropped account response, scope conflict/rate control, link-denied history, anonymous/account
+session revocation, ciphertext canary destruction, export artifact destruction and finalize
+fencing, provider suppression and reauthentication denial, append-only completion, and runtime
+least privilege. A custom-format dump/restore then proves the deleted account remains disabled,
+exact terminal replay survives recovery, and no private canary reappears. The complete
+identity/privacy adversarial matrix remains reserved for RIT-057.
+
+RIT-045 adds focused Domain, Worker, Web route/server/proxy/message tests plus
+`test:revisit-reminder-database`. The isolated PostgreSQL gate deploys all migrations and proves
+account ownership, exact replay and changed-key conflict, old-key stable replay after withdrawal,
+quiet-hours suppression, one-winner concurrent claims, public mapping of leased state, live
+pre-provider authorization, stale lease rejection, bounded retry, terminal dead letter, immediate
+unsubscribe, once-only completion, privacy canary absence, append-only operations, and runtime
+update/delete denial. Existing privacy export/deletion gates prove the new table does not break
+least privilege. The focused Revisit browser verifies committed-only opt-in/out, no delivery
+request, offline/RTL/320px/touch/axe/privacy behavior; the continuous anonymous loop verifies the
+safe empty account state without console errors. The full unit matrix remains reserved for the
+next milestone/release trigger.
+
+RIT-057 adds `test:identity-privacy-authorization`, which composes focused authentication, merge,
+account-control, export, deletion, admin-policy, observability, analytics, metadata, PostgreSQL
+recovery, and production-artifact browser gates without hiding their stage labels. Its
+`test:privacy-control-browser` flow signs in, exports, reads metadata, downloads, deletes the
+account, proves old-session and export denial, replays the dropped deletion response, and checks
+browser/server privacy canaries. The deletion database gate also connects as the dedicated role
+and proves another account is invisible and immutable under the presented account's request token.
+At Milestone 5 closure the complete workspace unit/integration/accessibility/security matrix runs
+once; later documentation-only changes reuse that evidence under D-050.
 
 ### Non-functional
 
@@ -103,11 +196,74 @@ Do not make production randomness predictable merely to support tests; inject an
 
 ### Astrology
 
-- Licensed engine reference charts with tolerated numeric precision.
-- Historical time-zone/DST cases.
+- Historical Selection V1 preserves the superseded Professional contract model. Active Selection
+  V2 separates library release from source/data snapshot and checks owner AGPL approval,
+  whole-project license, exact Corresponding Source policy, source/data checksums, privacy,
+  attribution, fallback, and exit path.
+- Selection V1 is structurally production-safe-off. Integration readiness requires immutable
+  evidence records and a caller-supplied independent evidence authority; catalog JSON cannot
+  authorize its own license. Authority requests bind the exact selection-manifest digest and each
+  code-specific subject digest, enforce reviewer-role/independence rules, and reject future-dated
+  review evidence.
+- Local Swiss Ephemeris source/build integration requires independently verified D-069 approval,
+  the root AGPL license, and a pinned manifest. Missing Corresponding Source, incompatible license
+  material, runtime download, or unpinned native artifacts fail the architecture/SCA gate.
+- `@rituvia/divination` remains pure; native code must use a registered server-only adapter zone.
+- Reproducible hardened native build, compiler/flags, ABI, SBOM, archived source/data, and read-only
+  vendored DE441 data with exact SHA-256 inventory.
+- macOS local security evidence uses UBSan plus 151 deterministic mutation/boundary cases because
+  the bundled Apple clang ASan runtime is incompatible with the current host. Linux is the release
+  gate for ASan+UBSan and 5,000 bounded libFuzzer runs. A fresh Ubuntu 24.04.4 arm64 environment
+  passed that exact gate on 2026-07-27; release CI must repeat it for the immutable release
+  revision.
+- Native SCA queries only the exact pinned upstream commit through a bounded OSV API contract,
+  rejects malformed/duplicate records, and fails closed on any returned vulnerability. A
+  zero-record result is recorded precisely and is not treated as proof of complete C/C++
+  vulnerability coverage.
+- The native-component Corresponding Source drill must archive all bridge/build/test/interfaces,
+  notices, patched-dependency inputs, pure package source dependencies, lock/config inputs, and
+  exact Swiss source/data; suppress host xattrs; verify every extracted hash; place a rejecting
+  curl shim first in `PATH`; and reproduce the baseline engine metadata offline. A fresh Linux
+  extraction must also support a frozen-lockfile install. This rehearsal does not replace a clean
+  complete archive for the exact deployed project revision.
+- The complete release-source gate must bind an explicit 40-character Git revision, require a
+  clean worktree and a narrow ignored-input allowlist, reject non-regular Git/archive entries,
+  case collisions, unresolved Git LFS pointers, environment redirection, component checksum or
+  source drift, and existing output replacement. Its expected inventory is computed in process
+  from the exact Git archive plus checksum-attested vendor source and must match the extracted
+  payload before an offline native rebuild. Pull-request rehearsal does not replace final
+  release-revision archive retention, upload/readback verification, or public source-link checks.
+- Approved-method catalog digest and strict exact/approximate/unknown publication invariants.
+- Official Swiss Ephemeris `setest` regression vectors with explicit per-field tolerances; these
+  validate upstream/bridge consistency and do not replace independent astronomical comparison or
+  qualified external review.
+- A checksum-bound Astronomy Engine `2.1.19` corpus independently recomputes forty geocentric
+  apparent true-ecliptic-of-date Sun/Moon/planet vectors across 1801, 1888, 2000, and 2050. Both
+  normal and sanitizer-native gates enforce `0.02°` longitude/latitude and `0.001`
+  relative-distance limits. True Node and Placidus houses are explicitly excluded from this
+  independent claim and retain their separate Swiss flag/upstream regression evidence.
+- Owner/profile-revision binding, encrypted append-only persistence, exact replay conflict,
+  least-privilege grants, privacy export V2, and crypto-shred deletion.
+- The canonical `experience.astrology` control drill must prove default off, `OWN-015` and empty
+  scope enforcement for activation, emergency off without mutation, runtime read-only access, and
+  logical restore of the latest-off immutable history.
+- Web runtime composition must evaluate the live canonical flag before loading native metadata,
+  reject security-profile metadata in the production loader, and keep API/UI activation separate
+  from server-only composition.
+- Historical time-zone fixtures include non-hour offsets, New York fold/gap, Samoa's skipped local
+  date, explicit earlier/later disambiguation, and limited pre-1970 confidence.
+- Location-provider contract fixtures cover normalized bounded search, zero/one/multiple results,
+  duplicate/hostile/mismatched provider data, opaque location reread, exact provider/data digest,
+  raw-query isolation, HMAC cache partitioning, single flight, TTL, timeout, and failure eviction.
+- The Node/ICU/tzdata runtime is an exact calculation input. Version drift fails the focused gate
+  until fixtures and provenance are intentionally reviewed.
 - Unknown/approximate birth time.
 - House-system and engine-version fixtures.
 - AI fact verifier rejects altered placement.
+- Returned engine flags must match the requested Swiss Ephemeris/data mode; implicit Moshier, JPL,
+  alternate-data, or alternate-engine fallback returns unavailable rather than mixed facts.
+- Replacement requires archived inputs and a dual-run comparison before a new adapter/calculation
+  version takes over; historical facts are never silently rewritten.
 
 ## 4. Payment test matrix
 
@@ -160,6 +316,16 @@ executable behavior, self-reported pass fields, or observations. The non-English
 only fail-closed scope; this local synthetic gate does not approve a production model or prove
 multilingual output quality, human review, latency, cost, or canary quality, which remain
 candidate/release evidence.
+
+The same root command now runs the separate English/numerology safe-off gate after Tarot.
+`pnpm test:numerology-ai-evals` remains independently runnable for focused diagnosis. Its exact
+suite covers engine recomputation, all 11/22/33 controls, complete calculation/result content
+inventory, artifact integrity and authority, number/target/source drift, digit and number-word
+prose, strict locale, hostile text, prohibited safety categories, independent review,
+single-use/digest trust, deterministic replacement, and privacy metadata. It requires zero
+critical, metric, safe-control, missing, or unexpected failures and zero external or paid calls.
+Passing this synthetic gate does not override the canonical catalog's AI-disabled policy or
+approve production meanings.
 
 ## 6. Accessibility testing
 
@@ -236,7 +402,7 @@ Use coverage to find gaps, not as a game:
 
 ## 12. CI gates
 
-Per PR, run the smallest affected matrix plus mandatory foundation:
+Per PR, CI runs the smallest affected matrix plus mandatory foundation:
 
 - Format/lint/type/architecture boundaries.
 - Unit/property.
@@ -258,6 +424,15 @@ unregistered inputs. CI invokes the exact root `pnpm check:architecture` command
 quality step; architecture enforcement is not hidden inside lint.
 
 Nightly/full release runs expanded browser, AI red-team, performance, link/SEO, provider fixture, and flaky detection.
+
+For RIT-084, `pnpm test:numerology-seo-browser` consumes the current Web production build and
+visits the exact five English public numerology documents at 320px in dark and reduced-motion
+modes. It verifies static content, headings, no private inputs, canonical/noindex behavior,
+allowed JSON-LD types, internal calculator links, layout, touch targets, storage, request ledger,
+console/page errors, and serious/critical axe results. Axe-incomplete contrast nodes must match the
+reviewed selector inventory; the verifier never converts incomplete findings into automatic
+passes. This focused gate supplements, rather than replaces, milestone/release accessibility and
+SEO integration checks.
 
 The M0 active workflow separates mandatory checks into `Quality`, `PostgreSQL integration`, and
 `Security scans` jobs on GitHub-hosted Ubuntu 24.04 runners. It has read-only repository permission,

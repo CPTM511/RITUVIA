@@ -4,6 +4,7 @@ import { getMessages } from "../app/_i18n/messages";
 import { getAccountMessages } from "../app/_i18n/account-messages";
 import { getCommerceMessages } from "../app/_i18n/commerce-messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
+import { getNumerologyMessages } from "../app/_i18n/numerology-messages";
 import { getSanctuaryMessages } from "../app/_i18n/sanctuary-messages";
 import { getStateMessages } from "../app/_i18n/state-messages";
 import { getTarotOneCardMessages } from "../app/_i18n/tarot-one-card-messages";
@@ -42,8 +43,22 @@ describe("English shell messages", () => {
     expect(copy).toContain("contact local emergency services now");
     expect(copy).toContain("someone else may be in immediate danger");
     expect(copy).toContain("not placed in the URL");
-    expect(copy).toContain("No reading has been created or saved");
+    expect(copy).toContain("Continue to a private one-card reflection");
+    expect(copy).toContain("your question will not be copied into the reading request");
     expect(copy).not.toMatch(/\b(?:guaranteed|destined|curse removal|stronger ritual)\b/iu);
+  });
+
+  it("keeps numerology copy transparent, private, and non-predictive", () => {
+    const copy = collectStrings(getNumerologyMessages("en")).join(" ");
+
+    expect(copy).toContain("Every step, clearly shown");
+    expect(copy).toContain("never guesses the current year");
+    expect(copy).toContain("not placed in the URL, stored, logged, or included in analytics");
+    expect(copy).toContain("reviewed product convention for symbolic reflection");
+    expect(copy).toContain("Learn the public method before calculating");
+    expect(copy).not.toMatch(
+      /\b(?:name|expression number|guaranteed|destined|predicts|current year is)\b/iu,
+    );
   });
 
   it("keeps one-card copy non-deterministic, private, and free of pressure", () => {

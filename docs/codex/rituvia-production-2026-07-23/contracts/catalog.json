@@ -1,0 +1,120 @@
+{
+  "version": "2026-07-23",
+  "currency": "USD",
+  "creditPacks": [
+    {
+      "code": "pack_6",
+      "credits": 6,
+      "unitAmountCents": 599
+    },
+    {
+      "code": "pack_15",
+      "credits": 15,
+      "unitAmountCents": 1199
+    },
+    {
+      "code": "pack_40",
+      "credits": 40,
+      "unitAmountCents": 2499
+    }
+  ],
+  "plusPlans": [
+    {
+      "code": "plus_monthly",
+      "interval": "month",
+      "unitAmountCents": 999,
+      "creditsPerMonth": 8
+    },
+    {
+      "code": "plus_annual",
+      "interval": "year",
+      "unitAmountCents": 6999,
+      "creditsPerMonth": 8
+    }
+  ],
+  "deepReadings": [
+    {
+      "code": "deep_one",
+      "credits": 1,
+      "name": "One-card Deep Reading"
+    },
+    {
+      "code": "deep_three",
+      "credits": 2,
+      "name": "Three-card Synthesis"
+    },
+    {
+      "code": "relationship",
+      "credits": 3,
+      "name": "Relationship Reflection"
+    },
+    {
+      "code": "theme_30",
+      "credits": 4,
+      "name": "30-Day Theme"
+    },
+    {
+      "code": "year_reflection",
+      "credits": 6,
+      "name": "Your Year in Reflection"
+    }
+  ],
+  "permanentObjects": [
+    {
+      "code": "mindful_incense",
+      "credits": 3
+    },
+    {
+      "code": "moonlit_lotus",
+      "credits": 5
+    },
+    {
+      "code": "amethyst_guardian",
+      "credits": 6
+    },
+    {
+      "code": "golden_bowl",
+      "credits": 8
+    }
+  ],
+  "freeObjects": [
+    "free_candle",
+    "free_incense"
+  ],
+  "consumableRituals": [
+    {
+      "code": "guided_light",
+      "credits": 2
+    },
+    {
+      "code": "offering",
+      "credits": 2
+    },
+    {
+      "code": "moon_phase",
+      "credits": 3
+    },
+    {
+      "code": "relationship_release",
+      "credits": 3
+    },
+    {
+      "code": "annual_open_close",
+      "credits": 4
+    }
+  ],
+  "paymentEligibility": {
+    "stripe": [
+      "pack_6",
+      "pack_15",
+      "pack_40",
+      "plus_monthly",
+      "plus_annual"
+    ],
+    "cryptoUsdcBase": [
+      "pack_6",
+      "pack_15",
+      "pack_40"
+    ]
+  }
+}

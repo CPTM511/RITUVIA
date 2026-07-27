@@ -1,4 +1,27 @@
+export {
+  birthProfilePersistenceErrorCodes,
+  BirthProfilePersistenceError,
+  createBirthProfilePersistence,
+  type BirthProfileCiphertext,
+  type BirthProfilePersistence,
+  type BirthProfilePersistenceErrorCode,
+  type PersistedBirthProfile,
+  type PreparedBirthProfileWrite,
+} from "./birth-profile-persistence.js";
 export { assertDatabaseUrl, createDatabaseClient } from "./client.js";
+export {
+  adminRoles,
+  adminSecurityErrorCodes,
+  AdminSecurityError,
+  assertAdminSecurityRuntimeDatabasePrivileges,
+  createAdminSecurityService,
+  verifyAdminAuditEventHash,
+  type AdminRole,
+  type AdminRoleAssignmentResult,
+  type AdminSecurityErrorCode,
+  type AdminSecurityPolicy,
+  type AdminSecurityService,
+} from "./admin-security.js";
 export {
   anonymousIdentityPersistenceErrorCodes,
   AnonymousIdentityPersistenceError,
@@ -15,6 +38,16 @@ export {
   readFeatureFlagVersions,
   type PersistedFeatureFlagVersion,
 } from "./feature-flags.js";
+export {
+  assertCountryPolicyRuntimeDatabasePrivileges,
+  readCountryPolicyVersions,
+  type PersistedCountryPolicyVersion,
+} from "./country-policies.js";
+export {
+  assertCatalogRuntimeDatabasePrivileges,
+  readCatalogVersions,
+  type PersistedCatalogVersion,
+} from "./catalogs.js";
 export {
   assertTarotReadingRuntimeDatabasePrivileges,
   createTarotReadingPersistence,
@@ -67,10 +100,23 @@ export {
   type PersistedInterpretationVerification,
 } from "./interpretation-generation-persistence.js";
 export {
+  accountConsentErrorCodes,
+  AccountConsentError,
+  assertAccountConsentRuntimeDatabasePrivileges,
+  createAccountConsentService,
+  type AccountConsentErrorCode,
+  type AccountConsentService,
+} from "./account-consent.js";
+export {
   accountIdentityErrorCodes,
   AccountIdentityError,
   createAccountIdentityService,
   type AccountIdentityErrorCode,
+  type AccountHistoryPage,
+  type AccountHistoryResourceType,
+  type AccountHistorySourceType,
+  type AccountHistorySummary,
+  type AccountMergeStatus,
   type AccountIdentityPolicy,
   type AccountIdentityService,
   type AccountProfile,
@@ -99,16 +145,99 @@ export {
   reflectionPersistenceErrorCodes,
   ReflectionPersistenceError,
   type PersistedReflectionIntention,
+  type PersistedReflectionIntentionV2,
   type PersistedReflectionJournal,
   type PersistedReflectionRitual,
   type PreparedPrivateReflectionCreate,
+  type PreparedPrivateIntentionV2Write,
   type PreparedReflectionCreate,
   type ReflectionCiphertext,
   type ReflectionPersistence,
   type ReflectionPersistenceErrorCode,
   type ReflectionPersistencePolicy,
   type ReflectionPrepareContext,
+  type ReflectionIntentionV2PrepareContext,
+  type MutatedReflectionIntentionV2,
   type ResolvedReflectionIntention,
+  type ResolvedReflectionIntentionV2,
   type ResolvedReflectionJournal,
   type ResolvedReflectionRitual,
 } from "./reflection-persistence.js";
+export {
+  assertRitualJournalRuntimeDatabasePrivileges,
+  createRitualJournalPersistence,
+  ritualJournalPersistenceErrorCodes,
+  RitualJournalPersistenceError,
+  type PersistedPrivateJournalV2,
+  type PersistedRitualSessionV2,
+  type RitualJournalCiphertext,
+  type RitualJournalMutationResolution,
+  type RitualJournalPersistence,
+  type RitualJournalPersistenceErrorCode,
+  type RitualJournalPreparedDigests,
+  type RitualJournalPrincipalTokens,
+  type RitualJournalResolution,
+} from "./ritual-journal-persistence.js";
+export {
+  assertRevisitRuntimeDatabasePrivileges,
+  createRevisitPersistence,
+  revisitPersistenceErrorCodes,
+  RevisitPersistenceError,
+  type PersistedRevisit,
+  type RevisitCiphertext,
+  type RevisitMutationResolution,
+  type RevisitPersistence,
+  type RevisitPersistenceErrorCode,
+  type RevisitPreparedDigests,
+  type RevisitPrincipalTokens,
+  type RevisitResolution,
+} from "./revisit-persistence.js";
+export {
+  assertRevisitReminderRuntimeDatabasePrivileges,
+  createRevisitReminderService,
+  revisitReminderErrorCodes,
+  RevisitReminderError,
+  type RevisitReminderDeliveryJob,
+  type RevisitReminderErrorCode,
+  type RevisitReminderService,
+} from "./revisit-reminder.js";
+export {
+  assertAstrologyCalculationRuntimeDatabasePrivileges,
+  astrologyCalculationPersistenceErrorCodes,
+  astrologyCalculationStatuses,
+  astrologyEngineBuildProvenanceVersion,
+  AstrologyCalculationPersistenceError,
+  createAstrologyCalculationPersistence,
+  type AstrologyCalculationPersistence,
+  type AstrologyCalculationPersistenceErrorCode,
+  type AstrologyCalculationStatus,
+  type AstrologyCalculationTimeCertainty,
+  type AstrologyEngineBuildProvenanceV1,
+  type AstrologyFactsCiphertext,
+  type PersistedAstrologyCalculation,
+  type PreparedAstrologyCalculationCreate,
+} from "./astrology-calculation-persistence.js";
+export {
+  assertPrivacyExportRuntimeDatabasePrivileges,
+  createPrivacyExportPersistence,
+  privacyExportErrorCodes,
+  PrivacyExportError,
+  type PrivacyExportEncryptedArtifact,
+  type PrivacyExportErrorCode,
+  type PrivacyExportMetadata,
+  type PrivacyExportPersistence,
+  type PrivacyExportPolicy,
+  type PrivacyExportSnapshot,
+} from "./privacy-export.js";
+export {
+  createPrivacyDeletionPersistence,
+  privacyDeletionErrorCodes,
+  privacyDeletionScopes,
+  PrivacyDeletionError,
+  type PrivacyDeletionCounts,
+  type PrivacyDeletionErrorCode,
+  type PrivacyDeletionPersistence,
+  type PrivacyDeletionPolicy,
+  type PrivacyDeletionResult,
+  type PrivacyDeletionScope,
+} from "./privacy-deletion.js";

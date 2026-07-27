@@ -23,7 +23,7 @@ export type TextAutoComplete = "email" | "name" | "off" | "on" | "tel" | "url" |
 export type TextAreaAutoComplete = "off" | "on";
 export type TextDirection = "auto" | "ltr" | "rtl";
 export type TextInputMode = "decimal" | "email" | "numeric" | "search" | "tel" | "text" | "url";
-export type TextInputType = "email" | "search" | "tel" | "text" | "url";
+export type TextInputType = "date" | "email" | "search" | "tel" | "text" | "url";
 
 const actionVariants = new Set<string>(["primary", "quiet", "secondary"]);
 const buttonTones = new Set<string>([...actionVariants, "danger"]);
@@ -52,7 +52,7 @@ const textInputModes = new Set<string>([
   "text",
   "url",
 ]);
-const textInputTypes = new Set<string>(["email", "search", "tel", "text", "url"]);
+const textInputTypes = new Set<string>(["date", "email", "search", "tel", "text", "url"]);
 
 const assertClosedValue = <Value extends string>(
   value: Value,
@@ -449,6 +449,7 @@ export type TextFieldProps = SharedFieldContent &
     dir?: TextDirection;
     inputMode?: TextInputMode;
     maxLength?: number;
+    minimum?: string;
     name?: UiControlName;
     placeholder?: string;
     type?: TextInputType;
@@ -466,6 +467,7 @@ export function TextField({
   inputMode,
   label,
   maxLength,
+  minimum,
   name,
   onValueChange,
   placeholder,
@@ -490,6 +492,14 @@ export function TextField({
       : assertClosedValue(inputMode, textInputModes, "Text field input mode");
   const reviewedMaxLength = optionalBoundedInteger(maxLength, 1, 65_535, "Text field maxLength");
   const reviewedType = assertClosedValue(type, textInputTypes, "Text field type");
+  const reviewedMinimum =
+    minimum === undefined
+      ? undefined
+      : reviewedType === "date" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u.test(minimum)
+        ? minimum
+        : (() => {
+            throw new TypeError("Text field minimum is invalid.");
+          })();
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     onValueChange?.(event.currentTarget.value);
   };
@@ -510,6 +520,7 @@ export function TextField({
         id={reviewedId}
         inputMode={reviewedInputMode}
         maxLength={reviewedMaxLength}
+        min={reviewedMinimum}
         name={reviewedName}
         onChange={onValueChange === undefined ? undefined : handleChange}
         placeholder={placeholder}

@@ -32,6 +32,11 @@ describe("Web accessibility smoke policy", () => {
       "/en/methodology",
       "/en/safety",
       "/en/privacy",
+      "/en/numerology",
+      "/en/numerology/life-path-number",
+      "/en/numerology/birthday-number",
+      "/en/numerology/personal-year-number",
+      "/en/numerology/master-numbers",
     ]);
     expect(privateAccessibilitySmokeRoutes).toEqual([
       "/en/intake",
@@ -43,6 +48,11 @@ describe("Web accessibility smoke policy", () => {
       "/en/methodology",
       "/en/safety",
       "/en/privacy",
+      "/en/numerology",
+      "/en/numerology/life-path-number",
+      "/en/numerology/birthday-number",
+      "/en/numerology/personal-year-number",
+      "/en/numerology/master-numbers",
       "/en/intake",
       "/en/tarot/one-card",
       "/en/tarot/three-card",
@@ -65,6 +75,11 @@ describe("Web accessibility smoke policy", () => {
     expect(resolveAccessibilityArtifactRequest("/en/privacy")).toEqual({
       contentType: "text/html; charset=utf-8",
       relativePath: "server/app/en/privacy.html",
+      type: "document",
+    });
+    expect(resolveAccessibilityArtifactRequest("/en/numerology/master-numbers")).toEqual({
+      contentType: "text/html; charset=utf-8",
+      relativePath: "server/app/en/numerology/master-numbers.html",
       type: "document",
     });
     expect(resolveAccessibilityArtifactRequest("/en/intake")).toEqual({
@@ -92,6 +107,15 @@ describe("Web accessibility smoke policy", () => {
       relativePath: "static/chunks/reviewed.js",
       type: "static",
     });
+    expect(
+      resolveAccessibilityArtifactRequest(
+        "/_next/image?url=%2Fimages%2Frituvia-sanctuary-orb.png&w=384&q=75",
+      ),
+    ).toEqual({
+      contentType: "image/png",
+      relativePath: "images/rituvia-sanctuary-orb.png",
+      type: "public-image",
+    });
   });
 
   it.each([
@@ -104,6 +128,11 @@ describe("Web accessibility smoke policy", () => {
     "/_next/static/%2e%2e/server/secret.js",
     "/_next/static/chunks\\secret.js",
     "/_next/static/chunks/secret.txt",
+    "/_next/image?url=%2Fimages%2Frituvia-sanctuary-orb.png&w=1&q=75",
+    "/_next/image?url=%2Fimages%2Fother.png&w=384&q=75",
+    "/_next/image?url=%2Fimages%2Frituvia-sanctuary-orb.png&w=384&q=74",
+    "/_next/image?url=%2Fimages%2Frituvia-sanctuary-orb.png&w=384&q=75&extra=true",
+    "/_next/image?url=%2Fimages%2Frituvia-sanctuary-orb.png&w=384&w=640&q=75",
     "/icon.svg?unreviewed=true",
     "https://remote.invalid/en",
   ])("rejects an unreviewed artifact request: %s", (request) => {

@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { deriveSessionCsrfToken } from "../server/session-csrf";
+
 const harness = vi.hoisted(() => ({ list: vi.fn(), revoke: vi.fn() }));
 vi.mock("../server/account-auth", () => ({
+  accountAuthStateCookieName: "__Host-rituvia-auth-state",
   accountSessionCookieName: "__Host-rituvia-account-session",
+  mergeWebAnonymousSubject: vi.fn(),
 }));
 vi.mock("../server/account", () => ({
   listWebAccountSessions: harness.list,
@@ -55,6 +59,7 @@ describe("account session management routes", () => {
             cookie: "__Host-rituvia-account-session=" + "s".repeat(43),
             origin: "https://example.test",
             "sec-fetch-site": "same-origin",
+            "x-csrf-token": deriveSessionCsrfToken("s".repeat(43)),
           },
           method: "DELETE",
         },
@@ -66,5 +71,27 @@ describe("account session management routes", () => {
       sessionId: "44444444-4444-4444-8444-444444444444",
       sessionToken: "s".repeat(43),
     });
+  });
+
+  it("rejects targeted revocation without the current session CSRF token", async () => {
+    const response = await DELETE(
+      new NextRequest(
+        "https://example.test/api/v1/me/sessions/44444444-4444-4444-8444-444444444444",
+        {
+          headers: {
+            cookie: "__Host-rituvia-account-session=" + "s".repeat(43),
+            origin: "https://example.test",
+            "sec-fetch-site": "same-origin",
+          },
+          method: "DELETE",
+        },
+      ),
+      { params: Promise.resolve({ sessionId: "44444444-4444-4444-8444-444444444444" }) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("x-robots-tag")).toContain("noindex");
+    expect(harness.revoke).not.toHaveBeenCalled();
   });
 });

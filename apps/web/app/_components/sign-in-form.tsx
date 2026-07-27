@@ -9,27 +9,19 @@ import type { AccountMessages } from "../_i18n/account-messages";
 export const authenticationStartEndpoint = "/api/v1/auth/start";
 
 type SignInPhase =
-  "error" | "idle" | "loading" | "local-ready" | "offline" | "sent" | "unavailable";
+  | "error"
+  | "idle"
+  | "loading"
+  | "local-ready"
+  | "offline"
+  | "rate-limited"
+  | "sent"
+  | "unavailable";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
-const safeCallbackUrl = (value: unknown): string | null => {
-  if (typeof value !== "string") return null;
-  try {
-    const parsed = new URL(value, window.location.origin);
-    if (
-      parsed.origin !== window.location.origin ||
-      parsed.pathname !== "/api/v1/auth/callback" ||
-      !parsed.searchParams.has("challenge") ||
-      !parsed.searchParams.has("token")
-    ) {
-      return null;
-    }
-    return `${parsed.pathname}${parsed.search}`;
-  } catch {
-    return null;
-  }
-};
+const safeLocalPreviewPath = (value: unknown): string | null =>
+  value === "/api/v1/auth/local-preview" ? value : null;
 
 type SignInFormProps = Readonly<{
   invalidInitial?: boolean;
@@ -73,7 +65,13 @@ export function SignInForm({ invalidInitial = false, messages, returnTo }: SignI
         headers: { accept: "application/json", "content-type": "application/json" },
         method: "POST",
       });
+      if (response.status === 429) {
+        await response.arrayBuffer();
+        setPhase("rate-limited");
+        return;
+      }
       if (response.status === 503) {
+        await response.arrayBuffer();
         setPhase("unavailable");
         return;
       }
@@ -84,7 +82,7 @@ export function SignInForm({ invalidInitial = false, messages, returnTo }: SignI
       const payload = (await response.json()) as unknown;
       const callback =
         typeof payload === "object" && payload !== null && !Array.isArray(payload)
-          ? safeCallbackUrl((payload as Record<string, unknown>).callbackUrl)
+          ? safeLocalPreviewPath((payload as Record<string, unknown>).localPreviewPath)
           : null;
       if (callback === null) {
         setPhase("sent");
@@ -103,6 +101,12 @@ export function SignInForm({ invalidInitial = false, messages, returnTo }: SignI
         return { message: messages.error, title: messages.title, tone: "error" as const };
       case "offline":
         return { message: messages.offline, title: messages.title, tone: "warning" as const };
+      case "rate-limited":
+        return {
+          message: messages.rateLimited,
+          title: messages.title,
+          tone: "warning" as const,
+        };
       case "unavailable":
         return { message: messages.unavailable, title: messages.title, tone: "warning" as const };
       case "sent":

@@ -66,6 +66,18 @@ describe("account reading history route", () => {
     "?limit=0",
     "?limit=51",
     "?cursor=not-json",
+    `?cursor=${Buffer.from(
+      JSON.stringify({
+        createdAt: "not-an-instant",
+        readingId: "33333333-3333-4333-8333-333333333333",
+      }),
+    ).toString("base64url")}`,
+    `?cursor=${Buffer.from(
+      JSON.stringify({
+        createdAt: "2026-07-18T00:00:00.000Z",
+        readingId: "not-a-reading",
+      }),
+    ).toString("base64url")}`,
   ])("rejects unreviewed history input before owner lookup: %s", async (query) => {
     const response = await GET(new NextRequest(`https://example.test/api/v1/me/readings${query}`));
     expect(response.status).toBe(400);

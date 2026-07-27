@@ -6,12 +6,14 @@ import { getWebRuntimeConfiguration } from "../../config/server";
 import { createPublicPageMetadata } from "../_i18n/metadata";
 import { getMessages } from "../_i18n/messages";
 import { parseLocale, supportedLocales, type Locale } from "../_i18n/routing";
+import { loadNumerologyAvailability } from "../../server/numerology-state";
 
 type LocalePageProps = Readonly<{
   params: Promise<Readonly<{ locale: string }>>;
 }>;
 
 export const dynamicParams = false;
+export const dynamic = "force-dynamic";
 
 const resolvePageLocale = async (params: LocalePageProps["params"]): Promise<Locale> => {
   const locale = parseLocale((await params).locale);
@@ -45,6 +47,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
       brandTagline={configuration.client.brand.tagline}
       locale={locale}
       messages={getMessages(locale)}
+      numerologyEnabled={loadNumerologyAvailability() === "enabled"}
     />
   );
 }

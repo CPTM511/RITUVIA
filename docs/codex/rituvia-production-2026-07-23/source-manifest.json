@@ -1,0 +1,287 @@
+{
+  "packVersion": "2026-07-23",
+  "goldenPrototype": "RITUVIA_WALLET_STRIPE_CRYPTO_AI_UPDATED_PROTOTYPE_2026-07-23.html",
+  "goldenPrototypeSha256": "e9d75c9c118be64cc779d182f01ec332d150b520fa9f0eb497f58fbf5fea5740",
+  "files": [
+    {
+      "path": ".env.example",
+      "bytes": 1823,
+      "sha256": "37f6c5c8fd4890b00d9c059f908baaa8fa450065dec3e6031d6ac310aa5deea7"
+    },
+    {
+      "path": "00_START_HERE.md",
+      "bytes": 3351,
+      "sha256": "be0f3b16982c8d7d586fd45798ae152bcbb99bd0549d205991e6e512d7e08e66"
+    },
+    {
+      "path": "01_PRODUCT_SOURCE_OF_TRUTH.md",
+      "bytes": 5602,
+      "sha256": "2a9a4db9dc9ce63868250b3cb7be20bfae78e8464b485e260f82c581bb659ce2"
+    },
+    {
+      "path": "02_UI_FIDELITY_CONTRACT.md",
+      "bytes": 4732,
+      "sha256": "10b34cca8ada06b0be5835f3aae67cf395adb859277b9521ae5fb662f4c97950"
+    },
+    {
+      "path": "03_PRODUCTION_ARCHITECTURE.md",
+      "bytes": 5958,
+      "sha256": "01a7bba4cd3d80f6a841a1b7eac6b8a13d05de66b28674f39ed557d4d021204b"
+    },
+    {
+      "path": "04_DOMAIN_MODEL_AND_DATABASE.md",
+      "bytes": 3996,
+      "sha256": "6df98b6c63b376abe126284da2ff743c8f37cf0ac985a152016e7585ff116f5a"
+    },
+    {
+      "path": "04_DOMAIN_MODEL_AND_DATABASE.sql",
+      "bytes": 16329,
+      "sha256": "233707a22b6bbb4484a057976ed8ee0a8f2262f5791f136bc03ca718b8db777a"
+    },
+    {
+      "path": "05_API_CONTRACTS.openapi.yaml",
+      "bytes": 21901,
+      "sha256": "f41d8431e4e8ad987792c9150784bae57fc3f1746d168106bc93bd2f662d30fe"
+    },
+    {
+      "path": "06_SECURITY_THREAT_MODEL.md",
+      "bytes": 9447,
+      "sha256": "a5da26da669315629e2c497bc9ccb9df7f61676b1c8ae09b9d791fe15ac617ed"
+    },
+    {
+      "path": "07_SECURITY_ENGINEERING_REQUIREMENTS.md",
+      "bytes": 6148,
+      "sha256": "1263e162745723a48d7f929072f3ee0e254640574e74c3101717757d19ea00e8"
+    },
+    {
+      "path": "08_AI_SAFETY_AND_EVALS.md",
+      "bytes": 5980,
+      "sha256": "2ae48308b67d9112e87871ad541012e0e016079238c038e06ec7fa5ad865d984"
+    },
+    {
+      "path": "09_PAYMENTS_WALLET_AND_CREDITS.md",
+      "bytes": 5353,
+      "sha256": "76eb3c1bc36807050f65584669b0d9a50a9b974c4c18f48bd2f91e41a4adf5e4"
+    },
+    {
+      "path": "10_TEST_STRATEGY_AND_ACCEPTANCE.md",
+      "bytes": 5271,
+      "sha256": "610296363d2cde79572ddd4611d5d8f2765ab4150ebd344c25acd48ebee3798b"
+    },
+    {
+      "path": "11_PRODUCTION_READINESS_GATES.md",
+      "bytes": 3085,
+      "sha256": "2446d2bd15d6ec8648dddb2b10d8f1b39ade8bdb6f55f47bc5ec8f36399a3a83"
+    },
+    {
+      "path": "12_OFFICIAL_REFERENCES.md",
+      "bytes": 1704,
+      "sha256": "3756837dc759be1cc733a567a614193d99bfeacebe60bde1fc5215153cbf08b1"
+    },
+    {
+      "path": "13_INSTALL_IN_REPOSITORY.md",
+      "bytes": 1575,
+      "sha256": "436945141cebccfbae3d171d5542597a86bad035b7af1531c8d32b1361f4b288"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 3444,
+      "sha256": "cf813bd7c2325f9cde7a55a60289bccce509126a4e4e15a4974f204dbc532760"
+    },
+    {
+      "path": "RITUVIA_PRODUCTION_CODEX_PACK_QA.md",
+      "bytes": 1202,
+      "sha256": "c4c38e99c0a5a9c3c1df968a01128407df02ec2f7ed44216f03ed94cd32f62ce"
+    },
+    {
+      "path": "contracts/catalog.json",
+      "bytes": 2045,
+      "sha256": "723e3d723dc237c9eb496ccd2045150859000741915d5a0dd7f7199ee796a708"
+    },
+    {
+      "path": "contracts/model-policy.json",
+      "bytes": 1931,
+      "sha256": "cd160d5efdf339b1fff9f61ff165a14c6b61986e8ea46602dd7d89e2ed0bc557"
+    },
+    {
+      "path": "contracts/requirements.json",
+      "bytes": 4052,
+      "sha256": "1442a17000f55a37ffdaa792d5eb358d05afccc4d9351df1d7cf3f9d62fa6563"
+    },
+    {
+      "path": "contracts/security-test-matrix.csv",
+      "bytes": 3963,
+      "sha256": "c60abca8788846be0665f7f6f45992f1f29040dcddb93cd1484c400c0f333be0"
+    },
+    {
+      "path": "evidence/screenshots/desktop-about.png",
+      "bytes": 1036012,
+      "sha256": "a1901cc2027e4600141ec3186569b7355f10c136c00175f7e5e69f92e3b2c5a6"
+    },
+    {
+      "path": "evidence/screenshots/desktop-account-authenticated.png",
+      "bytes": 943674,
+      "sha256": "473aa7cf989505741e0549a89a7b0c06ed28753bef54ec912b0dbcfebf3ac962"
+    },
+    {
+      "path": "evidence/screenshots/desktop-billing-wallets.png",
+      "bytes": 708485,
+      "sha256": "c15ade2f079af42a7f02a36d2e2cab49e13240086ec5cfa29e1e9d875d8c47c6"
+    },
+    {
+      "path": "evidence/screenshots/desktop-checkout-stripe.png",
+      "bytes": 829014,
+      "sha256": "9a811c5fd42381952d9194766219344324198ef6da8c67ee41fc62c269432a20"
+    },
+    {
+      "path": "evidence/screenshots/desktop-checkout-usdc-base.png",
+      "bytes": 890672,
+      "sha256": "ff3bed769e62dae6c4ea69ddc66484ac3a45a85a59dfabd1ab21aff777a0685e"
+    },
+    {
+      "path": "evidence/screenshots/desktop-daily-revealed.png",
+      "bytes": 696139,
+      "sha256": "4d5fe8483af49ff856ee8355de4396348e0395f7e36a950d8a12892a5c422c3b"
+    },
+    {
+      "path": "evidence/screenshots/desktop-deep-readings.png",
+      "bytes": 602149,
+      "sha256": "d35461e30959a1cd40f6b1dfdcc8f0bb9fbdfd68e425ffeea8ef2bce56708adc"
+    },
+    {
+      "path": "evidence/screenshots/desktop-home.png",
+      "bytes": 1367137,
+      "sha256": "b72bf31cdc7863f382367859036d2f0d309980b80d5d083721600a789dd4e5a1"
+    },
+    {
+      "path": "evidence/screenshots/desktop-orders.png",
+      "bytes": 467542,
+      "sha256": "8b447afa02e3083605c29ddde4d948c6d8631fc343c3448893e1cb980f7d9002"
+    },
+    {
+      "path": "evidence/screenshots/desktop-plans-credits.png",
+      "bytes": 2856558,
+      "sha256": "51b6d35cd74ad2ed9b9176e88c25043edad6cc0880fe72ab8d3f361575320c49"
+    },
+    {
+      "path": "evidence/screenshots/desktop-readings.png",
+      "bytes": 1254861,
+      "sha256": "64959c5bfeda413c694dd646fd05d0a6f0de4f7a7a761f5ca2404e08cbb661d7"
+    },
+    {
+      "path": "evidence/screenshots/desktop-sanctuary.png",
+      "bytes": 1080502,
+      "sha256": "9724e288f8478195a68e1690617aa89e09bea795cd4027a119ed1ba81c63e67a"
+    },
+    {
+      "path": "evidence/screenshots/desktop-sign-in.png",
+      "bytes": 659441,
+      "sha256": "e5a0d60763e8f6618f9474c4c8f1b1b951c0579d04d585fc8194248ebb314ec7"
+    },
+    {
+      "path": "evidence/screenshots/desktop-tarot.png",
+      "bytes": 715196,
+      "sha256": "5e685693a2b95baa2741660a8cd38bf101e47e8ab04c32f43893640ef119cc51"
+    },
+    {
+      "path": "evidence/screenshots/mobile-deep-zh.png",
+      "bytes": 565885,
+      "sha256": "8deb303119a3c54979d05e2d2a61d814c72590064ab08202308f3828e7a56d21"
+    },
+    {
+      "path": "evidence/screenshots/mobile-home-zh.png",
+      "bytes": 894498,
+      "sha256": "68026d54825ddc223774c00ffdcf9bf247eeb974bf67db28ee891a78e95c9be9"
+    },
+    {
+      "path": "evidence/screenshots/mobile-plans-zh.png",
+      "bytes": 2077100,
+      "sha256": "9f46613af60485f15faf02752bb27418258a28aa16ee4aa6185636abe5ea784f"
+    },
+    {
+      "path": "evidence/screenshots/mobile-sign-in-zh.png",
+      "bytes": 349940,
+      "sha256": "b58dc5c3ee5120528841e5cbbafe0015e6da68d155960137b3bf20fb26566b68"
+    },
+    {
+      "path": "prompts/00_CODEX_MASTER_START_PROMPT.md",
+      "bytes": 7203,
+      "sha256": "e2fe59fae0ec7384ed2f950f2ce8d6fe6f04b55675c922715e4a9ff0827b4cb9"
+    },
+    {
+      "path": "prompts/01_PHASE_0_REALITY_AUDIT.md",
+      "bytes": 381,
+      "sha256": "a5f6033b8eb181f4fe892ada9dd6e43ec7c239a76c6d39553c05a4144c3fcdd8"
+    },
+    {
+      "path": "prompts/02_PHASE_1_UI_FOUNDATION.md",
+      "bytes": 360,
+      "sha256": "99c9debc407974a33bb91a2ec16adc49a7845bc78001f8f90e60078d24fc9b5c"
+    },
+    {
+      "path": "prompts/03_PHASE_2_IDENTITY_WALLET.md",
+      "bytes": 341,
+      "sha256": "f25c9d482c85ee7bb2a34c48b8327091d497e9942a6328fdbafcad4b5c4c35c4"
+    },
+    {
+      "path": "prompts/04_PHASE_3_CREDITS_ENTITLEMENTS.md",
+      "bytes": 313,
+      "sha256": "5f1aafc38dee043a0cce78e0a263dfd689c4d60dfb92f0ded4db15c411f6ada1"
+    },
+    {
+      "path": "prompts/05_PHASE_4_STRIPE_TEST_MODE.md",
+      "bytes": 318,
+      "sha256": "902700ffee4ba0a10e546d66ad9bd9cc34a99b9fe989d89bd3017fcc49a1e1ac"
+    },
+    {
+      "path": "prompts/06_PHASE_5_USDC_BASE.md",
+      "bytes": 319,
+      "sha256": "948a512a93e90c76d7c386f4ddfda34921c2ac8998e62adcce9cc3601bb89e72"
+    },
+    {
+      "path": "prompts/07_PHASE_6_AI.md",
+      "bytes": 329,
+      "sha256": "498ec0ffd77cf3bb0e9790b4d472027c441729a91c3121306b3de2814036cc16"
+    },
+    {
+      "path": "prompts/08_PHASE_7_BETA_SECURITY.md",
+      "bytes": 297,
+      "sha256": "79845250542e74ad0ef68ffb3391b9224225ea7d1fd2129886a177e5e51bb0cf"
+    },
+    {
+      "path": "scripts/verify_pack.py",
+      "bytes": 569,
+      "sha256": "51fd62c67318262b5bee0c1a38ac5f9448190f9d4f25796c706699e5b9f36619"
+    },
+    {
+      "path": "source/RITUVIA_CODEX_WALLET_PAYMENTS_AI_EXECUTION_PROMPT_2026-07-23.md",
+      "bytes": 6005,
+      "sha256": "0e7a8e94fe50fcb37da19eedcfe542b98f74e40b9bac92af57f17305f715019a"
+    },
+    {
+      "path": "source/RITUVIA_COMMERCIAL_MODEL_MASTER_SPEC_2026-07-20.md",
+      "bytes": 21554,
+      "sha256": "241a4331158112e9889b0ca820a6ffbd747d432a2512f1be6bb5cacc21887416"
+    },
+    {
+      "path": "source/RITUVIA_MVP_TEAM_HANDOFF_ZH_2026-07-18.md",
+      "bytes": 12138,
+      "sha256": "3f2a5c338a272456109296df9114cf6012d01f96254ae188292b5fa8f1c7ff01"
+    },
+    {
+      "path": "source/RITUVIA_WALLET_PAYMENTS_AI_CODEX_IMPLEMENTATION_BRIEF_2026-07-23.md",
+      "bytes": 17034,
+      "sha256": "5b7fb28c50167b4a5aee1239b850084942d4f9d8b7572c32ed9ed753e01e8fab"
+    },
+    {
+      "path": "source/RITUVIA_WALLET_PAYMENTS_AI_PROTOTYPE_QA_2026-07-23.md",
+      "bytes": 2137,
+      "sha256": "a587f8eae31e33efc314ac22ad83b14387ee47fe3860be82d005bccb0bf7ba1e"
+    },
+    {
+      "path": "source/RITUVIA_WALLET_STRIPE_CRYPTO_AI_UPDATED_PROTOTYPE_2026-07-23.html",
+      "bytes": 216662,
+      "sha256": "e9d75c9c118be64cc779d182f01ec332d150b520fa9f0eb497f58fbf5fea5740"
+    }
+  ]
+}

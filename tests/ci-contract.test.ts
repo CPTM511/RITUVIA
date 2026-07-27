@@ -74,8 +74,16 @@ describe("active CI workflow contract", () => {
         "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
       test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
-      "test:accessibility": "node scripts/verify-web-accessibility.mjs",
+      "test:accessibility":
+        "node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs",
       "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
+      "test:astrology-native-corresponding-source":
+        "pnpm --filter @rituvia/astrology-engine-native native:verify-corresponding-source",
+      "test:astrology-native-sca":
+        "pnpm --filter @rituvia/astrology-engine-native native:verify-sca",
+      "test:astrology-native-security":
+        "pnpm --filter @rituvia/astrology-engine-native native:verify-security",
+      "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",
     };
     expect(auditCiScripts(valid)).toEqual([]);
     expect(auditCiScripts({ ...valid, "check:architecture": "node -e 'process.exit(0)'" })).toEqual(
@@ -256,6 +264,26 @@ describe("active CI workflow contract", () => {
       });
     },
   );
+
+  it.each([
+    "pnpm test:astrology-native-security -- --allow-download",
+    "pnpm test:astrology-native-sca -- --allow-network",
+    "pnpm test:astrology-native-corresponding-source -- --allow-download",
+    `component_archive=packages/astrology-engine-native/.native-cache/corresponding-source/rituvia-native-corresponding-source.tar; component_sha256="$(sha256sum "$component_archive" | cut -d ' ' -f1)"; pnpm test:release-corresponding-source -- --expected-revision "$GITHUB_SHA" --component-archive "$component_archive" --component-archive-sha256 "$component_sha256"`,
+  ])("locks the native security command %s in the Linux security job", (command) => {
+    const candidate = cloneWorkflow();
+    const security = record(record(candidate.jobs).security);
+    const steps = security.steps as unknown[];
+    const index = steps.findIndex((step) => record(step).run === command);
+    if (index < 0) throw new Error("native security fixture step missing");
+    steps.splice(index, 1);
+    expect(auditCiWorkflow(candidate)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.security", rule: "run-command-sequence" },
+        { location: "jobs.security", rule: "step-sequence" },
+      ]),
+    );
+  });
 
   it("rejects any extra PostgreSQL service environment key", () => {
     const candidate = cloneWorkflow();

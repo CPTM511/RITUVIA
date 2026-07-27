@@ -1,0 +1,630 @@
+openapi: 3.1.0
+info:
+  title: RITUVIA Production API
+  version: 1.0.0-draft
+  description: Server-authoritative API contract. Adapt paths to the existing repository without weakening invariants.
+servers:
+  - url: https://staging.example.invalid/api
+security:
+  - cookieSession: []
+tags:
+  - name: Auth
+  - name: Readings
+  - name: Reflection
+  - name: Credits
+  - name: Commerce
+  - name: Sanctuary
+  - name: Privacy
+paths:
+  /v1/auth/email/start:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: startEmailSignIn
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, locale]
+              properties:
+                email: {type: string, format: email, maxLength: 254}
+                locale: {type: string, enum: [en, zh-CN]}
+                returnPath: {type: string, maxLength: 300}
+      responses:
+        '202': {description: Uniform accepted response; never reveals account existence}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /v1/auth/email/verify:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: verifyEmailSignIn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: {type: string, minLength: 32, maxLength: 512}
+      responses:
+        '200':
+          description: Session created and rotated
+          content: {application/json: {schema: {$ref: '#/components/schemas/SessionResponse'}}}
+        '400': {$ref: '#/components/responses/InvalidRequest'}
+  /v1/auth/wallet/challenge:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: createWalletChallenge
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, chainId, purpose]
+              properties:
+                address: {$ref: '#/components/schemas/EvmAddress'}
+                chainId: {type: integer, minimum: 1}
+                purpose: {type: string, enum: [sign_in, link_wallet, step_up]}
+                returnPath: {type: string, maxLength: 300}
+      responses:
+        '200':
+          description: SIWE message and server-bound challenge
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [requestId, message, expiresAt]
+                properties:
+                  requestId: {type: string, format: uuid}
+                  message: {type: string}
+                  expiresAt: {type: string, format: date-time}
+        '429': {$ref: '#/components/responses/RateLimited'}
+  /v1/auth/wallet/verify:
+    post:
+      tags: [Auth]
+      security: []
+      operationId: verifyWalletChallenge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestId, message, signature]
+              properties:
+                requestId: {type: string, format: uuid}
+                message: {type: string, maxLength: 4096}
+                signature: {type: string, maxLength: 2048}
+      responses:
+        '200':
+          description: Session or linked identity result
+          content: {application/json: {schema: {$ref: '#/components/schemas/SessionResponse'}}}
+        '400': {$ref: '#/components/responses/InvalidRequest'}
+        '409': {description: Wallet already linked to another account}
+  /v1/auth/wallets/{walletId}:
+    delete:
+      tags: [Auth]
+      operationId: unlinkWallet
+      parameters:
+        - {name: walletId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204': {description: Wallet unlinked after step-up and last-identity checks}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204': {description: Current session revoked}
+  /v1/me:
+    get:
+      tags: [Auth]
+      operationId: getMe
+      responses:
+        '200':
+          description: Current account
+          content: {application/json: {schema: {$ref: '#/components/schemas/UserProfile'}}}
+  /v1/catalog:
+    get:
+      tags: [Commerce]
+      security: []
+      operationId: getCatalog
+      parameters:
+        - {name: locale, in: query, schema: {type: string, enum: [en, zh-CN]}}
+        - {name: country, in: query, schema: {type: string, pattern: '^[A-Z]{2}$'}}
+      responses:
+        '200':
+          description: Versioned authoritative catalogue
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, products, signature]
+                properties:
+                  version: {type: string}
+                  products: {type: array, items: {$ref: '#/components/schemas/CatalogProduct'}}
+                  signature: {type: string}
+  /v1/tarot/daily:
+    post:
+      tags: [Readings]
+      security: []
+      operationId: getOrCreateDailyTarot
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [localDate, timezone, anonymousSubject]
+              properties:
+                localDate: {type: string, format: date}
+                timezone: {type: string, maxLength: 80}
+                anonymousSubject: {type: string, maxLength: 128}
+      responses:
+        '200': {description: Existing or newly created daily draw, with reviewed content}
+  /v1/tarot/readings:
+    post:
+      tags: [Readings]
+      security: []
+      operationId: createTarotReading
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [spread, theme, anonymousSubject]
+              properties:
+                spread: {type: string, enum: [one_card, three_card]}
+                theme: {type: string, maxLength: 40}
+                question: {type: string, maxLength: 500}
+                anonymousSubject: {type: string, maxLength: 128}
+      responses:
+        '201': {description: Immutable card draw and reviewed base interpretation}
+        '422': {description: Question blocked or safely reframed}
+  /v1/numerology/calculate:
+    post:
+      tags: [Readings]
+      security: []
+      operationId: calculateNumerology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [birthDate]
+              properties:
+                birthDate: {type: string, format: date}
+                latinName: {type: string, maxLength: 120}
+      responses:
+        '200': {description: Deterministic results and visible calculation steps}
+  /v1/astrology/calculate:
+    post:
+      tags: [Readings]
+      operationId: calculateAstrology
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [birthDate, timeCertainty, placeId]
+              properties:
+                birthDate: {type: string, format: date}
+                birthTime: {type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$'}
+                timeCertainty: {type: string, enum: [exact, approximate, unknown]}
+                placeId: {type: string, maxLength: 160}
+      responses:
+        '200': {description: Licensed deterministic placements, confidence and textual equivalent}
+        '503': {description: Astrology disabled or provider unavailable; no invented result}
+  /v1/deep-readings/quote:
+    post:
+      tags: [Readings, Credits]
+      operationId: quoteDeepReading
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productCode]
+              properties:
+                productCode: {$ref: '#/components/schemas/ProductCode'}
+      responses:
+        '200':
+          description: Authoritative cost and projected remaining Credits
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [productCode, cost, available, remaining]
+                properties:
+                  productCode: {$ref: '#/components/schemas/ProductCode'}
+                  cost: {type: integer}
+                  available: {type: integer}
+                  remaining: {type: integer}
+  /v1/deep-readings:
+    post:
+      tags: [Readings, Credits]
+      operationId: createDeepReading
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productCode, consentVersion]
+              properties:
+                productCode: {$ref: '#/components/schemas/ProductCode'}
+                sourceReadingId: {type: string, format: uuid}
+                context: {type: string, maxLength: 5200}
+                consentVersion: {type: string}
+      responses:
+        '202':
+          description: Credit reserved and generation queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [readingId, reservationId, status]
+                properties:
+                  readingId: {type: string, format: uuid}
+                  reservationId: {type: string, format: uuid}
+                  status: {type: string, enum: [reserved, generating]}
+        '402': {description: Insufficient Credits}
+        '422': {description: Input blocked by safety policy}
+  /v1/deep-readings/{readingId}:
+    get:
+      tags: [Readings]
+      operationId: getDeepReading
+      parameters:
+        - {name: readingId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200': {description: Owner-scoped reading state and result}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /v1/credits:
+    get:
+      tags: [Credits]
+      operationId: getCredits
+      responses:
+        '200':
+          description: Server-derived Credit availability by bucket
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subscription, promotional, purchased, total, version]
+                properties:
+                  subscription: {type: integer}
+                  promotional: {type: integer}
+                  purchased: {type: integer}
+                  total: {type: integer}
+                  version: {type: integer}
+  /v1/credits/ledger:
+    get:
+      tags: [Credits]
+      operationId: listCreditLedger
+      parameters:
+        - {name: cursor, in: query, schema: {type: string}}
+      responses:
+        '200': {description: Owner-scoped append-only activity page}
+  /v1/checkout/stripe:
+    post:
+      tags: [Commerce]
+      operationId: createStripeCheckout
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productCode, successPath, cancelPath]
+              properties:
+                productCode: {$ref: '#/components/schemas/ProductCode'}
+                successPath: {type: string, maxLength: 300}
+                cancelPath: {type: string, maxLength: 300}
+      responses:
+        '201':
+          description: Internal order and Stripe-hosted Checkout URL
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CheckoutResponse'}
+  /v1/checkout/crypto:
+    post:
+      tags: [Commerce]
+      operationId: createCryptoCheckout
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productCode, successPath, cancelPath]
+              properties:
+                productCode: {$ref: '#/components/schemas/ProductCode'}
+                successPath: {type: string, maxLength: 300}
+                cancelPath: {type: string, maxLength: 300}
+      responses:
+        '201':
+          description: Internal order and single-use USDC on Base Checkout URL
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CheckoutResponse'}
+        '422': {description: Product not eligible for crypto payment}
+  /v1/checkout/return/{orderId}:
+    get:
+      tags: [Commerce]
+      operationId: getCheckoutReturnState
+      parameters:
+        - {name: orderId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: Pending or confirmed server state; URL parameters never grant access
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Order'}
+  /v1/webhooks/stripe:
+    post:
+      tags: [Commerce]
+      security: []
+      operationId: stripeWebhook
+      responses:
+        '200': {description: Signature verified and event durably accepted}
+        '400': {description: Invalid signature, timestamp or body}
+  /v1/webhooks/coinbase:
+    post:
+      tags: [Commerce]
+      security: []
+      operationId: coinbaseWebhook
+      responses:
+        '200': {description: Signature verified and event durably accepted}
+        '400': {description: Invalid signature, timestamp or body}
+  /v1/orders:
+    get:
+      tags: [Commerce]
+      operationId: listOrders
+      responses:
+        '200': {description: Owner-scoped order history}
+  /v1/orders/{orderId}/refund:
+    post:
+      tags: [Commerce]
+      operationId: requestRefund
+      parameters:
+        - {name: orderId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '202': {description: Refund request accepted; provider event/reconciliation confirms result}
+        '409': {description: Not refundable, already refunded or Credits already consumed under policy}
+  /v1/billing/portal:
+    post:
+      tags: [Commerce]
+      operationId: createBillingPortal
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '201': {description: Short-lived Stripe Customer Portal URL}
+  /v1/entitlements:
+    get:
+      tags: [Sanctuary]
+      operationId: listEntitlements
+      responses:
+        '200': {description: Permanent objects, Plus status and available ritual passes}
+  /v1/rituals/start:
+    post:
+      tags: [Sanctuary, Credits]
+      operationId: startRitual
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [objectCode]
+              properties:
+                objectCode: {type: string}
+                intentionId: {type: string, format: uuid}
+      responses:
+        '201': {description: Ritual session created; consumable pass atomically consumed/reserved}
+        '403': {description: No entitlement or ritual pass}
+  /v1/rituals/{sessionId}/complete:
+    post:
+      tags: [Sanctuary]
+      operationId: completeRitual
+      parameters:
+        - {name: sessionId, in: path, required: true, schema: {type: string, format: uuid}}
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                elapsedSeconds: {type: integer, minimum: 0, maximum: 86400}
+      responses:
+        '200': {description: Owner-scoped idempotent completion}
+  /v1/intentions:
+    post:
+      tags: [Reflection]
+      operationId: createIntention
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text, action]
+              properties:
+                text: {type: string, maxLength: 280}
+                action: {type: string, maxLength: 180}
+                sourceReadingId: {type: string, format: uuid}
+                revisitAt: {type: string, format: date-time}
+      responses:
+        '201': {description: Encrypted intention created}
+  /v1/journal:
+    post:
+      tags: [Reflection]
+      operationId: createJournalEntry
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: {type: string, maxLength: 4000}
+                intentionId: {type: string, format: uuid}
+                ritualSessionId: {type: string, format: uuid}
+      responses:
+        '201': {description: Encrypted private entry created}
+  /v1/revisits:
+    post:
+      tags: [Reflection]
+      operationId: scheduleRevisit
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intentionId, scheduledFor]
+              properties:
+                intentionId: {type: string, format: uuid}
+                scheduledFor: {type: string, format: date-time}
+      responses:
+        '201': {description: Revisit scheduled}
+  /v1/privacy/export:
+    post:
+      tags: [Privacy]
+      operationId: requestDataExport
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '202': {description: Export job queued after recent authentication}
+  /v1/privacy/delete:
+    post:
+      tags: [Privacy]
+      operationId: requestAccountDeletion
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '202': {description: Deletion job queued and sessions revoked}
+components:
+  securitySchemes:
+    cookieSession:
+      type: apiKey
+      in: cookie
+      name: __Host-rituvia_session
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: {type: string, minLength: 16, maxLength: 255}
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema: {type: string, minLength: 16, maxLength: 512}
+  responses:
+    InvalidRequest: {description: Invalid or expired request}
+    Forbidden: {description: Authentication or authorization insufficient}
+    NotFound: {description: Resource not found or not owned by caller}
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After: {schema: {type: integer}}
+  schemas:
+    EvmAddress:
+      type: string
+      pattern: '^0x[a-fA-F0-9]{40}$'
+    ProductCode:
+      type: string
+      pattern: '^[a-z0-9_]{2,80}$'
+    SessionResponse:
+      type: object
+      required: [user, csrfToken]
+      properties:
+        user: {$ref: '#/components/schemas/UserProfile'}
+        csrfToken: {type: string}
+        returnPath: {type: string}
+    UserProfile:
+      type: object
+      required: [id, locale, identities]
+      properties:
+        id: {type: string, format: uuid}
+        locale: {type: string, enum: [en, zh-CN]}
+        identities:
+          type: array
+          items:
+            type: object
+            properties:
+              type: {type: string, enum: [email, google, apple, passkey, wallet]}
+              label: {type: string}
+    CatalogProduct:
+      type: object
+      required: [code, kind, displayName, eligibility]
+      properties:
+        code: {$ref: '#/components/schemas/ProductCode'}
+        kind: {type: string, enum: [credit_pack, subscription, deep_reading, permanent_object, consumable_ritual]}
+        displayName: {type: string}
+        amountMinor: {type: integer}
+        currency: {type: string}
+        creditCost: {type: integer}
+        eligibility: {type: array, items: {type: string, enum: [stripe, crypto_usdc_base, credits]}}
+    CheckoutResponse:
+      type: object
+      required: [orderId, checkoutUrl, expiresAt]
+      properties:
+        orderId: {type: string, format: uuid}
+        checkoutUrl: {type: string, format: uri}
+        expiresAt: {type: string, format: date-time}
+    Order:
+      type: object
+      required: [id, productCode, status, amountMinor, currency]
+      properties:
+        id: {type: string, format: uuid}
+        productCode: {$ref: '#/components/schemas/ProductCode'}
+        status: {type: string}
+        amountMinor: {type: integer}
+        currency: {type: string}
+        paymentProvider: {type: string}

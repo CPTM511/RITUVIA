@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@next/env": "16.2.10",
+    "@next/env": "16.2.11",
     "@rituvia/config": "workspace:*",
+    "@rituvia/domain": "workspace:*",
     "@rituvia/observability": "workspace:*"
   },
   "scripts": {

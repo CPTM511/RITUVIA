@@ -1,3 +1,5 @@
+import type { QuestionIntakeThemeCode } from "@rituvia/domain";
+
 import type { Locale } from "./routing";
 
 export type AccountMessages = Readonly<{
@@ -24,6 +26,7 @@ export type AccountMessages = Readonly<{
     sentTitle: string;
     sentDescription: string;
     offline: string;
+    rateLimited: string;
     invalid: string;
     error: string;
     unavailable: string;
@@ -58,12 +61,70 @@ export type AccountMessages = Readonly<{
     saving: string;
     saved: string;
     saveError: string;
+    saveConflict: string;
     requiredLabel: string;
-    readingsTitle: string;
-    readingsEmpty: string;
-    readingsCount: string;
-    readingsDescription: string;
+    consentEyebrow: string;
+    consentTitle: string;
+    consentDescription: string;
+    consentLoading: string;
+    consentErrorTitle: string;
+    consentError: string;
+    consentRetry: string;
+    analyticsConsentLabel: string;
+    analyticsConsentDescription: string;
+    personalizationConsentLabel: string;
+    personalizationConsentDescription: string;
+    modelImprovementConsentLabel: string;
+    modelImprovementConsentDescription: string;
+    consentSeparationNote: string;
+    consentSaving: string;
+    consentSaved: string;
+    consentSaveError: string;
+    historyTitle: string;
+    historyDescription: string;
+    historyLoading: string;
+    historyEmpty: string;
+    historyErrorTitle: string;
+    historyError: string;
+    historyRetry: string;
+    historyLoadMore: string;
+    historyLoadingMore: string;
+    historyOneCard: string;
+    historyThreeCard: string;
+    historyIntention: string;
+    historyRitual: string;
+    historyJournal: string;
+    historyRevisit: string;
+    historyStatusActive: string;
+    historyStatusArchived: string;
+    historyStatusCompleted: string;
+    historyStatusPaused: string;
+    historyStatusScheduled: string;
+    historyStatusAbandoned: string;
+    historyOpen: string;
+    historyOpenError: string;
+    readingThemes: Readonly<Record<QuestionIntakeThemeCode, string>>;
     sanctuaryAction: string;
+    sessionsTitle: string;
+    sessionsDescription: string;
+    sessionsLoading: string;
+    sessionsErrorTitle: string;
+    sessionsError: string;
+    sessionsRetry: string;
+    sessionCurrent: string;
+    sessionOther: string;
+    sessionCreated: string;
+    sessionLastActive: string;
+    sessionExpires: string;
+    sessionRevoke: string;
+    sessionRevoking: string;
+    sessionRevokeConfirm: string;
+    sessionRevokeSuccess: string;
+    sessionRevokeError: string;
+    signOutAll: string;
+    signingOutAll: string;
+    signOutAllConfirm: string;
+    signOutAllError: string;
     signOut: string;
     signingOut: string;
     signOutError: string;
@@ -97,6 +158,7 @@ const englishMessages = {
     sentTitle: "Check your email",
     sentDescription: "Use the short-lived link we sent to finish signing in.",
     offline: "You appear to be offline. Reconnect before requesting a sign-in link.",
+    rateLimited: "Too many sign-in links were requested. Wait a little, then try again.",
     invalid: "That sign-in link is invalid or has expired. Request a new one below.",
     error: "Sign-in could not be started. No account changes were made. Try again.",
     unavailable: "Account sign-in is temporarily unavailable in this environment.",
@@ -135,13 +197,93 @@ const englishMessages = {
     saving: "Saving profile",
     saved: "Profile saved.",
     saveError: "Your profile could not be saved. Review the fields and try again.",
+    saveConflict:
+      "This profile changed in another session. Reload the account before saving again.",
     requiredLabel: "required",
-    readingsTitle: "Your reflections",
-    readingsEmpty: "No account-linked reflections are available yet.",
-    readingsCount: "{count} account-linked reflections",
-    readingsDescription:
-      "Anonymous work can be merged into your account after sign-in without moving another person's data.",
+    consentEyebrow: "You are in control",
+    consentTitle: "Personalization choices",
+    consentDescription:
+      "These optional choices are off until you turn them on. Turning one off stops that purpose immediately.",
+    consentLoading: "Loading privacy choices",
+    consentErrorTitle: "Privacy choices could not be loaded",
+    consentError: "No choice was changed. Try loading these controls again.",
+    consentRetry: "Retry privacy choices",
+    analyticsConsentLabel: "Use behavioral data without private text to improve the experience",
+    analyticsConsentDescription:
+      "This records an analytics preference only. Production analytics collection remains disabled until its separate policy and activation are approved.",
+    personalizationConsentLabel:
+      "Allow personalized summaries; private journal entries are excluded by default",
+    personalizationConsentDescription:
+      "Only an excerpt you explicitly select may pass this gate. Your name, email, payment data, full journal history, marketing, and model training remain excluded.",
+    modelImprovementConsentLabel:
+      "Allow excerpts I explicitly select to be considered for model-improvement review",
+    modelImprovementConsentDescription:
+      "This is separate from personalization. No production training or real-user-data evaluation path is enabled, and nothing is sent unless a later approved feature asks you to select an excerpt again.",
+    consentSeparationNote:
+      "Service notices, marketing, analytics, AI personalization, and model improvement are separate choices. One choice never grants another.",
+    consentSaving: "Saving privacy choice",
+    consentSaved: "Your privacy choice was saved and now applies to new data flows.",
+    consentSaveError:
+      "The choice could not be saved. The previous safe-off state remains in effect.",
+    historyTitle: "Your history",
+    historyDescription:
+      "Only minimal account-linked metadata appears here. Questions, intentions, journal entries, and Revisit reflections are never included in this list.",
+    historyLoading: "Loading your private history",
+    historyEmpty: "No account-linked history is available yet.",
+    historyErrorTitle: "History could not be loaded",
+    historyError: "Your private resources were not changed. Try loading this list again.",
+    historyRetry: "Retry history",
+    historyLoadMore: "Load older history",
+    historyLoadingMore: "Loading older history",
+    historyOneCard: "One-card reflection",
+    historyThreeCard: "Three-card reflection",
+    historyIntention: "Intention",
+    historyRitual: "Ritual session",
+    historyJournal: "Private journal entry",
+    historyRevisit: "Revisit",
+    historyStatusActive: "Active",
+    historyStatusArchived: "Archived",
+    historyStatusCompleted: "Completed",
+    historyStatusPaused: "Paused",
+    historyStatusScheduled: "Scheduled",
+    historyStatusAbandoned: "Ended",
+    historyOpen: "Open this reading",
+    historyOpenError:
+      "This tab could not prepare the reading safely. Your history was not changed. Try again.",
+    readingThemes: {
+      self: "Self",
+      relationships: "Relationships",
+      work: "Work",
+      creativity: "Creativity",
+      transition: "Transition",
+      grief: "Grief",
+      courage: "Courage",
+      gratitude: "Gratitude",
+      release: "Release",
+      open_reflection: "Open reflection",
+    },
     sanctuaryAction: "Visit my sanctuary",
+    sessionsTitle: "Signed-in sessions",
+    sessionsDescription:
+      "Review the current session and other active sessions. RITUVIA does not store device names, locations, or fingerprints for this list.",
+    sessionsLoading: "Loading active sessions",
+    sessionsErrorTitle: "Sessions could not be loaded",
+    sessionsError: "No session was changed. Try loading the private session list again.",
+    sessionsRetry: "Retry sessions",
+    sessionCurrent: "This session",
+    sessionOther: "Other active session",
+    sessionCreated: "Signed in",
+    sessionLastActive: "Last active",
+    sessionExpires: "Expires",
+    sessionRevoke: "Sign out this other session",
+    sessionRevoking: "Signing out session",
+    sessionRevokeConfirm: "Sign out this other session?",
+    sessionRevokeSuccess: "The other session was signed out.",
+    sessionRevokeError: "The other session could not be signed out. Try again.",
+    signOutAll: "Sign out all sessions",
+    signingOutAll: "Signing out all sessions",
+    signOutAllConfirm: "Sign out this session and every other active session?",
+    signOutAllError: "All sessions could not be signed out. Try again before leaving this device.",
     signOut: "Sign out",
     signingOut: "Signing out",
     signOutError: "Sign-out could not be completed. Try again before leaving this device.",

@@ -2,7 +2,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getWebRuntimeConfiguration } from "../../../../../config/server";
-import { startWebAccountAuth, WebAccountAuthError } from "../../../../../server/account-auth";
+import {
+  accountAuthStateCookieName,
+  accountSessionCookieName,
+  startWebAccountAuth,
+  WebAccountAuthError,
+} from "../../../../../server/account-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -47,9 +52,37 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
   }
   const input = body as Record<string, unknown>;
   try {
-    const started = await startWebAccountAuth({ email: input.email, returnTo: input.returnTo });
-    return NextResponse.json(started, { headers, status: 201 });
+    const started = await startWebAccountAuth({
+      email: input.email,
+      previousSessionToken: request.cookies.get(accountSessionCookieName)?.value,
+      returnTo: input.returnTo,
+    });
+    const response = NextResponse.json(
+      {
+        accepted: started.accepted,
+        expiresAt: started.expiresAt,
+        localPreviewPath: started.localPreviewPath,
+      },
+      { headers, status: 202 },
+    );
+    const expires = new Date(started.expiresAt);
+    response.cookies.set({
+      expires,
+      httpOnly: true,
+      maxAge: Math.max(1, Math.floor((expires.getTime() - Date.now()) / 1_000)),
+      name: accountAuthStateCookieName,
+      path: "/",
+      sameSite: "lax",
+      secure: true,
+      value: started.stateToken,
+    });
+    return response;
   } catch (error) {
+    if (error instanceof WebAccountAuthError && error.code === "rate_limited") {
+      const response = problem(429, "ACCOUNT_AUTH_RATE_LIMITED");
+      response.headers.set("retry-after", String(error.retryAfterSeconds ?? 60));
+      return response;
+    }
     return problem(
       error instanceof WebAccountAuthError && error.code === "invalid" ? 400 : 503,
       error instanceof WebAccountAuthError && error.code === "invalid"

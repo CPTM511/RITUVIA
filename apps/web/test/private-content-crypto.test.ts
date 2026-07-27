@@ -16,7 +16,11 @@ const context = Object.freeze({
 describe("private content cryptography", () => {
   it("round-trips AES-256-GCM content with opaque storage fields", () => {
     const crypto = createPrivateContentCryptography(
-      { activeKeyVersion: "local.v1", keys: [{ key, version: "local.v1" }] },
+      {
+        activeKeyVersion: "local.v1",
+        digestKeyVersion: "local.v1",
+        keys: [{ key, version: "local.v1" }],
+      },
       () => new Uint8Array(12).fill(9),
     );
     const encrypted = crypto.encrypt({ context, plaintext: "private journal canary" });
@@ -30,7 +34,11 @@ describe("private content cryptography", () => {
 
   it("binds ciphertext to owner, purpose, resource, and authentication tag", () => {
     const crypto = createPrivateContentCryptography(
-      { activeKeyVersion: "local.v1", keys: [{ key, version: "local.v1" }] },
+      {
+        activeKeyVersion: "local.v1",
+        digestKeyVersion: "local.v1",
+        keys: [{ key, version: "local.v1" }],
+      },
       () => new Uint8Array(12).fill(4),
     );
     const encrypted = crypto.encrypt({ context, plaintext: "private journal canary" });
@@ -47,16 +55,27 @@ describe("private content cryptography", () => {
         encrypted: { ...encrypted, tag: new Uint8Array(16) },
       }),
     ).toThrowError(PrivateContentCryptoError);
+    expect(() =>
+      crypto.decrypt({
+        context: { ...context, purpose: "astrology_calculation.payload" },
+        encrypted,
+      }),
+    ).toThrowError(PrivateContentCryptoError);
   });
 
   it("supports historical decryption after active-key rotation", () => {
     const oldCrypto = createPrivateContentCryptography(
-      { activeKeyVersion: "key.v1", keys: [{ key, version: "key.v1" }] },
+      {
+        activeKeyVersion: "key.v1",
+        digestKeyVersion: "key.v1",
+        keys: [{ key, version: "key.v1" }],
+      },
       () => new Uint8Array(12).fill(1),
     );
     const encrypted = oldCrypto.encrypt({ context, plaintext: "private journal canary" });
     const rotated = createPrivateContentCryptography({
       activeKeyVersion: "key.v2",
+      digestKeyVersion: "key.v1",
       keys: [
         { key, version: "key.v1" },
         { key: new Uint8Array(32).fill(8), version: "key.v2" },
@@ -65,11 +84,35 @@ describe("private content cryptography", () => {
 
     expect(rotated.decrypt({ context, encrypted })).toBe("private journal canary");
     expect(rotated.activeKeyVersion).toBe("key.v2");
+    expect(rotated.digestKeyVersion).toBe("key.v1");
+    expect(
+      rotated.deriveIdempotencyKeyDigest({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        ownerSubjectId,
+      }),
+    ).toBe(
+      oldCrypto.deriveIdempotencyKeyDigest({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        ownerSubjectId,
+      }),
+    );
+    expect(
+      rotated.deriveCanonicalRequestDigest({
+        canonicalRequest: '{"reflection":"private journal canary"}',
+        ownerSubjectId,
+      }),
+    ).toBe(
+      oldCrypto.deriveCanonicalRequestDigest({
+        canonicalRequest: '{"reflection":"private journal canary"}',
+        ownerSubjectId,
+      }),
+    );
   });
 
   it("derives scoped stable digests without exposing raw private values", () => {
     const crypto = createPrivateContentCryptography({
       activeKeyVersion: "local.v1",
+      digestKeyVersion: "local.v1",
       keys: [{ key, version: "local.v1" }],
     });
     const idempotency = crypto.deriveIdempotencyKeyDigest({
@@ -91,17 +134,26 @@ describe("private content cryptography", () => {
 
   it("rejects malformed keys, entropy, context, and oversized content safely", () => {
     expect(() =>
-      createPrivateContentCryptography({ activeKeyVersion: "local.v1", keys: [] }),
+      createPrivateContentCryptography({
+        activeKeyVersion: "local.v1",
+        digestKeyVersion: "local.v1",
+        keys: [],
+      }),
     ).toThrowError(PrivateContentCryptoError);
     expect(() =>
       createPrivateContentCryptography({
         activeKeyVersion: "local.v1",
+        digestKeyVersion: "local.v1",
         keys: [{ key: new Uint8Array(1), version: "local.v1" }],
       }),
     ).toThrowError(PrivateContentCryptoError);
 
     const crypto = createPrivateContentCryptography(
-      { activeKeyVersion: "local.v1", keys: [{ key, version: "local.v1" }] },
+      {
+        activeKeyVersion: "local.v1",
+        digestKeyVersion: "local.v1",
+        keys: [{ key, version: "local.v1" }],
+      },
       () => new Uint8Array(11),
     );
     expect(() => crypto.encrypt({ context, plaintext: "private journal canary" })).toThrowError(
@@ -110,7 +162,7 @@ describe("private content cryptography", () => {
     expect(() =>
       crypto.encrypt({ context: { ...context, ownerSubjectId: "unsafe" }, plaintext: "private" }),
     ).toThrowError(PrivateContentCryptoError);
-    expect(() => crypto.encrypt({ context, plaintext: "x".repeat(4_097) })).toThrowError(
+    expect(() => crypto.encrypt({ context, plaintext: "x".repeat(12_001) })).toThrowError(
       PrivateContentCryptoError,
     );
   });
