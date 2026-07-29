@@ -497,7 +497,7 @@ const jsonFulfill = async (route, status, body, contentType = "application/json"
 
 const installTarotAcceptanceRoutes = async (
   page,
-  { failFirstInterpretationStart = false, finalStatus, readingType },
+  { failFirstInterpretationStart = false, finalStatus, fulfilledAbortRequests, readingType },
 ) => {
   const readingId = tarotAcceptanceReadingIds[readingType];
   let observeInterpretationGet;
@@ -614,6 +614,7 @@ const installTarotAcceptanceRoutes = async (
           schemaVersion: "tarot-interpretation-response.v1",
           status: finalStatus,
         });
+        fulfilledAbortRequests.add(request);
         return;
       }
     }
@@ -1386,6 +1387,7 @@ const attachBrowserBoundary = async (
     allowFulfilledSessionAbort = false,
     allowInterpretationUnavailable = false,
     expectedApiFailures = [],
+    fulfilledAbortRequests = new Set(),
   } = {},
 ) => {
   const expectedFailure = (url, status, method) =>
@@ -1472,6 +1474,13 @@ const attachBrowserBoundary = async (
       url.origin === origin &&
       url.pathname === "/api/v1/anonymous/session" &&
       failure === "net::ERR_ABORTED"
+    ) {
+      return;
+    }
+    if (
+      failure === "net::ERR_ABORTED" &&
+      url.origin === origin &&
+      fulfilledAbortRequests.has(request)
     ) {
       return;
     }
@@ -2196,13 +2205,16 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     viewport: { height: 1000, width: 1440 },
   });
   const oneCardPage = await oneCardContext.newPage();
+  const oneCardFulfilledAbortRequests = new Set();
   await attachBrowserBoundary(oneCardContext, oneCardPage, origin, browserFailures, {
     allowFulfilledSessionAbort: true,
     allowInterpretationUnavailable: true,
+    fulfilledAbortRequests: oneCardFulfilledAbortRequests,
   });
   const oneCardRequests = await installTarotAcceptanceRoutes(oneCardPage, {
     failFirstInterpretationStart: true,
     finalStatus: "verified",
+    fulfilledAbortRequests: oneCardFulfilledAbortRequests,
     readingType: "one_card",
   });
   try {
@@ -2289,11 +2301,14 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     viewport: { height: 844, width: 390 },
   });
   const threeCardPage = await threeCardContext.newPage();
+  const threeCardFulfilledAbortRequests = new Set();
   await attachBrowserBoundary(threeCardContext, threeCardPage, origin, browserFailures, {
     allowFulfilledSessionAbort: true,
+    fulfilledAbortRequests: threeCardFulfilledAbortRequests,
   });
   const threeCardRequests = await installTarotAcceptanceRoutes(threeCardPage, {
     finalStatus: "reviewed_fallback",
+    fulfilledAbortRequests: threeCardFulfilledAbortRequests,
     readingType: "three_card",
   });
   try {

@@ -150,6 +150,14 @@ describe("public shell contrast compensation", () => {
     expect(accessibilityVerifier).toContain('active.closest(".rvt-choice, .rvt-switch")');
   });
 
+  it("limits teardown abort tolerance to the exact fulfilled request object", () => {
+    expect(accessibilityVerifier).toContain("fulfilledAbortRequests.add(request)");
+    expect(accessibilityVerifier).toContain("fulfilledAbortRequests.has(request)");
+    expect(accessibilityVerifier).not.toMatch(
+      /request\.method\(\) === "GET"[\s\S]{0,200}url\.pathname\.includes\("interpretation"\)/u,
+    );
+  });
+
   it("keeps the decorative sanctuary preview inside its reviewed clipping bounds", () => {
     expect(webStyles).toMatch(
       /\.sanctuary-preview-art \{[\s\S]*?inline-size: 100%;[\s\S]*?max-inline-size: 33\.5rem;[\s\S]*?max-block-size: 42rem;[\s\S]*?aspect-ratio: 1122 \/ 1402;[\s\S]*?justify-self: center;[\s\S]*?overflow: hidden;/u,
