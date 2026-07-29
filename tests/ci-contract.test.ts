@@ -14,6 +14,7 @@ import {
 } from "../scripts/ci-contract.js";
 
 let workflow: Record<string, unknown>;
+let databaseVerifierSource = "";
 
 const cloneWorkflow = (): Record<string, unknown> => structuredClone(workflow);
 const record = (value: unknown): Record<string, unknown> => value as Record<string, unknown>;
@@ -21,6 +22,10 @@ const record = (value: unknown): Record<string, unknown> => value as Record<stri
 beforeAll(async () => {
   const source = await readFile(path.resolve(".github/workflows/ci.yml"), "utf8");
   workflow = parseWorkflowYaml(source) as Record<string, unknown>;
+  databaseVerifierSource = await readFile(
+    path.resolve("packages/db/scripts/verify-ci-foundation.ts"),
+    "utf8",
+  );
 });
 
 describe("active CI workflow contract", () => {
@@ -124,6 +129,18 @@ describe("active CI workflow contract", () => {
         rule: "ci-script-command",
       },
     ]);
+  });
+
+  it("keeps CI Tarot report inserts on the exact runtime columns", () => {
+    expect(databaseVerifierSource).toContain(
+      "GRANT INSERT ON TABLE reading, tarot_draw TO ${READING_WRITER_ROLE}",
+    );
+    expect(databaseVerifierSource).toContain(
+      "GRANT INSERT (anonymous_subject_id, canonical_request_hash, category, created_at, expires_at, idempotency_key_hash, idempotency_key_version, interpretation_id, interpretation_parent_status, interpretation_verification_status, reading_id, report_policy_version, report_request_schema_version, schema_version, target_kind, target_position_id) ON TABLE reading_report TO ${READING_WRITER_ROLE}",
+    );
+    expect(databaseVerifierSource).not.toContain(
+      "GRANT INSERT ON TABLE reading, tarot_draw, reading_report",
+    );
   });
 
   it("rejects write permissions and dangerous triggers", () => {
