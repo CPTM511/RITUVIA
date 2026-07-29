@@ -68,6 +68,25 @@ describe("Web shell build policy", () => {
     expect(audit().findings).toEqual([]);
   });
 
+  it("validates but does not charge nomodule compatibility code to the modern budget", () => {
+    const legacy = Buffer.from(
+      Array.from({ length: 1_024 }, (_, index) => String.fromCharCode(index % 256)).join(""),
+      "latin1",
+    );
+    const document = html().replace(
+      "</body>",
+      '<script nomodule="" src="/_next/static/legacy.js"></script></body>',
+    );
+    const assets = new Map([
+      ["/_next/static/app.js", Buffer.from("export{}")],
+      ["/_next/static/legacy.js", legacy],
+      ["/_next/static/app.css", Buffer.from("body{color:#111}")],
+    ]);
+    expect(audit(document, assets).findings).toEqual([]);
+    assets.delete("/_next/static/legacy.js");
+    expect(audit(document, assets).findings).toContain("missing-javascript-asset");
+  });
+
   it("accepts the exact framework boundary comments emitted by the reviewed build", () => {
     expect(audit(`<!DOCTYPE html>${html()}<!--$--><main></main><!--/$-->`).findings).toEqual([]);
   });

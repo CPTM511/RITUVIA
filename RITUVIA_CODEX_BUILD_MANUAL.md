@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-07-29. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-07-30. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -1068,7 +1068,7 @@ existing human approval gates.
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-29
+**Last reconciled:** 2026-07-30
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1130,12 +1130,11 @@ without adding birth-profile input, location search, calculation mutation, produ
 deployment, public source endpoint, or activation. An
 isolated 28-migration PostgreSQL drill passes default off, approved on,
 emergency off, historical-key rejection, append-only/least-privilege enforcement, and logical
-restore. The root full production
-build has not yet been rerun after registering the fifteenth active module; its final artifact
-verifier still expects a static `apps/web/.next/server/app/en.html` even though RIT-082 made `/en`
-dynamic; no full root-build pass is currently claimed. Generated-evidence synchronization is also
-pending because its repository guard requires every canonical untracked file from prior tasks to
-be represented in the Git index, and this run does not stage unrelated work. RIT-091 is complete
+restore. The root production build now passes all 16 packages, 121 workspace artifact/runtime
+checks, 45 public pages, five private experience pages, and the final production-artifact policy.
+The largest modern JavaScript delivery is 219,789 bytes gzip under the unchanged 232-KiB budget;
+legacy `nomodule` compatibility code remains independently asset-validated rather than being
+misclassified as modern first-load JavaScript. RIT-091 is complete
 through D-067, OWN-014 is complete through D-068, and RIT-092 is complete with encrypted
 session-authorized birth profiles, exact/approximate/unknown-time semantics, full replay
 provenance, privacy export, and cryptographic deletion evidence. OWN-015 is complete. A live bounded
@@ -2050,6 +2049,17 @@ environment-reader inventory, configuration-backed publication identity, and new
 post-migration invariant stage without exposing credentials or data. Twenty-eight representative
 tests, the complete 16-package plus root typecheck, and the milestone integration unit matrix of
 2,144 passing tests across 183 files pass locally.
+Hosted run `30474266506` passed Security again. Quality then passed format, lint, typecheck,
+architecture/evidence checks, 1,963 hosted unit/contract tests, fixed AI evaluations, and the
+configuration boundary before failing only because the artifact policy charged a validated legacy
+`nomodule` compatibility chunk against the modern JavaScript budget. PostgreSQL reached the new
+granular `tarot runtime privilege attestation` stage and revealed broader CI-only
+`reading_report` insert privileges than production permits. The current worktree now grants the
+exact 16 report columns, passes the same privilege attestation on a one-time loopback PostgreSQL
+role, and locks that least-privilege shape in the CI contract. The artifact policy still validates
+all referenced scripts but measures only modern-delivery scripts against the unchanged budget.
+One hundred three focused CI/database/build-policy tests and the complete production build pass locally;
+the resulting maximum modern JavaScript gzip size is 219,789 bytes.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner

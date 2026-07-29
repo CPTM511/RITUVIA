@@ -333,8 +333,9 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     await admin.query(
       `GRANT SELECT ON TABLE reading, tarot_draw, reading_report TO ${READING_READER_ROLE}`,
     );
+    await admin.query(`GRANT INSERT ON TABLE reading, tarot_draw TO ${READING_WRITER_ROLE}`);
     await admin.query(
-      `GRANT INSERT ON TABLE reading, tarot_draw, reading_report TO ${READING_WRITER_ROLE}`,
+      `GRANT INSERT (anonymous_subject_id, canonical_request_hash, category, created_at, expires_at, idempotency_key_hash, idempotency_key_version, interpretation_id, interpretation_parent_status, interpretation_verification_status, reading_id, report_policy_version, report_request_schema_version, schema_version, target_kind, target_position_id) ON TABLE reading_report TO ${READING_WRITER_ROLE}`,
     );
     await admin.query(`GRANT SELECT ON TABLE interpretation TO ${INTERPRETATION_READER_ROLE}`);
     await admin.query(

@@ -720,9 +720,14 @@ export const auditWebShellBuildArtifacts = ({
   icon,
 }) => {
   const findings = [...auditDocumentResources(html, expectedPathname)];
+  const scriptTags = [...html.matchAll(/<script\b[^>]*>/gu)].map(([tag]) => tag);
   const scriptSources = unique(
-    [...html.matchAll(/<script\b[^>]*>/gu)]
-      .map(([tag]) => attribute(tag, "src"))
+    scriptTags.map((tag) => attribute(tag, "src")).filter((value) => value !== null),
+  );
+  const modernScriptSources = new Set(
+    scriptTags
+      .filter((tag) => !parseAttributes(tag).has("nomodule"))
+      .map((tag) => attribute(tag, "src"))
       .filter((value) => value !== null),
   );
   const stylesheetSources = unique(
@@ -732,7 +737,7 @@ export const auditWebShellBuildArtifacts = ({
       .filter((value) => value !== null),
   );
 
-  if (scriptSources.length === 0) findings.push("missing-javascript-assets");
+  if (modernScriptSources.size === 0) findings.push("missing-javascript-assets");
   if (stylesheetSources.length === 0) findings.push("missing-stylesheet-assets");
   if (gzipSync(Buffer.from(html)).byteLength > budgets.htmlGzipBytes) findings.push("html-budget");
   if (icon.byteLength > budgets.iconBytes) findings.push("icon-budget");
@@ -747,7 +752,7 @@ export const auditWebShellBuildArtifacts = ({
       findings.push("missing-javascript-asset");
       continue;
     }
-    javascriptGzipBytes += gzipSync(asset).byteLength;
+    if (modernScriptSources.has(source)) javascriptGzipBytes += gzipSync(asset).byteLength;
   }
   if (javascriptGzipBytes > budgets.javascriptGzipBytes) findings.push("javascript-budget");
 
