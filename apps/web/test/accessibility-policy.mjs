@@ -63,6 +63,21 @@ export const accessibilitySmokeRoutes = Object.freeze(
   routeArtifacts.map(({ pathname }) => pathname),
 );
 
+export const auditPublicAccessibilitySmokeInventory = (reviewedRoutes) => {
+  if (!Array.isArray(reviewedRoutes) || reviewedRoutes.some((route) => typeof route !== "string")) {
+    return Object.freeze(["invalid-reviewed-public-route-inventory"]);
+  }
+  const reviewedRouteSet = new Set(reviewedRoutes);
+  return Object.freeze([
+    ...(new Set(publicAccessibilitySmokeRoutes).size === publicAccessibilitySmokeRoutes.length
+      ? []
+      : ["duplicate-public-accessibility-smoke-route"]),
+    ...publicAccessibilitySmokeRoutes
+      .filter((route) => !reviewedRouteSet.has(route))
+      .map((route) => `missing-public-accessibility-smoke-route:${route}`),
+  ]);
+};
+
 export const accessibilityAxeTags = Object.freeze([
   "wcag2a",
   "wcag2aa",

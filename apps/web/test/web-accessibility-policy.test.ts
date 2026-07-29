@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   accessibilityAxeTags,
   accessibilitySmokeRoutes,
+  auditPublicAccessibilitySmokeInventory,
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
@@ -79,6 +80,21 @@ describe("Web accessibility smoke policy", () => {
     expect(Object.isFrozen(publicAccessibilitySmokeRoutes)).toBe(true);
     expect(Object.isFrozen(privateAccessibilitySmokeRoutes)).toBe(true);
     expect(Object.isFrozen(accessibilityAxeTags)).toBe(true);
+  });
+
+  it("keeps every smoke route inside the reviewed public build inventory", () => {
+    expect(
+      auditPublicAccessibilitySmokeInventory([
+        ...publicAccessibilitySmokeRoutes,
+        "/en/numerology/example",
+      ]),
+    ).toEqual([]);
+    expect(auditPublicAccessibilitySmokeInventory(publicAccessibilitySmokeRoutes.slice(1))).toEqual(
+      ["missing-public-accessibility-smoke-route:/en"],
+    );
+    expect(auditPublicAccessibilitySmokeInventory("not-an-inventory")).toEqual([
+      "invalid-reviewed-public-route-inventory",
+    ]);
   });
 
   it("maps only reviewed documents, the generated icon, and bounded static assets", () => {

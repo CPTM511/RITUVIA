@@ -992,6 +992,20 @@ role, and locks that least-privilege shape in the CI contract. The artifact poli
 all referenced scripts but measures only modern-delivery scripts against the unchanged budget.
 One hundred three focused CI/database/build-policy tests and the complete production build pass locally;
 the resulting maximum modern JavaScript gzip size is 219,789 bytes.
+Hosted run `30475576351` passed Security and confirmed the modern-budget fix by reaching the
+accessibility stage. PostgreSQL passed the corrected Tarot privilege attestation, then exposed an
+outdated policy-inventory assertion that omitted four current privacy-deletion policies. Quality
+exposed a separate outdated exact-equality assumption between the complete 45-page reviewed build
+inventory and its intentionally representative 14-route accessibility smoke subset. The database
+verifier now attests the exact current nine-policy interpretation inventory, matched by a read-only
+query against the one-time loopback migrated database. Accessibility now enforces smoke inventory
+inclusion instead of equality and confines the GEO answer-context's Axe-incomplete contrast
+selectors to its bounded component; the underlying text tokens remain independently proven at
+4.5:1 or better against all reviewed gradients. The complete non-restricted accessibility command
+passes 14 public and three private routes, 79 primary Axe scans, deterministic Tarot acceptance,
+and the intention, ritual, Revisit, full-loop, and writing-system browser gates without
+critical/serious violations, layout failures, private leaks, unexpected requests, or console/page
+errors.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner

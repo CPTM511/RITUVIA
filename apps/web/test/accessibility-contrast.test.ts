@@ -117,6 +117,7 @@ describe("public shell contrast compensation", () => {
       ".information-introduction",
       ".question-intake-introduction",
       ".question-intake-boundary,\n.question-intake-privacy",
+      ".geo-answer-context-details dd,\n.geo-answer-context-authority dd",
       ".oracle-card > p:not(.eyebrow)",
       ".oracle-card .oracle-note",
     ]) {
@@ -130,6 +131,9 @@ describe("public shell contrast compensation", () => {
       /\.question-intake-introduction \{[\s\S]*?color: var\(--ink-secondary\)/u,
     );
     expect(webStyles).toMatch(/\.question-intake-boundary,[\s\S]*?color: var\(--ink-secondary\)/u);
+    expect(webStyles).toMatch(
+      /\.geo-answer-context-details dd,[\s\S]*?color: var\(--ink-secondary\)/u,
+    );
     expect(webStyles).toMatch(/body \{[\s\S]*?color: var\(--ink-primary\)/u);
     expect(webStyles).toMatch(
       /\.oracle-card > p:not\(\.eyebrow\) \{[\s\S]*?color: var\(--ink-secondary\)/u,
