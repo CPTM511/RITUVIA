@@ -2017,7 +2017,14 @@ before the analytics verifier, the Prisma client was not generated before the da
 and default Gitleaks classified 11 historical test constants as generic API keys. The current
 worktree fixes all six root causes with self-contained commands and an exact 11-fingerprint
 historical ignore list; focused CI-contract, fixed-tool, generated-client, and internal dependency
-build checks pass locally.
+build checks pass locally. Hosted run `30469853925` subsequently scanned all 40 commits with
+Gitleaks and found no leaks. It exposed one further clean-runner i18n build prerequisite and a
+10-second native sanitizer compile bound that was too short for the hosted runner; both are fixed
+with an explicit i18n build and 60-second bounded compiler stages. A cached-source native security
+rerun also identified and fixed the sanitized compiler environment's missing trusted temporary
+directory, then passed 151 mutation cases and the 23-component supply-chain validation. That run's
+PostgreSQL job never reached database verification because repeated npm registry timeouts aborted
+dependency installation, which remains external transient evidence rather than a database result.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner
