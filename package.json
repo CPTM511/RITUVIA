@@ -88,6 +88,7 @@
     "@axe-core/playwright": "4.12.1",
     "@next/env": "16.2.11",
     "@types/node": "24.13.3",
+    "esbuild": "0.28.1",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.11",
     "eslint-config-prettier": "10.1.8",
