@@ -77,20 +77,21 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web exec next de
 The repository-root `.env.local` is ignored, created with mode `0600`, and contains independent random local
 keys. The configurator refuses to replace it so encrypted local account and journal data are not
 silently orphaned. If port `55432` is occupied, set the same `RITUVIA_LOCAL_POSTGRES_PORT` value for
-the database and configuration commands. The runtime remains safe-off without the validated
-database and explicit `experience.public_shell=on` activation record.
+the database and configuration commands. Private database-backed capabilities remain safe-off
+without the validated database; public information delivery no longer depends on a rollout flag.
 
-When explicitly enabled, opening the local origin returns a permanent redirect to the only active,
-reviewed locale at `/en`. The finite public surface remains `/en`, `/en/methodology`, `/en/safety`,
-and `/en/privacy`; the private noindex product routes add `/en/sanctuary`, `/en/sign-in`,
+Opening the local origin returns a permanent redirect to the only active, reviewed locale at `/en`.
+The finite public surface remains `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy`; the
+private noindex product routes add `/en/sanctuary`, `/en/sign-in`,
 `/en/account`, and exact checkout-return paths. The privacy route is a product-design overview, not
 a legal privacy policy. Unsupported or non-canonical locale/page segments return 404 rather than
 silently falling back or generating caches. Public information pages remain server rendered and
 readable without JavaScript; transactional product flows require JavaScript and expose explicit
 loading, retry, error, and offline states. Local, preview, and staging metadata is `noindex`; a
 production environment must provide the approved HTTPS canonical origin before it may emit
-indexable metadata. The configuration-boundary integration harness reproducibly verifies enabled
-and disabled behavior without documenting an activation bypass or ad hoc SQL. The local MVP
+indexable metadata. The configuration-boundary integration harness reproducibly verifies public
+delivery and independent private-feature safe-off behavior without documenting an activation
+bypass or ad hoc SQL. The local MVP
 implements anonymous readings, account sessions, age-gated hosted checkout, entitlements, intention
 and ritual completion, and encrypted private journaling; it does not claim that provider onboarding,
 legal terms, or a public deployment are approved.
@@ -98,7 +99,7 @@ legal terms, or a public deployment are approved.
 `/robots.txt` and `/sitemap.xml` are generated from the same typed four-page inventory. Local,
 preview, and staging robots disallow the entire site and publish no sitemap. Production publishes
 the four exact, end-anchored document allows, the build-audited `/_next/static/` and icon resources,
-and a four-URL sitemap only while the public-shell flag is enabled; disabled or unavailable state
+and a four-URL sitemap only while the reviewed inventory is current. Missing or stale inventory
 returns disallow-all robots and no sitemap. Query, private, unsupported, bare/spoofed RSC, and
 unreviewed Next-internal requests fail closed. Served RSC responses are explicit `noindex` and
 `private, no-store`; Next-owned direct `*.rsc` errors are accepted only as `text/x-component` 404s
@@ -140,10 +141,10 @@ idempotency boundary. See `packages/ui/README.md` for the exact catalog and revi
 
 The same package provides presentation-only empty, error, offline, and provider-unavailable page
 patterns. Web owns their localized English copy, state classification, announcement/focus timing,
-and caller-controlled retry action. The public shell truthfully consumes empty, advisory offline, and route-error
-states; provider-unavailable remains a dependency-neutral synthetic pattern until a real adapter and
-typed safe classifier exist. This does not add PWA caching, synchronization, provider health, or an
-automatic retry capability, and the server-side safe-off flag still returns an empty private 404.
+and caller-controlled retry action. The public shell truthfully consumes empty, advisory offline,
+and route-error states; provider-unavailable remains a dependency-neutral synthetic pattern until a
+real adapter and typed safe classifier exist. This does not add PWA caching, synchronization,
+provider health, or an automatic retry capability.
 
 ### Local PostgreSQL and Prisma
 

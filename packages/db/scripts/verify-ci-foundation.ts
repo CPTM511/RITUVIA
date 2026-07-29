@@ -901,11 +901,6 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         roles: [FLAG_WRITER_ROLE],
       },
       {
-        command: "INSERT",
-        policyName: "feature_flag_version_astrology_append",
-        roles: [FLAG_WRITER_ROLE],
-      },
-      {
         command: "SELECT",
         policyName: "feature_flag_version_read",
         roles: [FLAG_READER_ROLE],
@@ -924,13 +919,15 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       ["6d393ec1-2019-4abc-9cf8-62f58c72efe8", "foundation-synthetic", "a".repeat(64)],
       "seed_manifest_pkey",
     );
-    await expectConstraint(
-      control,
-      `INSERT INTO feature_flag_version
-         (registry_version, flag_key, version, effective_at, change_reference, actor_id)
-       VALUES (0, $1, 1, $2, 'RIT-007', 'ci.verifier')`,
-      ["experience.public_shell", new Date("2026-07-17T11:00:00.000Z")],
-      "feature_flag_version_registry_version_check",
+    await expectPostgresError(
+      () =>
+        control.query(
+          `INSERT INTO feature_flag_version
+             (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+           VALUES (0, $1, 1, $2, 'RIT-007', 'ci.verifier')`,
+          ["experience.public_shell", new Date("2026-07-17T11:00:00.000Z")],
+        ),
+      "42501",
     );
 
     const inserted = await control.query<{ id: string }>(
@@ -944,10 +941,32 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       () =>
         control.query(
           `INSERT INTO feature_flag_version
+             (registry_version, flag_key, version, state, effective_at, change_reference, actor_id)
+           VALUES (1, 'experience.public_shell', 2, 'on', $1, 'RIT-016', 'ci.verifier')`,
+          [new Date("2026-07-17T12:00:00.000Z")],
+        ),
+      "42501",
+    );
+    await expectPostgresError(
+      () =>
+        control.query(
+          `INSERT INTO feature_flag_version
              (registry_version, flag_key, version, state, country_codes, effective_at,
               change_reference, approval_reference, actor_id)
-           VALUES (1, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
+           VALUES (3, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
                    'RIT-063', 'OWN-004:wrong-gate', 'ci.verifier')`,
+          [new Date("2026-07-17T12:00:00.000Z")],
+        ),
+      "42501",
+    );
+    await expectPostgresError(
+      () =>
+        control.query(
+          `INSERT INTO feature_flag_version
+             (registry_version, flag_key, version, state, country_codes, effective_at,
+              change_reference, approval_reference, actor_id)
+           VALUES (2, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
+                   'RIT-063', 'OWN-002:legacy-owner-record', 'ci.verifier')`,
           [new Date("2026-07-17T12:00:00.000Z")],
         ),
       "42501",
@@ -956,14 +975,24 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       `INSERT INTO feature_flag_version
          (registry_version, flag_key, version, state, country_codes, effective_at,
           change_reference, approval_reference, actor_id)
-       VALUES (1, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
+       VALUES (3, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
                'RIT-063', 'OWN-002:ci-owner-record', 'ci.verifier')`,
       [new Date("2026-07-17T12:00:00.000Z")],
+    );
+    await expectPostgresError(
+      () =>
+        control.query(
+          `INSERT INTO feature_flag_version
+             (registry_version, flag_key, version, effective_at, change_reference, actor_id)
+           VALUES (3, 'experience.public_shell', 1, $1, 'RIT-016', 'ci.verifier')`,
+          [new Date("2026-07-17T12:00:00.000Z")],
+        ),
+      "42501",
     );
     await control.query(
       `INSERT INTO feature_flag_version
          (registry_version, flag_key, version, effective_at, change_reference, actor_id)
-       VALUES (2, 'experience.public_shell', 1, $1, 'RIT-007', 'ci.verifier')`,
+       VALUES (2, 'experience.astrology', 1, $1, 'RIT-093', 'ci.verifier')`,
       [new Date("2026-07-17T12:00:00.000Z")],
     );
     await expectPostgresError(
@@ -1006,17 +1035,17 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         version: 1,
       },
       {
-        countryCodes: ["US"],
-        flagKey: "payments.fiat_checkout",
-        registryVersion: 1,
-        state: "on",
+        countryCodes: [],
+        flagKey: "experience.astrology",
+        registryVersion: 2,
+        state: "off",
         version: 1,
       },
       {
-        countryCodes: [],
-        flagKey: "experience.public_shell",
-        registryVersion: 2,
-        state: "off",
+        countryCodes: ["US"],
+        flagKey: "payments.fiat_checkout",
+        registryVersion: 3,
+        state: "on",
         version: 1,
       },
     ]);

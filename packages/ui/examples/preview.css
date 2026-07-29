@@ -72,6 +72,14 @@ h2 {
   margin-block-start: var(--space-6);
 }
 
+.preview-line-break-probe,
+.preview-shaping-probe {
+  max-inline-size: 9em;
+  margin-block: var(--space-4) 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line-subtle);
+}
+
 @media (width <= 40rem) {
   main {
     inline-size: min(100% - 1.25rem, 64rem);

@@ -17,7 +17,7 @@ const createRecord = (
   overrides: Readonly<Record<string, unknown>> = {},
 ) => ({
   actorId: "codex.local",
-  approvalReference: null,
+  approvalReference: flagKey === "experience.astrology" ? "OWN-015:D-070" : null,
   changeReference: "RIT-007",
   countryCodes: [],
   createdAt: "2026-07-17T10:00:00.000Z",
@@ -41,11 +41,10 @@ const createEvaluator = (records: readonly unknown[] = [], now = NOW) =>
 
 describe("typed feature-flag registry", () => {
   it("publishes a deeply immutable, versioned registry whose defaults are all safe-off", () => {
-    expect(featureFlagRegistryVersion).toBe(1);
+    expect(featureFlagRegistryVersion).toBe(3);
     expect(featureFlagKeys).toEqual([
       "content.regional_tradition",
       "experience.astrology",
-      "experience.public_shell",
       "market.country_activation",
       "payments.crypto_checkout",
       "payments.fiat_checkout",
@@ -76,7 +75,7 @@ describe("typed feature-flag registry", () => {
         evaluatedAt: NOW,
         flagKey,
         reason: "default-off",
-        registryVersion: 1,
+        registryVersion: 3,
         source: "default",
         version: null,
       });
@@ -84,19 +83,37 @@ describe("typed feature-flag registry", () => {
   });
 
   it("enables a standard flag only from an effective immutable version", () => {
-    const evaluator = createEvaluator([createRecord("experience.public_shell", { state: "on" })]);
-    const evaluation = evaluator.evaluate("experience.public_shell", {});
+    const evaluator = createEvaluator([createRecord("experience.astrology", { state: "on" })]);
+    const evaluation = evaluator.evaluate("experience.astrology", {});
 
     expect(evaluation).toEqual({
       enabled: true,
       evaluatedAt: NOW,
-      flagKey: "experience.public_shell",
+      flagKey: "experience.astrology",
       reason: "enabled",
-      registryVersion: 1,
+      registryVersion: 3,
       source: "version",
       version: 1,
     });
     expect(Object.isFrozen(evaluation)).toBe(true);
+  });
+
+  it("rejects the removed public-shell key and every pre-v3 snapshot", () => {
+    expect(() =>
+      parseFeatureFlagSnapshot(
+        createSnapshot([
+          createRecord("experience.astrology", {
+            flagKey: "experience.public_shell",
+          }),
+        ]),
+      ),
+    ).toThrow(ConfigurationError);
+    expect(() =>
+      parseFeatureFlagSnapshot({
+        records: [],
+        registryVersion: 2,
+      }),
+    ).toThrow(ConfigurationError);
   });
 
   it("requires the approved astrology method reference before enabling calculation", () => {
@@ -163,14 +180,14 @@ describe("typed feature-flag registry", () => {
   });
 
   it("uses the newest effective version and never resurrects an older version after expiry", () => {
-    const first = createRecord("experience.public_shell", { state: "on" });
-    const second = createRecord("experience.public_shell", {
+    const first = createRecord("experience.astrology", { state: "on" });
+    const second = createRecord("experience.astrology", {
       createdAt: "2026-07-17T10:30:00.000Z",
       effectiveAt: "2026-07-17T11:30:00.000Z",
       state: "off",
       version: 2,
     });
-    const third = createRecord("experience.public_shell", {
+    const third = createRecord("experience.astrology", {
       createdAt: "2026-07-17T11:00:00.000Z",
       effectiveAt: "2026-07-17T11:45:00.000Z",
       expiresAt: "2026-07-17T11:55:00.000Z",
@@ -179,22 +196,22 @@ describe("typed feature-flag registry", () => {
     });
     const evaluator = createEvaluator([third, first, second]);
 
-    expect(evaluator.evaluate("experience.public_shell", {})).toMatchObject({
+    expect(evaluator.evaluate("experience.astrology", {})).toMatchObject({
       enabled: false,
       reason: "expired",
       version: 3,
     });
     expect(
       createEvaluator([third, first, second], "2026-07-17T11:40:00.000Z").evaluate(
-        "experience.public_shell",
+        "experience.astrology",
         {},
       ),
     ).toMatchObject({ enabled: false, reason: "configured-off", version: 2 });
   });
 
   it("keeps the current version effective until a scheduled newer version begins", () => {
-    const current = createRecord("experience.public_shell", { state: "on" });
-    const scheduled = createRecord("experience.public_shell", {
+    const current = createRecord("experience.astrology", { state: "on" });
+    const scheduled = createRecord("experience.astrology", {
       createdAt: "2026-07-17T11:00:00.000Z",
       effectiveAt: "2026-07-18T00:00:00.000Z",
       state: "off",
@@ -202,21 +219,21 @@ describe("typed feature-flag registry", () => {
     });
     const evaluator = createEvaluator([scheduled, current]);
 
-    expect(evaluator.evaluate("experience.public_shell", {})).toMatchObject({
+    expect(evaluator.evaluate("experience.astrology", {})).toMatchObject({
       enabled: true,
       version: 1,
     });
   });
 
   it("lets a later-created emergency off version override a future scheduled activation", () => {
-    const current = createRecord("experience.public_shell", { state: "on" });
-    const scheduled = createRecord("experience.public_shell", {
+    const current = createRecord("experience.astrology", { state: "on" });
+    const scheduled = createRecord("experience.astrology", {
       createdAt: "2026-07-17T10:30:00.000Z",
       effectiveAt: "2026-07-18T00:00:00.000Z",
       state: "on",
       version: 2,
     });
-    const emergencyOff = createRecord("experience.public_shell", {
+    const emergencyOff = createRecord("experience.astrology", {
       createdAt: "2026-07-17T11:00:00.000Z",
       effectiveAt: "2026-07-17T11:00:00.000Z",
       state: "off",
@@ -226,7 +243,7 @@ describe("typed feature-flag registry", () => {
     for (const now of ["2026-07-17T12:00:00.000Z", "2026-07-18T01:00:00.000Z"]) {
       expect(
         createEvaluator([scheduled, current, emergencyOff], now).evaluate(
-          "experience.public_shell",
+          "experience.astrology",
           {},
         ),
       ).toMatchObject({ enabled: false, reason: "configured-off", version: 3 });
@@ -236,21 +253,21 @@ describe("typed feature-flag registry", () => {
   it.each([
     {
       label: "unknown registry version",
-      snapshot: { records: [], registryVersion: 2 },
+      snapshot: { records: [], registryVersion: 4 },
     },
     {
       label: "unknown flag",
-      snapshot: createSnapshot([createRecord("experience.public_shell", { flagKey: "unknown" })]),
+      snapshot: createSnapshot([createRecord("experience.astrology", { flagKey: "unknown" })]),
     },
     {
       label: "extra field",
-      snapshot: createSnapshot([createRecord("experience.public_shell", { payload: "private" })]),
+      snapshot: createSnapshot([createRecord("experience.astrology", { payload: "private" })]),
     },
     {
       label: "duplicate version",
       snapshot: createSnapshot([
-        createRecord("experience.public_shell"),
-        createRecord("experience.public_shell"),
+        createRecord("experience.astrology"),
+        createRecord("experience.astrology"),
       ]),
     },
     {
@@ -283,7 +300,7 @@ describe("typed feature-flag registry", () => {
     {
       label: "backdated activation",
       snapshot: createSnapshot([
-        createRecord("experience.public_shell", {
+        createRecord("experience.astrology", {
           createdAt: "2026-07-17T11:30:00.000Z",
         }),
       ]),
@@ -310,8 +327,8 @@ describe("typed feature-flag registry", () => {
     {
       label: "non-monotonic creation timing",
       snapshot: createSnapshot([
-        createRecord("experience.public_shell"),
-        createRecord("experience.public_shell", { version: 2 }),
+        createRecord("experience.astrology"),
+        createRecord("experience.astrology", { version: 2 }),
       ]),
     },
   ])("rejects $label without accepting an unsafe partial snapshot", ({ snapshot }) => {
@@ -323,7 +340,7 @@ describe("typed feature-flag registry", () => {
 
     try {
       parseFeatureFlagSnapshot(
-        createSnapshot([createRecord("experience.public_shell", { actorId: canary })]),
+        createSnapshot([createRecord("experience.astrology", { actorId: canary })]),
       );
       expect.unreachable("the malformed actor identifier should fail");
     } catch (error) {
@@ -338,14 +355,14 @@ describe("typed feature-flag registry", () => {
     const evaluator = createEvaluator();
 
     expect(() =>
-      evaluator.evaluate("experience.public_shell", {
+      evaluator.evaluate("experience.astrology", {
         countryCode: "usa",
       }),
     ).toThrow(ConfigurationError);
     expect(() => evaluator.evaluate("unknown" as FeatureFlagKey, {})).toThrow(ConfigurationError);
     expect(() =>
       createFeatureFlagEvaluator(createSnapshot(), () => "invalid").evaluate(
-        "experience.public_shell",
+        "experience.astrology",
         {},
       ),
     ).toThrow(ConfigurationError);
@@ -353,11 +370,11 @@ describe("typed feature-flag registry", () => {
 
   it("fails closed after a registry definition reaches its removal date", () => {
     const evaluator = createEvaluator(
-      [createRecord("experience.public_shell", { state: "on" })],
-      "2027-01-01T00:00:00.000Z",
+      [createRecord("experience.astrology", { state: "on" })],
+      "2027-07-27T00:00:00.000Z",
     );
 
-    expect(evaluator.evaluate("experience.public_shell", {})).toMatchObject({
+    expect(evaluator.evaluate("experience.astrology", {})).toMatchObject({
       enabled: false,
       reason: "registry-expired",
       version: 1,

@@ -24,6 +24,13 @@ const expectedRunCommands = Object.freeze({
     "pnpm install --frozen-lockfile",
     "pnpm check:ci-contract",
     "pnpm check:architecture",
+    "pnpm check:ai-operations",
+    "pnpm check:localization",
+    "pnpm check:editorial-content",
+    "pnpm check:public-pages",
+    "pnpm check:search-operations",
+    "pnpm check:rtl",
+    "pnpm check:writing-systems",
     "pnpm check:records",
     "pnpm check:migrations",
     "pnpm check:generated",
@@ -35,6 +42,8 @@ const expectedRunCommands = Object.freeze({
     "pnpm test:configuration-boundary",
     "pnpm build",
     "pnpm exec playwright install --with-deps --only-shell chromium",
+    "pnpm test:public-search-browser",
+    "pnpm test:tarot-share-browser",
     "pnpm test:accessibility",
   ]),
   security: Object.freeze([
@@ -133,17 +142,24 @@ export const auditToolchainVersions = ({
 
 export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
   const expected = Object.freeze({
+    "check:ai-operations": "node --import tsx scripts/verify-ai-operations.ts",
     "check:architecture": "node --import tsx scripts/verify-architecture.ts",
     "check:generated":
       "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
+    "check:editorial-content": "node --import tsx scripts/verify-editorial-content.ts",
+    "check:localization": "node scripts/verify-localization-workflow.mjs",
+    "check:public-pages": "node --import tsx scripts/verify-public-page-quality.ts",
+    "check:search-operations": "node --import tsx scripts/verify-search-operations.ts",
+    "check:rtl": "node --import tsx scripts/verify-rtl.ts",
+    "check:writing-systems": "node --import tsx scripts/verify-writing-systems.ts",
     "check:records":
       "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
     "check:evidence":
-      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
+      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
     test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
     "test:accessibility":
-      "node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs",
+      "pnpm --filter @rituvia/i18n build && node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs && node scripts/verify-writing-systems-browser.mjs",
     "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
     "test:astrology-native-corresponding-source":
       "pnpm --filter @rituvia/astrology-engine-native native:verify-corresponding-source",
@@ -151,6 +167,8 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
     "test:astrology-native-security":
       "pnpm --filter @rituvia/astrology-engine-native native:verify-security",
     "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",
+    "test:public-search-browser": "node --import tsx scripts/verify-public-search-browser.mjs",
+    "test:tarot-share-browser": "node scripts/verify-tarot-share-browser.mjs",
   });
   if (!isRecord(scripts)) return [{ location: "package.json#scripts", rule: "ci-scripts" }];
   return Object.entries(expected).flatMap(([name, command]) =>
@@ -158,6 +176,14 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
       ? []
       : [{ location: `package.json#scripts.${name}`, rule: "ci-script-command" }],
   );
+};
+
+export const auditDatabaseCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
+  const expected =
+    "pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
+  return isRecord(scripts) && scripts["test:ci"] === expected
+    ? []
+    : [{ location: "packages/db/package.json#scripts.test:ci", rule: "ci-script-command" }];
 };
 
 export const auditBrowserTestDependencies = (

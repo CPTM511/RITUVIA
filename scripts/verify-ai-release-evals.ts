@@ -321,4 +321,26 @@ if (!result.releaseEligible) {
   if (numerologyExecution.error !== undefined || numerologyExecution.status !== 0) {
     throw new TypeError("Numerology AI release evaluation failed.");
   }
+  const astrologyExecution = spawnSync(
+    process.execPath,
+    ["--import", "tsx", path.join(root, "scripts/verify-astrology-ai-release-evals.ts")],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env: {
+        CI: "true",
+        HOME: "/tmp",
+        NO_COLOR: "1",
+        PATH: process.env.PATH ?? "",
+      },
+      maxBuffer: 8 * 1024 * 1024,
+      timeout: 120_000,
+    },
+  );
+  if (typeof astrologyExecution.stdout === "string") {
+    process.stdout.write(astrologyExecution.stdout);
+  }
+  if (astrologyExecution.error !== undefined || astrologyExecution.status !== 0) {
+    throw new TypeError("Astrology AI release evaluation failed.");
+  }
 }

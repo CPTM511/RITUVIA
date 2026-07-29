@@ -7,7 +7,7 @@ import path from "node:path";
 
 const tools = Object.freeze({
   actionlint: Object.freeze({
-    asset: "actionlint_1.7.12_linux_x86_64.tar.gz",
+    asset: "actionlint_1.7.12_linux_amd64.tar.gz",
     binary: "actionlint",
     sha256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
     version: "1.7.12",

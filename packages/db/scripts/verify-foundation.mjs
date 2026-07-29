@@ -27,29 +27,14 @@ const EXPECTED_SEEDS = Object.freeze([
     createdAt: new Date("2026-07-16T00:00:00.000Z"),
   }),
   Object.freeze({
-    id: "72d0431b-fdc7-4181-97d0-f9e1ae213cc1",
-    datasetKey: "local-mvp-feature-flags",
+    id: "cbfdb21d-07e6-4f8f-af83-0d6d5cc67185",
+    datasetKey: "local-catalog-2026-07-23",
     version: 1,
-    checksumSha256: "5d898d56bcb06a0ac5a0871dcd67587ad7be8b319ea8214a6dba848da38f5c9a",
+    checksumSha256: "723e3d723dc237c9eb496ccd2045150859000741915d5a0dd7f7199ee796a708",
     isSynthetic: true,
-    createdAt: new Date("2026-07-18T00:00:00.000Z"),
+    createdAt: new Date("2026-07-25T00:00:00.000Z"),
   }),
 ]);
-
-const EXPECTED_LOCAL_PUBLIC_SHELL = Object.freeze({
-  actorId: "owner.local-mvp",
-  approvalReference: null,
-  changeReference: "RIT-158",
-  countryCodes: [],
-  createdAt: new Date("2026-07-18T00:00:00.000Z"),
-  effectiveAt: new Date("2026-07-18T00:00:00.000Z"),
-  flagKey: "experience.public_shell",
-  id: "d35f0bbb-b037-4bc8-8cb4-cb42a413535d",
-  localeTags: [],
-  registryVersion: 1,
-  state: "on",
-  version: 1,
-});
 
 const MVP_TABLES = Object.freeze([
   "account_session",
@@ -242,11 +227,6 @@ const verifyMigrationState = async (pool) => {
     {
       command: "INSERT",
       policyName: "feature_flag_version_append",
-      roles: ["rituvia_feature_flag_writer"],
-    },
-    {
-      command: "INSERT",
-      policyName: "feature_flag_version_astrology_append",
       roles: ["rituvia_feature_flag_writer"],
     },
     {
@@ -900,7 +880,7 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
       FROM feature_flag_version
      ORDER BY registry_version, flag_key, version
   `);
-  assert.deepEqual(initial.rows, [EXPECTED_LOCAL_PUBLIC_SHELL]);
+  assert.deepEqual(initial.rows, []);
 
   const insert = (overrides = {}) => {
     const record = {
@@ -941,26 +921,14 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
     );
   };
 
-  await expectPostgresError(
-    () => insert({ registryVersion: 0 }),
-    "23514",
-    "feature_flag_version_registry_version_check",
-  );
-  await expectPostgresError(
-    () => insert({ flagKey: "Invalid Key" }),
-    "23514",
-    "feature_flag_version_flag_key_check",
-  );
+  await expectPostgresError(() => insert({ registryVersion: 0 }), "42501");
+  await expectPostgresError(() => insert({ flagKey: "Invalid Key" }), "42501");
   await expectPostgresError(
     () => insert({ version: 0 }),
     "23514",
     "feature_flag_version_version_check",
   );
-  await expectPostgresError(
-    () => insert({ state: "partial" }),
-    "23514",
-    "feature_flag_version_state_check",
-  );
+  await expectPostgresError(() => insert({ state: "partial" }), "42501");
   await expectPostgresError(
     () => insert({ countryCodes: ["usa"] }),
     "23514",
@@ -1008,6 +976,7 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
     "23505",
     "feature_flag_version_registry_flag_key_version_key",
   );
+  await expectPostgresError(() => insert({ state: "on", version: 3 }), "42501");
 
   await expectPostgresError(
     () =>
@@ -1018,10 +987,22 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
       }),
     "42501",
   );
+  await expectPostgresError(
+    () =>
+      insert({
+        approvalReference: "OWN-002:legacy-owner-record",
+        countryCodes: ["US"],
+        flagKey: "payments.fiat_checkout",
+        registryVersion: 2,
+        state: "on",
+      }),
+    "42501",
+  );
   const approved = await insert({
     approvalReference: "OWN-002:local-owner-record",
     countryCodes: ["US"],
     flagKey: "payments.fiat_checkout",
+    registryVersion: 3,
     state: "on",
     version: 1,
   });
@@ -1032,12 +1013,17 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
         approvalReference: "OWN-004:wrong-gate",
         countryCodes: ["US"],
         flagKey: "payments.fiat_checkout",
+        registryVersion: 3,
         state: "on",
         version: 2,
       }),
     "42501",
   );
-  await insert({ registryVersion: 2, version: 1 });
+  await insert({ flagKey: "experience.astrology", registryVersion: 2, version: 1 });
+  await expectPostgresError(
+    () => insert({ flagKey: "experience.public_shell", registryVersion: 3, version: 1 }),
+    "42501",
+  );
 
   await expectPostgresError(
     () =>
@@ -1073,31 +1059,23 @@ const verifyFeatureFlagVersions = async (runtimePool, controlPool) => {
       countryCodes: [],
       flagKey: "experience.public_shell",
       registryVersion: 1,
-      state: "on",
-      version: 1,
+      state: "off",
+      version: 2,
     },
     {
       approvalReference: null,
       countryCodes: [],
-      flagKey: "experience.public_shell",
-      registryVersion: 1,
+      flagKey: "experience.astrology",
+      registryVersion: 2,
       state: "off",
-      version: 2,
+      version: 1,
     },
     {
       approvalReference: "OWN-002:local-owner-record",
       countryCodes: ["US"],
       flagKey: "payments.fiat_checkout",
-      registryVersion: 1,
+      registryVersion: 3,
       state: "on",
-      version: 1,
-    },
-    {
-      approvalReference: null,
-      countryCodes: [],
-      flagKey: "experience.public_shell",
-      registryVersion: 2,
-      state: "off",
       version: 1,
     },
   ]);

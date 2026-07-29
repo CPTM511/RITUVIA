@@ -168,6 +168,14 @@ success, rather than guessing from the newest unrelated reading.
 - Optional quiet hours are stored only as an inert future preference. Reminder preference is fixed
   to `none`, the channel is null, and this flow sends no email, push, SMS, webhook, or in-app
   notification.
+- A signed-in user may separately opt into the RIT-045 once-only English reminder. Its preference
+  link is a GET-safe fragment deep link to `/en/revisit#reminder-preferences`; loading or
+  reloading the link changes no preference and focuses the reminder control or section for
+  keyboard and assistive-technology users.
+- RIT-104 renders the reminder as semantic HTML plus equivalent plain text with a lock-screen-safe
+  subject, locale/time-zone date, quiet-hours context, private Revisit action, and preference link.
+  Unsupported delivery locales are suppressed; English fallback is available only in explicit
+  local preview and never activates sending.
 - The selected date is an invitation, not an unlock. A user may complete before, on, or after it,
   comparing the encrypted original intention/action snapshot with what actually happened without
   treating the result as proof of prophecy.
@@ -278,3 +286,16 @@ Place trust where the decision occurs:
 - Cache only safe public assets and explicitly selected private offline data.
 - Never cache payment pages or sensitive responses in shared caches.
 - App icons, splash, theme color, offline shell, and update behavior require explicit QA.
+
+## 17. Privacy-safe one-card sharing
+
+RIT-115 adds an opt-in share section only after a one-card result is revealed. No preview exists
+until requested. The preview is the exact locally generated SVG that will be downloaded or sent
+to a supported device share sheet, not a separate visual approximation.
+
+The card contains only brand, reviewed card title, orientation, optional bounded theme, a generic
+reflection line, the public locale Tarot URL, and the symbolic-not-predictive boundary. The theme
+is included by default per the product requirement and can be removed before any artifact action.
+Private question, reading ID, interpretation, birth data, intention, journal text, and account
+details are never share-component inputs. Browsers without SVG file-share support retain local
+download and do not show a misleading link-only card action.

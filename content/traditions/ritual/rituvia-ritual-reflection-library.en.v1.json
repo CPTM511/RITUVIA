@@ -1,0 +1,251 @@
+{
+  "schemaVersion": "ritual-reflection-library.v1",
+  "contentType": "ritual_reflection_library",
+  "catalogId": "rituvia.ritual-reflection-library.en",
+  "version": "1.0.0",
+  "locale": "en",
+  "method": "rituvia_original_secular",
+  "title": "RITUVIA ritual and reflection guide library",
+  "audience": "adults",
+  "publicationStatus": "approved",
+  "riskClassification": "low_risk_symbolic_education",
+  "sourceCatalog": {
+    "catalogId": "rituvia-original-secular",
+    "version": "1.0.0",
+    "publicationId": "rituvia-original.en.2026-07-23",
+    "sha256": "a31e09b1f3ef2d905a77d3eee499d69ff82b5ed52e271a52b922a06b208b29aa"
+  },
+  "editorial": {
+    "status": "approved",
+    "authorId": "product.codex",
+    "reviewerId": "owner",
+    "reviewerRole": "owner",
+    "requiredApprovalRole": "owner",
+    "reviewedDate": "2026-07-28",
+    "effectiveDate": "2026-07-29",
+    "reviewDueDate": "2027-07-28",
+    "approvalReference": "D-082",
+    "supersedes": null,
+    "changeReason": "Create a finite English educational projection of the approved RITUVIA original-secular virtual ritual catalog and private reflection loop."
+  },
+  "publicationPolicy": {
+    "publicPublicationAllowed": true,
+    "indexingAllowed": true,
+    "personalizedResultsIndexable": false,
+    "aiRetrievalAllowed": false,
+    "occasionDoorwayRoutesAllowed": false,
+    "physicalPracticeInstructionsAllowed": false,
+    "experiencePath": "/en/sanctuary"
+  },
+  "hub": {
+    "eyebrow": "Ritual and reflection guides",
+    "title": "A symbolic pause that keeps the next step yours",
+    "description": "Explore six bounded guides for turning one insight into an intention, a virtual ritual, a private reflection, and an optional revisit.",
+    "answer": "In RITUVIA, a ritual is a digital marker for attention, not a way to control events. You can name one intention, choose one action within your control, use a free virtual candle or incense pause, write only what feels useful, and revisit without pressure.",
+    "boundary": "No virtual object, payment, repeated practice, or journal entry makes an outcome more likely. These guides do not replace medical, legal, financial, mental-health, safety, or crisis support.",
+    "sourceNote": "The method is RITUVIA-original secular product guidance. It does not claim religious, cultural, historical, scientific, therapeutic, or institutional authority."
+  },
+  "labels": {
+    "guideListTitle": "Choose one practical guide",
+    "stepsTitle": "A bounded way to try it",
+    "questionsTitle": "Questions you may use",
+    "limitsTitle": "What this does not do",
+    "sourceTitle": "Sources and review status",
+    "relatedTitle": "Continue privately",
+    "reviewedDateTitle": "Reviewed date",
+    "reviewDueTitle": "Next review due",
+    "pendingReviewValue": "Pending owner review",
+    "aiAssistanceTitle": "AI assistance",
+    "aiAssistanceValue": "AI-assisted drafting is disclosed in this exact editorial artifact.",
+    "experienceAction": "Open the private Sanctuary",
+    "safetyAction": "Read the safety approach",
+    "backToHub": "Back to ritual and reflection guides"
+  },
+  "guideRoutes": [
+    {
+      "guideId": "virtual-candle-reflection",
+      "slug": "virtual-candle-reflection",
+      "kind": "virtual_ritual",
+      "title": "How to use a virtual candle for reflection",
+      "description": "Use a free digital candle as a simple marker for attention without fire, promises, timing pressure, or required belief.",
+      "answer": "A virtual candle can mark the beginning and end of a private pause. In RITUVIA, the useful part is choosing what deserves attention and what small action remains yours—not treating the image as a cause of external change.",
+      "steps": [
+        "Name one quality or choice you want to practice without directing another person's behavior.",
+        "Choose to light the virtual candle as a digital marker; no physical flame is involved.",
+        "Pause briefly or skip the pause if it is not useful.",
+        "End by choosing one small action or deciding that no action is needed."
+      ],
+      "reflectionQuestions": [
+        "What is within my control in this situation?",
+        "What would a proportionate next step look like?"
+      ],
+      "limitations": [
+        "It does not send, strengthen, manifest, or guarantee an intention.",
+        "It does not reveal another person's thoughts or future events.",
+        "It is not a physical candle or fire-safety guide."
+      ],
+      "catalogBinding": {
+        "itemCode": "free_candle",
+        "itemVersion": "1.0.0",
+        "templateCode": "free-candle-pause",
+        "templateVersion": "1.0.0",
+        "steps": ["prepare", "light", "breathe", "pause", "complete"]
+      },
+      "sourceRefs": [
+        "rituvia.ritual.original-secular-catalog@1.0.0",
+        "rituvia.editorial.ritual-reflection-library@1.0.0"
+      ]
+    },
+    {
+      "guideId": "virtual-incense-reflection",
+      "slug": "virtual-incense-reflection",
+      "kind": "virtual_ritual",
+      "title": "How to use virtual incense for a quiet pause",
+      "description": "Use a free digital incense image as an optional visual cue without smoke, scent, health claims, or required motion.",
+      "answer": "Virtual incense can provide a visual beginning and ending for a short reflection. The smoke shape is decorative, audio remains off, and the complete exercise still works as text without animation or sensory effects.",
+      "steps": [
+        "Choose one thought, assumption, or priority you want to notice without forcing it away.",
+        "Choose to light the virtual incense as a digital marker; no physical smoke or scent is involved.",
+        "Read the prompt at your own pace and ignore the decorative motion if it is not useful.",
+        "Finish with one sentence about what you want to carry forward."
+      ],
+      "reflectionQuestions": [
+        "What am I noticing without needing to solve it immediately?",
+        "What can I release from today's decision, even temporarily?"
+      ],
+      "limitations": [
+        "It does not cleanse, heal, protect, attract, or remove an external condition.",
+        "It does not require breath control, scent, smoke, sound, or animation.",
+        "It is not a physical incense, air-quality, allergy, or health guide."
+      ],
+      "catalogBinding": {
+        "itemCode": "free_incense",
+        "itemVersion": "1.0.0",
+        "templateCode": "free-incense-pause",
+        "templateVersion": "1.0.0",
+        "steps": ["prepare", "light", "breathe", "pause", "complete"]
+      },
+      "sourceRefs": [
+        "rituvia.ritual.original-secular-catalog@1.0.0",
+        "rituvia.editorial.ritual-reflection-library@1.0.0"
+      ]
+    },
+    {
+      "guideId": "intention-and-small-action",
+      "slug": "intention-and-small-action",
+      "kind": "intention",
+      "title": "Turn an intention into one small action",
+      "description": "Write an agency-based intention and pair it with one specific, kind, reversible action that remains within your control.",
+      "answer": "An intention becomes more useful when it names how you want to act rather than what another person or the world must do. Pair it with one small action that you can attempt, revise, or decline.",
+      "steps": [
+        "Start with 'I intend to,' 'I will practice,' or 'I am willing to.'",
+        "Remove wording that controls another person's feelings, consent, choices, or outcome.",
+        "Add one action small enough to attempt today without pressure or irreversible commitment.",
+        "Check whether doing nothing, waiting, or seeking appropriate support would be safer."
+      ],
+      "reflectionQuestions": [
+        "Does this intention describe my conduct rather than someone else's response?",
+        "Can I complete or revise the action without harming myself or another person?"
+      ],
+      "limitations": [
+        "An intention is not a prediction, contract, diagnosis, or guarantee.",
+        "Writing it does not create an obligation to complete the action.",
+        "It does not override evidence, consent, safety, or professional advice."
+      ],
+      "catalogBinding": null,
+      "sourceRefs": ["rituvia.editorial.ritual-reflection-library@1.0.0"]
+    },
+    {
+      "guideId": "private-reflection-journal",
+      "slug": "private-reflection-journal",
+      "kind": "private_reflection",
+      "title": "Write a private reflection after a ritual",
+      "description": "Record only what feels useful after a symbolic pause, without mandatory mood scores, public sharing, or pressure to find a lesson.",
+      "answer": "A post-ritual reflection can be as short as one sentence: what you noticed, what changed, or what remains uncertain. It is optional, private by default, and does not need to prove that the ritual worked.",
+      "steps": [
+        "Decide whether writing would help; leaving the page blank is valid.",
+        "Describe an observation in your own words without turning it into a prediction.",
+        "Note one action, question, or uncertainty you want to remember.",
+        "Stop when the note is useful rather than trying to produce a complete explanation."
+      ],
+      "reflectionQuestions": [
+        "What did I notice that I could not see as clearly before the pause?",
+        "What remains uncertain or unsupported by evidence?"
+      ],
+      "limitations": [
+        "A journal entry does not confirm spiritual, medical, legal, financial, or psychological truth.",
+        "You should not publish private questions, intentions, or relationship details for search visibility.",
+        "Writing more does not make a symbolic interpretation more accurate."
+      ],
+      "catalogBinding": null,
+      "sourceRefs": ["rituvia.editorial.ritual-reflection-library@1.0.0"]
+    },
+    {
+      "guideId": "revisit-a-reflection",
+      "slug": "revisit-a-reflection",
+      "kind": "revisit",
+      "title": "When to revisit a reflection",
+      "description": "Choose an optional future check-in that compares your original intention with what actually happened, without streaks or punishment.",
+      "answer": "A revisit is useful when time may provide new evidence or perspective. Pick a date only if it helps, return earlier or later if you prefer, and compare your original intention with reality rather than treating the date as an unlock.",
+      "steps": [
+        "Choose tomorrow, seven days, or another date only if a check-in would be useful.",
+        "Keep reminders off unless you separately choose a reviewed reminder preference.",
+        "Compare what you intended, what you did, and what actually happened.",
+        "Complete, revise, archive, delete, or leave the reflection without streak loss or shame."
+      ],
+      "reflectionQuestions": [
+        "What changed because of my actions, circumstances, or new evidence?",
+        "What would I keep, revise, or release now?"
+      ],
+      "limitations": [
+        "The selected date does not unlock an answer or make an outcome due.",
+        "Missing a revisit does not represent failure, avoidance, or spiritual blockage.",
+        "A reminder must not expose private reflection text on a lock screen."
+      ],
+      "catalogBinding": null,
+      "sourceRefs": ["rituvia.editorial.ritual-reflection-library@1.0.0"]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "rituvia.ritual.original-secular-catalog",
+      "version": "1.0.0",
+      "sourceType": "approved_product_catalog",
+      "title": "RITUVIA original-secular ritual catalog",
+      "creator": "RITUVIA product and safety process",
+      "publisher": "RITUVIA",
+      "identifier": "content/traditions/ritual/rituvia-original.en.v1.json",
+      "claims": [
+        "Defines the exact free_candle and free_incense item identities and versions used by this candidate.",
+        "Defines both free templates as brief grounded pauses with linear alternatives, audio off, static reduced-motion equivalence, reflective acknowledgement, and the same five ordered step codes.",
+        "Fixes every catalog item's experience scope to symbolic reflection only and external outcome to not guaranteed."
+      ],
+      "rights": {
+        "status": "owned",
+        "territory": "worldwide",
+        "allowedUses": ["factual_citation", "public_display"],
+        "evidenceReference": "D-047"
+      }
+    },
+    {
+      "sourceId": "rituvia.editorial.ritual-reflection-library",
+      "version": "1.0.0",
+      "sourceType": "original_editorial",
+      "title": "RITUVIA ritual and reflection guide editorial layer",
+      "creator": "RITUVIA product editorial",
+      "publisher": "RITUVIA",
+      "identifier": "content/traditions/ritual/rituvia-ritual-reflection-library.en.v1.json",
+      "claims": [
+        "Provides the answer-first hub, five distinct guide intents, examples, limitations, source notes, and candidate indexing policy.",
+        "Keeps virtual ritual, intention, reflection, and revisit language optional, private, agency-based, and non-efficacious.",
+        "Limits public inventory to the exact six routes declared in this artifact and denies occasion, outcome, profile, belief, and personalized route expansion."
+      ],
+      "rights": {
+        "status": "owned",
+        "territory": "worldwide",
+        "allowedUses": ["public_display", "commercial_use", "seo_publication", "translation"],
+        "evidenceReference": "D-082"
+      }
+    }
+  ]
+}

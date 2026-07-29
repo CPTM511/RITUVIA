@@ -21,6 +21,9 @@ export default defineConfig({
       "@rituvia/config/feature-flags": fileURLToPath(
         new URL("./packages/config/src/feature-flags.ts", import.meta.url),
       ),
+      "@rituvia/content": fileURLToPath(
+        new URL("./packages/content/src/index.ts", import.meta.url),
+      ),
       "@rituvia/country-policy": fileURLToPath(
         new URL("./packages/country-policy/src/index.ts", import.meta.url),
       ),
@@ -29,6 +32,19 @@ export default defineConfig({
         new URL("./packages/divination/src/index.ts", import.meta.url),
       ),
       "@rituvia/domain": fileURLToPath(new URL("./packages/domain/src/index.ts", import.meta.url)),
+      "@rituvia/i18n/testing": fileURLToPath(
+        new URL("./packages/i18n/src/pseudolocale.ts", import.meta.url),
+      ),
+      "@rituvia/i18n/locale": fileURLToPath(
+        new URL("./packages/i18n/src/locale.ts", import.meta.url),
+      ),
+      "@rituvia/i18n/lifecycle": fileURLToPath(
+        new URL("./packages/i18n/src/lifecycle.ts", import.meta.url),
+      ),
+      "@rituvia/i18n/messages": fileURLToPath(
+        new URL("./packages/i18n/src/messages.ts", import.meta.url),
+      ),
+      "@rituvia/i18n": fileURLToPath(new URL("./packages/i18n/src/index.ts", import.meta.url)),
       "@rituvia/payments/adapters/local": fileURLToPath(
         new URL("./packages/payments/src/adapters/local-hosted-checkout.ts", import.meta.url),
       ),

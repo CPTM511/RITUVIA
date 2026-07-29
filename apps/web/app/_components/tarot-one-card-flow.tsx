@@ -28,7 +28,9 @@ import {
   useSyncExternalStore,
 } from "react";
 
-import type { TarotReadingMessages } from "../_i18n/tarot-one-card-messages";
+import type { TarotOneCardMessages, TarotReadingMessages } from "../_i18n/tarot-one-card-messages";
+import { formatCoreMessage } from "../_i18n/core-messages";
+import type { Locale } from "../_i18n/routing";
 import {
   createTarotOneCardOperation,
   initialTarotOneCardState,
@@ -49,6 +51,7 @@ import {
   readTarotReadingResumeId,
   storeTarotReadingResumeId,
 } from "./tarot-reading-resume-storage";
+import { TarotShareCard } from "./tarot-share-card";
 import { storeSanctuaryReadingHandoff } from "./reading-sanctuary-handoff";
 
 const TarotInterpretationPanel = lazy(async () => {
@@ -127,11 +130,11 @@ const resumeFailureMessages = (
   }
 };
 
-const formatRetryAfter = (seconds: number): string => {
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "always", style: "long" });
-  if (seconds < 90) return formatter.format(seconds, "second");
-  if (seconds < 5_400) return formatter.format(Math.ceil(seconds / 60), "minute");
-  return formatter.format(Math.ceil(seconds / 3_600), "hour");
+const formatRetryAfter = (locale: Locale, seconds: number): string => {
+  const value =
+    seconds < 90 ? seconds : seconds < 5_400 ? Math.ceil(seconds / 60) : Math.ceil(seconds / 3_600);
+  const unit = seconds < 90 ? "second" : seconds < 5_400 ? "minute" : "hour";
+  return formatCoreMessage(locale, "tarot.retryAfter", { unit, value });
 };
 
 const getSessionResumeStorage = (): Storage | null => {
@@ -144,18 +147,33 @@ const getSessionResumeStorage = (): Storage | null => {
 };
 
 export type TarotReadingFlowProps = Readonly<{
+  brandName?: string;
+  locale: Locale;
   messages: TarotReadingMessages;
   methodologyHref: LocalActionHref;
   readingType: TarotReadingType;
   sanctuaryHref: LocalActionHref;
+  shareCanonicalUrl?: string;
 }>;
 
-export function TarotReadingFlow({
-  messages,
-  methodologyHref,
-  readingType,
-  sanctuaryHref,
-}: TarotReadingFlowProps) {
+export type TarotOneCardFlowProps = Readonly<
+  Omit<TarotReadingFlowProps, "brandName" | "messages" | "readingType" | "shareCanonicalUrl"> & {
+    brandName: string;
+    messages: TarotOneCardMessages;
+    shareCanonicalUrl: string;
+  }
+>;
+
+export function TarotReadingFlow(props: TarotReadingFlowProps) {
+  const {
+    brandName,
+    locale,
+    messages,
+    methodologyHref,
+    readingType,
+    sanctuaryHref,
+    shareCanonicalUrl,
+  } = props;
   const flowSlug = readingType === "one_card" ? "one-card" : "three-card";
   const flowId = `tarot-${flowSlug}`;
   const themeGroupId = createUiControlId(`${flowId}-theme`);
@@ -521,7 +539,7 @@ export function TarotReadingFlow({
           {state.failure === "limit_reached" && state.failureRetryAfterSeconds !== null ? (
             <p className="tarot-limit-wait">
               <span>{messages.states.limitReached.retryAfterLabel}</span>{" "}
-              <time>{formatRetryAfter(state.failureRetryAfterSeconds)}</time>
+              <time dir="auto">{formatRetryAfter(locale, state.failureRetryAfterSeconds)}</time>
             </p>
           ) : null}
         </section>
@@ -645,11 +663,27 @@ export function TarotReadingFlow({
               );
             })}
           </ol>
+          {readingType === "one_card" &&
+          brandName !== undefined &&
+          shareCanonicalUrl !== undefined &&
+          messages.result.share !== undefined &&
+          cards[0] !== undefined ? (
+            <TarotShareCard
+              brandName={brandName}
+              canonicalUrl={shareCanonicalUrl}
+              cardTitle={cards[0].cardTitle}
+              locale={locale}
+              messages={messages.result.share}
+              orientationLabel={orientationLabel(cards[0].orientation, messages)}
+              themeLabel={themeLabel(response.themeCode, messages)}
+            />
+          ) : null}
           <Suspense
             fallback={<p className="tarot-ai-boundary">{messages.result.interpretation.heading}</p>}
           >
             <TarotInterpretationPanel
               key={response.readingId}
+              locale={locale}
               messages={messages.result.interpretation}
               reportMessages={messages.result.report}
               readingId={response.readingId}
@@ -673,6 +707,7 @@ export function TarotReadingFlow({
           </details>
           <TarotReadingReport
             key={response.readingId}
+            locale={locale}
             messages={messages.result.report}
             positions={cards.map(({ positionId, positionTitle }) => ({
               positionId,
@@ -715,6 +750,6 @@ export function TarotReadingFlow({
   );
 }
 
-export function TarotOneCardFlow(props: Omit<TarotReadingFlowProps, "readingType">) {
+export function TarotOneCardFlow(props: TarotOneCardFlowProps) {
   return <TarotReadingFlow {...props} readingType="one_card" />;
 }

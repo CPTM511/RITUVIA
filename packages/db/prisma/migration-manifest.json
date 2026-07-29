@@ -29,6 +29,9 @@
     "migrations/202607260001_birth_profile_privacy/migration.sql": "cee8fdaa30052494d2dfafd4cc58a405fba49749935c5391a1e1c3cb79bd3abc",
     "migrations/202607260002_astrology_calculation/migration.sql": "7602839721d962a653647682fe771bc7325cb3fbc6c8b16fd3f69b67b427de94",
     "migrations/202607260003_astrology_feature_flag/migration.sql": "1ba0ab04e55e4043143da105df0479fee6c8185ef0ceb8fdc9e2e6632ac28f7c",
+    "migrations/202607270001_revisit_reminder_template_binding/migration.sql": "72f3235a754259c319e25e64c6676af644c52f2a34721354d80973fb36021131",
+    "migrations/202607290001_public_shell_flag_cleanup/migration.sql": "65ff62f77c275114b1ef8fc45941d52fc3c5fdbe22b5357ba23ca27d179c1c00",
+    "migrations/202607290002_public_shell_flag_removal/migration.sql": "28330de4cbd7fb43ee2135ea0050019048c9617eb99368e6ce5ffe3f5bc98212",
     "migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900"
   }
 }

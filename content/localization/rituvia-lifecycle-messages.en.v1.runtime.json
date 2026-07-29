@@ -1,0 +1,21 @@
+{
+  "catalogId": "rituvia.lifecycle.messages",
+  "contentType": "lifecycle_messages",
+  "locale": "en",
+  "messages": {
+    "email.revisit.actionLabel": "Open your private Revisit",
+    "email.revisit.body": "Your scheduled Revisit is ready when you are. The date you chose was {scheduledDate} in {timeZone}.{quietHours, select, saved { Delivery waited until outside your saved quiet hours.} none {} other {}} Open your private space when you choose.",
+    "email.revisit.preferenceLabel": "Turn off this reminder",
+    "email.revisit.preview": "Your private Revisit is ready when you are.",
+    "email.revisit.subject": "A quiet reminder from {brand}",
+    "email.shared.supportLabel": "Contact support",
+    "email.support.accountLabel": "Open your account",
+    "email.support.body": "We received your support request on {receivedDate} at {receivedTime} ({timeZone}). Share only the details needed to help with this request; do not send journal, prayer, birth-time, or private reading text by email.",
+    "email.support.preview": "Your support request was received.",
+    "email.support.replyLabel": "Email support",
+    "email.support.subject": "We received your support request"
+  },
+  "schemaVersion": "rituvia-message-runtime.v1",
+  "sourceChecksum": "f88307a199976dd59ca9209205b93a746db133636769216f073b7e3ec4fa2b0f",
+  "sourceVersion": "1.0.0"
+}

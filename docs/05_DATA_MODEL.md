@@ -342,12 +342,19 @@ Source unit/version, locale, translated content, machine/human origin, reviewer,
 - Queue payload is the row identity plus account, ownership-link, Revisit, and recipient-identity
   identifiers. It contains no email address, question, intention, action, ritual, journal,
   relationship, or generated prose.
+- Each row also persists the immutable lifecycle-template ID, positive version, source SHA-256,
+  resolved template locale, and fallback-used flag. The existing `locale` remains the requested
+  account locale; `template_locale` records the exact rendered catalog. Current delivery requires
+  English and `template_fallback_used = false`, while format-level database constraints allow a
+  future registry to retain older referenced versions during rollout or rollback.
 - Claiming uses database date/time-zone, 09:00 local due threshold, stored quiet hours,
   `SKIP LOCKED`, hashed bounded leases, three attempts, and deterministic retry. Delivery requires a
-  second live authorization check; committed unsubscribe and privacy deletion clear any lease.
+  second live authorization check that also re-evaluates the scheduled local date, current time
+  zone, due threshold, quiet hours, and exact template binding; committed unsubscribe and privacy
+  deletion clear any lease.
 - Runtime can update only finite preference/queue columns and cannot delete the row. Privacy export
-  includes user-visible preference, delivery, failure, provider-reference, timestamp, and operation
-  evidence while excluding lease and idempotency hashes.
+  includes user-visible preference, template provenance, delivery, failure, provider-reference,
+  timestamp, and operation evidence while excluding lease and idempotency hashes.
 
 #### `revisit_reminder_operation`
 

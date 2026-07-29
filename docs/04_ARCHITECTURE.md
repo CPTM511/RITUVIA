@@ -52,10 +52,11 @@ content/
 
 A separate `apps/admin` is optional. Prefer a protected route group in `apps/web` until isolation, deployment, or bundle needs justify separation.
 
-`@rituvia/analytics` currently implements only strict core-loop event contracts, bounded synthetic
-test storage, and deterministic funnel/WMRS projections. Web composition supplies purpose-scoped
-identity and consent checks; production collection, persistence, browser ingestion, vendors, and
-network export remain safe-off.
+`@rituvia/analytics` currently implements strict core-loop event contracts, bounded synthetic test
+storage, deterministic funnel/WMRS projections, and a fail-closed offline SEO/GEO operations
+projection over aggregate exports and reviewed public-content authority. Web composition supplies
+purpose-scoped identity and consent checks; production collection, persistence, browser ingestion,
+vendors, provider APIs, and network export remain safe-off.
 
 ## 4. System context
 
@@ -248,6 +249,14 @@ identifiers and exact versions, reauthorizes immediately before provider use, an
 subscription ID as the stable provider idempotency key. This is not a generic queue platform; the
 only composed provider is hard disabled and no production scheduler or email vendor is activated.
 
+RIT-104 binds each queued reminder to an immutable template ID, version, source checksum, resolved
+locale, and fallback flag. The Domain registry and checksummed i18n runtime projection must agree
+before the Worker can render; prior versions must remain registered while database rows reference
+them. Rendering occurs only after send-time authorization rechecks ownership, preference,
+scheduled local date, time zone, due threshold, and quiet hours. Missing or unknown template
+bindings terminate safely before provider use. Production runtime remains safe-off before claims:
+no scheduler, provider, support mailbox, or delivery capability is composed.
+
 ## 11. Environment strategy
 
 - Local: reproducible containers/emulators; synthetic data only.
@@ -286,10 +295,15 @@ the connected role is a read-only, non-owner, non-DDL, non-superuser identity fo
 table with the same authenticated session/current identity and no role-membership path to an owner,
 writer, or privileged identity. The attestation follows all role-membership paths, including
 currently non-settable membership, so membership administration cannot become a post-check upgrade.
-Registry version 1 defines exact typed keys for the public shell and the owner-gated country,
-fiat checkout, hosted crypto checkout, and regional-tradition boundaries. Every definition
-is immutable metadata with owner, purpose, creation date, active/retired lifecycle, required scope,
-approval gate, safe-off default, removal date, and a real BACKLOG cleanup reference.
+Registry version 3 defines exact typed keys for astrology and the owner-gated country, fiat
+checkout, hosted crypto checkout, and regional-tradition boundaries. Every definition is immutable
+metadata with owner, purpose, creation date, active/retired lifecycle, required scope, approval gate,
+safe-off default, removal date, and a real BACKLOG cleanup reference.
+
+D-089 records the completed protected compatibility window and removes the retired
+`experience.public_shell` key, adapter, and request-delivery branches in registry v3. The reviewed
+public shell is now the completed rollout behavior. SEO inventory freshness controls robots,
+sitemap, and indexing, not general page/API availability.
 
 Persisted snapshots are strict and bounded. They reject unknown keys/fields, wrong registry
 versions, duplicate or non-monotonic creation versions, non-canonical scope, invalid UTC instants,
@@ -305,17 +319,18 @@ PostgreSQL stores only bounded operational metadata in `feature_flag_version`. A
 migrator owns the database, public schema, and tables. The runtime login is a non-owner with schema
 usage and table reads only; it cannot create, insert, update, delete, truncate, alter RLS, or drop a
 policy. A distinct control login inherits only the feature-flag reader/writer capabilities and can
-append through forced RLS; enabled rows must match registry version 1's exact key, required owner
-gate prefix, and scope shape. It cannot update/delete/truncate history or change DDL, and no
-migration creates an enabled row. There is deliberately no activation endpoint: granting control
-credentials and recording the referenced owner approval remain operational approval actions.
+append through forced RLS. Legacy registry v1/v2 rows may append only `off`; enabled registry v3
+rows must match an exact active key, required owner-gate prefix, and scope shape. It cannot
+update/delete/truncate history or change DDL, and no migration creates an enabled row. There is
+deliberately no activation endpoint: granting control credentials and recording the referenced
+owner approval remain operational approval actions.
 
 Registry upgrades are rolling-safe. Storage uniqueness is `(registryVersion, flagKey, version)`,
-and each deployed reader queries only its exact registry version, so v1 and v2 histories can coexist
-and a rollback to v1 cannot ingest v2 keys. A key is first marked `retired` and therefore forced off;
-its referenced cleanup task must reach Done before a later registry version removes the tombstone.
-The preceding registry history remains in append-only storage and is ignored, not reparsed, by the
-new reader.
+and each deployed reader queries only its exact registry version, so v1, v2, and v3 histories can
+coexist and a rollback cannot ingest another registry version's keys. A key is first marked
+`retired` and therefore forced off; its referenced cleanup task must reach Done before a later
+registry version removes the tombstone. The preceding registry history remains in append-only
+storage and is ignored, not reparsed, by the new reader.
 
 ## 14. API and rendering
 
@@ -354,3 +369,15 @@ Record evidence in an ADR before extraction.
 ## 17. Deployment default
 
 Use a managed Web platform plus managed PostgreSQL, Redis-compatible queue/cache, and object storage. Keep deployment provider swappable through standard containers/build outputs where practical. Production deploy requires owner approval and an automated preflight/rollback path.
+
+## 18. Local share-artifact boundary
+
+The RIT-115 one-card share path is a client-local projection and serializer, not a persistence or
+publication service. The flow passes only brand, public canonical, reviewed card title,
+orientation, and bounded theme labels into `TarotShareCard`; it does not pass the reading ID,
+private prompts, AI output, or the full response object.
+
+`tarot-share-card.v1` validates the exact public projection and serializes one self-contained SVG.
+Preview, download, and native file sharing consume the same bytes. The CSP allows `blob:` only in
+`img-src`; connect, script, object, worker, frame, and external image restrictions remain closed.
+There is no upload, database, worker, cache, object storage, public token, or analytics event.

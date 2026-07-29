@@ -397,3 +397,17 @@ No production launch with:
 - Missing admin MFA/audit.
 - Critical accessibility blockers in the core loop.
 - Unapproved country/payment/legal/model configuration.
+
+## 18. Local share-artifact privacy boundary
+
+RIT-115 does not screenshot, upload, persist, cache, or publish private result pages. Its one-card
+projection has an exact public-field allowlist and cannot receive the reading identifier, private
+question, interpretation, birth data, intention, journal text, account data, or arbitrary response
+object. Canonical URLs reject credentials, queries, fragments, and private result paths; SVG text
+is bounded, normalized, checked for control and bidi characters, and XML-escaped.
+
+Preview and download object URLs are local and revoked after replacement or closure. Native
+sharing is available only when the browser proves it can share the exact SVG file; there is no
+silent link-only fallback, provider request, public token, or analytics event. The CSP expands
+only `img-src` with `blob:` and retains the existing closed connect, script, object, frame, worker,
+media, and external-image boundaries.

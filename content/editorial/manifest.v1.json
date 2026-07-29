@@ -1,0 +1,814 @@
+{
+  "claims": [
+    {
+      "claimId": "rituvia.claim.geo-answer-authority-boundary",
+      "classification": "product_guidance",
+      "sourceIds": ["rituvia.source.geo-answer-context"],
+      "statement": "The shared public answer context exposes only visible stable entities, fact or method, tradition, interpretation, product-policy distinctions, approved source labels, and truthful owner-review dates without hidden bot-only copy or internal repository evidence."
+    },
+    {
+      "claimId": "rituvia.claim.geo-answer-original-rights",
+      "classification": "fact",
+      "sourceIds": ["rituvia.source.geo-answer-context"],
+      "statement": "The registered English GEO answer-context labels, definitions, and classification statements are owner-approved RITUVIA original work with worldwide public-display, commercial, SEO, and future reviewed translation rights."
+    },
+    {
+      "claimId": "rituvia.claim.astrology-method-boundary",
+      "classification": "product_guidance",
+      "sourceIds": ["rituvia.source.astrology-method", "rituvia.source.astrology-education"],
+      "statement": "The Western natal education cluster explains one explicit versioned RITUVIA method and does not present chart facts as scientific personality evidence, prediction, diagnosis, or professional advice."
+    },
+    {
+      "claimId": "rituvia.claim.astrology-source-boundary",
+      "classification": "fact",
+      "sourceIds": [
+        "rituvia.source.astrology-method",
+        "rituvia.source.swiss-programming-reference"
+      ],
+      "statement": "Technical ephemeris references support calculation-interface facts while RITUVIA-owned method and editorial records control product conventions and explanatory copy."
+    },
+    {
+      "claimId": "rituvia.claim.numerology-method-boundary",
+      "classification": "product_guidance",
+      "sourceIds": ["rituvia.source.numerology-prototype", "rituvia.source.numerology-editorial"],
+      "statement": "The date-numerology cluster presents transparent RITUVIA calculations and symbolic possibilities without identity certainty, prediction, professional advice, or paid efficacy."
+    },
+    {
+      "claimId": "rituvia.claim.astrology-original-editorial-rights",
+      "classification": "fact",
+      "sourceIds": ["rituvia.source.astrology-education"],
+      "statement": "The registered English Western natal explanatory material is owner-approved RITUVIA original editorial work with worldwide public-display, commercial, SEO, and translation rights."
+    },
+    {
+      "claimId": "rituvia.claim.numerology-original-editorial-rights",
+      "classification": "fact",
+      "sourceIds": ["rituvia.source.numerology-editorial"],
+      "statement": "The registered English date-numerology explanatory material is owner-approved RITUVIA original editorial work with worldwide public-display, commercial, SEO, and translation rights."
+    },
+    {
+      "claimId": "rituvia.claim.tarot-method-boundary",
+      "classification": "product_guidance",
+      "sourceIds": ["rituvia.source.tarot-major-arcana", "rituvia.source.tarot-library-editorial"],
+      "statement": "The finite Major Arcana library presents symbolic possibilities, tensions, questions, actions, and limits without prediction, diagnosis, professional advice, hidden-person claims, or personalized-result indexing."
+    },
+    {
+      "claimId": "rituvia.claim.tarot-original-editorial-rights",
+      "classification": "fact",
+      "sourceIds": ["rituvia.source.tarot-library-editorial"],
+      "statement": "The registered English Major Arcana library and spread-guide editorial layer is owner-approved RITUVIA original work with worldwide public-display, commercial, SEO, and future reviewed translation rights."
+    },
+    {
+      "claimId": "rituvia.claim.ritual-reflection-method-boundary",
+      "classification": "product_guidance",
+      "sourceIds": [
+        "rituvia.source.ritual-original-secular-catalog",
+        "rituvia.source.ritual-reflection-editorial"
+      ],
+      "statement": "The finite ritual and reflection guide cluster explains a RITUVIA-original secular digital pause, agency-based intention, private reflection, and voluntary revisit without physical-practice instructions, efficacy claims, cultural authority, personalized indexing, or doorway expansion."
+    },
+    {
+      "claimId": "rituvia.claim.ritual-reflection-original-editorial-rights",
+      "classification": "fact",
+      "sourceIds": ["rituvia.source.ritual-reflection-editorial"],
+      "statement": "The registered English ritual and reflection guide editorial layer is owner-approved RITUVIA original work with worldwide public-display, commercial, SEO, and future reviewed translation rights."
+    }
+  ],
+  "records": [
+    {
+      "artifact": {
+        "path": "content/editorial/geo-answer-context.en.v1.json",
+        "sha256": "2cbb3792d95e9cc205a3a02dea72292786f2f75ff3736cedb43065510285afb3"
+      },
+      "audience": "adults",
+      "author": {
+        "aiAssistance": "draft_only",
+        "id": "product.codex",
+        "role": "staff"
+      },
+      "claimRefs": [
+        "rituvia.claim.geo-answer-authority-boundary",
+        "rituvia.claim.geo-answer-original-rights"
+      ],
+      "contentId": "rituvia.geo-answer-context.en",
+      "contentType": "ui_messages",
+      "lifecycle": {
+        "changeReason": "Register one conservative visible answer, source, review, and entity projection for the exact approved 45-page English public inventory.",
+        "deprecatedDate": null,
+        "effectiveDate": "2026-07-29",
+        "replacementRecordId": null,
+        "supersedesRecordId": null
+      },
+      "lineageId": "rituvia.geo-answer-context",
+      "locale": "en",
+      "localization": {
+        "kind": "source",
+        "method": "original",
+        "sourceArtifactSha256": null,
+        "sourceRecordId": null,
+        "sourceVersion": null,
+        "status": "source_ready"
+      },
+      "methodOrTradition": "RITUVIA public answer authority projection V1",
+      "publication": {
+        "indexingAllowed": false,
+        "previewAllowed": true,
+        "publishAllowed": true
+      },
+      "recordId": "rituvia.geo-answer-context.en@1.0.0",
+      "review": {
+        "approvalReference": "D-086",
+        "requiredRole": "owner",
+        "reviewDueDate": "2027-07-29",
+        "reviewedDate": "2026-07-29",
+        "reviewerId": "owner",
+        "reviewerRole": "owner"
+      },
+      "rights": {
+        "allowedUses": [
+          "internal_preview",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-086",
+        "expiresDate": null,
+        "owner": "RITUVIA",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "risk": {
+        "culturalReviewRequired": false,
+        "legalReviewRequired": false,
+        "level": "spiritual",
+        "prohibitedClaimsChecked": true
+      },
+      "seo": null,
+      "sourceRefs": ["rituvia.source.geo-answer-context"],
+      "status": "published",
+      "version": "1.0.0"
+    },
+    {
+      "artifact": {
+        "path": "content/traditions/astrology/rituvia-western-natal-education.en.v1.json",
+        "sha256": "a27ca9b9a6fa6881353ff49c9acce0992bce094d3a53353013efaa2978a16504"
+      },
+      "audience": "adults",
+      "author": {
+        "aiAssistance": "draft_only",
+        "id": "product.codex",
+        "role": "staff"
+      },
+      "claimRefs": [
+        "rituvia.claim.astrology-method-boundary",
+        "rituvia.claim.astrology-source-boundary",
+        "rituvia.claim.astrology-original-editorial-rights"
+      ],
+      "contentId": "rituvia.astrology.western-natal-education.en",
+      "contentType": "educational_catalog",
+      "lifecycle": {
+        "changeReason": "Register the approved bounded English Western natal education cluster in the shared editorial repository.",
+        "deprecatedDate": null,
+        "effectiveDate": "2026-07-27",
+        "replacementRecordId": null,
+        "supersedesRecordId": null
+      },
+      "lineageId": "rituvia.astrology.western-natal-education",
+      "locale": "en",
+      "localization": {
+        "kind": "source",
+        "method": "original",
+        "sourceArtifactSha256": null,
+        "sourceRecordId": null,
+        "sourceVersion": null,
+        "status": "source_ready"
+      },
+      "methodOrTradition": "RITUVIA Western natal method V1",
+      "publication": {
+        "indexingAllowed": true,
+        "previewAllowed": true,
+        "publishAllowed": true
+      },
+      "recordId": "rituvia.astrology.western-natal-education.en@1.0.0",
+      "review": {
+        "approvalReference": "OWN-016:option-a:2026-07-27",
+        "requiredRole": "owner",
+        "reviewDueDate": "2027-07-27",
+        "reviewedDate": "2026-07-27",
+        "reviewerId": "owner",
+        "reviewerRole": "owner"
+      },
+      "rights": {
+        "allowedUses": [
+          "internal_preview",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-073",
+        "expiresDate": null,
+        "owner": "RITUVIA",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "risk": {
+        "culturalReviewRequired": false,
+        "legalReviewRequired": false,
+        "level": "spiritual",
+        "prohibitedClaimsChecked": true
+      },
+      "seo": {
+        "canonicalPaths": [
+          "/en/astrology",
+          "/en/astrology/natal-chart-calculation",
+          "/en/astrology/birth-time-uncertainty",
+          "/en/astrology/houses-and-major-aspects",
+          "/en/astrology/sources-and-methodology"
+        ],
+        "description": "A bounded source-transparent education cluster for the approved RITUVIA Western natal calculation method.",
+        "title": "RITUVIA Western natal education"
+      },
+      "sourceRefs": [
+        "rituvia.source.astrology-education",
+        "rituvia.source.astrology-method",
+        "rituvia.source.swiss-programming-reference"
+      ],
+      "status": "published",
+      "version": "1.0.0"
+    },
+    {
+      "artifact": {
+        "path": "content/traditions/numerology/rituvia-symbolic-reflection.en.v1.json",
+        "sha256": "6b4da935eb3c9fd8e62a9a2acff4c3acd6008139e434f51999ec9e18deda25f0"
+      },
+      "audience": "adults",
+      "author": {
+        "aiAssistance": "draft_only",
+        "id": "product.codex",
+        "role": "staff"
+      },
+      "claimRefs": [
+        "rituvia.claim.numerology-method-boundary",
+        "rituvia.claim.numerology-original-editorial-rights"
+      ],
+      "contentId": "rituvia.numerology.symbolic-reflection.en",
+      "contentType": "educational_catalog",
+      "lifecycle": {
+        "changeReason": "Register the approved English date-numerology education and interpretation source in the shared editorial repository.",
+        "deprecatedDate": null,
+        "effectiveDate": "2026-07-25",
+        "replacementRecordId": null,
+        "supersedesRecordId": null
+      },
+      "lineageId": "rituvia.numerology.symbolic-reflection",
+      "locale": "en",
+      "localization": {
+        "kind": "source",
+        "method": "original",
+        "sourceArtifactSha256": null,
+        "sourceRecordId": null,
+        "sourceVersion": null,
+        "status": "source_ready"
+      },
+      "methodOrTradition": "RITUVIA V1 Date Reduction",
+      "publication": {
+        "indexingAllowed": true,
+        "previewAllowed": true,
+        "publishAllowed": true
+      },
+      "recordId": "rituvia.numerology.symbolic-reflection.en@1.0.0",
+      "review": {
+        "approvalReference": "OWN-012:option-a:2026-07-25",
+        "requiredRole": "owner",
+        "reviewDueDate": "2027-07-25",
+        "reviewedDate": "2026-07-25",
+        "reviewerId": "owner",
+        "reviewerRole": "owner"
+      },
+      "rights": {
+        "allowedUses": [
+          "internal_preview",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-065",
+        "expiresDate": null,
+        "owner": "RITUVIA",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "risk": {
+        "culturalReviewRequired": false,
+        "legalReviewRequired": false,
+        "level": "spiritual",
+        "prohibitedClaimsChecked": true
+      },
+      "seo": {
+        "canonicalPaths": [
+          "/en/numerology",
+          "/en/numerology/life-path-number",
+          "/en/numerology/birthday-number",
+          "/en/numerology/personal-year-number",
+          "/en/numerology/master-numbers"
+        ],
+        "description": "A transparent source-reviewed English library for the RITUVIA date-numerology method and bounded symbolic reflection.",
+        "title": "RITUVIA date numerology"
+      },
+      "sourceRefs": ["rituvia.source.numerology-editorial", "rituvia.source.numerology-prototype"],
+      "status": "published",
+      "version": "1.0.0"
+    },
+    {
+      "artifact": {
+        "path": "content/traditions/tarot/rituvia-major-arcana-library.en.v1.json",
+        "sha256": "15a1d9d5f5502ddf8c14543da06bc85813dc0b67cd7dae1cf9a0044ba72b8595"
+      },
+      "audience": "adults",
+      "author": {
+        "aiAssistance": "draft_only",
+        "id": "product.codex",
+        "role": "staff"
+      },
+      "claimRefs": [
+        "rituvia.claim.tarot-method-boundary",
+        "rituvia.claim.tarot-original-editorial-rights"
+      ],
+      "contentId": "rituvia.tarot.major-arcana-library.en",
+      "contentType": "educational_catalog",
+      "lifecycle": {
+        "changeReason": "Register the approved finite English Major Arcana library and two spread guides in the shared editorial repository.",
+        "deprecatedDate": null,
+        "effectiveDate": "2026-07-28",
+        "replacementRecordId": null,
+        "supersedesRecordId": null
+      },
+      "lineageId": "rituvia.tarot.major-arcana-library",
+      "locale": "en",
+      "localization": {
+        "kind": "source",
+        "method": "original",
+        "sourceArtifactSha256": null,
+        "sourceRecordId": null,
+        "sourceVersion": null,
+        "status": "source_ready"
+      },
+      "methodOrTradition": "RITUVIA Major Arcana symbolic reflection V1",
+      "publication": {
+        "indexingAllowed": true,
+        "previewAllowed": true,
+        "publishAllowed": true
+      },
+      "recordId": "rituvia.tarot.major-arcana-library.en@1.0.0",
+      "review": {
+        "approvalReference": "D-081",
+        "requiredRole": "owner",
+        "reviewDueDate": "2027-07-28",
+        "reviewedDate": "2026-07-28",
+        "reviewerId": "owner",
+        "reviewerRole": "owner"
+      },
+      "rights": {
+        "allowedUses": [
+          "internal_preview",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-081",
+        "expiresDate": null,
+        "owner": "RITUVIA",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "risk": {
+        "culturalReviewRequired": false,
+        "legalReviewRequired": false,
+        "level": "spiritual",
+        "prohibitedClaimsChecked": true
+      },
+      "seo": {
+        "canonicalPaths": [
+          "/en/tarot",
+          "/en/tarot/the-fool",
+          "/en/tarot/the-magician",
+          "/en/tarot/the-high-priestess",
+          "/en/tarot/the-empress",
+          "/en/tarot/the-emperor",
+          "/en/tarot/the-hierophant",
+          "/en/tarot/the-lovers",
+          "/en/tarot/the-chariot",
+          "/en/tarot/strength",
+          "/en/tarot/the-hermit",
+          "/en/tarot/wheel-of-fortune",
+          "/en/tarot/justice",
+          "/en/tarot/the-hanged-man",
+          "/en/tarot/death",
+          "/en/tarot/temperance",
+          "/en/tarot/the-devil",
+          "/en/tarot/the-tower",
+          "/en/tarot/the-star",
+          "/en/tarot/the-moon",
+          "/en/tarot/the-sun",
+          "/en/tarot/judgement",
+          "/en/tarot/the-world",
+          "/en/tarot/one-card-spread",
+          "/en/tarot/situation-action-possibility-spread"
+        ],
+        "description": "A finite source-transparent English Major Arcana reflection library with 22 card guides, two spreads, and explicit safety limits.",
+        "title": "RITUVIA Major Arcana reflection library"
+      },
+      "sourceRefs": ["rituvia.source.tarot-major-arcana", "rituvia.source.tarot-library-editorial"],
+      "status": "published",
+      "version": "1.0.0"
+    },
+    {
+      "artifact": {
+        "path": "content/traditions/ritual/rituvia-ritual-reflection-library.en.v1.json",
+        "sha256": "f551a42c2e55847736539ff57a0a3fd46a987dfd388235412a8c7790c23409bf"
+      },
+      "audience": "adults",
+      "author": {
+        "aiAssistance": "draft_only",
+        "id": "product.codex",
+        "role": "staff"
+      },
+      "claimRefs": [
+        "rituvia.claim.ritual-reflection-method-boundary",
+        "rituvia.claim.ritual-reflection-original-editorial-rights"
+      ],
+      "contentId": "rituvia.ritual-reflection.library.en",
+      "contentType": "educational_catalog",
+      "lifecycle": {
+        "changeReason": "Register the owner-approved finite English ritual and reflection guide cluster in the shared editorial repository.",
+        "deprecatedDate": null,
+        "effectiveDate": "2026-07-29",
+        "replacementRecordId": null,
+        "supersedesRecordId": null
+      },
+      "lineageId": "rituvia.ritual-reflection.library",
+      "locale": "en",
+      "localization": {
+        "kind": "source",
+        "method": "original",
+        "sourceArtifactSha256": null,
+        "sourceRecordId": null,
+        "sourceVersion": null,
+        "status": "source_ready"
+      },
+      "methodOrTradition": "RITUVIA original secular digital reflection V1",
+      "publication": {
+        "indexingAllowed": true,
+        "previewAllowed": true,
+        "publishAllowed": true
+      },
+      "recordId": "rituvia.ritual-reflection.library.en@1.0.0",
+      "review": {
+        "approvalReference": "D-082",
+        "requiredRole": "owner",
+        "reviewDueDate": "2027-07-28",
+        "reviewedDate": "2026-07-28",
+        "reviewerId": "owner",
+        "reviewerRole": "owner"
+      },
+      "rights": {
+        "allowedUses": [
+          "internal_preview",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-082",
+        "expiresDate": null,
+        "owner": "RITUVIA",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "risk": {
+        "culturalReviewRequired": false,
+        "legalReviewRequired": false,
+        "level": "spiritual",
+        "prohibitedClaimsChecked": true
+      },
+      "seo": {
+        "canonicalPaths": [
+          "/en/rituals",
+          "/en/rituals/virtual-candle-reflection",
+          "/en/rituals/virtual-incense-reflection",
+          "/en/rituals/intention-and-small-action",
+          "/en/rituals/private-reflection-journal",
+          "/en/rituals/revisit-a-reflection"
+        ],
+        "description": "A finite English guide to RITUVIA's original secular virtual ritual, intention, private reflection, and voluntary revisit loop.",
+        "title": "RITUVIA ritual and reflection guides"
+      },
+      "sourceRefs": [
+        "rituvia.source.ritual-original-secular-catalog",
+        "rituvia.source.ritual-reflection-editorial"
+      ],
+      "status": "published",
+      "version": "1.0.0"
+    }
+  ],
+  "repositoryId": "rituvia.editorial",
+  "schemaVersion": "rituvia-editorial-repository.v1",
+  "sources": [
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA product editorial",
+      "disagreementNotes": "The projection reports only current approved product and editorial authority; it does not claim expert, religious, scientific, institutional, or independent review.",
+      "geography": "global English source",
+      "language": "en",
+      "locator": "content/editorial/geo-answer-context.en.v1.json",
+      "publicationDate": "2026-07-29",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-29",
+      "reviewedDate": "2026-07-29",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-086",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.geo-answer-context",
+      "sourceType": "original",
+      "title": "RITUVIA public answer authority projection",
+      "tradition": "RITUVIA product content governance",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA",
+      "disagreementNotes": "House systems, aspect orbs, and astrology interpretation conventions vary; this source defines only the explicit RITUVIA V1 product method.",
+      "geography": "global product method",
+      "language": "en",
+      "locator": "content/sources/astrology/rituvia-western-natal-method.v1.json",
+      "publicationDate": "2026-07-26",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-26",
+      "reviewedDate": "2026-07-26",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-070",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.astrology-method",
+      "sourceType": "product_decision",
+      "title": "RITUVIA Western Natal Method V1",
+      "tradition": "Western tropical natal astrology",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA product editorial",
+      "disagreementNotes": "The material explains the approved product method and does not claim religious, scientific, or institutional authority.",
+      "geography": "global English source",
+      "language": "en",
+      "locator": "content/traditions/astrology/rituvia-western-natal-education.en.v1.json",
+      "publicationDate": "2026-07-27",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-27",
+      "reviewedDate": "2026-07-27",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-073",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.astrology-education",
+      "sourceType": "original",
+      "title": "RITUVIA Western Natal Education",
+      "tradition": "RITUVIA original education about one Western natal method",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "Astrodienst AG",
+      "disagreementNotes": "This technical reference documents an interface and does not authorize RITUVIA product interpretation or cultural claims.",
+      "geography": "Switzerland",
+      "language": "en",
+      "locator": "https://www.astro.com/swisseph/swephprg.htm",
+      "publicationDate": null,
+      "publisher": "Astrodienst AG",
+      "reviewDueDate": "2027-07-27",
+      "reviewedDate": "2026-07-27",
+      "reviewerId": "product.codex",
+      "rights": {
+        "allowedUses": ["factual_citation"],
+        "evidenceReference": "content/sources/astrology/swiss-ephemeris-agpl.v2.json",
+        "expiresDate": null,
+        "status": "reference_only",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.swiss-programming-reference",
+      "sourceType": "technical",
+      "title": "Swiss Ephemeris Programming Interface",
+      "tradition": "astronomical calculation software",
+      "version": "2.10.3"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA",
+      "disagreementNotes": "The algorithm is an explicit RITUVIA product convention and is not represented as universal, scientific, or historically exhaustive numerology.",
+      "geography": "global product method",
+      "language": "en",
+      "locator": "docs/codex/rituvia-production-2026-07-23/source/RITUVIA_WALLET_STRIPE_CRYPTO_AI_UPDATED_PROTOTYPE_2026-07-23.html",
+      "publicationDate": "2026-07-23",
+      "publisher": "RITUVIA repository",
+      "reviewDueDate": "2027-07-25",
+      "reviewedDate": "2026-07-25",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-065",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.numerology-prototype",
+      "sourceType": "original",
+      "title": "RITUVIA owner-approved production prototype numerology algorithm",
+      "tradition": "RITUVIA V1 date numerology",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA editorial",
+      "disagreementNotes": "The profiles are optional original reflection prompts rather than historical, scientific, identity, or prediction claims.",
+      "geography": "global English source",
+      "language": "en",
+      "locator": "content/traditions/numerology/rituvia-symbolic-reflection.en.v1.json",
+      "publicationDate": "2026-07-25",
+      "publisher": "RITUVIA repository",
+      "reviewDueDate": "2027-07-25",
+      "reviewedDate": "2026-07-25",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "OWN-012:option-a:2026-07-25",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.numerology-editorial",
+      "sourceType": "original",
+      "title": "RITUVIA English symbolic number profiles",
+      "tradition": "RITUVIA original symbolic reflection",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA owner-provided prototype and product editorial process",
+      "disagreementNotes": "Tarot traditions and card orderings vary; this source controls only the declared RITUVIA V1 Major Arcana ordering, symbols, and bounded reflection copy.",
+      "geography": "global English source",
+      "language": "en",
+      "locator": "content/traditions/tarot/rituvia-major-arcana.v1.json",
+      "publicationDate": "2026-07-18",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-28",
+      "reviewedDate": "2026-07-28",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": ["factual_citation", "public_display", "commercial_use"],
+        "evidenceReference": "D-044",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.tarot-major-arcana",
+      "sourceType": "original",
+      "title": "RITUVIA 22-card Major Arcana reflections",
+      "tradition": "RITUVIA symbolic reflection using Rider-Waite-Smith ordering convention",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA product editorial",
+      "disagreementNotes": "The library explains one bounded RITUVIA symbolic-reflection method and does not claim religious, historical, scientific, divinatory, or institutional authority.",
+      "geography": "global English source",
+      "language": "en",
+      "locator": "content/traditions/tarot/rituvia-major-arcana-library.en.v1.json",
+      "publicationDate": "2026-07-28",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-28",
+      "reviewedDate": "2026-07-28",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-081",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.tarot-library-editorial",
+      "sourceType": "original",
+      "title": "RITUVIA Major Arcana library editorial layer",
+      "tradition": "RITUVIA original symbolic reflection",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA product and safety process",
+      "disagreementNotes": "This source defines only the RITUVIA original-secular virtual ritual product method and does not claim religious, cultural, historical, scientific, therapeutic, or institutional authority.",
+      "geography": "global product method",
+      "language": "en",
+      "locator": "content/traditions/ritual/rituvia-original.en.v1.json",
+      "publicationDate": "2026-07-23",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-23",
+      "reviewedDate": "2026-07-24",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": ["factual_citation", "public_display"],
+        "evidenceReference": "D-047",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.ritual-original-secular-catalog",
+      "sourceType": "product_decision",
+      "title": "RITUVIA original-secular virtual ritual catalog",
+      "tradition": "RITUVIA original secular digital reflection",
+      "version": "1.0.0"
+    },
+    {
+      "claimsReviewed": true,
+      "creator": "RITUVIA product editorial",
+      "disagreementNotes": "The guide cluster explains one bounded RITUVIA digital reflection method and does not claim religious, cultural, historical, scientific, therapeutic, predictive, or institutional authority.",
+      "geography": "global English source",
+      "language": "en",
+      "locator": "content/traditions/ritual/rituvia-ritual-reflection-library.en.v1.json",
+      "publicationDate": "2026-07-29",
+      "publisher": "RITUVIA",
+      "reviewDueDate": "2027-07-28",
+      "reviewedDate": "2026-07-28",
+      "reviewerId": "owner",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-082",
+        "expiresDate": null,
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.source.ritual-reflection-editorial",
+      "sourceType": "original",
+      "title": "RITUVIA ritual and reflection guide editorial layer",
+      "tradition": "RITUVIA original secular digital reflection",
+      "version": "1.0.0"
+    }
+  ],
+  "version": "1.0.0"
+}

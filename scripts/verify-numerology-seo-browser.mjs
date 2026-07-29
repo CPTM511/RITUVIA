@@ -63,7 +63,10 @@ const stopServer = async (server) => {
 
 const server = spawn(process.execPath, ["start.mjs", "-H", host, "-p", String(port)], {
   cwd: `${process.cwd()}/apps/web`,
-  env: { ...process.env, BRAND_CANONICAL_ORIGIN: origin },
+  env: {
+    ...process.env,
+    BRAND_CANONICAL_ORIGIN: process.env.BRAND_CANONICAL_ORIGIN ?? origin,
+  },
   stdio: ["ignore", "ignore", "pipe"],
 });
 let serverError = "";
@@ -111,6 +114,10 @@ try {
   let reviewedContrastNodes = 0;
   for (const route of routes) {
     await page.goto(route.pathname, { timeout: 30_000, waitUntil: "load" });
+    const canonicalUrl = new URL(
+      route.pathname,
+      process.env.BRAND_CANONICAL_ORIGIN ?? origin,
+    ).toString();
     await page.getByRole("heading", { level: 1, name: route.heading }).waitFor();
     assert.equal(await page.getByRole("heading", { level: 1 }).count(), 1);
     assert.equal(await page.locator("main#main-content").count(), 1);
@@ -124,19 +131,28 @@ try {
     );
     assert.equal(
       await page.locator('meta[name="robots"]').getAttribute("content"),
-      "noindex, nofollow",
+      process.env.APP_ENV === "production" ? "index, follow" : "noindex, nofollow",
     );
     const structured = await page.locator('script[type="application/ld+json"]').textContent();
     assert.ok(structured);
     const graph = JSON.parse(structured)["@graph"];
     assert.ok(Array.isArray(graph));
+    assert.equal(graph.length, 1);
+    const pageNode = graph.find((entry) => entry?.["@type"] === route.structuredType);
+    assert.ok(pageNode);
+    assert.equal(pageNode.url, canonicalUrl);
+    assert.equal(pageNode.inLanguage, "en");
     assert.equal(
-      graph.some((entry) => entry?.["@type"] === route.structuredType),
+      pageNode[route.structuredType === "Article" ? "headline" : "name"],
+      (await page.getByRole("heading", { level: 1 }).innerText()).trim(),
+    );
+    assert.equal(
+      (await page.locator("main#main-content").innerText()).includes(pageNode.description),
       true,
     );
     assert.equal(
       graph.some((entry) => entry?.["@type"] === "BreadcrumbList"),
-      true,
+      false,
     );
     assert.equal(structured.includes("FAQPage"), false);
     assert.equal(structured.includes("Review"), false);

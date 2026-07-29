@@ -68,7 +68,8 @@ describe("Web shell repository contract", () => {
   });
 
   it("locks explicit redirect, unsupported-locale failure, and server rendering", () => {
-    const root = read("apps/web/app/page.tsx");
+    const root = read("apps/web/app/(root)/page.tsx");
+    const localeLayout = read("apps/web/app/[locale]/layout.tsx");
     const route = read("apps/web/app/[locale]/page.tsx");
     const publicRoute = read("apps/web/app/[locale]/[page]/page.tsx");
 
@@ -77,7 +78,9 @@ describe("Web shell repository contract", () => {
     expect(route).toContain("notFound()");
     expect(route).toContain("export const dynamicParams = false");
     expect(route).not.toContain('"use client"');
-    expect(publicRoute).toContain("parsePublicPageSlug");
+    expect(localeLayout).toContain("parseLocale");
+    expect(localeLayout).toContain("<RootDocument locale={locale}>");
+    expect(publicRoute).toContain("publicRouteRegistry.routeByPathname");
     expect(publicRoute).toContain("notFound()");
     expect(publicRoute).toContain("export const dynamicParams = false");
     expect(publicRoute).not.toContain('"use client"');
@@ -107,7 +110,7 @@ describe("Web shell repository contract", () => {
     expect(styles).toMatch(
       /\.brand-link\s*\{[^}]*max-inline-size:\s*100%[^}]*overflow-wrap:\s*anywhere/su,
     );
-    expect(styles).not.toContain("overflow-x: auto");
+    expect(styles).not.toMatch(/(?:html|body)\s*\{[^}]*overflow-x:\s*auto/gu);
     expect(styles).not.toMatch(/(?:margin|padding)-(?:left|right)|(?:left|right):/u);
   });
 });

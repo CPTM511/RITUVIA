@@ -709,6 +709,20 @@ describe("task-result semantics", () => {
     }
   });
 
+  it("accepts one bounded Next route-group segment without allowing path syntax", () => {
+    expect(isSafeRepositoryPath("apps/web/app/(root)/page.tsx")).toBe(true);
+    for (const unsafePath of [
+      "apps/web/app/(..)/page.tsx",
+      "apps/web/app/(root/page.tsx",
+      "apps/web/app/root)/page.tsx",
+      "apps/web/app/((root))/page.tsx",
+      "apps/web/app/(root path)/page.tsx",
+      "apps/web/app/(root.shell)/page.tsx",
+    ]) {
+      expect(isSafeRepositoryPath(unsafePath)).toBe(false);
+    }
+  });
+
   it("rejects nested extra fields, duplicate references, invalid dates, and schema bounds", () => {
     const extra = validResult() as ReturnType<typeof validResult> & {
       extra?: string;

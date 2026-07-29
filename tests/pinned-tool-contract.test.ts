@@ -12,5 +12,7 @@ describe("pinned CI tool contract", () => {
     expect(source).not.toContain('path.resolve(".gitleaks');
     expect(source).toContain("attempt < 3");
     expect(source).toContain('execFileSync("/usr/bin/tar"');
+    expect(source).toContain('"actionlint_1.7.12_linux_amd64.tar.gz"');
+    expect(source).not.toContain("linux_x86_64");
   });
 });

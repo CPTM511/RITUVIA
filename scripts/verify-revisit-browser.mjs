@@ -336,7 +336,20 @@ try {
   assert.equal(requests.length, 1);
   assert.equal(requests[0].body.reminderPreference, "none");
   assert.equal(requests[0].body.reminderChannel, null);
+  await page.goto("/en/revisit#reminder-preferences", {
+    timeout: 30_000,
+    waitUntil: "load",
+  });
   const reminderCheckbox = page.getByLabel("Email me once when this Revisit date arrives");
+  await reminderCheckbox.waitFor();
+  await page.waitForFunction(
+    () =>
+      document.activeElement?.id === "reminder-preferences" ||
+      (document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.id.startsWith("revisit-reminder-")),
+  );
+  assert.equal(requests.length, 1);
+  assert.equal(reminderPreferenceMutations, 0);
   await reminderCheckbox.click();
   await page.getByText("The one-time email reminder is on.", { exact: true }).waitFor();
   assert.equal(await reminderCheckbox.isChecked(), true);

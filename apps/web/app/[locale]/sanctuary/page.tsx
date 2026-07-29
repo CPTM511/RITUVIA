@@ -63,6 +63,7 @@ export default async function SanctuaryPage({ params }: SanctuaryPageProps) {
         </header>
         <SanctuaryFlow
           accountHref={localeAccountPath(locale)}
+          locale={locale}
           messages={messages}
           readingHref={localeTarotOneCardPath(locale)}
           revisitHref={localeRevisitPath(locale)}

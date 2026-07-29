@@ -13,7 +13,6 @@ type LocalePageProps = Readonly<{
 }>;
 
 export const dynamicParams = false;
-export const dynamic = "force-dynamic";
 
 const resolvePageLocale = async (params: LocalePageProps["params"]): Promise<Locale> => {
   const locale = parseLocale((await params).locale);
@@ -45,6 +44,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
     <SiteShell
       brandName={configuration.client.brand.name}
       brandTagline={configuration.client.brand.tagline}
+      canonicalOrigin={configuration.brand.canonicalOrigin}
       locale={locale}
       messages={getMessages(locale)}
       numerologyEnabled={loadNumerologyAvailability() === "enabled"}

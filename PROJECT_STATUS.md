@@ -1,6 +1,6 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-27
+**Last reconciled:** 2026-07-29
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -63,7 +63,7 @@ deployment, public source endpoint, or activation. An
 isolated 28-migration PostgreSQL drill passes default off, approved on,
 emergency off, historical-key rejection, append-only/least-privilege enforcement, and logical
 restore. The root full production
-build has not yet been rerun after registering the fourteenth active module; its final artifact
+build has not yet been rerun after registering the fifteenth active module; its final artifact
 verifier still expects a static `apps/web/.next/server/app/en.html` even though RIT-082 made `/en`
 dynamic; no full root-build pass is currently claimed. Generated-evidence synchronization is also
 pending because its repository guard requires every canonical untracked file from prior tasks to
@@ -349,7 +349,11 @@ append-only idempotency ledger. Parent deletion hides the child immediately. The
 artifact passes offline recovery, 320px, RTL, reduced motion, touch, axe, request, console,
 storage/metadata privacy, and redacted screenshot evidence without enabling delivery or analytics.
 
-**Release:** Phase 0 audit baseline over the local commercial MVP; no public production deployment
+**Release:** Phase 0 audit baseline over the local commercial MVP; no public production deployment.
+By unweighted engineering-task count, 78 of 107 tasks through the closed-English-beta milestone are
+Done (73%), and 78 of 113 tasks through limited paid launch are Done (69%). The remaining work is
+risk-heavier than the completed count: payment underwriting/integrity, production operations,
+threat/abuse controls, closed-beta evidence, legal/tax/brand/budget approvals, and launch rehearsal.
 
 **Working brand:** RITUVIA, pending formal trademark/domain/language clearance.
 
@@ -379,7 +383,10 @@ storage/metadata privacy, and redacted screenshot evidence without enabling deli
   catalog available only for historical replay.
 - Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
 - Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
-- Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default canonical metadata, non-production `noindex`, and server-side `experience.public_shell` enforcement across every HTML and RSC representation; default/emergency/error states fail closed without exposing the shell.
+- Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default
+  canonical metadata, and non-production `noindex`; registry v3 removes the completed public-shell
+  rollout key and Web adapter after a protected compatibility window. Crawl failure boundaries
+  remain driven by production environment and reviewed inventory freshness.
 - One typed four-page crawl inventory drives unique canonical/Open Graph metadata, production-only index polarity, exact end-anchored robots document allows, reviewed render-asset access, and a deterministic sitemap without fabricated `lastmod`; non-production, disabled, unavailable, private, query, spoofed/bare RSC, and unreviewed internal paths remain noindex, private/non-cacheable 404, disallow-all, or absent as appropriate.
 - Fail-closed Web build policy for all four canonical route artifacts, bounded compressed HTML/CSS/JavaScript/icon output, and HTML/CSS fetch surfaces including remote, ambiguous, duplicated, escaped, entity-obfuscated, and unbudgeted resources.
 - A production-artifact Chromium/axe gate for all four public routes plus the private intake,
@@ -639,8 +646,99 @@ parameters, and no document-level horizontal overflow. The browser's Axe run rep
 allowed color-contrast incomplete classification; no color-contrast violation is claimed as
 passing through suppression.
 
-RIT-095 is the sole Ready task. No natal interpretation provider, prompt, activation, or
-production behavior is started by the RIT-094 closure.
+RIT-095 is complete with a provider-neutral safe-off natal interpretation boundary. It strictly
+reparses RIT-093 facts, independently recomputes persisted aspects from authoritative longitudes,
+stops unavailable states before artifact/model work, exposes only minimized placement/aspect
+references and bounded provenance, preserves approximate-time suppression, and forbids model
+degree, house, deterministic-label, fixed-personality, certainty, professional-advice, dependency,
+paid-efficacy, persecution, self-harm, and injection drift. Exact content/prompt/fallback integrity
+and authority, digest/input/single-use binding, deterministic replacement, and independent
+semantic review are enforced. The fixed synthetic gate passes all 30 cases through 35 assertions
+with zero external requests and zero paid calls. No production content, provider/model, live
+reviewer, API, persistence, Credits, natal prose UI, activation, deployment, or public behavior is
+introduced.
+
+RIT-096 and OWN-016 are complete through D-073. The approved English publication at
+`/en/astrology` plus four method guides binds D-067 through D-070, the pinned Swiss Ephemeris
+technical reference, explicit source rights, exact body/house/aspect/uncertainty tables, owner
+review dated 2026-07-27, and worldwide RITUVIA rights for public display, commercial use, SEO
+publication, and translation. The pre-approval review bytes retain SHA-256
+`6c142722f993590981552eae6aac653ffc038156497e5eb43e49ebc8ed51e90b`; the approved publication file
+has SHA-256 `a27ca9b9a6fa6881353ff49c9acce0992bce094d3a53353013efaa2978a16504`.
+Only the five exact routes enter the production index, robots, and sitemap inventories. Local,
+preview, staging, RSC, private natal, sign/personality, and personalized routes remain
+non-indexable. The pages contain no birth input, personalized output, prediction claim, FAQ/review
+schema, or private API request. Production deployment, DNS,
+public launch, and actual crawl activation remain separate owner gates. Five focused files pass
+185 publication, metadata, routing, SEO, and proxy tests; the Node 24.18.0 production build
+statically generates all five routes, and the 320px Chromium gate passes five Axe scans with zero
+serious/critical violations, zero unexpected API requests, zero console/page errors, exact
+production robots/sitemap admission, and 81 explicitly reviewed color-contrast incomplete nodes.
+
+RIT-100 and RIT-101 are complete through D-075. `@rituvia/i18n` provides strict BCP 47 and IANA
+time-zone parsing, exact ICU arguments, nested plural/select formatting, explicit locale
+formatters, finite fallback telemetry, fail-closed translation publication, locale-derived text
+direction, and test-only `en-XA`/`ar-XB` ICU pseudolocalization. Checksummed English source and
+glossary records carry rights, context, risk, placeholder, markup, link, editorial, and reviewer
+metadata. Publication blocks missing/unexpected keys, stale source drift, unsafe expansion,
+glossary or forbidden-term violations, identical untranslated content, and insufficient review;
+runtime admits only an exact process-authorized approved catalog.
+
+Current shell, account, Sanctuary, Revisit, Tarot, commerce, numerology, and astrology surfaces use
+explicit locale formatting and structural bidi isolation without activating another locale. The
+RTL gate rejects physical directional CSS, invisible bidi controls, production pseudolocale
+imports, and reviewed contract loss. Production-artifact Chromium passes 79 Axe scans over
+fourteen public and three private routes with expanded text, desktop/mobile RTL, keyboard, touch,
+dark, reduced-motion, no-JavaScript, offline advisory, and local-only request checks. Dedicated
+numerology, Revisit, and astrology flows pass 320px RTL; astrology keeps the wheel LTR at 400% zoom
+under forced colors. Actual Arabic routes, reviewed content, email, share cards, support, and
+launch remain unimplemented and gated.
+
+RIT-103 is complete through D-076. One stable-ID, approval-bound route matrix now drives all
+fourteen approved English static paths, generic localized segment pages, SSR document
+language/direction, canonical and reciprocal hreflang metadata, robots, substantive revisions,
+and a production sitemap index with exact English pages/numerology/astrology shards. The redirect
+engine permits only explicit queryless same-locale stale slugs targeting a current reviewed route;
+Git history contains no superseded production public slug, so the production history is
+intentionally empty rather than populated with invented aliases. Synthetic `es-419` tests prove
+localized segment and redirect behavior without entering runtime.
+
+The RIT-100 client boundary is also reconciled: browser bundles consume a checksummed source-bound
+message-only projection and no longer include source rights, reviewer, server configuration, or
+fallback-brand literals. Focused route/SEO tests, Web/i18n type checks, production build and shell
+artifact policy, the real HTTP configuration boundary, and the fourteen-public/three-private
+production-artifact accessibility run pass. English remains the only supported/published locale;
+RIT-105 remains blocked on OWN-004.
+
+RIT-102 is complete through D-077. The UI now has local-only Japanese, Korean, Simplified Chinese,
+Traditional Chinese, and Devanagari UI/display fallback stacks, strict CJK line breaking, normal
+grapheme-safe wrapping, script-appropriate shaping/line height, and no production `break-all`.
+Private human text is preserved in NFC, permits legitimate ZWJ/ZWNJ, retains supplementary CJK
+characters, and still rejects zero-width space, bidi overrides/isolates, unsafe controls, and
+isolated surrogates. NFKC is limited to safety-classification copies rather than stored text.
+
+The test-only writing-system harness loads both UI and Web CSS and hydrates a real controlled React
+field. Chromium at 320 CSS pixels verifies four CJK punctuation/line-break profiles, five actual
+platform-font providers without LastResort/tofu, measurable Devanagari shaping, Japanese and Hindi
+composition across forced rerenders, canonical ISO dates, Axe, touch targets, and zero external
+request, storage, console, page, or locale-activation failure. English remains the only runtime
+and published locale.
+
+RIT-104 is complete through D-078. A separate checksummed English lifecycle-message catalog now
+renders a once-only Revisit reminder and support-receipt preview as semantic HTML plus equivalent
+plain text. Reminder queue rows persist exact template ID, version, source checksum, resolved
+locale, and fallback state; the Worker validates the retained registry entry after send-time
+authorization rechecks the current date, time zone, due threshold, and quiet hours. Unknown
+templates and unsupported delivery locales fail before provider use. Explicit fallback exists
+only in local preview and emits one non-identifying event.
+
+The GET-safe reminder preference deep link focuses settings without mutating consent. Focused
+i18n, Domain, Worker, Web, migration, real-PostgreSQL, architecture, localization, Chromium
+preview, and Revisit-browser evidence passes without running the complete 1,674-test matrix under
+D-050. Production runtime remains safe-off before queue claims: no scheduler, email provider,
+support mailbox, legal unsubscribe text, actual send, non-English message catalog, deployment, or
+public launch is activated. At RIT-104 closure no backlog item was Ready; RIT-105 remains blocked
+on OWN-004 and gates RIT-106.
 
 RIT-047 adds one production-artifact Chromium context that navigates in the same tab from safe
 intake through deterministic Tarot, exact-reading intention handoff, free reduced-motion ritual,
@@ -790,7 +888,7 @@ The runtime remains hard safe-off: no provider, reviewer, model, SDK,
 key, network, paid inference, production content/safety activation, database, UI, payment,
 deployment, or public launch is added or approved.
 
-The production Web matrix proves restrictive browser headers, server correlation, independent public-shell/intake safe-off behavior,
+The production Web matrix proves restrictive browser headers, server correlation, independent route/intake safe-off behavior,
 exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
 isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
 mobile, and same-origin coverage. Fresh production-artifact acceptance passes all four public routes
@@ -812,8 +910,10 @@ idempotency races, privacy-minimal global capacity, injected privilege-drift den
 column privileges, and exact restored-history behavior and attestation. Repository architecture,
 CI/toolchain, historical migration, current-tree/full-history secret,
 actionlint and dependency gates pass. The current dependency audit reports zero critical/high and
-one moderate advisory in Prisma's transitive `@hono/node-server` tooling path for Windows
-`serve-static`; RITUVIA does not expose that adapter as a product runtime or static-file server.
+two moderate advisories in Prisma's transitive tooling path: `@hono/node-server` Windows
+`serve-static` traversal and a Valibot issue-path flattening failure. RITUVIA does not expose the
+Hono adapter as a product runtime or static-file server, and neither advisory is introduced by
+the i18n dependencies.
 Independent
 accessibility, architecture, localization, and security review found no remaining local-slice P0/P1;
 the intentionally global issuance gate and required pre-gate catalog attestation remain explicit
@@ -837,9 +937,201 @@ preservation through a limit state, and no immediate limit retry. At 320px the o
 three-card results have no horizontal overflow; the latter exposes exactly three ordered cards and
 all three canonical report positions. The success responses exist only in isolated browser routes;
 the same latest production server returns an empty 404 without interception.
-Production deployment, public-shell activation, canonical-domain/DNS changes, actual indexing, and
-Search Console remain separate owner gates. No remote is configured, so no hosted Actions run or
-owner-side required-check protection is claimed.
+Production migration/deployment, canonical-domain/DNS changes, actual indexing, and Search Console
+remain separate owner gates. `origin` now points to the private
+`https://github.com/CPTM511/RITUVIA` repository, and committed `main` revision
+`2ff7a1c6106f4e78e34dfe283680701860ecd9cf` produced the first hosted three-job Actions run
+`30466750711`. The run truthfully failed: the historical revision used a non-existent actionlint
+Linux asset name, did not build `@rituvia/security` before the PostgreSQL verifier, and predates the
+current migration manifest. The current worktree fixes the first two root causes and already
+contains the migration-manifest correction; focused CI-contract, fixed-tool, and internal dependency
+build checks pass locally.
+
+OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
+the current account plan requires GitHub Pro or a public repository, including after the owner
+completed the requested authorization and the API was retried on 2026-07-29. The owner authorized
+the cumulative commit/push, so RIT-004 is the sole In Progress item while the current branch
+repairs the hosted CI defects and obtains a fresh three-job run. The safe recommendation remains to
+keep the repository private and activate GitHub Pro; making the repository public is a separate
+irreversible source-disclosure decision even though the intended deployed Corresponding Source is
+AGPL-3.0-only.
+
+D-079 records the owner-approved development baseline: IPO.ONE's BVI entity direction, an 18+
+product, United States and English as the first production-launch candidate, reviewed closed
+testing for `es-419`, `pt-BR`, and `fr`, later Mexico/Brazil candidates, deferred France/EU launch,
+a mandatory-law-preserving digital refund direction, active SEO/GEO engineering, and
+preparation-only ASO. `OWN-004` and `RIT-105` remain blocked on exact entity particulars,
+qualified legal review, final policy text, and tax/MoR evidence; no country, locale, policy,
+payment, deployment, indexing, or native-app distribution is activated.
+
+RIT-110 is Done with a Git-authored shared editorial registry and pure `@rituvia/content`
+publication boundary. Two existing approved English numerology and Western natal education assets
+bind exact checksums to stable identity, source/claim evidence, rights, review, version, risk,
+locale, and lifecycle metadata. Private preview is exact-digest, private/no-store, and noindex;
+publication additionally requires process-owned record/source authority fingerprints and locale
+authority. The forward-only status graph, exact translation source binding, reciprocal acyclic
+deprecation, canonical-path ownership, symlink/path denial, 108 focused tests, package build,
+architecture, CI, record, formatting, lint, lockfile, and secret gates pass without a CMS,
+database, public route, content-text change, locale/index activation, provider, deployment, or
+public launch.
+
+RIT-111 is Done through D-081: one Tarot library hub, 22 Major Arcana
+card pages, and two spread guides bind the exact approved local source catalog and resulting
+approval envelope. The shared editorial registry and active localized route registry now contain
+exactly those 25 English educational routes, with production-only canonical metadata, robots, and
+the English Tarot sitemap. Strict parsing, answer-first semantic components, source/rights
+separation, structured data, bounded internal links, mobile/forced-colors styles, and focused
+contract tests preserve no AI retrieval, personalized-result indexing, doorway expansion, new
+locale, deployment, DNS change, or public launch. The production Next.js build, 39-route public
+shell policy, 272 focused tests, strict typecheck, ESLint, shared editorial authority,
+architecture, secret scan, and representative 320 px Chromium/Axe gate pass without increasing
+asset budgets.
+
+RIT-112 is Done through D-082. One ritual/reflection hub and five distinct English guides bind the
+D-047 original-secular virtual ritual catalog and preserve the free virtual candle/incense flow,
+user agency, private-by-default reflection, and voluntary revisit timing. The exact approved
+artifact SHA-256 is
+`f551a42c2e55847736539ff57a0a3fd46a987dfd388235412a8c7790c23409bf`; no reviewed body copy or
+route slug changed during approval promotion. The shared editorial registry, localized public
+route registry, production-only canonical metadata, robots allowlist, and English rituals sitemap
+now contain exactly those six routes while physical fire/smoke, efficacy, cultural authority,
+personalization, private input, AI retrieval, doorway expansion, another locale, and regional
+traditions remain denied. The 60-page production Web build, 200 focused contract tests,
+four-record/nine-source/nine-claim editorial authority, architecture, non-restricted production
+configuration boundary, and representative 320 px Chromium/Axe gate pass; the browser gate found
+and closed one 44 px touch-target issue. No deployment, DNS change, public launch, actual indexing,
+AI activation, new locale, or regional tradition is approved. RIT-113 is now the sole In Progress
+item.
+
+RIT-113 is Done through D-083. One deterministic source-bound inventory now covers exactly 45
+approved English pages across core, numerology, astrology, Tarot, and ritual/reflection families.
+Every record binds stable route, locale, family, shape, intent, canonical, authority, source-set
+digest, review freshness, content digest, substantive structure, internal links, and nearest-page
+similarity. Exact and bounded near duplication, short-page containment, template substitution,
+thin content, same-intent cannibalization, canonical collision, stale authority, missing links,
+and private, personalized, query, framework, unknown, or unapproved exposure fail offline without
+an external provider.
+
+Canonical/hreflang metadata, robots, sitemap, configuration-boundary crawl checks, and the public
+build policy consume the same complete inventory. A single missing, extra, malformed, expired, or
+failing record omits canonical alternates, forces noindex, disallows all crawling, and suppresses
+sitemap output rather than publishing a partial set. The quality verifier, 168 focused tests,
+strict content/Web typechecks, focused lint/format, CI contract, architecture, records, generated
+evidence, secret scan, 60-page optimized Next build, 45-route public artifact policy, and
+non-restricted production configuration boundary pass. The full workspace verifier still reports
+the separately existing private three-card JavaScript aggregate above its fixed budget; RIT-113
+does not modify that private client slice or weaken the budget. No route, locale, country,
+deployment, DNS, actual indexing, or public launch is added or approved.
+
+RIT-114 is Done through D-084. Every one of the 45 approved English public pages now emits one
+minimal source-authorized JSON-LD graph: one `WebSite`, three `WebPage`, four `CollectionPage`, and
+37 `Article` documents. Exact canonical identity, English language, visible H1 and description,
+and explicit inventory-authorized parent hierarchy are enforced. Parent links must be visible;
+template, hidden, `aria-hidden`, script, and style content cannot satisfy search evidence.
+Breadcrumbs, author, publisher, date, FAQ, HowTo, Product, Offer, rating, and review claims remain
+denied without separate visible authority.
+
+The optimized Next.js build generates 60 pages and the build policy validates all 45 public
+artifacts within fixed budgets. The non-restricted production configuration boundary requests and
+audits the complete 45-page HTTP crawl surface. Twelve focused test files pass 125 tests, strict
+content/Web typechecks, focused lint/format, CI contract, architecture, and the six-page Chromium
+schema/injection gate pass. The browser uses the immutable production static artifacts, permits
+only the existing one-per-page local account-session probe with synthetic 401 isolation, excludes
+private canaries, and makes no external request. No deployment, DNS, Search Console, actual
+indexing, another locale, or public launch was added by RIT-114.
+
+RIT-115 is Done through D-085. The private English one-card result now offers an explicit local
+share-card preview only after reveal. One exact allowlisted `tarot-share-card.v1` projection drives
+the displayed 1200 by 630 SVG, local download, and capability-checked native SVG file share. The
+bounded selected theme is included by default and one control removes it from localized alt text,
+artifact bytes, download, and share payload. Private question, reading ID, interpretation, birth
+data, intention, journal, account data, uploads, persistence, tokens, and analytics never enter
+the share component.
+
+The governed core UI catalog is version 1.1.0 and adds the English ICU accessible-description
+contract. Production projection rejects test pseudolocales; serializer-only `en-XA` and `ar-XB`
+fixtures prove expanded LTR and RTL geometry without activating a route or locale. The private
+result remains noindex with no canonical, Open Graph, or Twitter metadata, while the artifact uses
+only the public `/en/tarot` canonical. Focused unit/localization checks, Web typecheck/build, and
+the dedicated non-restricted 320px Chromium gate pass across exact Blob/download/share bytes,
+private canaries, CSP, network, storage, object-URL revocation, touch targets, and Axe. No
+deployment, DNS, country, locale, public share hosting, provider, or public launch is added or
+approved.
+
+RIT-116 is Done through D-086. Every exact 45-route English public inventory record now renders
+one server-side, human-visible answer-authority section with one of five stable entity identities,
+closed fact/method, tradition, interpretation, and product-policy classifications, approved
+source titles and versions, and truthful owner-review dates. Internal paths, hashes, locators,
+reviewer identities, fake expertise, hidden copy, private input, unsafe markup, unknown
+classifications, duplicate authority, and expired review state fail closed.
+
+The checksummed English GEO record participates in every route's source and visible-content
+digest without owning a canonical URL or adding richer structured-data claims. Existing minimal
+JSON-LD remains unchanged. Eleven focused test files pass 100 tests; focused lint, formatting, Web
+typecheck, architecture, editorial, 45-page quality, optimized build, fixed asset budgets,
+non-restricted configuration boundary, and seven-shape Chromium/Axe/no-JavaScript/mobile/network
+checks pass. No route, locale, tradition, analytics provider, deployment, DNS, Search Console
+action, actual indexing, or public launch is added or approved. RIT-117 is the sole Ready item.
+
+RIT-117 is Done through D-087. One fail-closed `seo-geo-operations.v1` pipeline consumes only
+bounded offline aggregate crawl, index, query, and consented-referral evidence for the exact
+current 45-route inventory. It binds the input, public-page inventory, and five-record/ten-source
+editorial authority with actual SHA-256 digests; reports source kind, approval, freshness, window,
+denominators, route/content/source/rights review state, and explicit included,
+other-or-unknown, excluded, and useful-action referral buckets; and writes new private mode-0600
+JSON and Markdown only.
+
+Stale, unavailable, and synthetic sources yield null performance values and blocked decision use.
+Route query/referral detail is suppressed below 20 observations, 20–199 remains diagnostic, and
+performance review prompts require at least 200. Crawl, index, snippet, referral-alignment, and
+content-review recommendations are bounded human-review prompts and cannot connect a provider,
+publish or rewrite content, request indexing, expand routes, activate a locale, or change
+production. Sixteen focused analytics/CLI tests, 30 CI-contract tests, strict analytics typecheck,
+focused lint/format, architecture, 137-record policy, dedicated offline operations verification,
+analysis-package build/export checks, and the 60-page Web production build pass. The complete
+workspace build verifier still reports the separately existing private three-card JavaScript
+aggregate above its fixed budget; RIT-117 does not modify or weaken that private client slice.
+No analytics provider, tracking runtime, database, user data, deployment, DNS, indexing action,
+locale, or public launch is added or approved. RIT-120 remains Planned until every dependency is
+complete.
+
+RIT-038 is Done through D-088. One fail-closed `ai-operations.v1` projection consumes only bounded
+offline daily aggregates and exposes source kind, approval, freshness, exact window, minimum
+sample, model/provider/prompt/schema/safety/content versions, cost and token coverage, estimated
+cost, latency, retries, failures, reviewed fallbacks, completion, and safe replacements. Unknown
+or private fields, accessors, malformed aggregates, duplicate groups, stale evidence, synthetic
+fixtures, unavailable sources, low samples, symlinks, oversized inputs, and existing output paths
+fail closed or yield explicit null values rather than invented performance.
+
+Review thresholds create human prompts only and cannot change providers, models, prompts, safety
+policy, budgets, admin surfaces, or production. Forty-two focused tests, strict analytics
+typecheck, focused lint/format, architecture, CI contract, 139-record policy, dedicated offline
+verification, and analytics package build/export checks pass. No production reader, provider
+call, raw trace, private prose, database change, admin route, deployment, or budget enforcement
+is added. Monetary limits remain blocked by OWN-005. RIT-120 remains Planned because RIT-073 is
+transitively blocked by OWN-002.
+
+RIT-016 is Done through D-089. An isolated, loopback-only protected staging environment used
+PostgreSQL 17, production Web builds, random Basic authentication, private/no-store responses, and
+disallow-all robots. Registry v2 completed forward, database-unavailable, v1 rollback, and v2
+roll-forward probes; registry v3 then completed forward, v2 rollback, and v3 roll-forward probes.
+No public hosting project, production environment, DNS, indexing action, customer data, or public
+launch was used.
+
+Registry v3 removes `experience.public_shell`, its server adapter, delivery branches, and obsolete
+synthetic publication matrices. Web delivery now follows the completed rollout directly while SEO
+inventory freshness independently controls crawl publication. PostgreSQL retains immutable v1/v2
+history for audit and rollback, permits legacy versions to append only `off`, rejects the removed
+key in v3, and allows only exact current v3 keys with their existing owner gates and scopes.
+
+Two hundred five focused registry, composition, Web, and migration tests, strict Config and Web
+typechecks, focused lint/format, migration policy, three production staging builds, the
+31-migration PostgreSQL foundation with repeat migration/seed/reset/restore, the non-restricted
+configuration boundary, architecture policy across 516 source files, record policy across 141
+durable records, and all diff whitespace checks pass. The full workspace matrix is intentionally
+not rerun. RIT-004 is now the sole In Progress task for the owner-authorized hosted CI closure;
+OWN-008 remains the external branch-protection gate, and RIT-008 remains Planned until RIT-004 is
+Done.
 
 ## Update rules
 

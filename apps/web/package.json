@@ -19,6 +19,7 @@
     "@rituvia/db": "workspace:*",
     "@rituvia/divination": "workspace:*",
     "@rituvia/domain": "workspace:*",
+    "@rituvia/i18n": "workspace:*",
     "@rituvia/observability": "workspace:*",
     "@rituvia/payments": "workspace:*",
     "@rituvia/ui": "workspace:*",

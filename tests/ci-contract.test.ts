@@ -8,6 +8,7 @@ import {
   auditBrowserTestDependencies,
   auditCiScripts,
   auditCiWorkflow,
+  auditDatabaseCiScripts,
   auditToolchainVersions,
   parseWorkflowYaml,
 } from "../scripts/ci-contract.js";
@@ -65,17 +66,24 @@ describe("active CI workflow contract", () => {
 
   it("rejects attempts to remove explicit repository evidence gates from scripts", () => {
     const valid = {
+      "check:ai-operations": "node --import tsx scripts/verify-ai-operations.ts",
       "check:architecture": "node --import tsx scripts/verify-architecture.ts",
       "check:generated":
         "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
+      "check:editorial-content": "node --import tsx scripts/verify-editorial-content.ts",
+      "check:localization": "node scripts/verify-localization-workflow.mjs",
+      "check:public-pages": "node --import tsx scripts/verify-public-page-quality.ts",
+      "check:search-operations": "node --import tsx scripts/verify-search-operations.ts",
+      "check:rtl": "node --import tsx scripts/verify-rtl.ts",
+      "check:writing-systems": "node --import tsx scripts/verify-writing-systems.ts",
       "check:records":
         "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
       "check:evidence":
-        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
+        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
       test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
       "test:accessibility":
-        "node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs",
+        "pnpm --filter @rituvia/i18n build && node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs && node scripts/verify-writing-systems-browser.mjs",
       "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
       "test:astrology-native-corresponding-source":
         "pnpm --filter @rituvia/astrology-engine-native native:verify-corresponding-source",
@@ -84,6 +92,8 @@ describe("active CI workflow contract", () => {
       "test:astrology-native-security":
         "pnpm --filter @rituvia/astrology-engine-native native:verify-security",
       "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",
+      "test:public-search-browser": "node --import tsx scripts/verify-public-search-browser.mjs",
+      "test:tarot-share-browser": "node scripts/verify-tarot-share-browser.mjs",
     };
     expect(auditCiScripts(valid)).toEqual([]);
     expect(auditCiScripts({ ...valid, "check:architecture": "node -e 'process.exit(0)'" })).toEqual(
@@ -97,6 +107,18 @@ describe("active CI workflow contract", () => {
     expect(auditCiScripts({ ...valid, "test:ai-evals": "node -e 'process.exit(0)'" })).toEqual([
       {
         location: "package.json#scripts.test:ai-evals",
+        rule: "ci-script-command",
+      },
+    ]);
+  });
+
+  it("requires the database CI verifier to build its internal runtime dependency", () => {
+    const expected =
+      "pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
+    expect(auditDatabaseCiScripts({ "test:ci": expected })).toEqual([]);
+    expect(auditDatabaseCiScripts({ "test:ci": "node scripts/verify-ci-foundation.ts" })).toEqual([
+      {
+        location: "packages/db/package.json#scripts.test:ci",
         rule: "ci-script-command",
       },
     ]);
@@ -235,35 +257,42 @@ describe("active CI workflow contract", () => {
     );
   });
 
-  it.each(["pnpm check:records", "pnpm check:generated"])(
-    "rejects removal or reordering of the %s workflow gate",
-    (command) => {
-      const removed = cloneWorkflow();
-      const removedSteps = record(record(removed.jobs).quality).steps as unknown[];
-      const index = removedSteps.findIndex((step) => record(step).run === command);
-      if (index < 0) throw new Error(`${command} fixture step missing`);
-      removedSteps.splice(index, 1);
-      expect(auditCiWorkflow(removed)).toEqual(
-        expect.arrayContaining([
-          { location: "jobs.quality", rule: "run-command-sequence" },
-          { location: "jobs.quality", rule: "step-sequence" },
-        ]),
-      );
+  it.each([
+    "pnpm check:ai-operations",
+    "pnpm check:localization",
+    "pnpm check:editorial-content",
+    "pnpm check:public-pages",
+    "pnpm check:search-operations",
+    "pnpm check:rtl",
+    "pnpm check:writing-systems",
+    "pnpm check:records",
+    "pnpm check:generated",
+  ])("rejects removal or reordering of the %s workflow gate", (command) => {
+    const removed = cloneWorkflow();
+    const removedSteps = record(record(removed.jobs).quality).steps as unknown[];
+    const index = removedSteps.findIndex((step) => record(step).run === command);
+    if (index < 0) throw new Error(`${command} fixture step missing`);
+    removedSteps.splice(index, 1);
+    expect(auditCiWorkflow(removed)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.quality", rule: "run-command-sequence" },
+        { location: "jobs.quality", rule: "step-sequence" },
+      ]),
+    );
 
-      const reordered = cloneWorkflow();
-      const reorderedSteps = record(record(reordered.jobs).quality).steps as unknown[];
-      const current = reorderedSteps.findIndex((step) => record(step).run === command);
-      if (current < 0) throw new Error(`${command} fixture step missing`);
-      [reorderedSteps[current], reorderedSteps[current + 1]] = [
-        reorderedSteps[current + 1],
-        reorderedSteps[current],
-      ];
-      expect(auditCiWorkflow(reordered)).toContainEqual({
-        location: "jobs.quality",
-        rule: "run-command-sequence",
-      });
-    },
-  );
+    const reordered = cloneWorkflow();
+    const reorderedSteps = record(record(reordered.jobs).quality).steps as unknown[];
+    const current = reorderedSteps.findIndex((step) => record(step).run === command);
+    if (current < 0) throw new Error(`${command} fixture step missing`);
+    [reorderedSteps[current], reorderedSteps[current + 1]] = [
+      reorderedSteps[current + 1],
+      reorderedSteps[current],
+    ];
+    expect(auditCiWorkflow(reordered)).toContainEqual({
+      location: "jobs.quality",
+      rule: "run-command-sequence",
+    });
+  });
 
   it.each([
     "pnpm test:astrology-native-security -- --allow-download",

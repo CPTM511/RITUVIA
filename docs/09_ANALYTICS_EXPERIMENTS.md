@@ -196,6 +196,46 @@ Eligible product view → checkout start → provider session → verified payme
 
 Always expose denominator, eligibility filters, locale/country, and time window.
 
+### AI operations v1
+
+The `ai-operations.v1` policy is essential operational reporting, not optional product analytics.
+It accepts one exact 24-hour UTC aggregate with capture no more than six hours after window end.
+The source is current for 30 hours. Unavailable, stale, or synthetic evidence blocks decisions and
+produces null performance values.
+
+Metrics cover terminal generation count, displayable completion, failure, reviewed fallback,
+safe replacement, retry, average latency, the share exceeding 30 seconds, cost/token reporting
+coverage, estimated cost, and average reported cost/tokens. Overall and version-group values
+require at least 20 generations. Initial human-review thresholds are failure above 2%, reviewed
+fallback above 10%, safe replacement above 5% of verified outcomes, more than 5% exceeding 30
+seconds, and cost or token reporting coverage below 95%.
+
+These thresholds open investigation only. They never change model/provider, timeout, retry,
+fallback, safety, prompt, content, or production configuration. OWN-005 remains incomplete, so
+there is no authorized daily monetary budget threshold and unavailable cost is never treated as
+zero.
+
+### SEO/GEO operations v1
+
+The `seo-geo-operations.v1` policy consumes one strict offline aggregate snapshot for the exact
+reviewed public inventory. It calculates crawl coverage, index coverage, CTR, average position,
+consented referral useful-action rate, generative-referral share, route review freshness,
+editorial-record review freshness, source review freshness, and rights-expiry status. Results are
+grouped only by approved route, locale, content family, and coarse user intent.
+
+The exact window is seven UTC days and capture must occur within 96 hours of its end. Crawl,
+index/query, and referral source ages are capped at 24, 96, and 72 hours respectively.
+Unavailable, stale, or synthetic streams cannot produce performance values or recommendations.
+Route query/referral values are suppressed below a denominator of 20; denominators from 20 through
+199 remain diagnostic and cannot trigger a performance recommendation; 200 or more may trigger a
+bounded review prompt. The v1 snippet prompt requires average position at most 10 and CTR below
+2%; the referral prompt requires useful-action rate below 1%.
+
+Raw query text, full referrer URLs, user/session identifiers, private content, exact location,
+arbitrary event properties, and cross-site tracking are prohibited. Referral exports must retain
+explicit other/unknown and excluded aggregate buckets. Production analytics collection, provider
+connection, notice, retention/deletion, and activation remain separately owner-gated.
+
 ## 8. Experiments
 
 Every experiment needs:

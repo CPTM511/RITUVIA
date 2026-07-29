@@ -62,6 +62,7 @@ const moduleDefinitions = Object.freeze([
   { kind: "package", name: "@rituvia/db", root: "packages/db" },
   { kind: "package", name: "@rituvia/ui", root: "packages/ui" },
   { kind: "package", name: "@rituvia/i18n", root: "packages/i18n" },
+  { kind: "package", name: "@rituvia/content", root: "packages/content" },
   { kind: "package", name: "@rituvia/divination", root: "packages/divination" },
   {
     kind: "package",
@@ -143,6 +144,7 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
   ["@rituvia/db", new Set(["@rituvia/domain", "@rituvia/security"])],
   ["@rituvia/ui", new Set(["@rituvia/i18n"])],
   ["@rituvia/i18n", new Set(["@rituvia/domain"])],
+  ["@rituvia/content", new Set(["@rituvia/i18n"])],
   ["@rituvia/divination", new Set(["@rituvia/domain"])],
   ["@rituvia/astrology-engine-native", new Set(["@rituvia/divination"])],
   [
@@ -181,7 +183,8 @@ const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>(
   ["@rituvia/domain", new Set()],
   ["@rituvia/db", new Set(["@prisma/adapter-pg", "@prisma/client", "pg"])],
   ["@rituvia/ui", new Set(["react", "react-dom"])],
-  ["@rituvia/i18n", new Set()],
+  ["@rituvia/i18n", new Set(["@formatjs/icu-messageformat-parser", "intl-messageformat"])],
+  ["@rituvia/content", new Set()],
   ["@rituvia/divination", new Set()],
   ["@rituvia/astrology-engine-native", new Set(["server-only"])],
   ["@rituvia/ai", new Set()],
@@ -586,6 +589,7 @@ const reviewedComputedDataAccesses = new Map<string, ReadonlySet<string>>([
   ],
   ["apps/web/server/payment-provider.ts", new Set(["input.priceIds|request.metadata.productCode"])],
   ["packages/config/src/server.ts", new Set(["record|key"])],
+  ["packages/i18n/src/locale.ts", new Set(["configuredFallbacks|requested"])],
   ["packages/db/src/account-identity.ts", new Set(["left|index", "right|index"])],
   ["packages/db/src/account-consent.ts", new Set(["left|index", "right|index"])],
   ["packages/db/src/revisit-reminder.ts", new Set(["left|index", "right|index"])],

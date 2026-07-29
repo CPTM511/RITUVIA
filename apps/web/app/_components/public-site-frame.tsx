@@ -2,6 +2,7 @@ import type { LocalActionHref } from "@rituvia/ui";
 import type { ReactNode } from "react";
 
 import type { SharedMessages } from "../_i18n/messages";
+import { formatCoreMessage } from "../_i18n/core-messages";
 import {
   localeHomePath,
   localeAccountPath,
@@ -77,7 +78,9 @@ export function PublicSiteFrame({
       <header className="site-header">
         <div className="shell header-inner">
           <a
-            aria-label={messages.navigation.homeLabel.replace("{brand}", brandName)}
+            aria-label={formatCoreMessage(locale, "shell.navigation.homeLabel", {
+              brand: brandName,
+            })}
             className="brand-link"
             href={localeHomePath(locale)}
           >

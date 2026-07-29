@@ -1008,7 +1008,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
           `GRANT SELECT, INSERT ON TABLE revisit_reminder_subscription, revisit_reminder_operation TO ${APP_ROLE}`,
         );
         await admin.query(
-          `GRANT UPDATE (recipient_identity_id, schema_version, notice_version, channel, frequency, locale, preference_state, delivery_state, attempt_count, next_attempt_at, lease_token_hash, leased_until, last_failure_code, provider_message_reference, updated_at, delivered_at, unsubscribed_at, dead_lettered_at) ON TABLE revisit_reminder_subscription TO ${APP_ROLE}`,
+          `GRANT UPDATE (recipient_identity_id, schema_version, notice_version, channel, frequency, locale, template_id, template_version, template_source_checksum, template_locale, template_fallback_used, preference_state, delivery_state, attempt_count, next_attempt_at, lease_token_hash, leased_until, last_failure_code, provider_message_reference, updated_at, delivered_at, unsubscribed_at, dead_lettered_at) ON TABLE revisit_reminder_subscription TO ${APP_ROLE}`,
         );
       }
       if (

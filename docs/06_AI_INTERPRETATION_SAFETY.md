@@ -244,6 +244,24 @@ Do not reduce quality to one model-as-judge score. Use deterministic validators,
 - Raw traces, if temporarily needed for debugging, require explicit gated sampling, encryption, restricted access, retention expiry, and user/legal basis.
 - Never send payment data, authentication secrets, private keys, or unnecessary identifiers to the model.
 
+### AI operations v1
+
+RIT-038 and D-088 project only aggregate operational metadata already authorized by D-040 and
+D-041. The daily report groups by locale, reading type, provider/model, prompt, output schema,
+safety policy, and public content version. It reports cost/token coverage, estimated cost,
+latency, retries, failures, reviewed fallbacks, verified outcomes, and safe replacements.
+
+The projection rejects questions, prompts, generated or fallback prose, retrieved excerpts,
+detailed safety categories, raw provider errors, user/session/reading/request identifiers,
+digests, leases, payment data, and arbitrary fields. Version-group and overall values require at
+least 20 terminal generations. Unavailable, stale, or synthetic evidence produces null values and
+a blocked decision status. A safe replacement is a protective outcome, not a critical safety
+failure or permission to weaken verification.
+
+The report is private offline evidence for the future RIT-120 owner surface. It does not activate a
+provider, collect browser analytics, create an admin route, change a model or safety policy, or
+enforce a monetary budget.
+
 ## 15. Numerology V1 safe-off boundary
 
 RIT-083 adds no production model or calculator prose. A future English numerology interpretation
@@ -258,7 +276,32 @@ separately from server-owned authorization. A provider candidate is single-use, 
 digest bound, deterministically checked, independently reviewed, and non-displayable until the
 final verified or approved-replacement result exists.
 
-The canonical V1 catalog currently has AI interpretation disabled. Synthetic fixtures and passing
-local evaluations do not authorize production meanings, content rights, a provider/reviewer,
-Credits, persistence, the free calculator surface, or launch. Those remain blocked by OWN-012 and
-the production AI owner gates.
+The canonical V1 catalog currently has AI interpretation disabled. D-065 resolves the exact
+English content, rights, reviewer, fallback, and optional paid-product mapping, but local
+evaluations do not authorize a provider, live reviewer, Credits consumption, persistence, the free
+calculator surface, or launch. Those remain behind the production AI and release gates.
+
+## 16. Astrology V1 safe-off boundary
+
+RIT-095 adds no provider, live model, public natal prose, or calculation route. Available
+`AstrologyNatalFactsV1` are reparsed and their major aspects are independently recomputed from the
+authoritative placement longitudes before any artifact is accepted. Unknown-time, engine-failure,
+and untrusted-output states stop before content or model work.
+
+Provider context contains only body/sign placement references, approved aspect references,
+uncertainty status, and bounded method/engine/source digests. It excludes birth date, time, place,
+coordinates, profile revision, Julian day, exact degrees, house cusps, and private text. The model
+cannot narrate deterministic labels or numbers; output binds every fact reference in exact order
+and explicitly keeps degree narration and house interpretation false. Approximate-time input
+retains its exact approved window and contains no house, angle, or aspect interpretation.
+
+Content, prompt, and fallback artifacts require separate integrity and server authority. A
+candidate is digest- and input-identity-bound, single-use, checked for fact drift, certainty,
+professional advice, mind-reading, dependency, paid efficacy, persecution, self-harm, injection,
+fixed personality, markup, hostile Unicode, and locale drift, then requires an independently
+authorized semantic reviewer. Malformed, uncertain, unsafe, or reviewer-failure outcomes use the
+approved deterministic replacement; trust failure produces no displayable output.
+
+The fixed synthetic suite runs with zero external requests and zero paid calls. It proves the code
+boundary only and does not approve production astrology meanings, a provider/model, a live
+reviewer, Credits, persistence, UI activation, deployment, or public launch.

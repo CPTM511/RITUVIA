@@ -59,7 +59,11 @@ export default async function AstrologyPage({ params }: AstrologyPageProps) {
           <p className="astrology-page-boundary">{messages.page.boundary}</p>
           <p className="astrology-page-privacy">{messages.page.privacy}</p>
         </header>
-        <AstrologyNatalResult messages={messages} signInHref={localeSignInPath(locale)} />
+        <AstrologyNatalResult
+          locale={locale}
+          messages={messages}
+          signInHref={localeSignInPath(locale)}
+        />
       </main>
     </PublicSiteFrame>
   );

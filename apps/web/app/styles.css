@@ -887,6 +887,61 @@ h3 {
   padding: 1rem 1.25rem;
 }
 
+.tarot-share {
+  display: grid;
+  gap: 1rem;
+  max-inline-size: 46rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1rem;
+  background: var(--surface-elevated);
+}
+
+.tarot-share header,
+.tarot-share-preview {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tarot-share header > *,
+.tarot-share-alt,
+.tarot-share-status {
+  margin: 0;
+}
+
+.tarot-share-privacy {
+  padding-inline-start: 1rem;
+  border-inline-start: 0.2rem solid var(--accent-sage);
+  color: var(--ink-secondary);
+}
+
+.tarot-share-card {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  min-inline-size: 0;
+  aspect-ratio: 1200 / 630;
+  border: 0.12rem solid var(--accent-gold);
+  border-radius: 1.25rem;
+  background: var(--brand-deep);
+  box-shadow: var(--shadow-soft);
+}
+
+.tarot-share-alt,
+.tarot-share-status {
+  color: var(--ink-secondary);
+}
+
+.tarot-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tarot-share-status {
+  min-block-size: 1.5em;
+}
+
 .tarot-report form,
 .tarot-report-fields,
 .tarot-new-reflection {
@@ -991,6 +1046,37 @@ h3 {
 .information-next p {
   max-inline-size: 58ch;
   color: var(--ink-on-brand-secondary);
+}
+
+.geo-answer-context {
+  display: grid;
+  gap: 1.25rem;
+  margin-block: 0 clamp(2rem, 5vw, 4rem);
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid var(--line-subtle);
+}
+
+.geo-answer-context-details,
+.geo-answer-context-authority,
+.geo-answer-context-authority dl {
+  display: grid;
+  gap: 1rem;
+}
+
+.geo-answer-context-details {
+  margin: 0;
+}
+
+.geo-answer-context-details dd,
+.geo-answer-context-authority dd {
+  display: grid;
+  margin: 0.25rem 0 0;
+  color: var(--ink-secondary);
+}
+
+.geo-answer-context-authority {
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--line-subtle);
 }
 
 .numerology-library-main {
@@ -1151,6 +1237,378 @@ h3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem 1.5rem;
+}
+
+.tarot-library-main {
+  padding-block-end: clamp(4rem, 8vw, 7rem);
+}
+
+.tarot-library-hero {
+  max-inline-size: 72rem;
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.tarot-library-hero h1 {
+  max-inline-size: 20ch;
+}
+
+.tarot-library-answer {
+  max-inline-size: 68ch;
+  color: var(--ink-secondary);
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+}
+
+.tarot-library-boundary {
+  max-inline-size: 68ch;
+  padding: 1rem 1.25rem;
+  border-inline-start: 0.2rem solid var(--accent-gold);
+  background: var(--surface-panel);
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+.tarot-library-section {
+  margin-block-start: clamp(2rem, 5vw, 4rem);
+}
+
+.tarot-library-section > h2,
+.tarot-related-guides > h2 {
+  max-inline-size: none;
+  font-family: inherit;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.tarot-library-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin-block-start: 1.5rem;
+  list-style: none;
+}
+
+.tarot-spread-grid,
+.tarot-guide-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tarot-library-card,
+.tarot-guide-content > section,
+.tarot-source-note,
+.tarot-related-guides {
+  min-inline-size: 0;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-panel);
+}
+
+.tarot-library-card {
+  block-size: 100%;
+}
+
+.tarot-library-card h3 {
+  margin-block-start: 0.5rem;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+}
+
+.tarot-library-card h3 a,
+.tarot-related-guides a {
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  align-items: center;
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+  text-decoration-color: var(--accent-gold);
+  text-decoration-thickness: 0.12rem;
+  text-underline-offset: 0.2rem;
+}
+
+.tarot-library-card p,
+.tarot-guide-content p,
+.tarot-guide-content li,
+.tarot-guide-content dd,
+.tarot-source-note p,
+.tarot-source-note li,
+.tarot-related-guides li {
+  color: var(--ink-secondary);
+}
+
+.tarot-library-symbol,
+.tarot-card-symbol {
+  display: inline-grid;
+  inline-size: 3rem;
+  block-size: 3rem;
+  place-items: center;
+  border: 1px solid var(--line-subtle);
+  border-radius: 50%;
+  color: var(--accent-gold);
+  font-size: 1.5rem;
+}
+
+.tarot-card-symbol {
+  inline-size: 5rem;
+  block-size: 5rem;
+  font-size: 2.5rem;
+}
+
+.tarot-library-number {
+  margin-block: 0.75rem 0;
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.tarot-source-note {
+  grid-column: 1 / -1;
+}
+
+.tarot-orientation-details,
+.tarot-editorial-status {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+}
+
+.tarot-orientation-details div,
+.tarot-editorial-status div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.tarot-orientation-details dt,
+.tarot-editorial-status dt {
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tarot-orientation-details dd,
+.tarot-editorial-status dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.tarot-spread-positions {
+  display: grid;
+  gap: 1rem;
+}
+
+.tarot-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-block-start: 1rem;
+}
+
+.tarot-library-actions .rvt-action--primary {
+  color: var(--action-primary-ink);
+}
+
+.tarot-related-guides {
+  margin-block-start: clamp(2.5rem, 6vw, 4rem);
+}
+
+.tarot-related-guides ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1.5rem;
+  padding-inline-start: 1.25rem;
+}
+
+@media (max-width: 64rem) {
+  .tarot-library-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .tarot-guide-content,
+  .tarot-library-grid,
+  .tarot-related-guides ul,
+  .tarot-spread-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ritual-guide-main {
+  padding-block-end: clamp(4rem, 8vw, 7rem);
+}
+
+.ritual-guide-hero {
+  max-inline-size: 72rem;
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.ritual-guide-hero h1 {
+  max-inline-size: 22ch;
+}
+
+.ritual-guide-answer {
+  max-inline-size: 68ch;
+  color: var(--ink-secondary);
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+}
+
+.ritual-guide-boundary {
+  max-inline-size: 68ch;
+  padding: 1rem 1.25rem;
+  border-inline-start: 0.2rem solid var(--accent-sage);
+  background: var(--surface-panel);
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+.ritual-guide-section {
+  margin-block-start: clamp(2rem, 5vw, 4rem);
+}
+
+.ritual-guide-grid,
+.ritual-guide-content {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ritual-guide-grid {
+  margin-block-start: 1.5rem;
+}
+
+.ritual-guide-card,
+.ritual-guide-content > section,
+.ritual-guide-source {
+  min-inline-size: 0;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-panel);
+}
+
+.ritual-guide-card h3 {
+  margin-block-start: 0;
+}
+
+.ritual-guide-card h3 a {
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  align-items: center;
+  color: var(--ink-primary);
+  overflow-wrap: anywhere;
+  text-decoration-color: var(--accent-sage);
+  text-decoration-thickness: 0.12rem;
+  text-underline-offset: 0.2rem;
+}
+
+.ritual-guide-card p,
+.ritual-guide-content li,
+.ritual-guide-source p,
+.ritual-guide-source li,
+.ritual-guide-review dd {
+  color: var(--ink-secondary);
+}
+
+.ritual-guide-source {
+  margin-block-start: clamp(2rem, 5vw, 4rem);
+}
+
+.ritual-guide-review {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+}
+
+.ritual-guide-review div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.ritual-guide-review dt {
+  color: var(--ink-secondary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ritual-guide-review dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ritual-guide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-block-start: 1rem;
+}
+
+.ritual-guide-actions > a {
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  align-items: center;
+}
+
+.ritual-guide-actions .rvt-action--primary {
+  color: var(--action-primary-ink);
+}
+
+@media (max-width: 40rem) {
+  .ritual-guide-content,
+  .ritual-guide-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.astrology-review-status {
+  max-inline-size: 68ch;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 0.75rem;
+  background: var(--surface-panel);
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+.astrology-reference-table-wrap {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+.astrology-reference-table {
+  inline-size: 100%;
+  min-inline-size: 38rem;
+  border-collapse: collapse;
+  color: var(--ink-secondary);
+}
+
+.astrology-reference-table caption {
+  margin-block-end: 0.75rem;
+  color: var(--ink-primary);
+  font-weight: 800;
+  text-align: start;
+}
+
+.astrology-reference-table th,
+.astrology-reference-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--line-subtle);
+  text-align: start;
+  vertical-align: top;
+}
+
+.astrology-reference-table thead th,
+.astrology-reference-table tbody th {
+  color: var(--ink-primary);
+  font-weight: 800;
 }
 
 .no-script-note {
@@ -2409,7 +2867,7 @@ h3 {
 
   .brand-link {
     inline-size: 100%;
-    word-break: break-all;
+    word-break: normal;
   }
 
   .header-actions {
@@ -2528,6 +2986,7 @@ h3 {
   .tarot-actions .rvt-action,
   .numerology-actions .rvt-action,
   .tarot-completion .rvt-action,
+  .tarot-share-actions .rvt-action,
   .astrology-viewer-state .rvt-action {
     inline-size: 100%;
   }
@@ -2640,7 +3099,10 @@ h3 {
 }
 
 .revisit-quiet-hours input {
+  inline-size: 100%;
+  max-inline-size: 100%;
   min-block-size: 2.75rem;
+  min-inline-size: 0;
 }
 
 .revisit-actions {
@@ -2689,11 +3151,24 @@ h3 {
   .information-section,
   .information-status,
   .information-next,
+  .geo-answer-context,
   .numerology-guide-card,
   .numerology-guide-content > section,
   .numerology-library-boundary,
   .numerology-related-guides,
   .numerology-source-note,
+  .tarot-guide-content > section,
+  .tarot-library-boundary,
+  .tarot-library-card,
+  .tarot-related-guides,
+  .tarot-source-note,
+  .ritual-guide-boundary,
+  .ritual-guide-card,
+  .ritual-guide-content > section,
+  .ritual-guide-source,
+  .astrology-reference-table th,
+  .astrology-reference-table td,
+  .astrology-review-status,
   .numerology-form,
   .numerology-result,
   .numerology-result-card,
@@ -2706,7 +3181,9 @@ h3 {
   .tarot-panel,
   .tarot-card,
   .tarot-prompt-card,
-  .tarot-methodology {
+  .tarot-methodology,
+  .tarot-share,
+  .tarot-share-card {
     border: 1px solid CanvasText;
   }
 

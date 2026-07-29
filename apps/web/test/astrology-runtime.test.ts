@@ -10,7 +10,7 @@ describe("Web astrology runtime composition", () => {
       evaluatedAt: "2026-07-26T00:00:00.000Z",
       flagKey: "experience.astrology" as const,
       reason: "default-off" as const,
-      registryVersion: 1 as const,
+      registryVersion: 3 as const,
       source: "default" as const,
       version: null,
     }));

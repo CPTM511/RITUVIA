@@ -146,7 +146,7 @@ const utcInstantPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 const semanticVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u;
 const identifierPattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const forbiddenPrivateText =
-  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
+  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
 
 const record = (value: unknown): Record<string, unknown> | null =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -220,10 +220,10 @@ const parseElapsedSeconds = (value: unknown, output = false): number => {
 
 const normalizePrivateText = (value: unknown, output = false): string => {
   if (typeof value !== "string") return output ? invalidOutput() : invalidInput();
-  const normalized = value.normalize("NFKC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+  const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
   if (
     normalized.length === 0 ||
-    normalized.length > privateJournalMaximumLength ||
+    Array.from(normalized).length > privateJournalMaximumLength ||
     forbiddenPrivateText.test(normalized)
   ) {
     return output ? invalidOutput() : invalidInput();
