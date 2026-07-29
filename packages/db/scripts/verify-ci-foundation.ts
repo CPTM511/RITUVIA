@@ -819,6 +819,20 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         rowSecurity: true,
       },
       {
+        command: "UPDATE",
+        forceRowSecurity: true,
+        policyName: "interpretation_privacy_deletion",
+        roles: [PRIVACY_DELETION_ROLE],
+        rowSecurity: true,
+      },
+      {
+        command: "SELECT",
+        forceRowSecurity: true,
+        policyName: "interpretation_privacy_deletion_read",
+        roles: [PRIVACY_DELETION_ROLE],
+        rowSecurity: true,
+      },
+      {
         command: "SELECT",
         forceRowSecurity: true,
         policyName: "interpretation_read",
@@ -849,6 +863,20 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         forceRowSecurity: true,
         policyName: "interpretation_verification_insert",
         roles: [VERIFICATION_WRITER_ROLE],
+        rowSecurity: true,
+      },
+      {
+        command: "UPDATE",
+        forceRowSecurity: true,
+        policyName: "interpretation_verification_privacy_deletion",
+        roles: [PRIVACY_DELETION_ROLE],
+        rowSecurity: true,
+      },
+      {
+        command: "SELECT",
+        forceRowSecurity: true,
+        policyName: "interpretation_verification_privacy_deletion_read",
+        roles: [PRIVACY_DELETION_ROLE],
         rowSecurity: true,
       },
       {

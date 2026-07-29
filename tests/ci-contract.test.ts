@@ -143,6 +143,17 @@ describe("active CI workflow contract", () => {
     );
   });
 
+  it("attests the current interpretation privacy-deletion policies", () => {
+    expect(databaseVerifierSource).toContain('policyName: "interpretation_privacy_deletion"');
+    expect(databaseVerifierSource).toContain('policyName: "interpretation_privacy_deletion_read"');
+    expect(databaseVerifierSource).toContain(
+      'policyName: "interpretation_verification_privacy_deletion"',
+    );
+    expect(databaseVerifierSource).toContain(
+      'policyName: "interpretation_verification_privacy_deletion_read"',
+    );
+  });
+
   it("rejects write permissions and dangerous triggers", () => {
     const candidate = cloneWorkflow();
     candidate.permissions = { contents: "write" };
