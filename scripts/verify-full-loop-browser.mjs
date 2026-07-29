@@ -105,8 +105,9 @@ const reading = Object.freeze({
   themeCode: "open_reflection",
 });
 
-const waitForServer = async (server) => {
+const waitForServer = async (server, readOutput) => {
   const deadline = Date.now() + serverReadyTimeoutMs;
+  let lastProbe = "not-attempted";
   while (Date.now() < deadline) {
     if (server.exitCode !== null || server.signalCode !== null) {
       throw new Error(
@@ -117,12 +118,16 @@ const waitForServer = async (server) => {
       const response = await fetch(`${origin}/en/intake`, {
         signal: AbortSignal.timeout(2_000),
       });
+      lastProbe = `http-${response.status}`;
       if (response.ok) return;
-    } catch {}
+    } catch (error) {
+      lastProbe = error instanceof Error ? `${error.name}:${error.message}` : "unknown-error";
+    }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
+  const output = readOutput().replaceAll(/\s+/gu, " ").trim().slice(-1_000) || "none";
   throw new Error(
-    `Full-loop browser server did not become ready: ${server.exitCode ?? server.signalCode ?? "running"}.`,
+    `Full-loop browser server did not become ready: ${server.exitCode ?? server.signalCode ?? "running"}; last probe: ${lastProbe}; output: ${output}.`,
   );
 };
 
@@ -203,16 +208,19 @@ const activateWithKeyboard = async (locator) => {
 const server = spawn(process.execPath, ["start.mjs", "-H", host, "-p", String(port)], {
   cwd: `${process.cwd()}/apps/web`,
   env: { ...process.env, BRAND_CANONICAL_ORIGIN: origin },
-  stdio: ["ignore", "ignore", "pipe"],
+  stdio: ["ignore", "pipe", "pipe"],
 });
-let serverError = "";
+let serverOutput = "";
+server.stdout?.on("data", (chunk) => {
+  serverOutput += String(chunk);
+});
 server.stderr?.on("data", (chunk) => {
-  serverError += String(chunk);
+  serverOutput += String(chunk);
 });
 
 let browser = null;
 try {
-  await waitForServer(server);
+  await waitForServer(server, () => serverOutput);
   browser = await chromium.launch({ headless: true });
   const operations = [];
   const allRequests = [];
@@ -861,7 +869,7 @@ try {
     )}\n`,
   );
 } catch (error) {
-  if (serverError !== "") process.stderr.write(serverError);
+  if (serverOutput !== "") process.stderr.write(serverOutput);
   throw error;
 } finally {
   if (browser !== null) await browser.close();
