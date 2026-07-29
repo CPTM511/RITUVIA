@@ -273,7 +273,7 @@ describe("MVP server-rendered initial states", () => {
     expect(html).not.toMatch(/<input\b/u);
   });
 
-  it("renders the sanctuary with a labelled formal image and degraded-safe catalog state", () => {
+  it("renders the sanctuary with a labelled image, degraded-safe catalog, and gated private form", () => {
     const html = renderToStaticMarkup(
       createElement(SanctuaryFlow, {
         accountHref: localeAccountPath("en"),
@@ -293,6 +293,9 @@ describe("MVP server-rendered initial states", () => {
     expect(html).toContain("Quiet incense");
     expect(html).toContain("Set an intention");
     expect(html).toContain("Private reflection");
+    expect(html).toContain('<form aria-busy="true">');
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Peace and clarity<\/button>/u);
+    expect(html).toMatch(/<button[^>]*aria-label="Continue with this intention"[^>]*disabled=""/u);
     const revisitDateInput = html
       .match(/<input[^>]*>/gu)
       ?.find((input) => input.includes('type="date"'));
