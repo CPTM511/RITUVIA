@@ -2039,6 +2039,17 @@ against a strict Prisma-7.8.0 fingerprint. A fresh throwaway database and the ex
 migrated database produced the same 17,666-byte, 356-line SHA-256 fingerprint. Focused baseline
 tests, affected lint/format, and all 16 package plus root typechecks pass; any schema, output,
 normalization, or Prisma-version change fails closed.
+Hosted run `30473143747` passed the complete Security job for a third consecutive current revision.
+PostgreSQL accepted the strict drift baseline and reached migrated-database invariants before one
+post-migration assertion failed under the prior generic stage label. Quality passed format, lint,
+and typecheck, then ran 1,963 tests: 1,955 passed, five skipped, three configuration-contract
+assertions failed, and 21 files could not import clean-checkout Config/Security build outputs. The
+current worktree fixes the whole Quality set with exact source aliases, current native-script
+environment-reader inventory, configuration-backed publication identity, and new planned
+`RIT-160` astrology flag cleanup. The database verifier now identifies each non-sensitive
+post-migration invariant stage without exposing credentials or data. Twenty-eight representative
+tests, the complete 16-package plus root typecheck, and the milestone integration unit matrix of
+2,144 passing tests across 183 files pass locally.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner
@@ -3613,6 +3624,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                                | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.                                                                                                                                                |
 | RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP            | RIT-025,RIT-029,RIT-036                 | product       | Direct Sanctuary completion and new 22-card Major Arcana draws pass production-artifact Playwright while exact old-catalog replay and production gates remain closed.                                                                                      |
 | RIT-159 | Audit     |       P0 | Done    | Install and reconcile the 2026-07-23 production source-of-truth pack        | RIT-158                                 | architect     | Pack integrity, repository capability/gap/security matrix, schema/API adaptation plan, current quality gates, browser evidence, and truthful status reconciliation pass without activating production providers.                                           |
+| RIT-160 | M15       |       P2 | Planned | Clean up the astrology rollout flag                                         | RIT-144                                 | backend       | Flag is retired safe-off for one registry window, then removed after rollback evidence passes.                                                                                                                                                              |
 | OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance         | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                                                                                                                                                             |
 | OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval             | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                                                                                                                                                         |
 | OWN-003 | External  |       P0 | Done    | Select astrology engine/provider and license model                          | None                                    | owner         | D-069 selects Swiss Ephemeris 2.10.03/v2.10.3final under whole-project `AGPL-3.0-only` and supersedes the planned Professional License path.                                                                                                               |

@@ -34,7 +34,7 @@ export const featureFlagRegistry: Readonly<Record<FeatureFlagKey, FeatureFlagDef
   Object.freeze({
     "experience.astrology": Object.freeze({
       approvalGate: "OWN-015",
-      cleanupReference: "RIT-093",
+      cleanupReference: "RIT-160",
       createdOn: "2026-07-26",
       defaultState: "off",
       lifecycle: "active",

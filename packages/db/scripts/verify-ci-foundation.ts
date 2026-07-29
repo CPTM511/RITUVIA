@@ -539,12 +539,17 @@ const verifyMigratedDatabase = async (): Promise<void> => {
   const preselectedRuntimeDatabase = createDatabaseClient(preselectedRuntimeUrl.toString());
   await Promise.all([app.connect(), control.connect(), migrator.connect()]);
   try {
-    verificationStage = "migrated database invariants";
+    verificationStage = "feature flag runtime privilege attestation";
     await assertFeatureFlagRuntimeDatabasePrivileges(runtimeDatabase);
+    verificationStage = "anonymous identity runtime privilege attestation";
     await assertAnonymousIdentityRuntimeDatabasePrivileges(runtimeDatabase);
+    verificationStage = "tarot runtime privilege attestation";
     await assertTarotReadingRuntimeDatabasePrivileges(runtimeDatabase);
+    verificationStage = "interpretation runtime privilege attestation";
     await assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase);
+    verificationStage = "admin security runtime privilege attestation";
     await assertAdminSecurityRuntimeDatabasePrivileges(adminServiceDatabase);
+    verificationStage = "runtime privilege negative controls";
     await assert.rejects(
       assertAdminSecurityRuntimeDatabasePrivileges(runtimeDatabase),
       /Admin security storage is unavailable/u,
@@ -591,6 +596,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
         /runtime database privileges are unsafe/u,
       );
     }
+    verificationStage = "interpretation privilege mutation controls";
     await migrator.query(
       `GRANT INSERT (status) ON TABLE interpretation TO ${INTERPRETATION_WRITER_ROLE}`,
     );
@@ -655,6 +661,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       );
     }
     await assertInterpretationGenerationRuntimeDatabasePrivileges(runtimeDatabase);
+    verificationStage = "database ownership and role invariants";
     const systemIdentity = await app.query<{
       canCreateInDatabase: boolean;
       canCreateInSchema: boolean;
@@ -697,6 +704,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       superuser: false,
     });
 
+    verificationStage = "migration and seed invariants";
     const migrations = await app.query<{ migrationName: string }>(
       `SELECT migration_name AS "migrationName"
          FROM _prisma_migrations
@@ -725,6 +733,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       "SELECT count(*)::int AS count FROM feature_flag_version",
     );
     assert.equal(featureFlags.rows[0]?.count, 0);
+    verificationStage = "private table emptiness invariants";
     const emptyIdentity = await app.query<{
       consents: number;
       draws: number;
@@ -752,6 +761,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       subjects: 0,
       verifications: 0,
     });
+    verificationStage = "interpretation write denial invariants";
     await expectPostgresError(
       () => app.query("INSERT INTO interpretation (status) VALUES ('fallback')"),
       "42501",
@@ -775,6 +785,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     );
     await expectPostgresError(() => app.query("DELETE FROM interpretation_verification"), "42501");
     await expectPostgresError(() => app.query("TRUNCATE interpretation_verification"), "42501");
+    verificationStage = "interpretation row security policies";
     const interpretationPolicies = await app.query<{
       command: string;
       forceRowSecurity: boolean;
@@ -848,6 +859,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       },
     ]);
 
+    verificationStage = "anonymous identity lifecycle invariants";
     const identity = createAnonymousIdentityService(runtimeDatabase, {
       issuanceLimit: 10,
       issuanceWindowSeconds: 60,
@@ -883,6 +895,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       () => app.query("UPDATE consent_record SET decision = 'denied'"),
       "42501",
     );
+    verificationStage = "feature flag row security policies";
     const appendOnlyPolicies = await app.query<{
       commands: string[];
       forceRowSecurity: boolean;
@@ -923,6 +936,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       },
     ]);
 
+    verificationStage = "constraint enforcement";
     await expectConstraint(
       migrator,
       "INSERT INTO seed_manifest (dataset_key, version, checksum_sha256, is_synthetic) VALUES ($1, 1, $2, true)",
@@ -946,6 +960,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       "42501",
     );
 
+    verificationStage = "feature flag append-only behavior";
     const inserted = await control.query<{ id: string }>(
       `INSERT INTO feature_flag_version
          (registry_version, flag_key, version, effective_at, change_reference, actor_id)
@@ -1076,6 +1091,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
     );
     await expectPostgresError(() => app.query("TRUNCATE feature_flag_version"), "42501");
 
+    verificationStage = "transaction rollback";
     await migrator.query("BEGIN");
     await migrator.query(
       "INSERT INTO seed_manifest (dataset_key, version, checksum_sha256, is_synthetic) VALUES ($1, 1, $2, true)",
