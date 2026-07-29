@@ -24,6 +24,8 @@ export const accessibilitySmokeRoutes: readonly string[];
 export const privateAccessibilitySmokeRoutes: readonly string[];
 export const publicAccessibilitySmokeRoutes: readonly string[];
 
+export function auditPublicAccessibilitySmokeInventory(reviewedRoutes: unknown): readonly string[];
+
 export function resolveAccessibilityArtifactRequest(
   rawUrl: string,
 ): AccessibilityArtifactDescriptor | null;

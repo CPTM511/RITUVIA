@@ -978,13 +978,21 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       ["6d393ec1-2019-4abc-9cf8-62f58c72efe8", "foundation-synthetic", "a".repeat(64)],
       "seed_manifest_pkey",
     );
+    const featureFlagTimes = await app.query<{ first: Date; second: Date }>(
+      `SELECT clock_timestamp() + interval '1 minute' AS first,
+              clock_timestamp() + interval '2 minutes' AS second`,
+    );
+    const featureFlagFirstEffectiveAt = featureFlagTimes.rows[0]?.first;
+    const featureFlagSecondEffectiveAt = featureFlagTimes.rows[0]?.second;
+    assert.ok(featureFlagFirstEffectiveAt instanceof Date);
+    assert.ok(featureFlagSecondEffectiveAt instanceof Date);
     await expectPostgresError(
       () =>
         control.query(
           `INSERT INTO feature_flag_version
              (registry_version, flag_key, version, effective_at, change_reference, actor_id)
            VALUES (0, $1, 1, $2, 'RIT-007', 'ci.verifier')`,
-          ["experience.public_shell", new Date("2026-07-17T11:00:00.000Z")],
+          ["experience.public_shell", featureFlagFirstEffectiveAt],
         ),
       "42501",
     );
@@ -995,7 +1003,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
          (registry_version, flag_key, version, effective_at, change_reference, actor_id)
        VALUES (1, $1, 1, $2, 'RIT-007', 'ci.verifier')
        RETURNING id::text AS id`,
-      ["experience.public_shell", new Date("2026-07-17T11:00:00.000Z")],
+      ["experience.public_shell", featureFlagFirstEffectiveAt],
     );
     await expectPostgresError(
       () =>
@@ -1003,7 +1011,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
           `INSERT INTO feature_flag_version
              (registry_version, flag_key, version, state, effective_at, change_reference, actor_id)
            VALUES (1, 'experience.public_shell', 2, 'on', $1, 'RIT-016', 'ci.verifier')`,
-          [new Date("2026-07-17T12:00:00.000Z")],
+          [featureFlagSecondEffectiveAt],
         ),
       "42501",
     );
@@ -1015,7 +1023,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
               change_reference, approval_reference, actor_id)
            VALUES (3, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
                    'RIT-063', 'OWN-004:wrong-gate', 'ci.verifier')`,
-          [new Date("2026-07-17T12:00:00.000Z")],
+          [featureFlagSecondEffectiveAt],
         ),
       "42501",
     );
@@ -1027,7 +1035,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
               change_reference, approval_reference, actor_id)
            VALUES (2, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
                    'RIT-063', 'OWN-002:legacy-owner-record', 'ci.verifier')`,
-          [new Date("2026-07-17T12:00:00.000Z")],
+          [featureFlagSecondEffectiveAt],
         ),
       "42501",
     );
@@ -1037,7 +1045,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
           change_reference, approval_reference, actor_id)
        VALUES (3, 'payments.fiat_checkout', 1, 'on', ARRAY['US'], $1,
                'RIT-063', 'OWN-002:ci-owner-record', 'ci.verifier')`,
-      [new Date("2026-07-17T12:00:00.000Z")],
+      [featureFlagSecondEffectiveAt],
     );
     await expectPostgresError(
       () =>
@@ -1045,7 +1053,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
           `INSERT INTO feature_flag_version
              (registry_version, flag_key, version, effective_at, change_reference, actor_id)
            VALUES (3, 'experience.public_shell', 1, $1, 'RIT-016', 'ci.verifier')`,
-          [new Date("2026-07-17T12:00:00.000Z")],
+          [featureFlagSecondEffectiveAt],
         ),
       "42501",
     );
@@ -1053,7 +1061,7 @@ const verifyMigratedDatabase = async (): Promise<void> => {
       `INSERT INTO feature_flag_version
          (registry_version, flag_key, version, effective_at, change_reference, actor_id)
        VALUES (2, 'experience.astrology', 1, $1, 'RIT-093', 'ci.verifier')`,
-      [new Date("2026-07-17T12:00:00.000Z")],
+      [featureFlagSecondEffectiveAt],
     );
     await expectPostgresError(
       () =>

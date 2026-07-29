@@ -152,6 +152,8 @@ describe("active CI workflow contract", () => {
     expect(databaseVerifierSource).toContain(
       'policyName: "interpretation_verification_privacy_deletion_read"',
     );
+    expect(databaseVerifierSource).toContain("clock_timestamp() + interval '1 minute'");
+    expect(databaseVerifierSource).not.toContain('new Date("2026-07-17T');
   });
 
   it("rejects write permissions and dangerous triggers", () => {
