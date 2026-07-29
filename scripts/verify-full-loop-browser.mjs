@@ -201,6 +201,7 @@ const assertTouchTargets = async (page) => {
 };
 
 const activateWithKeyboard = async (locator) => {
+  await locator.click({ trial: true });
   await locator.focus();
   assert.equal(await locator.evaluate((element) => document.activeElement === element), true);
   await locator.press("Enter");
