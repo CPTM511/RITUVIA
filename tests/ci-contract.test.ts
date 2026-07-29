@@ -71,7 +71,8 @@ describe("active CI workflow contract", () => {
       "check:architecture": "node --import tsx scripts/verify-architecture.ts",
       "check:generated":
         "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
-      "check:editorial-content": "node --import tsx scripts/verify-editorial-content.ts",
+      "check:editorial-content":
+        "pnpm --filter @rituvia/i18n build && node --import tsx scripts/verify-editorial-content.ts",
       "check:localization": "node scripts/verify-localization-workflow.mjs",
       "check:public-pages": "node --import tsx scripts/verify-public-page-quality.ts",
       "check:search-operations": "node --import tsx scripts/verify-search-operations.ts",
