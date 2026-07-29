@@ -195,9 +195,10 @@ server.stderr?.on("data", (chunk) => {
   serverError += String(chunk);
 });
 
-const browser = await chromium.launch({ headless: true });
+let browser = null;
 try {
   await waitForServer(server);
+  browser = await chromium.launch({ headless: true });
   const operations = [];
   const allRequests = [];
   const unexpected = [];
@@ -848,6 +849,6 @@ try {
   if (serverError !== "") process.stderr.write(serverError);
   throw error;
 } finally {
-  await browser.close();
+  if (browser !== null) await browser.close();
   await stopServer(server);
 }
