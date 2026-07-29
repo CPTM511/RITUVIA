@@ -66,7 +66,8 @@ describe("active CI workflow contract", () => {
 
   it("rejects attempts to remove explicit repository evidence gates from scripts", () => {
     const valid = {
-      "check:ai-operations": "node --import tsx scripts/verify-ai-operations.ts",
+      "check:ai-operations":
+        "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-ai-operations.ts",
       "check:architecture": "node --import tsx scripts/verify-architecture.ts",
       "check:generated":
         "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
@@ -114,7 +115,7 @@ describe("active CI workflow contract", () => {
 
   it("requires the database CI verifier to build its internal runtime dependency", () => {
     const expected =
-      "pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
+      "pnpm generate && pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
     expect(auditDatabaseCiScripts({ "test:ci": expected })).toEqual([]);
     expect(auditDatabaseCiScripts({ "test:ci": "node scripts/verify-ci-foundation.ts" })).toEqual([
       {

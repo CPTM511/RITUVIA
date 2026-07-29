@@ -142,7 +142,8 @@ export const auditToolchainVersions = ({
 
 export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
   const expected = Object.freeze({
-    "check:ai-operations": "node --import tsx scripts/verify-ai-operations.ts",
+    "check:ai-operations":
+      "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-ai-operations.ts",
     "check:architecture": "node --import tsx scripts/verify-architecture.ts",
     "check:generated":
       "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
@@ -180,7 +181,7 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
 
 export const auditDatabaseCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
   const expected =
-    "pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
+    "pnpm generate && pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
   return isRecord(scripts) && scripts["test:ci"] === expected
     ? []
     : [{ location: "packages/db/package.json#scripts.test:ci", rule: "ci-script-command" }];

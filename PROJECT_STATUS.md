@@ -943,8 +943,12 @@ remain separate owner gates. `origin` now points to the private
 `2ff7a1c6106f4e78e34dfe283680701860ecd9cf` produced the first hosted three-job Actions run
 `30466750711`. The run truthfully failed: the historical revision used a non-existent actionlint
 Linux asset name, did not build `@rituvia/security` before the PostgreSQL verifier, and predates the
-current migration manifest. The current worktree fixes the first two root causes and already
-contains the migration-manifest correction; focused CI-contract, fixed-tool, and internal dependency
+current migration manifest. Private PR `1` then ran the cumulative source in hosted run
+`30468813822` and exposed three additional clean-checkout assumptions: observability was not built
+before the analytics verifier, the Prisma client was not generated before the database verifier,
+and default Gitleaks classified 11 historical test constants as generic API keys. The current
+worktree fixes all six root causes with self-contained commands and an exact 11-fingerprint
+historical ignore list; focused CI-contract, fixed-tool, generated-client, and internal dependency
 build checks pass locally.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
