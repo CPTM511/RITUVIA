@@ -1015,6 +1015,14 @@ Web and root TypeScript checks pass. Feature-flag fixtures now derive bounded fu
 from the PostgreSQL service clock so policy tests cannot be preempted by runner-date drift. A
 transactional one-time loopback check accepts the intended legacy safe-off row and rolls it back,
 and 68 focused accessibility/contrast/CI/database tests pass.
+Hosted run `30478476010` then passed PostgreSQL integration and Security in the same current
+revision. Quality passed evidence, format, lint, typecheck, the hosted unit/contract matrix, fixed
+AI evaluations, configuration boundary, and production build before reverse keyboard traversal
+read the browser-native one-pixel outline of a transparent radio input instead of the designed
+three-pixel focus ring rendered on its `.rvt-choice` parent. Keyboard acceptance now evaluates the
+actual visible choice/switch parent focus indicator while preserving active-control order,
+visibility, clipping, and `:focus-visible` checks. Twenty-seven focused accessibility tests and the
+complete non-restricted accessibility/browser command pass after the correction.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner

@@ -1239,7 +1239,13 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
     page.evaluate(() => {
       const active = document.activeElement;
       if (!(active instanceof HTMLElement)) return null;
-      const style = getComputedStyle(active);
+      const focusIndicator =
+        active.matches(".rvt-choice__input, .rvt-switch__input") &&
+        active.closest(".rvt-choice, .rvt-switch") instanceof HTMLElement
+          ? active.closest(".rvt-choice, .rvt-switch")
+          : active;
+      if (!(focusIndicator instanceof HTMLElement)) return null;
+      const style = getComputedStyle(focusIndicator);
       const rectangle = active.getBoundingClientRect();
       return {
         clipped:
@@ -1248,6 +1254,7 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
           rectangle.top < -1 ||
           rectangle.bottom > document.documentElement.clientHeight + 1,
         focusIndex: active.getAttribute("data-rituvia-smoke-focus-index"),
+        focusIndicatorClassName: focusIndicator.className,
         focusVisible: active.matches(":focus-visible"),
         outlineWidth: Number.parseFloat(style.outlineWidth),
         rectangle: {
