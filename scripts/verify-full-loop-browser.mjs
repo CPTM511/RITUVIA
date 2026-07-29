@@ -1,12 +1,27 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import net from "node:net";
 
 import AxeBuilder from "@axe-core/playwright";
 import { chromium } from "playwright";
 
 const host = "127.0.0.1";
-const port = 4179;
+const findAvailablePort = () =>
+  new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", reject);
+    server.listen(0, host, () => {
+      const address = server.address();
+      if (address === null || typeof address === "string") {
+        server.close();
+        reject(new Error("Could not allocate a full-loop verification port."));
+        return;
+      }
+      server.close((error) => (error ? reject(error) : resolve(address.port)));
+    });
+  });
+const port = await findAvailablePort();
 const origin = `http://${host}:${port}`;
 const readingId = "11111111-1111-4111-8111-111111111111";
 const newerUnselectedReadingId = "66666666-6666-4666-8666-666666666666";
