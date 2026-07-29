@@ -2030,6 +2030,15 @@ SCA/CVE, and Corresponding Source checks. Quality reached the formatting gate an
 existing format drifts, now corrected with a full repository format check. PostgreSQL generated the
 pinned Prisma client and built security before revealing the remaining missing domain build output;
 the self-contained database command now builds domain, security, and Prisma in dependency order.
+Hosted run `30471374114` passed Security again. Quality then reached root TypeScript and exposed
+three clean-runner type-boundary defects, now corrected with a root JSX setting, unshadowed browser
+global, and complete build-policy declaration. PostgreSQL reached schema comparison after all
+prerequisites and migrations; because Prisma cannot represent the committed custom SQL constraints,
+explicit names, indexes, and defaults, the CI verifier now checks the complete normalized diff
+against a strict Prisma-7.8.0 fingerprint. A fresh throwaway database and the existing local
+migrated database produced the same 17,666-byte, 356-line SHA-256 fingerprint. Focused baseline
+tests, affected lint/format, and all 16 package plus root typechecks pass; any schema, output,
+normalization, or Prisma-version change fails closed.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner
@@ -10184,6 +10193,16 @@ read-only feature-flag access plus exact identity insert/lifecycle-column capabi
 receives only explicit feature-flag post-migration grants. This isolated CI path does not
 accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
 `DATABASE_URL`.
+
+Prisma cannot represent every committed PostgreSQL constraint, explicit foreign-key name, index,
+or SQL default used by RITUVIA. The CI job therefore compares Prisma's normalized
+`--from-config-datasource --to-schema --script` output against
+`prisma/schema-drift-baseline.json` instead of weakening those database invariants or asserting a
+false zero-drift state. The baseline is pinned to Prisma 7.8.0 and records the exact SHA-256, byte
+length, and line count of a clean migration. Any schema, migration, Prisma-version, normalization,
+or output change fails closed. Updating the baseline requires a fresh empty database, review of the
+complete SQL diff, migration-policy verification, and the replacement fingerprint in the same
+change; never copy a digest from an unreviewed or long-lived database.
 
 ## RIT-007 feature-flag registry classification
 

@@ -40,6 +40,16 @@ receives only explicit feature-flag post-migration grants. This isolated CI path
 accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
 `DATABASE_URL`.
 
+Prisma cannot represent every committed PostgreSQL constraint, explicit foreign-key name, index,
+or SQL default used by RITUVIA. The CI job therefore compares Prisma's normalized
+`--from-config-datasource --to-schema --script` output against
+`prisma/schema-drift-baseline.json` instead of weakening those database invariants or asserting a
+false zero-drift state. The baseline is pinned to Prisma 7.8.0 and records the exact SHA-256, byte
+length, and line count of a clean migration. Any schema, migration, Prisma-version, normalization,
+or output change fails closed. Updating the baseline requires a fresh empty database, review of the
+complete SQL diff, migration-policy verification, and the replacement fingerprint in the same
+change; never copy a digest from an unreviewed or long-lived database.
+
 ## RIT-007 feature-flag registry classification
 
 `feature_flag_version` stores internal operational configuration only: a registry/key version,
