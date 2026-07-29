@@ -90,7 +90,7 @@ describe("active CI workflow contract", () => {
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
       test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
       "test:accessibility":
-        "pnpm --filter @rituvia/i18n build && node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs && node scripts/verify-writing-systems-browser.mjs",
+        "pnpm --filter @rituvia/i18n build && node scripts/verify-full-loop-browser.mjs && node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-writing-systems-browser.mjs",
       "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
       "test:astrology-native-corresponding-source":
         "pnpm --filter @rituvia/astrology-engine-native native:verify-corresponding-source",
