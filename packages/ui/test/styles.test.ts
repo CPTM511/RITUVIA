@@ -46,6 +46,16 @@ describe("UI stylesheet contract", () => {
       "focus-ring",
       "font-ui",
       "font-display",
+      "font-ui-ja",
+      "font-display-ja",
+      "font-ui-ko",
+      "font-display-ko",
+      "font-ui-zh-hans",
+      "font-display-zh-hans",
+      "font-ui-zh-hant",
+      "font-display-zh-hant",
+      "font-ui-devanagari",
+      "font-display-devanagari",
       "font-size-md",
       "space-4",
       "radius-md",
@@ -87,6 +97,27 @@ describe("UI stylesheet contract", () => {
     expect(styles).not.toMatch(
       /@import|@font-face|url\s*\(|(?:-webkit-)?image-set\s*\(|https?:|data:|blob:|\\/iu,
     );
+  });
+
+  it("uses locale-specific CJK and Devanagari stacks without unsafe grapheme breaking", () => {
+    for (const contract of [
+      ":lang(ja)",
+      ":lang(ko)",
+      ":lang(zh-Hans)",
+      ":lang(zh-Hant)",
+      ":lang(hi)",
+      "line-break: strict",
+      "word-break: normal",
+      "font-variant-ligatures: common-ligatures contextual",
+      '"Hiragino Sans"',
+      '"Malgun Gothic"',
+      '"PingFang SC"',
+      '"PingFang TC"',
+      '"Noto Sans Devanagari"',
+    ]) {
+      expect(styles).toContain(contract);
+    }
+    expect(styles).not.toContain("word-break: break-all");
   });
 
   it("keeps reviewed light and dark text, state, boundary, and focus pairs contrast compliant", () => {

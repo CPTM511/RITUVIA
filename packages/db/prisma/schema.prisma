@@ -1324,6 +1324,11 @@ model RevisitReminderSubscription {
   channel                  String                     @db.VarChar(16)
   frequency                String                     @db.VarChar(16)
   locale                   String                     @db.VarChar(35)
+  templateId               String                     @map("template_id") @db.VarChar(80)
+  templateVersion          String                     @map("template_version") @db.VarChar(100)
+  templateSourceChecksum   String                     @map("template_source_checksum") @db.Char(64)
+  templateLocale           String                     @map("template_locale") @db.VarChar(35)
+  templateFallbackUsed     Boolean                    @default(false) @map("template_fallback_used")
   preferenceState          String                     @map("preference_state") @db.VarChar(16)
   deliveryState            String                     @map("delivery_state") @db.VarChar(24)
   attemptCount             Int                        @default(0) @map("attempt_count") @db.SmallInt

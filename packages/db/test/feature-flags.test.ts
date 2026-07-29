@@ -214,10 +214,12 @@ describe("feature-flag database reader", () => {
 
     expect((await readFeatureFlagVersions(database, 1))[0]?.registryVersion).toBe(1);
     expect((await readFeatureFlagVersions(database, 2))[0]?.registryVersion).toBe(2);
+    expect((await readFeatureFlagVersions(database, 3))[0]?.registryVersion).toBe(3);
     expect((await readFeatureFlagVersions(database, 1))[0]?.registryVersion).toBe(1);
     expect(queries.map((query) => (query as { where: unknown }).where)).toEqual([
       { registryVersion: 1 },
       { registryVersion: 2 },
+      { registryVersion: 3 },
       { registryVersion: 1 },
     ]);
   });

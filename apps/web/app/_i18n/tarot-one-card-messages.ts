@@ -3,6 +3,29 @@ import type { QuestionIntakeThemeCode } from "@rituvia/domain";
 import type { Locale } from "./routing";
 import { getQuestionIntakeMessages } from "./question-intake-messages";
 
+export type TarotShareMessages = Readonly<{
+  altTextLabel: string;
+  boundary: string;
+  description: string;
+  download: string;
+  downloaded: string;
+  error: string;
+  eyebrow: string;
+  fileName: string;
+  genericReflection: string;
+  heading: string;
+  hidePreview: string;
+  includeTheme: string;
+  nativeShare: string;
+  nativeShareTitle: string;
+  preview: string;
+  privacy: string;
+  shared: string;
+  sharing: string;
+  themeDescription: string;
+  themeFieldLabel: string;
+}>;
+
 export type TarotReadingMessages = Readonly<{
   metadata: Readonly<{ description: string; title: string }>;
   page: Readonly<{
@@ -74,6 +97,7 @@ export type TarotReadingMessages = Readonly<{
     sanctuaryAction: string;
     sanctuaryBoundary: string;
     saved: string;
+    share?: TarotShareMessages;
     tensionLabel: string;
     themesTitle: string;
     title: string;
@@ -148,7 +172,15 @@ export type TarotReadingMessages = Readonly<{
   }>;
 }>;
 
-export type TarotOneCardMessages = TarotReadingMessages;
+export type TarotOneCardMessages = Readonly<
+  Omit<TarotReadingMessages, "result"> & {
+    result: Readonly<
+      Omit<TarotReadingMessages["result"], "share"> & {
+        share: TarotShareMessages;
+      }
+    >;
+  }
+>;
 
 const questionIntakeMessages = getQuestionIntakeMessages("en");
 
@@ -292,6 +324,31 @@ const englishTarotOneCardMessages = {
       "Continue only if it feels useful. Sanctuary can link this fixed reading to an intention without copying private prose into browser storage.",
     saved:
       "This tab temporarily stores only this reading's random ID so the same fixed result can be restored after a refresh.",
+    share: {
+      altTextLabel: "Accessible description:",
+      boundary: "Symbolic reflection · not a prediction",
+      description:
+        "Create a local preview before choosing whether to download it or open your device's share sheet.",
+      download: "Download privacy-safe SVG",
+      downloaded: "The privacy-safe SVG was downloaded. Nothing was uploaded.",
+      error: "The privacy-safe share card could not be prepared. Nothing was uploaded or retried.",
+      eyebrow: "Optional sharing",
+      fileName: "rituvia-reflection-card.svg",
+      genericReflection: "A symbolic perspective to hold lightly, with your own judgment in view.",
+      heading: "Preview a privacy-safe share card",
+      hidePreview: "Hide share preview",
+      includeTheme: "Include my selected reflection theme",
+      nativeShare: "Open device share sheet",
+      nativeShareTitle: "A symbolic reflection",
+      preview: "Preview share card",
+      privacy:
+        "The card uses only the card title, orientation, optional bounded theme, generic reflection line, public Tarot URL, and configured brand attribution. It never includes a private question, reading ID, interpretation, birth data, intention, journal text, or account details.",
+      shared: "The privacy-safe card was passed to your device's share sheet.",
+      sharing: "Opening device share sheet",
+      themeDescription:
+        "On by default. Turn this off before previewing if the theme feels personal.",
+      themeFieldLabel: "Reflection theme",
+    },
     tensionLabel: "A tension to consider",
     themesTitle: "Core themes",
     title: "Your one-card reflection",

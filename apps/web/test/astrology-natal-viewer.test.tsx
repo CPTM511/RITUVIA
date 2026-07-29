@@ -163,6 +163,7 @@ describe("astrology natal presentation", () => {
   it("renders loading fail-closed markup without input or browser persistence", () => {
     const html = renderToStaticMarkup(
       createElement(AstrologyNatalResult, {
+        locale: "en",
         messages,
         signInHref: createLocalActionHref("/en/sign-in"),
       }),
@@ -177,7 +178,11 @@ describe("astrology natal presentation", () => {
   it("renders exact facts with an auxiliary wheel and authoritative complete tables", async () => {
     const facts = await createExactAstrologyFacts();
     const html = renderToStaticMarkup(
-      createElement(AstrologyNatalPresentation, { item: await item(facts), messages }),
+      createElement(AstrologyNatalPresentation, {
+        item: await item(facts),
+        locale: "en",
+        messages,
+      }),
     );
 
     expect(html).toContain("Exact-time facts");
@@ -192,7 +197,11 @@ describe("astrology natal presentation", () => {
   it("suppresses houses, angles, and aspects for approximate time", async () => {
     const facts = await createApproximateAstrologyFacts();
     const html = renderToStaticMarkup(
-      createElement(AstrologyNatalPresentation, { item: await item(facts), messages }),
+      createElement(AstrologyNatalPresentation, {
+        item: await item(facts),
+        locale: "en",
+        messages,
+      }),
     );
 
     expect(html).toContain("Approximate-time facts");
@@ -205,7 +214,11 @@ describe("astrology natal presentation", () => {
   it("shows the unknown-time boundary without inventing a chart", async () => {
     const facts = await createUnknownTimeAstrologyFacts();
     const html = renderToStaticMarkup(
-      createElement(AstrologyNatalPresentation, { item: await item(facts), messages }),
+      createElement(AstrologyNatalPresentation, {
+        item: await item(facts),
+        locale: "en",
+        messages,
+      }),
     );
 
     expect(html).toContain("Unknown-time boundary");

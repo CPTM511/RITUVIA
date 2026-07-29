@@ -85,6 +85,26 @@ Codex prepares a concise owner brief:
 
 All conclusions state source, time window, denominator, and data-quality caveats.
 
+### Offline SEO/GEO brief
+
+The weekly search brief is generated only from a manually supplied, approved aggregate export:
+
+```sh
+pnpm report:search-operations -- \
+  --as-of <ISO timestamp> \
+  --input <aggregate.json> \
+  --output-json <new-private-report.json> \
+  --output-markdown <new-private-brief.md> \
+  --repository-root <repository>
+```
+
+The command performs no network request, binds the input and current 45-route/editorial authority
+digests, refuses symlinks and existing output paths, and writes mode-0600 artifacts. A blocked
+brief or null metric is an operational result, not permission to fabricate data. Automation may
+prepare crawl, index, snippet, referral-alignment, or content-review investigation prompts, but a
+human must review them before any content, metadata, indexing, route, locale, provider, or
+production action.
+
 ## 7. Monthly risk review
 
 - Country/payment underwriting and policy freshness.
@@ -189,3 +209,8 @@ The owner should have one daily surface showing:
 - Budget against limits.
 
 This is an operations dashboard, not a replacement for detailed source systems.
+
+RIT-038 provides the private, source-labeled AI operations input for this future surface through
+`pnpm report:ai-operations`. RIT-117 provides the equivalent SEO/GEO brief. RIT-120 may compose
+those contracts only after its remaining dependencies are complete; it must not bypass the
+safe-off admin boundary or present unavailable sources as zero.

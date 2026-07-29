@@ -38,7 +38,7 @@ const artifactContentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'",
-  "img-src 'self'",
+  "img-src 'self' blob:",
   "manifest-src 'none'",
   "media-src 'none'",
   "object-src 'none'",
@@ -82,6 +82,10 @@ const homeContrastTargets = Object.freeze([
   Object.freeze([".oracle-card:nth-child(3) > h3"]),
   Object.freeze([".oracle-card:nth-child(3) > p:nth-child(3)"]),
   Object.freeze([".oracle-card:nth-child(3) > .oracle-note"]),
+  Object.freeze([".oracle-card:nth-child(4) > .eyebrow"]),
+  Object.freeze([".oracle-card:nth-child(4) > h3"]),
+  Object.freeze([".oracle-card:nth-child(4) > p:nth-child(3)"]),
+  Object.freeze([".oracle-card:nth-child(4) > .oracle-note"]),
 ]);
 const offlineContrastTargets = Object.freeze([
   ...homeContrastTargets,
@@ -145,6 +149,43 @@ const informationContrastTargets = Object.freeze({
         Object.freeze([".numerology-library-answer"]),
         Object.freeze([".numerology-library-boundary"]),
         Object.freeze(["#numerology-guide-list-heading"]),
+      ]),
+    ]),
+  ),
+  ...Object.fromEntries(
+    [
+      "/en/astrology",
+      "/en/astrology/natal-chart-calculation",
+      "/en/astrology/birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects",
+      "/en/astrology/sources-and-methodology",
+    ].map((pathname) => [
+      pathname,
+      Object.freeze([
+        Object.freeze([".brand-link"]),
+        Object.freeze(['.navigation-link[href="/en"]']),
+        Object.freeze(['.navigation-link[href$="sanctuary"]']),
+        Object.freeze(['.navigation-link[href$="methodology"]']),
+        Object.freeze(['.navigation-link[href$="safety"]']),
+        Object.freeze(["label"]),
+        Object.freeze([".eyebrow"]),
+        Object.freeze(["h1"]),
+        Object.freeze([".numerology-library-answer"]),
+        Object.freeze([".numerology-library-boundary"]),
+        Object.freeze(["#astrology-guide-list-heading"]),
+        Object.freeze(["caption"]),
+        Object.freeze(['th[scope="col"]:nth-child(2)']),
+        Object.freeze(['th[scope="col"]:nth-child(3)']),
+        Object.freeze(["tr:nth-child(1) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(1) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(2) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(2) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(3) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(3) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(4) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(4) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(5) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(5) > td:nth-child(3)"]),
       ]),
     ]),
   ),
@@ -751,7 +792,8 @@ const collectTextNodes = async (page) =>
 
 const applyPseudolocale = async (page, direction) => {
   const values = await collectTextNodes(page);
-  const replacements = values.map((value) => pseudoLocalizeText(value, direction));
+  const pseudolocale = direction === "rtl" ? "ar-XB" : "en-XA";
+  const replacements = values.map((value) => pseudoLocalizeText(value, pseudolocale));
   if (!replacements.some((value, index) => value !== values[index])) {
     throw new Error("Pseudolocale smoke found no transformable public text.");
   }
@@ -795,7 +837,11 @@ const assertLayout = async (page, label) => {
       ) {
         continue;
       }
-      if (rectangle.left < -1 || rectangle.right > viewportWidth + 1) {
+      const approvedInlineScroller = element.closest(".astrology-reference-table-wrap");
+      if (
+        (rectangle.left < -1 || rectangle.right > viewportWidth + 1) &&
+        approvedInlineScroller === null
+      ) {
         problems.push(`viewport:${index}:${element.tagName.toLowerCase()}`);
       }
       if (
@@ -1203,7 +1249,7 @@ const assertRtlGeometry = async (page, label) => {
     const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
     const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
     const boundary = document.querySelector(
-      ".hero-boundary, .information-status, .question-intake-boundary, .tarot-reading-boundary",
+      ".hero-boundary, .information-status, .numerology-library-boundary, .question-intake-boundary, .tarot-reading-boundary",
     );
     const boundaryStyle = boundary === null ? null : getComputedStyle(boundary);
     return {

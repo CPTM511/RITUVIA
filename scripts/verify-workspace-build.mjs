@@ -112,12 +112,16 @@ const requiredArtifacts = [
   "packages/ai/dist/verification.js",
   "packages/analytics/dist/contracts.d.ts",
   "packages/analytics/dist/contracts.js",
+  "packages/analytics/dist/ai-operations.d.ts",
+  "packages/analytics/dist/ai-operations.js",
   "packages/analytics/dist/index.d.ts",
   "packages/analytics/dist/index.js",
   "packages/analytics/dist/ledger.d.ts",
   "packages/analytics/dist/ledger.js",
   "packages/analytics/dist/metrics.d.ts",
   "packages/analytics/dist/metrics.js",
+  "packages/analytics/dist/search-operations.d.ts",
+  "packages/analytics/dist/search-operations.js",
   "packages/observability/dist/index.d.ts",
   "packages/observability/dist/index.js",
   "packages/observability/dist/redaction.d.ts",
@@ -395,10 +399,16 @@ if (
   typeof analyticsModule.parseCoreLoopEvent !== "function" ||
   typeof analyticsModule.createBoundedInMemoryCoreLoopEventLedger !== "function" ||
   typeof analyticsModule.projectCoreLoopMetrics !== "function" ||
+  typeof analyticsModule.projectAiOperationsReport !== "function" ||
+  typeof analyticsModule.renderAiOperationsMarkdown !== "function" ||
+  typeof analyticsModule.projectSearchOperationsReport !== "function" ||
+  typeof analyticsModule.renderSearchOperationsMarkdown !== "function" ||
   analyticsModule.coreLoopEventSchemaVersion !== "core-loop-event.v1" ||
-  analyticsModule.wmrsDefinitionVersion !== "wmrs.consent-anonymous.v1"
+  analyticsModule.wmrsDefinitionVersion !== "wmrs.consent-anonymous.v1" ||
+  analyticsModule.aiOperationsPolicyVersion !== "ai-operations.v1" ||
+  analyticsModule.searchOperationsPolicyVersion !== "seo-geo-operations.v1"
 ) {
-  throw new TypeError("The analytics build omitted its privacy-safe core-loop contracts.");
+  throw new TypeError("The analytics build omitted its privacy-safe operational contracts.");
 }
 if (
   typeof aiModule.prepareNumerologyInterpretationV1 !== "function" ||
@@ -1524,7 +1534,7 @@ if (
   typeof configClientModule.parseClientConfiguration !== "function" ||
   typeof configFeatureFlagModule.createFeatureFlagEvaluator !== "function" ||
   !Array.isArray(configFeatureFlagModule.featureFlagKeys) ||
-  configFeatureFlagModule.featureFlagRegistryVersion !== 1 ||
+  configFeatureFlagModule.featureFlagRegistryVersion !== 3 ||
   typeof configServerModule.parseServerConfiguration !== "function"
 ) {
   throw new TypeError("The config build does not expose its typed runtime boundaries.");

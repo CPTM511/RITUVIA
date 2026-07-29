@@ -37,6 +37,11 @@ describe("Web accessibility smoke policy", () => {
       "/en/numerology/birthday-number",
       "/en/numerology/personal-year-number",
       "/en/numerology/master-numbers",
+      "/en/astrology",
+      "/en/astrology/natal-chart-calculation",
+      "/en/astrology/birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects",
+      "/en/astrology/sources-and-methodology",
     ]);
     expect(privateAccessibilitySmokeRoutes).toEqual([
       "/en/intake",
@@ -53,6 +58,11 @@ describe("Web accessibility smoke policy", () => {
       "/en/numerology/birthday-number",
       "/en/numerology/personal-year-number",
       "/en/numerology/master-numbers",
+      "/en/astrology",
+      "/en/astrology/natal-chart-calculation",
+      "/en/astrology/birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects",
+      "/en/astrology/sources-and-methodology",
       "/en/intake",
       "/en/tarot/one-card",
       "/en/tarot/three-card",
@@ -141,11 +151,11 @@ describe("Web accessibility smoke policy", () => {
 
   it("produces stable expanded LTR and Arabic-assisted RTL pseudolocales", () => {
     expect(pseudoLocalizeText(" Home ")).toBe(" ［Ĥöṁë ·］ ");
-    expect(pseudoLocalizeText("Home", "rtl")).toBe("اختبار Ĥöṁë · موسّع");
+    expect(pseudoLocalizeText("Home", "ar-XB")).toBe("اختبار Ĥöṁë · موسّع");
     expect(pseudoLocalizeText("Welcome to {brand}")).toContain("{brand}");
     expect(pseudoLocalizeText(" 123 ")).toBe(" 123 ");
-    expect(() => pseudoLocalizeText("Home", "sideways" as "ltr")).toThrowError(
-      "Pseudolocale direction must be ltr or rtl.",
+    expect(() => pseudoLocalizeText("Home", "sideways" as "en-XA")).toThrowError(
+      "Pseudolocalization is restricted to en-XA and ar-XB test locales.",
     );
   });
 

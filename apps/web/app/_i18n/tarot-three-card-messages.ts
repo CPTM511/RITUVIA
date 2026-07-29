@@ -2,6 +2,7 @@ import type { QuestionIntakeThemeCode } from "@rituvia/domain";
 
 import type { TarotReadingMessages } from "./tarot-one-card-messages";
 import type { Locale } from "./routing";
+import { getCoreSourceMessage } from "./core-messages";
 import { getQuestionIntakeMessages } from "./question-intake-messages";
 
 export type TarotThreeCardMessages = TarotReadingMessages;
@@ -263,7 +264,7 @@ const englishTarotThreeCardMessages = {
       summary: "Report an issue with this reading",
       targetLabel: "Report target",
       targetInterpretation: "The displayed interpretation",
-      targetPosition: "Position: {position}",
+      targetPosition: getCoreSourceMessage("tarot.report.targetPosition"),
       targetReading: "The whole reading",
       unavailable:
         "The report service is temporarily unavailable. Nothing will retry automatically.",

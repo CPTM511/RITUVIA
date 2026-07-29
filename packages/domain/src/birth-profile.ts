@@ -77,7 +77,7 @@ export type BirthProfilePayloadV1 = Readonly<{
 type UnknownRecord = Record<string, unknown>;
 
 const forbiddenText =
-  /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff<>]/u;
+  /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff<>]/u;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/u;
 const localTimePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/u;
 const identifierPattern = /^[a-z0-9]+(?:[._:-][a-z0-9]+)*$/u;
@@ -98,16 +98,17 @@ const exactKeys = (value: UnknownRecord, keys: readonly string[]): void => {
 };
 
 const text = (value: unknown, maximumLength: number): string => {
+  if (typeof value !== "string") return invalid();
+  const normalized = value.normalize("NFC");
   if (
-    typeof value !== "string" ||
-    value.length === 0 ||
-    value.length > maximumLength ||
-    value.trim() !== value ||
-    forbiddenText.test(value)
+    normalized.length === 0 ||
+    Array.from(normalized).length > maximumLength ||
+    normalized.trim() !== normalized ||
+    forbiddenText.test(normalized)
   ) {
     invalid();
   }
-  return value as string;
+  return normalized;
 };
 
 const identifier = (value: unknown, maximumLength = 128): string => {

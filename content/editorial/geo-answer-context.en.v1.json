@@ -1,0 +1,165 @@
+{
+  "contentId": "rituvia.geo-answer-context.en",
+  "contexts": {
+    "astrology": {
+      "classifications": [
+        {
+          "kind": "fact",
+          "statement": "Calculation-method details identify the required birth inputs, reference data, and uncertainty limits."
+        },
+        {
+          "kind": "tradition",
+          "statement": "Houses, aspects, and natal-chart vocabulary are identified as Western astrology conventions."
+        },
+        {
+          "kind": "interpretation",
+          "statement": "Symbolic meanings remain reflective possibilities and do not establish personality, fate, or professional conclusions."
+        }
+      ],
+      "entityId": "rituvia-western-natal-astrology-v1"
+    },
+    "home": {
+      "classifications": [
+        {
+          "kind": "product_guidance",
+          "statement": "Adult symbolic reflection and private ritual space."
+        },
+        {
+          "kind": "interpretation",
+          "statement": "Possibilities, not predictions or guarantees."
+        }
+      ],
+      "entityId": "rituvia-public-guidance-v1"
+    },
+    "methodology": {
+      "classifications": [
+        {
+          "kind": "fact",
+          "statement": "The documented product method keeps deterministic draws or calculations separate from explanatory prose."
+        },
+        {
+          "kind": "product_guidance",
+          "statement": "The user keeps control of the question, meaning, intention, small action, and decision to revisit."
+        }
+      ],
+      "entityId": "rituvia-public-guidance-v1"
+    },
+    "numerology": {
+      "classifications": [
+        {
+          "kind": "fact",
+          "statement": "Calculation rules and worked examples follow the published V1 date-reduction method."
+        },
+        {
+          "kind": "interpretation",
+          "statement": "Number meanings are optional symbolic prompts, not measured traits, identity claims, or predictions."
+        }
+      ],
+      "entityId": "rituvia-numerology-v1"
+    },
+    "privacy": {
+      "classifications": [
+        {
+          "kind": "product_guidance",
+          "statement": "Private questions, journals, prayers, intentions, and birth details are excluded from public pages and routine analytics."
+        }
+      ],
+      "entityId": "rituvia-public-guidance-v1"
+    },
+    "rituals": {
+      "classifications": [
+        {
+          "kind": "product_guidance",
+          "statement": "These are original secular digital reflection patterns, not claims of inherited religious authority or stronger spiritual efficacy."
+        },
+        {
+          "kind": "interpretation",
+          "statement": "Prompts and symbolic actions are optional aids for reflection; the user chooses their own meaning and next step."
+        }
+      ],
+      "entityId": "rituvia-original-secular-reflection-v1"
+    },
+    "safety": {
+      "classifications": [
+        {
+          "kind": "product_guidance",
+          "statement": "The public safety boundary excludes professional determinations, guaranteed outcomes, fear-based claims, and paid spiritual efficacy."
+        },
+        {
+          "kind": "interpretation",
+          "statement": "Reflective language describes possibilities and limitations rather than certainty about a person or future event."
+        }
+      ],
+      "entityId": "rituvia-public-guidance-v1"
+    },
+    "tarot": {
+      "classifications": [
+        {
+          "kind": "tradition",
+          "statement": "Card names, order, orientation vocabulary, and symbolic associations come from the reviewed Major Arcana catalog."
+        },
+        {
+          "kind": "interpretation",
+          "statement": "Possibilities, tensions, questions, and small actions are editorial reflection prompts rather than factual predictions."
+        }
+      ],
+      "entityId": "rituvia-major-arcana-reflection-v1"
+    }
+  },
+  "editorial": {
+    "approvalReference": "D-086",
+    "authorId": "product.codex",
+    "effectiveDate": "2026-07-29",
+    "reviewDueDate": "2027-07-29",
+    "reviewedDate": "2026-07-29",
+    "reviewerId": "owner",
+    "status": "approved"
+  },
+  "entities": [
+    {
+      "definition": "Reviewed product and safety boundaries.",
+      "entityId": "rituvia-public-guidance-v1",
+      "name": "Public product guidance V1"
+    },
+    {
+      "definition": "A versioned date-reduction method and symbolic reflection catalog with visible formulas, examples, and limitations.",
+      "entityId": "rituvia-numerology-v1",
+      "name": "Date Numerology V1"
+    },
+    {
+      "definition": "A versioned Western natal astrology method that separates calculation facts, tradition, and symbolic explanation.",
+      "entityId": "rituvia-western-natal-astrology-v1",
+      "name": "Western Natal Astrology V1"
+    },
+    {
+      "definition": "A versioned Major Arcana library for non-deterministic symbolic reflection, with explicit limits on what cards can determine.",
+      "entityId": "rituvia-major-arcana-reflection-v1",
+      "name": "Major Arcana Reflection Library V1"
+    },
+    {
+      "definition": "A versioned set of original secular virtual-ritual and private-reflection guides that preserves a free path.",
+      "entityId": "rituvia-original-secular-reflection-v1",
+      "name": "Original Secular Reflection V1"
+    }
+  ],
+  "labels": {
+    "answerContextHeading": "How this answer is framed",
+    "classification": {
+      "fact": "Fact or documented method",
+      "interpretation": "Interpretation",
+      "product_guidance": "Product policy",
+      "tradition": "Tradition"
+    },
+    "decisionAuthority": "Owner-approved product decision",
+    "editorialAuthority": "Owner-approved editorial record",
+    "entity": "Entity",
+    "reviewAuthority": "Review authority",
+    "reviewDue": "Review due",
+    "reviewed": "Reviewed",
+    "sourceBasis": "Source basis",
+    "sourceDecision": "Production content decision {approvalReference}"
+  },
+  "locale": "en",
+  "schemaVersion": "rituvia-geo-answer-context.v1",
+  "version": "1.0.0"
+}

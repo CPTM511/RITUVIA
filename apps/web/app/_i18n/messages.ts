@@ -1,5 +1,6 @@
 import type { PublicPageSlug } from "./public-routes";
 import type { Locale } from "./routing";
+import { getCoreSourceMessage } from "./core-messages";
 
 type PracticeStep = Readonly<{
   title: string;
@@ -138,7 +139,7 @@ const englishMessages = {
     },
     navigation: {
       home: "Home",
-      homeLabel: "{brand} home",
+      homeLabel: getCoreSourceMessage("shell.navigation.homeLabel"),
       primaryLabel: "Primary navigation",
       methodology: "Methodology",
       safety: "Safety",
@@ -327,7 +328,7 @@ const englishMessages = {
         {
           title: "Modality boundaries stay visible",
           description:
-            "Tarot, numerology, and astrology will remain separate systems. Western astrology is a future possibility and will not launch until a licensed calculation path, content and source rights, and required reviews are approved.",
+            "Tarot, numerology, and Western astrology remain separate systems. The current Western natal method uses a reviewed calculation path, source-bound education, and explicit uncertainty limits; no modality may borrow another system's facts or authority.",
         },
       ],
       nextStep: {

@@ -1,0 +1,428 @@
+{
+  "audience": "adults",
+  "catalogId": "rituvia.astrology.western-natal-education.en",
+  "contentType": "astrology_education_catalog",
+  "editorial": {
+    "approvalReference": "OWN-016:option-a:2026-07-27",
+    "authorId": "product.codex",
+    "changeReason": "Create a bounded English education cluster for the approved RITUVIA Western natal calculation method.",
+    "effectiveDate": "2026-07-27",
+    "requiredApprovalRole": "owner",
+    "reviewDueDate": "2027-07-27",
+    "reviewedDate": "2026-07-27",
+    "reviewerId": "owner",
+    "reviewerRole": "owner",
+    "status": "approved",
+    "supersedes": null
+  },
+  "guides": [
+    {
+      "answer": "A RITUVIA natal chart is a versioned record of calculated celestial longitudes, zodiac signs, and, when exact birth time supports them, Placidus houses, angles, and selected major aspects.",
+      "description": "Learn what the private natal calculation records, which inputs affect it, and why the chart display never creates astronomical facts.",
+      "limitations": [
+        "A chart records the approved calculation convention; it does not establish a scientific personality profile.",
+        "The calculation cannot determine future events, another person's thoughts, health, guilt, compatibility, or professional outcomes.",
+        "RITUVIA does not infer retrograde status or planet-house membership unless a future version adds those facts through an approved deterministic method."
+      ],
+      "sections": [
+        {
+          "bullets": [
+            "The birth profile supplies a local date, time-certainty state, selected location, and historical time-zone evidence.",
+            "The server resolves an allowed UTC instant and invokes the pinned Swiss Ephemeris adapter only when the approved uncertainty policy permits calculation.",
+            "The result stores immutable method, engine, source, compiler, data, and schema provenance alongside the facts.",
+            "The private viewer presents those facts in tables; its chart graphic is presentation-only."
+          ],
+          "heading": "From private input to deterministic facts",
+          "paragraphs": [
+            "RITUVIA separates input normalization, astronomical calculation, storage, and presentation. The browser cannot author a placement, angle, house cusp, or aspect.",
+            "The tropical zodiac divides ecliptic longitude into twelve equal thirty-degree signs. A placement's sign and within-sign degree are derived from its server-calculated longitude."
+          ]
+        },
+        {
+          "bullets": [
+            "Eleven selected bodies: Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, and the True Node.",
+            "Exact-time charts may include twelve Placidus house cusps and the ascendant, midheaven, vertex, and ARMC angles.",
+            "Exact-time charts may include conjunction, sextile, square, trine, and opposition records that satisfy the approved inclusive orb policy.",
+            "Approximate-time charts retain planetary positions at the supplied center instant but suppress houses, angles, and aspects."
+          ],
+          "heading": "What the V1 fact record can contain",
+          "paragraphs": [
+            "Every field is tied to the checksummed RITUVIA Western natal method. A later convention must use a new version rather than silently rewriting an existing chart."
+          ]
+        }
+      ],
+      "slug": "natal-chart-calculation",
+      "sourceRefs": [
+        "rituvia.astrology.method-catalog@1.0.0",
+        "swiss-ephemeris.programming-reference@2.10.03"
+      ],
+      "table": {
+        "caption": "Authoritative layers in a RITUVIA natal chart",
+        "columns": ["Layer", "Authority", "What it may do"],
+        "rows": [
+          [
+            "Birth-profile normalization",
+            "Server contract",
+            "Resolve approved location and historical time-zone evidence"
+          ],
+          [
+            "Astronomical calculation",
+            "Pinned ephemeris adapter",
+            "Calculate positions and exact-time house geometry"
+          ],
+          [
+            "Natal fact parser",
+            "Versioned deterministic contract",
+            "Validate signs, suppression states, methods, flags, and provenance"
+          ],
+          [
+            "Private viewer",
+            "Presentation layer",
+            "Display saved facts without calculating or interpreting new facts"
+          ]
+        ]
+      },
+      "title": "How RITUVIA calculates a natal chart"
+    },
+    {
+      "answer": "Birth-time certainty changes which facts RITUVIA is willing to publish: exact time can support the full approved chart, approximate time suppresses houses, angles, and aspects, and unknown time publishes no placements.",
+      "description": "Understand exact, approximate, and unknown birth-time states without hidden noon charts or invented precision.",
+      "limitations": [
+        "An approximation window is evidence about uncertainty, not a promise that every placement remains unchanged throughout the window.",
+        "Unknown time never defaults to noon and never produces a Sun-only or positions-only substitute in RITUVIA V1.",
+        "A failed exact-time Placidus calculation returns unavailable rather than switching to another house system."
+      ],
+      "sections": [
+        {
+          "bullets": [
+            "Exact means the stored profile contains an approved unambiguous or explicitly resolved local time and UTC instant.",
+            "Approximate means the user supplied a center time plus a bounded window; the window remains visible with the saved result.",
+            "Unknown means no trustworthy time was supplied; the ephemeris is not invoked for the natal result."
+          ],
+          "heading": "Three explicit certainty states",
+          "paragraphs": [
+            "Birth time can materially affect house geometry and angles. RITUVIA therefore treats uncertainty as part of the fact contract rather than a footnote added after calculation."
+          ]
+        },
+        {
+          "bullets": [
+            "Daylight-saving folds require an explicit earlier or later choice.",
+            "Nonexistent local times caused by clock changes are rejected rather than shifted silently.",
+            "Location and historical time-zone searches are authenticated, no-store, and excluded from URLs and shared caches.",
+            "Runtime, provider, and data versions remain attached to the normalized profile for replay."
+          ],
+          "heading": "Historical time zones are part of the evidence",
+          "paragraphs": [
+            "A place name alone is not enough to establish a UTC instant. The same local clock reading can map to two instants during a fall-back transition or to no instant during a spring-forward gap."
+          ]
+        }
+      ],
+      "slug": "birth-time-uncertainty",
+      "sourceRefs": [
+        "rituvia.astrology.method-catalog@1.0.0",
+        "rituvia.astrology.location-time-policy@1.0.0"
+      ],
+      "table": {
+        "caption": "RITUVIA V1 birth-time publication policy",
+        "columns": ["Time state", "Published facts", "Suppressed facts"],
+        "rows": [
+          [
+            "Exact",
+            "Placements, Placidus houses, angles, and approved aspects when calculation succeeds",
+            "Any fact absent from the versioned natal schema"
+          ],
+          [
+            "Approximate",
+            "Planetary placements at the supplied center instant and the exact approximation window",
+            "Houses, angles, and aspects"
+          ],
+          [
+            "Unknown",
+            "An explicit unavailable state",
+            "Placements, houses, angles, aspects, and any invented substitute time"
+          ],
+          [
+            "Engine or house failure",
+            "An explicit unavailable state with bounded recovery guidance",
+            "All partial astronomical facts and automatic fallback systems"
+          ]
+        ]
+      },
+      "title": "Birth-time uncertainty in natal charts"
+    },
+    {
+      "answer": "RITUVIA V1 uses Placidus houses only for exact-time charts and records five major aspect types using fixed inclusive orbs; it never substitutes another house system or asks AI to invent geometry.",
+      "description": "Review the approved house and aspect rules, including exact angles, inclusive orbs, and failure behavior.",
+      "limitations": [
+        "House systems and aspect orbs are conventions that differ across astrology practices; RITUVIA V1 is one explicit product method.",
+        "An aspect record describes angular separation under the approved policy; it does not prove a personality trait, event, or relationship outcome.",
+        "The current fact schema stores house cusps but does not assign each body to a house, so the product does not infer that membership."
+      ],
+      "sections": [
+        {
+          "bullets": [
+            "Placidus is the only approved V1 house system.",
+            "House cusps and angles are calculated only when birth time is exact.",
+            "Polar or other house-calculation failure returns unavailable without partial placements.",
+            "Whole Sign, Equal, and other systems are not automatic fallbacks."
+          ],
+          "heading": "Houses fail closed",
+          "paragraphs": [
+            "A house cusp is a calculated ecliptic longitude marking a house boundary. Because this geometry depends strongly on time and location, RITUVIA suppresses it whenever the approved evidence is insufficient."
+          ]
+        },
+        {
+          "bullets": [
+            "The engine compares each approved pair of bodies once in canonical body order.",
+            "Angular separation is normalized to the shortest distance from zero through one hundred eighty degrees.",
+            "A major aspect is recorded only when the separation falls within that aspect's inclusive maximum orb.",
+            "Approximate-time charts intentionally contain no aspects under the conservative V1 policy."
+          ],
+          "heading": "Major aspects are deterministic geometry",
+          "paragraphs": [
+            "An aspect has an exact target angle and an orb, which is the absolute difference between the observed separation and that target. The parser verifies both the aspect definition and canonical body order."
+          ]
+        }
+      ],
+      "slug": "houses-and-major-aspects",
+      "sourceRefs": [
+        "rituvia.astrology.method-catalog@1.0.0",
+        "swiss-ephemeris.programming-reference@2.10.03"
+      ],
+      "table": {
+        "caption": "Approved RITUVIA V1 major aspects",
+        "columns": ["Aspect", "Exact angle", "Inclusive maximum orb"],
+        "rows": [
+          ["Conjunction", "0 degrees", "8 degrees"],
+          ["Sextile", "60 degrees", "4 degrees"],
+          ["Square", "90 degrees", "6 degrees"],
+          ["Trine", "120 degrees", "6 degrees"],
+          ["Opposition", "180 degrees", "8 degrees"]
+        ]
+      },
+      "title": "Placidus houses and major aspects"
+    },
+    {
+      "answer": "RITUVIA pins the Swiss Ephemeris library, source snapshot, data inventory, adapter, compiler evidence, and a checksummed product-method catalog so a saved natal result can be audited without relying on AI memory.",
+      "description": "Inspect the calculation method, engine provenance, independent comparison limits, open-source obligations, and product boundaries.",
+      "limitations": [
+        "Swiss Ephemeris supplies astronomical calculations; it does not validate astrology as science or choose RITUVIA's interpretive product conventions.",
+        "Independent comparison evidence covers selected geocentric body positions within declared tolerances; it excludes the True Node and Placidus houses from that independent claim.",
+        "Source availability and reproducible builds support auditability but cannot assure that software is free of every defect."
+      ],
+      "sections": [
+        {
+          "bullets": [
+            "Library version 2.10.03 and source snapshot v2.10.3final are pinned.",
+            "The product method is tropical, uses the True Node, and fixes the eleven-body inventory and major-aspect policy.",
+            "The runtime requires Swiss Ephemeris flags and rejects fallback to the lower-precision Moshier path.",
+            "Every persisted result carries method, engine, data, source, adapter, compiler, ABI, and SBOM provenance."
+          ],
+          "heading": "Versioned inputs to the calculation",
+          "paragraphs": [
+            "Reproducibility requires more than naming an engine. RITUVIA records the exact method and build evidence needed to distinguish one calculation environment from another."
+          ]
+        },
+        {
+          "bullets": [
+            "The complete RITUVIA deliverable uses AGPL-3.0-only and preserves required notices.",
+            "A deployment must publish the complete corresponding source for its exact revision before owner go-live approval.",
+            "Native security evidence includes sanitizers, deterministic mutation cases, bounded fuzzing, source inventory checks, and offline archive rebuilds.",
+            "Production astrology remains controlled by the default-off experience.astrology flag."
+          ],
+          "heading": "Open source and release evidence",
+          "paragraphs": [
+            "The local source archive proves a rebuild boundary for the current implementation. A future deployed revision must repeat upload, download, digest, public-link, and exact-revision binding before launch."
+          ]
+        }
+      ],
+      "slug": "sources-and-methodology",
+      "sourceRefs": [
+        "rituvia.astrology.method-catalog@1.0.0",
+        "rituvia.astrology.agpl-integration@2.0.0",
+        "swiss-ephemeris.programming-reference@2.10.03"
+      ],
+      "table": {
+        "caption": "Selected V1 method and engine evidence",
+        "columns": ["Evidence", "Pinned value", "Purpose"],
+        "rows": [
+          [
+            "Product method",
+            "rituvia-western-natal.v1",
+            "Defines zodiac, bodies, node, houses, aspects, and uncertainty behavior"
+          ],
+          ["Aspect policy", "rituvia-major-aspects.v1", "Defines exact angles and inclusive orbs"],
+          [
+            "Engine library",
+            "Swiss Ephemeris 2.10.03",
+            "Calculates approved astronomical and house geometry"
+          ],
+          [
+            "Source snapshot",
+            "v2.10.3final",
+            "Supports exact source inventory and corresponding-source reconstruction"
+          ],
+          [
+            "Project license",
+            "AGPL-3.0-only",
+            "Requires complete corresponding source for the network-deployed work"
+          ]
+        ]
+      },
+      "title": "Astrology sources and calculation methodology"
+    }
+  ],
+  "hub": {
+    "answer": "RITUVIA uses Western natal astrology as a transparent symbolic-reflection system: deterministic software calculates the approved astronomical facts, while uncertainty and product limits remain visible.",
+    "boundary": "These pages explain one versioned RITUVIA convention. They do not make predictions, health determinations, professional recommendations, compatibility verdicts, or scientific personality claims.",
+    "description": "A source-backed guide to RITUVIA's Western natal calculation, birth-time uncertainty, Placidus houses, major aspects, and open methodology.",
+    "eyebrow": "Western natal astrology",
+    "sourceNote": "Owner-reviewed English editorial content authored for RITUVIA. Technical claims are limited to the approved method, implementation records, and cited references.",
+    "title": "Western astrology, with the calculation kept visible"
+  },
+  "labels": {
+    "backToHub": "Back to the astrology library",
+    "calculatorAction": "Open the private saved-chart viewer",
+    "guideListTitle": "Learn the calculation in four steps",
+    "limitationsTitle": "What this cannot determine",
+    "privacyAction": "Read the privacy approach",
+    "relatedGuidesTitle": "Continue learning",
+    "safetyAction": "Read the safety boundaries",
+    "sourceTitle": "Sources and review status",
+    "tableTitle": "Reference table"
+  },
+  "locale": "en",
+  "method": "western_natal",
+  "publicationPolicy": {
+    "calculatorPath": "/en/readings/astrology",
+    "indexingAllowed": true,
+    "personalizedPagesIndexable": false,
+    "profileDoorwayRoutesAllowed": false,
+    "publicPublicationAllowed": true
+  },
+  "publicationStatus": "approved",
+  "riskClassification": "sensitive_symbolic_education",
+  "schemaVersion": "astrology-education-catalog.v1",
+  "sources": [
+    {
+      "claims": [
+        "Defines the owner-approved tropical zodiac, True Node, eleven-body inventory, Placidus policy, major aspects, inclusive orbs, and uncertainty behavior.",
+        "Identifies the method and aspect-policy versions and the exact catalog checksum.",
+        "States that the convention is symbolic and is not a universal astrology rule, scientific personality claim, prediction, health determination, or professional recommendation."
+      ],
+      "creator": "RITUVIA",
+      "identifier": "content/sources/astrology/rituvia-western-natal-method.v1.json",
+      "publisher": "RITUVIA",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-070",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.astrology.method-catalog",
+      "sourceType": "product_method",
+      "title": "RITUVIA Western Natal Method V1",
+      "version": "1.0.0"
+    },
+    {
+      "claims": [
+        "Documents the Swiss Ephemeris programming interface used by the pinned native adapter.",
+        "Provides technical context for planetary calculations, house calculations, flags, and versioned engine behavior.",
+        "Does not supply or validate RITUVIA's product interpretation policy."
+      ],
+      "creator": "Astrodienst AG",
+      "identifier": "https://www.astro.com/swisseph/swephprg.htm",
+      "publisher": "Astrodienst AG",
+      "rights": {
+        "allowedUses": ["factual_citation"],
+        "evidenceReference": "content/sources/astrology/swiss-ephemeris-agpl.v2.json",
+        "status": "reference_only",
+        "territory": "worldwide"
+      },
+      "sourceId": "swiss-ephemeris.programming-reference",
+      "sourceType": "technical_reference",
+      "title": "Swiss Ephemeris Programming Interface",
+      "version": "2.10.03"
+    },
+    {
+      "claims": [
+        "Records the whole-project AGPL-3.0-only integration choice and corresponding-source obligations.",
+        "Pins the Swiss Ephemeris library and source snapshot while preserving native supply-chain and activation gates.",
+        "Separates local implementation evidence from exact deployed-revision source publication."
+      ],
+      "creator": "RITUVIA",
+      "identifier": "records/decisions/D-069.md",
+      "publisher": "RITUVIA",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-069",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.astrology.agpl-integration",
+      "sourceType": "product_decision",
+      "title": "RITUVIA Swiss Ephemeris AGPL Integration Decision",
+      "version": "2.0.0"
+    },
+    {
+      "claims": [
+        "Explains the exact, approximate, and unknown time states and the fail-closed historical time-zone boundary.",
+        "Documents explicit fold and gap behavior and the privacy-safe location-search contract.",
+        "Does not authorize publication of raw birth profiles, locations, coordinates, or personalized records."
+      ],
+      "creator": "RITUVIA",
+      "identifier": "records/decisions/D-067.md",
+      "publisher": "RITUVIA",
+      "rights": {
+        "allowedUses": [
+          "factual_citation",
+          "public_display",
+          "commercial_use",
+          "seo_publication",
+          "translation"
+        ],
+        "evidenceReference": "D-067,D-068,D-070",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.astrology.location-time-policy",
+      "sourceType": "product_decision",
+      "title": "RITUVIA Astrology Location and Time Policy",
+      "version": "1.0.0"
+    },
+    {
+      "claims": [
+        "Contains owner-approved original explanatory organization, summaries, limitations, tables, and educational copy for this exact five-route cluster.",
+        "Uses no copied interpretive corpus and makes no sign, planet, house, or aspect personality claims.",
+        "Permits public display, commercial use, SEO publication, and translation under the exact OWN-016 approval while deployment remains separately gated."
+      ],
+      "creator": "RITUVIA product editorial",
+      "identifier": "rituvia.astrology.western-natal-education.en",
+      "publisher": "RITUVIA",
+      "rights": {
+        "allowedUses": ["public_display", "commercial_use", "seo_publication", "translation"],
+        "evidenceReference": "D-073",
+        "status": "owned",
+        "territory": "worldwide"
+      },
+      "sourceId": "rituvia.editorial.astrology-education",
+      "sourceType": "original",
+      "title": "RITUVIA Western Natal Education",
+      "version": "1.0.0"
+    }
+  ],
+  "title": "RITUVIA Western Natal Education",
+  "version": "1.0.0"
+}

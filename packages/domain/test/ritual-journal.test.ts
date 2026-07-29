@@ -247,6 +247,18 @@ describe("ritual session and private journal contracts", () => {
     }
   });
 
+  it("preserves NFC CJK and Devanagari shaping controls in private journal text", () => {
+    const reflection = "𠮷という字と क्‍षमा を静かに書き留めた。";
+    expect(
+      parsePrivateJournalCreateRequestV2({
+        intentionId,
+        reflection,
+        ritualSessionId,
+        schemaVersion: "private-journal.v2",
+      }).reflection,
+    ).toBe(reflection);
+  });
+
   it("parses optimistic update and delete journal mutations", () => {
     const update = parsePrivateJournalMutationRequestV1({
       action: "update",

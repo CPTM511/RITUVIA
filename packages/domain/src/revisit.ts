@@ -122,7 +122,7 @@ const utcInstantPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/u;
 const localTimePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/u;
 const forbiddenPrivateText =
-  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
+  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
 
 const record = (value: unknown): Record<string, unknown> | null =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -193,10 +193,10 @@ const parseTimeZone = (value: unknown, output = false): string => {
 
 const normalizePrivateText = (value: unknown, output = false): string => {
   if (typeof value !== "string") return output ? invalidOutput() : invalidInput();
-  const normalized = value.normalize("NFKC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+  const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
   if (
     normalized.length < 1 ||
-    normalized.length > revisitMaximumReflectionLength ||
+    Array.from(normalized).length > revisitMaximumReflectionLength ||
     forbiddenPrivateText.test(normalized)
   ) {
     return output ? invalidOutput() : invalidInput();
@@ -208,7 +208,7 @@ const parseSnapshotText = (value: unknown): string => {
   if (
     typeof value !== "string" ||
     value.length < 1 ||
-    value.length > 280 ||
+    Array.from(value).length > 280 ||
     forbiddenPrivateText.test(value)
   ) {
     return invalidOutput();

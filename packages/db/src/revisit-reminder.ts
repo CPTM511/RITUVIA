@@ -2,6 +2,7 @@ import { randomBytes, webcrypto } from "node:crypto";
 
 import {
   parseRevisitReminderMutationV1,
+  revisitReminderTemplateBinding,
   revisitReminderBackoffSeconds,
   revisitReminderChannel,
   revisitReminderFrequency,
@@ -43,13 +44,29 @@ export type RevisitReminderDeliveryJob = Readonly<{
   leaseToken: string;
   locale: "en";
   maxAttempts: 3;
+  quietHours: "none" | "saved";
   recipientIdentityId: string;
   revisitId: string;
+  scheduledLocalDate: string;
   subscriptionId: string;
+  templateFallbackUsed: boolean;
+  templateId: string;
+  templateLocale: string;
+  templateSourceChecksum: string;
+  templateVersion: string;
+  timeZone: string;
 }>;
 
 export type RevisitReminderService = Readonly<{
-  authorizeDelivery(input: { leaseToken: string; subscriptionId: string }): Promise<boolean>;
+  authorizeDelivery(input: {
+    leaseToken: string;
+    subscriptionId: string;
+    templateFallbackUsed: boolean;
+    templateId: string;
+    templateLocale: string;
+    templateSourceChecksum: string;
+    templateVersion: string;
+  }): Promise<boolean>;
   claimDue(input: { leaseSeconds: number }): Promise<RevisitReminderDeliveryJob | null>;
   completeDelivery(input: {
     leaseToken: string;
@@ -57,7 +74,12 @@ export type RevisitReminderService = Readonly<{
     subscriptionId: string;
   }): Promise<boolean>;
   failDelivery(input: {
-    failureCode: "provider_disabled" | "provider_rejected" | "provider_unavailable" | "timeout";
+    failureCode:
+      | "provider_disabled"
+      | "provider_rejected"
+      | "provider_unavailable"
+      | "template_unavailable"
+      | "timeout";
     leaseToken: string;
     retryable: boolean;
     subscriptionId: string;
@@ -97,6 +119,11 @@ type ReminderRow = Readonly<{
   preferenceState: string;
   revisitId: string;
   schemaVersion: string;
+  templateId: string;
+  templateFallbackUsed: boolean;
+  templateLocale: string;
+  templateSourceChecksum: string;
+  templateVersion: string;
   updatedAt: Date;
 }>;
 
@@ -144,6 +171,11 @@ const parseState = (row: ReminderRow): RevisitReminderStateV1 => {
     row.schemaVersion !== revisitReminderSchemaVersion ||
     row.noticeVersion !== revisitReminderNoticeVersion ||
     row.locale !== "en" ||
+    !/^[a-z][a-z0-9-]{0,79}$/u.test(row.templateId) ||
+    !/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/u.test(row.templateVersion) ||
+    !/^[0-9a-f]{64}$/u.test(row.templateSourceChecksum) ||
+    row.templateLocale !== "en" ||
+    row.templateFallbackUsed ||
     !["subscribed", "unsubscribed"].includes(row.preferenceState) ||
     !["cancelled", "dead_lettered", "delivered", "leased", "pending", "retry_wait"].includes(
       row.deliveryState,
@@ -231,6 +263,10 @@ const readSubscription = async (
   const rows = await transaction.$queryRaw<ReminderRow[]>`
     SELECT id, revisit_id AS "revisitId", schema_version AS "schemaVersion",
            notice_version AS "noticeVersion", locale,
+           template_id AS "templateId", template_version AS "templateVersion",
+           template_source_checksum AS "templateSourceChecksum",
+           template_locale AS "templateLocale",
+           template_fallback_used AS "templateFallbackUsed",
            preference_state AS "preferenceState", delivery_state AS "deliveryState",
            attempt_count AS "attemptCount", max_attempts AS "maxAttempts",
            created_at AS "createdAt", updated_at AS "updatedAt"
@@ -325,6 +361,11 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
         SELECT subscription.id, subscription.revisit_id AS "revisitId",
                subscription.schema_version AS "schemaVersion",
                subscription.notice_version AS "noticeVersion", subscription.locale,
+               subscription.template_id AS "templateId",
+               subscription.template_version AS "templateVersion",
+               subscription.template_source_checksum AS "templateSourceChecksum",
+               subscription.template_locale AS "templateLocale",
+               subscription.template_fallback_used AS "templateFallbackUsed",
                subscription.preference_state AS "preferenceState",
                subscription.delivery_state AS "deliveryState",
                subscription.attempt_count AS "attemptCount",
@@ -403,6 +444,11 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                  subscription.id, subscription.revisit_id AS "revisitId",
                  subscription.schema_version AS "schemaVersion",
                  subscription.notice_version AS "noticeVersion", subscription.locale,
+                 subscription.template_id AS "templateId",
+                 subscription.template_version AS "templateVersion",
+                 subscription.template_source_checksum AS "templateSourceChecksum",
+                 subscription.template_locale AS "templateLocale",
+                 subscription.template_fallback_used AS "templateFallbackUsed",
                  operation.result_preference_state AS "preferenceState",
                  operation.result_delivery_state AS "deliveryState",
                  subscription.attempt_count AS "attemptCount",
@@ -441,7 +487,9 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                 INSERT INTO revisit_reminder_subscription (
                   user_id, account_subject_link_id, anonymous_subject_id, revisit_id,
                   recipient_identity_id, schema_version, notice_version, channel, frequency,
-                  locale, preference_state, delivery_state, attempt_count, max_attempts,
+                  locale, template_id, template_version, template_source_checksum,
+                  template_locale, template_fallback_used,
+                  preference_state, delivery_state, attempt_count, max_attempts,
                   next_attempt_at, updated_at, unsubscribed_at
                 ) VALUES (
                   ${account.userId}::uuid, ${revisit.accountSubjectLinkId}::uuid,
@@ -449,6 +497,11 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                   ${revisit.recipientIdentityId}::uuid, ${revisitReminderSchemaVersion},
                   ${revisitReminderNoticeVersion}, ${revisitReminderChannel},
                   ${revisitReminderFrequency}, 'en',
+                  ${revisitReminderTemplateBinding.templateId},
+                  ${revisitReminderTemplateBinding.templateVersion},
+                  ${revisitReminderTemplateBinding.sourceChecksum},
+                  ${revisitReminderTemplateBinding.locale},
+                  ${revisitReminderTemplateBinding.fallbackUsed},
                   ${subscribed ? "subscribed" : "unsubscribed"},
                   ${subscribed ? "pending" : "cancelled"},
                   0, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
@@ -456,6 +509,10 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                 )
                 RETURNING id, revisit_id AS "revisitId", schema_version AS "schemaVersion",
                           notice_version AS "noticeVersion", locale,
+                          template_id AS "templateId", template_version AS "templateVersion",
+                          template_source_checksum AS "templateSourceChecksum",
+                          template_locale AS "templateLocale",
+                          template_fallback_used AS "templateFallbackUsed",
                           preference_state AS "preferenceState",
                           delivery_state AS "deliveryState",
                           attempt_count AS "attemptCount", max_attempts AS "maxAttempts",
@@ -469,6 +526,11 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                        channel = ${revisitReminderChannel},
                        frequency = ${revisitReminderFrequency},
                        locale = 'en',
+                       template_id = ${revisitReminderTemplateBinding.templateId},
+                       template_version = ${revisitReminderTemplateBinding.templateVersion},
+                       template_source_checksum = ${revisitReminderTemplateBinding.sourceChecksum},
+                       template_locale = ${revisitReminderTemplateBinding.locale},
+                       template_fallback_used = ${revisitReminderTemplateBinding.fallbackUsed},
                        preference_state = ${subscribed ? "subscribed" : "unsubscribed"},
                        delivery_state = ${subscribed ? "pending" : "cancelled"},
                        attempt_count = 0,
@@ -486,6 +548,10 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                    AND user_id = ${account.userId}::uuid
                 RETURNING id, revisit_id AS "revisitId", schema_version AS "schemaVersion",
                           notice_version AS "noticeVersion", locale,
+                          template_id AS "templateId", template_version AS "templateVersion",
+                          template_source_checksum AS "templateSourceChecksum",
+                          template_locale AS "templateLocale",
+                          template_fallback_used AS "templateFallbackUsed",
                           preference_state AS "preferenceState",
                           delivery_state AS "deliveryState",
                           attempt_count AS "attemptCount", max_attempts AS "maxAttempts",
@@ -551,16 +617,27 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
         Array<
           Readonly<{
             attempt: number;
+            hasQuietHours: boolean;
             locale: string;
             maxAttempts: number;
             recipientIdentityId: string;
             revisitId: string;
+            scheduledLocalDate: string;
             subscriptionId: string;
+            templateFallbackUsed: boolean;
+            templateId: string;
+            templateLocale: string;
+            templateSourceChecksum: string;
+            templateVersion: string;
+            timeZone: string;
           }>
         >
       >`
         WITH candidate AS (
-          SELECT subscription.id
+          SELECT subscription.id,
+                 revisit.scheduled_local_date::text AS "scheduledLocalDate",
+                 revisit.time_zone AS "timeZone",
+                 revisit.quiet_hours_start IS NOT NULL AS "hasQuietHours"
             FROM revisit_reminder_subscription AS subscription
             JOIN app_user AS account
               ON account.id = subscription.user_id
@@ -637,17 +714,38 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
                   subscription.revisit_id AS "revisitId",
                   subscription.recipient_identity_id AS "recipientIdentityId",
                   subscription.locale,
+                  subscription.template_id AS "templateId",
+                  subscription.template_version AS "templateVersion",
+                  subscription.template_source_checksum AS "templateSourceChecksum",
+                  subscription.template_locale AS "templateLocale",
+                  subscription.template_fallback_used AS "templateFallbackUsed",
                   subscription.attempt_count AS attempt,
-                  subscription.max_attempts AS "maxAttempts"
+                  subscription.max_attempts AS "maxAttempts",
+                  candidate."scheduledLocalDate",
+                  candidate."timeZone",
+                  candidate."hasQuietHours"
       `;
       const row = rows[0];
       if (rows.length === 0 || row === undefined) return null;
+      try {
+        new Intl.DateTimeFormat("en", { timeZone: row.timeZone }).format(0);
+      } catch {
+        throw new RevisitReminderError("REVISIT_REMINDER_UNAVAILABLE");
+      }
       if (
         rows.length !== 1 ||
         !uuidV4Pattern.test(row.subscriptionId) ||
         !uuidV4Pattern.test(row.revisitId) ||
         !uuidV4Pattern.test(row.recipientIdentityId) ||
         row.locale !== "en" ||
+        !/^[a-z][a-z0-9-]{0,79}$/u.test(row.templateId) ||
+        !/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/u.test(row.templateVersion) ||
+        !/^[0-9a-f]{64}$/u.test(row.templateSourceChecksum) ||
+        row.templateLocale !== "en" ||
+        row.templateFallbackUsed ||
+        !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u.test(row.scheduledLocalDate) ||
+        Number.isNaN(Date.parse(`${row.scheduledLocalDate}T00:00:00.000Z`)) ||
+        typeof row.hasQuietHours !== "boolean" ||
         !Number.isSafeInteger(row.attempt) ||
         row.attempt < 1 ||
         row.maxAttempts !== 3
@@ -659,15 +757,30 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
         leaseToken,
         locale: "en",
         maxAttempts: 3,
+        quietHours: row.hasQuietHours ? "saved" : "none",
         recipientIdentityId: row.recipientIdentityId,
         revisitId: row.revisitId,
+        scheduledLocalDate: row.scheduledLocalDate,
         subscriptionId: row.subscriptionId,
+        templateFallbackUsed: row.templateFallbackUsed,
+        templateId: row.templateId,
+        templateLocale: row.templateLocale,
+        templateSourceChecksum: row.templateSourceChecksum,
+        templateVersion: row.templateVersion,
+        timeZone: row.timeZone,
       });
     });
   };
 
   const authorizeDelivery: RevisitReminderService["authorizeDelivery"] = async (input) => {
-    if (!uuidV4Pattern.test(input.subscriptionId)) {
+    if (
+      !uuidV4Pattern.test(input.subscriptionId) ||
+      !/^[a-z][a-z0-9-]{0,79}$/u.test(input.templateId) ||
+      !/^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/u.test(input.templateVersion) ||
+      !/^[0-9a-f]{64}$/u.test(input.templateSourceChecksum) ||
+      input.templateLocale !== "en" ||
+      input.templateFallbackUsed
+    ) {
       throw new RevisitReminderError("REVISIT_REMINDER_INVALID");
     }
     const leaseTokenHash = await tokenDigest(input.leaseToken);
@@ -703,12 +816,26 @@ export const createRevisitReminderService = (database: PrismaClient): RevisitRem
            AND subscription.channel = ${revisitReminderChannel}
            AND subscription.frequency = ${revisitReminderFrequency}
            AND subscription.locale = 'en'
+           AND subscription.template_id = ${input.templateId}
+           AND subscription.template_version = ${input.templateVersion}
+           AND subscription.template_source_checksum = ${input.templateSourceChecksum}
+           AND subscription.template_locale = ${input.templateLocale}
+           AND subscription.template_fallback_used = ${input.templateFallbackUsed}
            AND subscription.lease_token_hash = ${leaseTokenHash}
            AND subscription.leased_until > CURRENT_TIMESTAMP
            AND revisit.status = 'scheduled'
            AND revisit.deleted_at IS NULL
            AND revisit.expires_at > CURRENT_TIMESTAMP
            AND intention.deleted_at IS NULL
+           AND (
+             (CURRENT_TIMESTAMP AT TIME ZONE revisit.time_zone)::date
+               > revisit.scheduled_local_date
+             OR (
+               (CURRENT_TIMESTAMP AT TIME ZONE revisit.time_zone)::date
+                 = revisit.scheduled_local_date
+               AND (CURRENT_TIMESTAMP AT TIME ZONE revisit.time_zone)::time >= TIME '09:00'
+             )
+           )
            AND (
              revisit.quiet_hours_start IS NULL
              OR (

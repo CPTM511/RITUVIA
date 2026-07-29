@@ -91,6 +91,9 @@ describe("MVP client boundaries", () => {
     };
 
     expect(parseAccountSummary(account)).toMatchObject({ adultAttested: false, id: uuid });
+    expect(parseAccountSummary({ ...account, displayName: "𠮷".repeat(80) })?.displayName).toBe(
+      "𠮷".repeat(80),
+    );
     expect(parseAccountSummary({ ...account, emailVerified: false })).toBeNull();
     expect(parseAccountSummary({ ...account, id: "not-an-account-id" })).toBeNull();
   });
@@ -230,6 +233,7 @@ describe("MVP server-rendered initial states", () => {
   it("renders private account and checkout verification loading states", () => {
     const accountHtml = renderToStaticMarkup(
       createElement(AccountExperience, {
+        locale: "en",
         messages: getAccountMessages("en").account,
         oneCardHref: localeTarotOneCardPath("en"),
         sanctuaryHref: localeSanctuaryPath("en"),
@@ -273,6 +277,7 @@ describe("MVP server-rendered initial states", () => {
     const html = renderToStaticMarkup(
       createElement(SanctuaryFlow, {
         accountHref: localeAccountPath("en"),
+        locale: "en",
         messages: getSanctuaryMessages("en"),
         readingHref: localeTarotOneCardPath("en"),
         revisitHref: localeRevisitPath("en"),

@@ -4,6 +4,7 @@ import { Button, InlineAlert } from "@rituvia/ui";
 import { useCallback, useEffect, useId, useReducer, useRef, useState } from "react";
 
 import type { TarotReadingMessages } from "../_i18n/tarot-one-card-messages";
+import type { Locale } from "../_i18n/routing";
 import {
   canPollTarotInterpretation,
   createTarotInterpretationOperationId,
@@ -21,6 +22,7 @@ import { TarotReadingReport } from "./tarot-reading-report";
 type Messages = TarotReadingMessages["result"]["interpretation"];
 
 export type TarotInterpretationPanelProps = Readonly<{
+  locale: Locale;
   messages: Messages;
   reportMessages: TarotReadingMessages["result"]["report"];
   readingId: string;
@@ -71,6 +73,7 @@ const timeHorizonLabel = (
 };
 
 export function TarotInterpretationPanel({
+  locale,
   messages,
   reportMessages,
   readingId,
@@ -356,6 +359,7 @@ export function TarotInterpretationPanel({
             {state.operationId === null ? null : (
               <TarotReadingReport
                 interpretationRequestId={state.operationId}
+                locale={locale}
                 messages={reportMessages}
                 positions={[]}
                 readingId={readingId}

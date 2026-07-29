@@ -1,4 +1,5 @@
 import type { Locale } from "./routing";
+import { getCoreSourceMessage } from "./core-messages";
 
 export type SanctuaryThemeCode =
   | "calm_clarity"
@@ -363,7 +364,7 @@ const englishMessages = {
       previous: "Previous step",
       resume: "Resume ritual",
       returnToSanctuary: "Return to Sanctuary",
-      stepProgress: "Step {current} of {total}",
+      stepProgress: getCoreSourceMessage("ritual.stepProgress"),
       symbolicBoundary:
         "This is a symbolic digital experience for reflection. It does not change or guarantee external events.",
       useLinearMode: "Use accessible linear mode",

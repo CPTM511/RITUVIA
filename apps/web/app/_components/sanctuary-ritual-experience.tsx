@@ -1,12 +1,14 @@
 "use client";
 
 import { Button, InlineAlert } from "@rituvia/ui";
+import { formatIcuMessage } from "@rituvia/i18n/messages";
 import { useEffect, useId, useRef, useState } from "react";
 
 import type {
   SanctuaryFreeRitualItem,
   SanctuaryRitualExperienceMessages,
 } from "../_i18n/sanctuary-messages";
+import type { Locale } from "../_i18n/routing";
 
 export type RitualCompletionResult = "error" | "offline" | "success";
 export type RitualExperienceMode = "linear" | "visual";
@@ -18,6 +20,7 @@ type SanctuaryRitualExperienceProps = Readonly<{
   initialMode: RitualExperienceMode;
   intentionLabel: string;
   item: SanctuaryFreeRitualItem;
+  locale: Locale;
   messages: SanctuaryRitualExperienceMessages;
   onDismiss: (destination: RitualExperienceDestination) => void;
   onMutate: (
@@ -28,15 +31,13 @@ type SanctuaryRitualExperienceProps = Readonly<{
   status: "active" | "completed" | "paused";
 }>;
 
-const progressLabel = (template: string, current: number, total: number): string =>
-  template.replace("{current}", String(current)).replace("{total}", String(total));
-
 export function SanctuaryRitualExperience({
   currentStepCode,
   elapsedSeconds,
   initialMode,
   intentionLabel,
   item,
+  locale,
   messages,
   onDismiss,
   onMutate,
@@ -242,12 +243,15 @@ export function SanctuaryRitualExperience({
 
               <section aria-live="polite" className="ritual-step" key={currentStep.code}>
                 <p className="ritual-step-progress">
-                  {progressLabel(messages.stepProgress, stepIndex + 1, item.steps.length)}
+                  {formatIcuMessage(locale, messages.stepProgress, {
+                    current: stepIndex + 1,
+                    total: item.steps.length,
+                  })}
                 </p>
                 <h3>{currentStep.title}</h3>
                 <p>{currentStep.instruction}</p>
                 <p className="sanctuary-private-note">
-                  {messages.intentionLabel}: {intentionLabel}
+                  {messages.intentionLabel}: <bdi dir="auto">{intentionLabel}</bdi>
                 </p>
                 <div className="ritual-experience-actions">
                   {finalStep ? (

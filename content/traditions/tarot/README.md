@@ -25,3 +25,9 @@ visuals are original abstract interface symbols rather than reproductions of a t
 Every card has reviewed upright and reversed content for all intake themes. Publication eligibility
 is time-bounded by its editorial review date, and the web activation layer still restricts new draws
 to a fully configured local deployment.
+
+`rituvia-major-arcana-library.en.v1.json` is the D-081-approved finite English public-education
+projection derived from that exact catalog. It declares one hub, 22 card routes, and two spread
+routes, is registered in the shared editorial manifest, and enters the production-only public
+route and sitemap boundary. It remains unavailable to AI retrieval and does not authorize another
+locale, tradition, personalized-result index, doorway route, deployment, DNS change, or launch.

@@ -57,6 +57,7 @@ export default async function TarotThreeCardPage({ params }: TarotThreeCardPageP
           <p className="tarot-reading-privacy">{messages.page.privacy}</p>
         </header>
         <TarotThreeCardFlow
+          locale={locale}
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}
           sanctuaryHref={localeSanctuaryPath(locale)}

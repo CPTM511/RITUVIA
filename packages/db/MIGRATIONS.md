@@ -50,10 +50,11 @@ identifiers, private text, secrets, legal copy, provider payloads, or arbitrary 
 The migration is expand-only and creates no enabled records. Forced RLS grants reads to a common
 reader capability and inserts to a common writer capability. Environment provisioning assigns the
 reader to runtime and control, but assigns the writer only to control; runtime is never an object
-owner. `off` rows are always appendable by control. `on` rows additionally require registry version
-1's exact key, gate-prefix reference, and scope shape. Control cannot update/delete/truncate or use
-DDL. Owner approval still governs whether a control credential may be used; the database checks
-structure and provenance fields, not the external approval record's truth.
+owner. `off` rows are always appendable by control. Legacy registry v1/v2 rows are restricted to
+`off`; registry v3 `on` rows additionally require an exact active key, gate-prefix reference, and
+scope shape. Control cannot update/delete/truncate or use DDL. Owner approval still governs whether
+a control credential may be used; the database checks structure and provenance fields, not the
+external approval record's truth.
 
 The Web composition adapter does not trust the URL or login name alone. Before every registry read,
 it queries PostgreSQL's live ownership, role, and privilege catalogs and fails closed unless the
@@ -65,9 +66,10 @@ authenticated `session_user` must equal `current_user`, so a
 high-privilege login cannot use connection startup options to preselect a safe-looking role.
 
 Uniqueness includes registry version, and readers filter their exact deployed registry, allowing
-v1/v2 history to coexist during rolling upgrade and rollback. A key remains a forced-off tombstone
-until its cleanup task is Done; only a later registry version removes it. Dropping the table or
-policies remains a destructive migration requiring backup evidence and owner approval.
+v1/v2/v3 history to coexist during rolling upgrade and rollback. Registry v3 removes the completed
+public-shell tombstone after the protected D-089 compatibility window; v1/v2 history remains
+append-only and ignored by v3 readers. Dropping the table or policies remains a destructive
+migration requiring backup evidence and owner approval.
 
 Logical dumps run through the runtime's exact table-read capability with explicit row security and
 INSERT-form data. Restore runs
@@ -341,10 +343,11 @@ evidence, privacy/legal review, and explicit owner approval.
 ## RIT-093 astrology feature-flag registration
 
 The additive migration adds one insert policy for the canonical `experience.astrology` key. It
-does not insert a flag version or enable any environment. An `on` version requires registry V1,
-`OWN-015:` approval evidence, and empty country/locale scopes. The existing safe-off policy permits
-a newer emergency `off` version without waiting for approval; the append-only table, hierarchical
-key constraint, and reader/writer least-privilege roles remain unchanged.
+does not insert a flag version or enable any environment. The key is carried forward in registry
+v3; an `on` version requires `OWN-015:` approval evidence and empty country/locale scopes. The
+safe-off policy permits a newer emergency `off` version without waiting for approval; the
+append-only table, hierarchical key constraint, and reader/writer least-privilege roles remain
+unchanged.
 
 Historical `astrology_enabled` text is a superseded semantic label under D-071, not a valid
 PostgreSQL key. The isolated drill applies all 28 migrations, rejects the historical key and

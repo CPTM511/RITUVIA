@@ -25,9 +25,12 @@ describe("public numerology SEO pages", () => {
     expect(html.match(/class="numerology-guide-card"/gu)).toHaveLength(4);
     expect(html).toContain('href="/en/numerology/life-path-number"');
     expect(html).toContain('href="/en/readings/numerology"');
-    expect(html).toContain("RITUVIA original editorial guidance, version 1.0.0");
+    expect(html).toContain("RITUVIA English symbolic number profiles, version 1.0.0");
+    expect(html).toContain('data-geo-entity-id="rituvia-numerology-v1"');
+    expect(html).toContain(">Fact or documented method</dt>");
+    expect(html).toContain(">Interpretation</dt>");
     expect(html).toContain('"@type":"CollectionPage"');
-    expect(html).toContain('"@type":"BreadcrumbList"');
+    expect(html).not.toContain('"@type":"BreadcrumbList"');
     expect(html).toContain("https://example.test/en/numerology");
     expect(html).not.toContain("FAQPage");
     expect(html).not.toMatch(/<(?:input|form)\b/iu);
@@ -50,13 +53,13 @@ describe("public numerology SEO pages", () => {
       expect(html).toContain("Worked example");
       expect(html).toContain("What this cannot determine");
       expect(html).toContain("Questions for reflection");
-      expect(html).toContain("Source and review note");
-      expect(html).toContain("Reviewed 2026-07-25");
+      expect(html).toContain("Source basis");
+      expect(html).toContain(">Reviewed</dt><dd>2026-07-25</dd>");
       expect(html).toContain('href="/en/readings/numerology"');
       expect(html).toContain('href="/en/numerology"');
       expect(html.match(/<li><a href="\/en\/numerology\//gu)).toHaveLength(3);
       expect(html).toContain('"@type":"Article"');
-      expect(html).toContain('"@type":"BreadcrumbList"');
+      expect(html).not.toContain('"@type":"BreadcrumbList"');
       expect(html).not.toMatch(/<(?:input|form)\b/iu);
     }
   });
@@ -67,7 +70,8 @@ describe("public numerology SEO pages", () => {
       canonicalOrigin: "https://example.test",
       deploymentEnvironment: "production",
       description: "Unique guide description.",
-      pathname: "/en/numerology/life-path-number",
+      locale: "en",
+      routeId: "numerology-guide:life-path-number",
       title: "Life Path guide",
       type: "article",
     });
@@ -95,7 +99,8 @@ describe("public numerology SEO pages", () => {
           canonicalOrigin: "https://example.test",
           deploymentEnvironment,
           description: "Unique guide description.",
-          pathname: "/en/numerology/life-path-number",
+          locale: "en",
+          routeId: "numerology-guide:life-path-number",
           title: "Life Path guide",
           type: "article",
         }).robots,

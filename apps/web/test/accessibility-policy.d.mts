@@ -28,7 +28,7 @@ export function resolveAccessibilityArtifactRequest(
   rawUrl: string,
 ): AccessibilityArtifactDescriptor | null;
 
-export function pseudoLocalizeText(value: string, direction?: "ltr" | "rtl"): string;
+export function pseudoLocalizeText(value: string, locale?: "en-XA" | "ar-XB"): string;
 
 export function auditAxeResult(
   result: AxeAuditResult,

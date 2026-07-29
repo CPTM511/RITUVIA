@@ -12,6 +12,7 @@ import {
   type LocalActionHref,
 } from "@rituvia/ui";
 import { evaluateReflectionIntentionAgencyV1, parseRitualCatalogV1 } from "@rituvia/domain";
+import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import Image from "next/image";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +22,7 @@ import type {
   SanctuaryMessages,
   SanctuaryThemeCode,
 } from "../_i18n/sanctuary-messages";
+import type { Locale } from "../_i18n/routing";
 import {
   clearSanctuaryReadingHandoff,
   sanctuaryReadingHandoffStorageKey,
@@ -347,13 +349,13 @@ export const resolveLatestReadingId = async (
   );
 };
 
-const currencyLabel = (item: CatalogItem): string | null => {
+const currencyLabel = (item: CatalogItem, locale: Locale): string | null => {
   if (item.price === null) return null;
   try {
-    return new Intl.NumberFormat("en", {
-      currency: item.price.currency,
-      style: "currency",
-    }).format(item.price.amountMinor / 100);
+    return createLocaleFormatter({ locale, timeZone: "UTC" }).currency(
+      item.price.amountMinor / 100,
+      item.price.currency,
+    );
   } catch {
     return `${item.price.currency} ${(item.price.amountMinor / 100).toFixed(2)}`;
   }
@@ -383,6 +385,7 @@ const checkoutUrlFromResponse = (value: unknown): string | null => {
 
 type SanctuaryFlowProps = Readonly<{
   accountHref: LocalActionHref;
+  locale: Locale;
   messages: SanctuaryMessages;
   readingHref: LocalActionHref;
   revisitHref: LocalActionHref;
@@ -392,6 +395,7 @@ type SanctuaryFlowProps = Readonly<{
 
 export function SanctuaryFlow({
   accountHref,
+  locale,
   messages,
   readingHref,
   revisitHref,
@@ -1212,6 +1216,7 @@ export function SanctuaryFlow({
         initialMode={activeRitualMode}
         intentionLabel={intention.intentionText}
         item={activeFreeRitual}
+        locale={locale}
         messages={messages.ritual.experience}
         onDismiss={dismissRitualExperience}
         onMutate={mutateActiveRitual}
@@ -1551,7 +1556,7 @@ export function SanctuaryFlow({
               ) : null}
               <div className="ritual-item-list">
                 {catalog.map((item) => {
-                  const price = currencyLabel(item);
+                  const price = currencyLabel(item, locale);
                   const accessLabel =
                     item.access === "free"
                       ? messages.ritual.free
@@ -1567,7 +1572,9 @@ export function SanctuaryFlow({
                         <span className="ritual-access-badge">{accessLabel}</span>
                         <h3>{item.name}</h3>
                         <p>{item.description}</p>
-                        <p className="ritual-price">{price ?? messages.ritual.free}</p>
+                        <p className="ritual-price">
+                          {price === null ? messages.ritual.free : <bdi dir="auto">{price}</bdi>}
+                        </p>
                         {item.access === "purchase" ? (
                           <p className="privacy-note">{messages.ritual.priceDisclosure}</p>
                         ) : null}
@@ -1622,7 +1629,9 @@ export function SanctuaryFlow({
             </header>
             <div className="checkout-order-summary">
               <strong>{pendingItem.name}</strong>
-              <span>{currencyLabel(pendingItem)}</span>
+              <span>
+                <bdi dir="auto">{currencyLabel(pendingItem, locale)}</bdi>
+              </span>
             </div>
             {accountState === "loading" ? (
               <div aria-busy="true" aria-live="polite" className="sanctuary-status">

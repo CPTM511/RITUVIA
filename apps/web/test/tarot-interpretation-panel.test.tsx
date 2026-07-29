@@ -14,6 +14,7 @@ describe("private tarot interpretation panel", () => {
     (messages) => {
       const html = renderToStaticMarkup(
         createElement(TarotInterpretationPanel, {
+          locale: "en",
           messages: messages.result.interpretation,
           reportMessages: messages.result.report,
           readingId,

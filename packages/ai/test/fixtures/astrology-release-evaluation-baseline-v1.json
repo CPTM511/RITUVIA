@@ -1,0 +1,12 @@
+{
+  "evaluatorPolicyVersion": "astrology-release-evaluation-policy.v1",
+  "executionMode": "synthetic_safe_off",
+  "externalRequests": 0,
+  "paidCalls": 0,
+  "schemaVersion": "astrology-release-evaluation-baseline.v1",
+  "suite": {
+    "checksum": "sha256:eafad97c1c2ade5e02e998ee152837733c331883e4e08b0ef992892225a58e4a",
+    "id": "rituvia.astrology.release-evaluation.en",
+    "version": "1.0.0"
+  }
+}

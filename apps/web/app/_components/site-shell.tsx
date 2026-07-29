@@ -10,6 +10,8 @@ import {
   localeTarotThreeCardPath,
   type Locale,
 } from "../_i18n/routing";
+import { GeoAnswerContext } from "./geo-answer-context";
+import { PublicStructuredData } from "./public-structured-data";
 import { PublicSiteFrame } from "./public-site-frame";
 
 const oracleHeadingId = createUiControlId("oracle-heading");
@@ -17,6 +19,7 @@ const oracleHeadingId = createUiControlId("oracle-heading");
 type SiteShellProps = Readonly<{
   brandName: string;
   brandTagline: string;
+  canonicalOrigin: string;
   locale: Locale;
   messages: ShellMessages;
   numerologyEnabled: boolean;
@@ -25,6 +28,7 @@ type SiteShellProps = Readonly<{
 export function SiteShell({
   brandName,
   brandTagline,
+  canonicalOrigin,
   locale,
   messages,
   numerologyEnabled,
@@ -39,6 +43,13 @@ export function SiteShell({
       locale={locale}
       messages={messages.shared}
     >
+      <PublicStructuredData
+        canonicalOrigin={canonicalOrigin}
+        description={content.hero.introduction}
+        locale={locale}
+        routeId="home"
+        title={content.hero.title}
+      />
       <main id="main-content" tabIndex={-1}>
         <section aria-labelledby="home-heading" className="shell hero">
           <div className="hero-copy">
@@ -68,6 +79,8 @@ export function SiteShell({
             />
           </div>
         </section>
+
+        <GeoAnswerContext brandName={brandName} locale={locale} routeId="home" />
 
         <aside aria-label={content.trust.label} className="trust-bar">
           <ul className="shell trust-list">

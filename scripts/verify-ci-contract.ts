@@ -6,6 +6,7 @@ import { parse } from "yaml";
 import {
   auditBrowserTestDependencies,
   auditCiScripts,
+  auditDatabaseCiScripts,
   auditToolchainVersions,
   verifyCiWorkflowDirectory,
 } from "./ci-contract.js";
@@ -27,6 +28,9 @@ const workspace = parse(
 ) as {
   nodeVersion?: unknown;
 };
+const databasePackageJson = JSON.parse(
+  await readFile(path.join(repositoryRoot, "packages/db/package.json"), "utf8"),
+) as { scripts?: unknown };
 const toolchainFindings = auditToolchainVersions({
   nodeEngine: packageJson.engines?.node,
   nodeVersion: (await readFile(path.join(repositoryRoot, ".node-version"), "utf8")).trim(),
@@ -35,12 +39,16 @@ const toolchainFindings = auditToolchainVersions({
   workspaceNodeVersion: workspace.nodeVersion,
 });
 const scriptFindings = auditCiScripts(packageJson.scripts);
+const databaseScriptFindings = auditDatabaseCiScripts(databasePackageJson.scripts);
 const browserDependencyFindings = auditBrowserTestDependencies(packageJson.devDependencies);
 if (toolchainFindings.length > 0) {
   process.stderr.write("CI contract failure: toolchain versions are not synchronized.\n");
 }
 if (scriptFindings.length > 0) {
   process.stderr.write("CI contract failure: repository gate scripts are not exact.\n");
+}
+if (databaseScriptFindings.length > 0) {
+  process.stderr.write("CI contract failure: database CI script is not self-contained.\n");
 }
 if (browserDependencyFindings.length > 0) {
   process.stderr.write("CI contract failure: browser test dependencies are not exact.\n");
@@ -49,6 +57,7 @@ process.exitCode =
   workflowResult === 0 &&
   toolchainFindings.length === 0 &&
   scriptFindings.length === 0 &&
+  databaseScriptFindings.length === 0 &&
   browserDependencyFindings.length === 0
     ? 0
     : 1;
