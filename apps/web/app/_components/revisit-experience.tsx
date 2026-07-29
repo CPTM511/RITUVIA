@@ -200,17 +200,30 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
 
   useEffect(() => {
     if (phase === "loading" || reminderPreferencesRequested.current) return;
-    if (window.location.hash !== "#reminder-preferences") return;
-    const timer = window.setTimeout(() => {
-      reminderPreferencesRequested.current = true;
-      const region = reminderPreferencesRegion.current;
-      const checkbox = region?.querySelector<HTMLInputElement>(
-        'input[type="checkbox"][id^="revisit-reminder-"]',
-      );
-      (checkbox ?? region)?.focus({ preventScroll: true });
-      region?.scrollIntoView({ block: "start" });
-    }, 0);
-    return () => window.clearTimeout(timer);
+    let timer = 0;
+    const focusReminderPreferences = () => {
+      if (
+        reminderPreferencesRequested.current ||
+        window.location.hash !== "#reminder-preferences"
+      ) {
+        return;
+      }
+      timer = window.setTimeout(() => {
+        reminderPreferencesRequested.current = true;
+        const region = reminderPreferencesRegion.current;
+        const checkbox = region?.querySelector<HTMLInputElement>(
+          'input[type="checkbox"][id^="revisit-reminder-"]',
+        );
+        (checkbox ?? region)?.focus({ preventScroll: true });
+        region?.scrollIntoView({ block: "start" });
+      }, 0);
+    };
+    focusReminderPreferences();
+    window.addEventListener("hashchange", focusReminderPreferences);
+    return () => {
+      window.removeEventListener("hashchange", focusReminderPreferences);
+      window.clearTimeout(timer);
+    };
   }, [phase, reminderAccountAvailable, reminders]);
 
   const idempotencyKey = (fingerprint: string): string => {
