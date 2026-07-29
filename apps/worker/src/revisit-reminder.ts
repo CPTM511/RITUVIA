@@ -1,6 +1,4 @@
-import {
-  isRegisteredRevisitReminderTemplateBinding,
-} from "@rituvia/domain";
+import { isRegisteredRevisitReminderTemplateBinding } from "@rituvia/domain";
 import {
   createRevisitReminderEmail,
   type RevisitReminderEmailMessage,

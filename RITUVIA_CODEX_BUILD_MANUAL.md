@@ -2025,6 +2025,11 @@ rerun also identified and fixed the sanitized compiler environment's missing tru
 directory, then passed 151 mutation cases and the 23-component supply-chain validation. That run's
 PostgreSQL job never reached database verification because repeated npm registry timeouts aborted
 dependency installation, which remains external transient evidence rather than a database result.
+Hosted run `30470928541` then passed the complete Security job, including native sanitizer,
+SCA/CVE, and Corresponding Source checks. Quality reached the formatting gate and found two
+existing format drifts, now corrected with a full repository format check. PostgreSQL generated the
+pinned Prisma client and built security before revealing the remaining missing domain build output;
+the self-contained database command now builds domain, security, and Prisma in dependency order.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner

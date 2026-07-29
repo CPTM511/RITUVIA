@@ -182,7 +182,7 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
 
 export const auditDatabaseCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
   const expected =
-    "pnpm generate && pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
+    "pnpm --filter @rituvia/domain build && pnpm --filter @rituvia/security build && pnpm generate && node --import tsx scripts/verify-ci-foundation.ts";
   return isRecord(scripts) && scripts["test:ci"] === expected
     ? []
     : [{ location: "packages/db/package.json#scripts.test:ci", rule: "ci-script-command" }];
