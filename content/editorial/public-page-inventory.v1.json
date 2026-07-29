@@ -19,11 +19,7 @@
       "contentFamily": "pages",
       "contentShape": "product-landing",
       "headingCount": 7,
-      "internalRouteIds": [
-        "methodology",
-        "safety",
-        "privacy"
-      ],
+      "internalRouteIds": ["methodology", "safety", "privacy"],
       "locale": "en",
       "nearestRouteId": "safety",
       "nearestSimilarityPermille": 45,
@@ -53,11 +49,7 @@
       "contentFamily": "pages",
       "contentShape": "public-trust-article",
       "headingCount": 9,
-      "internalRouteIds": [
-        "home",
-        "safety",
-        "privacy"
-      ],
+      "internalRouteIds": ["home", "safety", "privacy"],
       "locale": "en",
       "nearestRouteId": "privacy",
       "nearestSimilarityPermille": 27,
@@ -87,11 +79,7 @@
       "contentFamily": "pages",
       "contentShape": "public-trust-article",
       "headingCount": 9,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "privacy"
-      ],
+      "internalRouteIds": ["home", "methodology", "privacy"],
       "locale": "en",
       "nearestRouteId": "home",
       "nearestSimilarityPermille": 45,
@@ -121,11 +109,7 @@
       "contentFamily": "pages",
       "contentShape": "public-trust-article",
       "headingCount": 9,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "safety"
-      ],
+      "internalRouteIds": ["home", "methodology", "safety"],
       "locale": "en",
       "nearestRouteId": "home",
       "nearestSimilarityPermille": 41,
@@ -1631,13 +1615,7 @@
       "contentFamily": "rituals",
       "contentShape": "ritual-reflection-guide",
       "headingCount": 7,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "safety",
-        "privacy",
-        "ritual-reflection-hub"
-      ],
+      "internalRouteIds": ["home", "methodology", "safety", "privacy", "ritual-reflection-hub"],
       "locale": "en",
       "nearestRouteId": "ritual-reflection-hub",
       "nearestSimilarityPermille": 475,
@@ -1667,13 +1645,7 @@
       "contentFamily": "rituals",
       "contentShape": "ritual-reflection-guide",
       "headingCount": 7,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "safety",
-        "privacy",
-        "ritual-reflection-hub"
-      ],
+      "internalRouteIds": ["home", "methodology", "safety", "privacy", "ritual-reflection-hub"],
       "locale": "en",
       "nearestRouteId": "ritual-reflection-guide:virtual-candle-reflection",
       "nearestSimilarityPermille": 466,
@@ -1703,13 +1675,7 @@
       "contentFamily": "rituals",
       "contentShape": "ritual-reflection-guide",
       "headingCount": 7,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "safety",
-        "privacy",
-        "ritual-reflection-hub"
-      ],
+      "internalRouteIds": ["home", "methodology", "safety", "privacy", "ritual-reflection-hub"],
       "locale": "en",
       "nearestRouteId": "ritual-reflection-hub",
       "nearestSimilarityPermille": 456,
@@ -1739,13 +1705,7 @@
       "contentFamily": "rituals",
       "contentShape": "ritual-reflection-guide",
       "headingCount": 7,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "safety",
-        "privacy",
-        "ritual-reflection-hub"
-      ],
+      "internalRouteIds": ["home", "methodology", "safety", "privacy", "ritual-reflection-hub"],
       "locale": "en",
       "nearestRouteId": "ritual-reflection-hub",
       "nearestSimilarityPermille": 466,
@@ -1775,13 +1735,7 @@
       "contentFamily": "rituals",
       "contentShape": "ritual-reflection-guide",
       "headingCount": 7,
-      "internalRouteIds": [
-        "home",
-        "methodology",
-        "safety",
-        "privacy",
-        "ritual-reflection-hub"
-      ],
+      "internalRouteIds": ["home", "methodology", "safety", "privacy", "ritual-reflection-hub"],
       "locale": "en",
       "nearestRouteId": "ritual-reflection-hub",
       "nearestSimilarityPermille": 478,

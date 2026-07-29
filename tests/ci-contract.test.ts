@@ -116,7 +116,7 @@ describe("active CI workflow contract", () => {
 
   it("requires the database CI verifier to build its internal runtime dependency", () => {
     const expected =
-      "pnpm generate && pnpm --filter @rituvia/security build && node --import tsx scripts/verify-ci-foundation.ts";
+      "pnpm --filter @rituvia/domain build && pnpm --filter @rituvia/security build && pnpm generate && node --import tsx scripts/verify-ci-foundation.ts";
     expect(auditDatabaseCiScripts({ "test:ci": expected })).toEqual([]);
     expect(auditDatabaseCiScripts({ "test:ci": "node scripts/verify-ci-foundation.ts" })).toEqual([
       {
