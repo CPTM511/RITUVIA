@@ -84,7 +84,7 @@ d0ecec7c5be7bc587fa68de9b34e59872e3860420592faaaeaa2856e8712e62d  apps/web/app/_
 69a03fa66de5b6a651c78c612d5331767c1aadef5045caa49ca6ce0d99500ea0  apps/web/app/_components/revisit-experience.tsx
 91639e04f166730c749ecaa66fd1eec1a5d6528ab40c32a6ab98607d4d68c287  apps/web/app/_components/ritual-reflection-publication.tsx
 8612cf3c5f7e57114b67a03753efa23f94f99752bc9b892bd7e382ba0df4a90c  apps/web/app/_components/root-document.tsx
-843e4c8008ad52a2bb021540753e8c2c74fe154a57453b7b1c3c04368690103e  apps/web/app/_components/sanctuary-flow.tsx
+ddb7b933cae4e6d53ed18eafcd5423bc15498db58802027ff8e30efd65c6d830  apps/web/app/_components/sanctuary-flow.tsx
 af74127d82783173771878cd906920db37bfa8bd613d4bb2f6e21cb3734828c3  apps/web/app/_components/sanctuary-ritual-experience.tsx
 f4477831063b3130d0615451edc5cfdb22fecbae25220d5c60b42e3f2f7b2b6e  apps/web/app/_components/sign-in-form.tsx
 59163fa78a1d802be3e706ab6b0f6cd33c168f5e3b8261d56f9e5e67d0f39cfd  apps/web/app/_components/site-shell.tsx
@@ -280,7 +280,7 @@ e94f6e6b0cffc54079139a943b43ed81a3515db85b358815919d7783b41146e5  apps/web/test/
 706930617a25654602026e2eea19528ac42e386a890b73899542388aec2c3a6e  apps/web/test/localized-public-routes.test.ts
 d0e3e7ac77352878b778e96f8b826b4691a860d567ff2e26b75d89416230fdb3  apps/web/test/messages.test.ts
 35df18616254644adeece9b32ed1ac80956d92c9fa4dc6e05451607280b25891  apps/web/test/metadata.test.ts
-f00315e75dbf46885f1643b438c4c32237a7bfba53c8e40e7bf64761fa8b009c  apps/web/test/mvp-experience-ui.test.tsx
+820cc2439279a50ec489f337ba69bbb376b29e6fb2a87061d9dbd92fee33e24e  apps/web/test/mvp-experience-ui.test.tsx
 5b30798c728ba32db39990e42148c574e97b9f1105d04506929e3c2a7979430f  apps/web/test/numerology-calculation-route.test.ts
 4ca0d75fc8d239727104a06a05a2978efdb89833f91853c00705d3b3e0ffacf3  apps/web/test/numerology-calculation-server.test.ts
 503b1e1f6e769dfc13e4d7b3be36713bc0fef483b864afc7d2f969209a5f74c9  apps/web/test/numerology-calculator.test.tsx

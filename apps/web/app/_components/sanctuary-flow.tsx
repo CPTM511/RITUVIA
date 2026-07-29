@@ -15,7 +15,7 @@ import { evaluateReflectionIntentionAgencyV1, parseRitualCatalogV1 } from "@ritu
 import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import Image from "next/image";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type {
   SanctuaryFreeRitualItem,
@@ -93,6 +93,7 @@ type IntentionLifecycleAction = "archive" | "complete" | "delete";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const codePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const csrfTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
+const subscribeToHydration = (): (() => void) => () => undefined;
 const legacyFreeRitualObjectCode = (code: SanctuaryFreeRitualItem["code"]): "candle" | "incense" =>
   code === "free_candle" ? "candle" : "incense";
 
@@ -394,6 +395,11 @@ export function SanctuaryFlow({
   sanctuaryHref,
   signInHref,
 }: SanctuaryFlowProps) {
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
   const [accountState, setAccountState] = useState<"loading" | "signed-in" | "signed-out">(
     "loading",
   );
@@ -1272,7 +1278,10 @@ export function SanctuaryFlow({
             <h2 id="sanctuary-intention-title">{messages.intention.title}</h2>
             <p>{messages.intention.description}</p>
           </header>
-          <form aria-busy={intentionPhase === "loading" || undefined} onSubmit={createIntention}>
+          <form
+            aria-busy={!hydrated || intentionPhase === "loading" || undefined}
+            onSubmit={createIntention}
+          >
             <fieldset className="sanctuary-theme-fieldset">
               <legend>{messages.intention.themeLabel}</legend>
               <div className="sanctuary-theme-list">
@@ -1281,6 +1290,7 @@ export function SanctuaryFlow({
                     aria-pressed={selectedTheme === code}
                     className="sanctuary-theme-chip"
                     disabled={
+                      !hydrated ||
                       intentionPhase === "loading" ||
                       (intention !== null && intention.status !== "active")
                     }
@@ -1305,6 +1315,7 @@ export function SanctuaryFlow({
                   <button
                     className="sanctuary-theme-chip"
                     disabled={
+                      !hydrated ||
                       intentionPhase === "loading" ||
                       (intention !== null && intention.status !== "active")
                     }
@@ -1327,7 +1338,7 @@ export function SanctuaryFlow({
             </fieldset>
             <TextAreaField
               description={messages.intention.intentionTextDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               {...(intentionErrorField === "intention" && intentionError !== null
                 ? { error: intentionError }
                 : {})}
@@ -1349,7 +1360,7 @@ export function SanctuaryFlow({
             />
             <TextAreaField
               description={messages.intention.smallActionDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               {...(intentionErrorField === "smallAction" && intentionError !== null
                 ? { error: intentionError }
                 : {})}
@@ -1370,7 +1381,7 @@ export function SanctuaryFlow({
             />
             <TextField
               description={messages.intention.revisitDateDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               id={revisitDateId}
               label={messages.intention.revisitDateLabel}
               {...(minimumRevisitDate === null ? {} : { minimum: minimumRevisitDate })}
@@ -1423,6 +1434,7 @@ export function SanctuaryFlow({
             ) : null}
             {intention === null || intention.status === "active" ? (
               <Button
+                disabled={!hydrated}
                 label={
                   intention === null ? messages.intention.create : messages.intention.saveChanges
                 }
