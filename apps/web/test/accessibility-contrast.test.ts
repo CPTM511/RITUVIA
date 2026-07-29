@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const uiStyles = readFileSync("packages/ui/src/styles.css", "utf8");
 const webStyles = readFileSync("apps/web/app/styles.css", "utf8");
+const accessibilityVerifier = readFileSync("scripts/verify-web-accessibility.mjs", "utf8");
 
 type Rgb = readonly [number, number, number];
 
@@ -139,6 +140,14 @@ describe("public shell contrast compensation", () => {
       /\.oracle-card > p:not\(\.eyebrow\) \{[\s\S]*?color: var\(--ink-secondary\)/u,
     );
     expect(webStyles).toMatch(/\.oracle-card \.oracle-note \{[\s\S]*?color: var\(--accent-sage\)/u);
+  });
+
+  it("checks the visible parent focus ring for transparent choice inputs", () => {
+    expect(uiStyles).toContain(":where(.rvt-choice, .rvt-switch):has(input:focus-visible)");
+    expect(accessibilityVerifier).toContain(
+      'active.matches(".rvt-choice__input, .rvt-switch__input")',
+    );
+    expect(accessibilityVerifier).toContain('active.closest(".rvt-choice, .rvt-switch")');
   });
 
   it("keeps the decorative sanctuary preview inside its reviewed clipping bounds", () => {
