@@ -15,6 +15,7 @@ const ritualSessionId = "33333333-3333-4333-8333-333333333333";
 const journalEntryId = "44444444-4444-4444-8444-444444444444";
 const revisitId = "55555555-5555-4555-8555-555555555555";
 const csrfToken = "f".repeat(43);
+const serverReadyTimeoutMs = process.env.CI === "true" ? 60_000 : 30_000;
 const anonymousSessionCookieName = "__Host-rituvia-anonymous-session";
 const anonymousSessionToken = "a".repeat(43);
 const privateQuestion = "What can I notice before I answer the private question canary?";
@@ -90,7 +91,7 @@ const reading = Object.freeze({
 });
 
 const waitForServer = async (server) => {
-  const deadline = Date.now() + 30_000;
+  const deadline = Date.now() + serverReadyTimeoutMs;
   while (Date.now() < deadline) {
     if (server.exitCode !== null || server.signalCode !== null) {
       throw new Error(
@@ -98,11 +99,12 @@ const waitForServer = async (server) => {
       );
     }
     try {
-      const response = await fetch(`${origin}/en/intake`);
+      const response = await fetch(`${origin}/en/intake`, {
+        signal: AbortSignal.timeout(2_000),
+      });
       if (response.ok) return;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error(
     `Full-loop browser server did not become ready: ${server.exitCode ?? server.signalCode ?? "running"}.`,
