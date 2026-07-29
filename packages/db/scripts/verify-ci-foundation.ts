@@ -16,6 +16,7 @@ import { createDatabaseClient } from "../src/client.js";
 import { assertFeatureFlagRuntimeDatabasePrivileges } from "../src/feature-flags.js";
 import { assertInterpretationGenerationRuntimeDatabasePrivileges } from "../src/interpretation-generation-persistence.js";
 import { assertTarotReadingRuntimeDatabasePrivileges } from "../src/tarot-reading-persistence.js";
+import { verifySchemaDriftBaseline } from "./schema-drift-baseline.js";
 
 const APP_ROLE = "rituvia_ci_app";
 const CONTROL_ROLE = "rituvia_ci_config_writer";
@@ -68,6 +69,17 @@ const readExpectedMigrationNames = async (): Promise<readonly string[]> => {
   return Object.freeze(names);
 };
 
+const readInstalledPrismaVersion = async (): Promise<string> => {
+  const manifest = JSON.parse(
+    await readFile(path.resolve("node_modules/prisma/package.json"), "utf8"),
+  ) as { version?: unknown };
+  if (typeof manifest.version !== "string") {
+    throw new Error("Installed Prisma version is invalid.");
+  }
+  assert.match(manifest.version, /^\d+\.\d+\.\d+$/u);
+  return manifest.version;
+};
+
 const hashDirectory = async (root: string, relative = ""): Promise<string> => {
   const digest = createHash("sha256");
   const directory = path.join(root, relative);
@@ -115,7 +127,10 @@ const prismaEnvironment = (): NodeJS.ProcessEnv => ({
   TMPDIR: process.env.TMPDIR,
 });
 
-const runPrisma = (label: string, args: readonly string[]): void => {
+const runPrisma = (
+  label: string,
+  args: readonly string[],
+): Readonly<{ stderr: string; stdout: string }> => {
   const result = spawnSync(process.execPath, [prismaEntry, ...args], {
     cwd: path.resolve("."),
     encoding: "utf8",
@@ -137,6 +152,7 @@ const runPrisma = (label: string, args: readonly string[]): void => {
   ) {
     throw new Error(`Prisma command failed during ${label}.`);
   }
+  return Object.freeze({ stderr: result.stderr, stdout: result.stdout });
 };
 
 const provisionLeastPrivilegeRole = async (): Promise<void> => {
@@ -1108,14 +1124,21 @@ try {
   verificationStage = "migration status";
   runPrisma("migration status", ["migrate", "status"]);
   verificationStage = "schema drift check";
-  runPrisma("schema drift check", [
+  const schemaDrift = runPrisma("schema drift check", [
     "migrate",
     "diff",
     "--from-config-datasource",
     "--to-schema",
     "prisma/schema.prisma",
-    "--exit-code",
+    "--script",
   ]);
+  verifySchemaDriftBaseline(
+    schemaDrift.stdout,
+    JSON.parse(
+      await readFile(path.resolve("prisma/schema-drift-baseline.json"), "utf8"),
+    ) as unknown,
+    await readInstalledPrismaVersion(),
+  );
   await verifyMigratedDatabase();
   process.stdout.write(
     "Verified ephemeral CI PostgreSQL attestation, least privilege, migration idempotence/drift, seed idempotence, feature-flag immutability, constraints, and transaction rollback.\n",

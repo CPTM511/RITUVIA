@@ -75,12 +75,12 @@ try {
   });
 
   for (const message of messages) {
-    const document = message.htmlBody.replace("</head>", `${style}</head>`);
-    assert.equal(document.includes(privacyCanary), false);
-    assert.equal(document.includes("<script"), false);
-    assert.equal(document.includes("<form"), false);
-    assert.equal(document.includes("<img"), false);
-    await page.setContent(document, { waitUntil: "domcontentloaded" });
+    const htmlDocument = message.htmlBody.replace("</head>", `${style}</head>`);
+    assert.equal(htmlDocument.includes(privacyCanary), false);
+    assert.equal(htmlDocument.includes("<script"), false);
+    assert.equal(htmlDocument.includes("<form"), false);
+    assert.equal(htmlDocument.includes("<img"), false);
+    await page.setContent(htmlDocument, { waitUntil: "domcontentloaded" });
     assert.equal(await page.locator("html").getAttribute("lang"), message.locale);
     assert.equal(await page.locator("html").getAttribute("dir"), message.direction);
     assert.equal(await page.title(), message.subject);

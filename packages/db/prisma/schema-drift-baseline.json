@@ -1,0 +1,8 @@
+{
+  "direction": "from-config-datasource-to-prisma-schema",
+  "normalizedBytes": 17666,
+  "normalizedLines": 356,
+  "prismaVersion": "7.8.0",
+  "schemaVersion": 1,
+  "sha256": "d90472e9ec55b07f404252805ad1ee8a6afa7c5f4cd9f54875ce6e6fd5d8a6ae"
+}

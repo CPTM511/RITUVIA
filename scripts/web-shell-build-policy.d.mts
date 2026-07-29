@@ -25,6 +25,10 @@ export function auditPublicSeoDocument(
   expectedPathname?: string,
   expectedCanonicalOrigin?: string,
   expectedRobots?: "index, follow" | "noindex, nofollow",
+  options?: Readonly<{
+    expectedOpenGraphType?: "article" | "website";
+    expectedStructuredDataType?: "Article" | "CollectionPage" | "WebPage" | "WebSite" | null;
+  }>,
 ): readonly string[];
 
 export function auditWebShellBuildArtifacts(

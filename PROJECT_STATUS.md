@@ -962,6 +962,15 @@ SCA/CVE, and Corresponding Source checks. Quality reached the formatting gate an
 existing format drifts, now corrected with a full repository format check. PostgreSQL generated the
 pinned Prisma client and built security before revealing the remaining missing domain build output;
 the self-contained database command now builds domain, security, and Prisma in dependency order.
+Hosted run `30471374114` passed Security again. Quality then reached root TypeScript and exposed
+three clean-runner type-boundary defects, now corrected with a root JSX setting, unshadowed browser
+global, and complete build-policy declaration. PostgreSQL reached schema comparison after all
+prerequisites and migrations; because Prisma cannot represent the committed custom SQL constraints,
+explicit names, indexes, and defaults, the CI verifier now checks the complete normalized diff
+against a strict Prisma-7.8.0 fingerprint. A fresh throwaway database and the existing local
+migrated database produced the same 17,666-byte, 356-line SHA-256 fingerprint. Focused baseline
+tests, affected lint/format, and all 16 package plus root typechecks pass; any schema, output,
+normalization, or Prisma-version change fails closed.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner
