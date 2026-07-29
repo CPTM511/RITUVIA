@@ -31,6 +31,7 @@ const journalEntryId = "44444444-4444-4444-8444-444444444444";
 const revisitId = "55555555-5555-4555-8555-555555555555";
 const csrfToken = "f".repeat(43);
 const serverReadyTimeoutMs = process.env.CI === "true" ? 60_000 : 30_000;
+const tarotIntegrityKey = Buffer.alloc(32, 81).toString("base64url");
 const anonymousSessionCookieName = "__Host-rituvia-anonymous-session";
 const anonymousSessionToken = "a".repeat(43);
 const privateQuestion = "What can I notice before I answer the private question canary?";
@@ -210,7 +211,9 @@ const server = spawn(process.execPath, ["start.mjs", "-H", host, "-p", String(po
   env: {
     ...process.env,
     BRAND_CANONICAL_ORIGIN: origin,
+    DATABASE_URL: "postgresql://127.0.0.1:1/rituvia_full_loop",
     RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.full-loop-browser.v1",
+    RITUVIA_TAROT_INTEGRITY_KEY_V1: tarotIntegrityKey,
   },
   stdio: ["ignore", "pipe", "pipe"],
 });
