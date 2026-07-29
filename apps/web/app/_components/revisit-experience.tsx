@@ -201,22 +201,16 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
   useEffect(() => {
     if (phase === "loading" || reminderPreferencesRequested.current) return;
     if (window.location.hash !== "#reminder-preferences") return;
-    let secondFrame = 0;
-    const firstFrame = requestAnimationFrame(() => {
-      secondFrame = requestAnimationFrame(() => {
-        reminderPreferencesRequested.current = true;
-        const region = reminderPreferencesRegion.current;
-        const checkbox = region?.querySelector<HTMLInputElement>(
-          'input[type="checkbox"][id^="revisit-reminder-"]',
-        );
-        (checkbox ?? region)?.focus({ preventScroll: true });
-        region?.scrollIntoView({ block: "start" });
-      });
-    });
-    return () => {
-      cancelAnimationFrame(firstFrame);
-      cancelAnimationFrame(secondFrame);
-    };
+    const timer = window.setTimeout(() => {
+      reminderPreferencesRequested.current = true;
+      const region = reminderPreferencesRegion.current;
+      const checkbox = region?.querySelector<HTMLInputElement>(
+        'input[type="checkbox"][id^="revisit-reminder-"]',
+      );
+      (checkbox ?? region)?.focus({ preventScroll: true });
+      region?.scrollIntoView({ block: "start" });
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [phase, reminderAccountAvailable, reminders]);
 
   const idempotencyKey = (fingerprint: string): string => {
