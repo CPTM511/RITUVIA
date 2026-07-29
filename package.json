@@ -12,7 +12,7 @@
   "scripts": {
     "build": "turbo run build && node scripts/verify-workspace-build.mjs",
     "check": "pnpm check:evidence && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "check:ai-operations": "node --import tsx scripts/verify-ai-operations.ts",
+    "check:ai-operations": "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-ai-operations.ts",
     "check:architecture": "node --import tsx scripts/verify-architecture.ts",
     "check:ci-contract": "node --import tsx scripts/verify-ci-contract.ts",
     "check:evidence": "pnpm check:ci-contract && pnpm check:architecture && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
