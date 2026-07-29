@@ -18,8 +18,14 @@ export default defineConfig({
       "@rituvia/astrology-engine-native": fileURLToPath(
         new URL("./packages/astrology-engine-native/src/index.ts", import.meta.url),
       ),
+      "@rituvia/config/brand": fileURLToPath(
+        new URL("./packages/config/src/brand.ts", import.meta.url),
+      ),
       "@rituvia/config/feature-flags": fileURLToPath(
         new URL("./packages/config/src/feature-flags.ts", import.meta.url),
+      ),
+      "@rituvia/config/server": fileURLToPath(
+        new URL("./packages/config/src/server.ts", import.meta.url),
       ),
       "@rituvia/content": fileURLToPath(
         new URL("./packages/content/src/index.ts", import.meta.url),
@@ -53,6 +59,9 @@ export default defineConfig({
       ),
       "@rituvia/payments": fileURLToPath(
         new URL("./packages/payments/src/index.ts", import.meta.url),
+      ),
+      "@rituvia/security": fileURLToPath(
+        new URL("./packages/security/src/index.ts", import.meta.url),
       ),
       "@rituvia/ui": fileURLToPath(new URL("./packages/ui/src/index.ts", import.meta.url)),
       "server-only": fileURLToPath(new URL("./tests/server-only-stub.ts", import.meta.url)),

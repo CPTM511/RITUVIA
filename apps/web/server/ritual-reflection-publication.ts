@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createBrandConfiguration } from "@rituvia/config/brand";
 import { parseRitualCatalogV1 } from "@rituvia/domain";
 
 import publicationSource from "../../../content/traditions/ritual/rituvia-ritual-reflection-library.en.v1.json";
@@ -10,6 +11,7 @@ import {
 } from "../app/_i18n/ritual-reflection-public-routes";
 
 type UnknownRecord = Record<string, unknown>;
+const publicationPublisher = createBrandConfiguration().name;
 
 type RitualReflectionEditorialV1 = Readonly<{
   approvalReference: "D-082";
@@ -29,7 +31,7 @@ export type RitualReflectionSourceV1 = Readonly<{
   claims: readonly [string, string, string];
   creator: string;
   identifier: string;
-  publisher: "RITUVIA";
+  publisher: string;
   rights: Readonly<{
     allowedUses: readonly string[];
     evidenceReference: "D-047" | "D-082";
@@ -360,7 +362,7 @@ const parseSource = (value: unknown): RitualReflectionSourceV1 => {
     claims: tuple3(candidate.claims),
     creator: text(candidate.creator),
     identifier: text(candidate.identifier),
-    publisher: literal(candidate.publisher, "RITUVIA"),
+    publisher: literal(candidate.publisher, publicationPublisher),
     rights: Object.freeze({
       allowedUses: Object.freeze(allowedUses),
       evidenceReference:

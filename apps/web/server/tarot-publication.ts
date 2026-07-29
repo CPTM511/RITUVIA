@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createBrandConfiguration } from "@rituvia/config/brand";
 import {
   parseTarotCatalogV1,
   type TarotCardContentV1,
@@ -18,6 +19,7 @@ import {
 } from "../app/_i18n/tarot-public-routes";
 
 type UnknownRecord = Record<string, unknown>;
+const publicationPublisher = createBrandConfiguration().name;
 
 type TarotLibraryEditorialV1 = Readonly<{
   approvalReference: "D-081";
@@ -37,7 +39,7 @@ export type TarotLibrarySourceV1 = Readonly<{
   claims: readonly string[];
   creator: string;
   identifier: string;
-  publisher: "RITUVIA";
+  publisher: string;
   rights: Readonly<{
     allowedUses: readonly string[];
     evidenceReference: "D-044" | "D-081";
@@ -303,7 +305,7 @@ const parseSource = (value: unknown): TarotLibrarySourceV1 => {
     claims: textArray(candidate.claims, 3, 3),
     creator: text(candidate.creator),
     identifier: text(candidate.identifier),
-    publisher: literal(candidate.publisher, "RITUVIA"),
+    publisher: literal(candidate.publisher, publicationPublisher),
     rights: Object.freeze({
       allowedUses,
       evidenceReference:
