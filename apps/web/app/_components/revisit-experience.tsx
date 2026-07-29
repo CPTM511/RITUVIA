@@ -23,6 +23,8 @@ import {
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useTomorrowLocalDate } from "./browser-local-date";
+
 import type { RevisitMessages } from "../_i18n/revisit-messages";
 
 export const revisitIntentionStorageKey = "rituvia.revisit-intention.v1";
@@ -132,14 +134,6 @@ const parseReminderList = (value: unknown): ReminderListResponse | null => {
   });
 };
 
-const tomorrow = (): string => {
-  const value = new Date();
-  value.setDate(value.getDate() + 1);
-  return `${value.getFullYear().toString().padStart(4, "0")}-${(value.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}-${value.getDate().toString().padStart(2, "0")}`;
-};
-
 const initialTimeZone = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -192,6 +186,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
   const quietHoursId = createUiControlId("revisit-quiet-hours");
   const reflectionId = createUiControlId("revisit-reflection");
   const timeZoneId = createUiControlId("revisit-time-zone");
+  const minimumCustomDate = useTomorrowLocalDate();
 
   useEffect(() => {
     if (completionId === null) return;
@@ -621,7 +616,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
                 dir="ltr"
                 id={customDateId}
                 label={messages.customDate}
-                minimum={tomorrow()}
+                {...(minimumCustomDate === null ? {} : { minimum: minimumCustomDate })}
                 onValueChange={setCustomDate}
                 required
                 requiredLabel={messages.required}

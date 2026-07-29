@@ -23,6 +23,7 @@ import type {
   SanctuaryThemeCode,
 } from "../_i18n/sanctuary-messages";
 import type { Locale } from "../_i18n/routing";
+import { useTomorrowLocalDate } from "./browser-local-date";
 import {
   clearSanctuaryReadingHandoff,
   sanctuaryReadingHandoffStorageKey,
@@ -94,15 +95,6 @@ const codePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const csrfTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 const legacyFreeRitualObjectCode = (code: SanctuaryFreeRitualItem["code"]): "candle" | "incense" =>
   code === "free_candle" ? "candle" : "incense";
-
-const tomorrowLocalDate = (): string => {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -449,7 +441,7 @@ export function SanctuaryFlow({
   const journalId = createUiControlId("sanctuary-journal");
   const ageId = createUiControlId("sanctuary-checkout-age");
   const sanctuarySignInHref = `${signInHref}?returnTo=${encodeURIComponent(sanctuaryHref)}`;
-  const minimumRevisitDate = tomorrowLocalDate();
+  const minimumRevisitDate = useTomorrowLocalDate();
   const idempotencyKeyFor = (fingerprint: string): string => {
     if (intentionOperation.current?.fingerprint === fingerprint) {
       return intentionOperation.current.key;
@@ -1381,7 +1373,7 @@ export function SanctuaryFlow({
               disabled={intention !== null && intention.status !== "active"}
               id={revisitDateId}
               label={messages.intention.revisitDateLabel}
-              minimum={minimumRevisitDate}
+              {...(minimumRevisitDate === null ? {} : { minimum: minimumRevisitDate })}
               onValueChange={(value) => {
                 setRevisitDate(value);
                 setIntentionSuccess(null);

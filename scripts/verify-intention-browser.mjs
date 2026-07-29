@@ -232,6 +232,9 @@ try {
   };
   const initialIncomplete = await scan();
   const dateInput = page.getByLabel("Optional revisit date");
+  await page.waitForFunction(
+    () => document.querySelector('input[type="date"]')?.getAttribute("min") !== null,
+  );
   const minimum = await dateInput.getAttribute("min");
   assert.match(minimum, /^\d{4}-\d{2}-\d{2}$/u);
   const localToday = await page.evaluate(() => {

@@ -293,5 +293,10 @@ describe("MVP server-rendered initial states", () => {
     expect(html).toContain("Quiet incense");
     expect(html).toContain("Set an intention");
     expect(html).toContain("Private reflection");
+    const revisitDateInput = html
+      .match(/<input[^>]*>/gu)
+      ?.find((input) => input.includes('type="date"'));
+    expect(revisitDateInput).toBeDefined();
+    expect(revisitDateInput).not.toContain("min=");
   });
 });
