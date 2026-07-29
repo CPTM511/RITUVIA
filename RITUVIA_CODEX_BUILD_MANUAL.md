@@ -2074,6 +2074,15 @@ passes 14 public and three private routes, 79 primary Axe scans, deterministic T
 and the intention, ritual, Revisit, full-loop, and writing-system browser gates without
 critical/serious violations, layout failures, private leaks, unexpected requests, or console/page
 errors.
+Hosted run `30477604316` passed Security again. Quality passed evidence, formatting, and linting,
+then failed at Web typecheck because the new runtime accessibility-inventory audit lacked its
+matching `.d.mts` declaration. PostgreSQL passed the current interpretation-policy inventory and
+reached feature-flag append-only behavior, where the old fixed July 17 fixture timestamp violated
+`effective_at >= created_at` before the intended RLS assertion. The declaration is now complete;
+Web and root TypeScript checks pass. Feature-flag fixtures now derive bounded future timestamps
+from the PostgreSQL service clock so policy tests cannot be preempted by runner-date drift. A
+transactional one-time loopback check accepts the intended legacy safe-off row and rolls it back,
+and 68 focused accessibility/contrast/CI/database tests pass.
 
 OWN-008 remains Blocked. GitHub rejected private-repository branch protection with HTTP 403 because
 the current account plan requires GitHub Pro or a public repository, including after the owner
