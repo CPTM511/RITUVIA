@@ -207,7 +207,11 @@ const activateWithKeyboard = async (locator) => {
 
 const server = spawn(process.execPath, ["start.mjs", "-H", host, "-p", String(port)], {
   cwd: `${process.cwd()}/apps/web`,
-  env: { ...process.env, BRAND_CANONICAL_ORIGIN: origin },
+  env: {
+    ...process.env,
+    BRAND_CANONICAL_ORIGIN: origin,
+    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.full-loop-browser.v1",
+  },
   stdio: ["ignore", "pipe", "pipe"],
 });
 let serverOutput = "";
