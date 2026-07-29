@@ -607,14 +607,19 @@ const installTarotAcceptanceRoutes = async (
         requests.interpretationGets += 1;
         observeInterpretationGet();
         await interpretationGetReleased;
-        await jsonFulfill(route, 200, {
-          displayable: true,
-          output: tarotAcceptanceInterpretationOutput,
-          readingId,
-          schemaVersion: "tarot-interpretation-response.v1",
-          status: finalStatus,
-        });
         fulfilledAbortRequests.add(request);
+        try {
+          await jsonFulfill(route, 200, {
+            displayable: true,
+            output: tarotAcceptanceInterpretationOutput,
+            readingId,
+            schemaVersion: "tarot-interpretation-response.v1",
+            status: finalStatus,
+          });
+        } catch (error) {
+          fulfilledAbortRequests.delete(request);
+          throw error;
+        }
         return;
       }
     }
