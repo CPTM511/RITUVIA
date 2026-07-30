@@ -1129,12 +1129,26 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       const commercialReconciliationTables = await admin.query(
         "SELECT to_regclass('public.commercial_reconciliation_run_v1') IS NOT NULL AS present",
       );
+      const commercialRefundTables = await admin.query(
+        "SELECT to_regclass('public.commercial_refund_request_v1') IS NOT NULL AS present",
+      );
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
       if (commercialFulfillmentTables.rows[0]?.present === true) {
         await admin.query(
           `GRANT SELECT ON TABLE credit_restriction_entry, commercial_fulfillment_v2 TO ${APP_ROLE}`,
+        );
+      }
+      if (commercialRefundTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE commercial_refund_request_v1, commercial_refund_credit_hold_v1 TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (status, provider_refund_id, provider_rejection_code, submitted_at, rejected_at, updated_at) ON TABLE commercial_refund_request_v1 TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (status, released_at, updated_at) ON TABLE commercial_refund_credit_hold_v1 TO ${APP_ROLE}`,
         );
       }
       await admin.query(
@@ -1154,6 +1168,9 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       );
       if (commercialFulfillmentTables.rows[0]?.present === true) {
         await admin.query(
+          `GRANT UPDATE (purchased_held) ON TABLE credit_projection TO ${APP_ROLE}`,
+        );
+        await admin.query(
           `GRANT SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_outbox_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, credit_restriction_entry, commercial_entitlement_v2, commercial_fulfillment_v2 TO ${PAYMENT_FULFILLMENT_ROLE}`,
         );
         await admin.query(
@@ -1168,6 +1185,17 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         await admin.query(
           `GRANT UPDATE (delivery_state, attempt_count, available_at, lease_token_hash, leased_until, completed_at, last_failure_code, dead_lettered_at) ON TABLE commercial_payment_outbox_v2 TO ${PAYMENT_FULFILLMENT_ROLE}`,
         );
+        if (commercialRefundTables.rows[0]?.present === true) {
+          await admin.query(
+            `GRANT SELECT ON TABLE commercial_refund_request_v1, commercial_refund_credit_hold_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (status, converted_at, updated_at) ON TABLE commercial_refund_credit_hold_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (status, confirmed_payment_event_id, confirmed_at, updated_at) ON TABLE commercial_refund_request_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+        }
       }
       if (commercialReconciliationTables.rows[0]?.present === true) {
         await admin.query(
@@ -1246,6 +1274,14 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         if (commercialFulfillmentTables.rows[0]?.present === true) {
           await admin.query(
             `GRANT SELECT ON TABLE credit_restriction_entry, commercial_fulfillment_v2 TO ${PRIVACY_DELETION_ROLE}`,
+          );
+        }
+        const commercialRefundTables = await admin.query(
+          "SELECT to_regclass('public.commercial_refund_request_v1') IS NOT NULL AS present",
+        );
+        if (commercialRefundTables.rows[0]?.present === true) {
+          await admin.query(
+            `GRANT SELECT ON TABLE commercial_refund_request_v1, commercial_refund_credit_hold_v1 TO ${PRIVACY_DELETION_ROLE}`,
           );
         }
         const commercialPaymentEventTables = await admin.query(

@@ -4,7 +4,7 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-067 are complete, and RIT-068 is the sole Ready task.
+RIT-063 through RIT-068 are complete, and RIT-069 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -34,7 +34,7 @@ consumed/reserved shortfalls for review without a negative balance. Authenticate
 restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
-is the sole Ready task. RIT-045
+adds the full-unused-pack Stripe Test refund path. RIT-069 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1356,7 +1356,30 @@ The requested footprint optimization disables unused production server source ma
 browser source maps disabled. A clean Web build falls from 46 MB to 20 MB, its static browser
 chunks remain 1.2 MB uncompressed in total, and the reviewed `/en/plans` route requires about
 66 KB gzip JavaScript plus 12,249 bytes gzip CSS. No UI framework, service or runtime dependency
-was added for this optimization. RIT-068 is the sole Ready task.
+was added for this optimization.
+
+RIT-068 is Done through D-093. The authenticated same-origin route accepts only an order identifier
+and exact client idempotency; amount, reason, provider object, policy and Credit quantity remain
+server-owned. Eligibility is limited to the exact synthetic US/USD Stripe Test one-time Credit
+pack under `local.refund.v1`, and every source Credit must remain active, available, unreserved,
+unheld and unreversed.
+
+Before Stripe invocation, one serializable transaction creates the owner-scoped request and
+source-linked hold and moves the pack from purchased availability into the nonspendable held
+bucket. Stripe uses a deterministic provider idempotency key. Definitive rejection releases the
+hold; ambiguous failure keeps the durable request and exact replay authority. API acceptance is
+only `submitted`. The existing matched refund-event/outbox path records `confirmed`, links the
+payment event, converts the hold and appends one source-linked reversal. Duplicate success events
+cannot regress `refund_requested` to `paid`, and webhook-before-response order converges safely.
+
+The focused 74-test payments/Web slice and refund, fulfillment, webhook and privacy-export
+PostgreSQL gates pass against all 36 migrations. The refund gate proves twelve-way request
+contention, changed-provider conflict, rejection release, signed confirmation, webhook-first
+convergence, refund-versus-reservation serialization, composite owner constraints, append-only
+evidence and least privilege. Affected typechecks and migration policy pass. No dependency,
+microservice or runtime queue was added, and no Stripe Live call, production migration,
+deployment, DNS change, legal-policy activation or launch occurred. RIT-069 is the sole Ready
+task.
 
 ## Update rules
 

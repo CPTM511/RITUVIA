@@ -185,6 +185,16 @@ export {
   type CommercialReconciliationPersistence,
 } from "./commercial-reconciliation-persistence.js";
 export {
+  commercialRefundPersistenceErrorCodes,
+  CommercialRefundPersistenceError,
+  createCommercialRefundPersistence,
+  type CommercialRefundEligibilityPlanner,
+  type CommercialRefundPersistence,
+  type CommercialRefundPersistenceErrorCode,
+  type CommercialRefundRequestRecord,
+  type PreparedCommercialRefundRequest,
+} from "./commercial-refund-persistence.js";
+export {
   assertReflectionRuntimeDatabasePrivileges,
   createReflectionPersistence,
   reflectionPersistenceErrorCodes,

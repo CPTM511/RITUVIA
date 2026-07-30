@@ -1082,7 +1082,7 @@ existing human approval gates.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-067 are complete, and RIT-068 is the sole Ready task.
+RIT-063 through RIT-068 are complete, and RIT-069 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1112,7 +1112,7 @@ consumed/reserved shortfalls for review without a negative balance. Authenticate
 restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
-is the sole Ready task. RIT-045
+adds the full-unused-pack Stripe Test refund path. RIT-069 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -2434,7 +2434,30 @@ The requested footprint optimization disables unused production server source ma
 browser source maps disabled. A clean Web build falls from 46 MB to 20 MB, its static browser
 chunks remain 1.2 MB uncompressed in total, and the reviewed `/en/plans` route requires about
 66 KB gzip JavaScript plus 12,249 bytes gzip CSS. No UI framework, service or runtime dependency
-was added for this optimization. RIT-068 is the sole Ready task.
+was added for this optimization.
+
+RIT-068 is Done through D-093. The authenticated same-origin route accepts only an order identifier
+and exact client idempotency; amount, reason, provider object, policy and Credit quantity remain
+server-owned. Eligibility is limited to the exact synthetic US/USD Stripe Test one-time Credit
+pack under `local.refund.v1`, and every source Credit must remain active, available, unreserved,
+unheld and unreversed.
+
+Before Stripe invocation, one serializable transaction creates the owner-scoped request and
+source-linked hold and moves the pack from purchased availability into the nonspendable held
+bucket. Stripe uses a deterministic provider idempotency key. Definitive rejection releases the
+hold; ambiguous failure keeps the durable request and exact replay authority. API acceptance is
+only `submitted`. The existing matched refund-event/outbox path records `confirmed`, links the
+payment event, converts the hold and appends one source-linked reversal. Duplicate success events
+cannot regress `refund_requested` to `paid`, and webhook-before-response order converges safely.
+
+The focused 74-test payments/Web slice and refund, fulfillment, webhook and privacy-export
+PostgreSQL gates pass against all 36 migrations. The refund gate proves twelve-way request
+contention, changed-provider conflict, rejection release, signed confirmation, webhook-first
+convergence, refund-versus-reservation serialization, composite owner constraints, append-only
+evidence and least privilege. Affected typechecks and migration policy pass. No dependency,
+microservice or runtime queue was added, and no Stripe Live call, production migration,
+deployment, DNS change, legal-policy activation or launch occurred. RIT-069 is the sole Ready
+task.
 
 ## Update rules
 
@@ -3476,6 +3499,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   misrepresented as a completed refund.
 - **Date:** 2026-07-30
 
+### [D-093 — Hold unused Credits before a Stripe sandbox refund](records/decisions/D-093.md)
+
+- **Decision:** For the exact eligible US/USD Stripe Test Credit pack, create a durable owner-scoped
+  request and source hold before provider invocation, use deterministic provider idempotency,
+  record API acceptance only as submitted, and allow the matched refund event plus fulfillment
+  outbox to confirm and reverse value.
+- **Reason:** Refund-versus-spend and API/webhook ordering must converge without negative Credits,
+  duplicate refunds, false completion, or a new service/queue before measured operational need.
+- **Date:** 2026-07-30
+
 ---
 
 # File: `ROADMAP.md`
@@ -3790,8 +3823,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-065 | M6        |       P0 | Done    | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Dedicated-role outbox consumption grants purchased Credits exactly once; disputes hold unspent source value, refunds reverse linked value, consumed shortfalls require review, and private owner restoration passes.                                       |
 | RIT-066 | M6        |       P0 | Done    | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
 | RIT-067 | M6        |       P0 | Done    | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Daily bounded Stripe Test payment/order/Credit comparison, append-only discrepancy cases, provider settlement-availability evidence, and exact missed-webhook recovery pass focused gates; payout accounting remains explicitly out of scope.              |
-| RIT-068 | M6        |       P0 | Ready   | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Versioned eligibility, audit, entitlement impact, duplicate/retry handling pass.                                                                                                                                                                           |
-| RIT-069 | M6        |       P0 | Planned | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                                                                                                                                                          |
+| RIT-068 | M6        |       P0 | Done    | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Exact US/USD/Test eligibility, owner scope, request-time Credit hold, provider idempotency, submitted/confirmed truth, signed-event-linked reversal, rejection/retry and concurrency gates pass.                                                            |
+| RIT-069 | M6        |       P0 | Ready   | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                                                                                                                                                          |
 | RIT-070 | M7        |       P0 | Planned | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                                                                                                                                                           |
 | RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                                          |
 | RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                                                |
@@ -4111,6 +4144,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
 | Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
+| Decision | D-093 | Hold unused Credits before a Stripe sandbox refund | [decisions/D-093.md](./decisions/D-093.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -4164,6 +4198,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-065 | Entitlement Fulfillment and Purchase Restoration | [tasks/RIT-065.md](./tasks/RIT-065.md) |
 | Task | RIT-066 | Product Detail, Checkout Return, and Order Status UX | [tasks/RIT-066.md](./tasks/RIT-066.md) |
 | Task | RIT-067 | Commercial Reconciliation and Discrepancy Cases | [tasks/RIT-067.md](./tasks/RIT-067.md) |
+| Task | RIT-068 | Refund Request and Stripe Sandbox Refund Path | [tasks/RIT-068.md](./tasks/RIT-068.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

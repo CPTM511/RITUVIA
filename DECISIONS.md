@@ -895,3 +895,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
 - **Reason:** Webhook ingestion must not issue value, and dispute evidence must not be
   misrepresented as a completed refund.
 - **Date:** 2026-07-30
+
+### [D-093 — Hold unused Credits before a Stripe sandbox refund](records/decisions/D-093.md)
+
+- **Decision:** For the exact eligible US/USD Stripe Test Credit pack, create a durable owner-scoped
+  request and source hold before provider invocation, use deterministic provider idempotency,
+  record API acceptance only as submitted, and allow the matched refund event plus fulfillment
+  outbox to confirm and reverse value.
+- **Reason:** Refund-versus-spend and API/webhook ordering must converge without negative Credits,
+  duplicate refunds, false completion, or a new service/queue before measured operational need.
+- **Date:** 2026-07-30

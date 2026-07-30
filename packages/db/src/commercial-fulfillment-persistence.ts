@@ -184,7 +184,9 @@ type GrantRow = Readonly<{
 
 type RestrictionRow = Readonly<{
   amount: number;
+  createdAt: Date;
   id: string;
+  source: "refund_request" | "restriction";
 }>;
 
 type PrivilegeRow = Readonly<{
@@ -199,11 +201,13 @@ type PrivilegeRow = Readonly<{
   canReadOrder: boolean;
   canReadOutbox: boolean;
   canReadProjection: boolean;
+  canReadRefundRequest: boolean;
   canReadRestriction: boolean;
   canReadReservation: boolean;
   canUpdateLedger: boolean;
   canUpdateOutbox: boolean;
   canUpdateProjection: boolean;
+  canConfirmRefundRequest: boolean;
   canInsertFulfillment: boolean;
   canInsertRestriction: boolean;
   canReadFulfillment: boolean;
@@ -304,6 +308,12 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
           AS "canReadFulfillment",
         has_table_privilege(current_user, 'public.commercial_fulfillment_v2', 'INSERT')
           AS "canInsertFulfillment",
+        has_table_privilege(current_user, 'public.commercial_refund_request_v1', 'SELECT')
+          AS "canReadRefundRequest",
+        has_column_privilege(
+          current_user, 'public.commercial_refund_request_v1',
+          'confirmed_payment_event_id', 'UPDATE'
+        ) AS "canConfirmRefundRequest",
         has_table_privilege(current_user, 'public.commercial_payment_event_v2', 'SELECT')
           OR has_any_column_privilege(
             current_user, 'public.commercial_payment_event_v2', 'SELECT'
@@ -347,6 +357,8 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
       !privilege.canInsertRestriction ||
       !privilege.canReadFulfillment ||
       !privilege.canInsertFulfillment ||
+      !privilege.canReadRefundRequest ||
+      !privilege.canConfirmRefundRequest ||
       privilege.canReadPaymentEvent ||
       privilege.canReadJournal ||
       privilege.canReadPrivateJournal ||
@@ -517,17 +529,33 @@ const processFulfillment = async (
           )
       `,
       database.$queryRaw<RestrictionRow[]>`
-        SELECT holds.id, holds.amount
-        FROM credit_restriction_entry AS holds
-        WHERE holds.source_entry_id = ${existingGrant.id}::uuid
-          AND holds.kind = 'hold'
-          AND NOT EXISTS (
-            SELECT 1
-            FROM credit_restriction_entry AS conversions
-            WHERE conversions.source_restriction_id = holds.id
-              AND conversions.kind = 'convert_to_reverse'
-        )
-        ORDER BY holds.created_at, holds.id
+        SELECT active.id, active.amount, active."createdAt", active.source
+        FROM (
+          SELECT
+            holds.id,
+            holds.amount,
+            holds.created_at AS "createdAt",
+            'restriction'::text AS source
+          FROM credit_restriction_entry AS holds
+          WHERE holds.source_entry_id = ${existingGrant.id}::uuid
+            AND holds.kind = 'hold'
+            AND NOT EXISTS (
+              SELECT 1
+              FROM credit_restriction_entry AS resolution
+              WHERE resolution.source_restriction_id = holds.id
+                AND resolution.kind = 'convert_to_reverse'
+            )
+          UNION ALL
+          SELECT
+            holds.id,
+            holds.amount,
+            holds.created_at AS "createdAt",
+            'refund_request'::text AS source
+          FROM commercial_refund_credit_hold_v1 AS holds
+          WHERE holds.source_entry_id = ${existingGrant.id}::uuid
+            AND holds.status = 'active'
+        ) AS active
+        ORDER BY active."createdAt", active.id
       `,
     ]);
     if ((unsafeAllocations.at(0)?.count ?? 0) > 0) {
@@ -660,11 +688,12 @@ const processFulfillment = async (
     }
     for (const hold of activeHolds) {
       const conversionIdempotencyHash = digest(
-        `credit.convert-hold.purchase:${row.orderId}:${hold.id}:${input.outboxId}`,
+        `credit.convert-hold.purchase:${hold.source}:${row.orderId}:${hold.id}:${input.outboxId}`,
       );
       const conversionCanonicalHash = digest(
         JSON.stringify({
           amount: hold.amount,
+          holdSource: hold.source,
           orderId: row.orderId,
           orderStatus: row.orderStatus,
           outboxId: input.outboxId,
@@ -673,24 +702,56 @@ const processFulfillment = async (
           sourceRestrictionId: hold.id,
         }),
       );
-      await database.$executeRaw`
-        INSERT INTO credit_restriction_entry (
-          user_id, source_entry_id, order_id, outbox_id, kind, amount, reason,
-          source_restriction_id, operation, idempotency_key_version, idempotency_key_hash,
-          canonical_request_hash, created_at
-        ) VALUES (
-          ${row.userId}::uuid, ${grantId}::uuid, ${row.orderId}::uuid, ${input.outboxId}::uuid,
-          'convert_to_reverse', ${hold.amount}, 'payment_refund', ${hold.id}::uuid,
-          'credit.convert-hold.purchase', ${fulfillmentIdempotencyKeyVersion},
-          ${conversionIdempotencyHash}, ${conversionCanonicalHash}, ${input.completedAt}
-        )
-      `;
+      if (hold.source === "restriction") {
+        await database.$executeRaw`
+          INSERT INTO credit_restriction_entry (
+            user_id, source_entry_id, order_id, outbox_id, kind, amount, reason,
+            source_restriction_id, operation, idempotency_key_version, idempotency_key_hash,
+            canonical_request_hash, created_at
+          ) VALUES (
+            ${row.userId}::uuid, ${grantId}::uuid, ${row.orderId}::uuid, ${input.outboxId}::uuid,
+            'convert_to_reverse', ${hold.amount}, 'payment_refund', ${hold.id}::uuid,
+            'credit.convert-hold.purchase', ${fulfillmentIdempotencyKeyVersion},
+            ${conversionIdempotencyHash}, ${conversionCanonicalHash}, ${input.completedAt}
+          )
+        `;
+      } else {
+        const confirmed = await database.$executeRaw`
+          UPDATE commercial_refund_request_v1 AS refunds
+          SET status = 'confirmed',
+              confirmed_payment_event_id = ${row.outboxPaymentEventId}::uuid,
+              confirmed_at = ${input.completedAt},
+              updated_at = ${input.completedAt}
+          FROM commercial_refund_credit_hold_v1 AS refund_hold
+          WHERE refund_hold.id = ${hold.id}::uuid
+            AND refund_hold.refund_request_id = refunds.id
+            AND refund_hold.user_id = refunds.user_id
+            AND refund_hold.order_id = refunds.order_id
+            AND refunds.order_id = ${row.orderId}::uuid
+            AND refunds.status IN ('prepared', 'submitted')
+        `;
+        if (confirmed !== 1) {
+          throw new CommercialFulfillmentPersistenceError("COMMERCIAL_FULFILLMENT_CONFLICT");
+        }
+        const converted = await database.$executeRaw`
+          UPDATE commercial_refund_credit_hold_v1
+          SET status = 'converted',
+              converted_at = ${input.completedAt},
+              updated_at = ${input.completedAt}
+          WHERE id = ${hold.id}::uuid
+            AND status = 'active'
+        `;
+        if (converted !== 1) {
+          throw new CommercialFulfillmentPersistenceError("COMMERCIAL_FULFILLMENT_CONFLICT");
+        }
+      }
       const reversalIdempotencyHash = digest(
-        `credit.reverse.held-purchase:${row.orderId}:${hold.id}:${input.outboxId}`,
+        `credit.reverse.held-purchase:${hold.source}:${row.orderId}:${hold.id}:${input.outboxId}`,
       );
       const reversalCanonicalHash = digest(
         JSON.stringify({
           amount: hold.amount,
+          holdSource: hold.source,
           orderId: row.orderId,
           outboxId: input.outboxId,
           sourceEntryId: grantId,

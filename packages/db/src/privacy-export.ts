@@ -886,6 +886,23 @@ const readSnapshot = async (
           ) ORDER BY orders.created_at, orders.id)
           FROM commercial_order_v2 AS orders WHERE orders.user_id = ${userId}::uuid
         ), '[]'::jsonb),
+        'commercialRefundRequestsV1', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', refunds.public_id, 'orderId', orders.public_id,
+            'status', refunds.status, 'amountMinor', refunds.amount_minor,
+            'currencyCode', refunds.currency_code,
+            'refundPolicyVersion', refunds.refund_policy_version,
+            'eligibilityPolicyVersion', refunds.eligibility_policy_version,
+            'reasonCode', refunds.reason_code,
+            'providerRefundId', refunds.provider_refund_id,
+            'createdAt', refunds.created_at, 'submittedAt', refunds.submitted_at,
+            'confirmedAt', refunds.confirmed_at,
+            'rejectedAt', refunds.rejected_at, 'updatedAt', refunds.updated_at
+          ) ORDER BY refunds.created_at, refunds.id)
+          FROM commercial_refund_request_v1 AS refunds
+          JOIN commercial_order_v2 AS orders ON orders.id = refunds.order_id
+          WHERE refunds.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
         'creditProjectionV2', COALESCE((
           SELECT jsonb_build_object(
             'subscriptionAvailable', projection.subscription_available,
@@ -919,6 +936,19 @@ const readSnapshot = async (
           FROM credit_restriction_entry AS restriction
           JOIN commercial_order_v2 AS orders ON orders.id = restriction.order_id
           WHERE restriction.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
+        'commercialRefundCreditHoldsV1', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', holds.id, 'refundRequestId', refunds.public_id,
+            'orderId', orders.public_id, 'sourceEntryId', holds.source_entry_id,
+            'amount', holds.amount, 'status', holds.status,
+            'createdAt', holds.created_at, 'releasedAt', holds.released_at,
+            'convertedAt', holds.converted_at, 'updatedAt', holds.updated_at
+          ) ORDER BY holds.created_at, holds.id)
+          FROM commercial_refund_credit_hold_v1 AS holds
+          JOIN commercial_refund_request_v1 AS refunds ON refunds.id = holds.refund_request_id
+          JOIN commercial_order_v2 AS orders ON orders.id = holds.order_id
+          WHERE holds.user_id = ${userId}::uuid
         ), '[]'::jsonb),
         'commercialFulfillmentsV2', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(

@@ -254,6 +254,7 @@ const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
       "packages/db/src/admin-security.ts",
       "packages/db/src/commercial-fulfillment-persistence.ts",
       "packages/db/src/commercial-reconciliation-persistence.ts",
+      "packages/db/src/commercial-refund-persistence.ts",
       "packages/db/src/revisit-reminder.ts",
     ]),
   ],

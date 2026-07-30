@@ -107,6 +107,91 @@ describe("Stripe verified event normalization", () => {
     expect(retrievePrice).toHaveBeenCalledTimes(2);
   });
 
+  it("submits one full Test Mode refund with provider idempotency and no client amount", async () => {
+    const createRefund = vi.fn(async () => ({
+      amount: 599,
+      id: "re_12345678",
+      livemode: false,
+      metadata: { orderId },
+      payment_intent: "pi_12345678",
+      status: "pending",
+    }));
+    const runtime = createStripeGateway(
+      {
+        accountId: "acct_12345678",
+        priceIds: { pack_6: "price_pack06test" },
+        secretKey: `sk_test_${"a".repeat(24)}`,
+        webhookSecret: `whsec_${"b".repeat(24)}`,
+      },
+      {
+        accounts: { retrieveCurrent: vi.fn(async () => ({ id: "acct_12345678" })) },
+        refunds: { create: createRefund },
+      } as never,
+    );
+
+    await expect(
+      runtime.requestRefund({
+        amountMinor: 599,
+        idempotencyKey: `stripe:refund:${orderId}:1`,
+        orderId,
+        paymentIntentId: "pi_12345678",
+      }),
+    ).resolves.toEqual({ providerRefundId: "re_12345678" });
+    expect(createRefund).toHaveBeenCalledWith(
+      {
+        amount: 599,
+        metadata: { orderId },
+        payment_intent: "pi_12345678",
+      },
+      { idempotencyKey: `stripe:refund:${orderId}:1` },
+    );
+  });
+
+  it("rejects failed or mismatched refund responses instead of asserting completion", async () => {
+    const base = {
+      amount: 599,
+      id: "re_12345678",
+      livemode: false,
+      metadata: { orderId },
+      payment_intent: "pi_12345678",
+    };
+    const stripe = {
+      accounts: { retrieveCurrent: vi.fn(async () => ({ id: "acct_12345678" })) },
+      refunds: { create: vi.fn(async () => ({ ...base, status: "failed" })) },
+    };
+    const runtime = createStripeGateway(
+      {
+        accountId: "acct_12345678",
+        priceIds: {},
+        secretKey: `sk_test_${"a".repeat(24)}`,
+        webhookSecret: `whsec_${"b".repeat(24)}`,
+      },
+      stripe as never,
+    );
+    await expect(
+      runtime.requestRefund({
+        amountMinor: 599,
+        idempotencyKey: `stripe:refund:${orderId}:1`,
+        orderId,
+        paymentIntentId: "pi_12345678",
+      }),
+    ).rejects.toMatchObject({ code: "rejected" });
+
+    stripe.refunds.create.mockResolvedValueOnce({
+      ...base,
+      amount: 1,
+      status: "pending",
+    });
+    await expect(
+      runtime.requestRefund({
+        amountMinor: 599,
+        idempotencyKey: `stripe:refund:${orderId}:1`,
+        orderId,
+        paymentIntentId: "pi_12345678",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+  });
+
   it("resolves a payment intent to its exact Checkout Session", async () => {
     const list = vi.fn(async () => ({ data: [{ id: "cs_old" }] }));
     const stripe = { checkout: { sessions: { list } } };

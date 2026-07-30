@@ -89,6 +89,12 @@ export {
   type CommercialReconciliationProviderSnapshot,
 } from "./commercial-reconciliation.js";
 export {
+  commercialRefundEligibilityPolicyVersion,
+  evaluateCommercialRefundEligibility,
+  type CommercialRefundEligibility,
+  type CommercialRefundEligibilitySnapshot,
+} from "./commercial-refund.js";
+export {
   allocateCreditSources,
   applyCreditProjection,
   commercialEntitlementEvents,

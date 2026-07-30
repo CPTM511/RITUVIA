@@ -571,8 +571,12 @@ const processInTransaction = async (
   const completedAt =
     reduced.attemptCompletedAt === null ? null : requireInstant(reduced.attemptCompletedAt);
   const paymentIntentId = match.paymentIntentId ?? input.providerPaymentIntentId;
+  const effectiveOrderStatus =
+    match.orderStatus === "refund_requested" && reduced.orderStatus === "paid"
+      ? "refund_requested"
+      : reduced.orderStatus;
   const changed =
-    match.orderStatus !== reduced.orderStatus ||
+    match.orderStatus !== effectiveOrderStatus ||
     match.orderRefundedMinor !== reduced.refundedMinor ||
     (match.orderPaidAt?.getTime() ?? null) !== (paidAt?.getTime() ?? null) ||
     (match.orderRefundedAt?.getTime() ?? null) !== (refundedAt?.getTime() ?? null) ||
@@ -586,7 +590,7 @@ const processInTransaction = async (
       paymentStateVersion,
       refundedAt,
       refundedMinor: reduced.refundedMinor,
-      status: reduced.orderStatus,
+      status: effectiveOrderStatus,
       updatedAt: orderUpdatedAt,
     },
     where: { id: match.orderId },
@@ -607,7 +611,7 @@ const processInTransaction = async (
         availableAt: parsed.receivedAt,
         createdAt: parsed.receivedAt,
         orderId: match.orderId,
-        orderStatus: reduced.orderStatus,
+        orderStatus: effectiveOrderStatus,
         paymentAttemptId: match.attemptId,
         paymentAttemptState: reduced.attemptState,
         paymentEventId: created.id,
@@ -624,7 +628,7 @@ const processInTransaction = async (
   return Object.freeze({
     disposition: currentDisposition.disposition,
     kind: "processed",
-    orderStatus: reduced.orderStatus,
+    orderStatus: effectiveOrderStatus,
     outboxCreated: changed,
     paymentAttemptState: reduced.attemptState,
   });

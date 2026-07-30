@@ -23,9 +23,9 @@ export type WebPaymentProviderId =
   typeof localHostedCheckoutProviderId | typeof stripeHostedCheckoutProviderId;
 
 export class WebPaymentProviderError extends Error {
-  readonly code: "configuration" | "unavailable";
+  readonly code: "configuration" | "rejected" | "unavailable";
 
-  constructor(code: "configuration" | "unavailable") {
+  constructor(code: "configuration" | "rejected" | "unavailable") {
     super("The payment provider is unavailable.");
     this.name = "WebPaymentProviderError";
     this.code = code;
@@ -48,6 +48,12 @@ export type WebPaymentProviderRegistry = Readonly<{
   assertAccountAttested(providerId: WebPaymentProviderId): void;
   attestAccount(providerId: WebPaymentProviderId): Promise<void>;
   get(providerId: WebPaymentProviderId): HostedCheckoutAdapter;
+  requestStripeRefund(input: {
+    amountMinor: number;
+    idempotencyKey: string;
+    orderId: string;
+    paymentIntentId: string;
+  }): Promise<Readonly<{ providerRefundId: string }>>;
   signLocalEvent(event: NormalizedPaymentEventV1): Promise<SignedLocalWebhook>;
 }>;
 
@@ -57,6 +63,14 @@ export const createWebPaymentProviderRegistry = (input: {
   stripeAccountAttestation?: (() => Promise<void>) | undefined;
   stripeAccountAttestationIdentity?: string | undefined;
   stripeAccountFingerprint?: string | undefined;
+  stripeRefund?:
+    | ((input: {
+        amountMinor: number;
+        idempotencyKey: string;
+        orderId: string;
+        paymentIntentId: string;
+      }) => Promise<Readonly<{ providerRefundId: string }>>)
+    | undefined;
   stripe?: HostedCheckoutAdapter | undefined;
 }): WebPaymentProviderRegistry => {
   if (input.local !== undefined && input.local.providerId !== localHostedCheckoutProviderId) {
@@ -103,6 +117,12 @@ export const createWebPaymentProviderRegistry = (input: {
       const provider = providerId === localHostedCheckoutProviderId ? input.local : input.stripe;
       if (provider === undefined) throw new WebPaymentProviderError("unavailable");
       return provider;
+    },
+    async requestStripeRefund(request) {
+      if (input.stripeRefund === undefined) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      return input.stripeRefund(request);
     },
     async signLocalEvent(event) {
       if (input.local === undefined) throw new WebPaymentProviderError("unavailable");
@@ -304,6 +324,7 @@ export const verifiedStripePaymentEvent = async (
 };
 
 const stripeSandboxWebhookEventTypes = new Set([
+  "charge.refunded",
   "checkout.session.async_payment_failed",
   "checkout.session.async_payment_succeeded",
   "checkout.session.completed",
@@ -322,6 +343,7 @@ export const createStripeGateway = (
   attestAccount: () => Promise<void>;
   gateway: StripeGateway;
   mapVerifiedEvent: (value: unknown) => NormalizedPaymentEventV1;
+  requestRefund: WebPaymentProviderRegistry["requestStripeRefund"];
 }> => {
   let accountVerification: Promise<void> | undefined;
   const verifyAccount = async (): Promise<void> => {
@@ -413,6 +435,39 @@ export const createStripeGateway = (
         type: value.type as NormalizedPaymentEventV1["type"],
       });
     },
+    async requestRefund(request) {
+      await verifyAccount();
+      let refund: Stripe.Refund;
+      try {
+        refund = await stripe.refunds.create(
+          {
+            amount: request.amountMinor,
+            metadata: { orderId: request.orderId },
+            payment_intent: request.paymentIntentId,
+          },
+          { idempotencyKey: request.idempotencyKey },
+        );
+      } catch (error) {
+        if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+          throw new WebPaymentProviderError("rejected");
+        }
+        throw new WebPaymentProviderError("unavailable");
+      }
+      const paymentIntentId = stripeExpandableId(refund.payment_intent);
+      if (
+        refund.amount !== request.amountMinor ||
+        refund.metadata?.orderId !== request.orderId ||
+        paymentIntentId !== request.paymentIntentId ||
+        !refund.id.startsWith("re_") ||
+        !["pending", "requires_action", "succeeded"].includes(refund.status ?? "")
+      ) {
+        if (["canceled", "failed"].includes(refund.status ?? "")) {
+          throw new WebPaymentProviderError("rejected");
+        }
+        throw new WebPaymentProviderError("unavailable");
+      }
+      return Object.freeze({ providerRefundId: refund.id });
+    },
   });
 };
 
@@ -455,6 +510,7 @@ export const loadWebPaymentProviderRegistry = (): WebPaymentProviderRegistry => 
         `${configuration.payment.accountId}\0${configuration.payment.secretKey}`,
       ),
       stripeAccountFingerprint: configuration.payment.accountId,
+      stripeRefund: stripeRuntime.requestRefund,
     });
     return registry;
   } catch {

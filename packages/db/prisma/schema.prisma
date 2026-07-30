@@ -237,6 +237,63 @@ model CommercialPaymentAttemptV2 {
   @@map("commercial_payment_attempt_v2")
 }
 
+model CommercialRefundRequestV1 {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publicId                   String    @unique(map: "commercial_refund_request_v1_public_id_key") @map("public_id") @db.Uuid
+  userId                     String    @map("user_id") @db.Uuid
+  orderId                    String    @unique(map: "commercial_refund_request_v1_order_key") @map("order_id") @db.Uuid
+  paymentAttemptId           String    @map("payment_attempt_id") @db.Uuid
+  provider                   String    @db.VarChar(32)
+  environment                String    @db.VarChar(16)
+  providerAccountFingerprint String    @map("provider_account_fingerprint") @db.VarChar(128)
+  providerRefundId           String?   @map("provider_refund_id") @db.VarChar(255)
+  status                     String    @db.VarChar(24)
+  amountMinor                Int       @map("amount_minor")
+  currencyCode               String    @map("currency_code") @db.Char(3)
+  refundPolicyVersion        String    @map("refund_policy_version") @db.VarChar(100)
+  eligibilityPolicyVersion   String    @map("eligibility_policy_version") @db.VarChar(100)
+  reasonCode                 String    @map("reason_code") @db.VarChar(100)
+  idempotencyKeyVersion      String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash         Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash       Bytes     @map("canonical_request_hash")
+  providerIdempotencyKeyHash Bytes     @map("provider_idempotency_key_hash")
+  providerRejectionCode      String?   @map("provider_rejection_code") @db.VarChar(100)
+  confirmedPaymentEventId    String?   @unique(map: "commercial_refund_request_v1_confirmed_event_key") @map("confirmed_payment_event_id") @db.Uuid
+  createdAt                  DateTime  @map("created_at") @db.Timestamptz(6)
+  submittedAt                DateTime? @map("submitted_at") @db.Timestamptz(6)
+  confirmedAt                DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  rejectedAt                 DateTime? @map("rejected_at") @db.Timestamptz(6)
+  updatedAt                  DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_refund_request_v1_user_idempotency_key")
+  @@unique([id, userId, orderId], map: "commercial_refund_request_v1_id_user_order_key")
+  @@unique([provider, environment, providerAccountFingerprint, providerRefundId], map: "commercial_refund_request_v1_provider_refund_key")
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "commercial_refund_request_v1_user_created_idx")
+  @@index([status, createdAt, id], map: "commercial_refund_request_v1_status_created_idx")
+  @@map("commercial_refund_request_v1")
+}
+
+model CommercialRefundCreditHoldV1 {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  refundRequestId       String    @unique(map: "commercial_refund_credit_hold_v1_request_key") @map("refund_request_id") @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  orderId               String    @map("order_id") @db.Uuid
+  sourceEntryId         String    @map("source_entry_id") @db.Uuid
+  amount                Int
+  status                String    @db.VarChar(16)
+  idempotencyKeyVersion String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes     @map("canonical_request_hash")
+  createdAt             DateTime  @map("created_at") @db.Timestamptz(6)
+  releasedAt            DateTime? @map("released_at") @db.Timestamptz(6)
+  convertedAt           DateTime? @map("converted_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_refund_credit_hold_v1_user_idempotency_key")
+  @@index([sourceEntryId, status, createdAt, id], map: "commercial_refund_credit_hold_v1_source_status_idx")
+  @@map("commercial_refund_credit_hold_v1")
+}
+
 model CommercialReconciliationRunV1 {
   id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   provider                   String   @db.VarChar(32)
