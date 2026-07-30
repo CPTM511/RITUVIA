@@ -41,6 +41,8 @@ jobs:
         run: pnpm check:ci-contract
       - name: Verify architecture boundaries
         run: pnpm check:architecture
+      - name: Verify environment isolation contract
+        run: pnpm check:environment-contract
       - name: Verify offline AI operations
         run: pnpm check:ai-operations
       - name: Verify localization workflow

@@ -74,6 +74,7 @@ describe("active CI workflow contract", () => {
       "check:ai-operations":
         "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-ai-operations.ts",
       "check:architecture": "node --import tsx scripts/verify-architecture.ts",
+      "check:environment-contract": "node --import tsx scripts/verify-environment-contract.ts",
       "check:generated":
         "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
       "check:editorial-content":
@@ -86,7 +87,7 @@ describe("active CI workflow contract", () => {
       "check:records":
         "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
       "check:evidence":
-        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
+        "pnpm check:ci-contract && pnpm check:architecture && pnpm check:environment-contract && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
       lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
       test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
       "test:accessibility":
@@ -290,6 +291,7 @@ describe("active CI workflow contract", () => {
   });
 
   it.each([
+    "pnpm check:environment-contract",
     "pnpm check:ai-operations",
     "pnpm check:localization",
     "pnpm check:editorial-content",

@@ -3,7 +3,8 @@
 **Last reconciled:** 2026-07-30
 
 RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is the sole In Progress task.
+and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete; RIT-123 is the
+sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1208,7 +1209,22 @@ typechecks, focused lint/format, migration policy, three production staging buil
 31-migration PostgreSQL foundation with repeat migration/seed/reset/restore, the non-restricted
 configuration boundary, architecture policy across 516 source files, record policy across 141
 durable records, and all diff whitespace checks pass. The full workspace matrix is intentionally
-not rerun. RIT-004 and OWN-008 are Done through D-090. RIT-008 is now the sole In Progress task.
+not rerun. RIT-004 and OWN-008 are Done through D-090.
+
+RIT-008 is Done. The canonical four-environment contract distinguishes implemented local
+controls, the verified loopback staging rehearsal, and controls required before any preview,
+standing staging, or production use. It requires isolated data stores, caches, object storage,
+keys, providers, analytics, and email authority; forbids downward production secrets or private
+production content; locks non-production indexing off; and binds promotion to exact revision,
+immutable build/source evidence, required CI, environment-specific configuration, smoke/security
+evidence, rollback readiness, and owner approval.
+
+The focused contract verifier covers ten control sections and ten repository references. Seven
+focused Vitest files pass 91 environment, CI, configuration, SEO, inventory, and secret-boundary
+tests; formatting, lint, typecheck, architecture, CI-contract, and secret-scan gates pass. No
+hosting project, cloud service, production secret, customer data, deployment, DNS, indexing,
+provider activation, migration, or public product launch was added. RIT-123 is the sole Ready
+task.
 
 ## Update rules
 

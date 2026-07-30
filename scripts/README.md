@@ -6,6 +6,7 @@ Run from the repository root:
 pnpm check:records
 pnpm check:generated
 pnpm check:public-pages
+pnpm check:environment-contract
 shasum -a 256 -c checksums.sha256
 ```
 
@@ -25,6 +26,7 @@ The fail-closed repository evidence commands are:
 ```bash
 pnpm check:ci-contract
 pnpm check:architecture
+pnpm check:environment-contract
 pnpm check:public-pages
 pnpm check:records
 pnpm check:migrations
@@ -35,6 +37,9 @@ pnpm scan:secrets
 
 The CI contract parses the active workflow with the exact locked YAML parser and enforces triggers,
 permissions, runners, immutable actions/service image, database isolation, and required commands.
+The environment contract gate verifies the four-environment authority matrix, isolation, downward
+data/secret-flow denial, indexing, migration/recovery, promotion, rollback, owner gates, current
+implementation claims, and every repository reference without contacting a provider or network.
 The migration policy checks the complete migration directory against
 `packages/db/prisma/migration-manifest.json` and rejects checksum drift, unlisted files, missing
 files, transaction loss, and destructive SQL. The current-tree secret policy scans every tracked or

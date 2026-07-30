@@ -259,12 +259,15 @@ no scheduler, provider, support mailbox, or delivery capability is composed.
 
 ## 11. Environment strategy
 
-- Local: reproducible containers/emulators; synthetic data only.
-- Preview: per-PR, no production secrets or real payment capture.
-- Staging: production-like, provider sandboxes, synthetic/consented test accounts.
-- Production: least privilege, separate projects/accounts, protected deployment, backups, monitoring.
+The canonical, machine-verified matrix is the
+[Environment contract](21_ENVIRONMENT_CONTRACT.md). Local is the only currently implemented
+standing environment. RIT-016 proved one bounded loopback compatibility rehearsal; it did not
+provision a reusable staging service. Preview, standing staging, and production remain
+`required before use`.
 
-Never share databases, signing secrets, webhook endpoints, storage buckets, analytics projects, or AI logs between staging and production.
+Never share databases, signing secrets, webhook endpoints, storage buckets, analytics projects,
+email authority, provider projects, or AI logs between environments. Never copy production secrets
+or private production content downward.
 
 ## 12. Configuration
 

@@ -56,6 +56,7 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `docs/18_REFERENCES.md`
 - `docs/19_NAME_CLEARANCE_WORKSHEET.md`
 - `docs/20_AI_GROWTH_ENGINE.md`
+- `docs/21_ENVIRONMENT_CONTRACT.md`
 - `docs/README.md`
 - `apps/admin/AGENTS.md`
 - `apps/web/AGENTS.md`
@@ -195,6 +196,7 @@ An English-first, Web/PWA product for global users that offers:
 6. Use the documents under `docs/` as canonical specifications.
 7. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
 8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
+9. Use `docs/21_ENVIRONMENT_CONTRACT.md` as the canonical environment-isolation and deployment-gate contract; it does not claim that external infrastructure exists.
 
 ## Local development
 
@@ -1077,7 +1079,8 @@ existing human approval gates.
 **Last reconciled:** 2026-07-30
 
 RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is the sole In Progress task.
+and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete; RIT-123 is the
+sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -2282,7 +2285,22 @@ typechecks, focused lint/format, migration policy, three production staging buil
 31-migration PostgreSQL foundation with repeat migration/seed/reset/restore, the non-restricted
 configuration boundary, architecture policy across 516 source files, record policy across 141
 durable records, and all diff whitespace checks pass. The full workspace matrix is intentionally
-not rerun. RIT-004 and OWN-008 are Done through D-090. RIT-008 is now the sole In Progress task.
+not rerun. RIT-004 and OWN-008 are Done through D-090.
+
+RIT-008 is Done. The canonical four-environment contract distinguishes implemented local
+controls, the verified loopback staging rehearsal, and controls required before any preview,
+standing staging, or production use. It requires isolated data stores, caches, object storage,
+keys, providers, analytics, and email authority; forbids downward production secrets or private
+production content; locks non-production indexing off; and binds promotion to exact revision,
+immutable build/source evidence, required CI, environment-specific configuration, smoke/security
+evidence, rollback readiness, and owner approval.
+
+The focused contract verifier covers ten control sections and ten repository references. Seven
+focused Vitest files pass 91 environment, CI, configuration, SEO, inventory, and secret-boundary
+tests; formatting, lint, typecheck, architecture, CI-contract, and secret-scan gates pass. No
+hosting project, cloud service, production secret, customer data, deployment, DNS, indexing,
+provider activation, migration, or public product launch was added. RIT-123 is the sole Ready
+task.
 
 ## Update rules
 
@@ -3566,7 +3584,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                     | RIT-001                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                                                                                                                                                                        |
 | RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                  | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                                                                                                                                                                |
 | RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                           | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                                                                                                                                                                           |
-| RIT-008 | M0        |       P1 | In Progress | Create preview/staging/production environment documentation             | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                                                     |
+| RIT-008 | M0        |       P1 | Done    | Create preview/staging/production environment documentation                 | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                                                     |
 | RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                  | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                                                                                                                                                                     |
 | RIT-010 | M1        |       P0 | Done    | Implement accessible Web shell and locale-prefixed routing                  | RIT-001,RIT-002,RIT-007                 | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                                                                                                                                                                 |
 | RIT-011 | M1        |       P0 | Done    | Implement design tokens and accessible component primitives                 | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                                                                                                                                                                 |
@@ -3656,7 +3674,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-120 | M12       |       P0 | Planned | Complete owner/admin operational dashboard                                  | RIT-038,RIT-073,RIT-117                 | operations    | Health, revenue, core loop, AI, queue, support, cost and approvals use source/freshness labels.                                                                                                                                                            |
 | RIT-121 | M12       |       P0 | Planned | Finalize threat model and remediate launch findings                         | RIT-057,RIT-069,RIT-095                 | qa_security   | Versioned threat model covers all integrations; no critical/high launch findings.                                                                                                                                                                          |
 | RIT-122 | M12       |       P0 | Planned | Implement rate limits, bot defense, abuse and denial-of-wallet controls     | RIT-024,RIT-033,RIT-063                 | qa_security   | Expensive/auth/checkout/support/privacy endpoints resist scripted abuse without sensitive profiling.                                                                                                                                                       |
-| RIT-123 | M12       |       P0 | Planned | Implement backups and isolated restore test                                 | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
+| RIT-123 | M12       |       P0 | Ready   | Implement backups and isolated restore test                                 | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
 | RIT-124 | M12       |       P0 | Planned | Implement SLOs, alerts, runbooks, and status controls                       | RIT-006,RIT-067                         | operations    | Actionable alerts link runbooks; kill switches/read-only mode and trace correlation are rehearsed.                                                                                                                                                         |
 | RIT-125 | M12       |       P1 | Planned | Implement support, privacy, safety, and content report queues               | RIT-056,RIT-068,RIT-110                 | operations    | Triage/SLA/escalation/permissions and draft automation preserve private-data boundaries.                                                                                                                                                                   |
 | RIT-126 | M12       |       P1 | Planned | Implement daily, weekly, and monthly Codex automation                       | RIT-004,RIT-120,RIT-124                 | operations    | Read-only checks/briefs/PRs run with structured output and no gated production actions.                                                                                                                                                                    |
@@ -5224,12 +5242,15 @@ no scheduler, provider, support mailbox, or delivery capability is composed.
 
 ## 11. Environment strategy
 
-- Local: reproducible containers/emulators; synthetic data only.
-- Preview: per-PR, no production secrets or real payment capture.
-- Staging: production-like, provider sandboxes, synthetic/consented test accounts.
-- Production: least privilege, separate projects/accounts, protected deployment, backups, monitoring.
+The canonical, machine-verified matrix is the
+[Environment contract](21_ENVIRONMENT_CONTRACT.md). Local is the only currently implemented
+standing environment. RIT-016 proved one bounded loopback compatibility rehearsal; it did not
+provision a reusable staging service. Preview, standing staging, and production remain
+`required before use`.
 
-Never share databases, signing secrets, webhook endpoints, storage buckets, analytics projects, or AI logs between staging and production.
+Never share databases, signing secrets, webhook endpoints, storage buckets, analytics projects,
+email authority, provider projects, or AI logs between environments. Never copy production secrets
+or private production content downward.
 
 ## 12. Configuration
 
@@ -9016,6 +9037,10 @@ Global-ready does not mean globally enabled. Launch in controlled cohorts and co
 
 ## 2. Environments
 
+The canonical [environment contract](21_ENVIRONMENT_CONTRACT.md) controls isolation, current
+implementation status, secrets, data, indexing, promotion, recovery, and approvals. This runbook
+does not override it or claim that external environments exist.
+
 - Local: synthetic data and mocks/sandboxes.
 - Preview: per-PR, non-indexable, isolated secrets/data.
 - Staging: production-like, provider sandboxes, release rehearsal.
@@ -9878,6 +9903,200 @@ Primary implementation tasks are `RIT-103`, `RIT-110`–`RIT-117`, `RIT-120`, `R
 
 ---
 
+# File: `docs/21_ENVIRONMENT_CONTRACT.md`
+
+# Environment Isolation and Deployment Contract
+
+This is the canonical RITUVIA contract for local, preview, staging, and production environments.
+It consolidates requirements already distributed across configuration, architecture, security,
+search, migration, and launch specifications. It documents required authority and evidence; it
+does not claim that external preview, staging, or production infrastructure currently exists.
+
+## 1. Authority and current state
+
+The status vocabulary is closed:
+
+| Status | Meaning |
+| --- | --- |
+| `implemented` | The repository currently implements and verifies the stated local control. |
+| `verified rehearsal` | A bounded, recorded rehearsal proved the pattern; no standing service is implied. |
+| `required before use` | The control must exist and be verified before that environment may be used. |
+
+Current state: no standing preview, staging, or production hosting environment exists. RIT-016 is
+a `verified rehearsal` of one isolated loopback staging compatibility window, not a reusable or
+standing staging service. The public GitHub repository in D-090 is source hosting, not product
+hosting, production deployment, DNS, indexing activation, or public product launch.
+
+## 2. Environment matrix
+
+| Environment | `APP_ENV` | Current status | Purpose | Data | Access and network | Lifetime | Promotion source |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Local | `local` | `implemented` | Developer build and focused verification | Synthetic or developer-created local test data only | Loopback by default; developer access | Developer controlled and disposable except explicitly retained local test data | Clean tracked source |
+| Preview | `preview` | `required before use` | Per-PR product and browser review | Synthetic fixtures only | Protected, authenticated, least-privilege access; no unrestricted crawler access | Ephemeral and deleted after review | Protected PR head with required CI |
+| Staging | `staging` | `verified rehearsal` | Production-like release, migration, recovery, DAST, and provider-sandbox rehearsal | Synthetic or explicitly consented dedicated test accounts only | Team/allowlist access, protected ingress, audited privileged access | Persistent only when an approved isolated service is provisioned | Immutable release candidate that passed required CI |
+| Production | `production` | `required before use` | Owner-approved customer service | Real customer data only after legal, privacy, security, and launch gates | Public application ingress; private administrative and service access | Durable, monitored, backed up, and recoverable | Exact staging-approved immutable release |
+
+Preview cannot promote directly to production. Staging is the required release rehearsal boundary.
+An artifact promoted between environments must retain the exact Git revision, dependency lock,
+compiled artifact digest, configuration schema version, and Corresponding Source identity.
+
+## 3. Isolation and data flow
+
+Every non-local environment must have independently addressable and independently revocable
+resources. A naming convention or logical schema alone is not isolation.
+
+| Resource | Preview | Staging | Production |
+| --- | --- | --- | --- |
+| PostgreSQL | Per-preview database or equivalent isolated cluster/database with synthetic data | Dedicated production-like database with test data | Dedicated production system of record |
+| Redis/cache | Per-preview namespace plus credentials, or disabled | Dedicated staging instance and credentials | Dedicated production instance and credentials |
+| Object storage | Per-preview bucket/prefix plus credentials, or disabled | Dedicated staging bucket and credentials | Dedicated production bucket and credentials |
+| Encryption/signing keys | Unique ephemeral test keys | Unique staging keys | Unique versioned production KMS keys |
+| Payment/crypto | Mock, CLI fixture, or approved sandbox only | Separate provider test-mode account/project and webhook endpoint | Live account only after provider/legal/owner gates |
+| AI | Disabled, recorded fixture, or dedicated test account | Approved test account with non-production data | Live provider only after privacy, safety, budget, and owner gates |
+| Email/auth | Sink, local capture, or dedicated test tenant | Dedicated test tenant/domain with allowlisted recipients | Approved production tenant/domain and reviewed templates |
+| Analytics/observability | Dedicated non-production destination with synthetic identifiers | Dedicated staging destination and retention | Dedicated production destination with approved retention/access |
+
+Production data MUST NOT be copied, sampled, restored, replayed, or exported into local, preview, or
+staging. Production secrets MUST NOT flow downward. Preview and staging credentials MUST NOT grant
+production authority. Private questions, journals, intentions, birth data, authentication material,
+payment payloads, or customer exports are never acceptable test fixtures.
+
+Cross-environment network access is denied by default. Preview and staging services may not connect
+to production databases, caches, buckets, queues, KMS keys, webhooks, provider projects, analytics
+destinations, or administrative endpoints.
+
+## 4. Secrets and privileged access
+
+- `.env*` files remain uncommitted. `.env.example` contains names and descriptions only.
+- Non-local secrets come from the environment's managed secret store, never source, images,
+  workflow files, build arguments, CI artifacts, screenshots, logs, tickets, or chat.
+- `NEXT_PUBLIC_*` remains denied; browser code receives only the validated non-secret projection.
+- Every environment uses unique database credentials, session/auth keys, HMAC keys, encryption
+  keys, signing keys, webhook secrets, provider credentials, and service identities.
+- Service identities receive least privilege for one environment and purpose. Human production
+  access requires named identity, MFA, short-lived elevation, reason, and audit evidence.
+- Rotation creates a versioned overlap window only where the data format supports it, verifies
+  read-old/write-new behavior, then revokes the prior version. Rotation must be rehearsed outside
+  production before launch.
+- Break-glass access is disabled by default, time-bounded, independently logged, reviewed after use,
+  and revoked immediately after the incident.
+- A suspected exposure requires environment-scoped revocation, incident handling, affected-data
+  analysis, and verification that no copied secret remains in source, artifacts, caches, or logs.
+
+## 5. Indexing and public exposure
+
+Local, preview, and staging MUST emit `noindex, nofollow`, serve disallow-all robots, and publish no sitemap.
+Authentication or an unguessable preview URL is not an indexing control.
+
+Production remains disallow-all and publishes no sitemap until all of the following are true:
+
+1. `APP_ENV=production` passes typed startup validation.
+2. The canonical origin is an approved HTTPS origin with approved DNS.
+3. The exact public-page inventory and editorial/source authority are current.
+4. Private, account, reading, checkout, journal, Sanctuary, and framework representations remain
+   noindex and private/no-store where required.
+5. Legal, country, locale, support, security, and operational launch gates are complete.
+6. The owner separately approves production deployment and indexing activation.
+
+Repository visibility, a successful production build, or a staging rehearsal never satisfies the
+production indexing gate.
+
+## 6. Schema change, backup, and recovery
+
+- Preview may apply migrations only to disposable isolated databases. It never uses production
+  backups or production connection strings.
+- Staging applies the exact candidate migration set before application promotion and rehearses
+  compatibility, rollback or forward-fix, seed-free smoke, and isolated restore.
+- Production migrations require an exact revision, reviewed migration manifest, backup/PITR
+  readiness, compatibility plan, rollback or forward-fix plan, maintenance/read-only strategy,
+  monitoring, and explicit owner approval.
+- Destructive migrations, production data mutation, backup deletion, key destruction, and
+  irreversible retention changes remain separate human approval gates.
+- Backups are encrypted with environment-specific authority. Restore tests use an isolated target
+  and verify integrity, authorization, application compatibility, and cleanup.
+- Application rollback is forbidden when the old application cannot safely read data written by
+  the new version. Prefer a tested forward fix after an irreversible schema change.
+
+No standing backup automation, production PITR, or external isolated-restore service is currently
+claimed. RIT-123 remains responsible for implementing and proving those controls.
+
+## 7. Build, promotion, and deployment gates
+
+A candidate cannot be promoted unless evidence binds all of these inputs:
+
+- exact Git revision and clean source state;
+- locked Node, pnpm, dependencies, action revisions, and service image digests;
+- required protected `Quality`, `PostgreSQL integration`, and `Security scans` results;
+- immutable application artifact and complete Corresponding Source identity;
+- environment-specific typed configuration validation with no secret values in evidence;
+- migration compatibility and restore/rollback evidence applicable to the change;
+- seed-free HTTP/browser smoke, accessibility, authorization, privacy, and security checks;
+- provider sandbox/webhook/reconciliation evidence when an integration is in scope;
+- open critical/high security findings: zero; and
+- every applicable owner approval reference.
+
+Preview deployment may be automated only after its hosting project, authentication, fork/secrets
+policy, retention, cleanup, and cost limits are reviewed. Staging deployment may be automated only
+after isolated resources and audit/rollback controls exist. Production deployment and rollback that affect customers always require explicit owner approval.
+
+Environment variables do not grant product authority by themselves. Country policy, feature flags,
+provider approval, content/locale approval, and owner gates remain server-authoritative and
+fail-closed.
+
+## 8. Evidence and current implementation state
+
+`implemented` repository evidence:
+
+- typed `APP_ENV` accepts only local, preview, staging, and production;
+- production startup requires complete HTTPS brand configuration and approved policy references;
+- `NEXT_PUBLIC_*` variables are rejected;
+- local authentication and local checkout adapters are rejected outside local;
+- non-production metadata, robots, and sitemap behavior fail closed;
+- migrations, architecture, records, generated evidence, secrets, build artifacts, and three hosted
+  CI jobs have repository gates; and
+- public `main` is protected under D-090.
+
+`verified rehearsal` evidence:
+
+- RIT-016 used loopback-only PostgreSQL 17 and Web processes, random Basic authentication,
+  private/no-store responses, disallow-all robots, synthetic data, and forward/rollback/
+  roll-forward registry compatibility probes.
+
+`required before use` and not currently claimed:
+
+- standing external preview, staging, or production hosting;
+- cloud databases, caches, buckets, KMS, queues, provider projects, or environment secret stores;
+- production credentials, customer data, DNS, public product indexing, or provider activation;
+- automated backup/PITR and isolated restore; and
+- production monitoring, alerting, support, status, on-call, and independent penetration evidence.
+
+## 9. Rollback and emergency actions
+
+Use the narrowest safe action: feature/provider/country kill switch, queue pause, read-only mode,
+artifact rollback, tested migration rollback, or forward fix. Preserve idempotency and audit
+evidence. Never delete or rewrite history to conceal a failed deployment.
+
+Emergency production action requires the owner or recorded delegate, a reason, exact affected
+environment/revision, start time, expected user impact, rollback or forward-fix plan, and
+post-action review. Restoring service does not waive incident, privacy, payment, or disclosure
+obligations.
+
+## 10. Owner approvals
+
+The following remain explicit human gates:
+
+- creating or changing production hosting, deployment, rollback, DNS, domains, or indexing;
+- installing, rotating, or revoking production secrets and provider credentials;
+- production migrations, data mutation, backup deletion, key destruction, or retention changes;
+- live payment, crypto, email, AI, analytics, country, locale, content, or age-policy activation;
+- legal terms, privacy, consent, refund, tax, merchant, support, and public-launch decisions; and
+- weakening branch, CI, security, privacy, recovery, or environment-isolation controls.
+
+Codex may prepare configurations, scripts, evidence, and protected preview/staging plans, but it
+must not execute these owner-gated production actions without a new explicit approval.
+
+---
+
 # File: `docs/README.md`
 
 # Specification Index
@@ -9911,6 +10130,7 @@ conflicting product details while preserving stricter repository safety and appr
 19. `18_REFERENCES.md` — retained sources and freshness policy.
 20. `19_NAME_CLEARANCE_WORKSHEET.md` — operational trademark/domain/language clearance checklist.
 21. `20_AI_GROWTH_ENGINE.md` — AI-native SEO/GEO/content/lifecycle/social/paid-growth operating system.
+22. `21_ENVIRONMENT_CONTRACT.md` — testable local/preview/staging/production isolation, secret, data, indexing, promotion, recovery, and approval gates.
 
 When a decision changes a specification, update the specification, tests/backlog, and append/supersede the decision in `DECISIONS.md` in the same change.
 
@@ -11979,6 +12199,8 @@ jobs:
         run: pnpm check:ci-contract
       - name: Verify architecture boundaries
         run: pnpm check:architecture
+      - name: Verify environment isolation contract
+        run: pnpm check:environment-contract
       - name: Verify offline AI operations
         run: pnpm check:ai-operations
       - name: Verify localization workflow
@@ -12472,6 +12694,7 @@ Run from the repository root:
 pnpm check:records
 pnpm check:generated
 pnpm check:public-pages
+pnpm check:environment-contract
 shasum -a 256 -c checksums.sha256
 ```
 
@@ -12491,6 +12714,7 @@ The fail-closed repository evidence commands are:
 ```bash
 pnpm check:ci-contract
 pnpm check:architecture
+pnpm check:environment-contract
 pnpm check:public-pages
 pnpm check:records
 pnpm check:migrations
@@ -12501,6 +12725,9 @@ pnpm scan:secrets
 
 The CI contract parses the active workflow with the exact locked YAML parser and enforces triggers,
 permissions, runners, immutable actions/service image, database isolation, and required commands.
+The environment contract gate verifies the four-environment authority matrix, isolation, downward
+data/secret-flow denial, indexing, migration/recovery, promotion, rollback, owner gates, current
+implementation claims, and every repository reference without contacting a provider or network.
 The migration policy checks the complete migration directory against
 `packages/db/prisma/migration-manifest.json` and rejects checksum drift, unlisted files, missing
 files, transaction loss, and destructive SQL. The current-tree secret policy scans every tracked or
@@ -12845,6 +13072,7 @@ SOURCE_FILES = [
         "REFERENCES",
         "NAME_CLEARANCE_WORKSHEET",
         "AI_GROWTH_ENGINE",
+        "ENVIRONMENT_CONTRACT",
     ])],
     "docs/README.md",
     "apps/admin/AGENTS.md",
