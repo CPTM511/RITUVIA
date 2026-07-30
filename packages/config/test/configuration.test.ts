@@ -9,6 +9,7 @@ import {
   buildEnvironmentVariables,
   parseBuildConfiguration,
   parseServerConfiguration,
+  parseWorkerConfiguration,
   serverEnvironmentVariables,
 } from "../src/server.js";
 
@@ -81,6 +82,7 @@ describe("server and client configuration boundary", () => {
     expect(serverEnvironmentVariables).toEqual([
       ...buildEnvironmentVariables,
       "DATABASE_URL",
+      "PAYMENT_FULFILLMENT_DATABASE_URL",
       "PAYMENT_WEBHOOK_DATABASE_URL",
       "PRIVACY_DELETION_DATABASE_URL",
       "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
@@ -437,6 +439,10 @@ describe("server and client configuration boundary", () => {
     const sandbox = {
       APP_ENV: "staging",
       DATABASE_URL: databaseUrl("rituvia_app", "app-password"),
+      PAYMENT_FULFILLMENT_DATABASE_URL: databaseUrl(
+        "rituvia_payment_fulfillment",
+        "fulfillment-password",
+      ),
       PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl("rituvia_payment_webhook", "webhook-password"),
       RITUVIA_PAYMENT_PROVIDER: "stripe",
       RITUVIA_STRIPE_ACCOUNT_ID: "acct_12345678",
@@ -450,6 +456,40 @@ describe("server and client configuration boundary", () => {
       provider: "stripe",
       secretKey: sandbox.STRIPE_SECRET_KEY,
     });
+    expect(parseServerConfiguration(sandbox).paymentFulfillmentDatabaseUrl).toBe(
+      sandbox.PAYMENT_FULFILLMENT_DATABASE_URL,
+    );
+    expect(() =>
+      parseWorkerConfiguration({
+        ...sandbox,
+        PAYMENT_FULFILLMENT_DATABASE_URL: undefined,
+      }),
+    ).toThrowError("PAYMENT_FULFILLMENT_DATABASE_URL:missing");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_FULFILLMENT_DATABASE_URL: sandbox.DATABASE_URL,
+      }),
+    ).toThrowError("PAYMENT_FULFILLMENT_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_FULFILLMENT_DATABASE_URL: databaseUrl(
+          "rituvia_payment_fulfillment",
+          "fulfillment-password",
+          "other",
+        ),
+      }),
+    ).toThrowError("PAYMENT_FULFILLMENT_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_FULFILLMENT_DATABASE_URL: databaseUrl(
+          "rituvia_payment_fulfillment",
+          "webhook-password",
+        ),
+      }),
+    ).toThrowError("PAYMENT_FULFILLMENT_DATABASE_URL:invalid");
     expect(() =>
       parseServerConfiguration({
         ...sandbox,

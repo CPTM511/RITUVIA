@@ -133,6 +133,9 @@ importers:
       '@rituvia/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@rituvia/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@rituvia/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -142,6 +145,9 @@ importers:
       '@rituvia/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@rituvia/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
 
   packages/ai:
     dependencies:

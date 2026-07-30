@@ -77,6 +77,10 @@ export {
   type VerifiedCommercialPaymentEventType,
 } from "./commercial-webhook.js";
 export {
+  planCommercialCreditPackFulfillment,
+  type CommercialCreditPackFulfillmentPlan,
+} from "./commercial-fulfillment.js";
+export {
   allocateCreditSources,
   applyCreditProjection,
   commercialEntitlementEvents,

@@ -71,6 +71,7 @@
     "test:catalog-database": "pnpm --filter @rituvia/db test:catalog",
     "test:commercial-transactions-database": "pnpm --filter @rituvia/db test:commercial-transactions",
     "test:commercial-checkout-database": "pnpm --filter @rituvia/db test:commercial-checkout",
+    "test:commercial-fulfillment-database": "pnpm --filter @rituvia/db test:commercial-fulfillment",
     "test:commercial-payment-webhook-database": "pnpm --filter @rituvia/db generate && node --import tsx tests/verify-commercial-payment-webhook.ts",
     "test:country-policy-database": "pnpm --filter @rituvia/db test:country-policy",
     "test:identity-privacy-authorization": "node scripts/verify-identity-privacy-authorization.mjs",

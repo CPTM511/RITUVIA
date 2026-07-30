@@ -74,6 +74,7 @@
 | Decision | D-089 | Complete the public-shell registry compatibility window | [decisions/D-089.md](./decisions/D-089.md) |
 | Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
+| Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -124,6 +125,7 @@
 | Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
 | Task | RIT-063 | First Fiat Hosted-Checkout Sandbox Adapter | [tasks/RIT-063.md](./tasks/RIT-063.md) |
 | Task | RIT-064 | Signed Payment Webhook Ingestion and Processing | [tasks/RIT-064.md](./tasks/RIT-064.md) |
+| Task | RIT-065 | Entitlement Fulfillment and Purchase Restoration | [tasks/RIT-065.md](./tasks/RIT-065.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

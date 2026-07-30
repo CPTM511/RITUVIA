@@ -87,7 +87,7 @@ const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/callback$/u, query: "auth_callback" },
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
-  { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements|ritual-objects)$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|credits|entitlements|ritual-objects)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/readings\/astrology\/natal$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/(?:intentions|journal-entries|ritual-sessions)$/u },

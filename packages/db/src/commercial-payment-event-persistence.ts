@@ -99,38 +99,7 @@ export type ProcessedCommercialPaymentEvent = Readonly<{
   paymentAttemptState: ReducedCommercialPaymentState["attemptState"] | null;
 }>;
 
-export type CommercialPaymentStateOutboxClaim = Readonly<{
-  attemptCount: number;
-  leaseExpiresAt: string;
-  orderId: string;
-  orderStatus: ReducedCommercialPaymentState["orderStatus"];
-  outboxId: string;
-  paymentAttemptId: string;
-  paymentAttemptState: ReducedCommercialPaymentState["attemptState"];
-  paymentEventId: string;
-  paymentStateVersion: number;
-  schemaVersion: "commercial-payment-state-outbox.v1";
-  topic: "commercial.payment_state_changed";
-}>;
-
 export type CommercialPaymentEventPersistence = Readonly<{
-  claimPaymentStateOutbox(input: {
-    claimedAt: string;
-    leaseTokenHash: Uint8Array;
-    leasedUntil: string;
-  }): Promise<CommercialPaymentStateOutboxClaim | null>;
-  completePaymentStateOutbox(input: {
-    completedAt: string;
-    leaseTokenHash: Uint8Array;
-    outboxId: string;
-  }): Promise<boolean>;
-  failPaymentStateOutbox(input: {
-    failedAt: string;
-    failureCode: string;
-    leaseTokenHash: Uint8Array;
-    outboxId: string;
-    retryAt: string | null;
-  }): Promise<"dead_lettered" | "retry_wait" | null>;
   processStripeSandboxEvent(
     input: PreparedCommercialPaymentEvent,
     reduce: CommercialPaymentEventReducer,
@@ -180,20 +149,6 @@ type TimelineRow = Readonly<{
   providerEventId: string;
 }>;
 
-type OutboxClaimRow = Readonly<{
-  attemptCount: number;
-  leaseExpiresAt: Date;
-  orderId: string;
-  orderStatus: ReducedCommercialPaymentState["orderStatus"];
-  outboxId: string;
-  paymentAttemptId: string;
-  paymentAttemptState: ReducedCommercialPaymentState["attemptState"];
-  paymentEventId: string;
-  paymentStateVersion: number;
-  schemaVersion: "commercial-payment-state-outbox.v1";
-  topic: "commercial.payment_state_changed";
-}>;
-
 type PaymentWebhookPrivilegeRow = Readonly<{
   canCreateInDatabase: boolean;
   canCreateInSchema: boolean;
@@ -210,7 +165,6 @@ type PaymentWebhookPrivilegeRow = Readonly<{
   canUpdateAttempt: boolean;
   canUpdateEvent: boolean;
   canUpdateOrder: boolean;
-  canUpdateOutbox: boolean;
   privilegedRole: boolean;
   roleName: string;
 }>;
@@ -248,9 +202,6 @@ export const assertCommercialPaymentWebhookRuntimeDatabasePrivileges = async (
                AS "canReadOutbox",
              has_table_privilege(current_user, 'public.commercial_payment_outbox_v2', 'INSERT')
                AS "canInsertOutbox",
-             has_any_column_privilege(
-               current_user, 'public.commercial_payment_outbox_v2', 'UPDATE'
-             ) AS "canUpdateOutbox",
              (
                has_table_privilege(current_user, 'public.credit_ledger_entry', 'SELECT')
                OR has_any_column_privilege(
@@ -307,7 +258,6 @@ export const assertCommercialPaymentWebhookRuntimeDatabasePrivileges = async (
         !privilege.canUpdateEvent ||
         !privilege.canReadOutbox ||
         !privilege.canInsertOutbox ||
-        !privilege.canUpdateOutbox ||
         privilege.canReadCredit ||
         privilege.canMutateCredit ||
         privilege.canReadEntitlement ||
@@ -674,142 +624,6 @@ export const createCommercialPaymentEventPersistence = (
   database: PrismaClient,
 ): CommercialPaymentEventPersistence =>
   Object.freeze({
-    async claimPaymentStateOutbox(input) {
-      await assertCommercialPaymentWebhookRuntimeDatabasePrivileges(database);
-      const claimedAt = requireInstant(input.claimedAt);
-      const leasedUntil = requireInstant(input.leasedUntil);
-      const leaseTokenHash = requireDigest(input.leaseTokenHash);
-      if (
-        leasedUntil <= claimedAt ||
-        leasedUntil.getTime() - claimedAt.getTime() > 5 * 60 * 1_000
-      ) {
-        throw new TypeError("Commercial payment outbox lease is invalid.");
-      }
-      const claimed = await database.$queryRaw<OutboxClaimRow[]>`
-        WITH exhausted AS (
-          UPDATE commercial_payment_outbox_v2
-          SET delivery_state = 'dead_lettered',
-              lease_token_hash = NULL,
-              leased_until = NULL,
-              last_failure_code = 'max_attempts',
-              dead_lettered_at = ${claimedAt}
-          WHERE delivery_state = 'leased'
-            AND leased_until <= ${claimedAt}
-            AND attempt_count >= 20
-          RETURNING id
-        ),
-        candidate AS (
-          SELECT id
-          FROM commercial_payment_outbox_v2
-          WHERE attempt_count < 20
-            AND (
-              (
-                delivery_state = 'pending'
-                AND available_at <= ${claimedAt}
-              )
-              OR (
-                delivery_state = 'leased'
-                AND leased_until <= ${claimedAt}
-              )
-            )
-          ORDER BY available_at, created_at, id
-          FOR UPDATE SKIP LOCKED
-          LIMIT 1
-        )
-        UPDATE commercial_payment_outbox_v2 AS outbox
-        SET delivery_state = 'leased',
-            attempt_count = outbox.attempt_count + 1,
-            lease_token_hash = ${leaseTokenHash},
-            leased_until = ${leasedUntil},
-            last_failure_code = NULL
-        FROM candidate
-        WHERE outbox.id = candidate.id
-        RETURNING
-          outbox.attempt_count AS "attemptCount",
-          outbox.leased_until AS "leaseExpiresAt",
-          outbox.order_id AS "orderId",
-          outbox.order_status AS "orderStatus",
-          outbox.id AS "outboxId",
-          outbox.payment_attempt_id AS "paymentAttemptId",
-          outbox.payment_attempt_state AS "paymentAttemptState",
-          outbox.payment_event_id AS "paymentEventId",
-          outbox.payment_state_version AS "paymentStateVersion",
-          outbox.schema_version AS "schemaVersion",
-          outbox.topic
-      `;
-      const claim = claimed.at(0);
-      return claim === undefined
-        ? null
-        : Object.freeze({
-            ...claim,
-            leaseExpiresAt: claim.leaseExpiresAt.toISOString(),
-          });
-    },
-
-    async completePaymentStateOutbox(input) {
-      await assertCommercialPaymentWebhookRuntimeDatabasePrivileges(database);
-      if (!uuidV4Pattern.test(input.outboxId)) {
-        throw new TypeError("Commercial payment outbox ID is invalid.");
-      }
-      const completedAt = requireInstant(input.completedAt);
-      const leaseTokenHash = requireDigest(input.leaseTokenHash);
-      const completed = await database.$executeRaw`
-        UPDATE commercial_payment_outbox_v2
-        SET delivery_state = 'completed',
-            lease_token_hash = NULL,
-            leased_until = NULL,
-            completed_at = ${completedAt},
-            last_failure_code = NULL
-        WHERE id = ${input.outboxId}::uuid
-          AND delivery_state = 'leased'
-          AND lease_token_hash = ${leaseTokenHash}
-          AND leased_until >= ${completedAt}
-      `;
-      return completed === 1;
-    },
-
-    async failPaymentStateOutbox(input) {
-      await assertCommercialPaymentWebhookRuntimeDatabasePrivileges(database);
-      if (
-        !uuidV4Pattern.test(input.outboxId) ||
-        !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(input.failureCode)
-      ) {
-        throw new TypeError("Commercial payment outbox failure is invalid.");
-      }
-      const failedAt = requireInstant(input.failedAt);
-      const retryAt = input.retryAt === null ? null : requireInstant(input.retryAt);
-      const leaseTokenHash = requireDigest(input.leaseTokenHash);
-      if (retryAt !== null && retryAt <= failedAt) {
-        throw new TypeError("Commercial payment outbox retry is invalid.");
-      }
-      const failed = await database.$queryRaw<Readonly<{ deliveryState: string }>[]>`
-        UPDATE commercial_payment_outbox_v2
-        SET delivery_state =
-              CASE
-                WHEN ${retryAt}::timestamptz IS NOT NULL AND attempt_count < 20
-                  THEN 'pending'
-                ELSE 'dead_lettered'
-              END,
-            available_at = COALESCE(${retryAt}::timestamptz, available_at),
-            lease_token_hash = NULL,
-            leased_until = NULL,
-            last_failure_code = ${input.failureCode},
-            dead_lettered_at =
-              CASE
-                WHEN ${retryAt}::timestamptz IS NOT NULL AND attempt_count < 20
-                  THEN NULL::timestamptz
-                ELSE ${failedAt}::timestamptz
-              END
-        WHERE id = ${input.outboxId}::uuid
-          AND delivery_state = 'leased'
-          AND lease_token_hash = ${leaseTokenHash}
-          AND leased_until >= ${failedAt}
-        RETURNING delivery_state AS "deliveryState"
-      `;
-      const state = failed.at(0)?.deliveryState;
-      return state === undefined ? null : state === "pending" ? "retry_wait" : "dead_lettered";
-    },
-
     async processStripeSandboxEvent(input, reduce) {
       await assertCommercialPaymentWebhookRuntimeDatabasePrivileges(database);
       if (

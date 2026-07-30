@@ -42,6 +42,7 @@ const anonymousSessionEnvironmentVariables = Object.freeze([
 export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
+  "PAYMENT_FULFILLMENT_DATABASE_URL",
   "PAYMENT_WEBHOOK_DATABASE_URL",
   "PRIVACY_DELETION_DATABASE_URL",
   "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
@@ -91,6 +92,7 @@ export type ServerConfiguration = Readonly<{
   databaseUrl: string | undefined;
   deploymentEnvironment: DeploymentEnvironment;
   payment: PaymentConfiguration | undefined;
+  paymentFulfillmentDatabaseUrl: string | undefined;
   paymentWebhookDatabaseUrl: string | undefined;
   privateContentKeyring: PrivateContentKeyringConfiguration | undefined;
   privacyDeletionPolicy: PrivacyDeletionPolicyConfiguration | undefined;
@@ -229,6 +231,7 @@ const absoluteMetadataPathSchema = z
 
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
+  PAYMENT_FULFILLMENT_DATABASE_URL: databaseUrlSchema.optional(),
   PAYMENT_WEBHOOK_DATABASE_URL: databaseUrlSchema.optional(),
   PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
   RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: absoluteMetadataPathSchema.optional(),
@@ -657,9 +660,10 @@ const decodeDatabaseCredential = (value: string): string | null => {
   }
 };
 
-const assertPaymentWebhookDatabaseBoundary = (
+const assertPaymentDatabaseBoundaries = (
   payment: PaymentConfiguration | undefined,
   databaseUrl: string | undefined,
+  paymentFulfillmentDatabaseUrl: string | undefined,
   paymentWebhookDatabaseUrl: string | undefined,
 ): void => {
   if (payment?.provider !== "stripe") return;
@@ -695,6 +699,25 @@ const assertPaymentWebhookDatabaseBoundary = (
   ) {
     throw new ConfigurationError("server", [
       { code: "invalid", key: "PAYMENT_WEBHOOK_DATABASE_URL" },
+    ]);
+  }
+  if (paymentFulfillmentDatabaseUrl === undefined) return;
+
+  const paymentFulfillment = new URL(paymentFulfillmentDatabaseUrl);
+  const paymentFulfillmentUsername = decodeDatabaseCredential(paymentFulfillment.username);
+  const paymentFulfillmentPassword = decodeDatabaseCredential(paymentFulfillment.password);
+  if (
+    normalizedDatabaseTarget(databaseUrl) !==
+      normalizedDatabaseTarget(paymentFulfillmentDatabaseUrl) ||
+    paymentFulfillmentUsername === null ||
+    paymentFulfillmentUsername === "" ||
+    paymentFulfillmentPassword === null ||
+    paymentFulfillmentPassword === "" ||
+    new Set([applicationUsername, paymentFulfillmentUsername, paymentWebhookUsername]).size !== 3 ||
+    new Set([applicationPassword, paymentFulfillmentPassword, paymentWebhookPassword]).size !== 3
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "PAYMENT_FULFILLMENT_DATABASE_URL" },
     ]);
   }
 };
@@ -823,6 +846,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const build = parseBuildConfiguration(environment);
   const server = parseConfiguration("server", serverEnvironmentSchema, {
     DATABASE_URL: normalizeEnvironmentValue(environment.DATABASE_URL),
+    PAYMENT_FULFILLMENT_DATABASE_URL: normalizeEnvironmentValue(
+      environment.PAYMENT_FULFILLMENT_DATABASE_URL,
+    ),
     PAYMENT_WEBHOOK_DATABASE_URL: normalizeEnvironmentValue(
       environment.PAYMENT_WEBHOOK_DATABASE_URL,
     ),
@@ -924,9 +950,10 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const accountIdentityPolicy = parseAccountIdentityPolicy(server);
   const privacyExport = parsePrivacyExportConfiguration(server);
   const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
-  assertPaymentWebhookDatabaseBoundary(
+  assertPaymentDatabaseBoundaries(
     payment,
     server.DATABASE_URL,
+    server.PAYMENT_FULFILLMENT_DATABASE_URL,
     server.PAYMENT_WEBHOOK_DATABASE_URL,
   );
   if (
@@ -953,6 +980,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     databaseUrl: server.DATABASE_URL,
     deploymentEnvironment: build.deploymentEnvironment,
     payment,
+    paymentFulfillmentDatabaseUrl: server.PAYMENT_FULFILLMENT_DATABASE_URL,
     paymentWebhookDatabaseUrl: server.PAYMENT_WEBHOOK_DATABASE_URL,
     privateContentKeyring: reflection.keyring,
     privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
@@ -964,4 +992,17 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
       server.RITUVIA_TAROT_INTEGRITY_KEY_V1,
     ),
   });
+};
+
+export const parseWorkerConfiguration = (environment: RawEnvironment): ServerConfiguration => {
+  const configuration = parseServerConfiguration(environment);
+  if (
+    configuration.payment?.provider === "stripe" &&
+    configuration.paymentFulfillmentDatabaseUrl === undefined
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "missing", key: "PAYMENT_FULFILLMENT_DATABASE_URL" },
+    ]);
+  }
+  return configuration;
 };

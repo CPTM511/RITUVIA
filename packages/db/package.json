@@ -34,6 +34,7 @@
     "test:catalog": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-catalog.ts",
     "test:commercial-transactions": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-commercial-transactions.ts",
     "test:commercial-checkout": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-commercial-checkout.ts",
+    "test:commercial-fulfillment": "node --import tsx ../../tests/verify-commercial-fulfillment.ts",
     "test:country-policy": "node --import tsx scripts/verify-country-policy.ts",
     "test:integration": "pnpm --filter @rituvia/domain build && pnpm generate && node scripts/verify-foundation.mjs && node --import tsx scripts/verify-anonymous-identity.ts && node --import tsx scripts/verify-tarot-reading-persistence.ts && node --import tsx scripts/verify-intention-persistence.ts && node --import tsx scripts/verify-ritual-journal-persistence.ts && node --import tsx scripts/verify-revisit-persistence.ts",
     "typecheck": "pnpm generate && tsc --noEmit"

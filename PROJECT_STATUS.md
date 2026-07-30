@@ -4,7 +4,7 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 and RIT-064 are complete, and RIT-065 is the sole Ready task.
+RIT-063 through RIT-065 are complete, and RIT-066 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -27,8 +27,12 @@ outbox with monotonic order versions and final-lease dead lettering. The route u
 database role whose DSN is bound to the application database but uses distinct credentials; the
 runtime attests that exact least-privilege role and rejects Credit or entitlement access. Node
 startup proves the configured account against the current Stripe Test Mode key before Stripe
-webhooks become available, while checkout repeats the same cached proof defensively. RIT-065 is
-the sole Ready task. RIT-045
+webhooks become available, while checkout repeats the same cached proof defensively. RIT-065 now
+consumes the outbox through a separate exact-role DSN, grants purchased packs exactly once, holds
+only unspent source Credits on dispute, converts holds and available value on refund, and records
+consumed/reserved shortfalls for review without a negative balance. Authenticated Credit
+restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 is the sole
+Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1288,7 +1292,23 @@ pass. The canonical Web build includes `/api/v1/checkout/stripe`.
 No Stripe credential, Price ID, provider account, external payment call, production policy,
 deployment, DNS, or public product launch was added. Real Stripe Test Mode network proof remains
 truthfully blocked until test credentials and exact test Price IDs are supplied through the secure
-configuration path. RIT-065 is the sole Ready task.
+configuration path.
+
+RIT-065 is Done through D-092. The webhook role no longer owns outbox delivery mutation; the
+independent `rituvia_payment_fulfillment` role leases ordered versions, rereads current order
+authority under serializable transactions, and can append only bounded grant/restriction/reversal
+evidence plus update exact projection/fulfillment/outbox columns. Composite owner/source foreign
+keys prevent cross-account fulfillment. Disputes move only unspent purchased Credits into a
+nonspendable held bucket; refunds convert active holds and reverse remaining available source
+value; reserved or consumed source value becomes `review_required`.
+
+The private `/api/v1/credits` restoration route returns only the authenticated owner's spendable
+projection with private/no-store headers. Privacy export includes v2 order, Credit, restriction,
+fulfillment, and entitlement evidence. Focused 51-test domain/configuration/worker/Web coverage,
+the 33-migration webhook and fulfillment PostgreSQL gates, privacy-export PostgreSQL gate, affected
+typechecks, and migration policy pass. No Live Mode, refund initiation, provider dispute/refund
+route activation, subscription, reconciliation, production migration, deployment, DNS, or launch
+was added. RIT-066 is the sole Ready task.
 
 ## Update rules
 

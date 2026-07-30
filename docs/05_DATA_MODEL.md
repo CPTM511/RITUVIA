@@ -396,9 +396,12 @@ amount/currency, expected crypto network/asset where applicable, hard expiry, an
 idempotency. Attempts terminate at payment success/failure/expiry/cancellation; refunds and
 disputes are not attempt states.
 
-#### `payment_event`
+#### `commercial_payment_event_v2`, `commercial_payment_outbox_v2`
 
-Immutable signed-webhook receipt metadata, provider event ID unique, payload encrypted/restricted, received/verified/processed timestamps, processing outcome.
+Immutable, account-bound signed-webhook receipt metadata and one transactional state-change outbox
+row per applied provider event. The webhook role may append events/outbox rows and update bounded
+payment state, but cannot lease, complete, grant, hold, or reverse value. A separate fulfillment
+role owns bounded outbox delivery state.
 
 #### `credit_ledger_entry`, `credit_reservation`, `credit_allocation`, `credit_projection`
 
@@ -409,7 +412,20 @@ Immutable signed-webhook receipt metadata, provider event ID unique, payload enc
 - Reservations bind one exact product and hard expiry. Allocations reference exact grants and
   consume subscription, then promotional, then purchased Credits.
 - Projection rows are transactionally mutable for bounded reads but never negative and remain
-  reconstructable from ledger/reservation/allocation facts.
+  reconstructable from ledger/reservation/allocation/restriction facts. `purchased_held` is
+  excluded from spendable balance and records dispute-frozen purchased Credits.
+
+#### `credit_restriction_entry`, `commercial_fulfillment_v2`
+
+- Restriction entries are append-only source-linked dispute holds and refund conversions. A
+  dispute moves only currently unspent purchased Credits from available to held; it does not
+  pretend that a refund occurred.
+- Refund conversion links each active hold to a refund reversal. Direct refund reversals affect
+  only currently available source value. Consumed or reserved source value becomes an explicit
+  nonnegative review shortfall.
+- The fulfillment projection binds one order/owner/source grant, current status, granted/held/
+  reversed/shortfall amounts, applied payment-state version, last outbox, and optimistic version.
+  It can be rebuilt from append-only payment, ledger, allocation, and restriction evidence.
 
 #### `subscription`
 
@@ -417,9 +433,10 @@ Provider subscription reference, plan/price snapshot, status, periods, cancel st
 
 #### `commercial_entitlement_v2`
 
-Owner, exact product/fulfillment, authoritative source, pending/active/frozen/revoked timestamps,
-and exact idempotency. Plus must originate from an order; permanent objects must originate from a
-Credit consumption. Unique owner/type/fulfillment constraints prevent double grants.
+Owner, exact product/fulfillment, authoritative source, active/frozen/revoked timestamps, and exact
+idempotency. Plus must originate from an order; permanent objects must originate from a Credit
+consumption. Composite owner/source constraints and unique owner/type/fulfillment constraints
+prevent cross-account or double grants.
 
 #### `refund`, `dispute`
 

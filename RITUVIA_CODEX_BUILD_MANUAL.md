@@ -1082,7 +1082,7 @@ existing human approval gates.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 and RIT-064 are complete, and RIT-065 is the sole Ready task.
+RIT-063 through RIT-065 are complete, and RIT-066 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1105,8 +1105,12 @@ outbox with monotonic order versions and final-lease dead lettering. The route u
 database role whose DSN is bound to the application database but uses distinct credentials; the
 runtime attests that exact least-privilege role and rejects Credit or entitlement access. Node
 startup proves the configured account against the current Stripe Test Mode key before Stripe
-webhooks become available, while checkout repeats the same cached proof defensively. RIT-065 is
-the sole Ready task. RIT-045
+webhooks become available, while checkout repeats the same cached proof defensively. RIT-065 now
+consumes the outbox through a separate exact-role DSN, grants purchased packs exactly once, holds
+only unspent source Credits on dispute, converts holds and available value on refund, and records
+consumed/reserved shortfalls for review without a negative balance. Authenticated Credit
+restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 is the sole
+Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -2366,7 +2370,23 @@ pass. The canonical Web build includes `/api/v1/checkout/stripe`.
 No Stripe credential, Price ID, provider account, external payment call, production policy,
 deployment, DNS, or public product launch was added. Real Stripe Test Mode network proof remains
 truthfully blocked until test credentials and exact test Price IDs are supplied through the secure
-configuration path. RIT-065 is the sole Ready task.
+configuration path.
+
+RIT-065 is Done through D-092. The webhook role no longer owns outbox delivery mutation; the
+independent `rituvia_payment_fulfillment` role leases ordered versions, rereads current order
+authority under serializable transactions, and can append only bounded grant/restriction/reversal
+evidence plus update exact projection/fulfillment/outbox columns. Composite owner/source foreign
+keys prevent cross-account fulfillment. Disputes move only unspent purchased Credits into a
+nonspendable held bucket; refunds convert active holds and reverse remaining available source
+value; reserved or consumed source value becomes `review_required`.
+
+The private `/api/v1/credits` restoration route returns only the authenticated owner's spendable
+projection with private/no-store headers. Privacy export includes v2 order, Credit, restriction,
+fulfillment, and entitlement evidence. Focused 51-test domain/configuration/worker/Web coverage,
+the 33-migration webhook and fulfillment PostgreSQL gates, privacy-export PostgreSQL gate, affected
+typechecks, and migration policy pass. No Live Mode, refund initiation, provider dispute/refund
+route activation, subscription, reconciliation, production migration, deployment, DNS, or launch
+was added. RIT-066 is the sole Ready task.
 
 ## Update rules
 
@@ -3398,6 +3418,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   truthfully replace.
 - **Date:** 2026-07-30
 
+### [D-092 — Separate payment ingestion from source-linked fulfillment](records/decisions/D-092.md)
+
+- **Decision:** Give ordered payment-state outbox consumption to a distinct least-privilege
+  fulfillment role; grant each purchased pack once, hold only unspent source Credits on dispute,
+  convert holds and available value on refund, and expose consumed/reserved value as review
+  shortfall without a negative balance.
+- **Reason:** Webhook ingestion must not issue value, and dispute evidence must not be
+  misrepresented as a completed refund.
+- **Date:** 2026-07-30
+
 ---
 
 # File: `ROADMAP.md`
@@ -3708,9 +3738,9 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-061 | M6        |       P0 | Done    | Implement catalog, product, price, and exact digital contents               | RIT-060,RIT-003                         | payments_risk | Immutable catalog/product/localization/price versions, exact Credit terms, integer USD, local-only seed, bounded DB reader, Web fail-closed endpoint, focused DB/build gates pass.                                                                         |
 | RIT-062 | M6        |       P0 | Done    | Implement order, payment attempt, ledger, and entitlement domain            | RIT-061                                 | backend       | Canonical v2 states, exact idempotency, append-only Credits/reservations/allocations, source-specific entitlements, 20-way no-overspend concurrency, least privilege, and restore pass.                                                                    |
 | RIT-063 | M6        |       P0 | Done    | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                         | payments_risk | Test-only Stripe Checkout API, v2 order/attempt persistence, exact idempotency, server catalog/policy pricing, CSRF, live-key rejection, focused PostgreSQL/security/build gates pass; real network proof remains credential-gated.                        |
-| RIT-064 | M6        |       P0 | Done    | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Test-only raw signature/replay, startup account attestation, same-database distinct-role binding, exact duplicate/conflict, account-bound out-of-order replay, monotonic/versioned outbox, final-lease dead lettering, and zero fulfillment pass.          |
-| RIT-065 | M6        |       P0 | Ready   | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Verified state grants exactly once and reverses per refund/dispute terms.                                                                                                                                                                                  |
-| RIT-066 | M6        |       P0 | Planned | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
+| RIT-064 | M6        |       P0 | Done    | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Test-only raw signature/replay, startup account attestation, same-database distinct-role binding, exact duplicate/conflict, account-bound out-of-order replay, monotonic/versioned outbox, and zero fulfillment pass.                                      |
+| RIT-065 | M6        |       P0 | Done    | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Dedicated-role outbox consumption grants purchased Credits exactly once; disputes hold unspent source value, refunds reverse linked value, consumed shortfalls require review, and private owner restoration passes.                                       |
+| RIT-066 | M6        |       P0 | Ready   | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
 | RIT-067 | M6        |       P0 | Planned | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Scheduled comparison detects missing/mismatched payment, order, entitlement, payout states.                                                                                                                                                                |
 | RIT-068 | M6        |       P0 | Planned | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Versioned eligibility, audit, entitlement impact, duplicate/retry handling pass.                                                                                                                                                                           |
 | RIT-069 | M6        |       P0 | Planned | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                                                                                                                                                          |
@@ -4032,6 +4062,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-089 | Complete the public-shell registry compatibility window | [decisions/D-089.md](./decisions/D-089.md) |
 | Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
+| Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -4082,6 +4113,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
 | Task | RIT-063 | First Fiat Hosted-Checkout Sandbox Adapter | [tasks/RIT-063.md](./tasks/RIT-063.md) |
 | Task | RIT-064 | Signed Payment Webhook Ingestion and Processing | [tasks/RIT-064.md](./tasks/RIT-064.md) |
+| Task | RIT-065 | Entitlement Fulfillment and Purchase Restoration | [tasks/RIT-065.md](./tasks/RIT-065.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
@@ -5851,9 +5883,12 @@ amount/currency, expected crypto network/asset where applicable, hard expiry, an
 idempotency. Attempts terminate at payment success/failure/expiry/cancellation; refunds and
 disputes are not attempt states.
 
-#### `payment_event`
+#### `commercial_payment_event_v2`, `commercial_payment_outbox_v2`
 
-Immutable signed-webhook receipt metadata, provider event ID unique, payload encrypted/restricted, received/verified/processed timestamps, processing outcome.
+Immutable, account-bound signed-webhook receipt metadata and one transactional state-change outbox
+row per applied provider event. The webhook role may append events/outbox rows and update bounded
+payment state, but cannot lease, complete, grant, hold, or reverse value. A separate fulfillment
+role owns bounded outbox delivery state.
 
 #### `credit_ledger_entry`, `credit_reservation`, `credit_allocation`, `credit_projection`
 
@@ -5864,7 +5899,20 @@ Immutable signed-webhook receipt metadata, provider event ID unique, payload enc
 - Reservations bind one exact product and hard expiry. Allocations reference exact grants and
   consume subscription, then promotional, then purchased Credits.
 - Projection rows are transactionally mutable for bounded reads but never negative and remain
-  reconstructable from ledger/reservation/allocation facts.
+  reconstructable from ledger/reservation/allocation/restriction facts. `purchased_held` is
+  excluded from spendable balance and records dispute-frozen purchased Credits.
+
+#### `credit_restriction_entry`, `commercial_fulfillment_v2`
+
+- Restriction entries are append-only source-linked dispute holds and refund conversions. A
+  dispute moves only currently unspent purchased Credits from available to held; it does not
+  pretend that a refund occurred.
+- Refund conversion links each active hold to a refund reversal. Direct refund reversals affect
+  only currently available source value. Consumed or reserved source value becomes an explicit
+  nonnegative review shortfall.
+- The fulfillment projection binds one order/owner/source grant, current status, granted/held/
+  reversed/shortfall amounts, applied payment-state version, last outbox, and optimistic version.
+  It can be rebuilt from append-only payment, ledger, allocation, and restriction evidence.
 
 #### `subscription`
 
@@ -5872,9 +5920,10 @@ Provider subscription reference, plan/price snapshot, status, periods, cancel st
 
 #### `commercial_entitlement_v2`
 
-Owner, exact product/fulfillment, authoritative source, pending/active/frozen/revoked timestamps,
-and exact idempotency. Plus must originate from an order; permanent objects must originate from a
-Credit consumption. Unique owner/type/fulfillment constraints prevent double grants.
+Owner, exact product/fulfillment, authoritative source, active/frozen/revoked timestamps, and exact
+idempotency. Plus must originate from an order; permanent objects must originate from a Credit
+consumption. Composite owner/source constraints and unique owner/type/fulfillment constraints
+prevent cross-account or double grants.
 
 #### `refund`, `dispute`
 
@@ -6463,11 +6512,19 @@ Refund and dispute aggregates remain later tasks and never rewrite an attempt in
 
 ## 8. Internal ledger and reconciliation
 
-The RIT-062 Credit foundation uses append-only grant/reserve/release/consume/reverse/expire entries,
-hard-expiry reservations, exact source allocations, and a nonnegative transactionally maintained
-projection. Subscription Credits are allocated before promotional and purchased Credits. The
-application role can insert ledger facts but cannot update or delete them. Provider-event,
-payment-settlement, refund/dispute, outbox, and reconciliation records remain later tasks.
+The RIT-062/RIT-065 Credit foundation uses append-only grant/reserve/release/consume/reverse/expire
+entries, hard-expiry reservations, exact source allocations, append-only dispute restrictions, and
+a nonnegative transactionally maintained projection. Subscription Credits are allocated before
+promotional and purchased Credits. The application role can insert ordinary ledger facts but
+cannot update or delete them. A separate exact-role fulfillment worker consumes signed
+payment-state outbox rows in order, rereads current order authority, and grants a purchased pack
+once.
+
+Disputes move only unspent source value from purchased available to purchased held. Refunds convert
+active holds to source-linked reversal entries and directly reverse remaining available source
+value. Reserved or consumed source value never makes the projection negative; it becomes an
+explicit `review_required` shortfall for later operations/reconciliation. Active refund initiation
+and provider dispute ingestion remain RIT-068/RIT-069 scope.
 
 Use append-only ledger/reconciliation records for:
 

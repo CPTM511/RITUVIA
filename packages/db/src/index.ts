@@ -158,13 +158,25 @@ export {
   type CommercialPaymentEventPersistence,
   type CommercialPaymentEventPersistenceErrorCode,
   type CommercialPaymentEventReducer,
-  type CommercialPaymentStateOutboxClaim,
   type CommercialPaymentTimelineRecord,
   type CommercialVerifiedPaymentEventType,
   type PreparedCommercialPaymentEvent,
   type ProcessedCommercialPaymentEvent,
   type ReducedCommercialPaymentState,
 } from "./commercial-payment-event-persistence.js";
+export {
+  assertCommercialFulfillmentRuntimeDatabasePrivileges,
+  commercialFulfillmentPersistenceErrorCodes,
+  CommercialFulfillmentPersistenceError,
+  createCommercialFulfillmentPersistence,
+  type CommercialCreditPackFulfillmentPlanner,
+  type CommercialFulfillmentOrderStatus,
+  type CommercialFulfillmentOutboxClaim,
+  type CommercialFulfillmentPersistence,
+  type CommercialFulfillmentPersistenceErrorCode,
+  type CommercialFulfillmentResult,
+  type CommercialPurchaseRestoration,
+} from "./commercial-fulfillment-persistence.js";
 export {
   assertReflectionRuntimeDatabasePrivileges,
   createReflectionPersistence,

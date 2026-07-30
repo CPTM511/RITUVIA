@@ -181,6 +181,7 @@ model CommercialOrderV2 {
 
   @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_order_v2_user_idempotency_key")
   @@unique([id, publicId], map: "commercial_order_v2_id_public_id_key")
+  @@unique([id, userId], map: "commercial_order_v2_id_user_key")
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "commercial_order_v2_user_created_idx")
   @@map("commercial_order_v2")
 }
@@ -340,6 +341,7 @@ model CreditLedgerEntry {
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([userId, operation, idempotencyKeyVersion, idempotencyKeyHash], map: "credit_ledger_entry_user_idempotency_key")
+  @@unique([id, userId], map: "credit_ledger_entry_id_user_key")
   @@index([userId, createdAt, id], map: "credit_ledger_entry_user_created_idx")
   @@index([sourceEntryId, id], map: "credit_ledger_entry_source_idx")
   @@map("credit_ledger_entry")
@@ -364,11 +366,54 @@ model CreditProjection {
   subscriptionAvailable Int      @default(0) @map("subscription_available")
   promotionalAvailable  Int      @default(0) @map("promotional_available")
   purchasedAvailable    Int      @default(0) @map("purchased_available")
+  purchasedHeld         Int      @default(0) @map("purchased_held")
   reserved              Int      @default(0)
   version               BigInt   @default(0)
   updatedAt             DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@map("credit_projection")
+}
+
+model CreditRestrictionEntry {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String   @map("user_id") @db.Uuid
+  sourceEntryId         String   @map("source_entry_id") @db.Uuid
+  orderId               String   @map("order_id") @db.Uuid
+  outboxId              String   @map("outbox_id") @db.Uuid
+  kind                  String   @db.VarChar(24)
+  amount                Int
+  reason                String   @db.VarChar(100)
+  sourceRestrictionId   String?  @map("source_restriction_id") @db.Uuid
+  operation             String   @db.VarChar(100)
+  idempotencyKeyVersion String   @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash    Bytes    @map("idempotency_key_hash")
+  canonicalRequestHash  Bytes    @map("canonical_request_hash")
+  createdAt             DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, operation, idempotencyKeyVersion, idempotencyKeyHash], map: "credit_restriction_entry_user_idempotency_key")
+  @@index([sourceEntryId, createdAt, id], map: "credit_restriction_entry_source_idx")
+  @@map("credit_restriction_entry")
+}
+
+model CommercialFulfillmentV2 {
+  orderId                    String   @id @map("order_id") @db.Uuid
+  userId                     String   @map("user_id") @db.Uuid
+  fulfillmentKind            String   @map("fulfillment_kind") @db.VarChar(24)
+  fulfillmentCode            String   @map("fulfillment_code") @db.VarChar(100)
+  sourceGrantEntryId         String   @map("source_grant_entry_id") @db.Uuid
+  status                     String   @db.VarChar(24)
+  grantedAmount              Int      @map("granted_amount")
+  heldAmount                 Int      @map("held_amount")
+  reversedAmount             Int      @map("reversed_amount")
+  shortfallAmount            Int      @map("shortfall_amount")
+  appliedPaymentStateVersion Int      @map("applied_payment_state_version")
+  lastOutboxId               String   @unique(map: "commercial_fulfillment_v2_last_outbox_key") @map("last_outbox_id") @db.Uuid
+  version                    Int      @default(1)
+  grantedAt                  DateTime @map("granted_at") @db.Timestamptz(6)
+  updatedAt                  DateTime @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId, status, updatedAt(sort: Desc), orderId], map: "commercial_fulfillment_v2_user_status_idx")
+  @@map("commercial_fulfillment_v2")
 }
 
 model CommercialEntitlementV2 {

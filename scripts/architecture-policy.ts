@@ -197,7 +197,7 @@ const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>(
 ]);
 const allowedRuntimeNodeBuiltins = new Map<string, ReadonlySet<string>>([
   ["@rituvia/web", new Set(["node:crypto", "node:perf_hooks", "node:url"])],
-  ["@rituvia/worker", new Set(["node:url"])],
+  ["@rituvia/worker", new Set(["node:crypto", "node:url"])],
   [
     "@rituvia/astrology-engine-native",
     new Set(["node:child_process", "node:crypto", "node:fs/promises", "node:path"]),
@@ -252,6 +252,7 @@ const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
       "packages/db/src/account-consent.ts",
       "packages/db/src/account-identity.ts",
       "packages/db/src/admin-security.ts",
+      "packages/db/src/commercial-fulfillment-persistence.ts",
       "packages/db/src/revisit-reminder.ts",
     ]),
   ],

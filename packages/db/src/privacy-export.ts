@@ -860,6 +860,92 @@ const readSnapshot = async (
           ) ORDER BY entitlement.granted_at, entitlement.id)
             FROM entitlement WHERE entitlement.user_id = ${userId}::uuid
         ), '[]'::jsonb),
+        'commercialOrdersV2', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', orders.public_id, 'status', orders.status,
+            'currencyCode', orders.currency_code, 'subtotalMinor', orders.subtotal_minor,
+            'taxMinor', orders.tax_minor, 'totalMinor', orders.total_minor,
+            'refundedMinor', orders.refunded_minor, 'countryCode', orders.country_code,
+            'countryPolicyVersion', orders.country_policy_version,
+            'catalogVersion', orders.catalog_version, 'termsVersion', orders.terms_version,
+            'refundPolicyVersion', orders.refund_policy_version,
+            'createdAt', orders.created_at, 'updatedAt', orders.updated_at,
+            'paidAt', orders.paid_at, 'refundedAt', orders.refunded_at,
+            'paymentStateVersion', orders.payment_state_version,
+            'item', (
+              SELECT jsonb_build_object(
+                'productCode', item.product_code, 'productVersion', item.product_version,
+                'quantity', item.quantity, 'totalMinor', item.total_minor,
+                'exactContents', item.exact_contents_snapshot,
+                'fulfillmentKind', item.fulfillment_kind,
+                'fulfillmentCode', item.fulfillment_code,
+                'creditsGranted', item.credits_granted
+              )
+              FROM commercial_order_item_v2 AS item WHERE item.order_id = orders.id
+            )
+          ) ORDER BY orders.created_at, orders.id)
+          FROM commercial_order_v2 AS orders WHERE orders.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
+        'creditProjectionV2', COALESCE((
+          SELECT jsonb_build_object(
+            'subscriptionAvailable', projection.subscription_available,
+            'promotionalAvailable', projection.promotional_available,
+            'purchasedAvailable', projection.purchased_available,
+            'purchasedHeld', projection.purchased_held,
+            'reserved', projection.reserved, 'version', projection.version,
+            'updatedAt', projection.updated_at
+          )
+          FROM credit_projection AS projection WHERE projection.user_id = ${userId}::uuid
+        ), '{}'::jsonb),
+        'creditLedgerV2', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', ledger.id, 'creditType', ledger.credit_type,
+            'direction', ledger.direction, 'amount', ledger.amount, 'reason', ledger.reason,
+            'productCode', ledger.product_code, 'orderId', orders.public_id,
+            'sourceEntryId', ledger.source_entry_id, 'createdAt', ledger.created_at
+          ) ORDER BY ledger.created_at, ledger.id)
+          FROM credit_ledger_entry AS ledger
+          LEFT JOIN commercial_order_v2 AS orders ON orders.id = ledger.order_id
+          WHERE ledger.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
+        'creditRestrictionsV2', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', restriction.id, 'sourceEntryId', restriction.source_entry_id,
+            'orderId', orders.public_id, 'kind', restriction.kind,
+            'amount', restriction.amount, 'reason', restriction.reason,
+            'sourceRestrictionId', restriction.source_restriction_id,
+            'createdAt', restriction.created_at
+          ) ORDER BY restriction.created_at, restriction.id)
+          FROM credit_restriction_entry AS restriction
+          JOIN commercial_order_v2 AS orders ON orders.id = restriction.order_id
+          WHERE restriction.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
+        'commercialFulfillmentsV2', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'orderId', orders.public_id, 'fulfillmentKind', fulfillment.fulfillment_kind,
+            'fulfillmentCode', fulfillment.fulfillment_code, 'status', fulfillment.status,
+            'grantedAmount', fulfillment.granted_amount, 'heldAmount', fulfillment.held_amount,
+            'reversedAmount', fulfillment.reversed_amount,
+            'shortfallAmount', fulfillment.shortfall_amount,
+            'paymentStateVersion', fulfillment.applied_payment_state_version,
+            'version', fulfillment.version, 'grantedAt', fulfillment.granted_at,
+            'updatedAt', fulfillment.updated_at
+          ) ORDER BY fulfillment.granted_at, fulfillment.order_id)
+          FROM commercial_fulfillment_v2 AS fulfillment
+          JOIN commercial_order_v2 AS orders ON orders.id = fulfillment.order_id
+          WHERE fulfillment.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
+        'commercialEntitlementsV2', COALESCE((
+          SELECT jsonb_agg(jsonb_build_object(
+            'id', entitlement.id, 'entitlementType', entitlement.entitlement_type,
+            'productCode', entitlement.product_code,
+            'fulfillmentCode', entitlement.fulfillment_code, 'status', entitlement.status,
+            'grantedAt', entitlement.granted_at, 'frozenAt', entitlement.frozen_at,
+            'revokedAt', entitlement.revoked_at, 'version', entitlement.version
+          ) ORDER BY entitlement.granted_at, entitlement.id)
+          FROM commercial_entitlement_v2 AS entitlement
+          WHERE entitlement.user_id = ${userId}::uuid
+        ), '[]'::jsonb),
         'ritualPasses', COALESCE((
           SELECT jsonb_agg(jsonb_build_object(
             'id', pass.id, 'accessRequirementCode', pass.access_requirement_code,

@@ -309,102 +309,6 @@ await withLocalPostgresLease(async (lease) => {
         "rejected_mismatch",
       );
 
-      const outboxClaimToken = digest("outbox-claim-one");
-      const claim = await events.claimPaymentStateOutbox({
-        claimedAt: "2026-07-30T12:10:00.000Z",
-        leaseTokenHash: outboxClaimToken,
-        leasedUntil: "2026-07-30T12:11:00.000Z",
-      });
-      assert.notEqual(claim, null);
-      assert.equal(claim?.topic, "commercial.payment_state_changed");
-      assert.equal(claim?.paymentStateVersion, 1);
-      assert.equal(
-        await events.completePaymentStateOutbox({
-          completedAt: "2026-07-30T12:10:30.000Z",
-          leaseTokenHash: digest("wrong-token"),
-          outboxId: claim!.outboxId,
-        }),
-        false,
-      );
-      assert.equal(
-        await events.completePaymentStateOutbox({
-          completedAt: "2026-07-30T12:10:30.000Z",
-          leaseTokenHash: outboxClaimToken,
-          outboxId: claim!.outboxId,
-        }),
-        true,
-      );
-
-      const retryToken = digest("outbox-claim-retry");
-      const retryClaim = await events.claimPaymentStateOutbox({
-        claimedAt: "2026-07-30T12:10:31.000Z",
-        leaseTokenHash: retryToken,
-        leasedUntil: "2026-07-30T12:11:31.000Z",
-      });
-      assert.notEqual(retryClaim, null);
-      assert.equal(
-        await events.failPaymentStateOutbox({
-          failedAt: "2026-07-30T12:10:40.000Z",
-          failureCode: "synthetic.retry",
-          leaseTokenHash: retryToken,
-          outboxId: retryClaim!.outboxId,
-          retryAt: "2026-07-30T12:12:00.000Z",
-        }),
-        "retry_wait",
-      );
-      await migrator.query(
-        `
-          UPDATE commercial_payment_outbox_v2
-             SET delivery_state = 'completed',
-                 completed_at = '2026-07-30T12:11:59.000Z',
-                 lease_token_hash = NULL,
-                 leased_until = NULL
-           WHERE id <> $1::uuid
-             AND delivery_state = 'pending'
-        `,
-        [retryClaim!.outboxId],
-      );
-      await migrator.query(
-        `
-          UPDATE commercial_payment_outbox_v2
-             SET attempt_count = 19,
-                 available_at = '2026-07-30T12:12:00.000Z'
-           WHERE id = $1::uuid
-        `,
-        [retryClaim!.outboxId],
-      );
-      const finalLeaseToken = digest("outbox-final-lease");
-      const finalClaim = await events.claimPaymentStateOutbox({
-        claimedAt: "2026-07-30T12:12:00.000Z",
-        leaseTokenHash: finalLeaseToken,
-        leasedUntil: "2026-07-30T12:13:00.000Z",
-      });
-      assert.equal(finalClaim?.outboxId, retryClaim!.outboxId);
-      assert.equal(finalClaim?.attemptCount, 20);
-      assert.equal(
-        await events.claimPaymentStateOutbox({
-          claimedAt: "2026-07-30T12:13:01.000Z",
-          leaseTokenHash: digest("outbox-after-final-lease"),
-          leasedUntil: "2026-07-30T12:14:01.000Z",
-        }),
-        null,
-      );
-      const finalLeaseState = (
-        await migrator.query<{ deliveryState: string; lastFailureCode: string }>(
-          `
-              SELECT delivery_state AS "deliveryState",
-                     last_failure_code AS "lastFailureCode"
-                FROM commercial_payment_outbox_v2
-               WHERE id = $1::uuid
-            `,
-          [retryClaim!.outboxId],
-        )
-      ).rows[0];
-      assert.deepEqual(finalLeaseState, {
-        deliveryState: "dead_lettered",
-        lastFailureCode: "max_attempts",
-      });
-
       const counts = await migrator.query<{
         accountBoundAttempts: number;
         credits: number;
@@ -507,6 +411,13 @@ await withLocalPostgresLease(async (lease) => {
         );
         await expectPostgresError(
           () => paymentWebhookSql.query("SELECT count(*) FROM commercial_entitlement_v2"),
+          ["42501"],
+        );
+        await expectPostgresError(
+          () =>
+            paymentWebhookSql.query(
+              "UPDATE commercial_payment_outbox_v2 SET delivery_state = 'completed'",
+            ),
           ["42501"],
         );
       } finally {

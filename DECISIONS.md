@@ -885,3 +885,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
   acceptance criterion requires external provider evidence that an internal approval cannot
   truthfully replace.
 - **Date:** 2026-07-30
+
+### [D-092 — Separate payment ingestion from source-linked fulfillment](records/decisions/D-092.md)
+
+- **Decision:** Give ordered payment-state outbox consumption to a distinct least-privilege
+  fulfillment role; grant each purchased pack once, hold only unspent source Credits on dispute,
+  convert holds and available value on refund, and expose consumed/reserved value as review
+  shortfall without a negative balance.
+- **Reason:** Webhook ingestion must not issue value, and dispute evidence must not be
+  misrepresented as a completed refund.
+- **Date:** 2026-07-30

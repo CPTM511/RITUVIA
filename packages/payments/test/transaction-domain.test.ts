@@ -8,6 +8,7 @@ import {
   commercialPaymentEvents,
   CommerceError,
   createCreditLedgerEntryV1,
+  planCommercialCreditPackFulfillment,
   resolveCommercialIdempotency,
   transitionCommercialEntitlement,
   transitionCommercialOrder,
@@ -306,5 +307,134 @@ describe("Credit allocation and projection", () => {
         userId: "user_1",
       }),
     ).toThrow(CommerceError);
+  });
+});
+
+describe("commercial Credit pack fulfillment", () => {
+  it("grants exactly once only after an authoritative paid state", () => {
+    expect(
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 0,
+        heldAmount: 0,
+        orderStatus: "pending",
+        reversedAmount: 0,
+        unavailableAmount: 0,
+      }),
+    ).toEqual({
+      disposition: "unchanged",
+      convertHeldAmount: 0,
+      grantAmount: 0,
+      holdAmount: 0,
+      reverseAmount: 0,
+      shortfallAmount: 0,
+    });
+    expect(
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 0,
+        heldAmount: 0,
+        orderStatus: "paid",
+        reversedAmount: 0,
+        unavailableAmount: 0,
+      }),
+    ).toEqual({
+      disposition: "granted",
+      convertHeldAmount: 0,
+      grantAmount: 6,
+      holdAmount: 0,
+      reverseAmount: 0,
+      shortfallAmount: 0,
+    });
+    expect(
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 6,
+        heldAmount: 0,
+        orderStatus: "paid",
+        reversedAmount: 0,
+        unavailableAmount: 0,
+      }),
+    ).toEqual({
+      disposition: "unchanged",
+      convertHeldAmount: 0,
+      grantAmount: 0,
+      holdAmount: 0,
+      reverseAmount: 0,
+      shortfallAmount: 0,
+    });
+  });
+
+  it("handles refund-before-success as one grant and one linked adjustment", () => {
+    expect(
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 0,
+        heldAmount: 0,
+        orderStatus: "refunded",
+        reversedAmount: 0,
+        unavailableAmount: 0,
+      }),
+    ).toEqual({
+      disposition: "granted_and_adjusted",
+      convertHeldAmount: 0,
+      grantAmount: 6,
+      holdAmount: 0,
+      reverseAmount: 6,
+      shortfallAmount: 0,
+    });
+  });
+
+  it("holds only available source value for a dispute and exposes review shortfall", () => {
+    expect(
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 6,
+        heldAmount: 0,
+        orderStatus: "disputed",
+        reversedAmount: 1,
+        unavailableAmount: 2,
+      }),
+    ).toEqual({
+      disposition: "review_required",
+      convertHeldAmount: 0,
+      grantAmount: 0,
+      holdAmount: 3,
+      reverseAmount: 0,
+      shortfallAmount: 2,
+    });
+  });
+
+  it("converts an existing dispute hold into a linked refund adjustment", () => {
+    expect(
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 6,
+        heldAmount: 4,
+        orderStatus: "refunded",
+        reversedAmount: 0,
+        unavailableAmount: 2,
+      }),
+    ).toEqual({
+      disposition: "review_required",
+      convertHeldAmount: 4,
+      grantAmount: 0,
+      holdAmount: 0,
+      reverseAmount: 0,
+      shortfallAmount: 2,
+    });
+  });
+
+  it("rejects impossible source accounting", () => {
+    expect(() =>
+      planCommercialCreditPackFulfillment({
+        creditsGranted: 6,
+        grantedAmount: 4,
+        heldAmount: 0,
+        orderStatus: "paid",
+        reversedAmount: 3,
+        unavailableAmount: 2,
+      }),
+    ).toThrow(TypeError);
   });
 });

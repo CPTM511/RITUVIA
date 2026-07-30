@@ -144,11 +144,19 @@ Refund and dispute aggregates remain later tasks and never rewrite an attempt in
 
 ## 8. Internal ledger and reconciliation
 
-The RIT-062 Credit foundation uses append-only grant/reserve/release/consume/reverse/expire entries,
-hard-expiry reservations, exact source allocations, and a nonnegative transactionally maintained
-projection. Subscription Credits are allocated before promotional and purchased Credits. The
-application role can insert ledger facts but cannot update or delete them. Provider-event,
-payment-settlement, refund/dispute, outbox, and reconciliation records remain later tasks.
+The RIT-062/RIT-065 Credit foundation uses append-only grant/reserve/release/consume/reverse/expire
+entries, hard-expiry reservations, exact source allocations, append-only dispute restrictions, and
+a nonnegative transactionally maintained projection. Subscription Credits are allocated before
+promotional and purchased Credits. The application role can insert ordinary ledger facts but
+cannot update or delete them. A separate exact-role fulfillment worker consumes signed
+payment-state outbox rows in order, rereads current order authority, and grants a purchased pack
+once.
+
+Disputes move only unspent source value from purchased available to purchased held. Refunds convert
+active holds to source-linked reversal entries and directly reverse remaining available source
+value. Reserved or consumed source value never makes the projection negative; it becomes an
+explicit `review_required` shortfall for later operations/reconciliation. Active refund initiation
+and provider dispute ingestion remain RIT-068/RIT-069 scope.
 
 Use append-only ledger/reconciliation records for:
 

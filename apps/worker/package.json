@@ -6,9 +6,11 @@
   "dependencies": {
     "@next/env": "16.2.11",
     "@rituvia/config": "workspace:*",
+    "@rituvia/db": "workspace:*",
     "@rituvia/domain": "workspace:*",
     "@rituvia/i18n": "workspace:*",
-    "@rituvia/observability": "workspace:*"
+    "@rituvia/observability": "workspace:*",
+    "@rituvia/payments": "workspace:*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
