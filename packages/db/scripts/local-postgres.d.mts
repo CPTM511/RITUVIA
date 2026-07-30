@@ -1,6 +1,16 @@
-export type LocalPostgresRuntime = Readonly<Record<string, unknown>>;
+export type LocalPostgresRuntime = Readonly<{
+  binaries: Readonly<{
+    pg_dump: string;
+    pg_restore: string;
+  }>;
+  credentials: Readonly<{
+    adminPassword: string;
+    migratorPassword: string;
+  }>;
+}>;
 
 export type LocalPostgresTestDatabase = Readonly<{
+  adminDatabaseUrl: string;
   attest(): Promise<void>;
   controlDatabaseUrl: string;
   databaseName: string;
@@ -30,9 +40,18 @@ export const runLocalPrisma: (
   databaseUrl: string,
   arguments_: readonly string[],
   options?: Readonly<{ stdio?: "inherit" | "pipe"; timeout?: number }>,
-) => unknown;
+) => Readonly<{
+  status: number | null;
+  stderr: string;
+  stdout: string;
+}>;
 
 export const stopLeaseOwnedRuntime: (lease: LocalPostgresLease) => Promise<void>;
+
+export const localPostgresConstants: Readonly<{
+  host: string;
+  port: number;
+}>;
 
 export const verifyLogicalDumpRestore: (
   runtime: LocalPostgresRuntime,

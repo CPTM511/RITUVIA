@@ -127,6 +127,10 @@ jobs:
         env:
           RITUVIA_CI_DATABASE_PASSWORD: rituvia-ci-${{ github.run_id }}-${{ github.run_attempt }}-admin
         run: pnpm test:ci-database
+      - name: Rehearse isolated backup and restore
+        env:
+          RITUVIA_CI_DATABASE_PASSWORD: rituvia-ci-${{ github.run_id }}-${{ github.run_attempt }}-admin
+        run: pnpm test:backup-recovery-database
 
   security:
     name: Security scans

@@ -40,6 +40,8 @@ permissions, runners, immutable actions/service image, database isolation, and r
 The environment contract gate verifies the four-environment authority matrix, isolation, downward
 data/secret-flow denial, indexing, migration/recovery, promotion, rollback, owner gates, current
 implementation claims, and every repository reference without contacting a provider or network.
+`pnpm test:backup-recovery-database` runs the guarded synthetic PostgreSQL custom-format backup,
+empty isolated restore, schema/data/privilege comparison, runtime denial, and cleanup rehearsal.
 The migration policy checks the complete migration directory against
 `packages/db/prisma/migration-manifest.json` and rejects checksum drift, unlisted files, missing
 files, transaction loss, and destructive SQL. The current-tree secret policy scans every tracked or

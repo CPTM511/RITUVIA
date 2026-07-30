@@ -52,6 +52,7 @@ SOURCE_FILES = [
         "NAME_CLEARANCE_WORKSHEET",
         "AI_GROWTH_ENGINE",
         "ENVIRONMENT_CONTRACT",
+        "BACKUP_RECOVERY",
     ])],
     "docs/README.md",
     "apps/admin/AGENTS.md",

@@ -79,6 +79,7 @@
     "test:revisit-browser": "node scripts/verify-revisit-browser.mjs",
     "test:writing-systems-browser": "node scripts/verify-writing-systems-browser.mjs",
     "test:lifecycle-message-preview": "node --import tsx scripts/verify-lifecycle-message-preview.ts",
+    "test:backup-recovery-database": "pnpm --filter @rituvia/db test:backup-recovery",
     "test:ci-database": "pnpm --filter @rituvia/db test:ci",
     "test:database-foundation": "pnpm --filter @rituvia/db test:integration",
     "test:list": "vitest list --filesOnly",

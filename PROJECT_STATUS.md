@@ -3,8 +3,8 @@
 **Last reconciled:** 2026-07-30
 
 RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete; RIT-123 is the
-sole Ready task.
+and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete. RIT-123 is the
+sole In Review task while its first hosted backup/restore rehearsal is pending.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1223,8 +1223,31 @@ The focused contract verifier covers ten control sections and ten repository ref
 focused Vitest files pass 91 environment, CI, configuration, SEO, inventory, and secret-boundary
 tests; formatting, lint, typecheck, architecture, CI-contract, and secret-scan gates pass. No
 hosting project, cloud service, production secret, customer data, deployment, DNS, indexing,
-provider activation, migration, or public product launch was added. RIT-123 is the sole Ready
-task.
+provider activation, migration, or public product launch was added. RIT-123 subsequently completed
+the repository-level backup and restore rehearsal.
+
+RIT-123 is In Review. One fail-closed `rituvia.backup-recovery.v1` rehearsal now creates a
+PostgreSQL custom-format logical backup from an exact synthetic local or GitHub Actions source,
+restores it into a distinct invocation-owned empty database, reapplies the local runtime grants
+or restores the exact CI ACL, deploys migrations idempotently, and compares migration, table, row,
+ownership, row-security, constraint, index, policy, privilege, role, and synthetic-sentinel state.
+The runtime role can read the restored sentinel but cannot create or delete data.
+
+The temporary artifact is generated only under an ignored mode-0700 repository directory, must
+be a regular non-symlink mode-0600 custom-format file, and is rehashed immediately before restore.
+Source, target, and artifact cleanup are mandatory even on failure. The ignored mode-0600 evidence
+contains only bounded hashes, counts, versions, timings, and checks. Six focused backup, artifact,
+cleanup, snapshot, and evidence tests join the existing database-safety and CI-contract coverage;
+50 focused tests, database typecheck, CI/environment/migration contracts, and the complete local
+31-migration isolated restore rehearsal pass. Protected CI is configured to run the same rehearsal
+after database foundation verification against the digest-pinned PostgreSQL 17 service; the first
+hosted result for this revision remains the review gate.
+
+This proves repository-level synthetic logical recovery only. It does not claim provider-managed
+physical backup, encrypted isolated retention, WAL/PITR, production RPO/RTO, customer-data
+recovery, or production restore authority. Those remain Gate H owner-approved production work.
+No production service, credential, data, backup, retention rule, migration, deployment, DNS, or
+public launch changed. No Planned backlog item currently has every dependency complete.
 
 ## Update rules
 
