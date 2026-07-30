@@ -865,3 +865,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
 - **Reason:** Direct v2 deletion skips the required rollback window, while coupling whole-site
   availability to SEO freshness would let editorial drift close unrelated product routes.
 - **Date:** 2026-07-29
+
+### [D-090 — Public AGPL repository with enforced main protection](records/decisions/D-090.md)
+
+- **Decision:** Publish the complete RITUVIA GitHub repository under its existing AGPL-3.0-only
+  license and protect `main` with strict required CI, administrator enforcement, pull requests,
+  linear history, resolved conversations, and force-push/deletion denial.
+- **Reason:** The owner explicitly chose public source disclosure so GitHub Free can enforce the
+  repository's existing three-job quality gate without weakening CI or paying for private-repository
+  branch protection.
+- **Date:** 2026-07-30
