@@ -1081,8 +1081,8 @@ existing human approval gates.
 **Last reconciled:** 2026-07-30
 
 RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete. RIT-123 is the
-sole In Review task while its first hosted backup/restore rehearsal is pending.
+and hosted run `30507901986` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
+No Planned item currently has all dependencies complete, so the queue has no Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -2304,12 +2304,12 @@ hosting project, cloud service, production secret, customer data, deployment, DN
 provider activation, migration, or public product launch was added. RIT-123 subsequently completed
 the repository-level backup and restore rehearsal.
 
-RIT-123 is In Review. One fail-closed `rituvia.backup-recovery.v1` rehearsal now creates a
-PostgreSQL custom-format logical backup from an exact synthetic local or GitHub Actions source,
-restores it into a distinct invocation-owned empty database, reapplies the local runtime grants
-or restores the exact CI ACL, deploys migrations idempotently, and compares migration, table, row,
-ownership, row-security, constraint, index, policy, privilege, role, and synthetic-sentinel state.
-The runtime role can read the restored sentinel but cannot create or delete data.
+RIT-123 is Done. One fail-closed `rituvia.backup-recovery.v1` rehearsal now creates a PostgreSQL
+custom-format logical backup from an exact synthetic local or GitHub Actions source, restores it
+into a distinct invocation-owned empty database, reapplies the local runtime grants or restores
+the exact CI ACL, deploys migrations idempotently, and compares migration, table, row, ownership,
+row-security, constraint, index, policy, privilege, role, and synthetic-sentinel state. The
+runtime role can read the restored sentinel but cannot create or delete data.
 
 The temporary artifact is generated only under an ignored mode-0700 repository directory, must
 be a regular non-symlink mode-0600 custom-format file, and is rehashed immediately before restore.
@@ -2317,9 +2317,9 @@ Source, target, and artifact cleanup are mandatory even on failure. The ignored 
 contains only bounded hashes, counts, versions, timings, and checks. Six focused backup, artifact,
 cleanup, snapshot, and evidence tests join the existing database-safety and CI-contract coverage;
 59 focused tests, database typecheck, CI/environment/migration contracts, and the complete local
-31-migration isolated restore rehearsal pass. Protected CI is configured to run the same rehearsal
-after database foundation verification against the digest-pinned PostgreSQL 17 service; the first
-hosted result for this revision remains the review gate.
+31-migration isolated restore rehearsal pass. Protected hosted run `30507901986` passes Quality,
+PostgreSQL integration, and Security scans, including the same rehearsal after database foundation
+verification against the digest-pinned PostgreSQL 17 service.
 
 This proves repository-level synthetic logical recovery only. It does not claim provider-managed
 physical backup, encrypted isolated retention, WAL/PITR, production RPO/RTO, customer-data
@@ -3699,7 +3699,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-120 | M12       |       P0 | Planned | Complete owner/admin operational dashboard                                  | RIT-038,RIT-073,RIT-117                 | operations    | Health, revenue, core loop, AI, queue, support, cost and approvals use source/freshness labels.                                                                                                                                                            |
 | RIT-121 | M12       |       P0 | Planned | Finalize threat model and remediate launch findings                         | RIT-057,RIT-069,RIT-095                 | qa_security   | Versioned threat model covers all integrations; no critical/high launch findings.                                                                                                                                                                          |
 | RIT-122 | M12       |       P0 | Planned | Implement rate limits, bot defense, abuse and denial-of-wallet controls     | RIT-024,RIT-033,RIT-063                 | qa_security   | Expensive/auth/checkout/support/privacy endpoints resist scripted abuse without sensitive profiling.                                                                                                                                                       |
-| RIT-123 | M12       |       P0 | In Review | Implement backups and isolated restore test                               | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
+| RIT-123 | M12       |       P0 | Done    | Implement backups and isolated restore test                                 | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
 | RIT-124 | M12       |       P0 | Planned | Implement SLOs, alerts, runbooks, and status controls                       | RIT-006,RIT-067                         | operations    | Actionable alerts link runbooks; kill switches/read-only mode and trace correlation are rehearsed.                                                                                                                                                         |
 | RIT-125 | M12       |       P1 | Planned | Implement support, privacy, safety, and content report queues               | RIT-056,RIT-068,RIT-110                 | operations    | Triage/SLA/escalation/permissions and draft automation preserve private-data boundaries.                                                                                                                                                                   |
 | RIT-126 | M12       |       P1 | Planned | Implement daily, weekly, and monthly Codex automation                       | RIT-004,RIT-120,RIT-124                 | operations    | Read-only checks/briefs/PRs run with structured output and no gated production actions.                                                                                                                                                                    |
@@ -13971,8 +13971,14 @@ def validate_backlog_readiness(deps: dict[str, list[str]], statuses: dict[str, s
 
     active_statuses = {"Ready", "In Progress", "In Review", "Changes Requested"}
     active = [task for task, status in statuses.items() if task.startswith("RIT-") and status in active_statuses]
-    unfinished = [task for task, status in statuses.items() if task.startswith("RIT-") and status != "Done"]
-    if unfinished and len(active) != 1:
+    eligible_planned = [
+        task
+        for task, status in statuses.items()
+        if task.startswith("RIT-")
+        and status == "Planned"
+        and all(statuses.get(dep) == "Done" for dep in deps.get(task, []))
+    ]
+    if len(active) > 1 or (len(active) == 0 and eligible_planned):
         fail(f"Expected exactly one executable RIT task, found {len(active)}: {active}", failures)
     in_progress = [task for task, status in statuses.items() if status == "In Progress"]
     if len(in_progress) > 1:
