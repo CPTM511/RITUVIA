@@ -312,6 +312,7 @@ model CreditReservation {
   expiredAt             DateTime? @map("expired_at") @db.Timestamptz(6)
 
   @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "credit_reservation_user_idempotency_key")
+  @@unique([id, userId], map: "credit_reservation_id_user_key")
   @@index([userId, status, expiresAt, id], map: "credit_reservation_user_status_idx")
   @@map("credit_reservation")
 }
@@ -350,6 +351,7 @@ model CreditLedgerEntry {
 model CreditAllocation {
   reservationId   String   @map("reservation_id") @db.Uuid
   sourceEntryId   String   @map("source_entry_id") @db.Uuid
+  userId          String?  @map("user_id") @db.Uuid
   creditType      String   @map("credit_type") @db.VarChar(24)
   amount          Int
   allocationOrder Int      @map("allocation_order") @db.SmallInt

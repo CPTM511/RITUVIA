@@ -34,6 +34,7 @@
     "migrations/202607290002_public_shell_flag_removal/migration.sql": "28330de4cbd7fb43ee2135ea0050019048c9617eb99368e6ce5ffe3f5bc98212",
     "migrations/202607300001_commercial_payment_webhook/migration.sql": "5eaf467591b45afdb0be503153d9c7ca1560c009c9bedca5475a43ddc89ad1d1",
     "migrations/202607300002_commercial_fulfillment/migration.sql": "d476cc69c70a398b0d13a24837e0665f3a5b8e372a995ca2e11657dc3ed4e405",
+    "migrations/202607300003_credit_allocation_ownership/migration.sql": "200939e5e2b7d36e2f139f2250a03f00296a94758a437a8664342389d588657c",
     "migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900"
   }
 }

@@ -161,10 +161,10 @@ const reserveOne = async (
       await client.query(
         `
           INSERT INTO credit_allocation (
-            reservation_id, source_entry_id, credit_type, amount, allocation_order
-          ) VALUES ($1::uuid, $2::uuid, 'purchased_credit', 1, 1)
+            reservation_id, source_entry_id, user_id, credit_type, amount, allocation_order
+          ) VALUES ($1::uuid, $2::uuid, $3::uuid, 'purchased_credit', 1, 1)
         `,
-        [reservationId, grantEntryId],
+        [reservationId, grantEntryId, userId],
       );
       await client.query(
         `

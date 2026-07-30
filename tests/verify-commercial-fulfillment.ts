@@ -128,8 +128,8 @@ await withLocalPostgresLease(async (lease) => {
           providerAccountFingerprint: "acct_12345678",
           providerCheckoutId: order.checkoutId,
           providerEventId: eventId,
-          providerObjectId: `pi_fulfillment_${sequence}`,
-          providerPaymentIntentId: `pi_fulfillment_${sequence}`,
+          providerObjectId: `pi_${order.checkoutId}`,
+          providerPaymentIntentId: `pi_${order.checkoutId}`,
           receivedAt: nextInstant(),
           signatureTimestampSeconds: Math.floor(clock / 1_000),
           verifierVersion: "stripe-signature.v1",
@@ -166,6 +166,89 @@ await withLocalPostgresLease(async (lease) => {
         );
         assert.notEqual(result, null);
         return result!;
+      };
+      const allocatePurchasedCredits = async (input: {
+        amount: number;
+        grantId: string;
+        status: "active" | "consumed";
+        userId: string;
+      }): Promise<void> => {
+        sequence += 1;
+        const reservationId = randomUUID();
+        const createdAt = nextInstant();
+        const consumedAt = input.status === "consumed" ? nextInstant() : null;
+        await migrator.query(
+          `
+            INSERT INTO credit_reservation (
+              id, user_id, catalog_version, product_code, product_version, amount, status,
+              idempotency_key_version, idempotency_key_hash, canonical_request_hash,
+              expires_at, created_at, consumed_at
+            ) VALUES (
+              $1::uuid, $2::uuid, 'local.catalog.2026-07-23.v1', 'pack_6', '2026-07-23',
+              $3, $4, 'commercial.fulfillment.test.v1', $5, $6,
+              $7::timestamptz, $8::timestamptz, $9::timestamptz
+            )
+          `,
+          [
+            reservationId,
+            input.userId,
+            input.amount,
+            input.status,
+            Buffer.from(digest(`reservation-idempotency-${sequence}`)),
+            Buffer.from(digest(`reservation-canonical-${sequence}`)),
+            new Date(clock + 86_400_000).toISOString(),
+            createdAt,
+            consumedAt,
+          ],
+        );
+        await migrator.query(
+          `
+            INSERT INTO credit_allocation (
+              reservation_id, source_entry_id, user_id, credit_type, amount, allocation_order,
+              created_at
+            ) VALUES (
+              $1::uuid, $2::uuid, $3::uuid, 'purchased_credit', $4, 1, $5::timestamptz
+            )
+          `,
+          [reservationId, input.grantId, input.userId, input.amount, createdAt],
+        );
+        await migrator.query(
+          `
+            UPDATE credit_projection
+            SET purchased_available = purchased_available - $2,
+                reserved = reserved + $3,
+                version = version + 1,
+                updated_at = $4::timestamptz
+            WHERE user_id = $1::uuid AND purchased_available >= $2
+          `,
+          [
+            input.userId,
+            input.amount,
+            input.status === "active" ? input.amount : 0,
+            consumedAt ?? createdAt,
+          ],
+        );
+      };
+      const assertFulfillmentPrivilegeDriftDenied = async (
+        grantSql: string,
+        revokeSql: string,
+      ): Promise<void> => {
+        await migrator.query(grantSql);
+        const driftDatabase = createDatabaseClient(database.paymentFulfillmentDatabaseUrl);
+        try {
+          await assert.rejects(
+            createCommercialFulfillmentPersistence(driftDatabase).claimNextPaymentState({
+              claimedAt: nextInstant(),
+              leaseTokenHash: digest(`privilege-drift-${clock}`),
+              leasedUntil: new Date(clock + 60_000).toISOString(),
+            }),
+            (error: unknown) =>
+              (error as { code?: unknown }).code === "COMMERCIAL_FULFILLMENT_UNAVAILABLE",
+          );
+        } finally {
+          await driftDatabase.$disconnect();
+          await migrator.query(revokeSql);
+        }
       };
 
       const userId = await createUser();
@@ -217,6 +300,30 @@ await withLocalPostgresLease(async (lease) => {
       });
       assert.equal((await fulfillment.restorePurchases(userId)).credits.purchased, 6);
       assert.equal((await fulfillment.restorePurchases(otherUserId)).credits.total, 0);
+
+      const convergedUserId = await createUser();
+      const convergedOrder = await createOrder(convergedUserId);
+      await process(convergedOrder, "payment_succeeded");
+      const convergedClaimedAt = nextInstant();
+      const convergedLeaseToken = digest("converged-lease-token");
+      const convergedClaim = await fulfillment.claimNextPaymentState({
+        claimedAt: convergedClaimedAt,
+        leaseTokenHash: convergedLeaseToken,
+        leasedUntil: new Date(Date.parse(convergedClaimedAt) + 60_000).toISOString(),
+      });
+      assert.notEqual(convergedClaim, null);
+      await process(convergedOrder, "payment_disputed");
+      const converged = await fulfillment.fulfillPaymentState(
+        {
+          completedAt: nextInstant(),
+          leaseTokenHash: convergedLeaseToken,
+          outboxId: convergedClaim!.outboxId,
+        },
+        planCommercialCreditPackFulfillment,
+      );
+      assert.equal(converged?.disposition, "granted_and_held");
+      assert.equal(converged?.creditsHeld, 6);
+      assert.equal((await fulfillNext()).disposition, "unchanged");
 
       await process(order, "payment_disputed");
       const disputed = await fulfillNext();
@@ -295,49 +402,45 @@ await withLocalPostgresLease(async (lease) => {
         )
       ).rows[0];
       assert.notEqual(grant, undefined);
-      const reservationId = randomUUID();
-      const reservationCreatedAt = nextInstant();
-      const reservationConsumedAt = nextInstant();
+      const crossAccountReservationId = randomUUID();
       await migrator.query(
         `
           INSERT INTO credit_reservation (
             id, user_id, catalog_version, product_code, product_version, amount, status,
             idempotency_key_version, idempotency_key_hash, canonical_request_hash,
-            expires_at, created_at, consumed_at
+            expires_at, created_at
           ) VALUES (
             $1::uuid, $2::uuid, 'local.catalog.2026-07-23.v1', 'pack_6', '2026-07-23',
-            2, 'consumed', 'commercial.fulfillment.test.v1', $3, $4,
-            $5::timestamptz, $6::timestamptz, $7::timestamptz
+            1, 'active', 'commercial.fulfillment.test.v1', $3, $4,
+            $5::timestamptz, $6::timestamptz
           )
         `,
         [
-          reservationId,
-          shortfallUserId,
-          Buffer.from(digest("reservation-idempotency")),
-          Buffer.from(digest("reservation-canonical")),
+          crossAccountReservationId,
+          otherUserId,
+          Buffer.from(digest("cross-account-reservation-idempotency")),
+          Buffer.from(digest("cross-account-reservation-canonical")),
           new Date(clock + 86_400_000).toISOString(),
-          reservationCreatedAt,
-          reservationConsumedAt,
+          nextInstant(),
         ],
       );
-      await migrator.query(
-        `
-          INSERT INTO credit_allocation (
-            reservation_id, source_entry_id, credit_type, amount, allocation_order, created_at
-          ) VALUES ($1::uuid, $2::uuid, 'purchased_credit', 2, 1, $3::timestamptz)
-        `,
-        [reservationId, grant!.id, reservationCreatedAt],
+      await assert.rejects(
+        migrator.query(
+          `
+            INSERT INTO credit_allocation (
+              reservation_id, source_entry_id, user_id, credit_type, amount, allocation_order
+            ) VALUES ($1::uuid, $2::uuid, $3::uuid, 'purchased_credit', 1, 1)
+          `,
+          [crossAccountReservationId, grant!.id, otherUserId],
+        ),
+        (error: unknown) => (error as { code?: unknown }).code === "23503",
       );
-      await migrator.query(
-        `
-          UPDATE credit_projection
-          SET purchased_available = purchased_available - 2,
-              version = version + 1,
-              updated_at = $2::timestamptz
-          WHERE user_id = $1::uuid AND purchased_available >= 2
-        `,
-        [shortfallUserId, reservationConsumedAt],
-      );
+      await allocatePurchasedCredits({
+        amount: 2,
+        grantId: grant!.id,
+        status: "consumed",
+        userId: shortfallUserId,
+      });
       await process(shortfallOrder, "payment_disputed");
       const shortfall = await fulfillNext();
       assert.equal(shortfall.disposition, "review_required");
@@ -346,6 +449,34 @@ await withLocalPostgresLease(async (lease) => {
       const shortfallProjection = await fulfillment.restorePurchases(shortfallUserId);
       assert.equal(shortfallProjection.credits.purchased, 0);
       assert.equal(shortfallProjection.credits.purchasedHeld, 4);
+
+      const reservedUserId = await createUser();
+      const reservedOrder = await createOrder(reservedUserId);
+      await process(reservedOrder, "payment_succeeded");
+      await fulfillNext();
+      const reservedGrant = (
+        await migrator.query<{ id: string }>(
+          `
+            SELECT id FROM credit_ledger_entry
+            WHERE order_id = (
+              SELECT id FROM commercial_order_v2 WHERE public_id = $1::uuid
+            ) AND direction = 'grant'
+          `,
+          [reservedOrder.orderId],
+        )
+      ).rows[0];
+      assert.notEqual(reservedGrant, undefined);
+      await allocatePurchasedCredits({
+        amount: 2,
+        grantId: reservedGrant!.id,
+        status: "active",
+        userId: reservedUserId,
+      });
+      await process(reservedOrder, "payment_disputed");
+      const reservedShortfall = await fulfillNext();
+      assert.equal(reservedShortfall.disposition, "review_required");
+      assert.equal(reservedShortfall.creditsHeld, 4);
+      assert.equal(reservedShortfall.shortfallAmount, 2);
 
       const counts = (
         await migrator.query<{
@@ -366,9 +497,9 @@ await withLocalPostgresLease(async (lease) => {
         )
       ).rows[0];
       assert.deepEqual(counts, {
-        fulfillments: 2,
-        grants: 2,
-        restrictions: 3,
+        fulfillments: 4,
+        grants: 4,
+        restrictions: 5,
         reversals: 1,
       });
 
@@ -401,6 +532,15 @@ await withLocalPostgresLease(async (lease) => {
           retryAt: null,
         }),
         "dead_lettered",
+      );
+
+      await assertFulfillmentPrivilegeDriftDenied(
+        "GRANT UPDATE (amount) ON TABLE credit_ledger_entry TO rituvia_payment_fulfillment",
+        "REVOKE UPDATE (amount) ON TABLE credit_ledger_entry FROM rituvia_payment_fulfillment",
+      );
+      await assertFulfillmentPrivilegeDriftDenied(
+        "GRANT SELECT ON TABLE commercial_payment_event_v2 TO rituvia_payment_fulfillment",
+        "REVOKE SELECT ON TABLE commercial_payment_event_v2 FROM rituvia_payment_fulfillment",
       );
 
       const webhookSql = createLocalPostgresClient(database.paymentWebhookDatabaseUrl);

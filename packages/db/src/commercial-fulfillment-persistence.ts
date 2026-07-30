@@ -194,6 +194,9 @@ type PrivilegeRow = Readonly<{
   canInsertFulfillment: boolean;
   canInsertRestriction: boolean;
   canReadFulfillment: boolean;
+  canReadJournal: boolean;
+  canReadPaymentEvent: boolean;
+  canReadPrivateJournal: boolean;
   canUpdateFulfillment: boolean;
   privilegedRole: boolean;
   roleName: string;
@@ -265,6 +268,7 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
         has_table_privilege(current_user, 'public.credit_ledger_entry', 'INSERT')
           AS "canInsertLedger",
         has_table_privilege(current_user, 'public.credit_ledger_entry', 'UPDATE')
+          OR has_any_column_privilege(current_user, 'public.credit_ledger_entry', 'UPDATE')
           AS "canUpdateLedger",
         has_table_privilege(current_user, 'public.credit_ledger_entry', 'DELETE')
           AS "canDeleteLedger",
@@ -287,6 +291,16 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
           AS "canReadFulfillment",
         has_table_privilege(current_user, 'public.commercial_fulfillment_v2', 'INSERT')
           AS "canInsertFulfillment",
+        has_table_privilege(current_user, 'public.commercial_payment_event_v2', 'SELECT')
+          OR has_any_column_privilege(
+            current_user, 'public.commercial_payment_event_v2', 'SELECT'
+          ) AS "canReadPaymentEvent",
+        has_table_privilege(current_user, 'public.journal_entry', 'SELECT')
+          OR has_any_column_privilege(current_user, 'public.journal_entry', 'SELECT')
+          AS "canReadJournal",
+        has_table_privilege(current_user, 'public.private_journal_entry', 'SELECT')
+          OR has_any_column_privilege(current_user, 'public.private_journal_entry', 'SELECT')
+          AS "canReadPrivateJournal",
         has_column_privilege(
           current_user, 'public.commercial_fulfillment_v2', 'status', 'UPDATE'
         ) AS "canUpdateFulfillment",
@@ -320,6 +334,9 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
       !privilege.canInsertRestriction ||
       !privilege.canReadFulfillment ||
       !privilege.canInsertFulfillment ||
+      privilege.canReadPaymentEvent ||
+      privilege.canReadJournal ||
+      privilege.canReadPrivateJournal ||
       !privilege.canUpdateFulfillment ||
       !privilege.canUpdateOutbox
     ) {
@@ -460,7 +477,7 @@ const processFulfillment = async (
   let unavailableAmount = 0;
   let activeHolds: readonly RestrictionRow[] = [];
   if (existingGrant !== undefined) {
-    const [adjustments, unavailable, holds] = await Promise.all([
+    const [adjustments, unavailable, unsafeAllocations, holds] = await Promise.all([
       database.$queryRaw<Readonly<{ amount: number }>[]>`
         SELECT COALESCE(SUM(amount), 0)::int AS amount
         FROM credit_ledger_entry
@@ -472,7 +489,19 @@ const processFulfillment = async (
         FROM credit_allocation AS allocations
         JOIN credit_reservation AS reservations ON reservations.id = allocations.reservation_id
         WHERE allocations.source_entry_id = ${existingGrant.id}::uuid
+          AND allocations.user_id = ${row.userId}::uuid
+          AND reservations.user_id = ${row.userId}::uuid
           AND reservations.status IN ('active', 'consumed')
+      `,
+      database.$queryRaw<Readonly<{ count: number }>[]>`
+        SELECT count(*)::int AS count
+        FROM credit_allocation AS allocations
+        JOIN credit_reservation AS reservations ON reservations.id = allocations.reservation_id
+        WHERE allocations.source_entry_id = ${existingGrant.id}::uuid
+          AND (
+            allocations.user_id IS DISTINCT FROM ${row.userId}::uuid
+            OR reservations.user_id <> ${row.userId}::uuid
+          )
       `,
       database.$queryRaw<RestrictionRow[]>`
         SELECT holds.id, holds.amount
@@ -488,6 +517,9 @@ const processFulfillment = async (
         ORDER BY holds.created_at, holds.id
       `,
     ]);
+    if ((unsafeAllocations.at(0)?.count ?? 0) > 0) {
+      throw new CommercialFulfillmentPersistenceError("COMMERCIAL_FULFILLMENT_CONFLICT");
+    }
     reversedAmount = adjustments.at(0)?.amount ?? 0;
     unavailableAmount = unavailable.at(0)?.amount ?? 0;
     activeHolds = holds;

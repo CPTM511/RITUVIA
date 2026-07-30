@@ -410,7 +410,11 @@ role owns bounded outbox delivery state.
 - Ledger facts are append-only grant/reserve/release/consume/reverse/expire operations with exact
   user, product/order/reservation/source, policy/terms, expiry, and idempotency evidence.
 - Reservations bind one exact product and hard expiry. Allocations reference exact grants and
-  consume subscription, then promotional, then purchased Credits.
+  consume subscription, then promotional, then purchased Credits. Every allocation carries the
+  same immutable owner as both its reservation and source grant, enforced by composite foreign
+  keys. The additive ownership migration enforces this for every new allocation without rewriting
+  historical rows; any legacy row without the binding makes fulfillment fail closed until a
+  separately approved audited backfill and constraint validation.
 - Projection rows are transactionally mutable for bounded reads but never negative and remain
   reconstructable from ledger/reservation/allocation/restriction facts. `purchased_held` is
   excluded from spendable balance and records dispute-frozen purchased Credits.

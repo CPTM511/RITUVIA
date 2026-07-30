@@ -1297,16 +1297,22 @@ configuration path.
 RIT-065 is Done through D-092. The webhook role no longer owns outbox delivery mutation; the
 independent `rituvia_payment_fulfillment` role leases ordered versions, rereads current order
 authority under serializable transactions, and can append only bounded grant/restriction/reversal
-evidence plus update exact projection/fulfillment/outbox columns. Composite owner/source foreign
-keys prevent cross-account fulfillment. Disputes move only unspent purchased Credits into a
+evidence plus update exact projection/fulfillment/outbox columns. Its startup attestation also
+rejects any payment-event or journal read authority and any ledger mutation authority. Composite
+owner/source foreign keys prevent new cross-account fulfillment and allocation; any pre-existing
+unbound allocation fails fulfillment closed pending a separately approved audited backfill.
+Disputes move only unspent purchased Credits into a
 nonspendable held bucket; refunds convert active holds and reverse remaining available source
 value; reserved or consumed source value becomes `review_required`.
 
 The private `/api/v1/credits` restoration route returns only the authenticated owner's spendable
 projection with private/no-store headers. Privacy export includes v2 order, Credit, restriction,
 fulfillment, and entitlement evidence. Focused 51-test domain/configuration/worker/Web coverage,
-the 33-migration webhook and fulfillment PostgreSQL gates, privacy-export PostgreSQL gate, affected
-typechecks, and migration policy pass. No Live Mode, refund initiation, provider dispute/refund
+the 34-migration webhook and fulfillment PostgreSQL gates, privacy-export PostgreSQL gate, affected
+typechecks, and migration policy pass. The fulfillment gate now explicitly proves current-order
+convergence, active-reservation and consumed shortfall, and cross-account allocation rejection.
+It also proves startup denial after synthetic ledger-update or payment-event-read privilege drift.
+No Live Mode, refund initiation, provider dispute/refund
 route activation, subscription, reconciliation, production migration, deployment, DNS, or launch
 was added. RIT-066 is the sole Ready task.
 
