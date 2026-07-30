@@ -42,6 +42,7 @@ const anonymousSessionEnvironmentVariables = Object.freeze([
 export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
+  "PAYMENT_WEBHOOK_DATABASE_URL",
   "PRIVACY_DELETION_DATABASE_URL",
   "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
   ...anonymousSessionEnvironmentVariables,
@@ -65,6 +66,7 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_REFLECTION_POLICY_VERSION",
   "RITUVIA_REFLECTION_RETENTION_SECONDS",
   "RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS",
+  "RITUVIA_STRIPE_ACCOUNT_ID",
   "RITUVIA_STRIPE_PRICE_IDS",
   "RITUVIA_TAROT_INTEGRITY_KEY_V1",
   "STRIPE_SECRET_KEY",
@@ -89,6 +91,7 @@ export type ServerConfiguration = Readonly<{
   databaseUrl: string | undefined;
   deploymentEnvironment: DeploymentEnvironment;
   payment: PaymentConfiguration | undefined;
+  paymentWebhookDatabaseUrl: string | undefined;
   privateContentKeyring: PrivateContentKeyringConfiguration | undefined;
   privacyDeletionPolicy: PrivacyDeletionPolicyConfiguration | undefined;
   privacyDeletionDatabaseUrl: string | undefined;
@@ -147,6 +150,7 @@ export type PaymentConfiguration =
       provider: "local";
     }>
   | Readonly<{
+      accountId: string;
       priceIds: Readonly<Record<string, string>>;
       provider: "stripe";
       secretKey: string;
@@ -225,6 +229,7 @@ const absoluteMetadataPathSchema = z
 
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
+  PAYMENT_WEBHOOK_DATABASE_URL: databaseUrlSchema.optional(),
   PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
   RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: absoluteMetadataPathSchema.optional(),
   RITUVIA_ACCOUNT_SESSION_TTL_SECONDS: positiveSecondsSchema.optional(),
@@ -293,6 +298,10 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_REFLECTION_RETENTION_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS: positiveSecondsSchema.optional(),
+  RITUVIA_STRIPE_ACCOUNT_ID: z
+    .string()
+    .regex(/^acct_[A-Za-z0-9]{8,255}$/u)
+    .optional(),
   RITUVIA_STRIPE_PRICE_IDS: stripePriceIdsSchema.optional(),
   RITUVIA_TAROT_INTEGRITY_KEY_V1: encodedSecretKeySchema.optional(),
   STRIPE_SECRET_KEY: z
@@ -517,10 +526,11 @@ const parsePrivacyDeletionPolicy = (
 };
 
 const stripeProductCodes = Object.freeze([
-  "amethyst_guardian",
-  "golden_intention_bowl",
-  "mindful_incense",
-  "moonlit_lotus",
+  "pack_6",
+  "pack_15",
+  "pack_40",
+  "plus_annual",
+  "plus_monthly",
 ] as const);
 
 const parseStripePriceIds = (value: string): Readonly<Record<string, string>> => {
@@ -552,6 +562,7 @@ const parsePaymentConfiguration = (
   if (parsed.RITUVIA_PAYMENT_PROVIDER === undefined) {
     const strayConfiguration = [
       parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
+      parsed.RITUVIA_STRIPE_ACCOUNT_ID,
       parsed.RITUVIA_STRIPE_PRICE_IDS,
       parsed.STRIPE_SECRET_KEY,
       parsed.STRIPE_WEBHOOK_SECRET,
@@ -567,6 +578,7 @@ const parsePaymentConfiguration = (
     if (
       deploymentEnvironment !== "local" ||
       parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1 === undefined ||
+      parsed.RITUVIA_STRIPE_ACCOUNT_ID !== undefined ||
       parsed.RITUVIA_STRIPE_PRICE_IDS !== undefined ||
       parsed.STRIPE_SECRET_KEY !== undefined ||
       parsed.STRIPE_WEBHOOK_SECRET !== undefined
@@ -585,7 +597,10 @@ const parsePaymentConfiguration = (
     });
   }
   if (
+    deploymentEnvironment === "production" ||
+    parsed.RITUVIA_STRIPE_ACCOUNT_ID === undefined ||
     parsed.STRIPE_SECRET_KEY === undefined ||
+    !parsed.STRIPE_SECRET_KEY.startsWith("sk_test_") ||
     parsed.STRIPE_WEBHOOK_SECRET === undefined ||
     parsed.RITUVIA_STRIPE_PRICE_IDS === undefined ||
     parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1 !== undefined
@@ -593,6 +608,11 @@ const parsePaymentConfiguration = (
     throw new ConfigurationError("server", [
       ...(parsed.STRIPE_SECRET_KEY === undefined
         ? [{ code: "missing" as const, key: "STRIPE_SECRET_KEY" }]
+        : deploymentEnvironment === "production" || !parsed.STRIPE_SECRET_KEY.startsWith("sk_test_")
+          ? [{ code: "invalid" as const, key: "STRIPE_SECRET_KEY" }]
+          : []),
+      ...(parsed.RITUVIA_STRIPE_ACCOUNT_ID === undefined
+        ? [{ code: "missing" as const, key: "RITUVIA_STRIPE_ACCOUNT_ID" }]
         : []),
       ...(parsed.STRIPE_WEBHOOK_SECRET === undefined
         ? [{ code: "missing" as const, key: "STRIPE_WEBHOOK_SECRET" }]
@@ -606,11 +626,77 @@ const parsePaymentConfiguration = (
     ]);
   }
   return Object.freeze({
+    accountId: parsed.RITUVIA_STRIPE_ACCOUNT_ID,
     priceIds: parseStripePriceIds(parsed.RITUVIA_STRIPE_PRICE_IDS),
     provider: "stripe",
     secretKey: parsed.STRIPE_SECRET_KEY,
     webhookSecret: parsed.STRIPE_WEBHOOK_SECRET,
   });
+};
+
+const normalizedDatabaseTarget = (value: string): string => {
+  const url = new URL(value);
+  const parameters = [...url.searchParams.entries()].sort(
+    ([leftKey, leftValue], [rightKey, rightValue]) =>
+      leftKey === rightKey ? leftValue.localeCompare(rightValue) : leftKey.localeCompare(rightKey),
+  );
+  return JSON.stringify([
+    url.protocol === "postgres:" ? "postgresql:" : url.protocol,
+    url.hostname,
+    url.port === "" ? "5432" : url.port,
+    url.pathname,
+    parameters,
+  ]);
+};
+
+const decodeDatabaseCredential = (value: string): string | null => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+};
+
+const assertPaymentWebhookDatabaseBoundary = (
+  payment: PaymentConfiguration | undefined,
+  databaseUrl: string | undefined,
+  paymentWebhookDatabaseUrl: string | undefined,
+): void => {
+  if (payment?.provider !== "stripe") return;
+
+  const missing = [
+    ...(databaseUrl === undefined ? [{ code: "missing" as const, key: "DATABASE_URL" }] : []),
+    ...(paymentWebhookDatabaseUrl === undefined
+      ? [{ code: "missing" as const, key: "PAYMENT_WEBHOOK_DATABASE_URL" }]
+      : []),
+  ];
+  if (databaseUrl === undefined || paymentWebhookDatabaseUrl === undefined) {
+    throw new ConfigurationError("server", missing);
+  }
+
+  const application = new URL(databaseUrl);
+  const paymentWebhook = new URL(paymentWebhookDatabaseUrl);
+  const applicationUsername = decodeDatabaseCredential(application.username);
+  const applicationPassword = decodeDatabaseCredential(application.password);
+  const paymentWebhookUsername = decodeDatabaseCredential(paymentWebhook.username);
+  const paymentWebhookPassword = decodeDatabaseCredential(paymentWebhook.password);
+  if (
+    normalizedDatabaseTarget(databaseUrl) !== normalizedDatabaseTarget(paymentWebhookDatabaseUrl) ||
+    applicationUsername === null ||
+    applicationUsername === "" ||
+    applicationPassword === null ||
+    applicationPassword === "" ||
+    paymentWebhookUsername === null ||
+    paymentWebhookUsername === "" ||
+    paymentWebhookPassword === null ||
+    paymentWebhookPassword === "" ||
+    applicationUsername === paymentWebhookUsername ||
+    applicationPassword === paymentWebhookPassword
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "PAYMENT_WEBHOOK_DATABASE_URL" },
+    ]);
+  }
 };
 
 const parseTarotReadingIntegrityKeyring = (
@@ -737,6 +823,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const build = parseBuildConfiguration(environment);
   const server = parseConfiguration("server", serverEnvironmentSchema, {
     DATABASE_URL: normalizeEnvironmentValue(environment.DATABASE_URL),
+    PAYMENT_WEBHOOK_DATABASE_URL: normalizeEnvironmentValue(
+      environment.PAYMENT_WEBHOOK_DATABASE_URL,
+    ),
     PRIVACY_DELETION_DATABASE_URL: normalizeEnvironmentValue(
       environment.PRIVACY_DELETION_DATABASE_URL,
     ),
@@ -811,6 +900,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS,
     ),
+    RITUVIA_STRIPE_ACCOUNT_ID: normalizeEnvironmentValue(environment.RITUVIA_STRIPE_ACCOUNT_ID),
     RITUVIA_STRIPE_PRICE_IDS: normalizeEnvironmentValue(environment.RITUVIA_STRIPE_PRICE_IDS),
     RITUVIA_TAROT_INTEGRITY_KEY_V1: normalizeEnvironmentValue(
       environment.RITUVIA_TAROT_INTEGRITY_KEY_V1,
@@ -833,6 +923,12 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const reflection = parseReflectionConfiguration(server);
   const accountIdentityPolicy = parseAccountIdentityPolicy(server);
   const privacyExport = parsePrivacyExportConfiguration(server);
+  const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
+  assertPaymentWebhookDatabaseBoundary(
+    payment,
+    server.DATABASE_URL,
+    server.PAYMENT_WEBHOOK_DATABASE_URL,
+  );
   if (
     privacyExport !== undefined &&
     ((accountIdentityPolicy !== undefined &&
@@ -856,7 +952,8 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     client: build.client,
     databaseUrl: server.DATABASE_URL,
     deploymentEnvironment: build.deploymentEnvironment,
-    payment: parsePaymentConfiguration(server, build.deploymentEnvironment),
+    payment,
+    paymentWebhookDatabaseUrl: server.PAYMENT_WEBHOOK_DATABASE_URL,
     privateContentKeyring: reflection.keyring,
     privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
     privacyDeletionDatabaseUrl: server.PRIVACY_DELETION_DATABASE_URL,

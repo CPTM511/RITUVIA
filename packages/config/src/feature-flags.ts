@@ -3,12 +3,11 @@ import * as z from "zod";
 import { ConfigurationError } from "./errors.js";
 import { parseConfiguration } from "./parsing.js";
 
-export const featureFlagRegistryVersion = 1 as const;
+export const featureFlagRegistryVersion = 3 as const;
 
 export const featureFlagKeys = Object.freeze([
   "content.regional_tradition",
   "experience.astrology",
-  "experience.public_shell",
   "market.country_activation",
   "payments.crypto_checkout",
   "payments.fiat_checkout",
@@ -35,7 +34,7 @@ export const featureFlagRegistry: Readonly<Record<FeatureFlagKey, FeatureFlagDef
   Object.freeze({
     "experience.astrology": Object.freeze({
       approvalGate: "OWN-015",
-      cleanupReference: "RIT-093",
+      cleanupReference: "RIT-160",
       createdOn: "2026-07-26",
       defaultState: "off",
       lifecycle: "active",
@@ -55,17 +54,6 @@ export const featureFlagRegistry: Readonly<Record<FeatureFlagKey, FeatureFlagDef
       purpose: "Gate any separately sourced and expert-reviewed regional tradition release.",
       removalOn: "2027-07-17",
       requiredScope: "country-and-locale",
-    }),
-    "experience.public_shell": Object.freeze({
-      approvalGate: null,
-      cleanupReference: "RIT-016",
-      createdOn: "2026-07-17",
-      defaultState: "off",
-      lifecycle: "active",
-      owner: "product",
-      purpose: "Gate the first public application shell while its release evidence is incomplete.",
-      removalOn: "2026-12-31",
-      requiredScope: "none",
     }),
     "market.country_activation": Object.freeze({
       approvalGate: "OWN-004",
@@ -230,8 +218,6 @@ const definitionForFlag = (flagKey: FeatureFlagKey): FeatureFlagDefinition => {
       return featureFlagRegistry["content.regional_tradition"];
     case "experience.astrology":
       return featureFlagRegistry["experience.astrology"];
-    case "experience.public_shell":
-      return featureFlagRegistry["experience.public_shell"];
     case "market.country_activation":
       return featureFlagRegistry["market.country_activation"];
     case "payments.crypto_checkout":

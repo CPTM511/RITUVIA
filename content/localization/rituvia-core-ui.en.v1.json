@@ -1,0 +1,98 @@
+{
+  "audience": "all",
+  "catalogId": "rituvia.web.core-ui",
+  "contentType": "ui_messages",
+  "editorial": {
+    "approvalReference": "D-085",
+    "authorId": "product.codex",
+    "changeReason": "Add the localized privacy-safe Tarot share-card alternative text contract.",
+    "effectiveDate": "2026-07-27",
+    "reviewDueDate": "2027-07-27",
+    "reviewedDate": "2026-07-29",
+    "reviewerId": "product.codex",
+    "status": "source_ready",
+    "supersedes": null
+  },
+  "locale": "en",
+  "messages": {
+    "account.savedReflections": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Count of retained private reflections shown in account history.",
+      "maxLength": 120,
+      "message": "{count, plural, =0 {No saved reflections} one {# saved reflection} other {# saved reflections}}",
+      "placeholders": ["count"],
+      "risk": "product"
+    },
+    "practice.availableMode": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Explains whether a symbolic practice is free or owned without implying stronger efficacy.",
+      "maxLength": 160,
+      "message": "{mode, select, free {Free practice available} owned {Owned presentation available} other {Practice availability unknown}}",
+      "placeholders": ["mode"],
+      "risk": "spiritual"
+    },
+    "ritual.stepProgress": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Accessible progress label for a finite ritual sequence.",
+      "maxLength": 80,
+      "message": "Step {current, number} of {total, number}",
+      "placeholders": ["current", "total"],
+      "risk": "product"
+    },
+    "shell.navigation.homeLabel": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Accessible home-link label containing the configured product brand.",
+      "maxLength": 100,
+      "message": "{brand} home",
+      "placeholders": ["brand"],
+      "risk": "product"
+    },
+    "tarot.report.targetPosition": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Categorical report target for one exact spread position.",
+      "maxLength": 120,
+      "message": "Position: {position}",
+      "placeholders": ["position"],
+      "risk": "safety"
+    },
+    "tarot.retryAfter": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Calm retry interval using ICU plural and select grammar.",
+      "maxLength": 320,
+      "message": "{value, plural, one {# {unit, select, second {second} minute {minute} hour {hour} other {unit}}} other {# {unit, select, second {seconds} minute {minutes} hour {hours} other {units}}}}",
+      "placeholders": ["unit", "value"],
+      "risk": "product"
+    },
+    "tarot.share.altText": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Accessible description for a redacted one-card Tarot share artifact.",
+      "maxLength": 800,
+      "message": "{cardTitle}, {orientation}. {themeVisibility, select, included {Reflection theme: {theme}.} hidden {Reflection theme hidden.} other {Reflection theme hidden.}} Privacy-safe {brand} share card. Symbolic reflection, not a prediction.",
+      "placeholders": ["brand", "cardTitle", "orientation", "theme", "themeVisibility"],
+      "risk": "spiritual"
+    }
+  },
+  "rights": {
+    "allowedUses": ["public_display", "commercial_use", "translation"],
+    "evidenceReference": "D-023",
+    "owner": "RITUVIA",
+    "status": "owned",
+    "territory": "worldwide"
+  },
+  "schemaVersion": "rituvia-message-source.v1",
+  "version": "1.1.0"
+}

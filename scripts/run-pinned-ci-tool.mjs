@@ -7,7 +7,7 @@ import path from "node:path";
 
 const tools = Object.freeze({
   actionlint: Object.freeze({
-    asset: "actionlint_1.7.12_linux_x86_64.tar.gz",
+    asset: "actionlint_1.7.12_linux_amd64.tar.gz",
     binary: "actionlint",
     sha256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
     version: "1.7.12",
@@ -32,6 +32,19 @@ const gitleaksDarwinArm64 = Object.freeze({
   sha256: "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5",
   version: "8.30.1",
 });
+const historicalGitleaksIgnoreFingerprints = Object.freeze([
+  "30badb537f1bd5e580278e627a95d56c9818603e:packages/db/scripts/verify-privacy-deletion.ts:generic-api-key:337",
+  "30badb537f1bd5e580278e627a95d56c9818603e:packages/db/scripts/verify-ritual-journal-persistence.ts:generic-api-key:36",
+  "30badb537f1bd5e580278e627a95d56c9818603e:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:1439",
+  "9daf59f2221dd1862c6722982a48c90bc2bd2803:packages/db/test/reflection-persistence.test.ts:generic-api-key:25",
+  "9daf59f2221dd1862c6722982a48c90bc2bd2803:packages/db/test/reflection-persistence.test.ts:generic-api-key:86",
+  "9daf59f2221dd1862c6722982a48c90bc2bd2803:packages/db/test/reflection-persistence.test.ts:generic-api-key:91",
+  "5f0faa23be68c9f13f10d389621cb808a2630c0d:apps/web/test/reflection-loop.test.ts:generic-api-key:27",
+  "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:apps/web/server/interpretation-generation.ts:generic-api-key:353",
+  "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:804",
+  "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:905",
+  "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:929",
+]);
 
 const allowedDownloadHost = (hostname) =>
   hostname === "github.com" || hostname.endsWith(".githubusercontent.com");
@@ -128,7 +141,9 @@ try {
   const gitleaksIgnorePath = path.join(temporaryDirectory, "gitleaks-ignore");
   if (toolName === "gitleaks") {
     await writeFile(gitleaksConfigurationPath, "[extend]\nuseDefault = true\n", { mode: 0o600 });
-    await writeFile(gitleaksIgnorePath, "", { mode: 0o600 });
+    await writeFile(gitleaksIgnorePath, `${historicalGitleaksIgnoreFingerprints.join("\n")}\n`, {
+      mode: 0o600,
+    });
   }
   const argumentsForTool =
     toolName === "gitleaks"

@@ -119,7 +119,7 @@ const NumerologyResult = ({ facts, messages }: NumerologyResultProps) => {
     <>
       <header className="numerology-result-heading">
         <p className="eyebrow">
-          {messages.result.targetYear}: {facts.input.targetYear}
+          {messages.result.targetYear}: <bdi dir="ltr">{facts.input.targetYear}</bdi>
         </p>
         <h2>{messages.result.title}</h2>
       </header>
@@ -130,31 +130,34 @@ const NumerologyResult = ({ facts, messages }: NumerologyResultProps) => {
             <article className="numerology-result-card" key={code}>
               <p className="numerology-result-value">
                 <span className="visually-hidden">{messages.result.result}: </span>
-                {evidence.result}
+                <bdi dir="ltr">{evidence.result}</bdi>
               </p>
               <h3>{calculationLabel(code, messages)}</h3>
               <dl className="numerology-formula">
                 <div>
                   <dt>{messages.result.digitSource}</dt>
                   <dd>
-                    {formulaLabel(code, messages)}: <code>{evidence.canonicalDigits}</code>
+                    {formulaLabel(code, messages)}:{" "}
+                    <code dir="ltr">{evidence.canonicalDigits}</code>
                   </dd>
                 </div>
                 <div>
                   <dt>{messages.result.initialValue}</dt>
                   <dd>
-                    <code>{numerologyFormulaSummary(evidence)}</code>
+                    <code dir="ltr">{numerologyFormulaSummary(evidence)}</code>
                   </dd>
                 </div>
                 <div>
                   <dt>{messages.result.reduction}</dt>
                   <dd>
-                    <code>{numerologyReductionSummary(evidence)}</code>
+                    <code dir="ltr">{numerologyReductionSummary(evidence)}</code>
                   </dd>
                 </div>
                 <div>
                   <dt>{messages.result.result}</dt>
-                  <dd>{evidence.result}</dd>
+                  <dd>
+                    <bdi dir="ltr">{evidence.result}</bdi>
+                  </dd>
                 </div>
               </dl>
               {evidence.masterNumberPreserved ? (
@@ -171,7 +174,7 @@ const NumerologyResult = ({ facts, messages }: NumerologyResultProps) => {
           <div>
             <dt>{messages.result.engineVersion}</dt>
             <dd>
-              <code>
+              <code dir="ltr">
                 {facts.engineName}@{facts.engineVersion}
               </code>
             </dd>
@@ -183,7 +186,7 @@ const NumerologyResult = ({ facts, messages }: NumerologyResultProps) => {
                 {calculationLabel(evidence.calculationCode, messages)}
               </dt>
               <dd>
-                <code>
+                <code dir="ltr">
                   {evidence.rule.id}@{evidence.rule.version}
                 </code>
               </dd>

@@ -1,11 +1,13 @@
 "use client";
 
 import { tarotReadingReportCategories, type TarotReadingReportCategory } from "@rituvia/domain";
+import { formatIcuMessage } from "@rituvia/i18n/messages";
 import { Button, InlineAlert } from "@rituvia/ui";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import type { TarotReadingMessages } from "../_i18n/tarot-one-card-messages";
+import type { Locale } from "../_i18n/routing";
 import {
   executeTarotReadingReport,
   TarotReadingReportTransportError,
@@ -17,6 +19,7 @@ type ReportStatus = "idle" | "submitting" | "success" | TarotReadingReportFailur
 
 export type TarotReadingReportProps = Readonly<{
   interpretationRequestId?: string;
+  locale: Locale;
   messages: TarotReadingMessages["result"]["report"];
   positions: readonly Readonly<{ positionId: string; positionTitle: string }>[];
   readingId: string;
@@ -62,6 +65,7 @@ const failureMessage = (
 
 export function TarotReadingReport({
   interpretationRequestId,
+  locale,
   messages,
   positions,
   readingId,
@@ -210,7 +214,9 @@ export function TarotReadingReport({
                 <option value="reading">{messages.targetReading}</option>
                 {positions.map((position) => (
                   <option key={position.positionId} value={position.positionId}>
-                    {messages.targetPosition.replace("{position}", position.positionTitle)}
+                    {formatIcuMessage(locale, messages.targetPosition, {
+                      position: position.positionTitle,
+                    })}
                   </option>
                 ))}
               </select>

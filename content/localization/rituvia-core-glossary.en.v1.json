@@ -1,0 +1,17 @@
+{
+  "approvalReference": "D-023",
+  "entries": [
+    {
+      "mode": "do_not_translate",
+      "sourceTerm": "RITUVIA",
+      "targetTerm": "RITUVIA"
+    }
+  ],
+  "locale": "en",
+  "reviewerId": "owner",
+  "schemaVersion": "rituvia-translation-glossary.v1",
+  "sourceCatalogId": "rituvia.web.core-ui",
+  "sourceVersion": "1.1.0",
+  "status": "approved",
+  "version": "1.0.0"
+}

@@ -188,8 +188,14 @@ def validate_backlog_readiness(deps: dict[str, list[str]], statuses: dict[str, s
 
     active_statuses = {"Ready", "In Progress", "In Review", "Changes Requested"}
     active = [task for task, status in statuses.items() if task.startswith("RIT-") and status in active_statuses]
-    unfinished = [task for task, status in statuses.items() if task.startswith("RIT-") and status != "Done"]
-    if unfinished and len(active) != 1:
+    eligible_planned = [
+        task
+        for task, status in statuses.items()
+        if task.startswith("RIT-")
+        and status == "Planned"
+        and all(statuses.get(dep) == "Done" for dep in deps.get(task, []))
+    ]
+    if len(active) > 1 or (len(active) == 0 and eligible_planned):
         fail(f"Expected exactly one executable RIT task, found {len(active)}: {active}", failures)
     in_progress = [task for task, status in statuses.items() if status == "In Progress"]
     if len(in_progress) > 1:

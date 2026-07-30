@@ -10,6 +10,7 @@ const render = () =>
     createElement(SiteShell, {
       brandName: "Configured Brand",
       brandTagline: "Configured tagline",
+      canonicalOrigin: "https://rituvia.example",
       locale: "en",
       messages: getMessages("en"),
       numerologyEnabled: true,
@@ -41,6 +42,14 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain("rituvia-sanctuary-orb.png");
     expect(html).toContain("A free ritual path always remains");
+    expect(html).toContain('data-geo-entity-id="rituvia-public-guidance-v1"');
+    expect(html).toContain(">Product policy</dt>");
+    expect(html).toContain(">Interpretation</dt>");
+    expect(html).toContain("Owner-approved product decision");
+    expect(html).toContain('"@type":"WebSite"');
+    expect(html).toContain('"url":"https://rituvia.example/en"');
+    expect(html).not.toContain("BreadcrumbList");
+    expect(html).not.toMatch(/"author"|"dateModified"|"datePublished"|"publisher"/u);
     expect(html).not.toContain('data-connection-state="offline"');
   });
 
@@ -73,6 +82,7 @@ describe("server-rendered public shell", () => {
       createElement(SiteShell, {
         brandName: "Configured Brand",
         brandTagline: "",
+        canonicalOrigin: "https://rituvia.example",
         locale: "en",
         messages: getMessages("en"),
         numerologyEnabled: true,
@@ -87,6 +97,7 @@ describe("server-rendered public shell", () => {
       createElement(SiteShell, {
         brandName: "Configured Brand",
         brandTagline: "Configured tagline",
+        canonicalOrigin: "https://rituvia.example",
         locale: "en",
         messages: getMessages("en"),
         numerologyEnabled: false,

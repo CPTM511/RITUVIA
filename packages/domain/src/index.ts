@@ -313,7 +313,6 @@ export {
   type ReflectionRitualResourceV1,
 } from "./reflection.js";
 export {
-  createRevisitReminderMessageV1,
   parseRevisitReminderMutationV1,
   revisitReminderActions,
   revisitReminderBackoffSeconds,
@@ -321,9 +320,9 @@ export {
   revisitReminderFrequency,
   revisitReminderNoticeVersion,
   revisitReminderSchemaVersion,
-  revisitReminderTemplateVersion,
+  revisitReminderTemplateBinding,
+  isRegisteredRevisitReminderTemplateBinding,
   type RevisitReminderAction,
-  type RevisitReminderMessageV1,
   type RevisitReminderMutationV1,
   type RevisitReminderStateV1,
 } from "./revisit-reminder.js";

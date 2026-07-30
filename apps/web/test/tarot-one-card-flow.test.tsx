@@ -11,9 +11,12 @@ describe("private one-card server render", () => {
   it("exposes ten theme-only disabled controls and meaningful no-JavaScript guidance", () => {
     const html = renderToStaticMarkup(
       createElement(TarotOneCardFlow, {
+        brandName: "RITUVIA",
+        locale: "en",
         messages: getTarotOneCardMessages("en"),
         methodologyHref: createLocalActionHref("/en/methodology"),
         sanctuaryHref: createLocalActionHref("/en/sanctuary"),
+        shareCanonicalUrl: "https://example.test/en/tarot",
       }),
     );
 
@@ -29,6 +32,7 @@ describe("private one-card server render", () => {
     const messages = getTarotOneCardMessages("en");
     const html = renderToStaticMarkup(
       createElement(TarotReadingReport, {
+        locale: "en",
         messages: messages.result.report,
         positions: [{ positionId: "single", positionTitle: "Single card" }],
         readingId: "33333333-3333-4333-8333-333333333333",
@@ -50,6 +54,7 @@ describe("private one-card server render", () => {
     const html = renderToStaticMarkup(
       createElement(TarotReadingReport, {
         interpretationRequestId,
+        locale: "en",
         messages: messages.result.report,
         positions: [],
         readingId: "33333333-3333-4333-8333-333333333333",

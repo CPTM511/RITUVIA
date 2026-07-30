@@ -101,12 +101,18 @@ describe("source configuration boundaries", () => {
 
     expect(environmentReaders.sort()).toEqual([
       "apps/web/config/server.ts",
+      "apps/web/instrumentation.ts",
       "apps/web/next.config.ts",
       "apps/web/start.mjs",
       "apps/worker/src/main.ts",
+      "packages/astrology-engine-native/scripts/prepare-native.mjs",
+      "packages/astrology-engine-native/scripts/verify-corresponding-source.mjs",
+      "packages/astrology-engine-native/scripts/verify-native-security.mjs",
+      "packages/astrology-engine-native/scripts/verify-native.mjs",
       "packages/db/prisma.config.ts",
       "packages/db/prisma/seed.ts",
       "packages/db/scripts/local-postgres.mjs",
+      "packages/db/scripts/verify-backup-recovery.ts",
       "packages/db/scripts/verify-ci-foundation.ts",
       "packages/db/scripts/verify-foundation.mjs",
     ]);

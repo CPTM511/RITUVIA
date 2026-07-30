@@ -110,6 +110,19 @@ describe("Revisit domain", () => {
     expect(parseRevisitResourceV1(completed)).toEqual(completed);
   });
 
+  it("preserves Devanagari shaping controls in a private completion reflection", () => {
+    const reflection = "मैंने क्‍षमा के साथ अपना छोटा कदम पूरा किया।";
+    expect(
+      parseRevisitMutationRequestV1({
+        action: "complete",
+        expectedRevision: 1,
+        outcomeTags: [],
+        reflection,
+        schemaVersion: "reflection-revisit-mutation.v1",
+      }),
+    ).toMatchObject({ reflection });
+  });
+
   it("rejects plaintext lifecycle inconsistencies and duplicate tags", () => {
     expect(() =>
       parseRevisitResourceV1({

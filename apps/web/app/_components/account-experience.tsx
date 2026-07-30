@@ -1,6 +1,7 @@
 "use client";
 
 import { accountConsentNoticeVersionFor, type AccountConsentPurpose } from "@rituvia/domain";
+import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import {
   ActionLink,
   Button,
@@ -15,6 +16,7 @@ import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AccountMessages } from "../_i18n/account-messages";
+import type { Locale } from "../_i18n/routing";
 import {
   parseAccountConsentControlResponse,
   parseAccountConsentControls,
@@ -52,19 +54,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
-const formatAccountInstant = (value: string, timeZone: string): string => {
+const formatAccountInstant = (locale: Locale, value: string, timeZone: string): string => {
   try {
-    return new Intl.DateTimeFormat("en", {
+    return createLocaleFormatter({ locale, timeZone }).date(new Date(value), {
       dateStyle: "medium",
       timeStyle: "short",
-      timeZone,
-    }).format(new Date(value));
+    });
   } catch {
-    return new Intl.DateTimeFormat("en", {
+    return createLocaleFormatter({ locale, timeZone: "UTC" }).date(new Date(value), {
       dateStyle: "medium",
       timeStyle: "short",
-      timeZone: "UTC",
-    }).format(new Date(value));
+    });
   }
 };
 
@@ -144,7 +144,7 @@ export const parseAccountSummary = (value: unknown): AccountSummary | null => {
     value.status !== "active" ||
     (typeof value.displayName !== "string" && value.displayName !== null) ||
     (typeof value.displayName === "string" &&
-      (value.displayName.length < 1 || value.displayName.length > 80)) ||
+      (value.displayName.length < 1 || Array.from(value.displayName).length > 80)) ||
     value.locale !== "en" ||
     typeof value.timeZone !== "string" ||
     value.timeZone.length < 1 ||
@@ -222,6 +222,7 @@ export function AccountNavigation({
 }
 
 type AccountExperienceProps = Readonly<{
+  locale: Locale;
   messages: AccountMessages["account"];
   oneCardHref: LocalActionHref;
   sanctuaryHref: LocalActionHref;
@@ -230,6 +231,7 @@ type AccountExperienceProps = Readonly<{
 }>;
 
 export function AccountExperience({
+  locale,
   messages,
   oneCardHref,
   sanctuaryHref,
@@ -680,7 +682,6 @@ export function AccountExperience({
             description={messages.displayNameDescription}
             id={displayNameId}
             label={messages.displayNameLabel}
-            maxLength={80}
             onValueChange={(value) => {
               setDisplayName(value);
               setProfileStatus("idle");
@@ -910,8 +911,8 @@ export function AccountExperience({
                       : null}
                     {accountHistoryStatusLabel(item.status, messages)}
                   </span>
-                  <time dateTime={item.occurredAt}>
-                    {formatAccountInstant(item.occurredAt, account.timeZone)}
+                  <time dateTime={item.occurredAt} dir="auto">
+                    {formatAccountInstant(locale, item.occurredAt, account.timeZone)}
                   </time>
                   {item.resourceType === "reading" ? (
                     <Button
@@ -985,24 +986,24 @@ export function AccountExperience({
                       <div>
                         <dt>{messages.sessionCreated}</dt>
                         <dd>
-                          <time dateTime={session.createdAt}>
-                            {formatAccountInstant(session.createdAt, account.timeZone)}
+                          <time dateTime={session.createdAt} dir="auto">
+                            {formatAccountInstant(locale, session.createdAt, account.timeZone)}
                           </time>
                         </dd>
                       </div>
                       <div>
                         <dt>{messages.sessionLastActive}</dt>
                         <dd>
-                          <time dateTime={session.lastSeenAt}>
-                            {formatAccountInstant(session.lastSeenAt, account.timeZone)}
+                          <time dateTime={session.lastSeenAt} dir="auto">
+                            {formatAccountInstant(locale, session.lastSeenAt, account.timeZone)}
                           </time>
                         </dd>
                       </div>
                       <div>
                         <dt>{messages.sessionExpires}</dt>
                         <dd>
-                          <time dateTime={session.expiresAt}>
-                            {formatAccountInstant(session.expiresAt, account.timeZone)}
+                          <time dateTime={session.expiresAt} dir="auto">
+                            {formatAccountInstant(locale, session.expiresAt, account.timeZone)}
                           </time>
                         </dd>
                       </div>

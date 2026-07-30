@@ -11,6 +11,7 @@ const render = (page: (typeof publicPageSlugs)[number]) =>
     createElement(PublicInformationPage, {
       brandName: "Configured Brand",
       brandTagline: "Configured tagline",
+      canonicalOrigin: "https://rituvia.example",
       locale: "en",
       messages: getMessages("en"),
       page,
@@ -29,6 +30,13 @@ describe("server-rendered public information pages", () => {
         new RegExp(`aria-current="page" class="(?:navigation|footer)-link" href="/en/${page}"`),
       );
       expect(html).toContain(getMessages("en").pages[page].status);
+      expect(html).toContain('data-geo-entity-id="rituvia-public-guidance-v1"');
+      expect(html).toContain(">Source basis</h3>");
+      expect(html).toContain("Owner-approved product decision");
+      expect(html).toContain('"@type":"WebPage"');
+      expect(html).toContain(`"url":"https://rituvia.example/en/${page}"`);
+      expect(html).not.toContain("BreadcrumbList");
+      expect(html).not.toMatch(/"author"|"dateModified"|"datePublished"|"publisher"/u);
       expect(html).not.toMatch(/<(?:form|input|textarea)\b/u);
       expect(html).not.toMatch(/href="https?:/u);
     },

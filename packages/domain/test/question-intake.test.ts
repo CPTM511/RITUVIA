@@ -65,6 +65,17 @@ describe("question intake policy", () => {
     );
   });
 
+  it("preserves NFC CJK and legitimate Devanagari join controls without weakening bidi denial", () => {
+    const cjk = "𠮷野家で①つの選択を振り返る";
+    const devanagari = "मैं क्‍षमा और स्पष्टता पर विचार करना चाहता हूँ।";
+
+    expect(parseQuestionIntakeRequest(request(cjk)).question).toBe(cjk);
+    expect(parseQuestionIntakeRequest(request(devanagari)).question).toBe(devanagari);
+    expect(() => parseQuestionIntakeRequest(request("unsafe\u202etext"))).toThrow(
+      expect.objectContaining({ code: "INTAKE_INPUT_INVALID" }),
+    );
+  });
+
   it.each([
     null,
     {},

@@ -53,6 +53,7 @@ export default async function AccountPage({ params }: AccountPageProps) {
     >
       <main className="experience-main account-main" id="main-content" tabIndex={-1}>
         <AccountExperience
+          locale={locale}
           messages={getAccountMessages(locale).account}
           oneCardHref={localeTarotOneCardPath(locale)}
           sanctuaryHref={localeSanctuaryPath(locale)}

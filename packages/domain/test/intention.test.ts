@@ -54,6 +54,17 @@ describe("reflection intention v2", () => {
     ).toMatchObject({ readingId: null, revisitDate: null, timeZone: null });
   });
 
+  it("preserves Indic shaping controls while applying compatibility folding only to safety review", () => {
+    const intentionText = "मैं क्‍षमा के साथ उत्तर देने का इरादा रखता हूँ।";
+    expect(
+      parseReflectionIntentionCreateRequestV2({ ...createRequest, intentionText }).intentionText,
+    ).toBe(intentionText);
+    expect(evaluateReflectionIntentionAgencyV1("ｍａｋｅ her contact me", "calm_clarity")).toEqual({
+      kind: "reframe_required",
+      suggestedIntentionText: "I intend to respond with calm and clarity.",
+    });
+  });
+
   it.each([
     "I intend to force my ex to return.",
     "Make them contact me tomorrow.",

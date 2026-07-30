@@ -75,6 +75,18 @@ describe("reflection loop domain", () => {
     );
   });
 
+  it("preserves CJK supplementary characters and Devanagari shaping in private text", () => {
+    const smallAction = "𠮷という字を書き、क्‍षमा के साथ रुकें।";
+    const reflection = "今日は静かに考え、क्‍षमा को याद रखा।";
+
+    expect(
+      parseReflectionIntentionCreateRequestV1({ ...intentionRequest, smallAction }).smallAction,
+    ).toBe(smallAction);
+    expect(
+      parseReflectionJournalCreateRequestV1({ ...journalRequest, reflection }).reflection,
+    ).toBe(reflection);
+  });
+
   it.each(reflectionFreeRitualObjectCodes)("keeps the free %s ritual available", (objectCode) => {
     expect(parseReflectionRitualCreateRequestV1({ ...ritualRequest, objectCode }).objectCode).toBe(
       objectCode,

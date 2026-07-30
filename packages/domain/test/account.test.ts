@@ -130,4 +130,27 @@ describe("account domain", () => {
       expect(() => parseAccountAgeAttestationV1(value)).toThrow(AccountError);
     }
   });
+
+  it("preserves representative names while rejecting embedded direction controls", () => {
+    for (const displayName of ["𠮷野 はるか", "अनन्या शर्मा", "김서연"]) {
+      expect(
+        parseAccountProfileUpdateV1({
+          displayName,
+          locale: "en",
+          profileVersion: 1,
+          schemaVersion: 1,
+          timeZone: "UTC",
+        }).displayName,
+      ).toBe(displayName.normalize("NFC"));
+    }
+    expect(() =>
+      parseAccountProfileUpdateV1({
+        displayName: "safe\u202ename",
+        locale: "en",
+        profileVersion: 1,
+        schemaVersion: 1,
+        timeZone: "UTC",
+      }),
+    ).toThrow(AccountError);
+  });
 });

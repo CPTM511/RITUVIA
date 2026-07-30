@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { revisitReminderTemplateBinding } from "@rituvia/domain";
 
 import {
   createDisabledRevisitReminderAdapter,
@@ -13,9 +14,23 @@ const job = Object.freeze({
   leaseToken: "x".repeat(43),
   locale: "en" as const,
   maxAttempts: 3 as const,
+  quietHours: "saved" as const,
   recipientIdentityId: "12345678-1234-4123-8123-123456789abc",
   revisitId: "22345678-1234-4123-8123-123456789abc",
+  scheduledLocalDate: "2026-07-28",
   subscriptionId: "32345678-1234-4123-8123-123456789abc",
+  templateFallbackUsed: false,
+  templateId: revisitReminderTemplateBinding.templateId,
+  templateLocale: revisitReminderTemplateBinding.locale,
+  templateSourceChecksum: revisitReminderTemplateBinding.sourceChecksum,
+  templateVersion: revisitReminderTemplateBinding.templateVersion,
+  timeZone: "Asia/Shanghai",
+});
+
+const messageConfiguration = Object.freeze({
+  brandName: "RITUVIA",
+  canonicalOrigin: "https://example.test",
+  supportEmail: "support@example.test",
 });
 
 const store = (overrides: Partial<RevisitReminderJobStore> = {}): RevisitReminderJobStore => ({
@@ -35,6 +50,7 @@ describe("Revisit reminder worker", () => {
     await expect(
       runOneRevisitReminderDelivery({
         adapter: { deliver: delivery },
+        messageConfiguration,
         observe: (event) => events.push(event),
         store: jobStore,
       }),
@@ -46,6 +62,20 @@ describe("Revisit reminder worker", () => {
       recipientIdentityId: job.recipientIdentityId,
       subscriptionId: job.subscriptionId,
     });
+    expect(delivery.mock.calls[0]?.[0].message).toMatchObject({
+      fallbackUsed: false,
+      locale: "en",
+      preference: {
+        label: "Turn off this reminder",
+        url: "https://example.test/en/revisit#reminder-preferences",
+      },
+      sourceChecksum: revisitReminderTemplateBinding.sourceChecksum,
+      templateVersion: revisitReminderTemplateBinding.templateVersion,
+      timeZone: "Asia/Shanghai",
+    });
+    expect(delivery.mock.calls[0]?.[0].message.bodyText).toContain(
+      "outside your saved quiet hours",
+    );
     expect(JSON.stringify(delivery.mock.calls[0]?.[0])).not.toMatch(
       /question|journal|relationship|intention|ritual|health|grief/iu,
     );
@@ -62,6 +92,7 @@ describe("Revisit reminder worker", () => {
     await expect(
       runOneRevisitReminderDelivery({
         adapter: { deliver: delivery },
+        messageConfiguration,
         store: store({ claimDue: vi.fn().mockResolvedValue(null) }),
       }),
     ).resolves.toBe("idle");
@@ -74,6 +105,7 @@ describe("Revisit reminder worker", () => {
     await expect(
       runOneRevisitReminderDelivery({
         adapter: { deliver: delivery },
+        messageConfiguration,
         store: jobStore,
       }),
     ).resolves.toBe("stale");
@@ -90,6 +122,7 @@ describe("Revisit reminder worker", () => {
             throw new RevisitReminderDeliveryError("provider_unavailable", true);
           },
         },
+        messageConfiguration,
         store: jobStore,
       }),
     ).resolves.toBe("retry_wait");
@@ -106,6 +139,7 @@ describe("Revisit reminder worker", () => {
     await expect(
       runOneRevisitReminderDelivery({
         adapter: createDisabledRevisitReminderAdapter(),
+        messageConfiguration,
         store: jobStore,
       }),
     ).resolves.toBe("dead_lettered");
@@ -127,6 +161,7 @@ describe("Revisit reminder worker", () => {
             });
           },
         },
+        messageConfiguration,
         store: jobStore,
         timeoutMs: 10,
       }),
@@ -143,10 +178,32 @@ describe("Revisit reminder worker", () => {
     await expect(
       runOneRevisitReminderDelivery({
         adapter: createDisabledRevisitReminderAdapter(),
+        messageConfiguration,
         signal: controller.signal,
         store: jobStore,
       }),
     ).resolves.toBe("cancelled");
     expect(jobStore.claimDue).not.toHaveBeenCalled();
+  });
+
+  it("dead-letters a stale template binding without calling the provider", async () => {
+    const delivery = vi.fn();
+    const jobStore = store({
+      claimDue: vi.fn().mockResolvedValue({ ...job, templateVersion: "revisit-reminder.en.stale" }),
+      failDelivery: vi.fn().mockResolvedValue("dead_lettered"),
+    });
+
+    await expect(
+      runOneRevisitReminderDelivery({
+        adapter: { deliver: delivery },
+        messageConfiguration,
+        store: jobStore,
+      }),
+    ).resolves.toBe("dead_lettered");
+
+    expect(delivery).not.toHaveBeenCalled();
+    expect(jobStore.failDelivery).toHaveBeenCalledWith(
+      expect.objectContaining({ failureCode: "template_unavailable", retryable: false }),
+    );
   });
 });

@@ -51,6 +51,7 @@ const databaseUrlPath = path.join(localRoot, "database-url");
 const ADMIN_ROLE = "rituvia_local_admin";
 const APP_ROLE = "rituvia_app";
 const CONTROL_ROLE = "rituvia_config_writer";
+const PAYMENT_WEBHOOK_ROLE = "rituvia_payment_webhook";
 const PRIVACY_DELETION_ROLE = "rituvia_privacy_deletion";
 const ADMIN_SERVICE_ROLE = "rituvia_admin_service";
 const MIGRATOR_ROLE = "rituvia_migrator";
@@ -367,6 +368,7 @@ const createCredentials = async () => {
     adminPassword: randomBytes(32).toString("base64url"),
     appPassword: randomBytes(32).toString("base64url"),
     controlPassword: randomBytes(32).toString("base64url"),
+    paymentWebhookPassword: randomBytes(32).toString("base64url"),
     privacyDeletionPassword: randomBytes(32).toString("base64url"),
     adminServicePassword: randomBytes(32).toString("base64url"),
     migratorPassword: randomBytes(32).toString("base64url"),
@@ -396,6 +398,7 @@ const assertCredentials = (credentials) => {
   assertBaseCredentials(credentials);
   if (
     !secretPattern.test(credentials.controlPassword ?? "") ||
+    !secretPattern.test(credentials.paymentWebhookPassword ?? "") ||
     !secretPattern.test(credentials.privacyDeletionPassword ?? "") ||
     !secretPattern.test(credentials.adminServicePassword ?? "") ||
     !secretPattern.test(credentials.migratorPassword ?? "")
@@ -414,6 +417,9 @@ const upgradeCredentials = async () => {
     controlPassword: secretPattern.test(existing.controlPassword ?? "")
       ? existing.controlPassword
       : randomBytes(32).toString("base64url"),
+    paymentWebhookPassword: secretPattern.test(existing.paymentWebhookPassword ?? "")
+      ? existing.paymentWebhookPassword
+      : randomBytes(32).toString("base64url"),
     privacyDeletionPassword: secretPattern.test(existing.privacyDeletionPassword ?? "")
       ? existing.privacyDeletionPassword
       : randomBytes(32).toString("base64url"),
@@ -427,6 +433,7 @@ const upgradeCredentials = async () => {
   assertCredentials(upgraded);
   if (
     upgraded.controlPassword !== existing.controlPassword ||
+    upgraded.paymentWebhookPassword !== existing.paymentWebhookPassword ||
     upgraded.privacyDeletionPassword !== existing.privacyDeletionPassword ||
     upgraded.adminServicePassword !== existing.adminServicePassword ||
     upgraded.migratorPassword !== existing.migratorPassword
@@ -604,6 +611,7 @@ const buildDatabaseUrl = (runtime, databaseName, role = APP_ROLE) => {
     [ADMIN_ROLE]: runtime.credentials.adminPassword,
     [APP_ROLE]: runtime.credentials.appPassword,
     [CONTROL_ROLE]: runtime.credentials.controlPassword,
+    [PAYMENT_WEBHOOK_ROLE]: runtime.credentials.paymentWebhookPassword,
     [PRIVACY_DELETION_ROLE]: runtime.credentials.privacyDeletionPassword,
     [ADMIN_SERVICE_ROLE]: runtime.credentials.adminServicePassword,
     [MIGRATOR_ROLE]: runtime.credentials.migratorPassword,
@@ -835,20 +843,20 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     await admin.query(`ALTER SCHEMA public OWNER TO ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM PUBLIC`);
     await admin.query(
-      `REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
-      `GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
     await admin.query(
-      `REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
-      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
     const foundationTables = await admin.query(
       `SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS migrations,
@@ -1008,7 +1016,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
           `GRANT SELECT, INSERT ON TABLE revisit_reminder_subscription, revisit_reminder_operation TO ${APP_ROLE}`,
         );
         await admin.query(
-          `GRANT UPDATE (recipient_identity_id, schema_version, notice_version, channel, frequency, locale, preference_state, delivery_state, attempt_count, next_attempt_at, lease_token_hash, leased_until, last_failure_code, provider_message_reference, updated_at, delivered_at, unsubscribed_at, dead_lettered_at) ON TABLE revisit_reminder_subscription TO ${APP_ROLE}`,
+          `GRANT UPDATE (recipient_identity_id, schema_version, notice_version, channel, frequency, locale, template_id, template_version, template_source_checksum, template_locale, template_fallback_used, preference_state, delivery_state, attempt_count, next_attempt_at, lease_token_hash, leased_until, last_failure_code, provider_message_reference, updated_at, delivered_at, unsubscribed_at, dead_lettered_at) ON TABLE revisit_reminder_subscription TO ${APP_ROLE}`,
         );
       }
       if (
@@ -1096,6 +1104,9 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       "SELECT to_regclass('public.commercial_order_v2') IS NOT NULL AS present",
     );
     if (commercialTransactionTables.rows[0]?.present === true) {
+      const commercialPaymentEventTables = await admin.query(
+        "SELECT to_regclass('public.commercial_payment_event_v2') IS NOT NULL AS present",
+      );
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
@@ -1103,7 +1114,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         `GRANT UPDATE (status, refunded_minor, updated_at, paid_at, refund_requested_at, refunded_at) ON TABLE commercial_order_v2 TO ${APP_ROLE}`,
       );
       await admin.query(
-        `GRANT UPDATE (state, provider_checkout_id, provider_checkout_url, provider_payment_intent_id, updated_at, completed_at) ON TABLE commercial_payment_attempt_v2 TO ${APP_ROLE}`,
+        `GRANT UPDATE (state, provider_checkout_id, provider_checkout_url, provider_payment_intent_id, expires_at, updated_at, completed_at) ON TABLE commercial_payment_attempt_v2 TO ${APP_ROLE}`,
       );
       await admin.query(
         `GRANT UPDATE (status, consumed_at, released_at, expired_at) ON TABLE credit_reservation TO ${APP_ROLE}`,
@@ -1114,6 +1125,26 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT UPDATE (status, frozen_at, revoked_at, version) ON TABLE commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
+      if (commercialPaymentEventTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE commercial_order_v2, commercial_payment_attempt_v2, commercial_payment_event_v2, commercial_payment_outbox_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+        );
+        await admin.query(
+          `GRANT INSERT ON TABLE commercial_payment_event_v2, commercial_payment_outbox_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (status, refunded_minor, payment_state_version, updated_at, paid_at, refunded_at) ON TABLE commercial_order_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (state, provider_payment_intent_id, updated_at, completed_at) ON TABLE commercial_payment_attempt_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (order_id, payment_attempt_id, validation_state, processing_state, processing_disposition, processed_at) ON TABLE commercial_payment_event_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (delivery_state, attempt_count, available_at, lease_token_hash, leased_until, completed_at, last_failure_code, dead_lettered_at) ON TABLE commercial_payment_outbox_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+        );
+      }
     }
     const privacyExportTables = await admin.query(
       "SELECT to_regclass('public.privacy_export') IS NOT NULL AS present",
@@ -1154,6 +1185,14 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         await admin.query(
           `GRANT SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${PRIVACY_DELETION_ROLE}`,
         );
+        const commercialPaymentEventTables = await admin.query(
+          "SELECT to_regclass('public.commercial_payment_event_v2') IS NOT NULL AS present",
+        );
+        if (commercialPaymentEventTables.rows[0]?.present === true) {
+          await admin.query(
+            `GRANT SELECT ON TABLE commercial_payment_event_v2, commercial_payment_outbox_v2 TO ${PRIVACY_DELETION_ROLE}`,
+          );
+        }
       }
       await admin.query(
         `GRANT INSERT ON TABLE privacy_deletion_request, privacy_deletion_completion, auth_identity_suppression TO ${PRIVACY_DELETION_ROLE}`,
@@ -1224,7 +1263,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -1252,6 +1291,7 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
     await ensureGroupRole(admin, VERIFICATION_WRITER_ROLE);
     await ensureLoginRole(admin, APP_ROLE, runtime.credentials.appPassword);
     await ensureLoginRole(admin, CONTROL_ROLE, runtime.credentials.controlPassword);
+    await ensureLoginRole(admin, PAYMENT_WEBHOOK_ROLE, runtime.credentials.paymentWebhookPassword);
     await ensureLoginRole(
       admin,
       PRIVACY_DELETION_ROLE,
@@ -1303,7 +1343,16 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
     const privileges = await admin.query(
       `SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls
          FROM pg_roles WHERE rolname = ANY($1::text[])`,
-      [[APP_ROLE, CONTROL_ROLE, PRIVACY_DELETION_ROLE, ADMIN_SERVICE_ROLE, MIGRATOR_ROLE]],
+      [
+        [
+          APP_ROLE,
+          CONTROL_ROLE,
+          PAYMENT_WEBHOOK_ROLE,
+          PRIVACY_DELETION_ROLE,
+          ADMIN_SERVICE_ROLE,
+          MIGRATOR_ROLE,
+        ],
+      ],
     );
     for (const role of privileges.rows) {
       if (
@@ -1680,16 +1729,30 @@ const createTestDatabase = async (runtime) => {
 
   let active = true;
   const databaseUrl = buildDatabaseUrl(runtime, databaseName);
+  const adminDatabaseUrl = buildDatabaseUrl(runtime, databaseName, ADMIN_ROLE);
   const controlDatabaseUrl = buildDatabaseUrl(runtime, databaseName, CONTROL_ROLE);
+  const paymentWebhookDatabaseUrl = buildDatabaseUrl(runtime, databaseName, PAYMENT_WEBHOOK_ROLE);
   const privacyDeletionDatabaseUrl = buildDatabaseUrl(runtime, databaseName, PRIVACY_DELETION_ROLE);
   const adminServiceDatabaseUrl = buildDatabaseUrl(runtime, databaseName, ADMIN_SERVICE_ROLE);
   const migrationDatabaseUrl = buildDatabaseUrl(runtime, databaseName, MIGRATOR_ROLE);
   assertExactLocalDatabaseUrl(databaseUrl, databaseName, runtime.credentials.appPassword);
   assertExactLocalDatabaseUrl(
+    adminDatabaseUrl,
+    databaseName,
+    runtime.credentials.adminPassword,
+    ADMIN_ROLE,
+  );
+  assertExactLocalDatabaseUrl(
     controlDatabaseUrl,
     databaseName,
     runtime.credentials.controlPassword,
     CONTROL_ROLE,
+  );
+  assertExactLocalDatabaseUrl(
+    paymentWebhookDatabaseUrl,
+    databaseName,
+    runtime.credentials.paymentWebhookPassword,
+    PAYMENT_WEBHOOK_ROLE,
   );
   assertExactLocalDatabaseUrl(
     privacyDeletionDatabaseUrl,
@@ -1713,7 +1776,9 @@ const createTestDatabase = async (runtime) => {
   const handle = Object.freeze({
     databaseName,
     databaseUrl,
+    adminDatabaseUrl,
     controlDatabaseUrl,
+    paymentWebhookDatabaseUrl,
     privacyDeletionDatabaseUrl,
     adminServiceDatabaseUrl,
     migrationDatabaseUrl,
@@ -1917,6 +1982,11 @@ export const withLocalPostgresLease = async (operation) =>
           DEVELOPMENT_DATABASE,
           MIGRATOR_ROLE,
         ),
+        developmentPaymentWebhookDatabaseUrl: buildDatabaseUrl(
+          runtime,
+          DEVELOPMENT_DATABASE,
+          PAYMENT_WEBHOOK_ROLE,
+        ),
         developmentPrivacyDeletionDatabaseUrl: buildDatabaseUrl(
           runtime,
           DEVELOPMENT_DATABASE,
@@ -1933,6 +2003,9 @@ export const stopLeaseOwnedRuntime = async (lease) => {
   }
 };
 
+export const createLocalPostgresClient = (databaseUrl) =>
+  new Client({ connectionString: databaseUrl });
+
 export const localPostgresConstants = Object.freeze({
   appRole: APP_ROLE,
   controlRole: CONTROL_ROLE,
@@ -1941,6 +2014,7 @@ export const localPostgresConstants = Object.freeze({
   developmentDatabase: DEVELOPMENT_DATABASE,
   host: HOST,
   migratorRole: MIGRATOR_ROLE,
+  paymentWebhookRole: PAYMENT_WEBHOOK_ROLE,
   port: PORT,
   databaseUrlPath,
   resetConfirmation: RESET_CONFIRMATION,

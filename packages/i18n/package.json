@@ -1,0 +1,43 @@
+{
+  "name": "@rituvia/i18n",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./src/pseudolocale.ts",
+      "import": "./dist/pseudolocale.js",
+      "default": "./dist/pseudolocale.js"
+    },
+    "./locale": {
+      "types": "./src/locale.ts",
+      "import": "./dist/locale.js",
+      "default": "./dist/locale.js"
+    },
+    "./lifecycle": {
+      "types": "./src/lifecycle.ts",
+      "import": "./dist/lifecycle.js",
+      "default": "./dist/lifecycle.js"
+    },
+    "./messages": {
+      "types": "./src/messages.ts",
+      "import": "./dist/messages.js",
+      "default": "./dist/messages.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run --root ../.. packages/i18n/test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@formatjs/icu-messageformat-parser": "3.5.15",
+    "intl-messageformat": "11.2.12"
+  }
+}

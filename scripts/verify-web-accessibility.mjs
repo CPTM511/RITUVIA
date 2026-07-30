@@ -7,6 +7,7 @@ import { chromium } from "playwright";
 import {
   accessibilityAxeTags,
   accessibilitySmokeRoutes,
+  auditPublicAccessibilitySmokeInventory,
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
@@ -38,7 +39,7 @@ const artifactContentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'",
-  "img-src 'self'",
+  "img-src 'self' blob:",
   "manifest-src 'none'",
   "media-src 'none'",
   "object-src 'none'",
@@ -48,6 +49,41 @@ const artifactContentSecurityPolicy = [
   "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
   "worker-src 'none'",
 ].join("; ");
+const geoAnswerContextContrastTargets = (
+  headingSelector,
+  includeBareHeading = false,
+  includeBareStrong = true,
+) =>
+  Object.freeze([
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(1) > dd"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(1) > dt"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(2) > dd"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(2) > dt"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(3) > dd"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(3) > dt"]),
+    Object.freeze([".geo-answer-context-details > div:nth-child(1) > dt"]),
+    Object.freeze([headingSelector]),
+    Object.freeze(["dd > span"]),
+    Object.freeze(["div > h3"]),
+    ...(includeBareHeading ? [Object.freeze(["h3"])] : []),
+    Object.freeze(["div > ul > li"]),
+    Object.freeze(["div > ul > li:nth-child(1)"]),
+    Object.freeze(["div > ul > li:nth-child(2)"]),
+    Object.freeze(["div > ul > li:nth-child(3)"]),
+    Object.freeze(["div > ul > li:nth-child(4)"]),
+    Object.freeze(["div > ul > li:nth-child(5)"]),
+    Object.freeze(['div[data-geo-classification="fact"] > dd']),
+    Object.freeze(['div[data-geo-classification="fact"] > dt']),
+    Object.freeze(['div[data-geo-classification="interpretation"] > dd']),
+    Object.freeze(['div[data-geo-classification="interpretation"] > dt']),
+    Object.freeze(['div[data-geo-classification="product_guidance"] > dd']),
+    Object.freeze(['div[data-geo-classification="product_guidance"] > dt']),
+    Object.freeze(['div[data-geo-classification="tradition"] > dd']),
+    Object.freeze(['div[data-geo-classification="tradition"] > dt']),
+    Object.freeze([".geo-answer-context-details strong"]),
+    Object.freeze(["dd > strong"]),
+    ...(includeBareStrong ? [Object.freeze(["strong"])] : []),
+  ]);
 const homeContrastTargets = Object.freeze([
   Object.freeze([".brand-link"]),
   Object.freeze(['.navigation-link[aria-current="page"][href="/en"]']),
@@ -82,6 +118,11 @@ const homeContrastTargets = Object.freeze([
   Object.freeze([".oracle-card:nth-child(3) > h3"]),
   Object.freeze([".oracle-card:nth-child(3) > p:nth-child(3)"]),
   Object.freeze([".oracle-card:nth-child(3) > .oracle-note"]),
+  Object.freeze([".oracle-card:nth-child(4) > .eyebrow"]),
+  Object.freeze([".oracle-card:nth-child(4) > h3"]),
+  Object.freeze([".oracle-card:nth-child(4) > p:nth-child(3)"]),
+  Object.freeze([".oracle-card:nth-child(4) > .oracle-note"]),
+  ...geoAnswerContextContrastTargets("#geo-home"),
 ]);
 const offlineContrastTargets = Object.freeze([
   ...homeContrastTargets,
@@ -100,6 +141,7 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
+    ...geoAnswerContextContrastTargets("#geo-methodology", true),
   ]),
   "/en/privacy": Object.freeze([
     Object.freeze([".brand-link"]),
@@ -112,6 +154,7 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
+    ...geoAnswerContextContrastTargets("#geo-privacy", true),
   ]),
   "/en/safety": Object.freeze([
     Object.freeze([".brand-link"]),
@@ -123,15 +166,16 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
+    ...geoAnswerContextContrastTargets("#geo-safety", true),
   ]),
   ...Object.fromEntries(
-    [
-      "/en/numerology",
-      "/en/numerology/life-path-number",
-      "/en/numerology/birthday-number",
-      "/en/numerology/personal-year-number",
-      "/en/numerology/master-numbers",
-    ].map((pathname) => [
+    Object.entries({
+      "/en/numerology": "#geo-numerology-hub",
+      "/en/numerology/birthday-number": "#geo-numerology-guide-birthday-number",
+      "/en/numerology/life-path-number": "#geo-numerology-guide-life-path-number",
+      "/en/numerology/master-numbers": "#geo-numerology-guide-master-numbers",
+      "/en/numerology/personal-year-number": "#geo-numerology-guide-personal-year-number",
+    }).map(([pathname, geoHeadingSelector]) => [
       pathname,
       Object.freeze([
         Object.freeze([".brand-link"]),
@@ -145,6 +189,49 @@ const informationContrastTargets = Object.freeze({
         Object.freeze([".numerology-library-answer"]),
         Object.freeze([".numerology-library-boundary"]),
         Object.freeze(["#numerology-guide-list-heading"]),
+        ...geoAnswerContextContrastTargets(
+          geoHeadingSelector,
+          pathname !== "/en/numerology",
+          pathname !== "/en/numerology",
+        ),
+      ]),
+    ]),
+  ),
+  ...Object.fromEntries(
+    Object.entries({
+      "/en/astrology": "#geo-astrology-hub",
+      "/en/astrology/birth-time-uncertainty": "#geo-astrology-guide-birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects": "#geo-astrology-guide-houses-and-major-aspects",
+      "/en/astrology/natal-chart-calculation": "#geo-astrology-guide-natal-chart-calculation",
+      "/en/astrology/sources-and-methodology": "#geo-astrology-guide-sources-and-methodology",
+    }).map(([pathname, geoHeadingSelector]) => [
+      pathname,
+      Object.freeze([
+        Object.freeze([".brand-link"]),
+        Object.freeze(['.navigation-link[href="/en"]']),
+        Object.freeze(['.navigation-link[href$="sanctuary"]']),
+        Object.freeze(['.navigation-link[href$="methodology"]']),
+        Object.freeze(['.navigation-link[href$="safety"]']),
+        Object.freeze(["label"]),
+        Object.freeze([".eyebrow"]),
+        Object.freeze(["h1"]),
+        Object.freeze([".numerology-library-answer"]),
+        Object.freeze([".numerology-library-boundary"]),
+        Object.freeze(["#astrology-guide-list-heading"]),
+        Object.freeze(["caption"]),
+        Object.freeze(['th[scope="col"]:nth-child(2)']),
+        Object.freeze(['th[scope="col"]:nth-child(3)']),
+        Object.freeze(["tr:nth-child(1) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(1) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(2) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(2) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(3) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(3) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(4) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(4) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(5) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(5) > td:nth-child(3)"]),
+        ...geoAnswerContextContrastTargets(geoHeadingSelector, pathname !== "/en/astrology"),
       ]),
     ]),
   ),
@@ -410,7 +497,7 @@ const jsonFulfill = async (route, status, body, contentType = "application/json"
 
 const installTarotAcceptanceRoutes = async (
   page,
-  { failFirstInterpretationStart = false, finalStatus, readingType },
+  { failFirstInterpretationStart = false, finalStatus, fulfilledAbortRequests, readingType },
 ) => {
   const readingId = tarotAcceptanceReadingIds[readingType];
   let observeInterpretationGet;
@@ -520,13 +607,19 @@ const installTarotAcceptanceRoutes = async (
         requests.interpretationGets += 1;
         observeInterpretationGet();
         await interpretationGetReleased;
-        await jsonFulfill(route, 200, {
-          displayable: true,
-          output: tarotAcceptanceInterpretationOutput,
-          readingId,
-          schemaVersion: "tarot-interpretation-response.v1",
-          status: finalStatus,
-        });
+        fulfilledAbortRequests.add(request);
+        try {
+          await jsonFulfill(route, 200, {
+            displayable: true,
+            output: tarotAcceptanceInterpretationOutput,
+            readingId,
+            schemaVersion: "tarot-interpretation-response.v1",
+            status: finalStatus,
+          });
+        } catch (error) {
+          fulfilledAbortRequests.delete(request);
+          throw error;
+        }
         return;
       }
     }
@@ -751,7 +844,8 @@ const collectTextNodes = async (page) =>
 
 const applyPseudolocale = async (page, direction) => {
   const values = await collectTextNodes(page);
-  const replacements = values.map((value) => pseudoLocalizeText(value, direction));
+  const pseudolocale = direction === "rtl" ? "ar-XB" : "en-XA";
+  const replacements = values.map((value) => pseudoLocalizeText(value, pseudolocale));
   if (!replacements.some((value, index) => value !== values[index])) {
     throw new Error("Pseudolocale smoke found no transformable public text.");
   }
@@ -795,7 +889,11 @@ const assertLayout = async (page, label) => {
       ) {
         continue;
       }
-      if (rectangle.left < -1 || rectangle.right > viewportWidth + 1) {
+      const approvedInlineScroller = element.closest(".astrology-reference-table-wrap");
+      if (
+        (rectangle.left < -1 || rectangle.right > viewportWidth + 1) &&
+        approvedInlineScroller === null
+      ) {
         problems.push(`viewport:${index}:${element.tagName.toLowerCase()}`);
       }
       if (
@@ -928,11 +1026,27 @@ const assertPseudolocaleBoundary = async (page, pathname, direction) => {
 
 const assertReviewedIncompleteScope = async (page, label, reviewedTargets) => {
   const reviewed = new Set(reviewedTargets.map((target) => JSON.stringify(target)));
-  if (!reviewed.has('["strong"]') && !reviewed.has('[".rvt-icon"]')) return;
+  const reviewsGeoAnswerContext = reviewedTargets.some(([selector]) =>
+    selector.startsWith(".geo-answer-context"),
+  );
+  const reviewsBareGeoHeading = reviewed.has('["h3"]');
+  const reviewsBareStrong = reviewed.has('["strong"]');
+  if (!reviewed.has('["strong"]') && !reviewed.has('[".rvt-icon"]') && !reviewsGeoAnswerContext) {
+    return;
+  }
   const scope = await page.evaluate(() => {
     const strongElements = [...document.querySelectorAll("strong")];
     const iconElements = [...document.querySelectorAll(".rvt-icon")];
+    const geoBroadElements = [...document.querySelectorAll("dd > span, div > h3, div > ul > li")];
     return {
+      bareHeadingCount: document.querySelectorAll("h3").length,
+      bareHeadingOutsideReviewedComponent: [...document.querySelectorAll("h3")].filter(
+        (element) => element.closest("[data-geo-answer-context]") === null,
+      ).length,
+      geoAnswerContextCount: document.querySelectorAll("[data-geo-answer-context]").length,
+      geoBroadElementsOutsideReviewedComponent: geoBroadElements.filter(
+        (element) => element.closest("[data-geo-answer-context]") === null,
+      ).length,
       iconCount: iconElements.length,
       iconOutsideReviewedComponents: iconElements.filter(
         (element) => element.closest(".rvt-alert, .rvt-state-pattern") === null,
@@ -940,16 +1054,23 @@ const assertReviewedIncompleteScope = async (page, label, reviewedTargets) => {
       strongCount: strongElements.length,
       strongOutsideReviewedComponents: strongElements.filter(
         (element) =>
-          element.closest(".tarot-result-cards figcaption, .principles-section, .tarot-report") ===
-          null,
+          element.closest(
+            ".tarot-result-cards figcaption, .principles-section, .tarot-report, [data-geo-answer-context]",
+          ) === null,
       ).length,
     };
   });
   if (
     scope.iconCount > 2 ||
     scope.iconOutsideReviewedComponents !== 0 ||
-    scope.strongCount > 5 ||
-    scope.strongOutsideReviewedComponents !== 0
+    (reviewsBareStrong &&
+      (scope.strongCount > (reviewsGeoAnswerContext ? 6 : 5) ||
+        scope.strongOutsideReviewedComponents !== 0)) ||
+    (reviewsGeoAnswerContext &&
+      (scope.geoAnswerContextCount !== 1 ||
+        scope.geoBroadElementsOutsideReviewedComponent !== 0)) ||
+    (reviewsBareGeoHeading &&
+      (scope.bareHeadingCount !== 1 || scope.bareHeadingOutsideReviewedComponent !== 0))
   ) {
     throw new Error(`${label} broad reviewed contrast scope drifted: ${JSON.stringify(scope)}`);
   }
@@ -1124,7 +1245,13 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
     page.evaluate(() => {
       const active = document.activeElement;
       if (!(active instanceof HTMLElement)) return null;
-      const style = getComputedStyle(active);
+      const focusIndicator =
+        active.matches(".rvt-choice__input, .rvt-switch__input") &&
+        active.closest(".rvt-choice, .rvt-switch") instanceof HTMLElement
+          ? active.closest(".rvt-choice, .rvt-switch")
+          : active;
+      if (!(focusIndicator instanceof HTMLElement)) return null;
+      const style = getComputedStyle(focusIndicator);
       const rectangle = active.getBoundingClientRect();
       return {
         clipped:
@@ -1133,6 +1260,7 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
           rectangle.top < -1 ||
           rectangle.bottom > document.documentElement.clientHeight + 1,
         focusIndex: active.getAttribute("data-rituvia-smoke-focus-index"),
+        focusIndicatorClassName: focusIndicator.className,
         focusVisible: active.matches(":focus-visible"),
         outlineWidth: Number.parseFloat(style.outlineWidth),
         rectangle: {
@@ -1203,7 +1331,7 @@ const assertRtlGeometry = async (page, label) => {
     const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
     const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
     const boundary = document.querySelector(
-      ".hero-boundary, .information-status, .question-intake-boundary, .tarot-reading-boundary",
+      ".hero-boundary, .information-status, .numerology-library-boundary, .question-intake-boundary, .tarot-reading-boundary",
     );
     const boundaryStyle = boundary === null ? null : getComputedStyle(boundary);
     return {
@@ -1264,6 +1392,7 @@ const attachBrowserBoundary = async (
     allowFulfilledSessionAbort = false,
     allowInterpretationUnavailable = false,
     expectedApiFailures = [],
+    fulfilledAbortRequests = new Set(),
   } = {},
 ) => {
   const expectedFailure = (url, status, method) =>
@@ -1350,6 +1479,13 @@ const attachBrowserBoundary = async (
       url.origin === origin &&
       url.pathname === "/api/v1/anonymous/session" &&
       failure === "net::ERR_ABORTED"
+    ) {
+      return;
+    }
+    if (
+      failure === "net::ERR_ABORTED" &&
+      url.origin === origin &&
+      fulfilledAbortRequests.has(request)
     ) {
       return;
     }
@@ -2074,13 +2210,16 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     viewport: { height: 1000, width: 1440 },
   });
   const oneCardPage = await oneCardContext.newPage();
+  const oneCardFulfilledAbortRequests = new Set();
   await attachBrowserBoundary(oneCardContext, oneCardPage, origin, browserFailures, {
     allowFulfilledSessionAbort: true,
     allowInterpretationUnavailable: true,
+    fulfilledAbortRequests: oneCardFulfilledAbortRequests,
   });
   const oneCardRequests = await installTarotAcceptanceRoutes(oneCardPage, {
     failFirstInterpretationStart: true,
     finalStatus: "verified",
+    fulfilledAbortRequests: oneCardFulfilledAbortRequests,
     readingType: "one_card",
   });
   try {
@@ -2167,11 +2306,14 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     viewport: { height: 844, width: 390 },
   });
   const threeCardPage = await threeCardContext.newPage();
+  const threeCardFulfilledAbortRequests = new Set();
   await attachBrowserBoundary(threeCardContext, threeCardPage, origin, browserFailures, {
     allowFulfilledSessionAbort: true,
+    fulfilledAbortRequests: threeCardFulfilledAbortRequests,
   });
   const threeCardRequests = await installTarotAcceptanceRoutes(threeCardPage, {
     finalStatus: "reviewed_fallback",
+    fulfilledAbortRequests: threeCardFulfilledAbortRequests,
     readingType: "three_card",
   });
   try {
@@ -2251,9 +2393,10 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
 
 const run = async () => {
   const build = await verifyWebShellBuild(repositoryRoot);
-  if (JSON.stringify(build.routes) !== JSON.stringify(publicAccessibilitySmokeRoutes)) {
+  const publicInventoryFindings = auditPublicAccessibilitySmokeInventory(build.routes);
+  if (publicInventoryFindings.length > 0) {
     throw new Error(
-      "Public accessibility inventory differs from the reviewed Web build inventory.",
+      `Public accessibility smoke inventory is outside the reviewed Web build inventory: ${publicInventoryFindings.join(", ")}.`,
     );
   }
   const artifacts = await loadReviewedArtifacts();

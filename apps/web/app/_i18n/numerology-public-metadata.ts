@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { createLocalizedPublicAlternates } from "./public-route-metadata";
+import type { NumerologyPublicRouteId } from "./numerology-public-routes";
 import type { DeploymentEnvironment } from "./seo";
 
 type NumerologyPublicMetadataInput = Readonly<{
@@ -7,7 +9,8 @@ type NumerologyPublicMetadataInput = Readonly<{
   canonicalOrigin: string;
   deploymentEnvironment: DeploymentEnvironment;
   description: string;
-  pathname: string;
+  locale: "en";
+  routeId: NumerologyPublicRouteId;
   title: string;
   type: "article" | "website";
 }>;
@@ -17,28 +20,24 @@ export const createNumerologyPublicMetadata = ({
   canonicalOrigin,
   deploymentEnvironment,
   description,
-  pathname,
+  locale,
+  routeId,
   title,
   type,
 }: NumerologyPublicMetadataInput): Metadata => {
-  const canonical = new URL(pathname, canonicalOrigin).toString();
-  const indexable = deploymentEnvironment === "production";
+  const alternates = createLocalizedPublicAlternates(canonicalOrigin, locale, routeId);
+  const canonical = alternates?.canonical as string | undefined;
+  const indexable = deploymentEnvironment === "production" && alternates !== null;
   const fullTitle = `${title} — ${brandName}`;
   return {
-    alternates: {
-      canonical,
-      languages: {
-        en: canonical,
-        "x-default": canonical,
-      },
-    },
+    ...(alternates === null ? {} : { alternates }),
     description,
     openGraph: {
       description,
       siteName: brandName,
       title: fullTitle,
       type,
-      url: canonical,
+      ...(canonical === undefined ? {} : { url: canonical }),
     },
     robots: {
       follow: indexable,

@@ -81,6 +81,7 @@ describe("server and client configuration boundary", () => {
     expect(serverEnvironmentVariables).toEqual([
       ...buildEnvironmentVariables,
       "DATABASE_URL",
+      "PAYMENT_WEBHOOK_DATABASE_URL",
       "PRIVACY_DELETION_DATABASE_URL",
       "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
@@ -107,6 +108,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_REFLECTION_POLICY_VERSION",
       "RITUVIA_REFLECTION_RETENTION_SECONDS",
       "RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS",
+      "RITUVIA_STRIPE_ACCOUNT_ID",
       "RITUVIA_STRIPE_PRICE_IDS",
       "RITUVIA_TAROT_INTEGRITY_KEY_V1",
       "STRIPE_SECRET_KEY",
@@ -415,6 +417,99 @@ describe("server and client configuration boundary", () => {
         BRAND_CANONICAL_ORIGIN: "http://example.com",
       }),
     ).toThrowError("BRAND_CANONICAL_ORIGIN:invalid");
+  });
+
+  it("allows only complete Stripe Test Mode configuration outside production", () => {
+    const databaseUrl = (username: string, password: string, database = "app") => {
+      const url = new URL(`postgresql://127.0.0.1:5432/${database}`);
+      url.username = username;
+      url.password = password;
+      url.searchParams.set("sslmode", "require");
+      return url.toString();
+    };
+    const priceIds = JSON.stringify({
+      pack_15: "price_pack15test",
+      pack_40: "price_pack40test",
+      pack_6: "price_pack06test",
+      plus_annual: "price_plusannual",
+      plus_monthly: "price_plusmonthly",
+    });
+    const sandbox = {
+      APP_ENV: "staging",
+      DATABASE_URL: databaseUrl("rituvia_app", "app-password"),
+      PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl("rituvia_payment_webhook", "webhook-password"),
+      RITUVIA_PAYMENT_PROVIDER: "stripe",
+      RITUVIA_STRIPE_ACCOUNT_ID: "acct_12345678",
+      RITUVIA_STRIPE_PRICE_IDS: priceIds,
+      STRIPE_SECRET_KEY: `sk_test_${"a".repeat(24)}`,
+      STRIPE_WEBHOOK_SECRET: `whsec_${"b".repeat(24)}`,
+    } as const;
+
+    expect(parseServerConfiguration(sandbox).payment).toMatchObject({
+      accountId: sandbox.RITUVIA_STRIPE_ACCOUNT_ID,
+      provider: "stripe",
+      secretKey: sandbox.STRIPE_SECRET_KEY,
+    });
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:missing");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: sandbox.DATABASE_URL,
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: sandbox.DATABASE_URL.replace(
+          "rituvia_app:app-password",
+          "%72ituvia_app:%61pp-password",
+        ),
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl(
+          "rituvia_payment_webhook",
+          "webhook-password",
+          "other",
+        ),
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "production",
+        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+        BRAND_CANONICAL_ORIGIN: "https://example.com",
+        BRAND_LEGAL_ENTITY: "Entity",
+        BRAND_NAME: "Brand",
+        BRAND_SHORT_NAME: "Brand",
+        BRAND_SOCIAL_HANDLES: "{}",
+        BRAND_SUPPORT_EMAIL: "support@example.com",
+        BRAND_TAGLINE: "Tagline",
+        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
+          mindful_incense: "price_legacytest",
+        }),
+      }),
+    ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
   });
 
   it("revalidates serialized client input and rejects extra fields", () => {

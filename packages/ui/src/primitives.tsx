@@ -741,6 +741,33 @@ export function Checkbox({
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     onCheckedChange?.(event.currentTarget.checked);
   };
+  if (mixed && disabled) {
+    return (
+      <Field>
+        <div className="rvt-choice" data-state="mixed">
+          <span
+            aria-checked="mixed"
+            aria-describedby={describedBy(reviewedId, description, error)}
+            aria-disabled="true"
+            aria-errormessage={
+              error === undefined ? undefined : supportControlId(reviewedId, "error")
+            }
+            aria-invalid={error === undefined ? undefined : "true"}
+            aria-label={label}
+            className="rvt-choice__input"
+            id={reviewedId}
+            role="checkbox"
+          />
+          <span aria-hidden="true" className="rvt-choice__indicator" />
+          <span className="rvt-choice__label">
+            {label}
+            {required ? <span className="rvt-field__required">{` ${requiredLabel}`}</span> : null}
+          </span>
+        </div>
+        <FieldSupport description={description} error={error} id={reviewedId} />
+      </Field>
+    );
+  }
   return (
     <Field>
       <label className="rvt-choice" data-state={state} htmlFor={reviewedId}>

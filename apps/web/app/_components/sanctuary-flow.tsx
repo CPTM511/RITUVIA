@@ -12,15 +12,18 @@ import {
   type LocalActionHref,
 } from "@rituvia/ui";
 import { evaluateReflectionIntentionAgencyV1, parseRitualCatalogV1 } from "@rituvia/domain";
+import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import Image from "next/image";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type {
   SanctuaryFreeRitualItem,
   SanctuaryMessages,
   SanctuaryThemeCode,
 } from "../_i18n/sanctuary-messages";
+import type { Locale } from "../_i18n/routing";
+import { useTomorrowLocalDate } from "./browser-local-date";
 import {
   clearSanctuaryReadingHandoff,
   sanctuaryReadingHandoffStorageKey,
@@ -90,17 +93,9 @@ type IntentionLifecycleAction = "archive" | "complete" | "delete";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const codePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const csrfTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
+const subscribeToHydration = (): (() => void) => () => undefined;
 const legacyFreeRitualObjectCode = (code: SanctuaryFreeRitualItem["code"]): "candle" | "incense" =>
   code === "free_candle" ? "candle" : "incense";
-
-const tomorrowLocalDate = (): string => {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -347,13 +342,13 @@ export const resolveLatestReadingId = async (
   );
 };
 
-const currencyLabel = (item: CatalogItem): string | null => {
+const currencyLabel = (item: CatalogItem, locale: Locale): string | null => {
   if (item.price === null) return null;
   try {
-    return new Intl.NumberFormat("en", {
-      currency: item.price.currency,
-      style: "currency",
-    }).format(item.price.amountMinor / 100);
+    return createLocaleFormatter({ locale, timeZone: "UTC" }).currency(
+      item.price.amountMinor / 100,
+      item.price.currency,
+    );
   } catch {
     return `${item.price.currency} ${(item.price.amountMinor / 100).toFixed(2)}`;
   }
@@ -383,6 +378,7 @@ const checkoutUrlFromResponse = (value: unknown): string | null => {
 
 type SanctuaryFlowProps = Readonly<{
   accountHref: LocalActionHref;
+  locale: Locale;
   messages: SanctuaryMessages;
   readingHref: LocalActionHref;
   revisitHref: LocalActionHref;
@@ -392,12 +388,18 @@ type SanctuaryFlowProps = Readonly<{
 
 export function SanctuaryFlow({
   accountHref,
+  locale,
   messages,
   readingHref,
   revisitHref,
   sanctuaryHref,
   signInHref,
 }: SanctuaryFlowProps) {
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
   const [accountState, setAccountState] = useState<"loading" | "signed-in" | "signed-out">(
     "loading",
   );
@@ -445,7 +447,7 @@ export function SanctuaryFlow({
   const journalId = createUiControlId("sanctuary-journal");
   const ageId = createUiControlId("sanctuary-checkout-age");
   const sanctuarySignInHref = `${signInHref}?returnTo=${encodeURIComponent(sanctuaryHref)}`;
-  const minimumRevisitDate = tomorrowLocalDate();
+  const minimumRevisitDate = useTomorrowLocalDate();
   const idempotencyKeyFor = (fingerprint: string): string => {
     if (intentionOperation.current?.fingerprint === fingerprint) {
       return intentionOperation.current.key;
@@ -1212,6 +1214,7 @@ export function SanctuaryFlow({
         initialMode={activeRitualMode}
         intentionLabel={intention.intentionText}
         item={activeFreeRitual}
+        locale={locale}
         messages={messages.ritual.experience}
         onDismiss={dismissRitualExperience}
         onMutate={mutateActiveRitual}
@@ -1275,7 +1278,10 @@ export function SanctuaryFlow({
             <h2 id="sanctuary-intention-title">{messages.intention.title}</h2>
             <p>{messages.intention.description}</p>
           </header>
-          <form aria-busy={intentionPhase === "loading" || undefined} onSubmit={createIntention}>
+          <form
+            aria-busy={!hydrated || intentionPhase === "loading" || undefined}
+            onSubmit={createIntention}
+          >
             <fieldset className="sanctuary-theme-fieldset">
               <legend>{messages.intention.themeLabel}</legend>
               <div className="sanctuary-theme-list">
@@ -1284,6 +1290,7 @@ export function SanctuaryFlow({
                     aria-pressed={selectedTheme === code}
                     className="sanctuary-theme-chip"
                     disabled={
+                      !hydrated ||
                       intentionPhase === "loading" ||
                       (intention !== null && intention.status !== "active")
                     }
@@ -1308,6 +1315,7 @@ export function SanctuaryFlow({
                   <button
                     className="sanctuary-theme-chip"
                     disabled={
+                      !hydrated ||
                       intentionPhase === "loading" ||
                       (intention !== null && intention.status !== "active")
                     }
@@ -1330,7 +1338,7 @@ export function SanctuaryFlow({
             </fieldset>
             <TextAreaField
               description={messages.intention.intentionTextDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               {...(intentionErrorField === "intention" && intentionError !== null
                 ? { error: intentionError }
                 : {})}
@@ -1352,7 +1360,7 @@ export function SanctuaryFlow({
             />
             <TextAreaField
               description={messages.intention.smallActionDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               {...(intentionErrorField === "smallAction" && intentionError !== null
                 ? { error: intentionError }
                 : {})}
@@ -1373,10 +1381,10 @@ export function SanctuaryFlow({
             />
             <TextField
               description={messages.intention.revisitDateDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               id={revisitDateId}
               label={messages.intention.revisitDateLabel}
-              minimum={minimumRevisitDate}
+              {...(minimumRevisitDate === null ? {} : { minimum: minimumRevisitDate })}
               onValueChange={(value) => {
                 setRevisitDate(value);
                 setIntentionSuccess(null);
@@ -1426,6 +1434,7 @@ export function SanctuaryFlow({
             ) : null}
             {intention === null || intention.status === "active" ? (
               <Button
+                disabled={!hydrated}
                 label={
                   intention === null ? messages.intention.create : messages.intention.saveChanges
                 }
@@ -1551,7 +1560,7 @@ export function SanctuaryFlow({
               ) : null}
               <div className="ritual-item-list">
                 {catalog.map((item) => {
-                  const price = currencyLabel(item);
+                  const price = currencyLabel(item, locale);
                   const accessLabel =
                     item.access === "free"
                       ? messages.ritual.free
@@ -1567,7 +1576,9 @@ export function SanctuaryFlow({
                         <span className="ritual-access-badge">{accessLabel}</span>
                         <h3>{item.name}</h3>
                         <p>{item.description}</p>
-                        <p className="ritual-price">{price ?? messages.ritual.free}</p>
+                        <p className="ritual-price">
+                          {price === null ? messages.ritual.free : <bdi dir="auto">{price}</bdi>}
+                        </p>
                         {item.access === "purchase" ? (
                           <p className="privacy-note">{messages.ritual.priceDisclosure}</p>
                         ) : null}
@@ -1622,7 +1633,9 @@ export function SanctuaryFlow({
             </header>
             <div className="checkout-order-summary">
               <strong>{pendingItem.name}</strong>
-              <span>{currencyLabel(pendingItem)}</span>
+              <span>
+                <bdi dir="auto">{currencyLabel(pendingItem, locale)}</bdi>
+              </span>
             </div>
             {accountState === "loading" ? (
               <div aria-busy="true" aria-live="polite" className="sanctuary-status">

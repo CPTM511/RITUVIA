@@ -9,7 +9,7 @@ const harness = vi.hoisted(() => {
       this.code = code;
     }
   }
-  return { CommerceError, processWebhook: vi.fn() };
+  return { CommerceError, processStripeWebhook: vi.fn(), processWebhook: vi.fn() };
 });
 
 vi.mock("../config/server", () => ({
@@ -26,6 +26,12 @@ vi.mock("../server/commerce", () => ({
 vi.mock("../server/payment-provider", () => ({
   localHostedCheckoutProviderId: "local_hosted",
   stripeHostedCheckoutProviderId: "stripe",
+}));
+
+vi.mock("../server/stripe-webhook", () => ({
+  loadWebStripeWebhookApplicationService: () => ({
+    processWebhook: harness.processStripeWebhook,
+  }),
 }));
 
 import { POST as localWebhook } from "../app/api/v1/webhooks/payments/local/route";
@@ -51,6 +57,7 @@ describe("payment webhook HTTP boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     harness.processWebhook.mockResolvedValue({ disposition: "applied" });
+    harness.processStripeWebhook.mockResolvedValue({ disposition: "applied" });
   });
 
   it("forwards the exact local raw bytes and signature header without JSON normalization", async () => {
@@ -75,9 +82,11 @@ describe("payment webhook HTTP boundary", () => {
     );
 
     expect(response.status).toBe(204);
-    expect(harness.processWebhook).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: "stripe" }),
-    );
+    expect(harness.processStripeWebhook).toHaveBeenCalledOnce();
+    const input = harness.processStripeWebhook.mock.calls[0]?.[0];
+    expect(new TextDecoder().decode(input.rawBody)).toBe(rawBody);
+    expect(input.headers["stripe-signature"]).toContain("t=1784366400");
+    expect(harness.processWebhook).not.toHaveBeenCalled();
   });
 
   it("rejects encoded, oversized, or malformed webhook bodies before verification", async () => {
@@ -104,5 +113,19 @@ describe("payment webhook HTTP boundary", () => {
     expect(response.status).toBe(400);
     expect(text).toContain("PAYMENT_WEBHOOK_INVALID");
     expect(text).not.toContain("canary");
+  });
+
+  it("keeps Stripe storage failures retryable without exposing details", async () => {
+    harness.processStripeWebhook.mockRejectedValueOnce(new harness.CommerceError("unavailable"));
+    const response = await stripeWebhook(
+      request("stripe", '{"private":"stripe-canary"}', {
+        "stripe-signature": `t=1784366400,v1=${"b".repeat(64)}`,
+      }),
+    );
+    const text = await response.text();
+
+    expect(response.status).toBe(503);
+    expect(text).toContain("COMMERCE_UNAVAILABLE");
+    expect(text).not.toContain("stripe-canary");
   });
 });

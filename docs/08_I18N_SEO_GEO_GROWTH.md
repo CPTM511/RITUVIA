@@ -91,6 +91,21 @@ Allow cultural adaptation where literal translation would mislead. Record deviat
 - No private, user-generated, paywalled-sensitive, query-string, checkout, admin, or account pages in search.
 - Search Console/Bing-style verification and crawl/index monitoring through adapters/operational checks.
 
+RIT-103 implements this boundary through stable route IDs and approval-bound locale records.
+English is the only published locale. `/sitemap.xml` is a production-only index over exact
+non-empty locale/content-type shards, and canonical/hreflang/redirect targets derive from the same
+reviewed matrix. Synthetic locale fixtures test localized slugs and same-locale stale redirects
+without entering runtime. A real locale still requires owner selection, reviewed content,
+localized messages/support, country alignment, and launch approval; missing content never falls
+back into an indexable mixed-language route.
+
+RIT-102 adds test-only CJK and Devanagari engineering evidence without publishing another locale.
+Local fallback stacks, script-specific line breaking/shaping, actual platform-font inspection,
+hydrated composition input, NFC private-text preservation, legitimate ZWJ/ZWNJ support, and
+locale/time-zone formatting are CI-gated. NFKC may be used on an isolated safety-matching copy but
+must not rewrite stored user-authored text. Native and deterministic dates retain explicit
+Gregorian ISO values independent of localized display.
+
 ## 7. Search content architecture
 
 ### Tarot clusters
@@ -99,6 +114,13 @@ Allow cultural adaptation where literal translation would mislead. Record deviat
 - Spread guides and interactive tools.
 - Theme guides: love, work, creativity, decisions—without guaranteed outcomes.
 - Educational methodology and ethical use.
+
+RIT-111 publishes a finite D-081-approved English cluster with one hub, 22 Major Arcana card pages, and
+two spread guides. Upright and reversed meanings remain sections of the same card page; themes,
+personalized results, and high-risk keywords never become indexable route variants. The cluster
+binds the exact approved local catalog and enters routes, robots, and sitemaps only through the
+production publication-integrity gate. It remains unavailable to AI retrieval; D-081 binds the exact
+candidate digest, SEO rights, reviewer evidence, and 25-route inventory.
 
 ### Astrology clusters
 
@@ -195,10 +217,18 @@ Avoid high-pressure “your soulmate is…” ads, crisis targeting, protected/s
 - No re-engagement that uses fear or claims the user's energy/window is closing.
 
 RIT-045 activates only an English once-only Revisit email contract for signed-in accounts. The
-fixed subject, preview, body, and private-route action contain no reflection details and remain
-safe for lock screens. Locale is reread at claim/authorization time and unsupported locales fail
-closed. RIT-104 owns reviewed localized templates and fallback previews; production legal copy,
-email domain/provider, and sending remain owner-gated.
+subject, preview, body, and private-route action contain no reflection details and remain safe for
+lock screens. Locale is reread at claim/authorization time and unsupported locales fail closed.
+
+RIT-104 replaces hardcoded Worker copy with a checksummed `lifecycle_messages` source/runtime
+catalog and semantic HTML/plain-text renderers for the Revisit reminder and a support-receipt
+preview. Exact template ID, version, source checksum, locale, and fallback state are persisted and
+checked again before provider use. Delivery suppresses unsupported locales; only explicit local
+preview may fall back to English, with one deduplicated non-identifying event. The reminder
+preference URL is GET-safe and focuses the control without mutating consent. English remains the
+only authorized message locale. Production legal/unsubscribe text, support address and service
+level, email domain/provider, scheduling, actual sending, and any non-English activation remain
+owner-gated.
 
 ## 13. Ethical conversion
 
@@ -233,3 +263,94 @@ Codex/automation may:
 - Open review PRs.
 
 It may not automatically publish culturally sensitive, legal, safety, payment, or high-stakes content; change pricing; buy ads; send mass campaigns; or launch a locale/country without owner approval.
+
+### 15.1 Offline search operations contract
+
+RIT-117 and D-087 bind weekly search operations to one exact seven-day UTC window and the current
+45-route reviewed inventory. Crawl, index, query, and consented referral evidence enters only
+through a bounded offline aggregate file. The operation performs no provider request and rejects
+raw queries, full referrer URLs, user identifiers, private content, arbitrary metadata, symlinks,
+oversized files, path drift, and authority accessors.
+
+Every stream names its source kind, approval reference, observed-through time, maximum age, and
+freshness. Crawl evidence expires after 24 hours, index and query exports after 96 hours, and
+referral aggregates after 72 hours. Unavailable, stale, or synthetic evidence produces null
+performance values and a blocked decision status rather than an inferred trend. Query or referral
+route detail is suppressed below 20 observations; 20–199 observations are diagnostic only; a
+performance recommendation requires at least 200 observations. Referral denominators separately
+report included, other/unknown, excluded, and useful-action sessions.
+
+The resulting JSON and Markdown bind SHA-256 digests for the input, public-page inventory, and
+editorial authority. Recommendations are human-review investigation prompts only. They cannot
+publish or rewrite content, request indexing, expand routes, activate a locale, connect a provider,
+change metadata, or alter production.
+
+## 16. Ritual and reflection publication boundary
+
+RIT-112 and D-082 approve exactly six English paths: one `/en/rituals` hub plus virtual
+candle, virtual incense, intention-and-small-action, private-reflection-journal, and
+revisit-a-reflection guides. They are distinct answer-first explanations of RITUVIA's original
+secular product loop, not historical or religious practice claims and not a template for
+occasion-, relationship-, belief-, outcome-, or profile-keyword expansion.
+
+The exact approved artifact is registered in the shared editorial repository and active localized
+route registry. Its metadata remains noindex in local, preview, and staging and becomes indexable
+only when the production publication inventory is current. The six URLs occupy one dedicated English
+ritual sitemap shard and no other ritual path may enter robots or sitemap output. Activation does
+not approve deployment, DNS, public launch, another locale, a regional tradition, personalized
+results, user-submitted journal text, AI retrieval, physical fire/smoke instructions, or efficacy
+claims.
+
+## 17. Public-page inventory and quality authorization
+
+RIT-113 and D-083 bind every active public route to one checked-in record generated from the
+approval-bound route registry and its current reviewed source. The inventory contains exactly 45
+English pages across core, numerology, astrology, Tarot, and ritual/reflection families. Each
+record carries stable route, locale, family, shape, intent, canonical, authority, source-set
+digest, review, content digest, structured substance, internal-link, and nearest-page similarity
+evidence.
+
+The offline deterministic gate uses exact normalized content, three-token Jaccard, five-token
+containment, explicit intent ownership, and family-specific structure. It rejects exact and bounded
+near duplicates, keyword/template substitution, short-page containment, thin or padded pages,
+canonical or intent collisions, stale authority, missing links, and any private, personalized,
+query-bearing, framework, unknown, or unapproved route. It sends no content to an external
+provider.
+
+Canonical/hreflang, robots, sitemap, production configuration, and build validation consume the
+same complete inventory. Any missing, extra, stale, malformed, duplicated, expired, or failing
+record suppresses the entire crawl inventory: canonical alternates are omitted, metadata is
+noindex, robots disallows all, and sitemap output is unavailable. Expanding the inventory still
+requires the original content, locale, country, deployment, and public-launch approvals.
+
+## 18. Structured-data and crawl authorization
+
+RIT-114 and D-084 emit one minimal JSON-LD graph node from the complete current public-page
+inventory. The reviewed mapping is `WebSite` for the product landing page, `WebPage` for the three
+public trust articles, `CollectionPage` for the four education hubs, and `Article` for the 37
+approved guides. Each node binds the exact canonical URL, English language, visible H1, and a
+description present in visible main content.
+
+Page hierarchy is explicit evidence, not a caller-supplied guess. Core trust pages and family hubs
+belong to the English home page; every guide belongs to its exact family hub and must visibly link
+to it. Breadcrumb schema is omitted because no visible breadcrumb UI exists. Author, publisher,
+date, FAQ, HowTo, Product, Offer, rating, and review claims remain denied until visible source
+authority exists.
+
+Build and production HTTP gates validate all 45 approved routes. A focused Chromium gate covers
+all four schema types, representative content families, private-canary exclusion, local-only
+requests, and inert script-breaking input. These checks do not constitute Search Console
+verification, deployment, public launch, or actual indexing approval.
+
+## 19. Localized private-result share output
+
+RIT-115 publishes no result URL and no private social metadata. The English one-card artifact uses
+the governed ICU source catalog for accessible text and includes only the stable public
+`/en/tarot` canonical inside the local SVG and explicit native-share payload. The private
+`/en/tarot/one-card` document remains noindex with no canonical, Open Graph, or Twitter output.
+
+Production projection accepts only an active reviewed locale. `en-XA` and `ar-XB` remain test-only
+and are rejected before projection; tests construct serializer-only fixtures to verify expanded
+LTR and RTL geometry without authorizing a route, translation, hreflang, sitemap entry, or share
+output. Every future locale needs reviewed source/translation evidence and the existing
+owner-approved language launch decision.

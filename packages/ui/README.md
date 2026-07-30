@@ -57,6 +57,12 @@ CJK wrapping, Devanagari shaping, light/dark/system, forced colors, reduced moti
 and 44px targets. Directional icons and switch travel follow each element's computed direction so
 nested `dir="ltr"`/`dir="rtl"` overrides remain isolated; other symbols keep their orientation.
 
+Japanese, Korean, Simplified Chinese, Traditional Chinese, and Devanagari use local-only fallback
+stacks. The package never downloads fonts. CJK uses strict line breaking with normal word
+breaking; Devanagari preserves ligatures and script-safe spacing. Human-authored values must not be
+normalized or truncated during composition, and consumers must not use native `maxLength` where
+UTF-16 units would disagree with the server's reviewed Unicode boundary.
+
 The package intentionally excludes dialogs, comboboxes, date/location controls, domain cards, theme
 persistence, service-worker caching, offline synchronization, provider adapters, and a generic
 partial/degraded state machine until real consuming tasks can prove their interaction contracts.

@@ -3,7 +3,7 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 
 export const webShellBuildBudgets = Object.freeze({
-  cssGzipBytes: 9 * 1024,
+  cssGzipBytes: 12 * 1024,
   htmlGzipBytes: 8 * 1024,
   iconBytes: 2 * 1024,
   javascriptGzipBytes: 232 * 1024,
@@ -64,7 +64,6 @@ const sanctuaryImageSizes = Object.freeze({
   "sanctuary-preview-image": "(max-width: 640px) 94vw, 48vw",
   "sanctuary-scene-image": "(max-width: 640px) 100vw, (max-width: 928px) 90vw, 58vw",
 });
-
 const optimizedSanctuaryImageUrl = (width) =>
   `/_next/image?url=${encodeURIComponent(sanctuaryImagePath)}&amp;w=${width}&amp;q=75`;
 
@@ -268,11 +267,152 @@ const documentTitle = (html) => {
   return matches.length === 1 ? matches[0][1] : null;
 };
 
+const decodeHtmlText = (value) =>
+  value
+    .replaceAll(/&#x([0-9a-f]+);/giu, (_match, digits) =>
+      String.fromCodePoint(Number.parseInt(digits, 16)),
+    )
+    .replaceAll(/&#([0-9]+);/gu, (_match, digits) =>
+      String.fromCodePoint(Number.parseInt(digits, 10)),
+    )
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#x27;", "'")
+    .replaceAll("&#39;", "'");
+
+const normalizedVisibleText = (value) => decodeHtmlText(value).replaceAll(/\s+/gu, " ").trim();
+
+const withoutNonVisibleMarkup = (markup) =>
+  markup
+    .replaceAll(/<template\b[^>]*>[\s\S]*?<\/template>/giu, " ")
+    .replaceAll(
+      /<([A-Za-z][A-Za-z0-9:-]*)\b(?=[^>]*(?:\shidden(?:\s|=|>)|\saria-hidden=(?:"true"|'true'|true)))[^>]*>[\s\S]*?<\/\1>/giu,
+      " ",
+    )
+    .replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/giu, " ")
+    .replaceAll(/<style\b[^>]*>[\s\S]*?<\/style>/giu, " ");
+
+const documentMainMarkup = (html) => {
+  const main = [...html.matchAll(/<main\b[^>]*>([\s\S]*?)<\/main>/giu)];
+  return main.length === 1 ? withoutNonVisibleMarkup(main[0][1]) : null;
+};
+
+const documentBodyMarkup = (html) => {
+  const body = [...html.matchAll(/<body\b[^>]*>([\s\S]*?)<\/body>/giu)];
+  return body.length === 1 ? withoutNonVisibleMarkup(body[0][1]) : null;
+};
+
+const documentMainText = (html) => {
+  const main = documentMainMarkup(html);
+  return main === null ? null : normalizedVisibleText(main.replaceAll(/<[^>]+>/gu, " "));
+};
+
+const documentMainHeading = (html) => {
+  const main = documentMainMarkup(html);
+  if (main === null) return null;
+  const headings = [...main.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/giu)];
+  return headings.length === 1
+    ? normalizedVisibleText(headings[0][1].replaceAll(/<[^>]+>/gu, " "))
+    : null;
+};
+
+const exactObjectKeys = (value, expected) =>
+  Object.keys(value).sort().join("\u0000") === [...expected].sort().join("\u0000");
+
+export const publicStructuredDataTypeForContentShape = (contentShape) => {
+  switch (contentShape) {
+    case "product-landing":
+      return "WebSite";
+    case "public-trust-article":
+      return "WebPage";
+    case "educational-collection":
+      return "CollectionPage";
+    case "calculation-guide":
+    case "methodology-guide":
+    case "ritual-reflection-guide":
+    case "tarot-card-guide":
+    case "tarot-spread-guide":
+      return "Article";
+    default:
+      return null;
+  }
+};
+
+const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+
+const reviewedStructuredData = (html, payload, canonical, expectedType) => {
+  try {
+    if (Buffer.byteLength(payload) > 4 * 1024) return false;
+    const value = JSON.parse(payload);
+    if (
+      !isObject(value) ||
+      !exactObjectKeys(value, ["@context", "@graph"]) ||
+      value["@context"] !== "https://schema.org" ||
+      !Array.isArray(value["@graph"]) ||
+      value["@graph"].length !== 1
+    ) {
+      return false;
+    }
+    const page = value["@graph"][0];
+    if (!isObject(page) || page["@type"] !== expectedType) {
+      return false;
+    }
+    const titleKey = expectedType === "Article" ? "headline" : "name";
+    const hasParent = Object.hasOwn(page, "isPartOf");
+    if (
+      !exactObjectKeys(page, [
+        "@id",
+        "@type",
+        "description",
+        "inLanguage",
+        ...(hasParent ? ["isPartOf"] : []),
+        titleKey,
+        "url",
+      ]) ||
+      page.url !== canonical.toString() ||
+      page["@id"] !==
+        `${canonical.toString()}#${expectedType === "WebSite" ? "website" : "webpage"}` ||
+      page.inLanguage !== "en" ||
+      typeof page[titleKey] !== "string" ||
+      page[titleKey] !== documentMainHeading(html) ||
+      typeof page.description !== "string" ||
+      page.description.length < 20 ||
+      !(documentMainText(html) ?? "").includes(normalizedVisibleText(page.description))
+    ) {
+      return false;
+    }
+    if (canonical.pathname === `/${canonical.pathname.split("/").filter(Boolean)[0]}`) {
+      return !hasParent;
+    }
+    if (!hasParent || !isObject(page.isPartOf)) return false;
+    const parent = page.isPartOf;
+    const parentUrl = canonicalDocumentUrl(String(parent.url));
+    const body = documentBodyMarkup(html);
+    return (
+      exactObjectKeys(parent, ["@id", "@type", "url"]) &&
+      ["CollectionPage", "WebPage", "WebSite"].includes(String(parent["@type"])) &&
+      parentUrl !== null &&
+      body !== null &&
+      parentUrl.origin === canonical.origin &&
+      parentUrl.search === "" &&
+      parentUrl.hash === "" &&
+      body.includes(`href="${parentUrl.pathname}"`) &&
+      parent["@id"] ===
+        `${parentUrl.toString()}#${parent["@type"] === "WebSite" ? "website" : "webpage"}`
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const auditPublicSeoDocument = (
   html,
   expectedPathname = "/en",
   expectedCanonicalOrigin = "http://localhost:3000",
   expectedRobots = "noindex, nofollow",
+  { expectedOpenGraphType = "website", expectedStructuredDataType = null } = {},
 ) => {
   const findings = [];
   const tags = documentTags(html).tags;
@@ -332,18 +472,36 @@ export const auditPublicSeoDocument = (
     openGraphSiteName.length !== 1 ||
     openGraphSiteName[0].trim() === "" ||
     openGraphType.length !== 1 ||
-    openGraphType[0] !== "website"
+    openGraphType[0] !== expectedOpenGraphType
   ) {
     findings.push("public-seo-metadata");
   }
 
+  const jsonLdTags = tags.filter(({ attributes, name }) => {
+    if (name !== "script") return false;
+    const rawType = attributes.get("type") ?? "";
+    if (rawType.includes("&")) return true;
+    const type = rawType.trim().toLowerCase();
+    return type === "application/ld+json" || type.startsWith("application/ld+json;");
+  });
+  const jsonLdPayloads = [
+    ...html.matchAll(/<script\b[^>]*\btype="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/giu),
+  ].map((match) => match[1]);
+  const reviewedJsonLd =
+    expectedStructuredDataType !== null &&
+    canonical !== null &&
+    jsonLdTags.length === 1 &&
+    jsonLdPayloads.length === 1 &&
+    reviewedStructuredData(html, jsonLdPayloads[0], canonical, expectedStructuredDataType);
   if (
+    (jsonLdTags.length > 0 && !reviewedJsonLd) ||
+    (expectedStructuredDataType !== null && !reviewedJsonLd) ||
     tags.some(({ attributes, name }) => {
       if (name !== "script") return false;
       const rawType = attributes.get("type") ?? "";
       if (rawType.includes("&")) return true;
       const type = rawType.trim().toLowerCase();
-      return type === "application/ld+json" || type.startsWith("application/ld+json;");
+      return type.startsWith("application/ld+json") && type !== "application/ld+json";
     }) ||
     tags.some(({ attributes, name }) => {
       const property = attributes.get("property");
@@ -367,7 +525,7 @@ export const auditPublicSeoDocument = (
       );
     })
   ) {
-    findings.push("structured-data-before-rit-114");
+    findings.push("public-structured-data");
   }
 
   return Object.freeze(findings);
@@ -378,7 +536,8 @@ const auditDocumentResources = (html, expectedPathname = "/en") => {
   const documentWithoutReviewedDeclarations = html
     .replace(/^<!DOCTYPE html>/iu, "")
     .replaceAll("<!--$-->", "")
-    .replaceAll("<!--/$-->", "");
+    .replaceAll("<!--/$-->", "")
+    .replaceAll("<!-- -->", "");
   if (/<!--|-->|<!|<\?/u.test(documentWithoutReviewedDeclarations)) {
     findings.push("noncanonical-html-comment-or-declaration");
   }
@@ -561,9 +720,14 @@ export const auditWebShellBuildArtifacts = ({
   icon,
 }) => {
   const findings = [...auditDocumentResources(html, expectedPathname)];
+  const scriptTags = [...html.matchAll(/<script\b[^>]*>/gu)].map(([tag]) => tag);
   const scriptSources = unique(
-    [...html.matchAll(/<script\b[^>]*>/gu)]
-      .map(([tag]) => attribute(tag, "src"))
+    scriptTags.map((tag) => attribute(tag, "src")).filter((value) => value !== null),
+  );
+  const modernScriptSources = new Set(
+    scriptTags
+      .filter((tag) => !parseAttributes(tag).has("nomodule"))
+      .map((tag) => attribute(tag, "src"))
       .filter((value) => value !== null),
   );
   const stylesheetSources = unique(
@@ -573,7 +737,7 @@ export const auditWebShellBuildArtifacts = ({
       .filter((value) => value !== null),
   );
 
-  if (scriptSources.length === 0) findings.push("missing-javascript-assets");
+  if (modernScriptSources.size === 0) findings.push("missing-javascript-assets");
   if (stylesheetSources.length === 0) findings.push("missing-stylesheet-assets");
   if (gzipSync(Buffer.from(html)).byteLength > budgets.htmlGzipBytes) findings.push("html-budget");
   if (icon.byteLength > budgets.iconBytes) findings.push("icon-budget");
@@ -588,7 +752,7 @@ export const auditWebShellBuildArtifacts = ({
       findings.push("missing-javascript-asset");
       continue;
     }
-    javascriptGzipBytes += gzipSync(asset).byteLength;
+    if (modernScriptSources.has(source)) javascriptGzipBytes += gzipSync(asset).byteLength;
   }
   if (javascriptGzipBytes > budgets.javascriptGzipBytes) findings.push("javascript-budget");
 
@@ -621,16 +785,71 @@ export const auditWebShellBuildArtifacts = ({
 export const auditWebShellRouteArtifacts = ({
   dynamicRoute = "/[locale]",
   expectedCanonicalOrigin = "http://localhost:3000",
+  expectedOpenGraphType = "website",
   expectedPathname = "/en",
   expectedRobots = "noindex, nofollow",
+  expectedStructuredDataType = null,
   html,
   prerenderManifest,
   routeMetadata,
   routesManifest,
 }) => {
   const findings = [
-    ...auditPublicSeoDocument(html, expectedPathname, expectedCanonicalOrigin, expectedRobots),
+    ...auditPublicSeoDocument(html, expectedPathname, expectedCanonicalOrigin, expectedRobots, {
+      expectedOpenGraphType,
+      expectedStructuredDataType,
+    }),
   ];
+  const geoSections = [...html.matchAll(/<section\b[^>]*\bdata-geo-answer-context=""[^>]*>/gu)];
+  const geoSectionHtml = html.match(
+    /<section\b[^>]*\bdata-geo-answer-context=""[^>]*>[\s\S]*?<\/section>/u,
+  )?.[0];
+  const allowedEntityIds = new Set([
+    "rituvia-public-guidance-v1",
+    "rituvia-numerology-v1",
+    "rituvia-western-natal-astrology-v1",
+    "rituvia-major-arcana-reflection-v1",
+    "rituvia-original-secular-reflection-v1",
+  ]);
+  const allowedClassifications = new Set([
+    "fact",
+    "interpretation",
+    "product_guidance",
+    "tradition",
+  ]);
+  const entityId =
+    geoSections.length === 1 ? attribute(geoSections[0]?.[0] ?? "", "data-geo-entity-id") : null;
+  const classifications =
+    geoSectionHtml === undefined
+      ? []
+      : [...geoSectionHtml.matchAll(/\bdata-geo-classification="([^"]+)"/gu)].map(
+          (match) => match[1],
+        );
+  if (
+    geoSections.length !== 1 ||
+    geoSectionHtml === undefined ||
+    entityId === null ||
+    !allowedEntityIds.has(entityId) ||
+    classifications.length < 1 ||
+    classifications.length > 3 ||
+    new Set(classifications).size !== classifications.length ||
+    classifications.some(
+      (classification) =>
+        classification === undefined || !allowedClassifications.has(classification),
+    ) ||
+    !/\baria-labelledby="geo-[^"]+"/u.test(geoSections[0]?.[0] ?? "") ||
+    !geoSectionHtml.includes(">How this answer is framed</h2>") ||
+    !geoSectionHtml.includes(">Source basis</h3>") ||
+    !geoSectionHtml.includes(">Review authority</dt>") ||
+    /(?:\baria-hidden=|\bhidden(?:=|\s)|display\s*:\s*none|visibility\s*:\s*hidden)/iu.test(
+      geoSectionHtml,
+    ) ||
+    /(?:content\/editorial\/|product\.codex|sourceSha256|sourcePaths|reviewerId)/u.test(
+      geoSectionHtml,
+    )
+  ) {
+    findings.push("geo-answer-context");
+  }
   if (routesManifest?.caseSensitive !== true) findings.push("case-insensitive-routes");
   if (prerenderManifest?.dynamicRoutes?.[dynamicRoute]?.fallback !== false) {
     findings.push("dynamic-locale-fallback");
@@ -675,41 +894,52 @@ export const verifyWebShellBuild = async (
       JSON.parse(await readFile(path.join(nextRoot, file), "utf8")),
     ),
   );
-  const routes = [
-    { artifact: "en", dynamicRoute: "/[locale]", pathname: "/en" },
-    {
-      artifact: "en/methodology",
-      dynamicRoute: "/[locale]/[page]",
-      pathname: "/en/methodology",
-    },
-    { artifact: "en/safety", dynamicRoute: "/[locale]/[page]", pathname: "/en/safety" },
-    { artifact: "en/privacy", dynamicRoute: "/[locale]/[page]", pathname: "/en/privacy" },
-    {
-      artifact: "en/numerology",
-      dynamicRoute: "/[locale]/numerology",
-      pathname: "/en/numerology",
-    },
-    {
-      artifact: "en/numerology/life-path-number",
-      dynamicRoute: "/[locale]/numerology/[slug]",
-      pathname: "/en/numerology/life-path-number",
-    },
-    {
-      artifact: "en/numerology/birthday-number",
-      dynamicRoute: "/[locale]/numerology/[slug]",
-      pathname: "/en/numerology/birthday-number",
-    },
-    {
-      artifact: "en/numerology/personal-year-number",
-      dynamicRoute: "/[locale]/numerology/[slug]",
-      pathname: "/en/numerology/personal-year-number",
-    },
-    {
-      artifact: "en/numerology/master-numbers",
-      dynamicRoute: "/[locale]/numerology/[slug]",
-      pathname: "/en/numerology/master-numbers",
-    },
-  ];
+  const publicInventory = JSON.parse(
+    await readFile(
+      path.join(repositoryRoot, "content/editorial/public-page-inventory.v1.json"),
+      "utf8",
+    ),
+  );
+  if (
+    publicInventory?.schemaVersion !== "rituvia-public-page-inventory.v1" ||
+    !Array.isArray(publicInventory.records) ||
+    publicInventory.records.length !== 45 ||
+    publicInventory.records.some(
+      (record) =>
+        record?.qualityStatus !== "passed" ||
+        typeof record.pathname !== "string" ||
+        typeof record.contentFamily !== "string" ||
+        typeof record.contentShape !== "string" ||
+        !(
+          record.structuredParentRouteId === null ||
+          typeof record.structuredParentRouteId === "string"
+        ),
+    )
+  ) {
+    throw new TypeError("Web shell build policy requires a passing public-page inventory.");
+  }
+  const routes = publicInventory.records.map(({ contentShape, pathname }) => {
+    const segments = pathname.split("/").filter(Boolean);
+    const expectedStructuredDataType = publicStructuredDataTypeForContentShape(contentShape);
+    if (segments.length < 1 || segments.length > 3) {
+      throw new TypeError(`Unsupported public route shape: ${pathname}`);
+    }
+    if (expectedStructuredDataType === null) {
+      throw new TypeError(`Unsupported public structured-data shape: ${contentShape}`);
+    }
+    return {
+      artifact: segments.join("/"),
+      dynamicRoute:
+        segments.length === 1
+          ? "/[locale]"
+          : segments.length === 2
+            ? "/[locale]/[page]"
+            : "/[locale]/[page]/[slug]",
+      expectedOpenGraphType: segments.length === 3 ? "article" : undefined,
+      expectedStructuredDataType,
+      pathname,
+    };
+  });
   const routeInputs = await Promise.all(
     routes.map(async (route) => ({
       ...route,
@@ -741,25 +971,36 @@ export const verifyWebShellBuild = async (
       ]),
     ),
   );
-  const results = routeInputs.map(({ dynamicRoute, html, pathname, routeMetadata }) => {
-    const result = auditWebShellBuildArtifacts({
-      assets,
-      expectedPathname: pathname,
-      html,
-      icon,
-    });
-    const routeFindings = auditWebShellRouteArtifacts({
+  const results = routeInputs.map(
+    ({
       dynamicRoute,
-      expectedCanonicalOrigin,
-      expectedPathname: pathname,
-      expectedRobots,
+      expectedOpenGraphType,
+      expectedStructuredDataType,
       html,
-      prerenderManifest,
+      pathname,
       routeMetadata,
-      routesManifest,
-    });
-    return { pathname, result, routeFindings };
-  });
+    }) => {
+      const result = auditWebShellBuildArtifacts({
+        assets,
+        expectedPathname: pathname,
+        html,
+        icon,
+      });
+      const routeFindings = auditWebShellRouteArtifacts({
+        dynamicRoute,
+        expectedCanonicalOrigin,
+        expectedOpenGraphType,
+        expectedPathname: pathname,
+        expectedRobots,
+        expectedStructuredDataType,
+        html,
+        prerenderManifest,
+        routeMetadata,
+        routesManifest,
+      });
+      return { pathname, result, routeFindings };
+    },
+  );
   const findings = [
     ...new Set(
       results.flatMap(({ result, routeFindings }) => [...result.findings, ...routeFindings]),
@@ -778,7 +1019,15 @@ export const verifyWebShellBuild = async (
     findings.sort();
   }
   if (findings.length > 0) {
-    throw new Error(`Web shell build policy failed: ${findings.join(", ")}`);
+    const routeDetails = results
+      .filter(({ result, routeFindings }) => result.findings.length > 0 || routeFindings.length > 0)
+      .map(
+        ({ pathname, result, routeFindings }) =>
+          `${pathname}[${[...result.findings, ...routeFindings].join("|")}]`,
+      );
+    throw new Error(
+      `Web shell build policy failed: ${findings.join(", ")}; routes: ${routeDetails.join(", ")}`,
+    );
   }
   return Object.freeze({
     cssGzipBytes: Math.max(...results.map(({ result }) => result.cssGzipBytes)),

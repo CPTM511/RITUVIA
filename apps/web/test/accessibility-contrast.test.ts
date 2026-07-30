@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const uiStyles = readFileSync("packages/ui/src/styles.css", "utf8");
 const webStyles = readFileSync("apps/web/app/styles.css", "utf8");
+const accessibilityVerifier = readFileSync("scripts/verify-web-accessibility.mjs", "utf8");
 
 type Rgb = readonly [number, number, number];
 
@@ -117,6 +118,7 @@ describe("public shell contrast compensation", () => {
       ".information-introduction",
       ".question-intake-introduction",
       ".question-intake-boundary,\n.question-intake-privacy",
+      ".geo-answer-context-details dd,\n.geo-answer-context-authority dd",
       ".oracle-card > p:not(.eyebrow)",
       ".oracle-card .oracle-note",
     ]) {
@@ -130,11 +132,30 @@ describe("public shell contrast compensation", () => {
       /\.question-intake-introduction \{[\s\S]*?color: var\(--ink-secondary\)/u,
     );
     expect(webStyles).toMatch(/\.question-intake-boundary,[\s\S]*?color: var\(--ink-secondary\)/u);
+    expect(webStyles).toMatch(
+      /\.geo-answer-context-details dd,[\s\S]*?color: var\(--ink-secondary\)/u,
+    );
     expect(webStyles).toMatch(/body \{[\s\S]*?color: var\(--ink-primary\)/u);
     expect(webStyles).toMatch(
       /\.oracle-card > p:not\(\.eyebrow\) \{[\s\S]*?color: var\(--ink-secondary\)/u,
     );
     expect(webStyles).toMatch(/\.oracle-card \.oracle-note \{[\s\S]*?color: var\(--accent-sage\)/u);
+  });
+
+  it("checks the visible parent focus ring for transparent choice inputs", () => {
+    expect(uiStyles).toContain(":where(.rvt-choice, .rvt-switch):has(input:focus-visible)");
+    expect(accessibilityVerifier).toContain(
+      'active.matches(".rvt-choice__input, .rvt-switch__input")',
+    );
+    expect(accessibilityVerifier).toContain('active.closest(".rvt-choice, .rvt-switch")');
+  });
+
+  it("limits teardown abort tolerance to the exact fulfilled request object", () => {
+    expect(accessibilityVerifier).toContain("fulfilledAbortRequests.add(request)");
+    expect(accessibilityVerifier).toContain("fulfilledAbortRequests.has(request)");
+    expect(accessibilityVerifier).not.toMatch(
+      /request\.method\(\) === "GET"[\s\S]{0,200}url\.pathname\.includes\("interpretation"\)/u,
+    );
   });
 
   it("keeps the decorative sanctuary preview inside its reviewed clipping bounds", () => {

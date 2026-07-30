@@ -1,0 +1,17 @@
+{
+  "catalogId": "rituvia.web.core-ui",
+  "contentType": "ui_messages",
+  "locale": "en",
+  "messages": {
+    "account.savedReflections": "{count, plural, =0 {No saved reflections} one {# saved reflection} other {# saved reflections}}",
+    "practice.availableMode": "{mode, select, free {Free practice available} owned {Owned presentation available} other {Practice availability unknown}}",
+    "ritual.stepProgress": "Step {current, number} of {total, number}",
+    "shell.navigation.homeLabel": "{brand} home",
+    "tarot.report.targetPosition": "Position: {position}",
+    "tarot.retryAfter": "{value, plural, one {# {unit, select, second {second} minute {minute} hour {hour} other {unit}}} other {# {unit, select, second {seconds} minute {minutes} hour {hours} other {units}}}}",
+    "tarot.share.altText": "{cardTitle}, {orientation}. {themeVisibility, select, included {Reflection theme: {theme}.} hidden {Reflection theme hidden.} other {Reflection theme hidden.}} Privacy-safe {brand} share card. Symbolic reflection, not a prediction."
+  },
+  "schemaVersion": "rituvia-message-runtime.v1",
+  "sourceChecksum": "7f393180b7c0f17a0ebc6545bf2edd4a69bb4d09bd83a8b38b8d6568d7f39528",
+  "sourceVersion": "1.1.0"
+}

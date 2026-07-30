@@ -2,7 +2,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
-import { loadPublicShellState } from "./server/public-shell-state";
 import { loadNumerologyAvailability } from "./server/numerology-state";
 import { loadQuestionIntakeAvailability } from "./server/question-intake-state";
 import { loadTarotReadingAvailability } from "./server/tarot-reading-state";
@@ -10,9 +9,10 @@ import { getWebRuntimeConfiguration } from "./config/server";
 import {
   isIndexablePublicPagePathname,
   isPublicDiscoveryPathname,
+  resolvePublicRouteRedirect,
   isPublicShellPathname,
 } from "./app/_i18n/public-routes";
-import { createRobotsText, createSitemapXml, type PublicShellState } from "./app/_i18n/seo";
+import { createRobotsText, createSitemapXml } from "./app/_i18n/seo";
 import {
   localeAccountPath,
   localeAstrologyPath,
@@ -44,7 +44,7 @@ const shellContentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'",
-  "img-src 'self'",
+  "img-src 'self' blob:",
   "manifest-src 'none'",
   "media-src 'none'",
   "object-src 'none'",
@@ -292,15 +292,11 @@ const isTarotReadingPagePathname = (pathname: string): boolean =>
       pathname.startsWith(`${pagePathname}.segments/`),
   );
 
-const discoveryResponse = (
-  request: NextRequest,
-  publicShellState: PublicShellState,
-): NextResponse => {
+const discoveryResponse = (request: NextRequest): NextResponse => {
   const configuration = getWebRuntimeConfiguration();
   const input = {
     canonicalOrigin: configuration.brand.canonicalOrigin,
     deploymentEnvironment: configuration.deploymentEnvironment,
-    publicShellState,
   } as const;
   const isHead = request.method === "HEAD";
 
@@ -312,7 +308,7 @@ const discoveryResponse = (
     });
   }
 
-  const body = createSitemapXml(input);
+  const body = createSitemapXml(input, request.nextUrl.pathname);
   return new NextResponse(isHead || body === null ? null : body, {
     headers: { "content-type": "application/xml; charset=utf-8" },
     status: body === null ? 404 : 200,
@@ -333,6 +329,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     isSafeReadMethod(request.method) &&
     isUngatedInfrastructureRequest(pathname, configuration.deploymentEnvironment);
   const publicDocument = isPublicShellPathname(pathname);
+  const publicRedirect = resolvePublicRouteRedirect(pathname);
   const discovery = isPublicDiscoveryPathname(pathname);
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
   const anonymousSessionApi = pathname === anonymousSessionApiPathname;
@@ -390,20 +387,6 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     (unreviewedFrameworkRepresentation ||
       !isSafeReadMethod(request.method) ||
       (request.nextUrl.search !== "" && !hasOnlyReviewedFrameworkQuery(request)));
-  const shouldLoadShellState =
-    !invalidRequest &&
-    (publicDocument ||
-      reviewedAnonymousSessionRequest ||
-      reviewedNumerologyRequest ||
-      reviewedQuestionIntakeRequest ||
-      reviewedTarotReadingRequest ||
-      (reviewedMvpApi.reviewed && !reviewedMvpApi.webhook) ||
-      reviewedPrivateExperienceDocument ||
-      numerologyDocument ||
-      questionIntakeDocument ||
-      tarotReadingDocument ||
-      (discovery && configuration.deploymentEnvironment === "production"));
-  const shellState = shouldLoadShellState ? await loadPublicShellState() : null;
   const intakeAvailability =
     !invalidRequest && (questionIntakeDocument || reviewedQuestionIntakeRequest)
       ? loadQuestionIntakeAvailability()
@@ -419,6 +402,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const unsupported =
     !infrastructure &&
     !publicDocument &&
+    publicRedirect === null &&
     !discovery &&
     !anonymousSessionApi &&
     !numerologyCalculationApi &&
@@ -429,29 +413,33 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !numerologyDocument &&
     !questionIntakeDocument &&
     !tarotReadingDocument;
-  const enabledDocument = publicDocument && shellState === "enabled";
-  const enabledNumerology = shellState === "enabled" && numerologyAvailability === "enabled";
-  const enabledQuestionIntake = shellState === "enabled" && intakeAvailability === "enabled";
-  const enabledTarotReading = shellState === "enabled" && tarotReadingAvailability === "enabled";
+  const enabledNumerology = numerologyAvailability === "enabled";
+  const enabledQuestionIntake = intakeAvailability === "enabled";
+  const enabledTarotReading = tarotReadingAvailability === "enabled";
   const response =
     invalidRequest || unsupported
       ? new NextResponse(null, { status: 404 })
-      : discovery
-        ? discoveryResponse(request, shellState ?? "disabled")
-        : infrastructure ||
-            enabledDocument ||
-            (numerologyDocument && enabledNumerology) ||
-            (reviewedNumerologyRequest && enabledNumerology) ||
-            (questionIntakeDocument && enabledQuestionIntake) ||
-            (tarotReadingDocument && enabledTarotReading) ||
-            (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
-            (reviewedTarotReadingRequest && enabledTarotReading) ||
-            reviewedMvpApi.webhook ||
-            (reviewedMvpApi.reviewed && shellState === "enabled") ||
-            (reviewedPrivateExperienceDocument && shellState === "enabled") ||
-            (reviewedAnonymousSessionRequest && shellState === "enabled")
-          ? NextResponse.next({ request: { headers: downstreamHeaders } })
-          : new NextResponse(null, { status: 404 });
+      : publicRedirect !== null
+        ? NextResponse.redirect(
+            new URL(publicRedirect.targetPathname, configuration.brand.canonicalOrigin),
+            308,
+          )
+        : discovery
+          ? discoveryResponse(request)
+          : infrastructure ||
+              publicDocument ||
+              (numerologyDocument && enabledNumerology) ||
+              (reviewedNumerologyRequest && enabledNumerology) ||
+              (questionIntakeDocument && enabledQuestionIntake) ||
+              (tarotReadingDocument && enabledTarotReading) ||
+              (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
+              (reviewedTarotReadingRequest && enabledTarotReading) ||
+              reviewedMvpApi.webhook ||
+              reviewedMvpApi.reviewed ||
+              reviewedPrivateExperienceDocument ||
+              reviewedAnonymousSessionRequest
+            ? NextResponse.next({ request: { headers: downstreamHeaders } })
+            : new NextResponse(null, { status: 404 });
   response.headers.set("content-security-policy", shellContentSecurityPolicy);
   response.headers.set(
     "permissions-policy",
@@ -462,7 +450,6 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   response.headers.set("x-content-type-options", "nosniff");
   const indexableRepresentation =
     configuration.deploymentEnvironment === "production" &&
-    shellState === "enabled" &&
     request.nextUrl.search === "" &&
     isSafeReadMethod(request.method) &&
     isIndexablePublicPagePathname(pathname) &&
@@ -482,22 +469,15 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     privateExperienceDocument
   ) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
-  } else if (discovery || response.status === 404) {
+  } else if (discovery || publicRedirect !== null || response.status === 404) {
     response.headers.set("cache-control", "no-store, max-age=0");
   } else if (frameworkRepresentation) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   }
   operation.end(
-    shellState === "unavailable"
-      ? {
-          category: "dependency",
-          errorCode: "dependency_error",
-          outcome: "failure",
-          retryable: true,
-        }
-      : response.status === 200
-        ? { outcome: "success" }
-        : { outcome: "success", statusCode: response.status },
+    response.status === 200
+      ? { outcome: "success" }
+      : { outcome: "success", statusCode: response.status },
   );
   return response;
 };

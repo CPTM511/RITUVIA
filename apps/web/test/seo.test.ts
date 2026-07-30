@@ -3,91 +3,99 @@ import { describe, expect, it } from "vitest";
 import {
   indexablePublicPagePathnames,
   indexablePublicPageRecords,
+  publicSitemapPathnames,
 } from "../app/_i18n/public-routes";
 import { createRobotsText, createSitemapXml } from "../app/_i18n/seo";
 
 const input = {
   canonicalOrigin: "https://example.test",
   deploymentEnvironment: "production" as const,
-  publicShellState: "enabled" as const,
 };
 
 describe("finite public crawl policy", () => {
-  it("publishes exact end-anchored production allows and one canonical sitemap", () => {
+  it("publishes exact end-anchored production allows and one canonical sitemap index", () => {
     const robots = createRobotsText(input);
 
-    expect(robots).toBe(
-      [
-        "User-agent: *",
-        "Allow: /en$",
-        "Allow: /en/methodology$",
-        "Allow: /en/safety$",
-        "Allow: /en/privacy$",
-        "Allow: /en/numerology$",
-        "Allow: /en/numerology/life-path-number$",
-        "Allow: /en/numerology/birthday-number$",
-        "Allow: /en/numerology/personal-year-number$",
-        "Allow: /en/numerology/master-numbers$",
-        "Allow: /_next/static/",
-        "Allow: /icon.svg$",
-        "Allow: /sitemap.xml$",
-        "Disallow: /",
-        "Sitemap: https://example.test/sitemap.xml",
-        "",
-      ].join("\n"),
-    );
+    for (const pathname of indexablePublicPagePathnames) {
+      expect(robots).toContain(`Allow: ${pathname}$`);
+    }
+    for (const pathname of ["/sitemap.xml", ...publicSitemapPathnames]) {
+      expect(robots).toContain(`Allow: ${pathname}$`);
+    }
+    expect(robots).toContain("Allow: /_next/static/");
+    expect(robots).toContain("Allow: /icon.svg$");
+    expect(robots).toContain("Disallow: /");
+    expect(robots).toContain("Sitemap: https://example.test/sitemap.xml");
     expect(robots).not.toContain("account");
-    expect(robots).not.toContain("journal");
+    expect(robots).not.toContain("Allow: /en/journal$");
     expect(robots).not.toContain("checkout");
     expect(robots).not.toContain("/en/readings/numerology");
+    expect(robots).not.toContain("/en/readings/astrology");
     expect(robots).not.toContain("/en/numerology/number-");
+    expect(robots).not.toContain("/en/astrology/aries");
     expect(robots).not.toContain("/_next/image");
   });
 
-  it.each([
-    ["local", "enabled"],
-    ["preview", "enabled"],
-    ["staging", "enabled"],
-    ["production", "disabled"],
-    ["production", "unavailable"],
-  ] as const)("disallows all for %s with shell %s", (deploymentEnvironment, publicShellState) => {
-    const policy = { ...input, deploymentEnvironment, publicShellState };
+  it.each(["local", "preview", "staging"] as const)(
+    "disallows all outside production in %s",
+    (deploymentEnvironment) => {
+      const policy = { ...input, deploymentEnvironment };
 
-    expect(createRobotsText(policy)).toBe("User-agent: *\nDisallow: /\n");
-    expect(createSitemapXml(policy)).toBeNull();
-  });
+      expect(createRobotsText(policy)).toBe("User-agent: *\nDisallow: /\n");
+      expect(createSitemapXml(policy)).toBeNull();
+      for (const pathname of publicSitemapPathnames) {
+        expect(createSitemapXml(policy, pathname)).toBeNull();
+      }
+    },
+  );
 
-  it("emits one deterministic production XML URL set from the exact inventory", () => {
+  it("emits a deterministic locale and content-type sitemap index", () => {
     const sitemap = createSitemapXml(input);
 
-    expect(sitemap).not.toBeNull();
-    expect(sitemap).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    expect(sitemap).toContain('<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
     const locations = [...(sitemap ?? "").matchAll(/<loc>([^<]+)<\/loc>/gu)].map(
-      ([, location]) => location,
+      (match) => match[1] as string,
     );
     expect(locations).toEqual(
-      indexablePublicPagePathnames.map((pathname) => `https://example.test${pathname}`),
+      publicSitemapPathnames.map((pathname) => `https://example.test${pathname}`),
     );
-    expect(new Set(locations)).toHaveLength(indexablePublicPagePathnames.length);
-    const lastModified = [...(sitemap ?? "").matchAll(/<lastmod>([^<]+)<\/lastmod>/gu)].map(
-      ([, value]) => value,
-    );
-    expect(lastModified).toEqual(
-      indexablePublicPageRecords.map(({ lastModified }) => lastModified),
-    );
-    expect(sitemap).not.toContain("/en/readings/numerology");
-    expect(sitemap).not.toContain("/en/numerology/number-");
-    expect(locations.join("\n")).not.toMatch(
-      /(?:\.rsc|\.segments|\?|#|\/account|\/journal|\/checkout)/u,
+    expect(sitemap).not.toContain("<url>");
+    expect(sitemap?.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/gu)).toHaveLength(
+      publicSitemapPathnames.length,
     );
   });
 
-  it("escapes canonical URL text without trusting request host input", () => {
-    const sitemap = createSitemapXml({
-      ...input,
-      canonicalOrigin: "https://example.test",
-    });
+  it("emits exact non-overlapping URL sets with reciprocal hreflang", () => {
+    const observedLocations: string[] = [];
+    for (const pathname of publicSitemapPathnames) {
+      const sitemap = createSitemapXml(input, pathname);
+      expect(sitemap).toContain(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+      );
+      const locations = [...(sitemap ?? "").matchAll(/<loc>([^<]+)<\/loc>/gu)].map(
+        (match) => match[1] as string,
+      );
+      expect(locations.length).toBeGreaterThan(0);
+      observedLocations.push(...locations);
+      for (const location of locations) {
+        expect(sitemap).toContain(`<xhtml:link rel="alternate" hreflang="en" href="${location}"/>`);
+        expect(sitemap).toContain(
+          `<xhtml:link rel="alternate" hreflang="x-default" href="${location}"/>`,
+        );
+      }
+      expect(locations.join("\n")).not.toMatch(
+        /(?:\.rsc|\.segments|\?|#|\/account|\/journal|\/checkout|\/readings\/)/u,
+      );
+    }
+    expect(observedLocations).toEqual(
+      indexablePublicPagePathnames.map((pathname) => `https://example.test${pathname}`),
+    );
+    expect(new Set(observedLocations)).toHaveLength(indexablePublicPageRecords.length);
+  });
 
+  it("rejects unknown sitemap documents and never trusts request-host input", () => {
+    expect(createSitemapXml(input, "/sitemaps/en-private.xml")).toBeNull();
+    const sitemap = createSitemapXml(input, "/sitemaps/en-pages.xml");
     expect(sitemap).toContain("https://example.test/en");
     expect(sitemap).not.toContain("localhost");
     expect(sitemap).not.toContain("request-host");

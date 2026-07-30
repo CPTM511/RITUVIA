@@ -9,8 +9,26 @@ import {
 const seoHead = (pathname = "/en", label = "Home") =>
   `<title>RITUVIA — ${label}</title><meta name="description" content="${label} description"><meta name="robots" content="noindex, nofollow"><link rel="canonical" href="http://localhost:3000${pathname}"><link rel="alternate" hreflang="en" href="http://localhost:3000${pathname}"><link rel="alternate" hreflang="x-default" href="http://localhost:3000${pathname}"><meta property="og:title" content="RITUVIA — ${label}"><meta property="og:description" content="${label} description"><meta property="og:url" content="http://localhost:3000${pathname}"><meta property="og:site_name" content="RITUVIA"><meta property="og:type" content="website">`;
 
+const structuredDocument = (
+  page: Record<string, unknown> = {
+    "@id": "http://localhost:3000/en#website",
+    "@type": "WebSite",
+    description: "A visible structured description for the reviewed home page.",
+    inLanguage: "en",
+    name: "Home",
+    url: "http://localhost:3000/en",
+  },
+) =>
+  `<html><head>${seoHead()}<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [page],
+  })}</script></head><body><main id="main-content"><h1>Home</h1><p>A visible structured description for the reviewed home page.</p></main></body></html>`;
+
 const html = (script = "/_next/static/app.js", stylesheet = "/_next/static/app.css") =>
   `<html><head><link rel="stylesheet" href="${stylesheet}"></head><body><script src="${script}"></script></body></html>`;
+
+const geoAuthority =
+  '<section aria-labelledby="geo-home" class="shell geo-answer-context" data-geo-answer-context="" data-geo-entity-id="rituvia-public-guidance-v1"><h2 id="geo-home">How this answer is framed</h2><div data-geo-classification="product_guidance"><dt>Product policy</dt><dd>Reviewed product policy.</dd></div><div data-geo-classification="interpretation"><dt>Interpretation</dt><dd>Reviewed interpretation boundary.</dd></div><h3>Source basis</h3><ul><li>Reviewed source</li></ul><dl><dt>Review authority</dt><dd>Owner-approved product decision</dd></dl></section>';
 
 const sanctuaryImageWidths = [256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
 const sanctuaryImageUrl = (width: number) =>
@@ -48,6 +66,25 @@ const audit = (
 describe("Web shell build policy", () => {
   it("accepts bounded local framework assets", () => {
     expect(audit().findings).toEqual([]);
+  });
+
+  it("validates but does not charge nomodule compatibility code to the modern budget", () => {
+    const legacy = Buffer.from(
+      Array.from({ length: 1_024 }, (_, index) => String.fromCharCode(index % 256)).join(""),
+      "latin1",
+    );
+    const document = html().replace(
+      "</body>",
+      '<script nomodule="" src="/_next/static/legacy.js"></script></body>',
+    );
+    const assets = new Map([
+      ["/_next/static/app.js", Buffer.from("export{}")],
+      ["/_next/static/legacy.js", legacy],
+      ["/_next/static/app.css", Buffer.from("body{color:#111}")],
+    ]);
+    expect(audit(document, assets).findings).toEqual([]);
+    assets.delete("/_next/static/legacy.js");
+    expect(audit(document, assets).findings).toContain("missing-javascript-asset");
   });
 
   it("accepts the exact framework boundary comments emitted by the reviewed build", () => {
@@ -298,7 +335,7 @@ describe("Web shell build policy", () => {
   });
 
   it("locks case-sensitive finite locale routing and a healthy canonical artifact", () => {
-    const canonicalHtml = `<html dir="ltr" lang="en"><head>${seoHead()}</head><body><main id="main-content"></main></body></html>`;
+    const canonicalHtml = `<html dir="ltr" lang="en"><head>${seoHead()}</head><body><main id="main-content">${geoAuthority}</main></body></html>`;
     const valid = {
       html: canonicalHtml,
       prerenderManifest: { dynamicRoutes: { "/[locale]": { fallback: false } } },
@@ -331,7 +368,7 @@ describe("Web shell build policy", () => {
   });
 
   it("audits the nested public-page route and canonical independently", () => {
-    const nestedHtml = `<html dir="ltr" lang="en"><head>${seoHead("/en/privacy", "Privacy")}</head><body><main id="main-content"></main></body></html>`;
+    const nestedHtml = `<html dir="ltr" lang="en"><head>${seoHead("/en/privacy", "Privacy")}</head><body><main id="main-content">${geoAuthority}</main></body></html>`;
     const input = {
       dynamicRoute: "/[locale]/[page]",
       expectedPathname: "/en/privacy",
@@ -350,8 +387,35 @@ describe("Web shell build policy", () => {
     ).toEqual(expect.arrayContaining(["canonical-route-metadata", "canonical-shell-html"]));
   });
 
-  it("requires exact visible SEO parity and defers structured data to RIT-114", () => {
+  it("requires one visible allowlisted GEO answer authority without internal evidence", () => {
+    const canonicalHtml = `<html dir="ltr" lang="en"><head>${seoHead()}</head><body><main id="main-content">${geoAuthority}</main></body></html>`;
+    const input = {
+      html: canonicalHtml,
+      prerenderManifest: { dynamicRoutes: { "/[locale]": { fallback: false } } },
+      routeMetadata: { headers: { "x-next-cache-tags": "_N_T_/layout,_N_T_/en" } },
+      routesManifest: { caseSensitive: true },
+    };
+
+    expect(auditWebShellRouteArtifacts(input)).toEqual([]);
+    for (const mutation of [
+      canonicalHtml.replace(geoAuthority, ""),
+      canonicalHtml.replace("<section", "<section hidden"),
+      canonicalHtml.replace("Reviewed source", "content/editorial/private.json"),
+      canonicalHtml.replace("Reviewed source", "product.codex"),
+      canonicalHtml.replace(
+        'data-geo-classification="interpretation"',
+        'data-geo-classification="prediction"',
+      ),
+    ]) {
+      expect(auditWebShellRouteArtifacts({ ...input, html: mutation })).toContain(
+        "geo-answer-context",
+      );
+    }
+  });
+
+  it("requires exact visible SEO parity and admits only explicitly reviewed JSON-LD", () => {
     const valid = `<html><head>${seoHead()}</head><body></body></html>`;
+    const reviewed = structuredDocument();
 
     expect(auditPublicSeoDocument(valid)).toEqual([]);
     expect(
@@ -375,7 +439,111 @@ describe("Web shell build policy", () => {
       auditPublicSeoDocument(
         valid.replace("</head>", '<script type="application/ld+json">{}</script></head>'),
       ),
-    ).toContain("structured-data-before-rit-114");
+    ).toContain("public-structured-data");
+    expect(
+      auditPublicSeoDocument(reviewed, "/en", "http://localhost:3000", "noindex, nofollow", {
+        expectedStructuredDataType: "WebSite",
+      }),
+    ).not.toContain("public-structured-data");
+    expect(
+      auditPublicSeoDocument(valid, "/en", "http://localhost:3000", "noindex, nofollow", {
+        expectedStructuredDataType: "WebSite",
+      }),
+    ).toContain("public-structured-data");
+    const articleDescription = "A visible structured description for the reviewed guide page.";
+    const article = `<html><head>${seoHead("/en/numerology/example", "Example").replace('content="website"', 'content="article"')}<script type="application/ld+json">${JSON.stringify(
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@id": "http://localhost:3000/en/numerology/example#webpage",
+            "@type": "Article",
+            description: articleDescription,
+            headline: "Example",
+            inLanguage: "en",
+            isPartOf: {
+              "@id": "http://localhost:3000/en/numerology#webpage",
+              "@type": "CollectionPage",
+              url: "http://localhost:3000/en/numerology",
+            },
+            url: "http://localhost:3000/en/numerology/example",
+          },
+        ],
+      },
+    )}</script></head><body><main id="main-content"><h1>Example</h1><p>${articleDescription}</p><a href="/en/numerology">Back to the library</a></main></body></html>`;
+    expect(
+      auditPublicSeoDocument(
+        article,
+        "/en/numerology/example",
+        "http://localhost:3000",
+        "noindex, nofollow",
+        { expectedOpenGraphType: "article", expectedStructuredDataType: "Article" },
+      ),
+    ).not.toContain("public-structured-data");
+    expect(
+      auditPublicSeoDocument(
+        article.replace('href="/en/numerology"', 'href="/en/safety"'),
+        "/en/numerology/example",
+        "http://localhost:3000",
+        "noindex, nofollow",
+        { expectedOpenGraphType: "article", expectedStructuredDataType: "Article" },
+      ),
+    ).toContain("public-structured-data");
+    for (const mutation of [
+      reviewed.replace('"@type":"WebSite"', '"@type":"FAQPage"'),
+      reviewed.replace('"name":"Home"', '"name":"Hidden title"'),
+      reviewed.replace(
+        '"description":"A visible structured description for the reviewed home page."',
+        '"description":"A hidden structured description that is not rendered in the page."',
+      ),
+      reviewed.replace('"url":"http://localhost:3000/en"', '"url":"https://poison.invalid/en"'),
+      reviewed.replace(
+        '"url":"http://localhost:3000/en"',
+        '"unknown":"claim","url":"http://localhost:3000/en"',
+      ),
+    ]) {
+      expect(
+        auditPublicSeoDocument(mutation, "/en", "http://localhost:3000", "noindex, nofollow", {
+          expectedStructuredDataType: "WebSite",
+        }),
+      ).toContain("public-structured-data");
+    }
+    for (const hiddenDescription of [
+      "<template>A visible structured description for the reviewed home page.</template>",
+      "<p hidden>A visible structured description for the reviewed home page.</p>",
+      '<p aria-hidden="true">A visible structured description for the reviewed home page.</p>',
+    ]) {
+      const hiddenOnly = reviewed.replace(
+        "<p>A visible structured description for the reviewed home page.</p>",
+        `<p>Different visible page copy.</p>${hiddenDescription}`,
+      );
+      expect(
+        auditPublicSeoDocument(hiddenOnly, "/en", "http://localhost:3000", "noindex, nofollow", {
+          expectedStructuredDataType: "WebSite",
+        }),
+      ).toContain("public-structured-data");
+    }
+    expect(
+      auditPublicSeoDocument(
+        reviewed.replace("<h1>Home</h1>", "<h1>Different title</h1><h1 hidden>Home</h1>"),
+        "/en",
+        "http://localhost:3000",
+        "noindex, nofollow",
+        { expectedStructuredDataType: "WebSite" },
+      ),
+    ).toContain("public-structured-data");
+    expect(
+      auditPublicSeoDocument(
+        article.replace(
+          '<a href="/en/numerology">Back to the library</a>',
+          '<a hidden href="/en/numerology">Back to the library</a>',
+        ),
+        "/en/numerology/example",
+        "http://localhost:3000",
+        "noindex, nofollow",
+        { expectedOpenGraphType: "article", expectedStructuredDataType: "Article" },
+      ),
+    ).toContain("public-structured-data");
     expect(
       auditPublicSeoDocument(
         valid.replace(
@@ -383,7 +551,7 @@ describe("Web shell build policy", () => {
           '<script type=" application/ld+json; charset=utf-8 ">{}</script></head>',
         ),
       ),
-    ).toContain("structured-data-before-rit-114");
+    ).toContain("public-structured-data");
     for (const encodedType of [
       "application/ld&#43;json",
       "application/ld&#x2b;json",
@@ -393,7 +561,7 @@ describe("Web shell build policy", () => {
         auditPublicSeoDocument(
           valid.replace("</head>", `<script type="${encodedType}">{}</script></head>`),
         ),
-      ).toContain("structured-data-before-rit-114");
+      ).toContain("public-structured-data");
     }
     for (const structuredMarkup of [
       '<div itemscope="" itemtype="https://schema.org/WebSite"></div>',
@@ -409,7 +577,7 @@ describe("Web shell build policy", () => {
     ]) {
       expect(
         auditPublicSeoDocument(valid.replace("</body>", `${structuredMarkup}</body>`)),
-      ).toContain("structured-data-before-rit-114");
+      ).toContain("public-structured-data");
     }
   });
 });

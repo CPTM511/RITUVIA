@@ -48,7 +48,7 @@ focused command does not weaken or replace required CI coverage.
 Reference templates live under `.github/codex/workflow-examples/`, outside the directory GitHub
 Actions loads. Move one into `.github/workflows` only after:
 
-1. The repository is private/protected as intended.
+1. The public AGPL repository and protected `main` baseline in D-090 remain active as intended.
 2. The official Codex GitHub Action and current inputs are re-verified.
 3. `OPENAI_API_KEY` is stored as a GitHub Actions secret with appropriate budget/restrictions.
 4. Branch protection, permissions, path filters, concurrency, artifact retention, and untrusted-fork behavior are reviewed.

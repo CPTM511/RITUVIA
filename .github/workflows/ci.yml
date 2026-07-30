@@ -41,6 +41,22 @@ jobs:
         run: pnpm check:ci-contract
       - name: Verify architecture boundaries
         run: pnpm check:architecture
+      - name: Verify environment isolation contract
+        run: pnpm check:environment-contract
+      - name: Verify offline AI operations
+        run: pnpm check:ai-operations
+      - name: Verify localization workflow
+        run: pnpm check:localization
+      - name: Verify editorial content workflow
+        run: pnpm check:editorial-content
+      - name: Verify public-page quality inventory
+        run: pnpm check:public-pages
+      - name: Verify offline SEO/GEO operations
+        run: pnpm check:search-operations
+      - name: Verify RTL architecture
+        run: pnpm check:rtl
+      - name: Verify CJK and Devanagari architecture
+        run: pnpm check:writing-systems
       - name: Verify durable record policy
         run: pnpm check:records
       - name: Verify migration policy
@@ -63,6 +79,10 @@ jobs:
         run: pnpm build
       - name: Install pinned Chromium headless shell
         run: pnpm exec playwright install --with-deps --only-shell chromium
+      - name: Verify public search browser contract
+        run: pnpm test:public-search-browser
+      - name: Verify redacted Tarot share-card browser contract
+        run: pnpm test:tarot-share-browser
       - name: Run accessibility and pseudolocale smoke
         run: pnpm test:accessibility
 
@@ -107,6 +127,10 @@ jobs:
         env:
           RITUVIA_CI_DATABASE_PASSWORD: rituvia-ci-${{ github.run_id }}-${{ github.run_attempt }}-admin
         run: pnpm test:ci-database
+      - name: Rehearse isolated backup and restore
+        env:
+          RITUVIA_CI_DATABASE_PASSWORD: rituvia-ci-${{ github.run_id }}-${{ github.run_attempt }}-admin
+        run: pnpm test:backup-recovery-database
 
   security:
     name: Security scans
