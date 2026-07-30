@@ -227,7 +227,9 @@ const transitionFor = (
         ? { directive: "none", state: "payment_failed" }
         : null;
     case "payment_expired":
-      return ["pending_checkout", "checkout_created", "processing", "payment_failed"].includes(state)
+      return ["pending_checkout", "checkout_created", "processing", "payment_failed"].includes(
+        state,
+      )
         ? { directive: "none", state: "canceled" }
         : null;
     case "payment_refunded":
