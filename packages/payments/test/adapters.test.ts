@@ -137,6 +137,11 @@ describe("Stripe hosted checkout boundary", () => {
       expect.objectContaining({
         clientReferenceId: "order_11111111",
         currencyCode: "USD",
+        idempotencyKey: "idempotency_11111111",
+        metadata: {
+          orderId: "order_11111111",
+          productCode: "mindful_incense",
+        },
         mode: "payment",
         quantity: 1,
         unitAmountMinor: 99,

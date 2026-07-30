@@ -417,6 +417,57 @@ describe("server and client configuration boundary", () => {
     ).toThrowError("BRAND_CANONICAL_ORIGIN:invalid");
   });
 
+  it("allows only complete Stripe Test Mode configuration outside production", () => {
+    const priceIds = JSON.stringify({
+      pack_15: "price_pack15test",
+      pack_40: "price_pack40test",
+      pack_6: "price_pack06test",
+      plus_annual: "price_plusannual",
+      plus_monthly: "price_plusmonthly",
+    });
+    const sandbox = {
+      APP_ENV: "staging",
+      RITUVIA_PAYMENT_PROVIDER: "stripe",
+      RITUVIA_STRIPE_PRICE_IDS: priceIds,
+      STRIPE_SECRET_KEY: `sk_test_${"a".repeat(24)}`,
+      STRIPE_WEBHOOK_SECRET: `whsec_${"b".repeat(24)}`,
+    } as const;
+
+    expect(parseServerConfiguration(sandbox).payment).toMatchObject({
+      provider: "stripe",
+      secretKey: sandbox.STRIPE_SECRET_KEY,
+    });
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "production",
+        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+        BRAND_CANONICAL_ORIGIN: "https://example.com",
+        BRAND_LEGAL_ENTITY: "Entity",
+        BRAND_NAME: "Brand",
+        BRAND_SHORT_NAME: "Brand",
+        BRAND_SOCIAL_HANDLES: "{}",
+        BRAND_SUPPORT_EMAIL: "support@example.com",
+        BRAND_TAGLINE: "Tagline",
+        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
+          mindful_incense: "price_legacytest",
+        }),
+      }),
+    ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
+  });
+
   it("revalidates serialized client input and rejects extra fields", () => {
     const configuration = parseBuildConfiguration({});
 

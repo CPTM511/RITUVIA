@@ -1103,7 +1103,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         `GRANT UPDATE (status, refunded_minor, updated_at, paid_at, refund_requested_at, refunded_at) ON TABLE commercial_order_v2 TO ${APP_ROLE}`,
       );
       await admin.query(
-        `GRANT UPDATE (state, provider_checkout_id, provider_checkout_url, provider_payment_intent_id, updated_at, completed_at) ON TABLE commercial_payment_attempt_v2 TO ${APP_ROLE}`,
+        `GRANT UPDATE (state, provider_checkout_id, provider_checkout_url, provider_payment_intent_id, expires_at, updated_at, completed_at) ON TABLE commercial_payment_attempt_v2 TO ${APP_ROLE}`,
       );
       await admin.query(
         `GRANT UPDATE (status, consumed_at, released_at, expired_at) ON TABLE credit_reservation TO ${APP_ROLE}`,

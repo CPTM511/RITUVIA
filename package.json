@@ -70,6 +70,7 @@
     "test:configuration-boundary": "node scripts/verify-configuration-boundary.mjs",
     "test:catalog-database": "pnpm --filter @rituvia/db test:catalog",
     "test:commercial-transactions-database": "pnpm --filter @rituvia/db test:commercial-transactions",
+    "test:commercial-checkout-database": "pnpm --filter @rituvia/db test:commercial-checkout",
     "test:country-policy-database": "pnpm --filter @rituvia/db test:country-policy",
     "test:identity-privacy-authorization": "node scripts/verify-identity-privacy-authorization.mjs",
     "test:full-loop-browser": "node scripts/verify-full-loop-browser.mjs",

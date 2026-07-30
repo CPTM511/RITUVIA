@@ -517,10 +517,11 @@ const parsePrivacyDeletionPolicy = (
 };
 
 const stripeProductCodes = Object.freeze([
-  "amethyst_guardian",
-  "golden_intention_bowl",
-  "mindful_incense",
-  "moonlit_lotus",
+  "pack_6",
+  "pack_15",
+  "pack_40",
+  "plus_annual",
+  "plus_monthly",
 ] as const);
 
 const parseStripePriceIds = (value: string): Readonly<Record<string, string>> => {
@@ -585,7 +586,9 @@ const parsePaymentConfiguration = (
     });
   }
   if (
+    deploymentEnvironment === "production" ||
     parsed.STRIPE_SECRET_KEY === undefined ||
+    !parsed.STRIPE_SECRET_KEY.startsWith("sk_test_") ||
     parsed.STRIPE_WEBHOOK_SECRET === undefined ||
     parsed.RITUVIA_STRIPE_PRICE_IDS === undefined ||
     parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1 !== undefined
@@ -593,7 +596,9 @@ const parsePaymentConfiguration = (
     throw new ConfigurationError("server", [
       ...(parsed.STRIPE_SECRET_KEY === undefined
         ? [{ code: "missing" as const, key: "STRIPE_SECRET_KEY" }]
-        : []),
+        : deploymentEnvironment === "production" || !parsed.STRIPE_SECRET_KEY.startsWith("sk_test_")
+          ? [{ code: "invalid" as const, key: "STRIPE_SECRET_KEY" }]
+          : []),
       ...(parsed.STRIPE_WEBHOOK_SECRET === undefined
         ? [{ code: "missing" as const, key: "STRIPE_WEBHOOK_SECRET" }]
         : []),
