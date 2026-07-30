@@ -101,6 +101,7 @@ describe("source configuration boundaries", () => {
 
     expect(environmentReaders.sort()).toEqual([
       "apps/web/config/server.ts",
+      "apps/web/instrumentation.ts",
       "apps/web/next.config.ts",
       "apps/web/start.mjs",
       "apps/worker/src/main.ts",
