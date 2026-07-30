@@ -1238,7 +1238,7 @@ be a regular non-symlink mode-0600 custom-format file, and is rehashed immediate
 Source, target, and artifact cleanup are mandatory even on failure. The ignored mode-0600 evidence
 contains only bounded hashes, counts, versions, timings, and checks. Six focused backup, artifact,
 cleanup, snapshot, and evidence tests join the existing database-safety and CI-contract coverage;
-50 focused tests, database typecheck, CI/environment/migration contracts, and the complete local
+59 focused tests, database typecheck, CI/environment/migration contracts, and the complete local
 31-migration isolated restore rehearsal pass. Protected CI is configured to run the same rehearsal
 after database foundation verification against the digest-pinned PostgreSQL 17 service; the first
 hosted result for this revision remains the review gate.
