@@ -875,3 +875,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
   repository's existing three-job quality gate without weakening CI or paying for private-repository
   branch protection.
 - **Date:** 2026-07-30
+
+### [D-091 — Separate Stripe sandbox approval from production underwriting](records/decisions/D-091.md)
+
+- **Decision:** Approve Stripe Test Mode as the first fiat sandbox integration for one-time USD
+  checkout under synthetic US policy, track that approval as OWN-017, and keep OWN-002 blocked
+  until primary and backup providers supply written production underwriting evidence.
+- **Reason:** The owner explicitly approved unlocking RIT-063, while the existing OWN-002
+  acceptance criterion requires external provider evidence that an internal approval cannot
+  truthfully replace.
+- **Date:** 2026-07-30

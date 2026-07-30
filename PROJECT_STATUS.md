@@ -18,7 +18,9 @@ selective/account deletion, RIT-056 admin roles/MFA/audit foundation, and RIT-05
 identity/privacy/authorization security closure are complete. RIT-060 immutable Country Policy
 Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
 transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
-still blocks RIT-063; RIT-045 consented transactional Revisit reminders are complete. OWN-011
+still blocks production payment activation, but D-091 and OWN-017 approve the narrower Stripe Test
+Mode sandbox scope and make RIT-063 the sole Ready task. RIT-045 consented transactional Revisit
+reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
 date-numerology catalog, source records, worked vectors, exact Life Path/Birthday/Personal Year
 rules, explicit target year, 11/22/33 preservation, and name/locale exclusions. RIT-081 is complete
@@ -1188,8 +1190,9 @@ policy, budgets, admin surfaces, or production. Forty-two focused tests, strict 
 typecheck, focused lint/format, architecture, CI contract, 139-record policy, dedicated offline
 verification, and analytics package build/export checks pass. No production reader, provider
 call, raw trace, private prose, database change, admin route, deployment, or budget enforcement
-is added. Monetary limits remain blocked by OWN-005. RIT-120 remains Planned because RIT-073 is
-transitively blocked by OWN-002.
+is added. Monetary limits remain blocked by OWN-005. RIT-120 remains Planned behind the payment
+chain that now begins with Ready task RIT-063; production payment activation remains blocked by
+OWN-002.
 
 RIT-016 is Done through D-089. An isolated, loopback-only protected staging environment used
 PostgreSQL 17, production Web builds, random Basic authentication, private/no-store responses, and
@@ -1247,7 +1250,16 @@ This proves repository-level synthetic logical recovery only. It does not claim 
 physical backup, encrypted isolated retention, WAL/PITR, production RPO/RTO, customer-data
 recovery, or production restore authority. Those remain Gate H owner-approved production work.
 No production service, credential, data, backup, retention rule, migration, deployment, DNS, or
-public launch changed. No Planned backlog item currently has every dependency complete.
+public launch changed.
+
+D-091 and OWN-017 approve Stripe Test Mode as the first fiat sandbox integration for RIT-063:
+one-time USD checkout only, synthetic US policy only, server-authoritative catalog prices, hosted
+Stripe pages, exact provider idempotency, no redirect-based fulfillment, and no live mode. The
+owner's instruction to approve OWN-002 cannot substitute for the provider-written primary and
+backup production underwriting evidence required by that existing gate, so OWN-002 remains
+Blocked for RIT-140 while the narrower sandbox approval is recorded separately. RIT-063 is the
+sole Ready task. No Stripe credential, Price ID, provider account, external call, production
+policy, deployment, DNS, or public product launch was added.
 
 ## Update rules
 
