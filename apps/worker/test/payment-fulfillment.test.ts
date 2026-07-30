@@ -36,6 +36,7 @@ const store = (
     shortfallAmount: 0,
     userId: "52345678-1234-4123-8123-123456789abc",
   }),
+  readPurchaseStatus: vi.fn(),
   restorePurchases: vi.fn(),
   ...overrides,
 });

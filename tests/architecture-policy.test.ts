@@ -942,7 +942,7 @@ describe("package architecture policy", () => {
     accepted.push({
       path: "apps/web/next.config.ts",
       source:
-        "const nextConfig = { experimental: { caseSensitiveRoutes: true }, poweredByHeader: false, reactStrictMode: true, skipProxyUrlNormalize: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true, serverSourceMaps: false }, poweredByHeader: false, reactStrictMode: true, skipProxyUrlNormalize: true, skipTrailingSlashRedirect: true, typedRoutes: true }; export default nextConfig;",
     });
     expect(rules(accepted)).not.toContain("framework-config-dynamic");
 
@@ -953,6 +953,14 @@ describe("package architecture policy", () => {
         "const nextConfig = { experimental: { caseSensitiveRoutes: true, typedEnv: true }, reactStrictMode: true, skipTrailingSlashRedirect: true }; export default nextConfig;",
     });
     expect(rules(unreviewed)).toContain("framework-config-dynamic");
+
+    const serverSourceMapsEnabled = baseline();
+    serverSourceMapsEnabled.push({
+      path: "apps/web/next.config.ts",
+      source:
+        "const nextConfig = { experimental: { caseSensitiveRoutes: true, serverSourceMaps: true }, reactStrictMode: true, skipTrailingSlashRedirect: true }; export default nextConfig;",
+    });
+    expect(rules(serverSourceMapsEnabled)).toContain("framework-config-dynamic");
 
     const caseInsensitive = baseline();
     caseInsensitive.push({

@@ -179,6 +179,12 @@ export {
   type CommercialPurchaseStatus,
 } from "./commercial-fulfillment-persistence.js";
 export {
+  createCommercialReconciliationPersistence,
+  type CommercialReconciliationCandidate,
+  type CommercialReconciliationCase,
+  type CommercialReconciliationPersistence,
+} from "./commercial-reconciliation-persistence.js";
+export {
   assertReflectionRuntimeDatabasePrivileges,
   createReflectionPersistence,
   reflectionPersistenceErrorCodes,

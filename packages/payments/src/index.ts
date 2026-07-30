@@ -81,6 +81,14 @@ export {
   type CommercialCreditPackFulfillmentPlan,
 } from "./commercial-fulfillment.js";
 export {
+  commercialReconciliationCaseTypes,
+  compareCommercialPayment,
+  type CommercialReconciliationCaseType,
+  type CommercialReconciliationFinding,
+  type CommercialReconciliationInternalSnapshot,
+  type CommercialReconciliationProviderSnapshot,
+} from "./commercial-reconciliation.js";
+export {
   allocateCreditSources,
   applyCreditProjection,
   commercialEntitlementEvents,

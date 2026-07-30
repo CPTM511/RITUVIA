@@ -120,6 +120,7 @@ await withLocalPostgresLease(async (lease) => {
         return Object.freeze({
           amountMinor: 599,
           currencyCode: "USD",
+          evidenceSource: "signed_webhook",
           eventType,
           normalizationVersion: "stripe-commercial-event.v1",
           occurredAt,

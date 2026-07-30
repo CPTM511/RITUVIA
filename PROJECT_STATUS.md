@@ -4,7 +4,7 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-066 are complete, and RIT-067 is the sole Ready task.
+RIT-063 through RIT-067 are complete, and RIT-068 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -33,7 +33,8 @@ only unspent source Credits on dispute, converts holds and available value on re
 consumed/reserved shortfalls for review without a negative balance. Authenticated Credit
 restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
-RIT-067 is the sole Ready task. RIT-045
+RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
+is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1330,7 +1331,32 @@ Chromium review pass. The focused mobile Axe run has zero violations, no horizon
 no unexpected console errors. The local passwordless start remained safely unavailable in the
 production-build browser environment, so no external Stripe Test Mode checkout was created; the
 return path, failure state, route contracts, CSRF, idempotency and URL boundaries remain covered by
-focused automated evidence. RIT-067 is the sole Ready task.
+focused automated evidence.
+
+RIT-067 is Done. The existing worker now performs one bounded, circular and observation-idempotent
+daily Stripe Test scan for the configured account and compares provider Checkout/payment/settlement
+evidence with the internal order, attempt, purchased-Credit grant and current fulfillment version.
+Amount, currency, order, Checkout, PaymentIntent, state, missing/duplicate Credit issuance,
+fulfillment drift, provider API failure and missing provider settlement-availability evidence
+create digest-only append-only operations cases; no raw Stripe response or private user content is
+stored.
+
+The only automatic recovery is a missed successful webhook whose Test account, public order,
+Checkout, PaymentIntent, amount and currency all match exactly. The operations case commits first,
+then the existing payment-event reducer advances the order and writes the normal fulfillment
+outbox; mismatches never change orders, Credits, entitlements or projections. A dedicated
+least-privilege database role fails closed on privilege drift. The 97 focused
+configuration/architecture/payments/worker/Web tests and the webhook, fulfillment and
+reconciliation PostgreSQL gates pass against all 35 migrations. The database evidence includes a
+concurrent signed-webhook/reconciliation race, one outbox and Credit grant, 12-way duplicate run
+contention, observation-sensitive same-day cases and complete coverage of 101 candidates across
+two circular 100-row windows. Affected package typechecks and worker/Web builds pass.
+
+The requested footprint optimization disables unused production server source maps while keeping
+browser source maps disabled. A clean Web build falls from 46 MB to 20 MB, its static browser
+chunks remain 1.2 MB uncompressed in total, and the reviewed `/en/plans` route requires about
+66 KB gzip JavaScript plus 12,249 bytes gzip CSS. No UI framework, service or runtime dependency
+was added for this optimization. RIT-068 is the sole Ready task.
 
 ## Update rules
 

@@ -1125,7 +1125,6 @@ h3 {
 
 .numerology-guide-card,
 .numerology-guide-content > section,
-.numerology-source-note,
 .numerology-related-guides {
   min-inline-size: 0;
   padding: clamp(1.25rem, 4vw, 2.25rem);
@@ -1153,8 +1152,6 @@ h3 {
 .numerology-guide-card p,
 .numerology-guide-content p,
 .numerology-guide-content li,
-.numerology-source-note p,
-.numerology-source-note li,
 .numerology-related-guides li {
   color: var(--ink-secondary);
 }
@@ -1163,11 +1160,6 @@ h3 {
   margin-block-end: 0;
 }
 
-.numerology-source-note {
-  margin-block-start: 1rem;
-}
-
-.numerology-source-note h2,
 .numerology-guide-content h2 {
   max-inline-size: none;
   font-family: inherit;
@@ -1182,13 +1174,7 @@ h3 {
   gap: 1rem;
 }
 
-.numerology-guide-content > .numerology-source-note {
-  grid-column: 1 / -1;
-  margin-block-start: 0;
-}
-
 .numerology-guide-content ul,
-.numerology-source-note ul,
 .numerology-related-guides ul {
   padding-inline-start: 1.25rem;
 }
@@ -1298,7 +1284,6 @@ h3 {
 
 .tarot-library-card,
 .tarot-guide-content > section,
-.tarot-source-note,
 .tarot-related-guides {
   min-inline-size: 0;
   padding: clamp(1.25rem, 4vw, 2.25rem);
@@ -1332,8 +1317,6 @@ h3 {
 .tarot-guide-content p,
 .tarot-guide-content li,
 .tarot-guide-content dd,
-.tarot-source-note p,
-.tarot-source-note li,
 .tarot-related-guides li {
   color: var(--ink-secondary);
 }
@@ -1364,25 +1347,18 @@ h3 {
   letter-spacing: 0.08em;
 }
 
-.tarot-source-note {
-  grid-column: 1 / -1;
-}
-
-.tarot-orientation-details,
-.tarot-editorial-status {
+.tarot-orientation-details {
   display: grid;
   gap: 1rem;
   margin: 0;
 }
 
-.tarot-orientation-details div,
-.tarot-editorial-status div {
+.tarot-orientation-details div {
   display: grid;
   gap: 0.25rem;
 }
 
-.tarot-orientation-details dt,
-.tarot-editorial-status dt {
+.tarot-orientation-details dt {
   color: var(--ink-secondary);
   font-size: 0.78rem;
   font-weight: 800;
@@ -1390,8 +1366,7 @@ h3 {
   text-transform: uppercase;
 }
 
-.tarot-orientation-details dd,
-.tarot-editorial-status dd {
+.tarot-orientation-details dd {
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -1483,8 +1458,7 @@ h3 {
 }
 
 .ritual-guide-card,
-.ritual-guide-content > section,
-.ritual-guide-source {
+.ritual-guide-content > section {
   min-inline-size: 0;
   padding: clamp(1.25rem, 4vw, 2.25rem);
   border: 1px solid var(--line-subtle);
@@ -1508,39 +1482,8 @@ h3 {
 }
 
 .ritual-guide-card p,
-.ritual-guide-content li,
-.ritual-guide-source p,
-.ritual-guide-source li,
-.ritual-guide-review dd {
+.ritual-guide-content li {
   color: var(--ink-secondary);
-}
-
-.ritual-guide-source {
-  margin-block-start: clamp(2rem, 5vw, 4rem);
-}
-
-.ritual-guide-review {
-  display: grid;
-  gap: 1rem;
-  margin: 1.5rem 0 0;
-}
-
-.ritual-guide-review div {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.ritual-guide-review dt {
-  color: var(--ink-secondary);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.ritual-guide-review dd {
-  margin: 0;
-  overflow-wrap: anywhere;
 }
 
 .ritual-guide-actions {
@@ -1566,16 +1509,6 @@ h3 {
   .ritual-guide-grid {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-
-.astrology-review-status {
-  max-inline-size: 68ch;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--line-subtle);
-  border-radius: 0.75rem;
-  background: var(--surface-panel);
-  color: var(--ink-secondary);
-  font-weight: 700;
 }
 
 .astrology-reference-table-wrap {
@@ -3223,19 +3156,15 @@ h3 {
   .numerology-guide-content > section,
   .numerology-library-boundary,
   .numerology-related-guides,
-  .numerology-source-note,
   .tarot-guide-content > section,
   .tarot-library-boundary,
   .tarot-library-card,
   .tarot-related-guides,
-  .tarot-source-note,
   .ritual-guide-boundary,
   .ritual-guide-card,
   .ritual-guide-content > section,
-  .ritual-guide-source,
   .astrology-reference-table th,
   .astrology-reference-table td,
-  .astrology-review-status,
   .numerology-form,
   .numerology-result,
   .numerology-result-card,

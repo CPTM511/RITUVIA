@@ -38,6 +38,7 @@ export type CommercialVerifiedPaymentEventType =
 export type PreparedCommercialPaymentEvent = Readonly<{
   amountMinor: number;
   currencyCode: string;
+  evidenceSource: "reconciliation_api" | "signed_webhook";
   eventType: CommercialVerifiedPaymentEventType;
   normalizationVersion: string;
   occurredAt: string;
@@ -110,6 +111,7 @@ type ExistingEventRow = Readonly<{
   amountMinor: number;
   claimedOrderPublicId: string;
   currencyCode: string;
+  evidenceSource: string;
   eventType: string;
   id: string;
   normalizationVersion: string;
@@ -120,6 +122,7 @@ type ExistingEventRow = Readonly<{
   providerObjectId: string;
   providerOccurredAt: Date;
   providerPaymentIntentId: string | null;
+  signatureTimestampSeconds: bigint;
 }>;
 
 type LockedOrderAttemptRow = Readonly<{
@@ -332,13 +335,15 @@ const eventMatches = (
   existing.amountMinor === input.amountMinor &&
   existing.claimedOrderPublicId === input.orderId &&
   existing.currencyCode === input.currencyCode &&
+  existing.evidenceSource === input.evidenceSource &&
   existing.eventType === input.eventType &&
   digestEquals(existing.payloadDigest, payloadDigest) &&
   existing.providerCheckoutId === input.providerCheckoutId &&
   existing.providerEventId === input.providerEventId &&
   existing.providerObjectId === input.providerObjectId &&
   dateEquals(existing.providerOccurredAt, occurredAt) &&
-  existing.providerPaymentIntentId === input.providerPaymentIntentId;
+  existing.providerPaymentIntentId === input.providerPaymentIntentId &&
+  existing.signatureTimestampSeconds === BigInt(input.signatureTimestampSeconds);
 
 const dispositionForDuplicate = (
   value: string | null,
@@ -362,13 +367,14 @@ const processInTransaction = async (
   const inserted = await database.$queryRaw<ExistingEventRow[]>`
     INSERT INTO commercial_payment_event_v2 (
       provider, environment, provider_account_fingerprint, provider_event_id,
-      normalization_version, event_type, provider_object_id, payload_digest,
+      normalization_version, evidence_source, event_type, provider_object_id, payload_digest,
       signature_timestamp_seconds, verifier_version, provider_occurred_at, received_at,
       claimed_order_public_id, provider_checkout_id, provider_payment_intent_id,
       amount_minor, currency_code
     ) VALUES (
       'stripe', 'sandbox', ${input.providerAccountFingerprint}, ${input.providerEventId},
-      ${input.normalizationVersion}, ${input.eventType}, ${input.providerObjectId},
+      ${input.normalizationVersion}, ${input.evidenceSource}, ${input.eventType},
+      ${input.providerObjectId},
       ${parsed.payloadDigest}, ${input.signatureTimestampSeconds}, ${input.verifierVersion},
       ${parsed.occurredAt}, ${parsed.receivedAt}, ${input.orderId}::uuid,
       ${input.providerCheckoutId}, ${input.providerPaymentIntentId},
@@ -382,6 +388,7 @@ const processInTransaction = async (
       amount_minor AS "amountMinor",
       claimed_order_public_id AS "claimedOrderPublicId",
       currency_code AS "currencyCode",
+      evidence_source AS "evidenceSource",
       event_type AS "eventType",
       normalization_version AS "normalizationVersion",
       payload_digest AS "payloadDigest",
@@ -390,7 +397,8 @@ const processInTransaction = async (
       provider_event_id AS "providerEventId",
       provider_object_id AS "providerObjectId",
       provider_occurred_at AS "providerOccurredAt",
-      provider_payment_intent_id AS "providerPaymentIntentId"
+      provider_payment_intent_id AS "providerPaymentIntentId",
+      signature_timestamp_seconds AS "signatureTimestampSeconds"
   `;
   const created = inserted.at(0);
   if (created === undefined) {
@@ -400,6 +408,7 @@ const processInTransaction = async (
         amount_minor AS "amountMinor",
         claimed_order_public_id AS "claimedOrderPublicId",
         currency_code AS "currencyCode",
+        evidence_source AS "evidenceSource",
         event_type AS "eventType",
         normalization_version AS "normalizationVersion",
         payload_digest AS "payloadDigest",
@@ -408,7 +417,8 @@ const processInTransaction = async (
         provider_event_id AS "providerEventId",
         provider_object_id AS "providerObjectId",
         provider_occurred_at AS "providerOccurredAt",
-        provider_payment_intent_id AS "providerPaymentIntentId"
+        provider_payment_intent_id AS "providerPaymentIntentId",
+        signature_timestamp_seconds AS "signatureTimestampSeconds"
       FROM commercial_payment_event_v2
       WHERE provider = 'stripe'
         AND environment = 'sandbox'

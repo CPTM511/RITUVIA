@@ -237,6 +237,40 @@ model CommercialPaymentAttemptV2 {
   @@map("commercial_payment_attempt_v2")
 }
 
+model CommercialReconciliationRunV1 {
+  id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider                   String   @db.VarChar(32)
+  environment                String   @db.VarChar(16)
+  providerAccountFingerprint String   @map("provider_account_fingerprint") @db.VarChar(128)
+  schemaVersion              String   @map("schema_version") @db.VarChar(100)
+  slotStartedAt              DateTime @map("slot_started_at") @db.Timestamptz(6)
+  idempotencyKeyHash         Bytes    @map("idempotency_key_hash")
+  candidateCount             Int      @map("candidate_count") @db.SmallInt
+  caseCount                  Int      @map("case_count") @db.SmallInt
+  scanState                  String   @map("scan_state") @db.VarChar(16)
+  createdAt                  DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@unique([provider, environment, providerAccountFingerprint, schemaVersion, idempotencyKeyHash], map: "commercial_reconciliation_run_v1_idempotency_key")
+  @@index([provider, environment, providerAccountFingerprint, slotStartedAt(sort: Desc)], map: "commercial_reconciliation_run_v1_schedule_idx")
+  @@map("commercial_reconciliation_run_v1")
+}
+
+model CommercialReconciliationCaseV1 {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  runId            String   @map("run_id") @db.Uuid
+  orderId          String   @map("order_id") @db.Uuid
+  paymentAttemptId String   @map("payment_attempt_id") @db.Uuid
+  caseType         String   @map("case_type") @db.VarChar(48)
+  severity         String   @db.VarChar(16)
+  evidenceDigest   Bytes    @map("evidence_digest")
+  createdAt        DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@unique([runId, orderId, caseType], map: "commercial_reconciliation_case_v1_run_order_type_key")
+  @@index([severity, createdAt(sort: Desc), id], map: "commercial_reconciliation_case_v1_open_idx")
+  @@index([orderId, createdAt(sort: Desc), id], map: "commercial_reconciliation_case_v1_order_idx")
+  @@map("commercial_reconciliation_case_v1")
+}
+
 model CommercialPaymentEventV2 {
   id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   provider                   String    @db.VarChar(32)
@@ -244,6 +278,7 @@ model CommercialPaymentEventV2 {
   providerAccountFingerprint String    @map("provider_account_fingerprint") @db.VarChar(128)
   providerEventId            String    @map("provider_event_id") @db.VarChar(255)
   normalizationVersion       String    @map("normalization_version") @db.VarChar(100)
+  evidenceSource             String    @default("signed_webhook") @map("evidence_source") @db.VarChar(32)
   eventType                  String    @map("event_type") @db.VarChar(40)
   providerObjectId           String    @map("provider_object_id") @db.VarChar(255)
   payloadDigest              Bytes     @map("payload_digest")

@@ -85,6 +85,7 @@ export const createStripeWebhookApplicationService = (
           {
             amountMinor: event.amount.amountMinor,
             currencyCode: event.amount.currencyCode,
+            evidenceSource: "signed_webhook",
             eventType: event.type,
             normalizationVersion: stripeEventNormalizationVersion,
             occurredAt: event.occurredAt,

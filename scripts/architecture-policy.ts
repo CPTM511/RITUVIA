@@ -253,6 +253,7 @@ const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
       "packages/db/src/account-identity.ts",
       "packages/db/src/admin-security.ts",
       "packages/db/src/commercial-fulfillment-persistence.ts",
+      "packages/db/src/commercial-reconciliation-persistence.ts",
       "packages/db/src/revisit-reminder.ts",
     ]),
   ],
@@ -714,25 +715,45 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
         : null;
     if (name === "experimental") {
       const value = unwrapExpression(property.initializer);
-      if (!ts.isObjectLiteralExpression(value) || value.properties.length !== 1) return false;
-      const [caseSensitiveRoutes] = value.properties;
       if (
-        !caseSensitiveRoutes ||
-        !ts.isPropertyAssignment(caseSensitiveRoutes) ||
-        ts.isComputedPropertyName(caseSensitiveRoutes.name)
+        !ts.isObjectLiteralExpression(value) ||
+        value.properties.length < 1 ||
+        value.properties.length > 2
       ) {
         return false;
       }
-      const experimentalName =
-        ts.isIdentifier(caseSensitiveRoutes.name) ||
-        ts.isStringLiteralLike(caseSensitiveRoutes.name)
-          ? caseSensitiveRoutes.name.text
-          : null;
-      const experimentalValue = unwrapExpression(caseSensitiveRoutes.initializer);
-      return (
-        experimentalName === "caseSensitiveRoutes" &&
-        experimentalValue.kind === ts.SyntaxKind.TrueKeyword
-      );
+      let reviewedCaseSensitiveRoutes = false;
+      let reviewedServerSourceMaps = false;
+      for (const experimentalProperty of value.properties) {
+        if (
+          !ts.isPropertyAssignment(experimentalProperty) ||
+          ts.isComputedPropertyName(experimentalProperty.name)
+        ) {
+          return false;
+        }
+        const experimentalName =
+          ts.isIdentifier(experimentalProperty.name) ||
+          ts.isStringLiteralLike(experimentalProperty.name)
+            ? experimentalProperty.name.text
+            : null;
+        const experimentalValue = unwrapExpression(experimentalProperty.initializer);
+        if (
+          experimentalName === "caseSensitiveRoutes" &&
+          experimentalValue.kind === ts.SyntaxKind.TrueKeyword &&
+          !reviewedCaseSensitiveRoutes
+        ) {
+          reviewedCaseSensitiveRoutes = true;
+        } else if (
+          experimentalName === "serverSourceMaps" &&
+          experimentalValue.kind === ts.SyntaxKind.FalseKeyword &&
+          !reviewedServerSourceMaps
+        ) {
+          reviewedServerSourceMaps = true;
+        } else {
+          return false;
+        }
+      }
+      return reviewedCaseSensitiveRoutes;
     }
     if (name === "poweredByHeader") {
       const value = unwrapExpression(property.initializer);

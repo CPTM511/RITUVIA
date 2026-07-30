@@ -10,6 +10,7 @@ parseBuildConfiguration(process.env);
 const nextConfig: NextConfig = {
   experimental: {
     caseSensitiveRoutes: true,
+    serverSourceMaps: false,
   },
   poweredByHeader: false,
   reactStrictMode: true,

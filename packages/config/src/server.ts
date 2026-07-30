@@ -43,6 +43,7 @@ export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
   "PAYMENT_FULFILLMENT_DATABASE_URL",
+  "PAYMENT_RECONCILIATION_DATABASE_URL",
   "PAYMENT_WEBHOOK_DATABASE_URL",
   "PRIVACY_DELETION_DATABASE_URL",
   "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
@@ -93,6 +94,7 @@ export type ServerConfiguration = Readonly<{
   deploymentEnvironment: DeploymentEnvironment;
   payment: PaymentConfiguration | undefined;
   paymentFulfillmentDatabaseUrl: string | undefined;
+  paymentReconciliationDatabaseUrl: string | undefined;
   paymentWebhookDatabaseUrl: string | undefined;
   privateContentKeyring: PrivateContentKeyringConfiguration | undefined;
   privacyDeletionPolicy: PrivacyDeletionPolicyConfiguration | undefined;
@@ -232,6 +234,7 @@ const absoluteMetadataPathSchema = z
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
   PAYMENT_FULFILLMENT_DATABASE_URL: databaseUrlSchema.optional(),
+  PAYMENT_RECONCILIATION_DATABASE_URL: databaseUrlSchema.optional(),
   PAYMENT_WEBHOOK_DATABASE_URL: databaseUrlSchema.optional(),
   PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
   RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: absoluteMetadataPathSchema.optional(),
@@ -664,6 +667,7 @@ const assertPaymentDatabaseBoundaries = (
   payment: PaymentConfiguration | undefined,
   databaseUrl: string | undefined,
   paymentFulfillmentDatabaseUrl: string | undefined,
+  paymentReconciliationDatabaseUrl: string | undefined,
   paymentWebhookDatabaseUrl: string | undefined,
 ): void => {
   if (payment?.provider !== "stripe") return;
@@ -701,24 +705,36 @@ const assertPaymentDatabaseBoundaries = (
       { code: "invalid", key: "PAYMENT_WEBHOOK_DATABASE_URL" },
     ]);
   }
-  if (paymentFulfillmentDatabaseUrl === undefined) return;
-
-  const paymentFulfillment = new URL(paymentFulfillmentDatabaseUrl);
-  const paymentFulfillmentUsername = decodeDatabaseCredential(paymentFulfillment.username);
-  const paymentFulfillmentPassword = decodeDatabaseCredential(paymentFulfillment.password);
-  if (
-    normalizedDatabaseTarget(databaseUrl) !==
-      normalizedDatabaseTarget(paymentFulfillmentDatabaseUrl) ||
-    paymentFulfillmentUsername === null ||
-    paymentFulfillmentUsername === "" ||
-    paymentFulfillmentPassword === null ||
-    paymentFulfillmentPassword === "" ||
-    new Set([applicationUsername, paymentFulfillmentUsername, paymentWebhookUsername]).size !== 3 ||
-    new Set([applicationPassword, paymentFulfillmentPassword, paymentWebhookPassword]).size !== 3
-  ) {
-    throw new ConfigurationError("server", [
-      { code: "invalid", key: "PAYMENT_FULFILLMENT_DATABASE_URL" },
-    ]);
+  const paymentDatabases = [
+    {
+      key: "PAYMENT_FULFILLMENT_DATABASE_URL",
+      value: paymentFulfillmentDatabaseUrl,
+    },
+    {
+      key: "PAYMENT_RECONCILIATION_DATABASE_URL",
+      value: paymentReconciliationDatabaseUrl,
+    },
+  ] as const;
+  const usernames = [applicationUsername, paymentWebhookUsername];
+  const passwords = [applicationPassword, paymentWebhookPassword];
+  for (const paymentDatabase of paymentDatabases) {
+    if (paymentDatabase.value === undefined) continue;
+    const url = new URL(paymentDatabase.value);
+    const username = decodeDatabaseCredential(url.username);
+    const password = decodeDatabaseCredential(url.password);
+    if (
+      normalizedDatabaseTarget(databaseUrl) !== normalizedDatabaseTarget(paymentDatabase.value) ||
+      username === null ||
+      username === "" ||
+      password === null ||
+      password === "" ||
+      usernames.includes(username) ||
+      passwords.includes(password)
+    ) {
+      throw new ConfigurationError("server", [{ code: "invalid", key: paymentDatabase.key }]);
+    }
+    usernames.push(username);
+    passwords.push(password);
   }
 };
 
@@ -849,6 +865,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     PAYMENT_FULFILLMENT_DATABASE_URL: normalizeEnvironmentValue(
       environment.PAYMENT_FULFILLMENT_DATABASE_URL,
     ),
+    PAYMENT_RECONCILIATION_DATABASE_URL: normalizeEnvironmentValue(
+      environment.PAYMENT_RECONCILIATION_DATABASE_URL,
+    ),
     PAYMENT_WEBHOOK_DATABASE_URL: normalizeEnvironmentValue(
       environment.PAYMENT_WEBHOOK_DATABASE_URL,
     ),
@@ -954,6 +973,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     payment,
     server.DATABASE_URL,
     server.PAYMENT_FULFILLMENT_DATABASE_URL,
+    server.PAYMENT_RECONCILIATION_DATABASE_URL,
     server.PAYMENT_WEBHOOK_DATABASE_URL,
   );
   if (
@@ -981,6 +1001,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     deploymentEnvironment: build.deploymentEnvironment,
     payment,
     paymentFulfillmentDatabaseUrl: server.PAYMENT_FULFILLMENT_DATABASE_URL,
+    paymentReconciliationDatabaseUrl: server.PAYMENT_RECONCILIATION_DATABASE_URL,
     paymentWebhookDatabaseUrl: server.PAYMENT_WEBHOOK_DATABASE_URL,
     privateContentKeyring: reflection.keyring,
     privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
@@ -996,13 +1017,16 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
 
 export const parseWorkerConfiguration = (environment: RawEnvironment): ServerConfiguration => {
   const configuration = parseServerConfiguration(environment);
-  if (
-    configuration.payment?.provider === "stripe" &&
-    configuration.paymentFulfillmentDatabaseUrl === undefined
-  ) {
-    throw new ConfigurationError("server", [
-      { code: "missing", key: "PAYMENT_FULFILLMENT_DATABASE_URL" },
-    ]);
+  if (configuration.payment?.provider === "stripe") {
+    const missing = [
+      ...(configuration.paymentFulfillmentDatabaseUrl === undefined
+        ? [{ code: "missing" as const, key: "PAYMENT_FULFILLMENT_DATABASE_URL" }]
+        : []),
+      ...(configuration.paymentReconciliationDatabaseUrl === undefined
+        ? [{ code: "missing" as const, key: "PAYMENT_RECONCILIATION_DATABASE_URL" }]
+        : []),
+    ];
+    if (missing.length > 0) throw new ConfigurationError("server", missing);
   }
   return configuration;
 };

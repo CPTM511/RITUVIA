@@ -52,6 +52,7 @@ const ADMIN_ROLE = "rituvia_local_admin";
 const APP_ROLE = "rituvia_app";
 const CONTROL_ROLE = "rituvia_config_writer";
 const PAYMENT_FULFILLMENT_ROLE = "rituvia_payment_fulfillment";
+const PAYMENT_RECONCILIATION_ROLE = "rituvia_payment_reconciliation";
 const PAYMENT_WEBHOOK_ROLE = "rituvia_payment_webhook";
 const PRIVACY_DELETION_ROLE = "rituvia_privacy_deletion";
 const ADMIN_SERVICE_ROLE = "rituvia_admin_service";
@@ -370,6 +371,7 @@ const createCredentials = async () => {
     appPassword: randomBytes(32).toString("base64url"),
     controlPassword: randomBytes(32).toString("base64url"),
     paymentFulfillmentPassword: randomBytes(32).toString("base64url"),
+    paymentReconciliationPassword: randomBytes(32).toString("base64url"),
     paymentWebhookPassword: randomBytes(32).toString("base64url"),
     privacyDeletionPassword: randomBytes(32).toString("base64url"),
     adminServicePassword: randomBytes(32).toString("base64url"),
@@ -401,6 +403,7 @@ const assertCredentials = (credentials) => {
   if (
     !secretPattern.test(credentials.controlPassword ?? "") ||
     !secretPattern.test(credentials.paymentFulfillmentPassword ?? "") ||
+    !secretPattern.test(credentials.paymentReconciliationPassword ?? "") ||
     !secretPattern.test(credentials.paymentWebhookPassword ?? "") ||
     !secretPattern.test(credentials.privacyDeletionPassword ?? "") ||
     !secretPattern.test(credentials.adminServicePassword ?? "") ||
@@ -423,6 +426,9 @@ const upgradeCredentials = async () => {
     paymentFulfillmentPassword: secretPattern.test(existing.paymentFulfillmentPassword ?? "")
       ? existing.paymentFulfillmentPassword
       : randomBytes(32).toString("base64url"),
+    paymentReconciliationPassword: secretPattern.test(existing.paymentReconciliationPassword ?? "")
+      ? existing.paymentReconciliationPassword
+      : randomBytes(32).toString("base64url"),
     paymentWebhookPassword: secretPattern.test(existing.paymentWebhookPassword ?? "")
       ? existing.paymentWebhookPassword
       : randomBytes(32).toString("base64url"),
@@ -440,6 +446,7 @@ const upgradeCredentials = async () => {
   if (
     upgraded.controlPassword !== existing.controlPassword ||
     upgraded.paymentFulfillmentPassword !== existing.paymentFulfillmentPassword ||
+    upgraded.paymentReconciliationPassword !== existing.paymentReconciliationPassword ||
     upgraded.paymentWebhookPassword !== existing.paymentWebhookPassword ||
     upgraded.privacyDeletionPassword !== existing.privacyDeletionPassword ||
     upgraded.adminServicePassword !== existing.adminServicePassword ||
@@ -619,6 +626,7 @@ const buildDatabaseUrl = (runtime, databaseName, role = APP_ROLE) => {
     [APP_ROLE]: runtime.credentials.appPassword,
     [CONTROL_ROLE]: runtime.credentials.controlPassword,
     [PAYMENT_FULFILLMENT_ROLE]: runtime.credentials.paymentFulfillmentPassword,
+    [PAYMENT_RECONCILIATION_ROLE]: runtime.credentials.paymentReconciliationPassword,
     [PAYMENT_WEBHOOK_ROLE]: runtime.credentials.paymentWebhookPassword,
     [PRIVACY_DELETION_ROLE]: runtime.credentials.privacyDeletionPassword,
     [ADMIN_SERVICE_ROLE]: runtime.credentials.adminServicePassword,
@@ -851,20 +859,20 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
     await admin.query(`ALTER SCHEMA public OWNER TO ${MIGRATOR_ROLE}`);
     await admin.query(`REVOKE ALL ON DATABASE ${databaseName} FROM PUBLIC`);
     await admin.query(
-      `REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `REVOKE ALL ON DATABASE ${databaseName} FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_RECONCILIATION_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
-      `GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `GRANT CONNECT ON DATABASE ${databaseName} TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_RECONCILIATION_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
     await admin.query(
-      `REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `REVOKE ALL ON SCHEMA public FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_RECONCILIATION_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
-      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
+      `GRANT USAGE ON SCHEMA public TO ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_RECONCILIATION_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
-      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_RECONCILIATION_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
     const foundationTables = await admin.query(
       `SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS migrations,
@@ -1118,6 +1126,9 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       const commercialFulfillmentTables = await admin.query(
         "SELECT to_regclass('public.commercial_fulfillment_v2') IS NOT NULL AS present",
       );
+      const commercialReconciliationTables = await admin.query(
+        "SELECT to_regclass('public.commercial_reconciliation_run_v1') IS NOT NULL AS present",
+      );
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
@@ -1156,6 +1167,17 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         );
         await admin.query(
           `GRANT UPDATE (delivery_state, attempt_count, available_at, lease_token_hash, leased_until, completed_at, last_failure_code, dead_lettered_at) ON TABLE commercial_payment_outbox_v2 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+        );
+      }
+      if (commercialReconciliationTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, commercial_fulfillment_v2, credit_ledger_entry, commercial_reconciliation_run_v1, commercial_reconciliation_case_v1 TO ${PAYMENT_RECONCILIATION_ROLE}`,
+        );
+        await admin.query(
+          `GRANT INSERT ON TABLE commercial_reconciliation_run_v1, commercial_reconciliation_case_v1 TO ${PAYMENT_RECONCILIATION_ROLE}`,
+        );
+        await admin.query(
+          `REVOKE UPDATE, DELETE, TRUNCATE ON TABLE commercial_reconciliation_run_v1, commercial_reconciliation_case_v1 FROM ${PAYMENT_RECONCILIATION_ROLE}`,
         );
       }
       if (commercialPaymentEventTables.rows[0]?.present === true) {
@@ -1304,7 +1326,7 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(
-      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
+      `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM ${APP_ROLE}, ${CONTROL_ROLE}, ${PAYMENT_FULFILLMENT_ROLE}, ${PAYMENT_RECONCILIATION_ROLE}, ${PAYMENT_WEBHOOK_ROLE}, ${PRIVACY_DELETION_ROLE}, ${ADMIN_SERVICE_ROLE}, ${FLAG_READER_ROLE}, ${FLAG_WRITER_ROLE}, ${COUNTRY_POLICY_READER_ROLE}, ${COUNTRY_POLICY_WRITER_ROLE}, ${CATALOG_READER_ROLE}, ${CATALOG_WRITER_ROLE}, ${IDENTITY_READER_ROLE}, ${IDENTITY_WRITER_ROLE}, ${READING_READER_ROLE}, ${READING_WRITER_ROLE}, ${INTERPRETATION_READER_ROLE}, ${INTERPRETATION_WRITER_ROLE}, ${VERIFICATION_READER_ROLE}, ${VERIFICATION_WRITER_ROLE}`,
     );
   } finally {
     await admin.end();
@@ -1336,6 +1358,11 @@ const ensureApplicationRoleAndDatabase = async (runtime) => {
       admin,
       PAYMENT_FULFILLMENT_ROLE,
       runtime.credentials.paymentFulfillmentPassword,
+    );
+    await ensureLoginRole(
+      admin,
+      PAYMENT_RECONCILIATION_ROLE,
+      runtime.credentials.paymentReconciliationPassword,
     );
     await ensureLoginRole(admin, PAYMENT_WEBHOOK_ROLE, runtime.credentials.paymentWebhookPassword);
     await ensureLoginRole(
@@ -1782,6 +1809,11 @@ const createTestDatabase = async (runtime) => {
     databaseName,
     PAYMENT_FULFILLMENT_ROLE,
   );
+  const paymentReconciliationDatabaseUrl = buildDatabaseUrl(
+    runtime,
+    databaseName,
+    PAYMENT_RECONCILIATION_ROLE,
+  );
   const paymentWebhookDatabaseUrl = buildDatabaseUrl(runtime, databaseName, PAYMENT_WEBHOOK_ROLE);
   const privacyDeletionDatabaseUrl = buildDatabaseUrl(runtime, databaseName, PRIVACY_DELETION_ROLE);
   const adminServiceDatabaseUrl = buildDatabaseUrl(runtime, databaseName, ADMIN_SERVICE_ROLE);
@@ -1804,6 +1836,12 @@ const createTestDatabase = async (runtime) => {
     databaseName,
     runtime.credentials.paymentFulfillmentPassword,
     PAYMENT_FULFILLMENT_ROLE,
+  );
+  assertExactLocalDatabaseUrl(
+    paymentReconciliationDatabaseUrl,
+    databaseName,
+    runtime.credentials.paymentReconciliationPassword,
+    PAYMENT_RECONCILIATION_ROLE,
   );
   assertExactLocalDatabaseUrl(
     paymentWebhookDatabaseUrl,
@@ -1836,6 +1874,7 @@ const createTestDatabase = async (runtime) => {
     adminDatabaseUrl,
     controlDatabaseUrl,
     paymentFulfillmentDatabaseUrl,
+    paymentReconciliationDatabaseUrl,
     paymentWebhookDatabaseUrl,
     privacyDeletionDatabaseUrl,
     adminServiceDatabaseUrl,
@@ -2050,6 +2089,11 @@ export const withLocalPostgresLease = async (operation) =>
           DEVELOPMENT_DATABASE,
           PAYMENT_FULFILLMENT_ROLE,
         ),
+        developmentPaymentReconciliationDatabaseUrl: buildDatabaseUrl(
+          runtime,
+          DEVELOPMENT_DATABASE,
+          PAYMENT_RECONCILIATION_ROLE,
+        ),
         developmentPrivacyDeletionDatabaseUrl: buildDatabaseUrl(
           runtime,
           DEVELOPMENT_DATABASE,
@@ -2078,6 +2122,7 @@ export const localPostgresConstants = Object.freeze({
   host: HOST,
   migratorRole: MIGRATOR_ROLE,
   paymentFulfillmentRole: PAYMENT_FULFILLMENT_ROLE,
+  paymentReconciliationRole: PAYMENT_RECONCILIATION_ROLE,
   paymentWebhookRole: PAYMENT_WEBHOOK_ROLE,
   port: PORT,
   databaseUrlPath,

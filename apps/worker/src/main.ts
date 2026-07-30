@@ -1,12 +1,19 @@
 import nextEnvironment from "@next/env";
 import { parseWorkerConfiguration } from "@rituvia/config/server";
-import { createCommercialFulfillmentPersistence, createDatabaseClient } from "@rituvia/db";
+import {
+  createCommercialFulfillmentPersistence,
+  createCommercialPaymentEventPersistence,
+  createCommercialReconciliationPersistence,
+  createDatabaseClient,
+} from "@rituvia/db";
 import { planCommercialCreditPackFulfillment } from "@rituvia/payments";
 import { fileURLToPath } from "node:url";
 
 import { createWorkerRuntime } from "./runtime.js";
 import { createWorkerObservability } from "./observability.js";
 import { runCommercialPaymentFulfillmentLoop } from "./payment-fulfillment.js";
+import { runCommercialPaymentReconciliationLoop } from "./payment-reconciliation.js";
+import { createStripeReconciliationReader } from "./stripe-reconciliation.js";
 
 const { loadEnvConfig } = nextEnvironment;
 const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
@@ -22,6 +29,20 @@ const database =
   configuration.paymentFulfillmentDatabaseUrl === undefined
     ? undefined
     : createDatabaseClient(configuration.paymentFulfillmentDatabaseUrl);
+const reconciliationDatabase =
+  configuration.paymentReconciliationDatabaseUrl === undefined
+    ? undefined
+    : createDatabaseClient(configuration.paymentReconciliationDatabaseUrl);
+const paymentEventDatabase =
+  configuration.paymentWebhookDatabaseUrl === undefined
+    ? undefined
+    : createDatabaseClient(configuration.paymentWebhookDatabaseUrl);
+const stripePaymentConfiguration =
+  configuration.payment?.provider === "stripe" ? configuration.payment : undefined;
+const stripeReconciliation =
+  stripePaymentConfiguration === undefined
+    ? undefined
+    : createStripeReconciliationReader(stripePaymentConfiguration);
 const lifecycle = observability.start({ kind: "service", operation: "service.lifecycle" });
 let shutdownSignal: "SIGINT" | "SIGTERM" | undefined;
 
@@ -39,6 +60,7 @@ process.once("SIGTERM", requestTermination);
 lifecycle.event({ name: "service.ready" });
 
 try {
+  await stripeReconciliation?.attestAccount();
   await Promise.all([
     runtime.start(controller.signal),
     ...(database === undefined
@@ -69,6 +91,38 @@ try {
             signal: controller.signal,
             store: createCommercialFulfillmentPersistence(database),
           }),
+          ...(stripeReconciliation === undefined ||
+          stripePaymentConfiguration === undefined ||
+          reconciliationDatabase === undefined ||
+          paymentEventDatabase === undefined
+            ? []
+            : [
+                runCommercialPaymentReconciliationLoop({
+                  observe: ({ disposition }) => {
+                    if (disposition === "duplicate") return;
+                    const operation = lifecycle.child({
+                      dependency: "payment",
+                      kind: "dependency",
+                      operation: "dependency.request",
+                    });
+                    if (disposition === "clean") {
+                      operation.end({ outcome: "success" });
+                    } else {
+                      operation.end({
+                        category: "dependency",
+                        errorCode: "dependency_error",
+                        outcome: "failure",
+                        retryable: false,
+                      });
+                    }
+                  },
+                  paymentEvents: createCommercialPaymentEventPersistence(paymentEventDatabase),
+                  providerAccountFingerprint: stripePaymentConfiguration.accountId,
+                  reader: stripeReconciliation,
+                  signal: controller.signal,
+                  store: createCommercialReconciliationPersistence(reconciliationDatabase),
+                }),
+              ]),
         ]),
   ]);
   lifecycle.end({ outcome: shutdownSignal === undefined ? "success" : "cancelled" });
@@ -84,5 +138,7 @@ try {
   process.off("SIGINT", requestInterrupt);
   process.off("SIGTERM", requestTermination);
   await database?.$disconnect();
+  await reconciliationDatabase?.$disconnect();
+  await paymentEventDatabase?.$disconnect();
   await observability.flush();
 }

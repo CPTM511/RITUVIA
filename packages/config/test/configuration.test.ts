@@ -83,6 +83,7 @@ describe("server and client configuration boundary", () => {
       ...buildEnvironmentVariables,
       "DATABASE_URL",
       "PAYMENT_FULFILLMENT_DATABASE_URL",
+      "PAYMENT_RECONCILIATION_DATABASE_URL",
       "PAYMENT_WEBHOOK_DATABASE_URL",
       "PRIVACY_DELETION_DATABASE_URL",
       "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
@@ -443,6 +444,10 @@ describe("server and client configuration boundary", () => {
         "rituvia_payment_fulfillment",
         "fulfillment-password",
       ),
+      PAYMENT_RECONCILIATION_DATABASE_URL: databaseUrl(
+        "rituvia_payment_reconciliation",
+        "reconciliation-password",
+      ),
       PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl("rituvia_payment_webhook", "webhook-password"),
       RITUVIA_PAYMENT_PROVIDER: "stripe",
       RITUVIA_STRIPE_ACCOUNT_ID: "acct_12345678",
@@ -459,6 +464,9 @@ describe("server and client configuration boundary", () => {
     expect(parseServerConfiguration(sandbox).paymentFulfillmentDatabaseUrl).toBe(
       sandbox.PAYMENT_FULFILLMENT_DATABASE_URL,
     );
+    expect(parseServerConfiguration(sandbox).paymentReconciliationDatabaseUrl).toBe(
+      sandbox.PAYMENT_RECONCILIATION_DATABASE_URL,
+    );
     expect(() =>
       parseWorkerConfiguration({
         ...sandbox,
@@ -466,11 +474,23 @@ describe("server and client configuration boundary", () => {
       }),
     ).toThrowError("PAYMENT_FULFILLMENT_DATABASE_URL:missing");
     expect(() =>
+      parseWorkerConfiguration({
+        ...sandbox,
+        PAYMENT_RECONCILIATION_DATABASE_URL: undefined,
+      }),
+    ).toThrowError("PAYMENT_RECONCILIATION_DATABASE_URL:missing");
+    expect(() =>
       parseServerConfiguration({
         ...sandbox,
         PAYMENT_FULFILLMENT_DATABASE_URL: sandbox.DATABASE_URL,
       }),
     ).toThrowError("PAYMENT_FULFILLMENT_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_RECONCILIATION_DATABASE_URL: sandbox.PAYMENT_FULFILLMENT_DATABASE_URL,
+      }),
+    ).toThrowError("PAYMENT_RECONCILIATION_DATABASE_URL:invalid");
     expect(() =>
       parseServerConfiguration({
         ...sandbox,
