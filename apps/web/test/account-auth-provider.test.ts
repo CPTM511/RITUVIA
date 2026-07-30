@@ -108,4 +108,18 @@ describe("local passwordless account provider", () => {
       }),
     ).toThrow(AccountAuthProviderInputError);
   });
+
+  it("allows the reviewed Credit-pack return target", () => {
+    const provider = createAccountAuthProvider({
+      canonicalOrigin: "https://example.test",
+      challengeTtlSeconds: 600,
+      deploymentEnvironment: "local",
+    });
+    expect(
+      provider.startEmailMagicLink({
+        email: "person@example.test",
+        returnTo: "/en/plans",
+      }).returnTo,
+    ).toBe("/en/plans");
+  });
 });

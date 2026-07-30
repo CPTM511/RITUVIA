@@ -252,6 +252,9 @@ const readCheckoutRecord = async (
 };
 
 const mapCheckout = async (record: CheckoutRecord): Promise<PersistedCommercialStripeCheckout> => {
+  if (!["created", "checkout_created"].includes(record.order.status)) {
+    throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
+  }
   if (
     record.order.userId.length === 0 ||
     record.order.totalMinor !== record.attempt.amountMinor ||
@@ -259,7 +262,6 @@ const mapCheckout = async (record: CheckoutRecord): Promise<PersistedCommercialS
     record.attempt.provider !== "stripe" ||
     record.attempt.providerAccountFingerprint === null ||
     record.attempt.idempotencyKeyVersion !== providerIdempotencyKeyVersion ||
-    !["created", "checkout_created"].includes(record.order.status) ||
     record.order.status !== record.attempt.state
   ) {
     throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");

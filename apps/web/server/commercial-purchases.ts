@@ -4,6 +4,7 @@ import {
   createCommercialFulfillmentPersistence,
   type CommercialFulfillmentPersistence,
   type CommercialPurchaseRestoration,
+  type CommercialPurchaseStatus,
 } from "@rituvia/db";
 
 import { getWebRuntimeConfiguration } from "../config/server";
@@ -17,15 +18,31 @@ type AccountGateway = Readonly<{
 
 export type CommercialPurchaseApplicationDependencies = Readonly<{
   accounts: AccountGateway;
-  persistence: Pick<CommercialFulfillmentPersistence, "restorePurchases">;
+  persistence: Pick<CommercialFulfillmentPersistence, "readPurchaseStatus" | "restorePurchases">;
 }>;
 
 export const createCommercialPurchaseApplicationService = (
   dependencies: CommercialPurchaseApplicationDependencies,
 ): Readonly<{
+  status(sessionToken: string | undefined, orderId: string): Promise<CommercialPurchaseStatus>;
   restore(sessionToken: string | undefined): Promise<CommercialPurchaseRestoration>;
 }> =>
   Object.freeze({
+    async status(sessionToken, orderId) {
+      if (sessionToken === undefined) throw new WebCommerceError("session_required");
+      try {
+        const session = await dependencies.accounts.resolveSession(sessionToken);
+        if (session === null) throw new WebCommerceError("session_required");
+        const status = await dependencies.persistence.readPurchaseStatus(session.userId, orderId);
+        if (status === null) throw new WebCommerceError("not_found");
+        return status;
+      } catch (error) {
+        if (error instanceof WebCommerceError) throw error;
+        if (error instanceof TypeError) throw new WebCommerceError("not_found");
+        throw new WebCommerceError("unavailable");
+      }
+    },
+
     async restore(sessionToken) {
       if (sessionToken === undefined) throw new WebCommerceError("session_required");
       try {

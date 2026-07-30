@@ -1082,7 +1082,7 @@ existing human approval gates.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-065 are complete, and RIT-066 is the sole Ready task.
+RIT-063 through RIT-066 are complete, and RIT-067 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1109,8 +1109,9 @@ webhooks become available, while checkout repeats the same cached proof defensiv
 consumes the outbox through a separate exact-role DSN, grants purchased packs exactly once, holds
 only unspent source Credits on dispute, converts holds and available value on refund, and records
 consumed/reserved shortfalls for review without a negative balance. Authenticated Credit
-restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 is the sole
-Ready task. RIT-045
+restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
+noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
+RIT-067 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -2390,9 +2391,24 @@ the 34-migration webhook and fulfillment PostgreSQL gates, privacy-export Postgr
 typechecks, and migration policy pass. The fulfillment gate now explicitly proves current-order
 convergence, active-reservation and consumed shortfall, and cross-account allocation rejection.
 It also proves startup denial after synthetic ledger-update or payment-event-read privilege drift.
-No Live Mode, refund initiation, provider dispute/refund
-route activation, subscription, reconciliation, production migration, deployment, DNS, or launch
-was added. RIT-066 is the sole Ready task.
+No Live Mode, refund initiation, provider dispute/refund route activation, subscription,
+reconciliation, production migration, deployment, DNS, or launch was added.
+
+RIT-066 is Done. `/en/plans` now renders only active server-catalogue one-time US/USD Credit packs
+with exact contents, calm price and refund disclosures, verified-account/18+ gating, and stable
+per-pack retry idempotency. The existing Stripe Test Mode service remains the only checkout
+authority; the client accepts only the reviewed hosted Stripe URL and never supplies money,
+eligibility or fulfillment facts. The private checkout-return API reads only the authenticated
+owner's order and matching current fulfillment version, so `paid` remains pending until active
+fulfillment and missing/cross-account orders remain indistinguishable.
+
+The focused 191-test Web subset, both affected package typechecks, the 34-migration commercial
+checkout and fulfillment database gates, the affected Web production build, and desktop/375px
+Chromium review pass. The focused mobile Axe run has zero violations, no horizontal overflow, and
+no unexpected console errors. The local passwordless start remained safely unavailable in the
+production-build browser environment, so no external Stripe Test Mode checkout was created; the
+return path, failure state, route contracts, CSRF, idempotency and URL boundaries remain covered by
+focused automated evidence. RIT-067 is the sole Ready task.
 
 ## Update rules
 
@@ -3746,8 +3762,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-063 | M6        |       P0 | Done    | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                         | payments_risk | Test-only Stripe Checkout API, v2 order/attempt persistence, exact idempotency, server catalog/policy pricing, CSRF, live-key rejection, focused PostgreSQL/security/build gates pass; real network proof remains credential-gated.                        |
 | RIT-064 | M6        |       P0 | Done    | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Test-only raw signature/replay, startup account attestation, same-database distinct-role binding, exact duplicate/conflict, account-bound out-of-order replay, monotonic/versioned outbox, and zero fulfillment pass.                                      |
 | RIT-065 | M6        |       P0 | Done    | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Dedicated-role outbox consumption grants purchased Credits exactly once; disputes hold unspent source value, refunds reverse linked value, consumed shortfalls require review, and private owner restoration passes.                                       |
-| RIT-066 | M6        |       P0 | Ready   | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
-| RIT-067 | M6        |       P0 | Planned | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Scheduled comparison detects missing/mismatched payment, order, entitlement, payout states.                                                                                                                                                                |
+| RIT-066 | M6        |       P0 | Done    | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
+| RIT-067 | M6        |       P0 | Ready   | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Scheduled comparison detects missing/mismatched payment, order, entitlement, payout states.                                                                                                                                                                |
 | RIT-068 | M6        |       P0 | Planned | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Versioned eligibility, audit, entitlement impact, duplicate/retry handling pass.                                                                                                                                                                           |
 | RIT-069 | M6        |       P0 | Planned | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                                                                                                                                                          |
 | RIT-070 | M7        |       P0 | Planned | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                                                                                                                                                           |
@@ -4120,6 +4136,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-063 | First Fiat Hosted-Checkout Sandbox Adapter | [tasks/RIT-063.md](./tasks/RIT-063.md) |
 | Task | RIT-064 | Signed Payment Webhook Ingestion and Processing | [tasks/RIT-064.md](./tasks/RIT-064.md) |
 | Task | RIT-065 | Entitlement Fulfillment and Purchase Restoration | [tasks/RIT-065.md](./tasks/RIT-065.md) |
+| Task | RIT-066 | Product Detail, Checkout Return, and Order Status UX | [tasks/RIT-066.md](./tasks/RIT-066.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

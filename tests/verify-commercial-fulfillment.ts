@@ -258,6 +258,27 @@ await withLocalPostgresLease(async (lease) => {
       const pendingResult = await fulfillNext();
       assert.equal(pendingResult.disposition, "unchanged");
       assert.equal((await fulfillment.restorePurchases(userId)).credits.total, 0);
+      const pendingStatus = await fulfillment.readPurchaseStatus(userId, order.orderId);
+      assert.notEqual(pendingStatus, null);
+      assert.match(pendingStatus!.updatedAt, /^\d{4}-\d{2}-\d{2}T/u);
+      assert.deepEqual(
+        {
+          ...pendingStatus,
+          updatedAt: undefined,
+        },
+        {
+          amountMinor: 599,
+          currencyCode: "USD",
+          exactContents: ["6 Credits", "Credits do not represent cash or stored value"],
+          fulfilled: false,
+          orderId: order.orderId,
+          productCode: "pack_6",
+          refundPolicyVersion: "test:local:refund.v1",
+          state: "pending",
+          updatedAt: undefined,
+        },
+      );
+      assert.equal(await fulfillment.readPurchaseStatus(otherUserId, order.orderId), null);
       const paid = await process(order, "payment_succeeded");
       const duplicate = await events.processStripeSandboxEvent(
         paid,
@@ -300,6 +321,7 @@ await withLocalPostgresLease(async (lease) => {
       });
       assert.equal((await fulfillment.restorePurchases(userId)).credits.purchased, 6);
       assert.equal((await fulfillment.restorePurchases(otherUserId)).credits.total, 0);
+      assert.equal((await fulfillment.readPurchaseStatus(userId, order.orderId))?.fulfilled, true);
 
       const convergedUserId = await createUser();
       const convergedOrder = await createOrder(convergedUserId);
@@ -329,6 +351,14 @@ await withLocalPostgresLease(async (lease) => {
       const disputed = await fulfillNext();
       assert.equal(disputed.disposition, "held");
       assert.equal(disputed.creditsHeld, 6);
+      assert.deepEqual(
+        await fulfillment
+          .readPurchaseStatus(userId, order.orderId)
+          .then((status) =>
+            status === null ? null : { fulfilled: status.fulfilled, state: status.state },
+          ),
+        { fulfilled: false, state: "disputed" },
+      );
       assert.deepEqual((await fulfillment.restorePurchases(userId)).credits, {
         promotional: 0,
         purchased: 0,
@@ -590,5 +620,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 console.log(
-  "Verified exactly-once Credit grants, dispute holds, refund conversion, shortfall review, private restoration, and fulfillment least privilege.",
+  "Verified exactly-once Credit grants, owner-scoped purchase status, dispute holds, refund conversion, shortfall review, private restoration, and fulfillment least privilege.",
 );

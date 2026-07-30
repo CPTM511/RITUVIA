@@ -19,6 +19,7 @@ import {
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeNumerologyPath,
+  localePlansPath,
   localeQuestionIntakePath,
   localeRevisitPath,
   localeSanctuaryPath,
@@ -77,6 +78,7 @@ const privateExperiencePagePathnames = Object.freeze([
   localeAstrologyPath("en"),
   localeCheckoutReturnPath("en"),
   localeLocalCheckoutPath("en"),
+  localePlansPath("en"),
   localeRevisitPath("en"),
   localeSanctuaryPath("en"),
   localeSignInPath("en"),
@@ -90,6 +92,11 @@ const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|credits|entitlements|ritual-objects)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/readings\/astrology\/natal$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/stripe$/u },
+  {
+    methods: ["GET"],
+    pattern: new RegExp(`^/api/v1/checkout/return/${uuidPathPart}$`, "u"),
+  },
   { methods: ["POST"], pattern: /^\/api\/v1\/(?:intentions|journal-entries|ritual-sessions)$/u },
   { methods: ["GET", "POST"], pattern: /^\/api\/v1\/revisits$/u },
   {

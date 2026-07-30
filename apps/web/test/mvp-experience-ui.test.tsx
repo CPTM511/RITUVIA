@@ -5,6 +5,12 @@ import { describe, expect, it, vi } from "vitest";
 import { AccountExperience, parseAccountSummary } from "../app/_components/account-experience";
 import { CheckoutReturn, resolveCheckoutOrderStatus } from "../app/_components/checkout-return";
 import {
+  clearCheckoutIdempotencyKey,
+  CreditPackCheckout,
+  parseStripeCheckoutResponse,
+  readCheckoutIdempotencyKey,
+} from "../app/_components/credit-pack-checkout";
+import {
   completedLocalOrderId,
   LocalCheckout,
   localCheckoutCompletionEndpoint,
@@ -28,6 +34,7 @@ import {
   localeAccountPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
+  localePlansPath,
   localeRevisitPath,
   localeSanctuaryPath,
   localeSignInPath,
@@ -103,12 +110,64 @@ describe("MVP client boundaries", () => {
       "pending",
     );
     expect(resolveCheckoutOrderStatus({ entitlementGranted: true, state: "paid" })).toBe("success");
+    expect(resolveCheckoutOrderStatus({ fulfilled: false, status: "paid" })).toBe("pending");
+    expect(resolveCheckoutOrderStatus({ fulfilled: true, status: "paid" })).toBe("success");
     expect(resolveCheckoutOrderStatus({ entitlementGranted: true, state: "refunded" })).toBe(
       "failed",
     );
     expect(resolveCheckoutOrderStatus({ state: "pending_checkout" })).toBe("pending");
     expect(resolveCheckoutOrderStatus({ state: "payment_failed" })).toBe("failed");
     expect(resolveCheckoutOrderStatus({ redirect: "success" })).toBeNull();
+  });
+
+  it("accepts only a reviewed Stripe hosted-checkout response", () => {
+    expect(
+      parseStripeCheckoutResponse({
+        checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_12345678",
+        orderId: uuid,
+        schemaVersion: 1,
+        state: "checkout_created",
+      }),
+    ).toBe("https://checkout.stripe.com/c/pay/cs_test_12345678");
+    expect(
+      parseStripeCheckoutResponse({
+        checkoutUrl: "https://foreign.test/checkout",
+        orderId: uuid,
+        schemaVersion: 1,
+        state: "checkout_created",
+      }),
+    ).toBeNull();
+    expect(
+      parseStripeCheckoutResponse({
+        checkoutUrl: "https://checkout.stripe.com:8443/c/pay/cs_test_12345678",
+        orderId: uuid,
+        schemaVersion: 1,
+        state: "checkout_created",
+      }),
+    ).toBeNull();
+  });
+
+  it("reuses checkout idempotency in memory when browser storage is unavailable", () => {
+    const memory = new Map<string, string>();
+    const issue = vi.fn(() => uuid);
+    const unavailableStorage = {
+      getItem: () => {
+        throw new Error("storage unavailable");
+      },
+      removeItem: () => {
+        throw new Error("storage unavailable");
+      },
+      setItem: () => {
+        throw new Error("storage unavailable");
+      },
+    };
+
+    expect(readCheckoutIdempotencyKey("pack_6", memory, unavailableStorage, issue)).toBe(uuid);
+    expect(readCheckoutIdempotencyKey("pack_6", memory, unavailableStorage, issue)).toBe(uuid);
+    expect(issue).toHaveBeenCalledTimes(1);
+    clearCheckoutIdempotencyKey("pack_6", memory, unavailableStorage);
+    expect(readCheckoutIdempotencyKey("pack_6", memory, unavailableStorage, issue)).toBe(uuid);
+    expect(issue).toHaveBeenCalledTimes(2);
   });
 
   it("keeps passwordless return paths on reviewed local English routes", () => {
@@ -236,6 +295,7 @@ describe("MVP server-rendered initial states", () => {
         locale: "en",
         messages: getAccountMessages("en").account,
         oneCardHref: localeTarotOneCardPath("en"),
+        plansHref: localePlansPath("en"),
         sanctuaryHref: localeSanctuaryPath("en"),
         signInHref: localeSignInPath("en"),
         threeCardHref: localeTarotThreeCardPath("en"),
@@ -254,6 +314,33 @@ describe("MVP server-rendered initial states", () => {
     expect(accountHtml).toContain("Loading your private account");
     expect(checkoutHtml).toContain('aria-busy="true"');
     expect(checkoutHtml).toContain("Checking the verified order status");
+  });
+
+  it("renders exact Credit pack contents before checkout", () => {
+    const html = renderToStaticMarkup(
+      createElement(CreditPackCheckout, {
+        accountHref: localeAccountPath("en"),
+        locale: "en",
+        messages: getCommerceMessages("en").plans,
+        plansHref: localePlansPath("en"),
+        products: [
+          {
+            amountMinor: 599,
+            code: "pack_6",
+            currencyCode: "USD",
+            description: "One-time service entitlements.",
+            exactContents: ["6 Credits", "Added after verified payment"],
+            title: "6 Credits",
+          },
+        ],
+        signInHref: localeSignInPath("en"),
+      }),
+    );
+
+    expect(html).toContain("$5.99");
+    expect(html).toContain("Added after verified payment");
+    expect(html).toContain("Accessed digital experiences are otherwise non-refundable");
+    expect(html).toContain('disabled=""');
   });
 
   it("renders an explicit, non-card local checkout confirmation", () => {

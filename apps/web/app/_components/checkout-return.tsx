@@ -15,7 +15,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export const resolveCheckoutOrderStatus = (
   value: unknown,
 ): Exclude<CheckoutPhase, "loading" | "missing" | "unavailable"> | null => {
-  if (!isRecord(value) || typeof value.state !== "string") return null;
+  if (!isRecord(value)) return null;
+  const state =
+    typeof value.status === "string"
+      ? value.status
+      : typeof value.state === "string"
+        ? value.state
+        : null;
+  if (state === null) return null;
   if (
     [
       "canceled",
@@ -26,11 +33,13 @@ export const resolveCheckoutOrderStatus = (
       "payment_failed",
       "refunded",
       "void",
-    ].includes(value.state)
+    ].includes(state)
   ) {
     return "failed";
   }
-  if (value.state === "paid" && value.entitlementGranted === true) return "success";
+  if (state === "paid" && (value.fulfilled === true || value.entitlementGranted === true)) {
+    return "success";
+  }
   if (
     [
       "checkout_created",
@@ -40,7 +49,7 @@ export const resolveCheckoutOrderStatus = (
       "pending",
       "pending_checkout",
       "processing",
-    ].includes(value.state)
+    ].includes(state)
   ) {
     return "pending";
   }
@@ -76,7 +85,7 @@ export function CheckoutReturn({
     controller.current = nextController;
     setPhase((current) => (current === "pending" ? "pending" : "loading"));
     try {
-      const response = await fetch(`/api/v1/orders/${encodeURIComponent(validOrderId)}`, {
+      const response = await fetch(`/api/v1/checkout/return/${encodeURIComponent(validOrderId)}`, {
         cache: "no-store",
         credentials: "same-origin",
         headers: { accept: "application/json" },

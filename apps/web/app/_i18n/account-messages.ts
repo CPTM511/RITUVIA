@@ -63,6 +63,7 @@ export type AccountMessages = Readonly<{
     saveError: string;
     saveConflict: string;
     requiredLabel: string;
+    plansAction: string;
     consentEyebrow: string;
     consentTitle: string;
     consentDescription: string;
@@ -200,6 +201,7 @@ const englishMessages = {
     saveConflict:
       "This profile changed in another session. Reload the account before saving again.",
     requiredLabel: "required",
+    plansAction: "View Credit packs",
     consentEyebrow: "You are in control",
     consentTitle: "Personalization choices",
     consentDescription:

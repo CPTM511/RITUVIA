@@ -176,6 +176,7 @@ export {
   type CommercialFulfillmentPersistenceErrorCode,
   type CommercialFulfillmentResult,
   type CommercialPurchaseRestoration,
+  type CommercialPurchaseStatus,
 } from "./commercial-fulfillment-persistence.js";
 export {
   assertReflectionRuntimeDatabasePrivileges,

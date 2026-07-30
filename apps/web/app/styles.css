@@ -2511,6 +2511,68 @@ h3 {
   margin-inline: auto;
 }
 
+.credit-pack-checkout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.credit-pack-account-state {
+  display: grid;
+  max-inline-size: 42rem;
+  gap: 1rem;
+}
+
+.credit-pack-account-state .rvt-action {
+  justify-self: start;
+}
+
+.credit-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.credit-pack-card {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.5rem;
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.credit-pack-card h3,
+.credit-pack-card h4,
+.credit-pack-card p,
+.credit-pack-card ul {
+  margin: 0;
+}
+
+.credit-pack-card header,
+.credit-pack-card ul {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.credit-pack-card p,
+.credit-pack-card li {
+  color: var(--ink-secondary);
+}
+
+.credit-pack-price {
+  color: var(--ink-primary) !important;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.credit-pack-card .rvt-action {
+  inline-size: 100%;
+  margin-block-start: auto;
+}
+
 .local-checkout-panel > .rvt-action {
   margin-block-start: 1.5rem;
 }
@@ -2936,6 +2998,7 @@ h3 {
   }
 
   .ritual-item-card .rvt-action,
+  .credit-pack-account-state .rvt-action,
   .ritual-experience-actions .rvt-action,
   .ritual-experience-header-actions .rvt-action,
   .ritual-experience-mode-actions .rvt-action,
@@ -2943,6 +3006,10 @@ h3 {
   .account-actions .rvt-action,
   .checkout-return-actions .rvt-action {
     inline-size: 100%;
+  }
+
+  .credit-pack-grid {
+    grid-template-columns: 1fr;
   }
 
   .ritual-experience {
@@ -3215,6 +3282,10 @@ h3 {
   .sign-in-panel,
   .sign-in-status,
   .checkout-return-panel {
+    border: 1px solid CanvasText;
+  }
+
+  .credit-pack-card {
     border: 1px solid CanvasText;
   }
 }

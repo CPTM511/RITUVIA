@@ -1,7 +1,7 @@
 const localCheckoutIdPattern = /^local_[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 
 export const isReviewedReturnTo = (value: unknown): value is string => {
-  if (value === "/en/account" || value === "/en/sanctuary") return true;
+  if (value === "/en/account" || value === "/en/plans" || value === "/en/sanctuary") return true;
   if (typeof value !== "string" || value.length > 512) return false;
   try {
     const parsed = new URL(value, "https://local.invalid");

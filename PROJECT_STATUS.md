@@ -4,7 +4,7 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-065 are complete, and RIT-066 is the sole Ready task.
+RIT-063 through RIT-066 are complete, and RIT-067 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -31,8 +31,9 @@ webhooks become available, while checkout repeats the same cached proof defensiv
 consumes the outbox through a separate exact-role DSN, grants purchased packs exactly once, holds
 only unspent source Credits on dispute, converts holds and available value on refund, and records
 consumed/reserved shortfalls for review without a negative balance. Authenticated Credit
-restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 is the sole
-Ready task. RIT-045
+restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
+noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
+RIT-067 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1312,9 +1313,24 @@ the 34-migration webhook and fulfillment PostgreSQL gates, privacy-export Postgr
 typechecks, and migration policy pass. The fulfillment gate now explicitly proves current-order
 convergence, active-reservation and consumed shortfall, and cross-account allocation rejection.
 It also proves startup denial after synthetic ledger-update or payment-event-read privilege drift.
-No Live Mode, refund initiation, provider dispute/refund
-route activation, subscription, reconciliation, production migration, deployment, DNS, or launch
-was added. RIT-066 is the sole Ready task.
+No Live Mode, refund initiation, provider dispute/refund route activation, subscription,
+reconciliation, production migration, deployment, DNS, or launch was added.
+
+RIT-066 is Done. `/en/plans` now renders only active server-catalogue one-time US/USD Credit packs
+with exact contents, calm price and refund disclosures, verified-account/18+ gating, and stable
+per-pack retry idempotency. The existing Stripe Test Mode service remains the only checkout
+authority; the client accepts only the reviewed hosted Stripe URL and never supplies money,
+eligibility or fulfillment facts. The private checkout-return API reads only the authenticated
+owner's order and matching current fulfillment version, so `paid` remains pending until active
+fulfillment and missing/cross-account orders remain indistinguishable.
+
+The focused 191-test Web subset, both affected package typechecks, the 34-migration commercial
+checkout and fulfillment database gates, the affected Web production build, and desktop/375px
+Chromium review pass. The focused mobile Axe run has zero violations, no horizontal overflow, and
+no unexpected console errors. The local passwordless start remained safely unavailable in the
+production-build browser environment, so no external Stripe Test Mode checkout was created; the
+return path, failure state, route contracts, CSRF, idempotency and URL boundaries remain covered by
+focused automated evidence. RIT-067 is the sole Ready task.
 
 ## Update rules
 

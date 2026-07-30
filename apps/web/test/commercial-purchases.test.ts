@@ -15,6 +15,17 @@ const restoration = Object.freeze({
   }),
   entitlements: Object.freeze([]),
 });
+const purchaseStatus = Object.freeze({
+  amountMinor: 599,
+  currencyCode: "USD",
+  exactContents: Object.freeze(["6 Credits"]),
+  fulfilled: false,
+  orderId: "22222222-2222-4222-8222-222222222222",
+  productCode: "pack_6",
+  refundPolicyVersion: "test:local:refund.v1",
+  state: "paid" as const,
+  updatedAt: "2026-07-30T12:00:00.000Z",
+});
 
 describe("commercial purchase restoration service", () => {
   it("restores only the authenticated account projection", async () => {
@@ -25,7 +36,7 @@ describe("commercial purchase restoration service", () => {
           userId: "12345678-1234-4123-8123-123456789abc",
         }),
       },
-      persistence: { restorePurchases },
+      persistence: { readPurchaseStatus: vi.fn(), restorePurchases },
     });
     await expect(service.restore("a".repeat(43))).resolves.toEqual(restoration);
     expect(restorePurchases).toHaveBeenCalledWith("12345678-1234-4123-8123-123456789abc");
@@ -34,7 +45,7 @@ describe("commercial purchase restoration service", () => {
   it("does not reveal whether a missing token maps to another account", async () => {
     const service = createCommercialPurchaseApplicationService({
       accounts: { resolveSession: vi.fn().mockResolvedValue(null) },
-      persistence: { restorePurchases: vi.fn() },
+      persistence: { readPurchaseStatus: vi.fn(), restorePurchases: vi.fn() },
     });
     await expect(service.restore("a".repeat(43))).rejects.toMatchObject({
       code: "session_required",
@@ -50,11 +61,50 @@ describe("commercial purchase restoration service", () => {
         }),
       },
       persistence: {
+        readPurchaseStatus: vi.fn(),
         restorePurchases: vi.fn().mockRejectedValue(new Error("private database details")),
       },
     });
     await expect(service.restore("a".repeat(43))).rejects.toMatchObject({
       code: "unavailable",
+    });
+  });
+
+  it("reads an owner-scoped checkout return state without granting from the URL", async () => {
+    const readPurchaseStatus = vi.fn().mockResolvedValue(purchaseStatus);
+    const service = createCommercialPurchaseApplicationService({
+      accounts: {
+        resolveSession: vi.fn().mockResolvedValue({
+          userId: "12345678-1234-4123-8123-123456789abc",
+        }),
+      },
+      persistence: { readPurchaseStatus, restorePurchases: vi.fn() },
+    });
+
+    await expect(service.status("a".repeat(43), purchaseStatus.orderId)).resolves.toEqual(
+      purchaseStatus,
+    );
+    expect(readPurchaseStatus).toHaveBeenCalledWith(
+      "12345678-1234-4123-8123-123456789abc",
+      purchaseStatus.orderId,
+    );
+  });
+
+  it("does not reveal another account's purchase status", async () => {
+    const service = createCommercialPurchaseApplicationService({
+      accounts: {
+        resolveSession: vi.fn().mockResolvedValue({
+          userId: "12345678-1234-4123-8123-123456789abc",
+        }),
+      },
+      persistence: {
+        readPurchaseStatus: vi.fn().mockResolvedValue(null),
+        restorePurchases: vi.fn(),
+      },
+    });
+
+    await expect(service.status("a".repeat(43), purchaseStatus.orderId)).rejects.toMatchObject({
+      code: "not_found",
     });
   });
 });

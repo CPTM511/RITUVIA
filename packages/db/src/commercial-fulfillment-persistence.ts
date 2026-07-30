@@ -110,6 +110,18 @@ export type CommercialPurchaseRestoration = Readonly<{
   }>[];
 }>;
 
+export type CommercialPurchaseStatus = Readonly<{
+  amountMinor: number;
+  currencyCode: string;
+  exactContents: readonly string[];
+  fulfilled: boolean;
+  orderId: string;
+  productCode: string;
+  refundPolicyVersion: string;
+  state: CommercialFulfillmentOrderStatus;
+  updatedAt: string;
+}>;
+
 export type CommercialFulfillmentPersistence = Readonly<{
   claimNextPaymentState(input: {
     claimedAt: string;
@@ -131,6 +143,7 @@ export type CommercialFulfillmentPersistence = Readonly<{
     },
     plan: CommercialCreditPackFulfillmentPlanner,
   ): Promise<CommercialFulfillmentResult | null>;
+  readPurchaseStatus(userId: string, orderId: string): Promise<CommercialPurchaseStatus | null>;
   restorePurchases(userId: string): Promise<CommercialPurchaseRestoration>;
 }>;
 
@@ -971,6 +984,58 @@ export const createCommercialFulfillmentPersistence = (
         }
       }
       throw new CommercialFulfillmentPersistenceError("COMMERCIAL_FULFILLMENT_UNAVAILABLE");
+    },
+
+    async readPurchaseStatus(userId, orderId) {
+      requireUuid(userId);
+      requireUuid(orderId);
+      const rows = await database.$queryRaw<
+        Readonly<{
+          amountMinor: number;
+          currencyCode: string;
+          exactContents: string[];
+          fulfillmentStatus: string | null;
+          orderId: string;
+          productCode: string;
+          refundPolicyVersion: string;
+          state: CommercialFulfillmentOrderStatus;
+          updatedAt: Date;
+        }>[]
+      >`
+        SELECT
+          orders.total_minor AS "amountMinor",
+          orders.currency_code AS "currencyCode",
+          items.exact_contents_snapshot AS "exactContents",
+          fulfillment.status AS "fulfillmentStatus",
+          orders.public_id AS "orderId",
+          items.product_code AS "productCode",
+          orders.refund_policy_version AS "refundPolicyVersion",
+          orders.status AS state,
+          orders.updated_at AS "updatedAt"
+        FROM commercial_order_v2 AS orders
+        JOIN commercial_order_item_v2 AS items ON items.order_id = orders.id
+        LEFT JOIN commercial_fulfillment_v2 AS fulfillment
+          ON fulfillment.order_id = orders.id
+          AND fulfillment.user_id = orders.user_id
+          AND fulfillment.applied_payment_state_version = orders.payment_state_version
+        WHERE orders.public_id = ${orderId}::uuid
+          AND orders.user_id = ${userId}::uuid
+        LIMIT 1
+      `;
+      const row = rows.at(0);
+      return row === undefined
+        ? null
+        : Object.freeze({
+            amountMinor: row.amountMinor,
+            currencyCode: row.currencyCode,
+            exactContents: Object.freeze([...row.exactContents]),
+            fulfilled: row.state === "paid" && row.fulfillmentStatus === "active",
+            orderId: row.orderId,
+            productCode: row.productCode,
+            refundPolicyVersion: row.refundPolicyVersion,
+            state: row.state,
+            updatedAt: row.updatedAt.toISOString(),
+          });
     },
 
     async restorePurchases(userId) {

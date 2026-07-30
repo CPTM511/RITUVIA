@@ -187,6 +187,30 @@ await withLocalPostgresLease(async (lease) => {
         orders: 2,
         paidOrders: 0,
       });
+      await migrator.query(
+        `
+          UPDATE commercial_order_v2
+          SET status = 'paid',
+              paid_at = '2026-07-30T12:05:00.000Z',
+              updated_at = '2026-07-30T12:05:00.000Z'
+          WHERE public_id = $1::uuid
+        `,
+        [created.checkout.orderId],
+      );
+      await migrator.query(
+        `
+          UPDATE commercial_payment_attempt_v2
+          SET state = 'succeeded', completed_at = '2026-07-30T12:05:00.000Z'
+          WHERE order_id = (SELECT id FROM commercial_order_v2 WHERE public_id = $1::uuid)
+        `,
+        [created.checkout.orderId],
+      );
+      await assert.rejects(
+        persistence.createOrReplayStripeCheckout(prepared),
+        (error: unknown) =>
+          error instanceof CommercialCheckoutPersistenceError &&
+          error.code === "COMMERCIAL_CHECKOUT_CONFLICT",
+      );
 
       const applicationSql = new Client({ connectionString: database.databaseUrl });
       await applicationSql.connect();
@@ -240,5 +264,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 console.log(
-  "Verified Stripe sandbox commercial checkout idempotency, atomic attachment, least privilege, and zero fulfillment side effects.",
+  "Verified Stripe sandbox commercial checkout idempotency, terminal replay conflict, atomic attachment, least privilege, and zero fulfillment side effects.",
 );

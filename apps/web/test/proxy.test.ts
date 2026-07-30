@@ -84,6 +84,7 @@ describe("public shell request and crawl gate", () => {
     "/en/sign-in?returnTo=%2Fen%2Fsanctuary",
     "/en/checkout/local?checkout_id=local_checkout.123",
     "/en/checkout/return?order_id=33333333-3333-4333-8333-333333333333",
+    "/en/plans",
   ])("allows an enabled exact private MVP document without indexing: %s", async (pathname) => {
     const response = await proxy(request(pathname));
 
@@ -91,6 +92,18 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+  });
+
+  it("allows only the reviewed Stripe checkout and return methods", async () => {
+    const create = await proxy(request("/api/v1/checkout/stripe", { method: "POST" }));
+    const status = await proxy(
+      request("/api/v1/checkout/return/33333333-3333-4333-8333-333333333333"),
+    );
+    const rejected = await proxy(request("/api/v1/checkout/stripe"));
+
+    expect(create.status).toBe(200);
+    expect(status.status).toBe(200);
+    expect(rejected.status).toBe(404);
   });
 
   it("allows only the exact saved astrology page and read API", async () => {

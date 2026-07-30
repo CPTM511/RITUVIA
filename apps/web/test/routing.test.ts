@@ -19,6 +19,7 @@ import {
   localeLocalCheckoutPath,
   localeNumerologyLibraryPath,
   localeNumerologyPath,
+  localePlansPath,
   localeQuestionIntakePath,
   localeSanctuaryPath,
   localeSectionPath,
@@ -57,6 +58,7 @@ describe("Web locale routing", () => {
     expect(localeSanctuaryPath("en")).toBe("/en/sanctuary");
     expect(localeSignInPath("en")).toBe("/en/sign-in");
     expect(localeAccountPath("en")).toBe("/en/account");
+    expect(localePlansPath("en")).toBe("/en/plans");
     expect(localeCheckoutReturnPath("en")).toBe("/en/checkout/return");
     expect(localeLocalCheckoutPath("en")).toBe("/en/checkout/local");
     expect(publicPageSlugs).toEqual(["methodology", "safety", "privacy"]);

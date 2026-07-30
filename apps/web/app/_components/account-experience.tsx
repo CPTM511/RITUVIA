@@ -225,6 +225,7 @@ type AccountExperienceProps = Readonly<{
   locale: Locale;
   messages: AccountMessages["account"];
   oneCardHref: LocalActionHref;
+  plansHref: LocalActionHref;
   sanctuaryHref: LocalActionHref;
   signInHref: LocalActionHref;
   threeCardHref: LocalActionHref;
@@ -234,6 +235,7 @@ export function AccountExperience({
   locale,
   messages,
   oneCardHref,
+  plansHref,
   sanctuaryHref,
   signInHref,
   threeCardHref,
@@ -739,6 +741,9 @@ export function AccountExperience({
               onPress={() => void signOut()}
               tone="quiet"
             />
+            <ActionLink href={plansHref} variant="secondary">
+              {messages.plansAction}
+            </ActionLink>
           </div>
           {error === null ? null : (
             <InlineAlert message={error} title={messages.errorTitle} tone="error" />
