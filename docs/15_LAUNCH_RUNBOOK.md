@@ -6,6 +6,10 @@ Global-ready does not mean globally enabled. Launch in controlled cohorts and co
 
 ## 2. Environments
 
+The canonical [environment contract](21_ENVIRONMENT_CONTRACT.md) controls isolation, current
+implementation status, secrets, data, indexing, promotion, recovery, and approvals. This runbook
+does not override it or claim that external environments exist.
+
 - Local: synthetic data and mocks/sandboxes.
 - Preview: per-PR, non-indexable, isolated secrets/data.
 - Staging: production-like, provider sandboxes, release rehearsal.
