@@ -111,6 +111,7 @@ describe("source configuration boundaries", () => {
       "packages/db/prisma.config.ts",
       "packages/db/prisma/seed.ts",
       "packages/db/scripts/local-postgres.mjs",
+      "packages/db/scripts/verify-backup-recovery.ts",
       "packages/db/scripts/verify-ci-foundation.ts",
       "packages/db/scripts/verify-foundation.mjs",
     ]);

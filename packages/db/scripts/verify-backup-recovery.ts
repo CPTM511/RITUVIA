@@ -722,6 +722,24 @@ const createCiContext = async (): Promise<DrillContext> => {
       await deleteSentinels(environment.migratorUrl);
       await admin.end();
     };
+    const normalizeTargetPrivileges = async (): Promise<void> => {
+      const targetAdmin = new Client({ connectionString: targetAdminUrl });
+      await targetAdmin.connect();
+      try {
+        await targetAdmin.query("ALTER SCHEMA public OWNER TO rituvia_ci_migrator");
+        await targetAdmin.query("REVOKE ALL ON SCHEMA public FROM PUBLIC");
+        await targetAdmin.query(
+          `REVOKE ALL ON SCHEMA public
+             FROM rituvia_ci_app, rituvia_ci_config_writer, rituvia_privacy_deletion, rituvia_admin_service`,
+        );
+        await targetAdmin.query(
+          `GRANT USAGE ON SCHEMA public
+             TO rituvia_ci_app, rituvia_ci_config_writer, rituvia_privacy_deletion, rituvia_admin_service`,
+        );
+      } finally {
+        await targetAdmin.end();
+      }
+    };
     return Object.freeze({
       cleanupSource,
       cleanupTarget,
@@ -748,6 +766,7 @@ const createCiContext = async (): Promise<DrillContext> => {
       runMigrations: async (databaseUrl: string) => {
         runPrismaForCi(databaseUrl, source.rows[0]?.systemIdentifier ?? "", ["migrate", "deploy"]);
         runPrismaForCi(databaseUrl, source.rows[0]?.systemIdentifier ?? "", ["migrate", "deploy"]);
+        await normalizeTargetPrivileges();
       },
       verifySchema: (databaseUrl: string) => {
         verifyRestoredSchema(
