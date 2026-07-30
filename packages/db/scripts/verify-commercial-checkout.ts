@@ -77,6 +77,7 @@ await withLocalPostgresLease(async (lease) => {
         priceVersion: "2026-07-23",
         productCode: "pack_6",
         productVersion: "2026-07-23",
+        providerAccountFingerprint: "acct_12345678",
         provisionalExpiresAt: "2026-07-31T12:00:00.000Z",
         refundPolicyVersion: "test:local:refund.v1",
         termsVersion: "local.terms.v1",

@@ -17,6 +17,7 @@ export type LocalPostgresTestDatabase = Readonly<{
   databaseUrl: string;
   drop(): Promise<void>;
   migrationDatabaseUrl: string;
+  paymentWebhookDatabaseUrl: string;
   privacyDeletionDatabaseUrl: string;
   adminServiceDatabaseUrl: string;
 }>;
@@ -26,6 +27,7 @@ export type LocalPostgresLease = Readonly<{
   developmentControlDatabaseUrl: string;
   developmentDatabaseUrl: string;
   developmentMigrationDatabaseUrl: string;
+  developmentPaymentWebhookDatabaseUrl: string;
   runtime: LocalPostgresRuntime;
   startedByInvocation: boolean;
 }>;
@@ -47,6 +49,17 @@ export const runLocalPrisma: (
 }>;
 
 export const stopLeaseOwnedRuntime: (lease: LocalPostgresLease) => Promise<void>;
+
+export type LocalPostgresClient = Readonly<{
+  connect(): Promise<void>;
+  end(): Promise<void>;
+  query<Row extends Record<string, unknown> = Record<string, unknown>>(
+    text: string,
+    values?: readonly unknown[],
+  ): Promise<Readonly<{ rows: Row[] }>>;
+}>;
+
+export const createLocalPostgresClient: (databaseUrl: string) => LocalPostgresClient;
 
 export const localPostgresConstants: Readonly<{
   host: string;

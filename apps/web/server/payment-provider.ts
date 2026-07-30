@@ -32,8 +32,21 @@ export class WebPaymentProviderError extends Error {
   }
 }
 
+const stripeAccountAttestationStore = (): Set<string> => {
+  const processState = globalThis as typeof globalThis & {
+    __rituviaStripeAccountAttestationsV1?: Set<string>;
+  };
+  const existing = processState.__rituviaStripeAccountAttestationsV1;
+  if (existing !== undefined) return existing;
+  const created = new Set<string>();
+  processState.__rituviaStripeAccountAttestationsV1 = created;
+  return created;
+};
+
 export type WebPaymentProviderRegistry = Readonly<{
   accountFingerprint(providerId: WebPaymentProviderId): string;
+  assertAccountAttested(providerId: WebPaymentProviderId): void;
+  attestAccount(providerId: WebPaymentProviderId): Promise<void>;
   get(providerId: WebPaymentProviderId): HostedCheckoutAdapter;
   signLocalEvent(event: NormalizedPaymentEventV1): Promise<SignedLocalWebhook>;
 }>;
@@ -41,6 +54,8 @@ export type WebPaymentProviderRegistry = Readonly<{
 export const createWebPaymentProviderRegistry = (input: {
   localAccountFingerprint?: string | undefined;
   local?: LocalHostedCheckoutAdapter | undefined;
+  stripeAccountAttestation?: (() => Promise<void>) | undefined;
+  stripeAccountAttestationIdentity?: string | undefined;
   stripeAccountFingerprint?: string | undefined;
   stripe?: HostedCheckoutAdapter | undefined;
 }): WebPaymentProviderRegistry => {
@@ -52,9 +67,12 @@ export const createWebPaymentProviderRegistry = (input: {
   }
   const localAccountFingerprint = input.localAccountFingerprint ?? "local.configured.v1";
   const stripeAccountFingerprint = input.stripeAccountFingerprint ?? "stripe.configured.v1";
+  const stripeAccountAttestationIdentity =
+    input.stripeAccountAttestationIdentity ?? stripeAccountFingerprint;
   if (
     !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(localAccountFingerprint) ||
-    !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(stripeAccountFingerprint)
+    !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(stripeAccountFingerprint) ||
+    !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(stripeAccountAttestationIdentity)
   ) {
     throw new WebPaymentProviderError("configuration");
   }
@@ -64,6 +82,22 @@ export const createWebPaymentProviderRegistry = (input: {
       return providerId === localHostedCheckoutProviderId
         ? localAccountFingerprint
         : stripeAccountFingerprint;
+    },
+    assertAccountAttested(providerId) {
+      if (
+        providerId === stripeHostedCheckoutProviderId &&
+        !stripeAccountAttestationStore().has(stripeAccountAttestationIdentity)
+      ) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+    },
+    async attestAccount(providerId) {
+      if (providerId === localHostedCheckoutProviderId) return;
+      if (input.stripeAccountAttestation === undefined) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      await input.stripeAccountAttestation();
+      stripeAccountAttestationStore().add(stripeAccountAttestationIdentity);
     },
     get(providerId) {
       const provider = providerId === localHostedCheckoutProviderId ? input.local : input.stripe;
@@ -172,6 +206,7 @@ export const verifiedStripePaymentEvent = async (
   stripe: Stripe,
   event: Stripe.Event,
 ): Promise<VerifiedStripePaymentEvent> => {
+  if (event.livemode !== false) throw new WebPaymentProviderError("unavailable");
   const occurredAt = new Date(event.created * 1_000).toISOString();
   switch (event.type) {
     case "checkout.session.completed":
@@ -187,7 +222,9 @@ export const verifiedStripePaymentEvent = async (
             : "payment_pending"
           : event.type === "checkout.session.async_payment_succeeded"
             ? "payment_succeeded"
-            : "payment_failed";
+            : event.type === "checkout.session.expired"
+              ? "payment_expired"
+              : "payment_failed";
       return Object.freeze({
         amountMinor: requireStripeAmount(session.amount_total),
         currencyCode: requireStripeCurrency(session.currency),
@@ -266,17 +303,43 @@ export const verifiedStripePaymentEvent = async (
   }
 };
 
-const createStripeGateway = (input: {
-  priceIds: Readonly<Record<string, string>>;
-  secretKey: string;
-  webhookSecret: string;
-}): Readonly<{
+const stripeSandboxWebhookEventTypes = new Set([
+  "checkout.session.async_payment_failed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.completed",
+  "checkout.session.expired",
+]);
+
+export const createStripeGateway = (
+  input: {
+    accountId: string;
+    priceIds: Readonly<Record<string, string>>;
+    secretKey: string;
+    webhookSecret: string;
+  },
+  stripe = new Stripe(input.secretKey, { maxNetworkRetries: 2, timeout: 10_000 }),
+): Readonly<{
+  attestAccount: () => Promise<void>;
   gateway: StripeGateway;
   mapVerifiedEvent: (value: unknown) => NormalizedPaymentEventV1;
 }> => {
-  const stripe = new Stripe(input.secretKey, { maxNetworkRetries: 2, timeout: 10_000 });
+  let accountVerification: Promise<void> | undefined;
+  const verifyAccount = async (): Promise<void> => {
+    accountVerification ??= stripe.accounts.retrieveCurrent().then((account) => {
+      if (account.id !== input.accountId) {
+        throw new WebPaymentProviderError("configuration");
+      }
+    });
+    try {
+      await accountVerification;
+    } catch (error) {
+      accountVerification = undefined;
+      throw error;
+    }
+  };
   const gateway: StripeGateway = Object.freeze({
     async createCheckoutSession(request: Parameters<StripeGateway["createCheckoutSession"]>[0]) {
+      await verifyAccount();
       const priceId = input.priceIds[request.metadata.productCode];
       if (priceId === undefined) throw new WebPaymentProviderError("configuration");
       const price = await stripe.prices.retrieve(priceId);
@@ -324,10 +387,14 @@ const createStripeGateway = (input: {
         undefined,
         nowSeconds * 1_000,
       );
+      if (!stripeSandboxWebhookEventTypes.has(event.type)) {
+        throw new WebPaymentProviderError("unavailable");
+      }
       return verifiedStripePaymentEvent(stripe, event);
     },
   });
   return Object.freeze({
+    attestAccount: verifyAccount,
     gateway,
     mapVerifiedEvent(value): NormalizedPaymentEventV1 {
       if (!isRecord(value)) throw new WebPaymentProviderError("unavailable");
@@ -383,10 +450,20 @@ export const loadWebPaymentProviderRegistry = (): WebPaymentProviderRegistry => 
         gateway: stripeRuntime.gateway,
         mapVerifiedEvent: stripeRuntime.mapVerifiedEvent,
       }),
-      stripeAccountFingerprint: configurationFingerprint(configuration.payment.secretKey),
+      stripeAccountAttestation: stripeRuntime.attestAccount,
+      stripeAccountAttestationIdentity: configurationFingerprint(
+        `${configuration.payment.accountId}\0${configuration.payment.secretKey}`,
+      ),
+      stripeAccountFingerprint: configuration.payment.accountId,
     });
     return registry;
   } catch {
     throw new WebPaymentProviderError("configuration");
   }
+};
+
+export const attestConfiguredWebPaymentProvider = async (): Promise<void> => {
+  const configuration = getWebRuntimeConfiguration();
+  if (configuration.payment?.provider !== "stripe") return;
+  await loadWebPaymentProviderRegistry().attestAccount(stripeHostedCheckoutProviderId);
 };
