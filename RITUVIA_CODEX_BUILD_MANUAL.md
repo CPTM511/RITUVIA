@@ -168,6 +168,11 @@ __pycache__/
 
 This repository pack is the operating system for building RITUVIA with Codex as a one-person company. It is not merely a one-shot prompt. It combines product doctrine, architecture, safety rules, a sequenced roadmap, a live backlog, specialized Codex roles, command rules, review prompts, and operating cadences.
 
+The canonical source repository is
+[github.com/CPTM511/RITUVIA](https://github.com/CPTM511/RITUVIA). It is publicly available under
+GNU AGPLv3. Public source availability does not mean the product is deployed, publicly launched,
+approved for production payments/providers, or authorized to process customer data.
+
 ## What Codex should build
 
 An English-first, Web/PWA product for global users that offers:
@@ -208,8 +213,9 @@ The root quality gate first verifies the active CI contract, architecture, durab
 security jobs. It uses only read access, GitHub-hosted Ubuntu 24.04 runners, immutable action SHAs, a
 digest-pinned PostgreSQL 17 service, synthetic data, and no repository secrets or deployment
 environment. See `.github/workflows/README.md` for the enforced workflow contract and owner-side
-required-check setup. Codex workflow examples live outside the Actions workflow directory and remain
-inert.
+required-check setup. Public `main` requires all three jobs, pull requests, linear history, resolved
+conversations, and administrator enforcement while denying force pushes and deletion. Codex
+workflow examples live outside the Actions workflow directory and remain inert.
 
 ### Local environment configuration
 
@@ -1070,6 +1076,9 @@ existing human approval gates.
 
 **Last reconciled:** 2026-07-30
 
+RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
+and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is the sole In Progress task.
+
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
 composer, RIT-041 ritual template/object domain, RIT-042 accessible free Sanctuary, and RIT-043
@@ -1599,7 +1608,6 @@ threat/abuse controls, closed-beta evidence, legal/tax/brand/budget approvals, a
   cache/synchronization layer, or generic partial/degraded network state machine. The local Stripe
   adapter and signed simulator are implementation evidence only; the connection notice remains a
   `navigator.onLine` advisory.
-- Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Production metrics, alerts, retention/sampling policy, vendor exporters, durable analytics
   storage/outbox, viewed-event ingestion, or a real persisted queue consumer; the RIT-046 analytics
@@ -1637,7 +1645,6 @@ threat/abuse controls, closed-beta evidence, legal/tax/brand/budget approvals, a
 | OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
 | OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
 | OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
-| OWN-008 | Repository remote and required CI checks       | Final RIT-004 acceptance              | Activate GitHub Pro while private, then protect the three CI jobs plus workflow changes        |
 
 These owner decisions do not block independent local engineering foundation work.
 
@@ -2095,14 +2102,12 @@ actual visible choice/switch parent focus indicator while preserving active-cont
 visibility, clipping, and `:focus-visible` checks. Twenty-seven focused accessibility tests and the
 complete non-restricted accessibility/browser command pass after the correction.
 
-OWN-008 remains Blocked. GitHub Actions run `30492438707` now passes `Quality`,
-`PostgreSQL integration`, and `Security scans` together on private PR `1`, but GitHub again rejected
-the private-repository branch-protection API with HTTP 403 on 2026-07-30 because the current account
-plan requires GitHub Pro or a public repository. RIT-004 is the sole In Progress item and now lacks
-only protected required checks and protected workflow changes. The safe recommendation remains to
-keep the repository private and activate GitHub Pro; making the repository public is a separate
-irreversible source-disclosure decision even though the intended deployed Corresponding Source is
-AGPL-3.0-only.
+D-090 records the owner's explicit public-source decision. GitHub now reports the AGPL repository
+as public and protects `main` with strict, up-to-date `Quality`, `PostgreSQL integration`, and
+`Security scans`; administrator enforcement; pull requests; linear history; resolved
+conversations; and force-push/deletion denial. Hosted run `30494018585` passes all three jobs
+together on the protected candidate tree. Public repository visibility is source disclosure, not a
+production deployment, DNS change, indexing activation, or public product launch.
 
 D-079 records the owner-approved development baseline: IPO.ONE's BVI entity direction, an 18+
 product, United States and English as the first production-launch candidate, reviewed closed
@@ -2277,8 +2282,7 @@ typechecks, focused lint/format, migration policy, three production staging buil
 31-migration PostgreSQL foundation with repeat migration/seed/reset/restore, the non-restricted
 configuration boundary, architecture policy across 516 source files, record policy across 141
 durable records, and all diff whitespace checks pass. The full workspace matrix is intentionally
-not rerun. RIT-004 is now the sole In Progress task: its current hosted three-job run passes, while
-OWN-008 remains the external branch-protection gate. RIT-008 remains Planned until RIT-004 is Done.
+not rerun. RIT-004 and OWN-008 are Done through D-090. RIT-008 is now the sole In Progress task.
 
 ## Update rules
 
@@ -3290,6 +3294,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   availability to SEO freshness would let editorial drift close unrelated product routes.
 - **Date:** 2026-07-29
 
+### [D-090 — Public AGPL repository with enforced main protection](records/decisions/D-090.md)
+
+- **Decision:** Publish the complete RITUVIA GitHub repository under its existing AGPL-3.0-only
+  license and protect `main` with strict required CI, administrator enforcement, pull requests,
+  linear history, resolved conversations, and force-push/deletion denial.
+- **Reason:** The owner explicitly chose public source disclosure so GitHub Free can enforce the
+  repository's existing three-job quality gate without weakening CI or paying for private-repository
+  branch protection.
+- **Date:** 2026-07-30
+
 ---
 
 # File: `ROADMAP.md`
@@ -3548,11 +3562,11 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-001 | M0        |       P0 | Done    | Create pnpm/Turborepo strict TypeScript monorepo                            | RIT-000                                 | backend       | Clean install, lint, typecheck, unit test, and build work from a fresh clone.                                                                                                                                                                              |
 | RIT-002 | M0        |       P0 | Done    | Add environment validation and brand configuration                          | RIT-001                                 | backend       | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded.                                                                                                                                                       |
 | RIT-003 | M0        |       P0 | Done    | Create local PostgreSQL and Prisma foundation                               | RIT-001                                 | backend       | Local database starts reproducibly; initial migration and synthetic seed/test reset pass.                                                                                                                                                                  |
-| RIT-004 | M0        |       P0 | In Progress | Create test harness and CI quality gates                                | RIT-001,RIT-003,OWN-008                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                                                                                                                                                                         |
+| RIT-004 | M0        |       P0 | Done    | Create test harness and CI quality gates                                    | RIT-001,RIT-003,OWN-008                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                                                                                                                                                                         |
 | RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                     | RIT-001                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                                                                                                                                                                        |
 | RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                  | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                                                                                                                                                                |
 | RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                           | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                                                                                                                                                                           |
-| RIT-008 | M0        |       P1 | Planned | Create preview/staging/production environment documentation                 | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                                                     |
+| RIT-008 | M0        |       P1 | In Progress | Create preview/staging/production environment documentation             | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                                                     |
 | RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                  | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                                                                                                                                                                     |
 | RIT-010 | M1        |       P0 | Done    | Implement accessible Web shell and locale-prefixed routing                  | RIT-001,RIT-002,RIT-007                 | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                                                                                                                                                                 |
 | RIT-011 | M1        |       P0 | Done    | Implement design tokens and accessible component primitives                 | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                                                                                                                                                                 |
@@ -3675,7 +3689,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | OWN-005 | External  |       P0 | Blocked | Set operating and launch budget limits                                      | None                                    | owner         | Monthly, AI, infrastructure, refund/fraud and marketing budgets are configured.                                                                                                                                                                            |
 | OWN-006 | External  |       P1 | Blocked | Approve crypto provider, countries, assets, refund, and legal path          | None                                    | owner         | Written approval and non-custodial architecture scope are recorded.                                                                                                                                                                                        |
 | OWN-007 | External  |       P2 | Blocked | Approve regional-tradition expert and source program                        | None                                    | owner         | Qualified reviewers, sources, rights, scope, language and compensation are documented.                                                                                                                                                                     |
-| OWN-008 | External  |       P0 | Blocked | Configure the GitHub remote and enforce CI checks                           | None                                    | owner         | Remote, workflow-change protection, and all three required CI jobs are configured and one hosted run passes.                                                                                                                                               |
+| OWN-008 | External  |       P0 | Done    | Configure the GitHub remote and enforce CI checks                           | None                                    | owner         | D-090 records public AGPL source disclosure, protected `main`, and all three required CI jobs passing together.                                                                                                                                             |
 | OWN-009 | External  |       P0 | Done    | Approve English question-intake safety language and activation policy       | None                                    | owner         | Exact copy, English scope, generic emergency-resource strategy, and production-activation reference are recorded.                                                                                                                                          |
 | OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                    | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded.                                                                                                                                 |
 | OWN-011 | External  |       P0 | Done    | Approve the exact RITUVIA V1 date-numerology method                         | None                                    | owner         | Life Path aggregation, Birthday reduction, explicit Personal Year target, 11/22/33 preservation, source scope, and name/locale exclusions are approved.                                                                                                    |
@@ -3921,7 +3935,9 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-087 | Fail-closed offline SEO/GEO performance and freshness operations | [decisions/D-087.md](./decisions/D-087.md) |
 | Decision | D-088 | Fail-closed offline AI operations metrics and review thresholds | [decisions/D-088.md](./decisions/D-088.md) |
 | Decision | D-089 | Complete the public-shell registry compatibility window | [decisions/D-089.md](./decisions/D-089.md) |
+| Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
+| Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -11907,7 +11923,7 @@ focused command does not weaken or replace required CI coverage.
 Reference templates live under `.github/codex/workflow-examples/`, outside the directory GitHub
 Actions loads. Move one into `.github/workflows` only after:
 
-1. The repository is private/protected as intended.
+1. The public AGPL repository and protected `main` baseline in D-090 remain active as intended.
 2. The official Codex GitHub Action and current inputs are re-verified.
 3. `OPENAI_API_KEY` is stored as a GitHub Actions secret with appropriate budget/restrictions.
 4. Branch protection, permissions, path filters, concurrency, artifact retention, and untrusted-fork behavior are reviewed.

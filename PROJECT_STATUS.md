@@ -2,6 +2,9 @@
 
 **Last reconciled:** 2026-07-30
 
+RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
+and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is the sole In Progress task.
+
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
 composer, RIT-041 ritual template/object domain, RIT-042 accessible free Sanctuary, and RIT-043
@@ -531,7 +534,6 @@ threat/abuse controls, closed-beta evidence, legal/tax/brand/budget approvals, a
   cache/synchronization layer, or generic partial/degraded network state machine. The local Stripe
   adapter and signed simulator are implementation evidence only; the connection notice remains a
   `navigator.onLine` advisory.
-- Hosted GitHub Actions execution evidence, a configured remote, and owner-enforced required checks/workflow protection.
 - Production infrastructure.
 - Production metrics, alerts, retention/sampling policy, vendor exporters, durable analytics
   storage/outbox, viewed-event ingestion, or a real persisted queue consumer; the RIT-046 analytics
@@ -569,7 +571,6 @@ threat/abuse controls, closed-beta evidence, legal/tax/brand/budget approvals, a
 | OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
 | OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
 | OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
-| OWN-008 | Repository remote and required CI checks       | Final RIT-004 acceptance              | Activate GitHub Pro while private, then protect the three CI jobs plus workflow changes        |
 
 These owner decisions do not block independent local engineering foundation work.
 
@@ -1027,14 +1028,12 @@ actual visible choice/switch parent focus indicator while preserving active-cont
 visibility, clipping, and `:focus-visible` checks. Twenty-seven focused accessibility tests and the
 complete non-restricted accessibility/browser command pass after the correction.
 
-OWN-008 remains Blocked. GitHub Actions run `30492438707` now passes `Quality`,
-`PostgreSQL integration`, and `Security scans` together on private PR `1`, but GitHub again rejected
-the private-repository branch-protection API with HTTP 403 on 2026-07-30 because the current account
-plan requires GitHub Pro or a public repository. RIT-004 is the sole In Progress item and now lacks
-only protected required checks and protected workflow changes. The safe recommendation remains to
-keep the repository private and activate GitHub Pro; making the repository public is a separate
-irreversible source-disclosure decision even though the intended deployed Corresponding Source is
-AGPL-3.0-only.
+D-090 records the owner's explicit public-source decision. GitHub now reports the AGPL repository
+as public and protects `main` with strict, up-to-date `Quality`, `PostgreSQL integration`, and
+`Security scans`; administrator enforcement; pull requests; linear history; resolved
+conversations; and force-push/deletion denial. Hosted run `30494018585` passes all three jobs
+together on the protected candidate tree. Public repository visibility is source disclosure, not a
+production deployment, DNS change, indexing activation, or public product launch.
 
 D-079 records the owner-approved development baseline: IPO.ONE's BVI entity direction, an 18+
 product, United States and English as the first production-launch candidate, reviewed closed
@@ -1209,8 +1208,7 @@ typechecks, focused lint/format, migration policy, three production staging buil
 31-migration PostgreSQL foundation with repeat migration/seed/reset/restore, the non-restricted
 configuration boundary, architecture policy across 516 source files, record policy across 141
 durable records, and all diff whitespace checks pass. The full workspace matrix is intentionally
-not rerun. RIT-004 is now the sole In Progress task: its current hosted three-job run passes, while
-OWN-008 remains the external branch-protection gate. RIT-008 remains Planned until RIT-004 is Done.
+not rerun. RIT-004 and OWN-008 are Done through D-090. RIT-008 is now the sole In Progress task.
 
 ## Update rules
 

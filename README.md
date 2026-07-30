@@ -8,6 +8,11 @@
 
 This repository pack is the operating system for building RITUVIA with Codex as a one-person company. It is not merely a one-shot prompt. It combines product doctrine, architecture, safety rules, a sequenced roadmap, a live backlog, specialized Codex roles, command rules, review prompts, and operating cadences.
 
+The canonical source repository is
+[github.com/CPTM511/RITUVIA](https://github.com/CPTM511/RITUVIA). It is publicly available under
+GNU AGPLv3. Public source availability does not mean the product is deployed, publicly launched,
+approved for production payments/providers, or authorized to process customer data.
+
 ## What Codex should build
 
 An English-first, Web/PWA product for global users that offers:
@@ -48,8 +53,9 @@ The root quality gate first verifies the active CI contract, architecture, durab
 security jobs. It uses only read access, GitHub-hosted Ubuntu 24.04 runners, immutable action SHAs, a
 digest-pinned PostgreSQL 17 service, synthetic data, and no repository secrets or deployment
 environment. See `.github/workflows/README.md` for the enforced workflow contract and owner-side
-required-check setup. Codex workflow examples live outside the Actions workflow directory and remain
-inert.
+required-check setup. Public `main` requires all three jobs, pull requests, linear history, resolved
+conversations, and administrator enforcement while denying force pushes and deletion. Codex
+workflow examples live outside the Actions workflow directory and remain inert.
 
 ### Local environment configuration
 
