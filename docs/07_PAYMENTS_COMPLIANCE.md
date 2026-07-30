@@ -28,6 +28,12 @@ Use a payment orchestration domain layer with multiple adapters. Do not assume o
 
 Provider enablement is configuration tied to Country Policy and owner approval.
 
+Sandbox engineering approval and production underwriting are separate evidence. D-091/OWN-017
+approve only Stripe Test Mode development for RIT-063 with synthetic US/USD policy and
+server-authoritative one-time prices. OWN-002 continues to require written primary and backup
+provider approval before production payment activation; an internal owner instruction cannot be
+represented as provider underwriting.
+
 ### Written approval dossier
 
 Prepare for every provider:

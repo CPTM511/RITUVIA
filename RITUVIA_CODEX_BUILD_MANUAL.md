@@ -1096,7 +1096,9 @@ selective/account deletion, RIT-056 admin roles/MFA/audit foundation, and RIT-05
 identity/privacy/authorization security closure are complete. RIT-060 immutable Country Policy
 Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
 transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
-still blocks RIT-063; RIT-045 consented transactional Revisit reminders are complete. OWN-011
+still blocks production payment activation, but D-091 and OWN-017 approve the narrower Stripe Test
+Mode sandbox scope and make RIT-063 the sole Ready task. RIT-045 consented transactional Revisit
+reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
 date-numerology catalog, source records, worked vectors, exact Life Path/Birthday/Personal Year
 rules, explicit target year, 11/22/33 preservation, and name/locale exclusions. RIT-081 is complete
@@ -2266,8 +2268,9 @@ policy, budgets, admin surfaces, or production. Forty-two focused tests, strict 
 typecheck, focused lint/format, architecture, CI contract, 139-record policy, dedicated offline
 verification, and analytics package build/export checks pass. No production reader, provider
 call, raw trace, private prose, database change, admin route, deployment, or budget enforcement
-is added. Monetary limits remain blocked by OWN-005. RIT-120 remains Planned because RIT-073 is
-transitively blocked by OWN-002.
+is added. Monetary limits remain blocked by OWN-005. RIT-120 remains Planned behind the payment
+chain that now begins with Ready task RIT-063; production payment activation remains blocked by
+OWN-002.
 
 RIT-016 is Done through D-089. An isolated, loopback-only protected staging environment used
 PostgreSQL 17, production Web builds, random Basic authentication, private/no-store responses, and
@@ -2325,7 +2328,16 @@ This proves repository-level synthetic logical recovery only. It does not claim 
 physical backup, encrypted isolated retention, WAL/PITR, production RPO/RTO, customer-data
 recovery, or production restore authority. Those remain Gate H owner-approved production work.
 No production service, credential, data, backup, retention rule, migration, deployment, DNS, or
-public launch changed. No Planned backlog item currently has every dependency complete.
+public launch changed.
+
+D-091 and OWN-017 approve Stripe Test Mode as the first fiat sandbox integration for RIT-063:
+one-time USD checkout only, synthetic US policy only, server-authoritative catalog prices, hosted
+Stripe pages, exact provider idempotency, no redirect-based fulfillment, and no live mode. The
+owner's instruction to approve OWN-002 cannot substitute for the provider-written primary and
+backup production underwriting evidence required by that existing gate, so OWN-002 remains
+Blocked for RIT-140 while the narrower sandbox approval is recorded separately. RIT-063 is the
+sole Ready task. No Stripe credential, Price ID, provider account, external call, production
+policy, deployment, DNS, or public product launch was added.
 
 ## Update rules
 
@@ -3347,6 +3359,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   branch protection.
 - **Date:** 2026-07-30
 
+### [D-091 — Separate Stripe sandbox approval from production underwriting](records/decisions/D-091.md)
+
+- **Decision:** Approve Stripe Test Mode as the first fiat sandbox integration for one-time USD
+  checkout under synthetic US policy, track that approval as OWN-017, and keep OWN-002 blocked
+  until primary and backup providers supply written production underwriting evidence.
+- **Reason:** The owner explicitly approved unlocking RIT-063, while the existing OWN-002
+  acceptance criterion requires external provider evidence that an internal approval cannot
+  truthfully replace.
+- **Date:** 2026-07-30
+
 ---
 
 # File: `ROADMAP.md`
@@ -3656,7 +3678,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-060 | M6        |       P0 | Done    | Implement versioned Country Policy Engine                                   | RIT-007,RIT-003                         | payments_risk | Strict immutable server policy, country-evidence hierarchy, independent fiat/crypto approvals, DB-backed kill/rollback chain, exact order version, focused PostgreSQL and build gates pass.                                                                |
 | RIT-061 | M6        |       P0 | Done    | Implement catalog, product, price, and exact digital contents               | RIT-060,RIT-003                         | payments_risk | Immutable catalog/product/localization/price versions, exact Credit terms, integer USD, local-only seed, bounded DB reader, Web fail-closed endpoint, focused DB/build gates pass.                                                                         |
 | RIT-062 | M6        |       P0 | Done    | Implement order, payment attempt, ledger, and entitlement domain            | RIT-061                                 | backend       | Canonical v2 states, exact idempotency, append-only Credits/reservations/allocations, source-specific entitlements, 20-way no-overspend concurrency, least privilege, and restore pass.                                                                    |
-| RIT-063 | M6        |       P0 | Planned | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-002                         | payments_risk | Approved sandbox creates server-priced checkout through provider adapter.                                                                                                                                                                                  |
+| RIT-063 | M6        |       P0 | Ready   | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                         | payments_risk | Approved sandbox creates server-priced checkout through provider adapter.                                                                                                                                                                                  |
 | RIT-064 | M6        |       P0 | Planned | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Raw signature, replay, duplicate, out-of-order, mismatch, outbox processing pass.                                                                                                                                                                          |
 | RIT-065 | M6        |       P0 | Planned | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Verified state grants exactly once and reverses per refund/dispute terms.                                                                                                                                                                                  |
 | RIT-066 | M6        |       P0 | Planned | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
@@ -3741,6 +3763,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | OWN-014 | External  |       P0 | Done    | Approve privacy-safe astrology location-search HTTP contract                | None                                    | owner         | D-068 approves authenticated same-origin CSRF-protected rate-limited POST JSON, no-store responses, and no raw-query logs/analytics/shared cache.                                                                                                          |
 | OWN-015 | External  |       P0 | Done    | Approve the exact Western astrology V1 calculation method                   | None                                    | owner         | D-070 approves Option A: tropical zodiac, True Node, eleven bodies, exact-time Placidus, fixed major-aspect orbs, strict approximate/unknown suppression, and no polar fallback.                                                                           |
 | OWN-016 | External  |       P1 | Done    | Approve exact English astrology education publication pack                  | None                                    | owner         | D-073 approves the reviewed and published checksums, RITUVIA-owned worldwide rights, owner review/date, exact five-route indexing scope, and continued prohibition of sign/personality and personalized doorway pages.                                     |
+| OWN-017 | External  |       P0 | Done    | Approve Stripe Test Mode sandbox integration scope                          | None                                    | owner         | D-091 approves Stripe-hosted one-time USD checkout development against synthetic US policy and server-authoritative catalog prices while keeping live mode and production underwriting closed.                                                           |
 
 ## Backlog maintenance
 
@@ -3979,6 +4002,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-088 | Fail-closed offline AI operations metrics and review thresholds | [decisions/D-088.md](./decisions/D-088.md) |
 | Decision | D-089 | Complete the public-shell registry compatibility window | [decisions/D-089.md](./decisions/D-089.md) |
 | Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
+| Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -6291,6 +6315,12 @@ Use a payment orchestration domain layer with multiple adapters. Do not assume o
 - Terminated.
 
 Provider enablement is configuration tied to Country Policy and owner approval.
+
+Sandbox engineering approval and production underwriting are separate evidence. D-091/OWN-017
+approve only Stripe Test Mode development for RIT-063 with synthetic US/USD policy and
+server-authoritative one-time prices. OWN-002 continues to require written primary and backup
+provider approval before production payment activation; an internal owner instruction cannot be
+represented as provider underwriting.
 
 ### Written approval dossier
 
