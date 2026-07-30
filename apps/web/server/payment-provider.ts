@@ -281,6 +281,7 @@ const createStripeGateway = (input: {
       if (priceId === undefined) throw new WebPaymentProviderError("configuration");
       const price = await stripe.prices.retrieve(priceId);
       if (
+        price.livemode ||
         !price.active ||
         price.type !== "one_time" ||
         price.currency.toUpperCase() !== request.currencyCode ||
@@ -300,7 +301,9 @@ const createStripeGateway = (input: {
         },
         { idempotencyKey: request.idempotencyKey },
       );
-      if (session.url === null) throw new WebPaymentProviderError("unavailable");
+      if (session.url === null || session.livemode || !session.id.startsWith("cs_test_")) {
+        throw new WebPaymentProviderError("unavailable");
+      }
       return Object.freeze({
         expiresAt: new Date(session.expires_at * 1_000).toISOString(),
         id: session.id,

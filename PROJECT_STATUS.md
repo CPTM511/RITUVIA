@@ -2,9 +2,9 @@
 
 **Last reconciled:** 2026-07-30
 
-RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30507901986` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-No Planned item currently has all dependencies complete, so the queue has no Ready task.
+RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
+and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
+RIT-063 is complete and RIT-064 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -19,7 +19,8 @@ identity/privacy/authorization security closure are complete. RIT-060 immutable 
 Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
 transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
 still blocks production payment activation, but D-091 and OWN-017 approve the narrower Stripe Test
-Mode sandbox scope and make RIT-063 the sole Ready task. RIT-045 consented transactional Revisit
+Mode sandbox scope. RIT-063 completes that bounded checkout slice, and RIT-064 is the sole Ready
+task. RIT-045 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
 date-numerology catalog, source records, worked vectors, exact Life Path/Birthday/Personal Year
@@ -1257,9 +1258,29 @@ one-time USD checkout only, synthetic US policy only, server-authoritative catal
 Stripe pages, exact provider idempotency, no redirect-based fulfillment, and no live mode. The
 owner's instruction to approve OWN-002 cannot substitute for the provider-written primary and
 backup production underwriting evidence required by that existing gate, so OWN-002 remains
-Blocked for RIT-140 while the narrower sandbox approval is recorded separately. RIT-063 is the
-sole Ready task. No Stripe credential, Price ID, provider account, external call, production
-policy, deployment, DNS, or public product launch was added.
+Blocked for RIT-140 while the narrower sandbox approval is recorded separately.
+
+RIT-063 now exposes an authenticated, same-origin, CSRF-protected
+`POST /api/v1/checkout/stripe` boundary with the canonical product/path request and
+`orderId`/`checkoutUrl`/`expiresAt` response. The service accepts only non-production Stripe Test
+Mode configuration, resolves active one-time `pack_6`, `pack_15`, or `pack_40` prices from the
+immutable v1 catalog, evaluates the synthetic US/USD/card/Stripe Country Policy, requires exact
+refund and terms versions, and never accepts client money or fulfillment authority.
+
+The v2 persistence creates one server-owned order/item/attempt before provider invocation, derives
+provider idempotency from the public order and attempt number, recovers concurrent exact replay,
+rejects same-key changed requests, atomically attaches only one HTTPS Stripe checkout, and leaves
+all orders at `created` or `checkout_created`. Twelve-way PostgreSQL concurrency, changed-request,
+duplicate attachment, least-privilege, no-paid-state, no-Credit, and no-entitlement evidence pass.
+Forty-one focused configuration, adapter, service, and route tests; affected package typechecks and
+builds; configuration, architecture, environment, record, generated-evidence, and secret gates
+pass. The canonical Web build includes `/api/v1/checkout/stripe`.
+
+No Stripe credential, Price ID, provider account, external payment call, production policy,
+deployment, DNS, or public product launch was added. Real Stripe Test Mode network proof remains
+truthfully blocked until test credentials and exact test Price IDs are supplied through the secure
+configuration path. This does not block the independent signed-webhook implementation task:
+RIT-064 is the sole Ready task.
 
 ## Update rules
 

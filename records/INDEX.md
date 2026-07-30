@@ -122,6 +122,7 @@
 | Task | RIT-060 | Versioned Country Policy Engine | [tasks/RIT-060.md](./tasks/RIT-060.md) |
 | Task | RIT-061 | Immutable Catalog, Product, and Price Registry | [tasks/RIT-061.md](./tasks/RIT-061.md) |
 | Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
+| Task | RIT-063 | First Fiat Hosted-Checkout Sandbox Adapter | [tasks/RIT-063.md](./tasks/RIT-063.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

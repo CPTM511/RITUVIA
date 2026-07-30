@@ -1080,9 +1080,9 @@ existing human approval gates.
 
 **Last reconciled:** 2026-07-30
 
-RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30507901986` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-No Planned item currently has all dependencies complete, so the queue has no Ready task.
+RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
+and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
+RIT-063 is complete and RIT-064 is the sole Ready task.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1097,7 +1097,8 @@ identity/privacy/authorization security closure are complete. RIT-060 immutable 
 Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
 transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
 still blocks production payment activation, but D-091 and OWN-017 approve the narrower Stripe Test
-Mode sandbox scope and make RIT-063 the sole Ready task. RIT-045 consented transactional Revisit
+Mode sandbox scope. RIT-063 completes that bounded checkout slice, and RIT-064 is the sole Ready
+task. RIT-045 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
 date-numerology catalog, source records, worked vectors, exact Life Path/Birthday/Personal Year
@@ -2335,9 +2336,29 @@ one-time USD checkout only, synthetic US policy only, server-authoritative catal
 Stripe pages, exact provider idempotency, no redirect-based fulfillment, and no live mode. The
 owner's instruction to approve OWN-002 cannot substitute for the provider-written primary and
 backup production underwriting evidence required by that existing gate, so OWN-002 remains
-Blocked for RIT-140 while the narrower sandbox approval is recorded separately. RIT-063 is the
-sole Ready task. No Stripe credential, Price ID, provider account, external call, production
-policy, deployment, DNS, or public product launch was added.
+Blocked for RIT-140 while the narrower sandbox approval is recorded separately.
+
+RIT-063 now exposes an authenticated, same-origin, CSRF-protected
+`POST /api/v1/checkout/stripe` boundary with the canonical product/path request and
+`orderId`/`checkoutUrl`/`expiresAt` response. The service accepts only non-production Stripe Test
+Mode configuration, resolves active one-time `pack_6`, `pack_15`, or `pack_40` prices from the
+immutable v1 catalog, evaluates the synthetic US/USD/card/Stripe Country Policy, requires exact
+refund and terms versions, and never accepts client money or fulfillment authority.
+
+The v2 persistence creates one server-owned order/item/attempt before provider invocation, derives
+provider idempotency from the public order and attempt number, recovers concurrent exact replay,
+rejects same-key changed requests, atomically attaches only one HTTPS Stripe checkout, and leaves
+all orders at `created` or `checkout_created`. Twelve-way PostgreSQL concurrency, changed-request,
+duplicate attachment, least-privilege, no-paid-state, no-Credit, and no-entitlement evidence pass.
+Forty-one focused configuration, adapter, service, and route tests; affected package typechecks and
+builds; configuration, architecture, environment, record, generated-evidence, and secret gates
+pass. The canonical Web build includes `/api/v1/checkout/stripe`.
+
+No Stripe credential, Price ID, provider account, external payment call, production policy,
+deployment, DNS, or public product launch was added. Real Stripe Test Mode network proof remains
+truthfully blocked until test credentials and exact test Price IDs are supplied through the secure
+configuration path. This does not block the independent signed-webhook implementation task:
+RIT-064 is the sole Ready task.
 
 ## Update rules
 
@@ -3678,8 +3699,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-060 | M6        |       P0 | Done    | Implement versioned Country Policy Engine                                   | RIT-007,RIT-003                         | payments_risk | Strict immutable server policy, country-evidence hierarchy, independent fiat/crypto approvals, DB-backed kill/rollback chain, exact order version, focused PostgreSQL and build gates pass.                                                                |
 | RIT-061 | M6        |       P0 | Done    | Implement catalog, product, price, and exact digital contents               | RIT-060,RIT-003                         | payments_risk | Immutable catalog/product/localization/price versions, exact Credit terms, integer USD, local-only seed, bounded DB reader, Web fail-closed endpoint, focused DB/build gates pass.                                                                         |
 | RIT-062 | M6        |       P0 | Done    | Implement order, payment attempt, ledger, and entitlement domain            | RIT-061                                 | backend       | Canonical v2 states, exact idempotency, append-only Credits/reservations/allocations, source-specific entitlements, 20-way no-overspend concurrency, least privilege, and restore pass.                                                                    |
-| RIT-063 | M6        |       P0 | Ready   | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                         | payments_risk | Approved sandbox creates server-priced checkout through provider adapter.                                                                                                                                                                                  |
-| RIT-064 | M6        |       P0 | Planned | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Raw signature, replay, duplicate, out-of-order, mismatch, outbox processing pass.                                                                                                                                                                          |
+| RIT-063 | M6        |       P0 | Done    | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                         | payments_risk | Test-only Stripe Checkout API, v2 order/attempt persistence, exact idempotency, server catalog/policy pricing, CSRF, live-key rejection, focused PostgreSQL/security/build gates pass; real network proof remains credential-gated.                           |
+| RIT-064 | M6        |       P0 | Ready   | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Raw signature, replay, duplicate, out-of-order, mismatch, outbox processing pass.                                                                                                                                                                          |
 | RIT-065 | M6        |       P0 | Planned | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Verified state grants exactly once and reverses per refund/dispute terms.                                                                                                                                                                                  |
 | RIT-066 | M6        |       P0 | Planned | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
 | RIT-067 | M6        |       P0 | Planned | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Scheduled comparison detects missing/mismatched payment, order, entitlement, payout states.                                                                                                                                                                |
@@ -4051,6 +4072,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-060 | Versioned Country Policy Engine | [tasks/RIT-060.md](./tasks/RIT-060.md) |
 | Task | RIT-061 | Immutable Catalog, Product, and Price Registry | [tasks/RIT-061.md](./tasks/RIT-061.md) |
 | Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
+| Task | RIT-063 | First Fiat Hosted-Checkout Sandbox Adapter | [tasks/RIT-063.md](./tasks/RIT-063.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

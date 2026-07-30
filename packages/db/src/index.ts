@@ -140,6 +140,16 @@ export {
   type ProcessedPaymentEvent,
 } from "./commerce-persistence.js";
 export {
+  commercialCheckoutPersistenceErrorCodes,
+  CommercialCheckoutPersistenceError,
+  createCommercialCheckoutPersistence,
+  type CommercialCheckoutPersistence,
+  type CommercialCheckoutPersistenceErrorCode,
+  type PersistedCommercialStripeCheckout,
+  type PreparedCommercialCheckoutAttachment,
+  type PreparedCommercialStripeCheckout,
+} from "./commercial-checkout-persistence.js";
+export {
   assertReflectionRuntimeDatabasePrivileges,
   createReflectionPersistence,
   reflectionPersistenceErrorCodes,
