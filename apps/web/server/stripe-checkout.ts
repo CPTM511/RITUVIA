@@ -64,6 +64,7 @@ export type StripeCheckoutApplicationDependencies = Readonly<{
     ): Promise<readonly CountryPolicyVersionV1[]>;
   }>;
   environment: CatalogEnvironment;
+  providerAccountFingerprint: string;
   paymentProvider: HostedCheckoutAdapter;
   persistence: CommercialCheckoutPersistence;
 }>;
@@ -301,6 +302,7 @@ export const createStripeCheckoutApplicationService = (
           priceVersion: price.version,
           productCode: product.code,
           productVersion: product.version,
+          providerAccountFingerprint: dependencies.providerAccountFingerprint,
           provisionalExpiresAt: new Date(Date.parse(now) + 86_400_000).toISOString(),
           refundPolicyVersion: price.refundPolicyVersion,
           termsVersion: termsDocument.version,
@@ -390,7 +392,8 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
     throw new WebCommerceError("unavailable");
   }
   const accounts = loadWebAccountIdentityService();
-  const paymentProvider = loadWebPaymentProviderRegistry().get(stripeHostedCheckoutProviderId);
+  const paymentProviders = loadWebPaymentProviderRegistry();
+  const paymentProvider = paymentProviders.get(stripeHostedCheckoutProviderId);
   service = createStripeCheckoutApplicationService({
     accounts: {
       getProfile: (token) => accounts.getProfile(token),
@@ -409,6 +412,7 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
         ).map((record) => parseCountryPolicyVersionV1(record.policyDocument)),
     },
     environment: configuration.deploymentEnvironment,
+    providerAccountFingerprint: paymentProviders.accountFingerprint(stripeHostedCheckoutProviderId),
     paymentProvider,
     persistence: createCommercialCheckoutPersistence(loadWebDatabase()),
   });

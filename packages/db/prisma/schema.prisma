@@ -177,8 +177,10 @@ model CommercialOrderV2 {
   paidAt                DateTime? @map("paid_at") @db.Timestamptz(6)
   refundRequestedAt     DateTime? @map("refund_requested_at") @db.Timestamptz(6)
   refundedAt            DateTime? @map("refunded_at") @db.Timestamptz(6)
+  paymentStateVersion   Int       @default(0) @map("payment_state_version")
 
   @@unique([userId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_order_v2_user_idempotency_key")
+  @@unique([id, publicId], map: "commercial_order_v2_id_public_id_key")
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "commercial_order_v2_user_created_idx")
   @@map("commercial_order_v2")
 }
@@ -207,6 +209,7 @@ model CommercialPaymentAttemptV2 {
   orderId                 String    @map("order_id") @db.Uuid
   provider                String    @db.VarChar(32)
   environment             String    @db.VarChar(16)
+  providerAccountFingerprint String? @map("provider_account_fingerprint") @db.VarChar(128)
   attemptNumber           Int       @map("attempt_number") @db.SmallInt
   state                   String    @default("created") @db.VarChar(24)
   providerCheckoutId      String?   @map("provider_checkout_id") @db.VarChar(255)
@@ -228,8 +231,66 @@ model CommercialPaymentAttemptV2 {
   @@unique([orderId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_payment_attempt_v2_idempotency_key")
   @@unique([provider, environment, providerCheckoutId], map: "commercial_payment_attempt_v2_checkout_key")
   @@unique([provider, environment, providerPaymentIntentId], map: "commercial_payment_attempt_v2_intent_key")
+  @@unique([id, orderId], map: "commercial_payment_attempt_v2_id_order_key")
   @@index([orderId, state, id], map: "commercial_payment_attempt_v2_order_state_idx")
   @@map("commercial_payment_attempt_v2")
+}
+
+model CommercialPaymentEventV2 {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider                   String    @db.VarChar(32)
+  environment                String    @db.VarChar(16)
+  providerAccountFingerprint String    @map("provider_account_fingerprint") @db.VarChar(128)
+  providerEventId            String    @map("provider_event_id") @db.VarChar(255)
+  normalizationVersion       String    @map("normalization_version") @db.VarChar(100)
+  eventType                  String    @map("event_type") @db.VarChar(40)
+  providerObjectId           String    @map("provider_object_id") @db.VarChar(255)
+  payloadDigest              Bytes     @map("payload_digest")
+  signatureTimestampSeconds  BigInt    @map("signature_timestamp_seconds")
+  verifierVersion            String    @map("verifier_version") @db.VarChar(100)
+  providerOccurredAt         DateTime  @map("provider_occurred_at") @db.Timestamptz(6)
+  receivedAt                 DateTime  @default(now()) @map("received_at") @db.Timestamptz(6)
+  claimedOrderPublicId       String    @map("claimed_order_public_id") @db.Uuid
+  orderId                    String?   @map("order_id") @db.Uuid
+  paymentAttemptId           String?   @map("payment_attempt_id") @db.Uuid
+  providerCheckoutId         String?   @map("provider_checkout_id") @db.VarChar(255)
+  providerPaymentIntentId    String?   @map("provider_payment_intent_id") @db.VarChar(255)
+  amountMinor                Int       @map("amount_minor")
+  currencyCode               String    @map("currency_code") @db.Char(3)
+  validationState            String    @default("received") @map("validation_state") @db.VarChar(24)
+  processingState            String    @default("pending") @map("processing_state") @db.VarChar(24)
+  processingDisposition      String?   @map("processing_disposition") @db.VarChar(32)
+  processedAt                DateTime? @map("processed_at") @db.Timestamptz(6)
+
+  @@unique([provider, environment, providerAccountFingerprint, providerEventId], map: "commercial_payment_event_v2_provider_event_key")
+  @@unique([id, orderId, paymentAttemptId], map: "commercial_payment_event_v2_outbox_identity_key")
+  @@index([orderId, providerOccurredAt, eventType, providerEventId], map: "commercial_payment_event_v2_order_timeline_idx")
+  @@index([processingState, receivedAt, id], map: "commercial_payment_event_v2_processing_idx")
+  @@map("commercial_payment_event_v2")
+}
+
+model CommercialPaymentOutboxV2 {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentEventId      String    @unique(map: "commercial_payment_outbox_v2_event_key") @map("payment_event_id") @db.Uuid
+  orderId             String    @map("order_id") @db.Uuid
+  paymentAttemptId    String    @map("payment_attempt_id") @db.Uuid
+  topic               String    @db.VarChar(100)
+  schemaVersion       String    @map("schema_version") @db.VarChar(100)
+  orderStatus         String    @map("order_status") @db.VarChar(24)
+  paymentAttemptState String    @map("payment_attempt_state") @db.VarChar(24)
+  paymentStateVersion Int       @map("payment_state_version")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  deliveryState       String    @default("pending") @map("delivery_state") @db.VarChar(24)
+  attemptCount        Int       @default(0) @map("attempt_count") @db.SmallInt
+  availableAt         DateTime  @map("available_at") @db.Timestamptz(6)
+  leaseTokenHash      Bytes?    @map("lease_token_hash")
+  leasedUntil         DateTime? @map("leased_until") @db.Timestamptz(6)
+  completedAt         DateTime? @map("completed_at") @db.Timestamptz(6)
+  lastFailureCode     String?   @map("last_failure_code") @db.VarChar(100)
+  deadLetteredAt      DateTime? @map("dead_lettered_at") @db.Timestamptz(6)
+
+  @@index([deliveryState, availableAt, createdAt, id], map: "commercial_payment_outbox_v2_delivery_idx")
+  @@map("commercial_payment_outbox_v2")
 }
 
 model CreditReservation {

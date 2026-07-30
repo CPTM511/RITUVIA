@@ -19,6 +19,7 @@ export const normalizedPaymentEventTypes = Object.freeze([
   "payment_pending",
   "payment_succeeded",
   "payment_failed",
+  "payment_expired",
   "payment_refunded",
   "payment_disputed",
 ] as const);
@@ -224,6 +225,10 @@ const transitionFor = (
     case "payment_failed":
       return ["pending_checkout", "checkout_created", "processing"].includes(state)
         ? { directive: "none", state: "payment_failed" }
+        : null;
+    case "payment_expired":
+      return ["pending_checkout", "checkout_created", "processing", "payment_failed"].includes(state)
+        ? { directive: "none", state: "canceled" }
         : null;
     case "payment_refunded":
       return state === "refunded" ? null : { directive: "revoke", state: "refunded" };

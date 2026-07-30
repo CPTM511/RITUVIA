@@ -44,6 +44,7 @@ export type PreparedCommercialStripeCheckout = Readonly<{
   priceVersion: string;
   productCode: string;
   productVersion: string;
+  providerAccountFingerprint: string;
   provisionalExpiresAt: string;
   refundPolicyVersion: string;
   termsVersion: string;
@@ -93,6 +94,7 @@ type CheckoutRecord = Readonly<{
     idempotencyKeyHash: Uint8Array;
     idempotencyKeyVersion: string;
     provider: string;
+    providerAccountFingerprint: string | null;
     providerCheckoutId: string | null;
     providerCheckoutUrl: string | null;
     state: string;
@@ -255,6 +257,7 @@ const mapCheckout = async (record: CheckoutRecord): Promise<PersistedCommercialS
     record.order.totalMinor !== record.attempt.amountMinor ||
     record.order.currencyCode !== record.attempt.currencyCode ||
     record.attempt.provider !== "stripe" ||
+    record.attempt.providerAccountFingerprint === null ||
     record.attempt.idempotencyKeyVersion !== providerIdempotencyKeyVersion ||
     !["created", "checkout_created"].includes(record.order.status) ||
     record.order.status !== record.attempt.state
@@ -327,6 +330,7 @@ export const createCommercialCheckoutPersistence = (
       ]) {
         requireResource(reference);
       }
+      requireResource(input.providerAccountFingerprint);
       requireIdentifier(input.productCode);
       requireIdentifier(input.fulfillmentCode);
 
@@ -335,7 +339,10 @@ export const createCommercialCheckoutPersistence = (
         userId: input.userId,
       });
       if (existing !== null) {
-        if (!digestsEqual(existing.order.canonicalRequestHash, canonicalRequestHash)) {
+        if (
+          !digestsEqual(existing.order.canonicalRequestHash, canonicalRequestHash) ||
+          existing.attempt.providerAccountFingerprint !== input.providerAccountFingerprint
+        ) {
           throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
         }
         return Object.freeze({
@@ -400,6 +407,7 @@ export const createCommercialCheckoutPersistence = (
                   idempotencyKeyVersion: providerIdempotencyKeyVersion,
                   orderId: order.id,
                   provider: "stripe",
+                  providerAccountFingerprint: input.providerAccountFingerprint,
                   state: "created",
                   updatedAt: createdAt,
                 },

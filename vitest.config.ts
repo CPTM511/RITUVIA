@@ -70,6 +70,7 @@ export default defineConfig({
   test: {
     include: [
       "tests/**/*.test.ts",
+      "apps/web/server/stripe-webhook.test.ts",
       "apps/web/test/**/*.test.ts",
       "apps/web/test/**/*.test.tsx",
       "apps/worker/test/**/*.test.ts",
