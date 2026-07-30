@@ -288,6 +288,8 @@ Finalize objectives before launch and align alerting/runbooks.
 
 ## 13. Backups and recovery
 
+- The canonical procedure and current implementation boundary are in
+  [PostgreSQL Backup and Recovery Runbook](22_BACKUP_RECOVERY.md).
 - Automated encrypted database backups and point-in-time recovery where available.
 - Object-store versioning/lifecycle where appropriate.
 - Separate backup access from production app credentials.
@@ -295,6 +297,13 @@ Finalize objectives before launch and align alerting/runbooks.
 - Quarterly initially, then regular restore tests with evidence.
 - Backup retention aligned with deletion/legal policy.
 - Infrastructure and configuration reproducible from code/documented provider state.
+
+The repository now automates a synthetic custom-format logical backup and empty isolated-database
+restore in local development and the protected PostgreSQL CI job. It compares migration, schema
+drift, rows, owner/RLS/policy, ACL, role, sentinel, runtime-denial, artifact-integrity, and cleanup
+evidence. This is not production backup/PITR evidence: provider-managed encryption, WAL/PITR,
+retention, separate access, provider-level isolation, and measured production RPO/RTO remain
+required before Gate H.
 
 The feature-flag version table uses forced row-level security and separate migrator, read-only
 runtime, and append-only control identities. Logical dumps run as runtime with row security and

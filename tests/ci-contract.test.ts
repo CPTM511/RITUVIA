@@ -99,6 +99,7 @@ describe("active CI workflow contract", () => {
         "pnpm --filter @rituvia/astrology-engine-native native:verify-sca",
       "test:astrology-native-security":
         "pnpm --filter @rituvia/astrology-engine-native native:verify-security",
+      "test:backup-recovery-database": "pnpm --filter @rituvia/db test:backup-recovery",
       "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",
       "test:public-search-browser": "node --import tsx scripts/verify-public-search-browser.mjs",
       "test:tarot-share-browser": "node scripts/verify-tarot-share-browser.mjs",
@@ -121,15 +122,60 @@ describe("active CI workflow contract", () => {
   });
 
   it("requires the database CI verifier to build its internal runtime dependency", () => {
-    const expected =
-      "pnpm --filter @rituvia/domain build && pnpm --filter @rituvia/security build && pnpm generate && node --import tsx scripts/verify-ci-foundation.ts";
-    expect(auditDatabaseCiScripts({ "test:ci": expected })).toEqual([]);
-    expect(auditDatabaseCiScripts({ "test:ci": "node scripts/verify-ci-foundation.ts" })).toEqual([
+    const valid = {
+      "test:backup-recovery":
+        "pnpm --filter @rituvia/domain build && pnpm generate && node --import tsx scripts/verify-backup-recovery.ts",
+      "test:ci":
+        "pnpm --filter @rituvia/domain build && pnpm --filter @rituvia/security build && pnpm generate && node --import tsx scripts/verify-ci-foundation.ts",
+    };
+    expect(auditDatabaseCiScripts(valid)).toEqual([]);
+    expect(
+      auditDatabaseCiScripts({ ...valid, "test:ci": "node scripts/verify-ci-foundation.ts" }),
+    ).toEqual([
       {
         location: "packages/db/package.json#scripts.test:ci",
         rule: "ci-script-command",
       },
     ]);
+    expect(
+      auditDatabaseCiScripts({
+        ...valid,
+        "test:backup-recovery": "node scripts/verify-backup-recovery.ts",
+      }),
+    ).toEqual([
+      {
+        location: "packages/db/package.json#scripts.test:backup-recovery",
+        rule: "ci-script-command",
+      },
+    ]);
+  });
+
+  it("locks the isolated backup restore after the CI database foundation", () => {
+    const removed = cloneWorkflow();
+    const removedSteps = record(record(removed.jobs).database).steps as unknown[];
+    const removedIndex = removedSteps.findIndex(
+      (step) => record(step).run === "pnpm test:backup-recovery-database",
+    );
+    if (removedIndex < 0) throw new Error("backup recovery fixture step missing");
+    removedSteps.splice(removedIndex, 1);
+    expect(auditCiWorkflow(removed)).toEqual(
+      expect.arrayContaining([
+        { location: "jobs.database", rule: "run-command-sequence" },
+        { location: "jobs.database", rule: "step-sequence" },
+      ]),
+    );
+
+    const broadened = cloneWorkflow();
+    const steps = record(record(broadened.jobs).database).steps as unknown[];
+    const index = steps.findIndex(
+      (step) => record(step).run === "pnpm test:backup-recovery-database",
+    );
+    if (index < 0) throw new Error("backup recovery fixture step missing");
+    record(steps[index]).env = { DATABASE_URL: "postgresql://production" };
+    expect(auditCiWorkflow(broadened)).toContainEqual({
+      location: `database.steps[${index}]`,
+      rule: "step-environment",
+    });
   });
 
   it("keeps CI Tarot report inserts on the exact runtime columns", () => {

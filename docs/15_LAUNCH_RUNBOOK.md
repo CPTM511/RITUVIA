@@ -10,6 +10,10 @@ The canonical [environment contract](21_ENVIRONMENT_CONTRACT.md) controls isolat
 implementation status, secrets, data, indexing, promotion, recovery, and approvals. This runbook
 does not override it or claim that external environments exist.
 
+The canonical database recovery procedure is the
+[PostgreSQL backup and recovery runbook](22_BACKUP_RECOVERY.md). A passing repository logical
+restore is necessary but does not satisfy the production provider-level backup/PITR Gate H.
+
 - Local: synthetic data and mocks/sandboxes.
 - Preview: per-PR, non-indexable, isolated secrets/data.
 - Staging: production-like, provider sandboxes, release rehearsal.

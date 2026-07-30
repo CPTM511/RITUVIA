@@ -20,7 +20,12 @@ No field is personal, private, secret, payment, authentication, or content-right
 - The initial migration is an explicit transaction and expand-only: it adds one table and indexes atomically, performs no backfill, and does not change an existing read or write path.
 - Runtime rollback leaves the additive table unused. Production schema removal requires a later reviewed forward migration, current backup evidence, and owner approval; do not manually drop it.
 - Local and isolated test rollback may drop only their guarded database and then reapply committed migrations.
-- Standard PostgreSQL logical and physical backups include this table. RIT-003 verifies a custom-format logical dump can restore into a second isolated database; production backup automation, point-in-time recovery, RPO/RTO, and restore operations remain RIT-123.
+- Standard PostgreSQL logical and physical backups include this table. RIT-123 now automates a
+  synthetic custom-format logical dump into a second isolated local/CI database, verifies the
+  locked schema-drift fingerprint, migration/table/row/owner/RLS/policy/ACL/role state and runtime
+  denial, and removes its artifact and invocation-owned databases. Production encrypted backup,
+  point-in-time recovery, retention, provider-level isolation, and measured RPO/RTO remain
+  production Gate H controls in `docs/22_BACKUP_RECOVERY.md`.
 - Check constraints are committed SQL because the Prisma schema cannot express every PostgreSQL invariant. Integration tests must fail if they are removed or weakened.
 
 ## CI enforcement

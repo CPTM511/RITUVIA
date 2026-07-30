@@ -110,8 +110,10 @@ production indexing gate.
 - Application rollback is forbidden when the old application cannot safely read data written by
   the new version. Prefer a tested forward fix after an irreversible schema change.
 
-No standing backup automation, production PITR, or external isolated-restore service is currently
-claimed. RIT-123 remains responsible for implementing and proving those controls.
+The repository automates a synthetic custom-format logical backup and isolated-database restore
+through RIT-123. No standing production backup automation, production PITR, approved retention, or
+external provider-level isolated restore is currently claimed; those controls remain required
+before production use under the [backup and recovery runbook](22_BACKUP_RECOVERY.md).
 
 ## 7. Build, promotion, and deployment gates
 
@@ -160,7 +162,7 @@ fail-closed.
 - standing external preview, staging, or production hosting;
 - cloud databases, caches, buckets, KMS, queues, provider projects, or environment secret stores;
 - production credentials, customer data, DNS, public product indexing, or provider activation;
-- automated backup/PITR and isolated restore; and
+- production automated encrypted backup/PITR and provider-level isolated restore; and
 - production monitoring, alerting, support, status, on-call, and independent penetration evidence.
 
 ## 9. Rollback and emergency actions

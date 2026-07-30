@@ -29,6 +29,7 @@
     "test:privacy-deletion": "node --import tsx scripts/verify-privacy-deletion.ts",
     "test:admin-security": "pnpm --filter @rituvia/security build && node --import tsx scripts/verify-admin-security.ts",
     "test:astrology-kill-switch": "node --import tsx scripts/verify-astrology-kill-switch.ts",
+    "test:backup-recovery": "pnpm --filter @rituvia/domain build && pnpm generate && node --import tsx scripts/verify-backup-recovery.ts",
     "test:ci": "pnpm --filter @rituvia/domain build && pnpm --filter @rituvia/security build && pnpm generate && node --import tsx scripts/verify-ci-foundation.ts",
     "test:catalog": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-catalog.ts",
     "test:commercial-transactions": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-commercial-transactions.ts",

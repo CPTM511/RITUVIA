@@ -57,6 +57,7 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `docs/19_NAME_CLEARANCE_WORKSHEET.md`
 - `docs/20_AI_GROWTH_ENGINE.md`
 - `docs/21_ENVIRONMENT_CONTRACT.md`
+- `docs/22_BACKUP_RECOVERY.md`
 - `docs/README.md`
 - `apps/admin/AGENTS.md`
 - `apps/web/AGENTS.md`
@@ -197,6 +198,7 @@ An English-first, Web/PWA product for global users that offers:
 7. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
 8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
 9. Use `docs/21_ENVIRONMENT_CONTRACT.md` as the canonical environment-isolation and deployment-gate contract; it does not claim that external infrastructure exists.
+10. Use `docs/22_BACKUP_RECOVERY.md` as the canonical PostgreSQL backup, isolated-restore, RPO/RTO, evidence, and production-gate runbook.
 
 ## Local development
 
@@ -1079,8 +1081,8 @@ existing human approval gates.
 **Last reconciled:** 2026-07-30
 
 RIT-004 and OWN-008 are complete through D-090. The AGPL repository is public, `main` is protected,
-and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete; RIT-123 is the
-sole Ready task.
+and hosted run `30494018585` passes all three mandatory jobs. RIT-008 is complete. RIT-123 is the
+sole In Review task while its first hosted backup/restore rehearsal is pending.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -2299,8 +2301,31 @@ The focused contract verifier covers ten control sections and ten repository ref
 focused Vitest files pass 91 environment, CI, configuration, SEO, inventory, and secret-boundary
 tests; formatting, lint, typecheck, architecture, CI-contract, and secret-scan gates pass. No
 hosting project, cloud service, production secret, customer data, deployment, DNS, indexing,
-provider activation, migration, or public product launch was added. RIT-123 is the sole Ready
-task.
+provider activation, migration, or public product launch was added. RIT-123 subsequently completed
+the repository-level backup and restore rehearsal.
+
+RIT-123 is In Review. One fail-closed `rituvia.backup-recovery.v1` rehearsal now creates a
+PostgreSQL custom-format logical backup from an exact synthetic local or GitHub Actions source,
+restores it into a distinct invocation-owned empty database, reapplies the local runtime grants
+or restores the exact CI ACL, deploys migrations idempotently, and compares migration, table, row,
+ownership, row-security, constraint, index, policy, privilege, role, and synthetic-sentinel state.
+The runtime role can read the restored sentinel but cannot create or delete data.
+
+The temporary artifact is generated only under an ignored mode-0700 repository directory, must
+be a regular non-symlink mode-0600 custom-format file, and is rehashed immediately before restore.
+Source, target, and artifact cleanup are mandatory even on failure. The ignored mode-0600 evidence
+contains only bounded hashes, counts, versions, timings, and checks. Six focused backup, artifact,
+cleanup, snapshot, and evidence tests join the existing database-safety and CI-contract coverage;
+50 focused tests, database typecheck, CI/environment/migration contracts, and the complete local
+31-migration isolated restore rehearsal pass. Protected CI is configured to run the same rehearsal
+after database foundation verification against the digest-pinned PostgreSQL 17 service; the first
+hosted result for this revision remains the review gate.
+
+This proves repository-level synthetic logical recovery only. It does not claim provider-managed
+physical backup, encrypted isolated retention, WAL/PITR, production RPO/RTO, customer-data
+recovery, or production restore authority. Those remain Gate H owner-approved production work.
+No production service, credential, data, backup, retention rule, migration, deployment, DNS, or
+public launch changed. No Planned backlog item currently has every dependency complete.
 
 ## Update rules
 
@@ -3674,7 +3699,7 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-120 | M12       |       P0 | Planned | Complete owner/admin operational dashboard                                  | RIT-038,RIT-073,RIT-117                 | operations    | Health, revenue, core loop, AI, queue, support, cost and approvals use source/freshness labels.                                                                                                                                                            |
 | RIT-121 | M12       |       P0 | Planned | Finalize threat model and remediate launch findings                         | RIT-057,RIT-069,RIT-095                 | qa_security   | Versioned threat model covers all integrations; no critical/high launch findings.                                                                                                                                                                          |
 | RIT-122 | M12       |       P0 | Planned | Implement rate limits, bot defense, abuse and denial-of-wallet controls     | RIT-024,RIT-033,RIT-063                 | qa_security   | Expensive/auth/checkout/support/privacy endpoints resist scripted abuse without sensitive profiling.                                                                                                                                                       |
-| RIT-123 | M12       |       P0 | Ready   | Implement backups and isolated restore test                                 | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
+| RIT-123 | M12       |       P0 | In Review | Implement backups and isolated restore test                               | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
 | RIT-124 | M12       |       P0 | Planned | Implement SLOs, alerts, runbooks, and status controls                       | RIT-006,RIT-067                         | operations    | Actionable alerts link runbooks; kill switches/read-only mode and trace correlation are rehearsed.                                                                                                                                                         |
 | RIT-125 | M12       |       P1 | Planned | Implement support, privacy, safety, and content report queues               | RIT-056,RIT-068,RIT-110                 | operations    | Triage/SLA/escalation/permissions and draft automation preserve private-data boundaries.                                                                                                                                                                   |
 | RIT-126 | M12       |       P1 | Planned | Implement daily, weekly, and monthly Codex automation                       | RIT-004,RIT-120,RIT-124                 | operations    | Read-only checks/briefs/PRs run with structured output and no gated production actions.                                                                                                                                                                    |
@@ -4027,6 +4052,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-115 | Redacted localized one-card share artifacts | [tasks/RIT-115.md](./tasks/RIT-115.md) |
 | Task | RIT-116 | Visible GEO answer, source, review, and entity authority | [tasks/RIT-116.md](./tasks/RIT-116.md) |
 | Task | RIT-117 | Offline SEO/GEO performance and freshness operations | [tasks/RIT-117.md](./tasks/RIT-117.md) |
+| Task | RIT-123 | Implement backups and isolated restore test | [tasks/RIT-123.md](./tasks/RIT-123.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
 | Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
 
@@ -7452,6 +7478,8 @@ Finalize objectives before launch and align alerting/runbooks.
 
 ## 13. Backups and recovery
 
+- The canonical procedure and current implementation boundary are in
+  [PostgreSQL Backup and Recovery Runbook](22_BACKUP_RECOVERY.md).
 - Automated encrypted database backups and point-in-time recovery where available.
 - Object-store versioning/lifecycle where appropriate.
 - Separate backup access from production app credentials.
@@ -7459,6 +7487,13 @@ Finalize objectives before launch and align alerting/runbooks.
 - Quarterly initially, then regular restore tests with evidence.
 - Backup retention aligned with deletion/legal policy.
 - Infrastructure and configuration reproducible from code/documented provider state.
+
+The repository now automates a synthetic custom-format logical backup and empty isolated-database
+restore in local development and the protected PostgreSQL CI job. It compares migration, schema
+drift, rows, owner/RLS/policy, ACL, role, sentinel, runtime-denial, artifact-integrity, and cleanup
+evidence. This is not production backup/PITR evidence: provider-managed encryption, WAL/PITR,
+retention, separate access, provider-level isolation, and measured production RPO/RTO remain
+required before Gate H.
 
 The feature-flag version table uses forced row-level security and separate migrator, read-only
 runtime, and append-only control identities. Logical dumps run as runtime with row security and
@@ -9041,6 +9076,10 @@ The canonical [environment contract](21_ENVIRONMENT_CONTRACT.md) controls isolat
 implementation status, secrets, data, indexing, promotion, recovery, and approvals. This runbook
 does not override it or claim that external environments exist.
 
+The canonical database recovery procedure is the
+[PostgreSQL backup and recovery runbook](22_BACKUP_RECOVERY.md). A passing repository logical
+restore is necessary but does not satisfy the production provider-level backup/PITR Gate H.
+
 - Local: synthetic data and mocks/sandboxes.
 - Preview: per-PR, non-indexable, isolated secrets/data.
 - Staging: production-like, provider sandboxes, release rehearsal.
@@ -10017,8 +10056,10 @@ production indexing gate.
 - Application rollback is forbidden when the old application cannot safely read data written by
   the new version. Prefer a tested forward fix after an irreversible schema change.
 
-No standing backup automation, production PITR, or external isolated-restore service is currently
-claimed. RIT-123 remains responsible for implementing and proving those controls.
+The repository automates a synthetic custom-format logical backup and isolated-database restore
+through RIT-123. No standing production backup automation, production PITR, approved retention, or
+external provider-level isolated restore is currently claimed; those controls remain required
+before production use under the [backup and recovery runbook](22_BACKUP_RECOVERY.md).
 
 ## 7. Build, promotion, and deployment gates
 
@@ -10067,7 +10108,7 @@ fail-closed.
 - standing external preview, staging, or production hosting;
 - cloud databases, caches, buckets, KMS, queues, provider projects, or environment secret stores;
 - production credentials, customer data, DNS, public product indexing, or provider activation;
-- automated backup/PITR and isolated restore; and
+- production automated encrypted backup/PITR and provider-level isolated restore; and
 - production monitoring, alerting, support, status, on-call, and independent penetration evidence.
 
 ## 9. Rollback and emergency actions
@@ -10094,6 +10135,163 @@ The following remain explicit human gates:
 
 Codex may prepare configurations, scripts, evidence, and protected preview/staging plans, but it
 must not execute these owner-gated production actions without a new explicit approval.
+
+---
+
+# File: `docs/22_BACKUP_RECOVERY.md`
+
+# PostgreSQL Backup and Recovery Runbook
+
+This is the canonical RITUVIA database backup and restore runbook. It separates repository-proven
+synthetic logical recovery from provider-managed production backup and point-in-time recovery
+(PITR). A passing local or CI drill never claims that production infrastructure exists.
+
+## 1. Authority and current state
+
+| Capability | Current state | Evidence or gate |
+| --- | --- | --- |
+| Repository-owned local logical backup and isolated restore | Implemented and verified with synthetic data | `pnpm test:backup-recovery-database` |
+| Digest-pinned GitHub Actions PostgreSQL logical restore | Enforced by the protected database CI job | `PostgreSQL integration` required check |
+| Production automated encrypted backup | Required before production use; not configured | Managed PostgreSQL evidence and owner deployment approval |
+| Production PITR | Required before beta/production use; not configured | Provider recovery-window and restore evidence |
+| Production isolated restore | Required before beta/production use; not performed | Separate provider project/cluster rehearsal and owner approval |
+| Production retention/deletion schedule | Not approved | Legal/privacy/owner decision |
+
+The repository drill accepts only invocation-owned local test databases or the exact ephemeral
+GitHub Actions database. It rejects preview, staging, production, arbitrary URLs, caller-selected
+database names, and caller-selected artifact paths.
+
+## 2. Recovery objectives
+
+The current initial objectives remain:
+
+- primary transactional-data RPO: no more than 15 minutes after the selected managed service can
+  prove that recovery window;
+- core-service RTO: no more than 4 hours for initial launch; and
+- no recovery may duplicate payments, Credits, entitlements, provider events, or private-content
+  lifecycle actions.
+
+These are launch objectives, not current production claims. Before beta, the selected provider's
+documented and measured backup/PITR capabilities must meet or improve them. RIT-124 owns alerting
+and SLO integration; RIT-142 repeats the complete launch and rollback rehearsal.
+
+## 3. Production backup requirements
+
+Before a production database may receive customer data:
+
+1. Use provider-managed automated encrypted backups and PITR with encryption at rest and in
+   transit. Do not implement custom backup cryptography.
+2. Keep backup storage, encryption authority, service identity, and administrative access
+   production-specific. Application runtime credentials receive no backup, restore, retention, or
+   deletion authority.
+3. Require named human identity, MFA, short-lived elevation, reason/ticket, immutable provider
+   audit evidence, and least privilege for backup or restore administration.
+4. Replicate or isolate backups according to the provider threat model so a primary database
+   compromise or operator error cannot silently destroy every recovery point.
+5. Monitor backup completion, PITR continuity, storage/encryption state, oldest/newest recovery
+   point, failed jobs, and unexpected retention/deletion changes without logging customer data.
+6. Bind infrastructure configuration, provider/project identity, region, PostgreSQL major,
+   encryption mode, schedule, recovery window, and access policy to reviewed evidence.
+7. Align retention and backup expiry with the separately approved privacy, deletion, financial,
+   legal-hold, and incident policies. No duration is activated by this runbook.
+
+Object storage, cache, queues, analytics, provider state, encryption-key recovery, and generated
+artifacts require their own recovery controls. A PostgreSQL backup alone does not recover the
+whole service.
+
+## 4. Repository rehearsal
+
+`pnpm test:backup-recovery-database`:
+
+1. starts or attests the repository-owned loopback PostgreSQL 17 cluster, or accepts only the exact
+   digest-pinned GitHub Actions PostgreSQL 17 service;
+2. creates distinct synthetic source and empty restore databases;
+3. deploys all committed migrations, applies the synthetic seed, and inserts one bounded sentinel;
+4. takes a zstd-compressed PostgreSQL custom-format logical backup as the ephemeral administrator;
+5. writes only to an internally generated mode-`0700` directory and mode-`0600` regular file,
+   rejects symlinks, verifies the `PGDMP` signature, size, and SHA-256, and rechecks the digest
+   immediately before restore;
+6. inserts a post-snapshot sentinel to prove the restored state is the captured boundary rather
+   than the later source state;
+7. restores as the non-superuser migrator into the empty isolated target in one transaction;
+8. deploys migrations twice, reapplies local grants or restores and verifies the exact CI ACL,
+   and validates the locked Prisma schema-drift fingerprint;
+9. compares migration records, tables/row counts, constraints, indexes, owners, RLS/forced-RLS,
+   policies, relation/database/schema privileges, role attributes, role membership, and sentinel
+   state;
+10. proves the runtime can read the restored sentinel but cannot create a table or delete it; and
+11. removes the artifact and invocation-owned databases on success or failure.
+
+The ignored `.local/evidence/backup-recovery/latest.json` report contains only schema-versioned
+metadata, hashes, counts, durations, source revision/state, and cleanup results. It contains no
+connection URL, database name, password, secret, SQL, table row, private content, or customer
+identifier.
+
+This custom-format logical drill proves repository recovery behavior. It does not prove physical
+backup, WAL archiving, PITR, geographic isolation, provider retention, KMS recovery, or a production
+RPO/RTO.
+
+## 5. Production restore procedure
+
+Production restore is a human-gated incident or rehearsal:
+
+1. Open an incident/change record with reason, scope, incident commander, owner approval,
+   privacy/security contacts, and expected user impact.
+2. Freeze risky writes through maintenance/read-only mode and provider/worker kill switches when
+   required. Preserve payment/webhook idempotency and queue evidence.
+3. Select the recovery point using database, application, migration, provider-event, and
+   encryption-key timelines. Record expected data loss against the RPO.
+4. Create a new isolated production-authority restore target in a separate approved provider
+   project/cluster or equivalent failure boundary. Never restore production data into local,
+   preview, ordinary staging, developer devices, or shared analytics.
+5. Use the provider restore operation with a dedicated short-lived restore identity. Never expose
+   backup bytes or credentials in shell history, logs, CI artifacts, chat, or tickets.
+6. Verify PostgreSQL major/extensions, checksums, encryption, database/schema ownership, roles,
+   grants, RLS/policies, migration manifest, table/index/constraint health, and key availability.
+7. Run privacy-safe integrity checks, application smoke, authorization negatives, payment/Credit
+   reconciliation, provider-event reconciliation, worker/outbox checks, and observability
+   verification against the isolated target.
+8. Measure achieved recovery point and elapsed restore time. Stop if RPO/RTO or integrity
+   expectations fail.
+9. Obtain the required owner go/no-go before changing production routing or credentials.
+10. Promote by controlled connection/routing change with monitoring and a rollback/forward-fix
+    plan. Do not overwrite the damaged source until evidence and incident needs are resolved.
+11. Reconcile events arriving across the recovery boundary before enabling all writes and workers.
+12. Revoke temporary access, preserve immutable evidence, apply approved cleanup/retention, and
+    complete a post-action review.
+
+An application rollback is forbidden when the old application cannot safely read the restored
+schema. Use the reviewed forward fix or compatible revision.
+
+## 6. Evidence and schedule
+
+Each provider-level rehearsal must record:
+
+- exact source and restored environment/project/cluster references without credentials;
+- exact application revision, migration manifest, PostgreSQL/provider versions, configuration and
+  infrastructure evidence;
+- selected recovery point, oldest/newest available points, measured RPO and RTO;
+- backup/PITR encryption, isolation, access, audit, and retention evidence;
+- integrity, authorization, schema, application, payment/Credit, provider-event, worker, and
+  observability results;
+- every participant and owner approval;
+- cleanup/revocation result, findings, remediation owner, and next due date.
+
+Run the provider-level isolated restore before beta, before production launch, after a material
+database/provider/recovery-policy change, after a recovery incident, and at least quarterly until
+evidence justifies a different reviewed cadence. CI continues to run the synthetic logical drill
+on every protected change.
+
+## 7. Owner gates
+
+Explicit owner approval remains required before:
+
+- selecting or creating production PostgreSQL/backup infrastructure;
+- installing production credentials or backup/KMS authority;
+- choosing or changing retention, backup deletion, legal hold, region, or recovery policy;
+- restoring, mutating, deleting, routing, or replacing production data;
+- destructive migration, key destruction, or customer-impacting rollback; and
+- declaring Gate H, beta readiness, production readiness, or public launch complete.
 
 ---
 
@@ -10131,6 +10329,7 @@ conflicting product details while preserving stricter repository safety and appr
 20. `19_NAME_CLEARANCE_WORKSHEET.md` — operational trademark/domain/language clearance checklist.
 21. `20_AI_GROWTH_ENGINE.md` — AI-native SEO/GEO/content/lifecycle/social/paid-growth operating system.
 22. `21_ENVIRONMENT_CONTRACT.md` — testable local/preview/staging/production isolation, secret, data, indexing, promotion, recovery, and approval gates.
+23. `22_BACKUP_RECOVERY.md` — PostgreSQL backup/PITR requirements, automated synthetic logical restore, production restore procedure, evidence, and owner gates.
 
 When a decision changes a specification, update the specification, tests/backlog, and append/supersede the decision in `DECISIONS.md` in the same change.
 
@@ -10465,7 +10664,12 @@ No field is personal, private, secret, payment, authentication, or content-right
 - The initial migration is an explicit transaction and expand-only: it adds one table and indexes atomically, performs no backfill, and does not change an existing read or write path.
 - Runtime rollback leaves the additive table unused. Production schema removal requires a later reviewed forward migration, current backup evidence, and owner approval; do not manually drop it.
 - Local and isolated test rollback may drop only their guarded database and then reapply committed migrations.
-- Standard PostgreSQL logical and physical backups include this table. RIT-003 verifies a custom-format logical dump can restore into a second isolated database; production backup automation, point-in-time recovery, RPO/RTO, and restore operations remain RIT-123.
+- Standard PostgreSQL logical and physical backups include this table. RIT-123 now automates a
+  synthetic custom-format logical dump into a second isolated local/CI database, verifies the
+  locked schema-drift fingerprint, migration/table/row/owner/RLS/policy/ACL/role state and runtime
+  denial, and removes its artifact and invocation-owned databases. Production encrypted backup,
+  point-in-time recovery, retention, provider-level isolation, and measured RPO/RTO remain
+  production Gate H controls in `docs/22_BACKUP_RECOVERY.md`.
 - Check constraints are committed SQL because the Prisma schema cannot express every PostgreSQL invariant. Integration tests must fail if they are removed or weakened.
 
 ## CI enforcement
@@ -12285,6 +12489,10 @@ jobs:
         env:
           RITUVIA_CI_DATABASE_PASSWORD: rituvia-ci-${{ github.run_id }}-${{ github.run_attempt }}-admin
         run: pnpm test:ci-database
+      - name: Rehearse isolated backup and restore
+        env:
+          RITUVIA_CI_DATABASE_PASSWORD: rituvia-ci-${{ github.run_id }}-${{ github.run_attempt }}-admin
+        run: pnpm test:backup-recovery-database
 
   security:
     name: Security scans
@@ -12728,6 +12936,8 @@ permissions, runners, immutable actions/service image, database isolation, and r
 The environment contract gate verifies the four-environment authority matrix, isolation, downward
 data/secret-flow denial, indexing, migration/recovery, promotion, rollback, owner gates, current
 implementation claims, and every repository reference without contacting a provider or network.
+`pnpm test:backup-recovery-database` runs the guarded synthetic PostgreSQL custom-format backup,
+empty isolated restore, schema/data/privilege comparison, runtime denial, and cleanup rehearsal.
 The migration policy checks the complete migration directory against
 `packages/db/prisma/migration-manifest.json` and rejects checksum drift, unlisted files, missing
 files, transaction loss, and destructive SQL. The current-tree secret policy scans every tracked or
@@ -13073,6 +13283,7 @@ SOURCE_FILES = [
         "NAME_CLEARANCE_WORKSHEET",
         "AI_GROWTH_ENGINE",
         "ENVIRONMENT_CONTRACT",
+        "BACKUP_RECOVERY",
     ])],
     "docs/README.md",
     "apps/admin/AGENTS.md",

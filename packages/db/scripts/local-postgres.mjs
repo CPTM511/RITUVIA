@@ -1680,11 +1680,18 @@ const createTestDatabase = async (runtime) => {
 
   let active = true;
   const databaseUrl = buildDatabaseUrl(runtime, databaseName);
+  const adminDatabaseUrl = buildDatabaseUrl(runtime, databaseName, ADMIN_ROLE);
   const controlDatabaseUrl = buildDatabaseUrl(runtime, databaseName, CONTROL_ROLE);
   const privacyDeletionDatabaseUrl = buildDatabaseUrl(runtime, databaseName, PRIVACY_DELETION_ROLE);
   const adminServiceDatabaseUrl = buildDatabaseUrl(runtime, databaseName, ADMIN_SERVICE_ROLE);
   const migrationDatabaseUrl = buildDatabaseUrl(runtime, databaseName, MIGRATOR_ROLE);
   assertExactLocalDatabaseUrl(databaseUrl, databaseName, runtime.credentials.appPassword);
+  assertExactLocalDatabaseUrl(
+    adminDatabaseUrl,
+    databaseName,
+    runtime.credentials.adminPassword,
+    ADMIN_ROLE,
+  );
   assertExactLocalDatabaseUrl(
     controlDatabaseUrl,
     databaseName,
@@ -1713,6 +1720,7 @@ const createTestDatabase = async (runtime) => {
   const handle = Object.freeze({
     databaseName,
     databaseUrl,
+    adminDatabaseUrl,
     controlDatabaseUrl,
     privacyDeletionDatabaseUrl,
     adminServiceDatabaseUrl,

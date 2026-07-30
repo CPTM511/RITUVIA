@@ -36,6 +36,7 @@ An English-first, Web/PWA product for global users that offers:
 7. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
 8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
 9. Use `docs/21_ENVIRONMENT_CONTRACT.md` as the canonical environment-isolation and deployment-gate contract; it does not claim that external infrastructure exists.
+10. Use `docs/22_BACKUP_RECOVERY.md` as the canonical PostgreSQL backup, isolated-restore, RPO/RTO, evidence, and production-gate runbook.
 
 ## Local development
 
