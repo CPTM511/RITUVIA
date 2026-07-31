@@ -206,27 +206,27 @@ model CommercialOrderItemV2 {
 }
 
 model CommercialPaymentAttemptV2 {
-  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId                 String    @map("order_id") @db.Uuid
-  provider                String    @db.VarChar(32)
-  environment             String    @db.VarChar(16)
-  providerAccountFingerprint String? @map("provider_account_fingerprint") @db.VarChar(128)
-  attemptNumber           Int       @map("attempt_number") @db.SmallInt
-  state                   String    @default("created") @db.VarChar(24)
-  providerCheckoutId      String?   @map("provider_checkout_id") @db.VarChar(255)
-  providerCheckoutUrl     String?   @map("provider_checkout_url") @db.Text
-  providerPaymentIntentId String?   @map("provider_payment_intent_id") @db.VarChar(255)
-  expectedNetwork         String?   @map("expected_network") @db.VarChar(32)
-  expectedAsset           String?   @map("expected_asset") @db.VarChar(32)
-  amountMinor             Int       @map("amount_minor")
-  currencyCode            String    @map("currency_code") @db.Char(3)
-  idempotencyKeyVersion   String    @map("idempotency_key_version") @db.VarChar(100)
-  idempotencyKeyHash      Bytes     @map("idempotency_key_hash")
-  canonicalRequestHash    Bytes     @map("canonical_request_hash")
-  expiresAt               DateTime  @map("expires_at") @db.Timestamptz(6)
-  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt               DateTime  @map("updated_at") @db.Timestamptz(6)
-  completedAt             DateTime? @map("completed_at") @db.Timestamptz(6)
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId                    String    @map("order_id") @db.Uuid
+  provider                   String    @db.VarChar(32)
+  environment                String    @db.VarChar(16)
+  providerAccountFingerprint String?   @map("provider_account_fingerprint") @db.VarChar(128)
+  attemptNumber              Int       @map("attempt_number") @db.SmallInt
+  state                      String    @default("created") @db.VarChar(24)
+  providerCheckoutId         String?   @map("provider_checkout_id") @db.VarChar(255)
+  providerCheckoutUrl        String?   @map("provider_checkout_url") @db.Text
+  providerPaymentIntentId    String?   @map("provider_payment_intent_id") @db.VarChar(255)
+  expectedNetwork            String?   @map("expected_network") @db.VarChar(32)
+  expectedAsset              String?   @map("expected_asset") @db.VarChar(32)
+  amountMinor                Int       @map("amount_minor")
+  currencyCode               String    @map("currency_code") @db.Char(3)
+  idempotencyKeyVersion      String    @map("idempotency_key_version") @db.VarChar(100)
+  idempotencyKeyHash         Bytes     @map("idempotency_key_hash")
+  canonicalRequestHash       Bytes     @map("canonical_request_hash")
+  expiresAt                  DateTime  @map("expires_at") @db.Timestamptz(6)
+  createdAt                  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime  @map("updated_at") @db.Timestamptz(6)
+  completedAt                DateTime? @map("completed_at") @db.Timestamptz(6)
 
   @@unique([orderId, attemptNumber], map: "commercial_payment_attempt_v2_order_number_key")
   @@unique([orderId, idempotencyKeyVersion, idempotencyKeyHash], map: "commercial_payment_attempt_v2_idempotency_key")
@@ -384,6 +384,112 @@ model CommercialPaymentOutboxV2 {
 
   @@index([deliveryState, availableAt, createdAt, id], map: "commercial_payment_outbox_v2_delivery_idx")
   @@map("commercial_payment_outbox_v2")
+}
+
+model CommercialSubscriptionV1 {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                     String    @map("user_id") @db.Uuid
+  sourceOrderId              String    @unique(map: "commercial_subscription_v1_source_order_key") @map("source_order_id") @db.Uuid
+  provider                   String    @db.VarChar(32)
+  environment                String    @db.VarChar(16)
+  providerAccountFingerprint String    @map("provider_account_fingerprint") @db.VarChar(128)
+  providerCheckoutId         String    @unique(map: "commercial_subscription_v1_checkout_key") @map("provider_checkout_id") @db.VarChar(255)
+  providerSubscriptionId     String?   @map("provider_subscription_id") @db.VarChar(255)
+  catalogVersion             String    @map("catalog_version") @db.VarChar(100)
+  productCode                String    @map("product_code") @db.VarChar(100)
+  productVersion             String    @map("product_version") @db.VarChar(100)
+  priceId                    String    @map("price_id") @db.VarChar(200)
+  priceVersion               String    @map("price_version") @db.VarChar(100)
+  fulfillmentCode            String    @map("fulfillment_code") @db.VarChar(100)
+  subscriptionInterval       String    @map("subscription_interval") @db.VarChar(16)
+  creditsPerMonth            Int       @map("credits_per_month")
+  state                      String    @default("pending") @db.VarChar(24)
+  cancelAtPeriodEnd          Boolean   @default(false) @map("cancel_at_period_end")
+  currentPeriodStartsAt      DateTime? @map("current_period_starts_at") @db.Timestamptz(6)
+  currentPeriodEndsAt        DateTime? @map("current_period_ends_at") @db.Timestamptz(6)
+  createdAt                  DateTime  @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime  @map("updated_at") @db.Timestamptz(6)
+  version                    Int       @default(1)
+
+  @@unique([provider, environment, providerAccountFingerprint, providerSubscriptionId], map: "commercial_subscription_v1_provider_subscription_key")
+  @@index([userId, state, updatedAt(sort: Desc), id], map: "commercial_subscription_v1_user_state_idx")
+  @@map("commercial_subscription_v1")
+}
+
+model CommercialSubscriptionPeriodV1 {
+  id                         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionId             String   @map("subscription_id") @db.Uuid
+  provider                   String   @db.VarChar(32)
+  environment                String   @db.VarChar(16)
+  providerAccountFingerprint String   @map("provider_account_fingerprint") @db.VarChar(128)
+  providerInvoiceId          String   @map("provider_invoice_id") @db.VarChar(255)
+  periodStartsAt             DateTime @map("period_starts_at") @db.Timestamptz(6)
+  periodEndsAt               DateTime @map("period_ends_at") @db.Timestamptz(6)
+  state                      String   @default("paid") @db.VarChar(24)
+  createdAt                  DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@unique([subscriptionId, providerInvoiceId], map: "commercial_subscription_period_v1_subscription_invoice_key")
+  @@unique([provider, environment, providerAccountFingerprint, providerInvoiceId], map: "commercial_subscription_period_v1_provider_invoice_key")
+  @@index([subscriptionId, periodStartsAt, id], map: "commercial_subscription_period_v1_subscription_period_idx")
+  @@map("commercial_subscription_period_v1")
+}
+
+model CommercialSubscriptionEventV1 {
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider                   String    @db.VarChar(32)
+  environment                String    @db.VarChar(16)
+  providerAccountFingerprint String    @map("provider_account_fingerprint") @db.VarChar(128)
+  providerEventId            String    @map("provider_event_id") @db.VarChar(255)
+  eventType                  String    @map("event_type") @db.VarChar(40)
+  providerCheckoutId         String    @map("provider_checkout_id") @db.VarChar(255)
+  providerSubscriptionId     String    @map("provider_subscription_id") @db.VarChar(255)
+  providerInvoiceId          String?   @map("provider_invoice_id") @db.VarChar(255)
+  periodStartsAt             DateTime? @map("period_starts_at") @db.Timestamptz(6)
+  periodEndsAt               DateTime? @map("period_ends_at") @db.Timestamptz(6)
+  cancelAtPeriodEnd          Boolean   @default(false) @map("cancel_at_period_end")
+  payloadDigest              Bytes     @map("payload_digest")
+  occurredAt                 DateTime  @map("occurred_at") @db.Timestamptz(6)
+  receivedAt                 DateTime  @map("received_at") @db.Timestamptz(6)
+  processingState            String    @default("received") @map("processing_state") @db.VarChar(24)
+  processingDisposition      String?   @map("processing_disposition") @db.VarChar(32)
+  processedAt                DateTime? @map("processed_at") @db.Timestamptz(6)
+
+  @@unique([provider, environment, providerAccountFingerprint, providerEventId], map: "commercial_subscription_event_v1_provider_event_key")
+  @@index([processingState, receivedAt, id], map: "commercial_subscription_event_v1_processing_idx")
+  @@map("commercial_subscription_event_v1")
+}
+
+model CommercialSubscriptionAllocationV1 {
+  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionPeriodId String    @map("subscription_period_id") @db.Uuid
+  allocationIndex      Int       @map("allocation_index") @db.SmallInt
+  amount               Int
+  availableAt          DateTime  @map("available_at") @db.Timestamptz(6)
+  expiresAt            DateTime  @map("expires_at") @db.Timestamptz(6)
+  state                String    @default("pending") @db.VarChar(24)
+  sourceLedgerEntryId  String?   @unique(map: "commercial_subscription_allocation_v1_ledger_key") @map("source_ledger_entry_id") @db.Uuid
+  createdAt            DateTime  @map("created_at") @db.Timestamptz(6)
+  grantedAt            DateTime? @map("granted_at") @db.Timestamptz(6)
+
+  @@unique([subscriptionPeriodId, allocationIndex], map: "commercial_subscription_allocation_v1_period_index_key")
+  @@index([state, availableAt, id], map: "commercial_subscription_allocation_v1_due_idx")
+  @@map("commercial_subscription_allocation_v1")
+}
+
+model CommercialSubscriptionOutboxV1 {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  allocationId   String    @unique(map: "commercial_subscription_outbox_v1_allocation_key") @map("allocation_id") @db.Uuid
+  sourceEventId  String    @map("source_event_id") @db.Uuid
+  deliveryState  String    @default("pending") @map("delivery_state") @db.VarChar(24)
+  attemptCount   Int       @default(0) @map("attempt_count") @db.SmallInt
+  availableAt    DateTime  @map("available_at") @db.Timestamptz(6)
+  leaseTokenHash Bytes?    @map("lease_token_hash")
+  leasedUntil    DateTime? @map("leased_until") @db.Timestamptz(6)
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt      DateTime  @map("created_at") @db.Timestamptz(6)
+
+  @@index([deliveryState, availableAt, createdAt, id], map: "commercial_subscription_outbox_v1_delivery_idx")
+  @@map("commercial_subscription_outbox_v1")
 }
 
 model CreditReservation {
@@ -852,38 +958,38 @@ model AnonymousSessionIssuanceGate {
 }
 
 model AppUser {
-  id                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  status                       String                        @default("active") @db.VarChar(24)
-  locale                       String                        @default("en") @db.VarChar(35)
-  timeZone                     String                        @default("UTC") @map("time_zone") @db.VarChar(64)
-  displayName                  String?                       @map("display_name") @db.VarChar(120)
-  emailVerifiedAt              DateTime                      @map("email_verified_at") @db.Timestamptz(6)
-  ageAttestedAt                DateTime?                     @map("age_attested_at") @db.Timestamptz(6)
-  agePolicyVersion             String?                       @map("age_policy_version") @db.VarChar(100)
-  createdAt                    DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
-  lastActiveAt                 DateTime                      @default(now()) @map("last_active_at") @db.Timestamptz(6)
-  profileVersion               Int                           @default(1) @map("profile_version")
-  authIdentities               AuthIdentity[]
-  accountSessions              AccountSession[]
-  accountConsents              AccountConsentRecord[]
-  revisitReminderSubscriptions RevisitReminderSubscription[]
-  accountSubjectLinks          AccountSubjectLink[]
-  privacyExports               PrivacyExport[]
-  privacyExportAudits          PrivacyExportAudit[]
-  privacyDeletions             PrivacyDeletionRequest[]
-  deletionCompletions          PrivacyDeletionCompletion[]
-  identitySuppressions         AuthIdentitySuppression[]
-  adminRoleAssignments         AdminRoleAssignment[]         @relation("AdminRoleSubject")
-  adminRolesGranted            AdminRoleAssignment[]         @relation("AdminRoleGrantor")
-  adminRolesRevoked            AdminRoleRevocation[]         @relation("AdminRoleRevoker")
-  adminMfaAssertions           AdminMfaAssertion[]
-  adminAuditEvents             AdminAuditEvent[]
-  orders                       CommerceOrder[]
-  entitlements                 Entitlement[]
-  ritualPasses                 RitualPass[]
-  birthProfiles                BirthProfile[]
-  birthProfileOperations       BirthProfileOperation[]
-  astrologyCalculations        AstrologyCalculation[]
+  id                             String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status                         String                          @default("active") @db.VarChar(24)
+  locale                         String                          @default("en") @db.VarChar(35)
+  timeZone                       String                          @default("UTC") @map("time_zone") @db.VarChar(64)
+  displayName                    String?                         @map("display_name") @db.VarChar(120)
+  emailVerifiedAt                DateTime                        @map("email_verified_at") @db.Timestamptz(6)
+  ageAttestedAt                  DateTime?                       @map("age_attested_at") @db.Timestamptz(6)
+  agePolicyVersion               String?                         @map("age_policy_version") @db.VarChar(100)
+  createdAt                      DateTime                        @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastActiveAt                   DateTime                        @default(now()) @map("last_active_at") @db.Timestamptz(6)
+  profileVersion                 Int                             @default(1) @map("profile_version")
+  authIdentities                 AuthIdentity[]
+  accountSessions                AccountSession[]
+  accountConsents                AccountConsentRecord[]
+  revisitReminderSubscriptions   RevisitReminderSubscription[]
+  accountSubjectLinks            AccountSubjectLink[]
+  privacyExports                 PrivacyExport[]
+  privacyExportAudits            PrivacyExportAudit[]
+  privacyDeletions               PrivacyDeletionRequest[]
+  deletionCompletions            PrivacyDeletionCompletion[]
+  identitySuppressions           AuthIdentitySuppression[]
+  adminRoleAssignments           AdminRoleAssignment[]           @relation("AdminRoleSubject")
+  adminRolesGranted              AdminRoleAssignment[]           @relation("AdminRoleGrantor")
+  adminRolesRevoked              AdminRoleRevocation[]           @relation("AdminRoleRevoker")
+  adminMfaAssertions             AdminMfaAssertion[]
+  adminAuditEvents               AdminAuditEvent[]
+  orders                         CommerceOrder[]
+  entitlements                   Entitlement[]
+  ritualPasses                   RitualPass[]
+  birthProfiles                  BirthProfile[]
+  birthProfileOperations         BirthProfileOperation[]
+  astrologyCalculations          AstrologyCalculation[]
   astrologyCalculationOperations AstrologyCalculationOperation[]
 
   @@index([status, lastActiveAt(sort: Desc), id], map: "app_user_status_activity_idx")
@@ -1172,25 +1278,25 @@ model PrivacyDeletionRequest {
 }
 
 model PrivacyDeletionCompletion {
-  requestId           String                 @id @map("request_id") @db.Uuid
-  userId              String                 @map("user_id") @db.Uuid
-  subjectCount        Int                    @map("subject_count")
-  intentionCount      Int                    @map("intention_count")
-  legacyJournalCount  Int                    @map("legacy_journal_count")
-  currentJournalCount Int                    @map("current_journal_count")
-  revisitCount        Int                    @map("revisit_count")
-  interpretationCount Int                    @map("interpretation_count")
-  verificationCount   Int                    @map("verification_count")
-  exportArtifactCount Int                    @map("export_artifact_count")
-  authIdentityCount   Int                    @map("auth_identity_count")
-  accountSessionCount Int                    @map("account_session_count")
-  passkeyCount        Int                    @map("passkey_count")
-  birthProfileCount   Int                    @map("birth_profile_count")
-  astrologyCalculationCount Int              @map("astrology_calculation_count")
-  evidenceSha256      Bytes                  @map("evidence_sha256")
-  completedAt         DateTime               @default(now()) @map("completed_at") @db.Timestamptz(6)
-  request             PrivacyDeletionRequest @relation(fields: [requestId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
-  user                AppUser                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requestId                 String                 @id @map("request_id") @db.Uuid
+  userId                    String                 @map("user_id") @db.Uuid
+  subjectCount              Int                    @map("subject_count")
+  intentionCount            Int                    @map("intention_count")
+  legacyJournalCount        Int                    @map("legacy_journal_count")
+  currentJournalCount       Int                    @map("current_journal_count")
+  revisitCount              Int                    @map("revisit_count")
+  interpretationCount       Int                    @map("interpretation_count")
+  verificationCount         Int                    @map("verification_count")
+  exportArtifactCount       Int                    @map("export_artifact_count")
+  authIdentityCount         Int                    @map("auth_identity_count")
+  accountSessionCount       Int                    @map("account_session_count")
+  passkeyCount              Int                    @map("passkey_count")
+  birthProfileCount         Int                    @map("birth_profile_count")
+  astrologyCalculationCount Int                    @map("astrology_calculation_count")
+  evidenceSha256            Bytes                  @map("evidence_sha256")
+  completedAt               DateTime               @default(now()) @map("completed_at") @db.Timestamptz(6)
+  request                   PrivacyDeletionRequest @relation(fields: [requestId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  user                      AppUser                @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
 
   @@unique([requestId, userId], map: "privacy_deletion_completion_request_user_key")
   @@index([userId, completedAt(sort: Desc), requestId(sort: Desc)], map: "privacy_deletion_completion_user_completed_idx")
@@ -1239,31 +1345,31 @@ model BirthProfileOperation {
 }
 
 model AstrologyCalculation {
-  id                         String                         @id @db.Uuid
-  userId                     String                         @map("user_id") @db.Uuid
-  birthProfileId             String                         @map("birth_profile_id") @db.Uuid
-  birthProfileRevision       Int                            @map("birth_profile_revision")
-  birthProfilePayloadDigest  Bytes                          @map("birth_profile_payload_digest")
-  status                     String                         @db.VarChar(48)
-  timeCertainty              String                         @map("time_certainty") @db.VarChar(16)
-  methodVersion              String                         @map("method_version") @db.VarChar(100)
-  aspectPolicyVersion        String                         @map("aspect_policy_version") @db.VarChar(100)
-  methodCatalogDigest        Bytes                          @map("method_catalog_digest")
-  inputSnapshotDigest        Bytes                          @map("input_snapshot_digest")
-  timezoneProvenanceDigest   Bytes                          @map("timezone_provenance_digest")
-  engineProvenanceVersion    String                         @map("engine_provenance_version") @db.VarChar(100)
-  engineBuildProvenance      Json                           @map("engine_build_provenance")
-  factsCiphertext            Bytes                          @map("facts_ciphertext")
-  factsNonce                 Bytes                          @map("facts_nonce")
-  factsTag                   Bytes                          @map("facts_tag")
-  encryptionKeyVersion       String                         @map("encryption_key_version") @db.VarChar(100)
-  digestKeyVersion           String                         @map("digest_key_version") @db.VarChar(100)
-  keyedFactsDigest           Bytes                          @map("keyed_facts_digest")
-  createdAt                  DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
-  privacyDeletedAt           DateTime?                      @map("privacy_deleted_at") @db.Timestamptz(6)
-  user                       AppUser                        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  birthProfile               BirthProfile                   @relation(fields: [birthProfileId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
-  operation                  AstrologyCalculationOperation?
+  id                        String                         @id @db.Uuid
+  userId                    String                         @map("user_id") @db.Uuid
+  birthProfileId            String                         @map("birth_profile_id") @db.Uuid
+  birthProfileRevision      Int                            @map("birth_profile_revision")
+  birthProfilePayloadDigest Bytes                          @map("birth_profile_payload_digest")
+  status                    String                         @db.VarChar(48)
+  timeCertainty             String                         @map("time_certainty") @db.VarChar(16)
+  methodVersion             String                         @map("method_version") @db.VarChar(100)
+  aspectPolicyVersion       String                         @map("aspect_policy_version") @db.VarChar(100)
+  methodCatalogDigest       Bytes                          @map("method_catalog_digest")
+  inputSnapshotDigest       Bytes                          @map("input_snapshot_digest")
+  timezoneProvenanceDigest  Bytes                          @map("timezone_provenance_digest")
+  engineProvenanceVersion   String                         @map("engine_provenance_version") @db.VarChar(100)
+  engineBuildProvenance     Json                           @map("engine_build_provenance")
+  factsCiphertext           Bytes                          @map("facts_ciphertext")
+  factsNonce                Bytes                          @map("facts_nonce")
+  factsTag                  Bytes                          @map("facts_tag")
+  encryptionKeyVersion      String                         @map("encryption_key_version") @db.VarChar(100)
+  digestKeyVersion          String                         @map("digest_key_version") @db.VarChar(100)
+  keyedFactsDigest          Bytes                          @map("keyed_facts_digest")
+  createdAt                 DateTime                       @default(now()) @map("created_at") @db.Timestamptz(6)
+  privacyDeletedAt          DateTime?                      @map("privacy_deleted_at") @db.Timestamptz(6)
+  user                      AppUser                        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  birthProfile              BirthProfile                   @relation(fields: [birthProfileId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  operation                 AstrologyCalculationOperation?
 
   @@unique([id, userId], map: "astrology_calculation_user_identity_key")
   @@index([userId, privacyDeletedAt, createdAt(sort: Desc), id(sort: Desc)], map: "astrology_calculation_user_active_created_idx")
@@ -1272,15 +1378,15 @@ model AstrologyCalculation {
 }
 
 model AstrologyCalculationOperation {
-  id                       String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                   String               @map("user_id") @db.Uuid
-  astrologyCalculationId   String               @map("astrology_calculation_id") @db.Uuid
-  action                   String               @db.VarChar(16)
-  idempotencyKeyDigest     Bytes                @map("idempotency_key_digest")
-  canonicalRequestDigest   Bytes                @map("canonical_request_digest")
-  createdAt                DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  user                     AppUser              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
-  astrologyCalculation     AstrologyCalculation @relation(fields: [astrologyCalculationId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String               @map("user_id") @db.Uuid
+  astrologyCalculationId String               @map("astrology_calculation_id") @db.Uuid
+  action                 String               @db.VarChar(16)
+  idempotencyKeyDigest   Bytes                @map("idempotency_key_digest")
+  canonicalRequestDigest Bytes                @map("canonical_request_digest")
+  createdAt              DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                   AppUser              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  astrologyCalculation   AstrologyCalculation @relation(fields: [astrologyCalculationId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
 
   @@unique([userId, idempotencyKeyDigest], map: "astrology_calculation_operation_user_idempotency_key")
   @@unique([astrologyCalculationId, userId], map: "astrology_calculation_operation_calculation_key")

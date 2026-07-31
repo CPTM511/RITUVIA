@@ -5,6 +5,7 @@ import {
   createWebPaymentProviderRegistry,
   stripeHostedCheckoutProviderId,
   verifiedStripePaymentEvent,
+  verifiedStripeSubscriptionEvent,
 } from "../server/payment-provider";
 
 const orderId = "11111111-1111-4111-8111-111111111111";
@@ -416,6 +417,255 @@ describe("Stripe verified event normalization", () => {
           id: "evt_refunded_dispute",
           livemode: false,
           type: "charge.dispute.created",
+        } as never,
+      ),
+    ).rejects.toMatchObject({ code: "unavailable" });
+  });
+
+  it("creates only a matching recurring Stripe Test Mode Checkout Session", async () => {
+    const retrievePrice = vi.fn(async () => ({
+      active: true,
+      currency: "usd",
+      id: "price_plusmonthlytest",
+      livemode: false,
+      recurring: { interval: "month" },
+      type: "recurring",
+      unit_amount: 999,
+    }));
+    const createSession = vi.fn(async () => ({
+      expires_at: 1_775_000_000,
+      id: "cs_test_subscription_12345678",
+      livemode: false,
+      url: "https://checkout.stripe.com/c/pay/cs_test_subscription_12345678",
+    }));
+    const runtime = createStripeGateway(
+      {
+        accountId: "acct_12345678",
+        priceIds: { plus_monthly: "price_plusmonthlytest" },
+        secretKey: `sk_test_${"a".repeat(24)}`,
+        webhookSecret: `whsec_${"b".repeat(24)}`,
+      },
+      {
+        accounts: { retrieveCurrent: vi.fn(async () => ({ id: "acct_12345678" })) },
+        checkout: { sessions: { create: createSession } },
+        prices: { retrieve: retrievePrice },
+      } as never,
+    );
+
+    await expect(runtime.attestAccount()).resolves.toBeUndefined();
+    const createSubscriptionCheckoutSession = runtime.gateway.createSubscriptionCheckoutSession;
+    if (createSubscriptionCheckoutSession === undefined) throw new Error("missing subscription");
+    await expect(
+      createSubscriptionCheckoutSession({
+        cancelUrl: "https://example.test/en/plans",
+        clientReferenceId: orderId,
+        countryCode: "US",
+        currencyCode: "USD",
+        idempotencyKey: `stripe:${orderId}:subscription`,
+        metadata: { orderId, productCode: "plus_monthly" },
+        mode: "subscription",
+        productName: "RITUVIA Plus Monthly",
+        quantity: 1,
+        returnUrl: "https://example.test/en/checkout/return",
+        subscriptionInterval: "month",
+        unitAmountMinor: 999,
+      }),
+    ).resolves.toMatchObject({ id: "cs_test_subscription_12345678" });
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        client_reference_id: orderId,
+        metadata: { orderId, productCode: "plus_monthly" },
+        mode: "subscription",
+        subscription_data: { metadata: { orderId, productCode: "plus_monthly" } },
+      }),
+      { idempotencyKey: `stripe:${orderId}:subscription` },
+    );
+  });
+
+  it.each([
+    ["customer.subscription.created", "subscription_created"],
+    ["customer.subscription.updated", "subscription_changed"],
+    ["customer.subscription.deleted", "subscription_canceled"],
+  ] as const)("maps %s without allocating a subscription period", async (type, expectedType) => {
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        {} as never,
+        {
+          created: 1_774_000_000,
+          data: {
+            object: {
+              cancel_at_period_end: type === "customer.subscription.updated",
+              current_period_end: 1_776_678_400,
+              current_period_start: 1_774_000_000,
+              customer: "cus_12345678",
+              id: "sub_12345678",
+              items: { data: [{ price: { recurring: { interval: "month" } } }] },
+              metadata: { orderId, productCode: "plus_monthly" },
+            },
+          },
+          id: `evt_${expectedType}`,
+          livemode: false,
+          type,
+        } as never,
+      ),
+    ).resolves.toMatchObject({
+      amount: null,
+      cancelAtPeriodEnd: type === "customer.subscription.updated",
+      orderId,
+      providerSubscriptionId: "sub_12345678",
+      type: expectedType,
+    });
+  });
+
+  it.each([
+    ["invoice.paid", "subscription_period_paid", "amount_paid"],
+    ["invoice.payment_failed", "subscription_payment_failed", "amount_due"],
+    ["invoice.payment_action_required", "subscription_payment_failed", "amount_due"],
+  ] as const)(
+    "maps %s to a precise subscription period fact",
+    async (type, expectedType, amountField) => {
+      const retrieveSubscription = vi.fn(async () => ({
+        cancel_at_period_end: false,
+        current_period_end: 1_776_678_400,
+        current_period_start: 1_774_000_000,
+        customer: "cus_12345678",
+        id: "sub_12345678",
+        items: { data: [{ price: { recurring: { interval: "month" } } }] },
+        metadata: { orderId, productCode: "plus_monthly" },
+      }));
+      const invoice = {
+        amount_due: 999,
+        amount_paid: 999,
+        currency: "usd",
+        customer: "cus_12345678",
+        id: "in_12345678",
+        subscription: "sub_12345678",
+      };
+      await expect(
+        verifiedStripeSubscriptionEvent(
+          { subscriptions: { retrieve: retrieveSubscription } } as never,
+          {
+            created: 1_774_000_000,
+            data: { object: invoice },
+            id: `evt_${expectedType}`,
+            livemode: false,
+            type,
+          } as never,
+        ),
+      ).resolves.toMatchObject({
+        amount: { amountMinor: invoice[amountField], currencyCode: "USD" },
+        providerInvoiceId: "in_12345678",
+        providerSubscriptionId: "sub_12345678",
+        type: expectedType,
+      });
+      expect(retrieveSubscription).toHaveBeenCalledWith("sub_12345678");
+    },
+  );
+
+  it("maps a subscription refund only through its exact invoice and subscription", async () => {
+    const retrieveInvoice = vi.fn(async () => ({
+      currency: "usd",
+      customer: "cus_12345678",
+      id: "in_12345678",
+      subscription: "sub_12345678",
+    }));
+    const retrieveSubscription = vi.fn(async () => ({
+      cancel_at_period_end: false,
+      current_period_end: 1_776_678_400,
+      current_period_start: 1_774_000_000,
+      customer: "cus_12345678",
+      id: "sub_12345678",
+      items: { data: [{ price: { recurring: { interval: "month" } } }] },
+      metadata: { orderId, productCode: "plus_monthly" },
+    }));
+
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        {
+          invoices: { retrieve: retrieveInvoice },
+          subscriptions: { retrieve: retrieveSubscription },
+        } as never,
+        {
+          created: 1_774_000_000,
+          data: {
+            object: {
+              amount_refunded: 999,
+              currency: "usd",
+              id: "ch_12345678",
+              invoice: "in_12345678",
+            },
+          },
+          id: "evt_subscription_refund",
+          livemode: false,
+          type: "charge.refunded",
+        } as never,
+      ),
+    ).resolves.toMatchObject({
+      providerChargeId: "ch_12345678",
+      providerInvoiceId: "in_12345678",
+      providerSubscriptionId: "sub_12345678",
+      type: "subscription_refunded",
+    });
+  });
+
+  it("rejects live, unsupported, or mismatched subscription facts before persistence", async () => {
+    const retrieveSubscription = vi.fn();
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        { subscriptions: { retrieve: retrieveSubscription } } as never,
+        {
+          created: 1_774_000_000,
+          data: { object: {} },
+          id: "evt_live_subscription",
+          livemode: true,
+          type: "invoice.paid",
+        } as never,
+      ),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(retrieveSubscription).not.toHaveBeenCalled();
+
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        {} as never,
+        {
+          created: 1_774_000_000,
+          data: { object: {} },
+          id: "evt_unknown_subscription",
+          livemode: false,
+          type: "invoice.voided",
+        } as never,
+      ),
+    ).rejects.toMatchObject({ code: "unavailable" });
+
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        {
+          subscriptions: {
+            retrieve: vi.fn(async () => ({
+              cancel_at_period_end: false,
+              current_period_end: 1_776_678_400,
+              current_period_start: 1_774_000_000,
+              customer: "cus_other",
+              id: "sub_12345678",
+              items: { data: [{ price: { recurring: { interval: "month" } } }] },
+              metadata: { orderId, productCode: "plus_monthly" },
+            })),
+          },
+        } as never,
+        {
+          created: 1_774_000_000,
+          data: {
+            object: {
+              amount_paid: 999,
+              currency: "usd",
+              customer: "cus_12345678",
+              id: "in_12345678",
+              subscription: "sub_12345678",
+            },
+          },
+          id: "evt_mismatched_subscription",
+          livemode: false,
+          type: "invoice.paid",
         } as never,
       ),
     ).rejects.toMatchObject({ code: "unavailable" });

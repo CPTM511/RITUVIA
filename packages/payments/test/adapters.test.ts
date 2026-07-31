@@ -35,6 +35,25 @@ const localEvent = (): NormalizedPaymentEventV1 => ({
   type: "payment_succeeded",
 });
 
+const subscriptionEvent = () => ({
+  amount: createMoney(999, "USD"),
+  cancelAtPeriodEnd: false,
+  eventId: "event_stripe_subscription_paid",
+  occurredAt: "2026-07-18T12:00:00.000Z",
+  orderId: "order_11111111",
+  productCode: "plus_monthly",
+  providerChargeId: null,
+  providerCustomerId: "cus_11111111",
+  providerId: "stripe",
+  providerInvoiceId: "in_11111111",
+  providerObjectId: "in_11111111",
+  providerSubscriptionId: "sub_11111111",
+  subscriptionInterval: "month" as const,
+  subscriptionPeriodEnd: "2026-08-18T12:00:00.000Z",
+  subscriptionPeriodStart: "2026-07-18T12:00:00.000Z",
+  type: "subscription_period_paid" as const,
+});
+
 const localAdapter = (clock: () => string): LocalHostedCheckoutAdapter =>
   createLocalHostedCheckoutAdapter({
     clock,
@@ -147,6 +166,76 @@ describe("Stripe hosted checkout boundary", () => {
         unitAmountMinor: 99,
       }),
     );
+  });
+
+  it("keeps subscription Checkout explicit and server-owned", async () => {
+    const createSubscriptionCheckoutSession = vi.fn(async () => ({
+      expiresAt: "2026-07-18T12:30:00.000Z",
+      id: "cs_test_subscription_11111111",
+      url: "https://checkout.stripe.com/c/pay/cs_test_subscription_11111111",
+    }));
+    const adapter = createStripeHostedCheckoutAdapter({
+      clock: () => "2026-07-18T12:00:00.000Z",
+      gateway: {
+        createCheckoutSession: async () => ({
+          expiresAt: "2026-07-18T12:30:00.000Z",
+          id: "cs_test_11111111",
+          url: "https://checkout.stripe.com/c/pay/cs_test_11111111",
+        }),
+        createSubscriptionCheckoutSession,
+        verifyWebhook: async () => ({ verified: true }),
+      },
+      mapVerifiedEvent: () => ({ ...localEvent(), providerId: "stripe" }),
+    });
+
+    await expect(
+      adapter.createSubscriptionCheckout({
+        ...stripeInput(),
+        mode: "subscription",
+        subscriptionInterval: "month",
+      }),
+    ).resolves.toMatchObject({
+      checkoutId: "cs_test_subscription_11111111",
+      providerId: "stripe",
+    });
+    expect(createSubscriptionCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { orderId: "order_11111111", productCode: "mindful_incense" },
+        mode: "subscription",
+        subscriptionInterval: "month",
+      }),
+    );
+  });
+
+  it("keeps subscription webhook normalization separate from one-time payments", async () => {
+    const verifySubscriptionWebhook = vi.fn(async () => ({ verified: "subscription" }));
+    const adapter = createStripeHostedCheckoutAdapter({
+      clock: () => "2026-07-18T12:00:00.000Z",
+      gateway: {
+        createCheckoutSession: async () => ({
+          expiresAt: "2026-07-18T12:30:00.000Z",
+          id: "cs_test_11111111",
+          url: "https://checkout.stripe.com/c/pay/cs_test_11111111",
+        }),
+        verifySubscriptionWebhook,
+        verifyWebhook: async () => ({ verified: "payment" }),
+      },
+      mapVerifiedEvent: () => ({ ...localEvent(), providerId: "stripe" }),
+      mapVerifiedSubscriptionEvent: subscriptionEvent,
+    });
+    const rawBody = new TextEncoder().encode('{"id":"evt_subscription"}');
+    const currentSeconds = Math.floor(Date.parse("2026-07-18T12:00:00.000Z") / 1_000);
+
+    await expect(
+      adapter.verifySubscriptionWebhook({
+        headers: { "stripe-signature": `t=${currentSeconds},v1=${"a".repeat(64)}` },
+        rawBody,
+      }),
+    ).resolves.toMatchObject({
+      providerSubscriptionId: "sub_11111111",
+      type: "subscription_period_paid",
+    });
+    expect(verifySubscriptionWebhook).toHaveBeenCalledOnce();
   });
 
   it("requires raw Stripe signature timing before calling the provider verifier", async () => {

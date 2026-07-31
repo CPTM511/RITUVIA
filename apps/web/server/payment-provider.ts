@@ -4,7 +4,11 @@ import { createHash, randomUUID } from "node:crypto";
 
 import Stripe from "stripe";
 
-import type { HostedCheckoutAdapter, NormalizedPaymentEventV1 } from "@rituvia/payments";
+import {
+  createMoney,
+  type HostedCheckoutAdapter,
+  type NormalizedPaymentEventV1,
+} from "@rituvia/payments";
 import {
   createLocalHostedCheckoutAdapter,
   type LocalHostedCheckoutAdapter,
@@ -13,6 +17,7 @@ import {
 import {
   createStripeHostedCheckoutAdapter,
   type StripeGateway,
+  type NormalizedSubscriptionEventV1,
 } from "@rituvia/payments/adapters/stripe";
 
 import { getWebRuntimeConfiguration } from "../config/server";
@@ -143,12 +148,19 @@ export type VerifiedStripePaymentEvent = Readonly<{
   type: NormalizedPaymentEventV1["type"];
 }>;
 
+export type VerifiedStripeSubscriptionEvent = NormalizedSubscriptionEventV1;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const metadataOrderId = (value: unknown): string | null => {
   if (!isRecord(value) || !isRecord(value.metadata)) return null;
   return typeof value.metadata.orderId === "string" ? value.metadata.orderId : null;
+};
+
+const metadataProductCode = (value: unknown): string | null => {
+  if (!isRecord(value) || !isRecord(value.metadata)) return null;
+  return typeof value.metadata.productCode === "string" ? value.metadata.productCode : null;
 };
 
 const requireStripeAmount = (value: unknown): number => {
@@ -175,8 +187,35 @@ const requireStripeOrderId = (value: string | null): string => {
   return value;
 };
 
+const requireStripeProviderId = (value: unknown): string => {
+  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/u.test(value)) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return value;
+};
+
+const requireStripeProductCode = (value: unknown): string => {
+  if (typeof value !== "string" || !/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u.test(value)) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return value;
+};
+
+const requireStripeUnixInstant = (value: unknown): string => {
+  if (!Number.isSafeInteger(value) || (value as number) < 1) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return new Date((value as number) * 1_000).toISOString();
+};
+
 const stripeExpandableId = (value: null | string | { id: string } | undefined): string | null =>
   typeof value === "string" ? value : (value?.id ?? null);
+
+const stripeRecordId = (value: unknown): string | null => {
+  if (typeof value === "string") return value;
+  if (isRecord(value) && typeof value.id === "string") return value.id;
+  return null;
+};
 
 const stripeCheckoutSessionIdForPaymentIntent = async (
   stripe: Stripe,
@@ -220,6 +259,180 @@ const stripeChargeContext = async (
     ),
     providerPaymentIntentId,
   });
+};
+
+type StripeSubscriptionContext = Readonly<{
+  cancelAtPeriodEnd: boolean;
+  orderId: string;
+  productCode: string;
+  providerCustomerId: string;
+  providerSubscriptionId: string;
+  subscriptionInterval: "month" | "year";
+  subscriptionPeriodEnd: string;
+  subscriptionPeriodStart: string;
+}>;
+
+const stripeSubscriptionContext = (
+  subscription: Stripe.Subscription,
+): StripeSubscriptionContext => {
+  const record = subscription as unknown as Record<string, unknown>;
+  const items = isRecord(record.items) && Array.isArray(record.items.data) ? record.items.data : [];
+  const item = items.at(0);
+  const price = isRecord(item) && isRecord(item.price) ? item.price : null;
+  const recurring = price !== null && isRecord(price.recurring) ? price.recurring : null;
+  const interval = recurring?.interval;
+  if (items.length !== 1 || (interval !== "month" && interval !== "year")) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  if (typeof record.cancel_at_period_end !== "boolean") {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return Object.freeze({
+    cancelAtPeriodEnd: record.cancel_at_period_end,
+    orderId: requireStripeOrderId(metadataOrderId(subscription)),
+    productCode: requireStripeProductCode(metadataProductCode(subscription)),
+    providerCustomerId: requireStripeProviderId(stripeRecordId(record.customer)),
+    providerSubscriptionId: requireStripeProviderId(record.id),
+    subscriptionInterval: interval,
+    subscriptionPeriodEnd: requireStripeUnixInstant(record.current_period_end),
+    subscriptionPeriodStart: requireStripeUnixInstant(record.current_period_start),
+  });
+};
+
+const stripeInvoiceSubscriptionId = (invoice: unknown): string | null => {
+  if (!isRecord(invoice)) return null;
+  const direct = stripeRecordId(invoice.subscription);
+  if (direct !== null) return direct;
+  if (!isRecord(invoice.parent) || !isRecord(invoice.parent.subscription_details)) return null;
+  return stripeRecordId(invoice.parent.subscription_details.subscription);
+};
+
+const stripeInvoiceContext = async (
+  stripe: Stripe,
+  invoice: unknown,
+): Promise<Readonly<{ context: StripeSubscriptionContext; invoice: Record<string, unknown> }>> => {
+  if (!isRecord(invoice)) throw new WebPaymentProviderError("unavailable");
+  const providerSubscriptionId = stripeInvoiceSubscriptionId(invoice);
+  if (providerSubscriptionId === null) throw new WebPaymentProviderError("unavailable");
+  const context = stripeSubscriptionContext(
+    await stripe.subscriptions.retrieve(requireStripeProviderId(providerSubscriptionId)),
+  );
+  if (
+    context.providerSubscriptionId !== providerSubscriptionId ||
+    context.providerCustomerId !== requireStripeProviderId(stripeRecordId(invoice.customer))
+  ) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return Object.freeze({ context, invoice });
+};
+
+const subscriptionEvent = (
+  context: StripeSubscriptionContext,
+  input: Readonly<{
+    amountMinor: number | null;
+    currencyCode: string | null;
+    event: Stripe.Event;
+    providerChargeId: string | null;
+    providerInvoiceId: string | null;
+    providerObjectId: string;
+    type: VerifiedStripeSubscriptionEvent["type"];
+  }>,
+): VerifiedStripeSubscriptionEvent =>
+  Object.freeze({
+    amount:
+      input.amountMinor === null || input.currencyCode === null
+        ? null
+        : createMoney(input.amountMinor, input.currencyCode),
+    cancelAtPeriodEnd: context.cancelAtPeriodEnd,
+    eventId: requireStripeProviderId(input.event.id),
+    occurredAt: requireStripeUnixInstant(input.event.created),
+    orderId: context.orderId,
+    productCode: context.productCode,
+    providerChargeId: input.providerChargeId,
+    providerCustomerId: context.providerCustomerId,
+    providerId: stripeHostedCheckoutProviderId,
+    providerInvoiceId: input.providerInvoiceId,
+    providerObjectId: input.providerObjectId,
+    providerSubscriptionId: context.providerSubscriptionId,
+    subscriptionInterval: context.subscriptionInterval,
+    subscriptionPeriodEnd: context.subscriptionPeriodEnd,
+    subscriptionPeriodStart: context.subscriptionPeriodStart,
+    type: input.type,
+  });
+
+export const verifiedStripeSubscriptionEvent = async (
+  stripe: Stripe,
+  event: Stripe.Event,
+): Promise<VerifiedStripeSubscriptionEvent> => {
+  if (event.livemode !== false) throw new WebPaymentProviderError("unavailable");
+  switch (event.type) {
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted": {
+      const context = stripeSubscriptionContext(event.data.object as Stripe.Subscription);
+      return subscriptionEvent(context, {
+        amountMinor: null,
+        currencyCode: null,
+        event,
+        providerChargeId: null,
+        providerInvoiceId: null,
+        providerObjectId: context.providerSubscriptionId,
+        type:
+          event.type === "customer.subscription.created"
+            ? "subscription_created"
+            : event.type === "customer.subscription.updated"
+              ? "subscription_changed"
+              : "subscription_canceled",
+      });
+    }
+    case "invoice.paid":
+    case "invoice.payment_failed":
+    case "invoice.payment_action_required": {
+      const { context, invoice } = await stripeInvoiceContext(stripe, event.data.object);
+      const amountMinor = requireStripeAmount(
+        event.type === "invoice.paid" ? invoice.amount_paid : invoice.amount_due,
+      );
+      const providerInvoiceId = requireStripeProviderId(invoice.id);
+      return subscriptionEvent(context, {
+        amountMinor,
+        currencyCode: requireStripeCurrency(invoice.currency),
+        event,
+        providerChargeId: null,
+        providerInvoiceId,
+        providerObjectId: providerInvoiceId,
+        type:
+          event.type === "invoice.paid"
+            ? "subscription_period_paid"
+            : "subscription_payment_failed",
+      });
+    }
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      const chargeRecord = charge as unknown as Record<string, unknown>;
+      const providerChargeId = requireStripeProviderId(chargeRecord.id);
+      const providerInvoiceId = stripeRecordId(chargeRecord.invoice);
+      if (providerInvoiceId === null) throw new WebPaymentProviderError("unavailable");
+      const { context, invoice } = await stripeInvoiceContext(
+        stripe,
+        await stripe.invoices.retrieve(requireStripeProviderId(providerInvoiceId)),
+      );
+      const currencyCode = requireStripeCurrency(chargeRecord.currency);
+      if (currencyCode !== requireStripeCurrency(invoice.currency)) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      return subscriptionEvent(context, {
+        amountMinor: requireStripeAmount(chargeRecord.amount_refunded),
+        currencyCode,
+        event,
+        providerChargeId,
+        providerInvoiceId,
+        providerObjectId: providerChargeId,
+        type: "subscription_refunded",
+      });
+    }
+    default:
+      throw new WebPaymentProviderError("unavailable");
+  }
 };
 
 export const verifiedStripePaymentEvent = async (
@@ -332,6 +545,16 @@ const stripeSandboxWebhookEventTypes = new Set([
   "checkout.session.expired",
 ]);
 
+const stripeSandboxSubscriptionWebhookEventTypes = new Set([
+  "charge.refunded",
+  "customer.subscription.created",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.paid",
+  "invoice.payment_action_required",
+  "invoice.payment_failed",
+]);
+
 export const createStripeGateway = (
   input: {
     accountId: string;
@@ -344,6 +567,7 @@ export const createStripeGateway = (
   attestAccount: () => Promise<void>;
   gateway: StripeGateway;
   mapVerifiedEvent: (value: unknown) => NormalizedPaymentEventV1;
+  mapVerifiedSubscriptionEvent: (value: unknown) => NormalizedSubscriptionEventV1;
   requestRefund: WebPaymentProviderRegistry["requestStripeRefund"];
 }> => {
   let accountVerification: Promise<void> | undefined;
@@ -396,6 +620,44 @@ export const createStripeGateway = (
         url: session.url,
       });
     },
+    async createSubscriptionCheckoutSession(
+      request: Parameters<NonNullable<StripeGateway["createSubscriptionCheckoutSession"]>>[0],
+    ) {
+      await verifyAccount();
+      const priceId = input.priceIds[request.metadata.productCode];
+      if (priceId === undefined) throw new WebPaymentProviderError("configuration");
+      const price = await stripe.prices.retrieve(priceId);
+      if (
+        price.livemode ||
+        !price.active ||
+        price.type !== "recurring" ||
+        price.currency.toUpperCase() !== request.currencyCode ||
+        price.unit_amount !== request.unitAmountMinor ||
+        price.recurring?.interval !== request.subscriptionInterval
+      ) {
+        throw new WebPaymentProviderError("configuration");
+      }
+      const session = await stripe.checkout.sessions.create(
+        {
+          cancel_url: request.cancelUrl,
+          client_reference_id: request.clientReferenceId,
+          line_items: [{ price: price.id, quantity: 1 }],
+          metadata: request.metadata,
+          mode: "subscription",
+          subscription_data: { metadata: request.metadata },
+          success_url: request.returnUrl,
+        },
+        { idempotencyKey: request.idempotencyKey },
+      );
+      if (session.url === null || session.livemode || !session.id.startsWith("cs_test_")) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      return Object.freeze({
+        expiresAt: new Date(session.expires_at * 1_000).toISOString(),
+        id: session.id,
+        url: session.url,
+      });
+    },
     async verifyWebhook({
       nowSeconds,
       rawBody,
@@ -414,6 +676,25 @@ export const createStripeGateway = (
         throw new WebPaymentProviderError("unavailable");
       }
       return verifiedStripePaymentEvent(stripe, event);
+    },
+    async verifySubscriptionWebhook({
+      nowSeconds,
+      rawBody,
+      signatureHeader,
+      toleranceSeconds,
+    }: Parameters<StripeGateway["verifyWebhook"]>[0]) {
+      const event = await stripe.webhooks.constructEventAsync(
+        rawBody,
+        signatureHeader,
+        input.webhookSecret,
+        toleranceSeconds,
+        undefined,
+        nowSeconds * 1_000,
+      );
+      if (!stripeSandboxSubscriptionWebhookEventTypes.has(event.type)) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      return verifiedStripeSubscriptionEvent(stripe, event);
     },
   });
   return Object.freeze({
@@ -434,6 +715,33 @@ export const createStripeGateway = (
         providerObjectId: value.providerObjectId as string,
         providerPaymentIntentId: value.providerPaymentIntentId as string | null,
         type: value.type as NormalizedPaymentEventV1["type"],
+      });
+    },
+    mapVerifiedSubscriptionEvent(value): NormalizedSubscriptionEventV1 {
+      if (!isRecord(value)) throw new WebPaymentProviderError("unavailable");
+      return Object.freeze({
+        amount:
+          value.amount === null
+            ? null
+            : createMoney(
+                isRecord(value.amount) ? value.amount.amountMinor : undefined,
+                isRecord(value.amount) ? value.amount.currencyCode : undefined,
+              ),
+        cancelAtPeriodEnd: value.cancelAtPeriodEnd as boolean,
+        eventId: value.eventId as string,
+        occurredAt: value.occurredAt as string,
+        orderId: value.orderId as string,
+        productCode: value.productCode as string,
+        providerChargeId: value.providerChargeId as string | null,
+        providerCustomerId: value.providerCustomerId as string,
+        providerId: value.providerId as string,
+        providerInvoiceId: value.providerInvoiceId as string | null,
+        providerObjectId: value.providerObjectId as string,
+        providerSubscriptionId: value.providerSubscriptionId as string,
+        subscriptionInterval: value.subscriptionInterval as "month" | "year",
+        subscriptionPeriodEnd: value.subscriptionPeriodEnd as string,
+        subscriptionPeriodStart: value.subscriptionPeriodStart as string,
+        type: value.type as NormalizedSubscriptionEventV1["type"],
       });
     },
     async requestRefund(request) {
@@ -505,6 +813,7 @@ export const loadWebPaymentProviderRegistry = (): WebPaymentProviderRegistry => 
         clock: () => new Date().toISOString(),
         gateway: stripeRuntime.gateway,
         mapVerifiedEvent: stripeRuntime.mapVerifiedEvent,
+        mapVerifiedSubscriptionEvent: stripeRuntime.mapVerifiedSubscriptionEvent,
       }),
       stripeAccountAttestation: stripeRuntime.attestAccount,
       stripeAccountAttestationIdentity: configurationFingerprint(

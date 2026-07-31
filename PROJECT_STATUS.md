@@ -4,7 +4,9 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-069 are complete, and RIT-070 is the sole Ready task.
+RIT-063 through RIT-069 are complete. RIT-070 is In Progress with the subscription domain,
+Stripe Test adapter, and additive database foundation complete; runtime persistence and monthly
+allocation remain before closure.
 
 ## Product checkpoint: M6 payment integrity
 
@@ -1424,8 +1426,18 @@ After final fixture additions, the affected four files pass 32 tests. The milest
 passes 2,241 unit tests with five skips, all 96 fixed AI eval cases, configuration and database
 foundation gates, formatting, linting, all 16 package typechecks, and the production build with an
 explicit local canonical origin. No Stripe network request, Live key, production payment,
-deployment, DNS change, legal-policy activation or public launch occurred. RIT-070 is the sole
-Ready task.
+deployment, DNS change, legal-policy activation or public launch occurred.
+
+RIT-070 is In Progress. The provider-neutral reducer now covers creation, paid periods, payment
+failure, grace expiry, plan change, scheduled cancellation, cancellation, refund and dispute
+without issuing value on subscription creation. A paid month plans exactly eight expiring
+subscription Credits and duplicate allocation is a no-op. Stripe Test Mode now has separate
+recurring Checkout and strict subscription event normalization while Live and unknown events
+remain fail-closed. The additive database foundation constrains one open subscription per user,
+provider invoice uniqueness, monthly allocation uniqueness, and a subscription-specific
+event/outbox boundary. The focused 39-test slice, Payments/Web typechecks, Prisma generation, and
+migration policy pass. Runtime event persistence, monthly allocation/entitlement transactions,
+refund reversal, and cancellation application remain before RIT-070 can close.
 
 ## Update rules
 
