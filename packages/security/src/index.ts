@@ -12,7 +12,10 @@ export const adminActions = Object.freeze([
   "admin.role.assign",
   "admin.role.revoke",
   "admin.audit.read",
+  "admin.commerce.read",
+  "admin.commerce.reconcile",
   "admin.content.manage",
+  "admin.refund.execute",
   "admin.refund.review",
   "admin.safety.review",
   "admin.analytics.read",
@@ -44,21 +47,44 @@ export const adminRoleAllows = (role: unknown, action: unknown): boolean => {
 
 export const adminSafeDiffFields = Object.freeze({
   "admin.audit.read": Object.freeze([]),
+  "admin.commerce.read": Object.freeze([]),
+  "admin.commerce.reconcile": Object.freeze([]),
+  "admin.refund.execute": Object.freeze(["amount_minor", "currency_code"]),
   "admin.role.assign": Object.freeze(["expires_at", "role"]),
   "admin.role.revoke": Object.freeze(["expires_at", "role"]),
 } satisfies Readonly<
   Record<
-    Extract<AdminAction, "admin.audit.read" | "admin.role.assign" | "admin.role.revoke">,
+    Extract<
+      AdminAction,
+      | "admin.audit.read"
+      | "admin.commerce.read"
+      | "admin.commerce.reconcile"
+      | "admin.refund.execute"
+      | "admin.role.assign"
+      | "admin.role.revoke"
+    >,
     readonly string[]
   >
 >);
 
 export const adminSafeDiffFieldsFor = (
-  action: "admin.audit.read" | "admin.role.assign" | "admin.role.revoke",
+  action:
+    | "admin.audit.read"
+    | "admin.commerce.read"
+    | "admin.commerce.reconcile"
+    | "admin.refund.execute"
+    | "admin.role.assign"
+    | "admin.role.revoke",
 ): readonly string[] => {
   switch (action) {
     case "admin.audit.read":
       return adminSafeDiffFields["admin.audit.read"];
+    case "admin.commerce.read":
+      return adminSafeDiffFields["admin.commerce.read"];
+    case "admin.commerce.reconcile":
+      return adminSafeDiffFields["admin.commerce.reconcile"];
+    case "admin.refund.execute":
+      return adminSafeDiffFields["admin.refund.execute"];
     case "admin.role.assign":
       return adminSafeDiffFields["admin.role.assign"];
     case "admin.role.revoke":

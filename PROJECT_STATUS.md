@@ -4,9 +4,10 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-070 are complete. The Stripe Test subscription slice now covers recurring
+RIT-063 through RIT-070 and RIT-073 are complete. The Stripe Test subscription slice now covers recurring
 Checkout, verified lifecycle ingestion, Plus entitlements, monthly Credit allocation, cancellation,
-invoice-scoped refund reversal, and durable review. RIT-073 is the sole Ready task.
+invoice-scoped refund reversal, durable review, and a safe-off owner commerce administration
+kernel with an immutable event timeline. RIT-074 is the sole Ready task.
 
 ## Product checkpoint: M6 payment integrity
 
@@ -27,8 +28,8 @@ slice. It does not activate Stripe Live or declare the complete paid product lau
   cases, configuration boundaries, the database foundation, all 16 package typechecks, and a
   production build. The payment matrix separately passes 18 payment files plus nine isolated
   PostgreSQL gates against all 36 migrations.
-- Technical paid-launch work remains: customer commerce UI (`RIT-072`), admin/support and dispute
-  workflows (`RIT-073`/`RIT-074`),
+- Technical paid-launch work remains: customer commerce UI (`RIT-072`), dispute/support workflow
+  (`RIT-074`),
   payment kill switches (`RIT-075`), launch threat/abuse/operations gates (`RIT-121`-`RIT-128`),
   beta remediation, and staging/launch rehearsal. External provider, entity, tax, country, budget,
   and owner production approval remain separate blockers.
@@ -62,8 +63,8 @@ restoration is owner-scoped and excludes held Credits from spendable total. RIT-
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
 adds the full-unused-pack Stripe Test refund path. RIT-069 closes the one-time Stripe Test payment
-integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, and RIT-073 is
-the sole Ready task. RIT-045
+integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, RIT-073 closes
+the safe-off commerce administration kernel, and RIT-074 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1452,6 +1453,30 @@ The isolated PostgreSQL gate applies all 38 migrations and proves role denial, 2
 idempotency, amount mismatch rejection, monthly/annual allocation, purchased-Credit preservation,
 invoice-scoped refund reversal across two paid periods, and nonnegative projection. No Stripe Live
 request, production recurring activation, deployment, DNS, or legal-policy activation occurred.
+
+RIT-073 is complete through D-094. The safe-off commerce administration kernel exposes one bounded,
+owner-only order timeline through reviewed security-barrier views. It requires recent account
+authentication, a recent same-session passkey assertion, reason and ticket references, and typed
+confirmation for reconciliation or refund commands. Raw commerce tables and private journals remain
+unreadable by the admin service role.
+
+Administrative commands are persisted before provider execution and use one durable operation
+identifier for executor idempotency. Requested, execution-started, succeeded, and failed evidence
+is append-only and digest-bound to operation, attempt, result, and database time. Exact retries
+converge across concurrent calls and policy-version changes, while changed order, amount, or
+currency fails closed. Reconciliation, refund, inspection, lease, and retry limits are
+explicit and lock-serialized. Every authenticated denial remains in the immutable audit chain; the
+kernel has no HTTP entrypoint, and a future route must add reviewed request-rate enforcement without
+dropping audit evidence.
+
+The focused security unit test, both affected package typechecks, DB build, architecture and
+migration policy pass. The isolated PostgreSQL gate applies all 39 migrations and proves immutable
+historical states, owner/passkey authorization, bounded access, concurrent idempotency, retry after
+synthetic provider failure, policy-version replay, audit and operation-event verification,
+automatic privilege-drift shutdown, raw-table denial, and append-only storage. The shared admin
+security PostgreSQL gate also passes. No admin HTTP route, production passkey issuer, Stripe Live
+executor, production migration, deployment, DNS change, legal-policy activation, or launch was
+added.
 
 ## Update rules
 

@@ -71,6 +71,7 @@
     "test:catalog-database": "pnpm --filter @rituvia/db test:catalog",
     "test:commercial-transactions-database": "pnpm --filter @rituvia/db test:commercial-transactions",
     "test:commercial-checkout-database": "pnpm --filter @rituvia/db test:commercial-checkout",
+    "test:commerce-admin-database": "pnpm --filter @rituvia/db test:commerce-admin",
     "test:commercial-fulfillment-database": "pnpm --filter @rituvia/db test:commercial-fulfillment",
     "test:commercial-subscription-database": "pnpm --filter @rituvia/db test:commercial-subscription",
     "test:commercial-reconciliation-database": "pnpm --filter @rituvia/db test:commercial-reconciliation",

@@ -478,6 +478,18 @@ const grantRuntimePrivileges = async (): Promise<void> => {
       `GRANT INSERT ON TABLE admin_role_assignment, admin_role_revocation, admin_audit_event TO ${ADMIN_SERVICE_ROLE}`,
     );
     await admin.query(
+      `GRANT SELECT ON TABLE commerce_admin_order_summary_v1, commerce_admin_timeline_v1, commerce_admin_audit_event_v1, commerce_admin_operation_v1, commerce_admin_operation_event_v1 TO ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE commerce_admin_audit_event_v1, commerce_admin_operation_v1, commerce_admin_operation_event_v1 TO ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE UPDATE, DELETE, TRUNCATE ON TABLE commerce_admin_audit_event_v1, commerce_admin_operation_v1, commerce_admin_operation_event_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, commercial_payment_event_v2, commercial_fulfillment_v2, credit_ledger_entry, credit_restriction_entry, commercial_refund_request_v1, commercial_reconciliation_case_v1, commercial_subscription_v1, commercial_subscription_event_v1, commercial_subscription_review_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,
     );
     await admin.query(

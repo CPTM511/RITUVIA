@@ -76,6 +76,7 @@
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
 | Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
 | Decision | D-093 | Hold unused Credits before a Stripe sandbox refund | [decisions/D-093.md](./decisions/D-093.md) |
+| Decision | D-094 | Separate commerce command acceptance from provider execution | [decisions/D-094.md](./decisions/D-094.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -131,6 +132,8 @@
 | Task | RIT-067 | Commercial Reconciliation and Discrepancy Cases | [tasks/RIT-067.md](./tasks/RIT-067.md) |
 | Task | RIT-068 | Refund Request and Stripe Sandbox Refund Path | [tasks/RIT-068.md](./tasks/RIT-068.md) |
 | Task | RIT-069 | Full Payment Integrity Matrix and M6 Product Checkpoint | [tasks/RIT-069.md](./tasks/RIT-069.md) |
+| Task | RIT-070 | Subscription Lifecycle and Entitlements | [tasks/RIT-070.md](./tasks/RIT-070.md) |
+| Task | RIT-073 | Commerce Admin and Immutable Event Timeline | [tasks/RIT-073.md](./tasks/RIT-073.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

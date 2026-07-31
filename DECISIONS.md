@@ -905,3 +905,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
 - **Reason:** Refund-versus-spend and API/webhook ordering must converge without negative Credits,
   duplicate refunds, false completion, or a new service/queue before measured operational need.
 - **Date:** 2026-07-30
+
+### [D-094 — Separate commerce command acceptance from provider execution](records/decisions/D-094.md)
+
+- **Decision:** Require owner role, recent same-session passkey reauthentication, reason, ticket,
+  typed confirmation, explicit limits, safe database projections, durable idempotent commands, and
+  separate append-only execution evidence for commerce inspection, reconciliation, and refunds.
+- **Reason:** An accepted administrative command is not provider completion, and support access
+  must remain useful without raw commerce reads, direct payment mutations, unbounded retries, or
+  mutable-state history.
+- **Date:** 2026-07-31

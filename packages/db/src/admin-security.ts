@@ -5,6 +5,7 @@ import {
   adminRoles,
   adminSafeDiffFieldsFor,
   isAdminRole,
+  type AdminAction,
   type AdminRole,
 } from "@rituvia/security";
 
@@ -89,8 +90,8 @@ export type AdminSecurityService = Readonly<{
   }): Promise<Readonly<{ assignmentId: string; revoked: true }>>;
 }>;
 
-type TransactionClient = Prisma.TransactionClient;
-type ActiveSession = Readonly<{
+export type AdminTransactionClient = Prisma.TransactionClient;
+export type AuthorizedAdminSession = Readonly<{
   authenticatedAt: Date | null;
   authIdentityId: string;
   sessionId: string;
@@ -104,16 +105,21 @@ type ActiveRole = Readonly<{
 }>;
 type OperationResult<Value> =
   Readonly<{ error: AdminSecurityErrorCode }> | Readonly<{ value: Value }>;
-type AuditAction = "admin.role.assign" | "admin.role.revoke";
-type AuditInput = Readonly<{
+export type AuditedAdminAction = Extract<
+  AdminAction,
+  "admin.audit.read" | "admin.role.assign" | "admin.role.revoke"
+>;
+type AuditAction = AuditedAdminAction;
+export type AdminAuditInput = Readonly<{
   action: AuditAction;
   actorRole: AdminRole | null;
   afterDigest: Uint8Array | null;
   beforeDigest: Uint8Array | null;
   outcome: "completed" | "denied";
   reasonCode: string;
-  session: ActiveSession;
+  session: AuthorizedAdminSession;
   targetId: string;
+  targetType?: string;
   ticketReference: string | null;
 }>;
 
@@ -182,10 +188,10 @@ const activeRoleDigest = (roles: readonly ActiveRole[]): Uint8Array =>
   );
 
 const findSession = async (
-  transaction: TransactionClient,
+  transaction: AdminTransactionClient,
   tokenHash: Uint8Array,
-): Promise<ActiveSession | null> => {
-  const rows = await transaction.$queryRaw<ActiveSession[]>`
+): Promise<AuthorizedAdminSession | null> => {
+  const rows = await transaction.$queryRaw<AuthorizedAdminSession[]>`
     SELECT
       session.id AS "sessionId",
       session.user_id AS "userId",
@@ -202,7 +208,10 @@ const findSession = async (
   return rows[0] ?? null;
 };
 
-const findActiveRoles = (transaction: TransactionClient, userId: string): Promise<ActiveRole[]> =>
+const findActiveRoles = (
+  transaction: AdminTransactionClient,
+  userId: string,
+): Promise<ActiveRole[]> =>
   transaction.$queryRaw<ActiveRole[]>`
     SELECT
       assignment.id AS "assignmentId",
@@ -219,8 +228,8 @@ const findActiveRoles = (transaction: TransactionClient, userId: string): Promis
   `;
 
 const hasPasskeyMfa = async (
-  transaction: TransactionClient,
-  session: ActiveSession,
+  transaction: AdminTransactionClient,
+  session: AuthorizedAdminSession,
   policy: AdminSecurityPolicy,
 ): Promise<boolean> => {
   const rows = await transaction.$queryRaw<Array<{ present: boolean }>>`
@@ -243,11 +252,17 @@ const hasPasskeyMfa = async (
 };
 
 const authorizeOwner = async (
-  transaction: TransactionClient,
-  session: ActiveSession,
+  transaction: AdminTransactionClient,
+  session: AuthorizedAdminSession,
   policy: AdminSecurityPolicy,
-  action: AuditAction,
+  action: AdminAction,
 ): Promise<Readonly<{ error: AdminSecurityErrorCode; role: AdminRole | null }> | null> => {
+  const owner = (await findActiveRoles(transaction, session.userId)).find(
+    ({ role }) => role === "owner",
+  );
+  if (owner === undefined || !adminRoleAllows(owner.role, action)) {
+    return Object.freeze({ error: "ADMIN_FORBIDDEN", role: null });
+  }
   const clocks = await transaction.$queryRaw<Array<{ now: Date }>>`
     SELECT CURRENT_TIMESTAMP AS now
   `;
@@ -260,13 +275,7 @@ const authorizeOwner = async (
     session.authenticatedAt.valueOf() > now.valueOf() ||
     session.authenticatedAt.valueOf() < now.valueOf() - policy.recentAuthenticationSeconds * 1_000
   ) {
-    return Object.freeze({ error: "ADMIN_RECENT_AUTH_REQUIRED", role: null });
-  }
-  const owner = (await findActiveRoles(transaction, session.userId)).find(
-    ({ role }) => role === "owner",
-  );
-  if (owner === undefined || !adminRoleAllows(owner.role, action)) {
-    return Object.freeze({ error: "ADMIN_FORBIDDEN", role: null });
+    return Object.freeze({ error: "ADMIN_RECENT_AUTH_REQUIRED", role: owner.role });
   }
   if (!(await hasPasskeyMfa(transaction, session, policy))) {
     return Object.freeze({ error: "ADMIN_MFA_REQUIRED", role: owner.role });
@@ -274,8 +283,56 @@ const authorizeOwner = async (
   return null;
 };
 
+export type AdminOwnerAuthorizationResult =
+  | Readonly<{
+      authorized: false;
+      error: AdminSecurityErrorCode;
+      role: AdminRole | null;
+      session: AuthorizedAdminSession | null;
+    }>
+  | Readonly<{
+      authorized: true;
+      role: "owner";
+      session: AuthorizedAdminSession;
+    }>;
+
+export const authorizeAdminOwnerOperation = async (
+  transaction: AdminTransactionClient,
+  input: {
+    action: AdminAction;
+    policy: AdminSecurityPolicy;
+    sessionToken: string;
+  },
+): Promise<AdminOwnerAuthorizationResult> => {
+  const tokenHash = sessionTokenDigest(input.sessionToken);
+  const session = await findSession(transaction, tokenHash);
+  if (session === null) {
+    return Object.freeze({
+      authorized: false,
+      error: "ADMIN_SESSION_UNAVAILABLE",
+      role: null,
+      session: null,
+    });
+  }
+  const failure = await authorizeOwner(
+    transaction,
+    session,
+    validatePolicy(input.policy),
+    input.action,
+  );
+  if (failure !== null) {
+    return Object.freeze({
+      authorized: false,
+      error: failure.error,
+      role: failure.role,
+      session,
+    });
+  }
+  return Object.freeze({ authorized: true, role: "owner", session });
+};
+
 const auditPayload = (input: {
-  audit: AuditInput;
+  audit: AdminAuditInput;
   createdAt: Date;
   eventId: string;
   previousEventHash: Uint8Array | null;
@@ -305,11 +362,14 @@ const auditPayload = (input: {
     requestId: input.requestId,
     reasonCode: input.audit.reasonCode,
     targetId: input.audit.targetId,
-    targetType: "admin_role_assignment",
+    targetType: input.audit.targetType ?? "admin_role_assignment",
     ticketReference: input.audit.ticketReference,
   });
 
-const appendAudit = async (transaction: TransactionClient, audit: AuditInput): Promise<void> => {
+const appendAudit = async (
+  transaction: AdminTransactionClient,
+  audit: AdminAuditInput,
+): Promise<string> => {
   await transaction.$executeRaw`
     SELECT pg_advisory_xact_lock(hashtextextended('admin_audit_event', 56056))
   `;
@@ -340,18 +400,19 @@ const appendAudit = async (transaction: TransactionClient, audit: AuditInput): P
     ) VALUES (
       ${eventId}::uuid, ${audit.session.userId}::uuid, ${audit.session.sessionId}::uuid,
       ${audit.actorRole}, ${requestId}::uuid, ${audit.action}, ${audit.outcome},
-      'admin_role_assignment', ${audit.targetId}, ${audit.reasonCode},
+      ${audit.targetType ?? "admin_role_assignment"}, ${audit.targetId}, ${audit.reasonCode},
       ${audit.ticketReference}, ${[...adminSafeDiffFieldsFor(audit.action)]}::text[],
       ${audit.beforeDigest}, ${audit.afterDigest}, ${previousEventHash},
       ${eventHash}, ${createdAt}
     )
   `;
   if (inserted !== 1) throw new AdminSecurityError("ADMIN_SECURITY_UNAVAILABLE");
+  return eventId;
 };
 
 const runTransaction = async <Value>(
   database: PrismaClient,
-  callback: (transaction: TransactionClient) => Promise<Value>,
+  callback: (transaction: AdminTransactionClient) => Promise<Value>,
 ): Promise<Value> => {
   try {
     return await database.$transaction(callback, {
@@ -362,6 +423,9 @@ const runTransaction = async <Value>(
     throw new AdminSecurityError("ADMIN_SECURITY_UNAVAILABLE");
   }
 };
+
+export const appendAdminAuditEvent = appendAudit;
+export const runAdminSecurityTransaction = runTransaction;
 
 const throwIfError = <Value>(result: OperationResult<Value>): Value => {
   if ("error" in result) throw new AdminSecurityError(result.error);
@@ -708,6 +772,7 @@ export const verifyAdminAuditEventHash = (event: {
   reasonCode: string;
   requestId: string;
   targetId: string;
+  targetType: string;
   ticketReference: string | null;
 }): boolean => {
   const expected = sha256(
@@ -726,6 +791,7 @@ export const verifyAdminAuditEventHash = (event: {
           userId: event.actorUserId,
         },
         targetId: event.targetId,
+        targetType: event.targetType,
         ticketReference: event.ticketReference,
       },
       createdAt: event.createdAt,

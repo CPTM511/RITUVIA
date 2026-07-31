@@ -346,13 +346,15 @@ await withLocalPostgresLease(async (lease) => {
         reasonCode: string;
         requestId: string;
         targetId: string;
+        targetType: string;
         ticketReference: string | null;
       }>(
         `
           SELECT
             id AS "eventId", actor_user_id AS "actorUserId",
             actor_session_id AS "actorSessionId", actor_role AS "actorRole",
-            request_id AS "requestId", action, outcome, target_id AS "targetId",
+            request_id AS "requestId", action, outcome,
+            target_type AS "targetType", target_id AS "targetId",
             reason_code AS "reasonCode",
             ticket_reference AS "ticketReference", change_fields AS "changeFields",
             before_digest AS "beforeDigest", after_digest AS "afterDigest",

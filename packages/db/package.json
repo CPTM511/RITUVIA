@@ -34,6 +34,7 @@
     "test:catalog": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-catalog.ts",
     "test:commercial-transactions": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-commercial-transactions.ts",
     "test:commercial-checkout": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-commercial-checkout.ts",
+    "test:commerce-admin": "pnpm --filter @rituvia/security build && node --import tsx scripts/verify-commerce-admin.ts",
     "test:commercial-fulfillment": "node --import tsx ../../tests/verify-commercial-fulfillment.ts",
     "test:commercial-subscription": "node --import tsx ../../tests/verify-commercial-subscription.ts",
     "test:commercial-reconciliation": "node --import tsx ../../tests/verify-commercial-reconciliation.ts",

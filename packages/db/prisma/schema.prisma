@@ -328,6 +328,67 @@ model CommercialReconciliationCaseV1 {
   @@map("commercial_reconciliation_case_v1")
 }
 
+model CommerceAdminOperationV1 {
+  id                   String   @id @db.Uuid
+  action               String   @db.VarChar(32)
+  orderId              String   @map("order_id") @db.Uuid
+  actorUserId          String   @map("actor_user_id") @db.Uuid
+  actorSessionId       String   @map("actor_session_id") @db.Uuid
+  auditEventId         String   @unique(map: "commerce_admin_operation_v1_audit_key") @map("audit_event_id") @db.Uuid
+  reasonCode           String   @map("reason_code") @db.VarChar(64)
+  ticketReference      String   @map("ticket_reference") @db.VarChar(64)
+  idempotencyKeyHash   Bytes    @map("idempotency_key_hash")
+  canonicalRequestHash Bytes    @map("canonical_request_hash")
+  limitPolicyVersion   String   @map("limit_policy_version") @db.VarChar(100)
+  amountMinor          Int?     @map("amount_minor")
+  currencyCode         String?  @map("currency_code") @db.Char(3)
+  createdAt            DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@unique([actorUserId, action, idempotencyKeyHash], map: "commerce_admin_operation_v1_actor_idempotency_key")
+  @@index([orderId, createdAt(sort: Desc), id(sort: Desc)], map: "commerce_admin_operation_v1_order_created_idx")
+  @@index([actorUserId, createdAt(sort: Desc), id(sort: Desc)], map: "commerce_admin_operation_v1_actor_created_idx")
+  @@map("commerce_admin_operation_v1")
+}
+
+model CommerceAdminAuditEventV1 {
+  id                String   @id @db.Uuid
+  actorUserId       String   @map("actor_user_id") @db.Uuid
+  actorSessionId    String   @map("actor_session_id") @db.Uuid
+  actorRole         String?  @map("actor_role") @db.VarChar(40)
+  requestId         String   @unique(map: "commerce_admin_audit_event_v1_request_key") @map("request_id") @db.Uuid
+  action            String   @db.VarChar(64)
+  outcome           String   @db.VarChar(16)
+  targetType        String   @map("target_type") @db.VarChar(64)
+  targetId          String   @map("target_id") @db.VarChar(128)
+  reasonCode        String   @map("reason_code") @db.VarChar(64)
+  ticketReference   String?  @map("ticket_reference") @db.VarChar(64)
+  changeFields      String[] @map("change_fields")
+  beforeDigest      Bytes?   @map("before_digest")
+  afterDigest       Bytes?   @map("after_digest")
+  previousEventHash Bytes?   @map("previous_event_hash")
+  eventHash         Bytes    @unique(map: "commerce_admin_audit_event_v1_hash_key") @map("event_hash")
+  createdAt         DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt, id], map: "commerce_admin_audit_event_v1_chain_idx")
+  @@index([actorUserId, createdAt(sort: Desc), id(sort: Desc)], map: "commerce_admin_audit_event_v1_actor_idx")
+  @@index([targetType, targetId, createdAt(sort: Desc), id(sort: Desc)], map: "commerce_admin_audit_event_v1_target_idx")
+  @@map("commerce_admin_audit_event_v1")
+}
+
+model CommerceAdminOperationEventV1 {
+  id              String   @id @db.Uuid
+  operationId     String   @map("operation_id") @db.Uuid
+  attemptId       String?  @map("attempt_id") @db.Uuid
+  eventType       String   @map("event_type") @db.VarChar(32)
+  resultReference String?  @map("result_reference") @db.VarChar(128)
+  evidenceDigest  Bytes    @map("evidence_digest")
+  createdAt       DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@unique([operationId, attemptId, eventType], map: "commerce_admin_operation_event_v1_attempt_event_key")
+  @@index([operationId, createdAt, id], map: "commerce_admin_operation_event_v1_timeline_idx")
+  @@map("commerce_admin_operation_event_v1")
+}
+
 model CommercialPaymentEventV2 {
   id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   provider                   String    @db.VarChar(32)

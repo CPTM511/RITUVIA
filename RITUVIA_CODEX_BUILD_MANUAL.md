@@ -1082,9 +1082,10 @@ existing human approval gates.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-070 are complete. The Stripe Test subscription slice now covers recurring
+RIT-063 through RIT-070 and RIT-073 are complete. The Stripe Test subscription slice now covers recurring
 Checkout, verified lifecycle ingestion, Plus entitlements, monthly Credit allocation, cancellation,
-invoice-scoped refund reversal, and durable review. RIT-073 is the sole Ready task.
+invoice-scoped refund reversal, durable review, and a safe-off owner commerce administration
+kernel with an immutable event timeline. RIT-074 is the sole Ready task.
 
 ## Product checkpoint: M6 payment integrity
 
@@ -1105,8 +1106,8 @@ slice. It does not activate Stripe Live or declare the complete paid product lau
   cases, configuration boundaries, the database foundation, all 16 package typechecks, and a
   production build. The payment matrix separately passes 18 payment files plus nine isolated
   PostgreSQL gates against all 36 migrations.
-- Technical paid-launch work remains: customer commerce UI (`RIT-072`), admin/support and dispute
-  workflows (`RIT-073`/`RIT-074`),
+- Technical paid-launch work remains: customer commerce UI (`RIT-072`), dispute/support workflow
+  (`RIT-074`),
   payment kill switches (`RIT-075`), launch threat/abuse/operations gates (`RIT-121`-`RIT-128`),
   beta remediation, and staging/launch rehearsal. External provider, entity, tax, country, budget,
   and owner production approval remain separate blockers.
@@ -1140,8 +1141,8 @@ restoration is owner-scoped and excludes held Credits from spendable total. RIT-
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
 adds the full-unused-pack Stripe Test refund path. RIT-069 closes the one-time Stripe Test payment
-integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, and RIT-073 is
-the sole Ready task. RIT-045
+integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, RIT-073 closes
+the safe-off commerce administration kernel, and RIT-074 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -2531,6 +2532,30 @@ idempotency, amount mismatch rejection, monthly/annual allocation, purchased-Cre
 invoice-scoped refund reversal across two paid periods, and nonnegative projection. No Stripe Live
 request, production recurring activation, deployment, DNS, or legal-policy activation occurred.
 
+RIT-073 is complete through D-094. The safe-off commerce administration kernel exposes one bounded,
+owner-only order timeline through reviewed security-barrier views. It requires recent account
+authentication, a recent same-session passkey assertion, reason and ticket references, and typed
+confirmation for reconciliation or refund commands. Raw commerce tables and private journals remain
+unreadable by the admin service role.
+
+Administrative commands are persisted before provider execution and use one durable operation
+identifier for executor idempotency. Requested, execution-started, succeeded, and failed evidence
+is append-only and digest-bound to operation, attempt, result, and database time. Exact retries
+converge across concurrent calls and policy-version changes, while changed order, amount, or
+currency fails closed. Reconciliation, refund, inspection, lease, and retry limits are
+explicit and lock-serialized. Every authenticated denial remains in the immutable audit chain; the
+kernel has no HTTP entrypoint, and a future route must add reviewed request-rate enforcement without
+dropping audit evidence.
+
+The focused security unit test, both affected package typechecks, DB build, architecture and
+migration policy pass. The isolated PostgreSQL gate applies all 39 migrations and proves immutable
+historical states, owner/passkey authorization, bounded access, concurrent idempotency, retry after
+synthetic provider failure, policy-version replay, audit and operation-event verification,
+automatic privilege-drift shutdown, raw-table denial, and append-only storage. The shared admin
+security PostgreSQL gate also passes. No admin HTTP route, production passkey issuer, Stripe Live
+executor, production migration, deployment, DNS change, legal-policy activation, or launch was
+added.
+
 ## Update rules
 
 Codex must update this file whenever release stage, blockers, completed capabilities, environments, or quality state changes. Do not turn it into a changelog; keep only the current truth and link historical decisions to `DECISIONS.md`.
@@ -3581,6 +3606,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   duplicate refunds, false completion, or a new service/queue before measured operational need.
 - **Date:** 2026-07-30
 
+### [D-094 — Separate commerce command acceptance from provider execution](records/decisions/D-094.md)
+
+- **Decision:** Require owner role, recent same-session passkey reauthentication, reason, ticket,
+  typed confirmation, explicit limits, safe database projections, durable idempotent commands, and
+  separate append-only execution evidence for commerce inspection, reconciliation, and refunds.
+- **Reason:** An accepted administrative command is not provider completion, and support access
+  must remain useful without raw commerce reads, direct payment mutations, unbounded retries, or
+  mutable-state history.
+- **Date:** 2026-07-31
+
 ---
 
 # File: `ROADMAP.md`
@@ -3900,8 +3935,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-070 | M7        |       P0 | Done    | Implement subscription lifecycle and entitlements                          | RIT-062,RIT-064                         | payments_risk | Local root is reserved before Stripe Test Checkout; signed facts are role-attested and order-bound; monthly/annual allocations grant 8 Credits exactly once; cancellation preserves purchases; invoice-scoped refunds, nonnegative projection, and durable review pass focused gates. |
 | RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                                          |
 | RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                                                |
-| RIT-073 | M7        |       P0 | Ready   | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Authorized owner can inspect/reconcile/refund with reauth, reason, limits, audit.                                                                                                                                                                          |
-| RIT-074 | M7        |       P1 | Planned | Implement dispute/chargeback records and support workflow                   | RIT-067,RIT-073                         | payments_risk | Evidence uses commerce facts, not private journals; entitlement and audit behavior pass.                                                                                                                                                                   |
+| RIT-073 | M7        |       P0 | Done    | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Owner-only single-order facts, bounded timeline, recent same-session passkey reauth, reason/ticket/typed confirmation, explicit reconciliation/refund limits, idempotent executor retries, separate hash-chain audit, and immutable least-privilege PostgreSQL evidence pass. |
+| RIT-074 | M7        |       P1 | Ready   | Implement dispute/chargeback records and support workflow                   | RIT-067,RIT-073                         | payments_risk | Evidence uses commerce facts, not private journals; entitlement and audit behavior pass.                                                                                                                                                                   |
 | RIT-075 | M7        |       P1 | Planned | Add payment/provider kill switches and failover contract                    | RIT-060,RIT-063                         | operations    | Provider/country/method can be safely disabled; no implicit unapproved fallback.                                                                                                                                                                           |
 | RIT-080 | M8        |       P0 | Done    | Define numerology rule sets and source records                              | RIT-003,OWN-011                         | product       | Life Path/Birthday/Personal Year rules, examples, master numbers, locale limits approved.                                                                                                                                                                  |
 | RIT-081 | M8        |       P0 | Done    | Implement deterministic numerology engine                                   | RIT-080                                 | backend       | Formula steps and fixed/property tests cover edge dates and unsupported scripts.                                                                                                                                                                           |
@@ -4217,6 +4252,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
 | Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
 | Decision | D-093 | Hold unused Credits before a Stripe sandbox refund | [decisions/D-093.md](./decisions/D-093.md) |
+| Decision | D-094 | Separate commerce command acceptance from provider execution | [decisions/D-094.md](./decisions/D-094.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -4272,6 +4308,8 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-067 | Commercial Reconciliation and Discrepancy Cases | [tasks/RIT-067.md](./tasks/RIT-067.md) |
 | Task | RIT-068 | Refund Request and Stripe Sandbox Refund Path | [tasks/RIT-068.md](./tasks/RIT-068.md) |
 | Task | RIT-069 | Full Payment Integrity Matrix and M6 Product Checkpoint | [tasks/RIT-069.md](./tasks/RIT-069.md) |
+| Task | RIT-070 | Subscription Lifecycle and Entitlements | [tasks/RIT-070.md](./tasks/RIT-070.md) |
+| Task | RIT-073 | Commerce Admin and Immutable Event Timeline | [tasks/RIT-073.md](./tasks/RIT-073.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |

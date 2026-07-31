@@ -10,18 +10,41 @@ export {
 } from "./birth-profile-persistence.js";
 export { assertDatabaseUrl, createDatabaseClient } from "./client.js";
 export {
+  appendAdminAuditEvent,
   adminRoles,
   adminSecurityErrorCodes,
   AdminSecurityError,
+  authorizeAdminOwnerOperation,
   assertAdminSecurityRuntimeDatabasePrivileges,
   createAdminSecurityService,
+  runAdminSecurityTransaction,
   verifyAdminAuditEventHash,
+  type AdminAuditInput,
+  type AdminOwnerAuthorizationResult,
   type AdminRole,
   type AdminRoleAssignmentResult,
   type AdminSecurityErrorCode,
   type AdminSecurityPolicy,
   type AdminSecurityService,
+  type AdminTransactionClient,
+  type AuditedAdminAction,
+  type AuthorizedAdminSession,
 } from "./admin-security.js";
+export {
+  CommerceAdminError,
+  assertCommerceAdminRuntimeDatabasePrivileges,
+  commerceAdminErrorCodes,
+  createCommerceAdminService,
+  verifyCommerceAdminAuditEventHash,
+  verifyCommerceAdminOperationEventDigest,
+  type CommerceAdminActionResult,
+  type CommerceAdminErrorCode,
+  type CommerceAdminExecutors,
+  type CommerceAdminOrderTimeline,
+  type CommerceAdminPolicy,
+  type CommerceAdminService,
+  type CommerceAdminTimelineEvent,
+} from "./commerce-admin.js";
 export {
   anonymousIdentityPersistenceErrorCodes,
   AnonymousIdentityPersistenceError,
