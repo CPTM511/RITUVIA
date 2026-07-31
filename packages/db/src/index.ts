@@ -179,6 +179,22 @@ export {
   type CommercialPurchaseStatus,
 } from "./commercial-fulfillment-persistence.js";
 export {
+  commercialSubscriptionEventTypes,
+  commercialSubscriptionPersistenceErrorCodes,
+  CommercialSubscriptionPersistenceError,
+  createCommercialSubscriptionPersistence,
+  type CommercialSubscriptionAllocationClaim,
+  type CommercialSubscriptionAllocationResult,
+  type CommercialSubscriptionEventType,
+  type IngestedCommercialSubscriptionEvent,
+  type CommercialSubscriptionPersistence,
+  type CommercialSubscriptionPersistenceErrorCode,
+  type CommercialSubscriptionState,
+  type PreparedCommercialSubscription,
+  type PreparedCommercialSubscriptionEvent,
+  type ProcessedCommercialSubscriptionEvent,
+} from "./commercial-subscription-persistence.js";
+export {
   createCommercialReconciliationPersistence,
   type CommercialReconciliationCandidate,
   type CommercialReconciliationCase,

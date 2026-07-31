@@ -4,8 +4,12 @@ import { createHash } from "node:crypto";
 
 import {
   CommercialPaymentEventPersistenceError,
+  CommercialSubscriptionPersistenceError,
   createCommercialPaymentEventPersistence,
+  createCommercialSubscriptionPersistence,
   type CommercialPaymentEventPersistence,
+  type CommercialSubscriptionEventType,
+  type CommercialSubscriptionPersistence,
 } from "@rituvia/db";
 import {
   CommerceError,
@@ -14,6 +18,7 @@ import {
   type HostedCheckoutAdapter,
   type RawWebhookRequest,
 } from "@rituvia/payments";
+import type { StripeHostedCheckoutAdapter } from "@rituvia/payments/adapters/stripe";
 
 import { getWebRuntimeConfiguration } from "../config/server";
 import { WebCommerceError } from "./commerce";
@@ -27,12 +32,32 @@ import {
 const stripeEventNormalizationVersion = "stripe-commercial-event.v1";
 const stripeSignatureVerifierVersion = "stripe-signature.v1";
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const subscriptionWebhookTypes = new Set([
+  "customer.subscription.created",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.paid",
+  "invoice.payment_action_required",
+  "invoice.payment_failed",
+]);
+const paymentWebhookTypes = new Set([
+  "charge.dispute.created",
+  "checkout.session.async_payment_failed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.completed",
+  "checkout.session.expired",
+]);
 
 export type StripeWebhookApplicationDependencies = Readonly<{
   clock(): string;
   paymentProvider: HostedCheckoutAdapter;
   paymentProviders: Pick<WebPaymentProviderRegistry, "accountFingerprint">;
   persistence: CommercialPaymentEventPersistence;
+  subscriptionPaymentProvider: Pick<
+    StripeHostedCheckoutAdapter,
+    "providerId" | "verifySubscriptionWebhook"
+  >;
+  subscriptionPersistence: Pick<CommercialSubscriptionPersistence, "ingestStripeSandboxEvent">;
 }>;
 
 const requireInstant = (value: string): string => {
@@ -46,11 +71,46 @@ const requireInstant = (value: string): string => {
 const sha256 = (value: Uint8Array): Uint8Array<ArrayBuffer> =>
   new Uint8Array(createHash("sha256").update(value).digest());
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+export const classifyStripeWebhook = (rawBody: Uint8Array): "payment" | "subscription" => {
+  try {
+    const payload: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(rawBody));
+    if (!isRecord(payload) || typeof payload.type !== "string") throw new Error();
+    if (
+      payload.type === "checkout.session.completed" &&
+      isRecord(payload.data) &&
+      isRecord(payload.data.object) &&
+      payload.data.object.mode === "subscription"
+    ) {
+      return "subscription";
+    }
+    if (subscriptionWebhookTypes.has(payload.type)) return "subscription";
+    if (paymentWebhookTypes.has(payload.type)) return "payment";
+    if (payload.type === "charge.refunded") {
+      const invoice =
+        isRecord(payload.data) && isRecord(payload.data.object)
+          ? payload.data.object.invoice
+          : null;
+      return invoice === null || invoice === undefined ? "payment" : "subscription";
+    }
+    throw new Error();
+  } catch {
+    throw new WebCommerceError("webhook_invalid");
+  }
+};
+
 const mapError = (error: unknown): never => {
   if (error instanceof WebCommerceError) throw error;
   if (error instanceof CommercialPaymentEventPersistenceError) {
     throw new WebCommerceError(
       error.code === "COMMERCIAL_PAYMENT_EVENT_CONFLICT" ? "webhook_invalid" : "unavailable",
+    );
+  }
+  if (error instanceof CommercialSubscriptionPersistenceError) {
+    throw new WebCommerceError(
+      error.code === "COMMERCIAL_SUBSCRIPTION_CONFLICT" ? "webhook_invalid" : "unavailable",
     );
   }
   if (error instanceof CommerceError) {
@@ -65,6 +125,9 @@ export const createStripeWebhookApplicationService = (
   if (dependencies.paymentProvider.providerId !== stripeHostedCheckoutProviderId) {
     throw new WebCommerceError("unavailable");
   }
+  if (dependencies.subscriptionPaymentProvider.providerId !== stripeHostedCheckoutProviderId) {
+    throw new WebCommerceError("unavailable");
+  }
   return Object.freeze({
     async processWebhook(request: RawWebhookRequest) {
       try {
@@ -73,6 +136,39 @@ export const createStripeWebhookApplicationService = (
           nowSeconds: Math.floor(Date.parse(receivedAt) / 1_000),
           signatureHeaderName: "stripe-signature",
         });
+        if (classifyStripeWebhook(request.rawBody) === "subscription") {
+          const event =
+            await dependencies.subscriptionPaymentProvider.verifySubscriptionWebhook(request);
+          if (event.type === "subscription_checkout_completed") {
+            return Object.freeze({ disposition: "ignored" as const });
+          }
+          const eventType: CommercialSubscriptionEventType =
+            event.type === "subscription_canceled"
+              ? "subscription_cancelled"
+              : event.type === "subscription_changed" && event.cancelAtPeriodEnd
+                ? "subscription_cancel_scheduled"
+                : event.type;
+          return await dependencies.subscriptionPersistence.ingestStripeSandboxEvent({
+            amountMinor: event.amount?.amountMinor ?? null,
+            cancelAtPeriodEnd: event.cancelAtPeriodEnd,
+            currencyCode: event.amount?.currencyCode ?? null,
+            eventType,
+            occurredAt: event.occurredAt,
+            payloadDigest: sha256(request.rawBody),
+            periodEndsAt: event.subscriptionPeriodEnd,
+            periodStartsAt: event.subscriptionPeriodStart,
+            providerAccountFingerprint: dependencies.paymentProviders.accountFingerprint(
+              stripeHostedCheckoutProviderId,
+            ),
+            providerEventId: event.eventId,
+            providerInvoiceId: event.providerInvoiceId,
+            providerSubscriptionId: event.providerSubscriptionId,
+            productCode: event.productCode,
+            receivedAt,
+            sourceOrderId: event.orderId,
+            subscriptionInterval: event.subscriptionInterval,
+          });
+        }
         const event = await dependencies.paymentProvider.verifyWebhook(request);
         if (
           event.providerId !== stripeHostedCheckoutProviderId ||
@@ -133,6 +229,10 @@ export const loadWebStripeWebhookApplicationService = (): StripeWebhookApplicati
     paymentProvider: paymentProviders.get(stripeHostedCheckoutProviderId),
     paymentProviders,
     persistence: createCommercialPaymentEventPersistence(loadWebPaymentWebhookDatabase()),
+    subscriptionPaymentProvider: paymentProviders.getStripeSubscription(),
+    subscriptionPersistence: createCommercialSubscriptionPersistence(
+      loadWebPaymentWebhookDatabase(),
+    ),
   });
   return service;
 };

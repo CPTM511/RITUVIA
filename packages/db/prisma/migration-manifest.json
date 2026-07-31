@@ -38,6 +38,7 @@
     "migrations/202607300004_commercial_reconciliation/migration.sql": "d4a743befa50aa10b68a4a138b073fbcb79b9b4c8d103fcc0f0424b970199cd3",
     "migrations/202607300005_commercial_refund_request/migration.sql": "849d71639009ee4e6136e2a5899c7752e950413a4da9e7d2658dc39d6be5f8f3",
     "migrations/202607310001_commercial_subscription_lifecycle/migration.sql": "e32cb9aed6206179b3b09451b3be606c838fb2afb6a1cd8d9b939327914f6912",
+    "migrations/202607310002_subscription_event_review/migration.sql": "f779f476fbed89a00fa21d122acbb1c3c1b09ee5d5b1d4e756938abf18977aea",
     "migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900"
   }
 }

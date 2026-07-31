@@ -43,12 +43,14 @@ export type CreateSubscriptionCheckoutInput = Readonly<{
 }>;
 
 export const normalizedSubscriptionEventTypes = Object.freeze([
+  "subscription_checkout_completed",
   "subscription_created",
   "subscription_period_paid",
   "subscription_payment_failed",
   "subscription_changed",
   "subscription_canceled",
   "subscription_refunded",
+  "subscription_disputed",
 ] as const);
 export type NormalizedSubscriptionEventType = (typeof normalizedSubscriptionEventTypes)[number];
 
@@ -210,6 +212,12 @@ export const parseNormalizedSubscriptionEventV1 = (
     throw new CommerceError("COMMERCE_INPUT_INVALID");
   }
   if (
+    type === "subscription_disputed" &&
+    (amount === null || providerInvoiceId === null || providerChargeId === null)
+  ) {
+    throw new CommerceError("COMMERCE_INPUT_INVALID");
+  }
+  if (
     type === "subscription_refunded" &&
     (amount === null || providerInvoiceId === null || providerChargeId === null)
   ) {
@@ -217,6 +225,7 @@ export const parseNormalizedSubscriptionEventV1 = (
   }
   if (
     (type === "subscription_created" ||
+      type === "subscription_checkout_completed" ||
       type === "subscription_changed" ||
       type === "subscription_canceled") &&
     (amount !== null || providerInvoiceId !== null || providerChargeId !== null)

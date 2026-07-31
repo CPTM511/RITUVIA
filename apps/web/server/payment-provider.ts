@@ -16,6 +16,7 @@ import {
 } from "@rituvia/payments/adapters/local";
 import {
   createStripeHostedCheckoutAdapter,
+  type StripeHostedCheckoutAdapter,
   type StripeGateway,
   type NormalizedSubscriptionEventV1,
 } from "@rituvia/payments/adapters/stripe";
@@ -53,6 +54,7 @@ export type WebPaymentProviderRegistry = Readonly<{
   assertAccountAttested(providerId: WebPaymentProviderId): void;
   attestAccount(providerId: WebPaymentProviderId): Promise<void>;
   get(providerId: WebPaymentProviderId): HostedCheckoutAdapter;
+  getStripeSubscription(): StripeHostedCheckoutAdapter;
   requestStripeRefund(input: {
     amountMinor: number;
     idempotencyKey: string;
@@ -76,7 +78,7 @@ export const createWebPaymentProviderRegistry = (input: {
         paymentIntentId: string;
       }) => Promise<Readonly<{ providerRefundId: string }>>)
     | undefined;
-  stripe?: HostedCheckoutAdapter | undefined;
+  stripe?: StripeHostedCheckoutAdapter | undefined;
 }): WebPaymentProviderRegistry => {
   if (input.local !== undefined && input.local.providerId !== localHostedCheckoutProviderId) {
     throw new WebPaymentProviderError("configuration");
@@ -122,6 +124,10 @@ export const createWebPaymentProviderRegistry = (input: {
       const provider = providerId === localHostedCheckoutProviderId ? input.local : input.stripe;
       if (provider === undefined) throw new WebPaymentProviderError("unavailable");
       return provider;
+    },
+    getStripeSubscription() {
+      if (input.stripe === undefined) throw new WebPaymentProviderError("unavailable");
+      return input.stripe;
     },
     async requestStripeRefund(request) {
       if (input.stripeRefund === undefined) {
@@ -366,6 +372,27 @@ export const verifiedStripeSubscriptionEvent = async (
 ): Promise<VerifiedStripeSubscriptionEvent> => {
   if (event.livemode !== false) throw new WebPaymentProviderError("unavailable");
   switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const providerSubscriptionId = stripeExpandableId(session.subscription);
+      if (session.mode !== "subscription" || providerSubscriptionId === null) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      const context = stripeSubscriptionContext(
+        await stripe.subscriptions.retrieve(requireStripeProviderId(providerSubscriptionId)),
+      );
+      const orderId = requireStripeOrderId(session.client_reference_id ?? metadataOrderId(session));
+      if (context.orderId !== orderId) throw new WebPaymentProviderError("unavailable");
+      return subscriptionEvent(context, {
+        amountMinor: null,
+        currencyCode: null,
+        event,
+        providerChargeId: null,
+        providerInvoiceId: null,
+        providerObjectId: requireStripeProviderId(session.id),
+        type: "subscription_checkout_completed",
+      });
+    }
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
@@ -417,11 +444,16 @@ export const verifiedStripeSubscriptionEvent = async (
         await stripe.invoices.retrieve(requireStripeProviderId(providerInvoiceId)),
       );
       const currencyCode = requireStripeCurrency(chargeRecord.currency);
+      const amountMinor = requireStripeAmount(chargeRecord.amount);
+      const refundedAmountMinor = requireStripeAmount(chargeRecord.amount_refunded);
       if (currencyCode !== requireStripeCurrency(invoice.currency)) {
         throw new WebPaymentProviderError("unavailable");
       }
+      if (refundedAmountMinor !== amountMinor) {
+        throw new WebPaymentProviderError("unavailable");
+      }
       return subscriptionEvent(context, {
-        amountMinor: requireStripeAmount(chargeRecord.amount_refunded),
+        amountMinor: refundedAmountMinor,
         currencyCode,
         event,
         providerChargeId,
@@ -547,6 +579,7 @@ const stripeSandboxWebhookEventTypes = new Set([
 
 const stripeSandboxSubscriptionWebhookEventTypes = new Set([
   "charge.refunded",
+  "checkout.session.completed",
   "customer.subscription.created",
   "customer.subscription.deleted",
   "customer.subscription.updated",

@@ -562,6 +562,41 @@ describe("Stripe verified event normalization", () => {
     },
   );
 
+  it("verifies a subscription Checkout completion without granting value", async () => {
+    const retrieveSubscription = vi.fn(async () => ({
+      cancel_at_period_end: false,
+      current_period_end: 1_776_678_400,
+      current_period_start: 1_774_000_000,
+      customer: "cus_12345678",
+      id: "sub_12345678",
+      items: { data: [{ price: { recurring: { interval: "month" } } }] },
+      metadata: { orderId, productCode: "plus_monthly" },
+    }));
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        { subscriptions: { retrieve: retrieveSubscription } } as never,
+        {
+          created: 1_774_000_000,
+          data: {
+            object: {
+              client_reference_id: orderId,
+              id: "cs_test_12345678",
+              mode: "subscription",
+              subscription: "sub_12345678",
+            },
+          },
+          id: "evt_subscription_checkout",
+          livemode: false,
+          type: "checkout.session.completed",
+        } as never,
+      ),
+    ).resolves.toMatchObject({
+      amount: null,
+      providerObjectId: "cs_test_12345678",
+      type: "subscription_checkout_completed",
+    });
+  });
+
   it("maps a subscription refund only through its exact invoice and subscription", async () => {
     const retrieveInvoice = vi.fn(async () => ({
       currency: "usd",
@@ -589,6 +624,7 @@ describe("Stripe verified event normalization", () => {
           created: 1_774_000_000,
           data: {
             object: {
+              amount: 999,
               amount_refunded: 999,
               currency: "usd",
               id: "ch_12345678",
@@ -606,6 +642,30 @@ describe("Stripe verified event normalization", () => {
       providerSubscriptionId: "sub_12345678",
       type: "subscription_refunded",
     });
+
+    await expect(
+      verifiedStripeSubscriptionEvent(
+        {
+          invoices: { retrieve: retrieveInvoice },
+          subscriptions: { retrieve: retrieveSubscription },
+        } as never,
+        {
+          created: 1_774_000_000,
+          data: {
+            object: {
+              amount: 999,
+              amount_refunded: 499,
+              currency: "usd",
+              id: "ch_partial",
+              invoice: "in_12345678",
+            },
+          },
+          id: "evt_subscription_partial_refund",
+          livemode: false,
+          type: "charge.refunded",
+        } as never,
+      ),
+    ).rejects.toMatchObject({ code: "unavailable" });
   });
 
   it("rejects live, unsupported, or mismatched subscription facts before persistence", async () => {

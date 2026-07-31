@@ -4,6 +4,7 @@ import {
   createCommercialFulfillmentPersistence,
   createCommercialPaymentEventPersistence,
   createCommercialReconciliationPersistence,
+  createCommercialSubscriptionPersistence,
   createDatabaseClient,
 } from "@rituvia/db";
 import { planCommercialCreditPackFulfillment } from "@rituvia/payments";
@@ -12,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { createWorkerRuntime } from "./runtime.js";
 import { createWorkerObservability } from "./observability.js";
 import { runCommercialPaymentFulfillmentLoop } from "./payment-fulfillment.js";
+import { runSubscriptionFulfillmentLoop } from "./subscription-fulfillment.js";
 import { runCommercialPaymentReconciliationLoop } from "./payment-reconciliation.js";
 import { createStripeReconciliationReader } from "./stripe-reconciliation.js";
 
@@ -90,6 +92,10 @@ try {
             plan: planCommercialCreditPackFulfillment,
             signal: controller.signal,
             store: createCommercialFulfillmentPersistence(database),
+          }),
+          runSubscriptionFulfillmentLoop({
+            signal: controller.signal,
+            store: createCommercialSubscriptionPersistence(database),
           }),
           ...(stripeReconciliation === undefined ||
           stripePaymentConfiguration === undefined ||

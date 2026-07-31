@@ -4,9 +4,12 @@ import { createHash } from "node:crypto";
 
 import {
   CommercialCheckoutPersistenceError,
+  CommercialSubscriptionPersistenceError,
   createCommercialCheckoutPersistence,
+  createCommercialSubscriptionPersistence,
   readCountryPolicyVersions,
   type CommercialCheckoutPersistence,
+  type CommercialSubscriptionPersistence,
 } from "@rituvia/db";
 import {
   evaluateCountryPolicyVersion,
@@ -18,8 +21,8 @@ import {
   createMoney,
   type CatalogEnvironment,
   type CatalogVersionV1,
-  type HostedCheckoutAdapter,
 } from "@rituvia/payments";
+import type { StripeHostedCheckoutAdapter } from "@rituvia/payments/adapters/stripe";
 
 import { getWebRuntimeConfiguration } from "../config/server";
 import { loadWebAccountIdentityService } from "./account-auth";
@@ -65,8 +68,15 @@ export type StripeCheckoutApplicationDependencies = Readonly<{
   }>;
   environment: CatalogEnvironment;
   providerAccountFingerprint: string;
-  paymentProvider: HostedCheckoutAdapter;
+  paymentProvider: Pick<
+    StripeHostedCheckoutAdapter,
+    "createCheckout" | "createSubscriptionCheckout" | "providerId"
+  >;
   persistence: CommercialCheckoutPersistence;
+  subscriptions: Pick<
+    CommercialSubscriptionPersistence,
+    "attachStripeCheckout" | "createOrReplaySubscription"
+  >;
 }>;
 
 export type WebStripeCheckout = Readonly<{
@@ -171,6 +181,11 @@ const mapError = (error: unknown): never => {
       error.code === "COMMERCIAL_CHECKOUT_CONFLICT" ? "conflict" : "unavailable",
     );
   }
+  if (error instanceof CommercialSubscriptionPersistenceError) {
+    throw new WebCommerceError(
+      error.code === "COMMERCIAL_SUBSCRIPTION_CONFLICT" ? "conflict" : "unavailable",
+    );
+  }
   if (error instanceof WebPaymentProviderError || error instanceof CommerceError) {
     throw new WebCommerceError("unavailable");
   }
@@ -218,19 +233,32 @@ export const createStripeCheckoutApplicationService = (
           (candidate) =>
             candidate.code === request.productCode &&
             candidate.status === "active" &&
-            candidate.kind === "credit_pack" &&
-            candidate.subscriptionInterval === null &&
-            candidate.creditsGranted !== null,
+            ((candidate.kind === "credit_pack" &&
+              candidate.subscriptionInterval === null &&
+              candidate.creditsGranted !== null) ||
+              (candidate.kind === "plus_plan" &&
+                candidate.subscriptionInterval !== null &&
+                candidate.creditsPerMonth !== null)),
         );
         if (product === undefined) throw new WebCommerceError("not_eligible");
-        const creditsGranted = product.creditsGranted;
-        if (creditsGranted === null) throw new WebCommerceError("not_eligible");
+        const recurring = product.kind === "plus_plan";
+        const creditsGranted = product.creditsGranted ?? 0;
+        const creditsPerMonth = product.creditsPerMonth;
+        if (
+          (!recurring && creditsGranted < 1) ||
+          (recurring &&
+            (creditsPerMonth !== 8 ||
+              (product.subscriptionInterval !== "month" &&
+                product.subscriptionInterval !== "year")))
+        ) {
+          throw new WebCommerceError("not_eligible");
+        }
         const prices = catalog.prices.filter(
           (candidate) =>
             candidate.status === "active" &&
             candidate.productCode === product.code &&
             candidate.productVersion === product.version &&
-            candidate.billingInterval === "one_time" &&
+            candidate.billingInterval === (recurring ? product.subscriptionInterval : "one_time") &&
             candidate.currencyCode === sandboxCurrencyCode &&
             candidate.countryCodes.includes(sandboxCountryCode) &&
             candidate.providerEligibility.includes("stripe") &&
@@ -262,7 +290,7 @@ export const createStripeCheckoutApplicationService = (
               kind: "fiat",
               method: "card",
               providerId: stripeHostedCheckoutProviderId,
-              recurring: false,
+              recurring,
             },
             productCode: product.code,
           },
@@ -293,10 +321,12 @@ export const createStripeCheckoutApplicationService = (
           countryCode: sandboxCountryCode,
           countryPolicyVersion: policyDecision.snapshot.policyVersion,
           createdAt: now,
-          creditsGranted,
+          creditsGranted: recurring ? null : creditsGranted,
+          creditsPerMonth,
           currencyCode: sandboxCurrencyCode,
           exactContents: localization.exactContents,
           fulfillmentCode: product.fulfillmentCode,
+          fulfillmentKind: recurring ? "subscription" : "credit_pack",
           idempotencyKeyHash: sha256(idempotencyKey),
           priceId: price.priceId,
           priceVersion: price.version,
@@ -308,14 +338,40 @@ export const createStripeCheckoutApplicationService = (
           termsVersion: termsDocument.version,
           userId: session.userId,
         });
+        if (recurring) {
+          await dependencies.subscriptions.createOrReplaySubscription({
+            catalogVersion: catalog.version,
+            createdAt: now,
+            fulfillmentCode: product.fulfillmentCode,
+            priceId: price.priceId,
+            priceVersion: price.version,
+            productCode: product.code,
+            productVersion: product.version,
+            providerAccountFingerprint: dependencies.providerAccountFingerprint,
+            sourceOrderId: prepared.checkout.orderId,
+            subscriptionInterval: product.subscriptionInterval as "month" | "year",
+            userId: session.userId,
+          });
+        }
+        const attachSubscription = async (checkoutId: string): Promise<void> => {
+          if (!recurring) return;
+          await dependencies.subscriptions.attachStripeCheckout({
+            attachedAt: now,
+            providerCheckoutId: checkoutId,
+            sourceOrderId: prepared.checkout.orderId,
+            userId: session.userId,
+          });
+        };
 
         if (
           prepared.checkout.state === "checkout_created" &&
-          prepared.checkout.checkoutUrl !== null
+          prepared.checkout.checkoutUrl !== null &&
+          prepared.checkout.checkoutId !== null
         ) {
           if (Date.parse(prepared.checkout.checkoutExpiresAt) <= Date.parse(now)) {
             throw new WebCommerceError("conflict");
           }
+          await attachSubscription(prepared.checkout.checkoutId);
           return Object.freeze({
             amountMinor: prepared.checkout.amountMinor,
             checkoutUrl: prepared.checkout.checkoutUrl,
@@ -328,7 +384,7 @@ export const createStripeCheckoutApplicationService = (
           });
         }
 
-        const checkout = await dependencies.paymentProvider.createCheckout({
+        const checkoutInput = {
           accountId: session.userId,
           amount: createMoney(prepared.checkout.amountMinor, prepared.checkout.currencyCode),
           cancelUrl: sandboxReturnUrl(dependencies.canonicalOrigin, request.cancelPath),
@@ -343,7 +399,14 @@ export const createStripeCheckoutApplicationService = (
             request.successPath,
             prepared.checkout.orderId,
           ),
-        });
+        };
+        const checkout = recurring
+          ? await dependencies.paymentProvider.createSubscriptionCheckout({
+              ...checkoutInput,
+              mode: "subscription",
+              subscriptionInterval: product.subscriptionInterval as "month" | "year",
+            })
+          : await dependencies.paymentProvider.createCheckout(checkoutInput);
         const attached = await dependencies.persistence.attachStripeCheckout({
           attachedAt: now,
           checkoutExpiresAt: checkout.expiresAt,
@@ -359,6 +422,7 @@ export const createStripeCheckoutApplicationService = (
         ) {
           throw new WebCommerceError("unavailable");
         }
+        await attachSubscription(checkout.checkoutId);
         return Object.freeze({
           amountMinor: attached.amountMinor,
           checkoutUrl: attached.checkoutUrl,
@@ -393,7 +457,7 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
   }
   const accounts = loadWebAccountIdentityService();
   const paymentProviders = loadWebPaymentProviderRegistry();
-  const paymentProvider = paymentProviders.get(stripeHostedCheckoutProviderId);
+  const paymentProvider = paymentProviders.getStripeSubscription();
   service = createStripeCheckoutApplicationService({
     accounts: {
       getProfile: (token) => accounts.getProfile(token),
@@ -415,6 +479,7 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
     providerAccountFingerprint: paymentProviders.accountFingerprint(stripeHostedCheckoutProviderId),
     paymentProvider,
     persistence: createCommercialCheckoutPersistence(loadWebDatabase()),
+    subscriptions: createCommercialSubscriptionPersistence(loadWebDatabase()),
   });
   return service;
 };

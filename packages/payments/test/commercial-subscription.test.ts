@@ -83,6 +83,22 @@ describe("commercial subscription lifecycle", () => {
     expect(result.cancelledAt).toBe("2026-08-10T00:00:00.000Z");
   });
 
+  it("accepts a verified refund after an active paid period", () => {
+    const result = reduceCommercialSubscriptionTimeline({
+      events: [
+        event("subscription_created", "2026-08-01T00:00:00.000Z"),
+        event("subscription_period_paid", "2026-08-01T00:00:01.000Z", {
+          periodStartsAt: "2026-08-01T00:00:00.000Z",
+          periodEndsAt: "2026-09-01T00:00:00.000Z",
+        }),
+        event("subscription_refunded", "2026-08-05T00:00:00.000Z"),
+      ],
+    });
+
+    expect(result.state).toBe("refunded");
+    expect(result.refundedAt).toBe("2026-08-05T00:00:00.000Z");
+  });
+
   it("allocates exactly the configured monthly amount inside paid coverage", () => {
     expect(
       planSubscriptionCreditAllocation({

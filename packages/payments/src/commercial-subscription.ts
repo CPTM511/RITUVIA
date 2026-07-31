@@ -147,7 +147,15 @@ const nextState = (
         ? "cancelled"
         : null;
     case "subscription_refunded":
-      return state === "disputed" || state === "cancelled" || state === "refunded"
+      return [
+        "active",
+        "grace_period",
+        "past_due",
+        "cancel_at_period_end",
+        "cancelled",
+        "disputed",
+        "refunded",
+      ].includes(state)
         ? "refunded"
         : null;
     case "subscription_disputed":

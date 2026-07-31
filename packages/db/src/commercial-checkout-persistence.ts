@@ -35,10 +35,12 @@ export type PreparedCommercialStripeCheckout = Readonly<{
   countryCode: string;
   countryPolicyVersion: string;
   createdAt: string;
-  creditsGranted: number;
+  creditsGranted?: number | null;
+  creditsPerMonth?: number | null;
   currencyCode: string;
   exactContents: readonly string[];
   fulfillmentCode: string;
+  fulfillmentKind?: "credit_pack" | "subscription";
   idempotencyKeyHash: Uint8Array;
   priceId: string;
   priceVersion: string;
@@ -58,6 +60,7 @@ export type PersistedCommercialStripeCheckout = Readonly<{
   checkoutUrl: string | null;
   countryCode: string;
   currencyCode: string;
+  fulfillmentKind: "credit_pack" | "subscription";
   orderId: string;
   productCode: string;
   providerIdempotencyKey: string;
@@ -100,6 +103,9 @@ type CheckoutRecord = Readonly<{
     state: string;
   }>;
   item: Readonly<{
+    creditsGranted: number | null;
+    creditsPerMonth: number | null;
+    fulfillmentKind: string;
     productCode: string;
   }>;
   order: Readonly<{
@@ -288,6 +294,7 @@ const mapCheckout = async (record: CheckoutRecord): Promise<PersistedCommercialS
     checkoutUrl: record.attempt.providerCheckoutUrl,
     countryCode: record.order.countryCode,
     currencyCode: record.order.currencyCode,
+    fulfillmentKind: record.item.fulfillmentKind as "credit_pack" | "subscription",
     orderId: record.order.publicId,
     productCode: record.item.productCode,
     providerIdempotencyKey: expectedProviderKey,
@@ -317,8 +324,18 @@ export const createCommercialCheckoutPersistence = (
         throw new TypeError("Commercial checkout expiry is invalid.");
       }
       const exactContents = requireContents(input.exactContents);
-      const creditsGranted = input.creditsGranted;
-      if (!Number.isSafeInteger(creditsGranted) || creditsGranted < 1) {
+      const fulfillmentKind = input.fulfillmentKind ?? "credit_pack";
+      const creditsGranted = input.creditsGranted ?? null;
+      const creditsPerMonth = input.creditsPerMonth ?? null;
+      const validCreditPack =
+        fulfillmentKind === "credit_pack" &&
+        creditsGranted !== null &&
+        Number.isSafeInteger(creditsGranted) &&
+        creditsGranted >= 1 &&
+        creditsPerMonth === null;
+      const validSubscription =
+        fulfillmentKind === "subscription" && creditsGranted === null && creditsPerMonth === 8;
+      if (!validCreditPack && !validSubscription) {
         throw new TypeError("Commercial checkout fulfillment is invalid.");
       }
       for (const reference of [
@@ -384,10 +401,10 @@ export const createCommercialCheckoutPersistence = (
                 data: {
                   catalogVersion: input.catalogVersion,
                   creditsGranted,
-                  creditsPerMonth: null,
+                  creditsPerMonth,
                   exactContentsSnapshot: [...exactContents],
                   fulfillmentCode: input.fulfillmentCode,
-                  fulfillmentKind: "credit_pack",
+                  fulfillmentKind,
                   orderId: order.id,
                   productCode: input.productCode,
                   productVersion: input.productVersion,

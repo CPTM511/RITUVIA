@@ -459,6 +459,17 @@ model CommercialSubscriptionEventV1 {
   @@map("commercial_subscription_event_v1")
 }
 
+model CommercialSubscriptionReviewV1 {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId        String   @unique(map: "commercial_subscription_review_v1_event_key") @map("event_id") @db.Uuid
+  subscriptionId String   @map("subscription_id") @db.Uuid
+  reason         String   @db.VarChar(40)
+  createdAt      DateTime @map("created_at") @db.Timestamptz(6)
+
+  @@index([subscriptionId, createdAt, id], map: "commercial_subscription_review_v1_subscription_created_idx")
+  @@map("commercial_subscription_review_v1")
+}
+
 model CommercialSubscriptionAllocationV1 {
   id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   subscriptionPeriodId String    @map("subscription_period_id") @db.Uuid

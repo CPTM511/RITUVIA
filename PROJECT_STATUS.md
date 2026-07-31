@@ -4,9 +4,9 @@
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-069 are complete. RIT-070 is In Progress with the subscription domain,
-Stripe Test adapter, and additive database foundation complete; runtime persistence and monthly
-allocation remain before closure.
+RIT-063 through RIT-070 are complete. The Stripe Test subscription slice now covers recurring
+Checkout, verified lifecycle ingestion, Plus entitlements, monthly Credit allocation, cancellation,
+invoice-scoped refund reversal, and durable review. RIT-073 is the sole Ready task.
 
 ## Product checkpoint: M6 payment integrity
 
@@ -27,8 +27,8 @@ slice. It does not activate Stripe Live or declare the complete paid product lau
   cases, configuration boundaries, the database foundation, all 16 package typechecks, and a
   production build. The payment matrix separately passes 18 payment files plus nine isolated
   PostgreSQL gates against all 36 migrations.
-- Technical paid-launch work remains: subscriptions and lifecycle entitlements (`RIT-070`),
-  customer commerce UI (`RIT-072`), admin/support and dispute workflows (`RIT-073`/`RIT-074`),
+- Technical paid-launch work remains: customer commerce UI (`RIT-072`), admin/support and dispute
+  workflows (`RIT-073`/`RIT-074`),
   payment kill switches (`RIT-075`), launch threat/abuse/operations gates (`RIT-121`-`RIT-128`),
   beta remediation, and staging/launch rehearsal. External provider, entity, tax, country, budget,
   and owner production approval remain separate blockers.
@@ -62,7 +62,8 @@ restoration is owner-scoped and excludes held Credits from spendable total. RIT-
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
 adds the full-unused-pack Stripe Test refund path. RIT-069 closes the one-time Stripe Test payment
-integrity matrix, and RIT-070 is the sole Ready task. RIT-045
+integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, and RIT-073 is
+the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1428,16 +1429,29 @@ foundation gates, formatting, linting, all 16 package typechecks, and the produc
 explicit local canonical origin. No Stripe network request, Live key, production payment,
 deployment, DNS change, legal-policy activation or public launch occurred.
 
-RIT-070 is In Progress. The provider-neutral reducer now covers creation, paid periods, payment
-failure, grace expiry, plan change, scheduled cancellation, cancellation, refund and dispute
-without issuing value on subscription creation. A paid month plans exactly eight expiring
-subscription Credits and duplicate allocation is a no-op. Stripe Test Mode now has separate
-recurring Checkout and strict subscription event normalization while Live and unknown events
-remain fail-closed. The additive database foundation constrains one open subscription per user,
-provider invoice uniqueness, monthly allocation uniqueness, and a subscription-specific
-event/outbox boundary. The focused 39-test slice, Payments/Web typechecks, Prisma generation, and
-migration policy pass. Runtime event persistence, monthly allocation/entitlement transactions,
-refund reversal, and cancellation application remain before RIT-070 can close.
+RIT-070 is complete. A local subscription root is reserved before any Stripe Test recurring
+Checkout is created, so concurrent open subscriptions fail before an external session exists and
+same-order retries recover safely. Signed subscription events enter through the exact webhook role,
+whose runtime attestation rejects schema creation, subscription mutation, Credit access, entitlement
+access, or privileged-role drift. Amount, currency, product, interval, order, account, invoice, and
+subscription facts must match the immutable local snapshot before an event is queued.
+
+The fulfillment worker reduces verified lifecycle events, maintains Plus access, and grants exactly
+8 subscription Credits per available month. Annual plans create twelve monthly allocations but
+release only the current one. Duplicate invoices/events/grants remain no-ops. Cancellation revokes
+future subscription allocations without touching purchased Credits. Full refunds are limited to
+the exact provider invoice; unconsumed linked Credits reverse without a negative projection, while
+restricted or conflicting cases create durable review records and the exact poison event is
+quarantined without blocking the queue. Subscription Checkout completion is signature-verified and
+acknowledged without granting value. Full subscription dispute workflow remains explicitly assigned
+to RIT-074.
+
+The focused six-file unit slice passes 59 tests. Payments, DB, Web, and Worker typechecks; DB,
+Payments, and Worker builds; formatting; lint; architecture; secret; migration; and diff checks pass.
+The isolated PostgreSQL gate applies all 38 migrations and proves role denial, 20-way event/grant
+idempotency, amount mismatch rejection, monthly/annual allocation, purchased-Credit preservation,
+invoice-scoped refund reversal across two paid periods, and nonnegative projection. No Stripe Live
+request, production recurring activation, deployment, DNS, or legal-policy activation occurred.
 
 ## Update rules
 

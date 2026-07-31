@@ -1082,7 +1082,9 @@ existing human approval gates.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-069 are complete, and RIT-070 is the sole Ready task.
+RIT-063 through RIT-070 are complete. The Stripe Test subscription slice now covers recurring
+Checkout, verified lifecycle ingestion, Plus entitlements, monthly Credit allocation, cancellation,
+invoice-scoped refund reversal, and durable review. RIT-073 is the sole Ready task.
 
 ## Product checkpoint: M6 payment integrity
 
@@ -1103,8 +1105,8 @@ slice. It does not activate Stripe Live or declare the complete paid product lau
   cases, configuration boundaries, the database foundation, all 16 package typechecks, and a
   production build. The payment matrix separately passes 18 payment files plus nine isolated
   PostgreSQL gates against all 36 migrations.
-- Technical paid-launch work remains: subscriptions and lifecycle entitlements (`RIT-070`),
-  customer commerce UI (`RIT-072`), admin/support and dispute workflows (`RIT-073`/`RIT-074`),
+- Technical paid-launch work remains: customer commerce UI (`RIT-072`), admin/support and dispute
+  workflows (`RIT-073`/`RIT-074`),
   payment kill switches (`RIT-075`), launch threat/abuse/operations gates (`RIT-121`-`RIT-128`),
   beta remediation, and staging/launch rehearsal. External provider, entity, tax, country, budget,
   and owner production approval remain separate blockers.
@@ -1138,7 +1140,8 @@ restoration is owner-scoped and excludes held Credits from spendable total. RIT-
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
 adds the full-unused-pack Stripe Test refund path. RIT-069 closes the one-time Stripe Test payment
-integrity matrix, and RIT-070 is the sole Ready task. RIT-045
+integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, and RIT-073 is
+the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -2502,8 +2505,31 @@ After final fixture additions, the affected four files pass 32 tests. The milest
 passes 2,241 unit tests with five skips, all 96 fixed AI eval cases, configuration and database
 foundation gates, formatting, linting, all 16 package typechecks, and the production build with an
 explicit local canonical origin. No Stripe network request, Live key, production payment,
-deployment, DNS change, legal-policy activation or public launch occurred. RIT-070 is the sole
-Ready task.
+deployment, DNS change, legal-policy activation or public launch occurred.
+
+RIT-070 is complete. A local subscription root is reserved before any Stripe Test recurring
+Checkout is created, so concurrent open subscriptions fail before an external session exists and
+same-order retries recover safely. Signed subscription events enter through the exact webhook role,
+whose runtime attestation rejects schema creation, subscription mutation, Credit access, entitlement
+access, or privileged-role drift. Amount, currency, product, interval, order, account, invoice, and
+subscription facts must match the immutable local snapshot before an event is queued.
+
+The fulfillment worker reduces verified lifecycle events, maintains Plus access, and grants exactly
+8 subscription Credits per available month. Annual plans create twelve monthly allocations but
+release only the current one. Duplicate invoices/events/grants remain no-ops. Cancellation revokes
+future subscription allocations without touching purchased Credits. Full refunds are limited to
+the exact provider invoice; unconsumed linked Credits reverse without a negative projection, while
+restricted or conflicting cases create durable review records and the exact poison event is
+quarantined without blocking the queue. Subscription Checkout completion is signature-verified and
+acknowledged without granting value. Full subscription dispute workflow remains explicitly assigned
+to RIT-074.
+
+The focused six-file unit slice passes 59 tests. Payments, DB, Web, and Worker typechecks; DB,
+Payments, and Worker builds; formatting; lint; architecture; secret; migration; and diff checks pass.
+The isolated PostgreSQL gate applies all 38 migrations and proves role denial, 20-way event/grant
+idempotency, amount mismatch rejection, monthly/annual allocation, purchased-Credit preservation,
+invoice-scoped refund reversal across two paid periods, and nonnegative projection. No Stripe Live
+request, production recurring activation, deployment, DNS, or legal-policy activation occurred.
 
 ## Update rules
 
@@ -3871,10 +3897,10 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-067 | M6        |       P0 | Done    | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Daily bounded Stripe Test payment/order/Credit comparison, append-only discrepancy cases, provider settlement-availability evidence, and exact missed-webhook recovery pass focused gates; payout accounting remains explicitly out of scope.              |
 | RIT-068 | M6        |       P0 | Done    | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Exact US/USD/Test eligibility, owner scope, request-time Credit hold, provider idempotency, submitted/confirmed truth, signed-event-linked reversal, rejection/retry and concurrency gates pass.                                                            |
 | RIT-069 | M6        |       P0 | Done    | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Stripe Test Mode redirect/webhook races, invalid signatures, pending/failure/expiry, 20-way duplicate/out-of-order, partial/full refund, dispute, fulfillment and reconciliation fixtures pass; no Live activation.                                       |
-| RIT-070 | M7        |       P0 | Ready   | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                                                                                                                                                           |
+| RIT-070 | M7        |       P0 | Done    | Implement subscription lifecycle and entitlements                          | RIT-062,RIT-064                         | payments_risk | Local root is reserved before Stripe Test Checkout; signed facts are role-attested and order-bound; monthly/annual allocations grant 8 Credits exactly once; cancellation preserves purchases; invoice-scoped refunds, nonnegative projection, and durable review pass focused gates. |
 | RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                                          |
 | RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                                                |
-| RIT-073 | M7        |       P0 | Planned | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Authorized owner can inspect/reconcile/refund with reauth, reason, limits, audit.                                                                                                                                                                          |
+| RIT-073 | M7        |       P0 | Ready   | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Authorized owner can inspect/reconcile/refund with reauth, reason, limits, audit.                                                                                                                                                                          |
 | RIT-074 | M7        |       P1 | Planned | Implement dispute/chargeback records and support workflow                   | RIT-067,RIT-073                         | payments_risk | Evidence uses commerce facts, not private journals; entitlement and audit behavior pass.                                                                                                                                                                   |
 | RIT-075 | M7        |       P1 | Planned | Add payment/provider kill switches and failover contract                    | RIT-060,RIT-063                         | operations    | Provider/country/method can be safely disabled; no implicit unapproved fallback.                                                                                                                                                                           |
 | RIT-080 | M8        |       P0 | Done    | Define numerology rule sets and source records                              | RIT-003,OWN-011                         | product       | Life Path/Birthday/Personal Year rules, examples, master numbers, locale limits approved.                                                                                                                                                                  |

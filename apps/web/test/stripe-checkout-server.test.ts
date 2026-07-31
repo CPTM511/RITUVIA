@@ -17,7 +17,7 @@ const request = Object.freeze({
   successPath: "/en/checkout/return",
 });
 
-const policy = (refundPolicyVersion = "test:local:refund.v1") =>
+const policy = (refundPolicyVersion = "test:local:refund.v1", subscription = false) =>
   parseCountryPolicyVersionV1({
     approvalMode: "local_test",
     countryCode: "US",
@@ -38,7 +38,7 @@ const policy = (refundPolicyVersion = "test:local:refund.v1") =>
       enabled: true,
       methods: ["card"],
       providerRoutes: ["stripe"],
-      recurringAllowed: false,
+      recurringAllowed: subscription,
     },
     legalDocumentVersions: [
       { documentCode: "privacy", version: "local.privacy.v1" },
@@ -50,7 +50,13 @@ const policy = (refundPolicyVersion = "test:local:refund.v1") =>
     modalities: ["ritual"],
     nextReviewAt: "2099-01-01T00:00:00.000Z",
     prohibitedClaims: ["guaranteed_outcome"],
-    products: [{ access: "paid", productCode: "pack_6", subscriptionAllowed: false }],
+    products: [
+      {
+        access: "paid",
+        productCode: subscription ? "plus_monthly" : "pack_6",
+        subscriptionAllowed: subscription,
+      },
+    ],
     refundPolicyVersion,
     requiredDisclosures: ["digital_contents", "reflective_not_predictive"],
     schemaVersion: "country-policy-version.v1",
@@ -68,6 +74,7 @@ const createdRecord = Object.freeze({
   checkoutUrl: null,
   countryCode: "US",
   currencyCode: "USD",
+  fulfillmentKind: "credit_pack" as const,
   orderId,
   productCode: "pack_6",
   providerIdempotencyKey: `stripe:${orderId}:1`,
@@ -85,9 +92,30 @@ const attachedRecord = Object.freeze({
 const harness = (options?: {
   policyRefundVersion?: string;
   replay?: boolean;
+  subscription?: boolean;
   unattachedReplayAmount?: number;
 }) => {
+  const subscription = options?.subscription === true;
+  const record = {
+    ...createdRecord,
+    amountMinor: subscription ? 999 : createdRecord.amountMinor,
+    fulfillmentKind: subscription ? ("subscription" as const) : createdRecord.fulfillmentKind,
+    productCode: subscription ? "plus_monthly" : createdRecord.productCode,
+  };
+  const attached = {
+    ...record,
+    checkoutExpiresAt: attachedRecord.checkoutExpiresAt,
+    checkoutId: attachedRecord.checkoutId,
+    checkoutUrl: attachedRecord.checkoutUrl,
+    state: attachedRecord.state,
+  };
   const createCheckout = vi.fn(async () => ({
+    checkoutId: "cs_test_12345678",
+    expiresAt,
+    providerId: "stripe",
+    url: checkoutUrl,
+  }));
+  const createSubscriptionCheckout = vi.fn(async () => ({
     checkoutId: "cs_test_12345678",
     expiresAt,
     providerId: "stripe",
@@ -96,26 +124,34 @@ const harness = (options?: {
   const createOrReplayStripeCheckout = vi.fn(async () => {
     if (options?.replay === true) {
       return {
-        checkout: attachedRecord,
+        checkout: attached,
         kind: "replayed" as const,
       };
     }
     return options?.unattachedReplayAmount === undefined
       ? {
-          checkout: createdRecord,
+          checkout: record,
           kind: "created" as const,
         }
       : {
           checkout: {
-            ...createdRecord,
+            ...record,
             amountMinor: options.unattachedReplayAmount,
           },
           kind: "replayed" as const,
         };
   });
   const attachStripeCheckout = vi.fn(async () => ({
-    ...attachedRecord,
-    amountMinor: options?.unattachedReplayAmount ?? attachedRecord.amountMinor,
+    ...attached,
+    amountMinor: options?.unattachedReplayAmount ?? attached.amountMinor,
+  }));
+  const createOrReplaySubscription = vi.fn(async () => ({
+    kind: "created" as const,
+    subscriptionId: "33333333-3333-4333-8333-333333333333",
+  }));
+  const attachSubscriptionCheckout = vi.fn(async () => ({
+    kind: "attached" as const,
+    subscriptionId: "33333333-3333-4333-8333-333333333333",
   }));
   const service = createStripeCheckoutApplicationService({
     accounts: {
@@ -133,24 +169,31 @@ const harness = (options?: {
     },
     clock: () => now,
     countryPolicies: {
-      read: async () => [policy(options?.policyRefundVersion)],
+      read: async () => [policy(options?.policyRefundVersion, subscription)],
     },
     environment: "local",
     providerAccountFingerprint: "acct_12345678",
     paymentProvider: {
       createCheckout,
+      createSubscriptionCheckout,
       providerId: "stripe",
-      verifyWebhook: vi.fn(),
     },
     persistence: {
       attachStripeCheckout,
       createOrReplayStripeCheckout,
     },
+    subscriptions: {
+      attachStripeCheckout: attachSubscriptionCheckout,
+      createOrReplaySubscription,
+    },
   });
   return {
     attachStripeCheckout,
+    attachSubscriptionCheckout,
     createCheckout,
+    createSubscriptionCheckout,
     createOrReplayStripeCheckout,
+    createOrReplaySubscription,
     service,
   };
 };
@@ -224,6 +267,64 @@ describe("Stripe sandbox checkout application service", () => {
       }),
     ).resolves.toMatchObject({ checkoutUrl, kind: "replayed", orderId });
     expect(test.createCheckout).not.toHaveBeenCalled();
+    expect(test.attachStripeCheckout).not.toHaveBeenCalled();
+  });
+
+  it("creates an approved monthly subscription without issuing Credits at checkout", async () => {
+    const test = harness({ subscription: true });
+
+    await expect(
+      test.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { ...request, productCode: "plus_monthly" },
+        sessionToken: "session-token",
+      }),
+    ).resolves.toMatchObject({
+      amountMinor: 999,
+      productCode: "plus_monthly",
+      state: "checkout_created",
+    });
+    expect(test.createCheckout).not.toHaveBeenCalled();
+    expect(test.createSubscriptionCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        productCode: "plus_monthly",
+        subscriptionInterval: "month",
+      }),
+    );
+    expect(test.createOrReplayStripeCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        creditsGranted: null,
+        creditsPerMonth: 8,
+        fulfillmentKind: "subscription",
+      }),
+    );
+    expect(test.createOrReplaySubscription).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productCode: "plus_monthly",
+        sourceOrderId: orderId,
+        subscriptionInterval: "month",
+      }),
+    );
+    expect(test.attachSubscriptionCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerCheckoutId: "cs_test_12345678",
+        sourceOrderId: orderId,
+      }),
+    );
+  });
+
+  it("does not call Stripe when the local subscription slot cannot be reserved", async () => {
+    const test = harness({ subscription: true });
+    test.createOrReplaySubscription.mockRejectedValueOnce(new Error("reservation failed"));
+    await expect(
+      test.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { ...request, productCode: "plus_monthly" },
+        sessionToken: "session-token",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(test.createSubscriptionCheckout).not.toHaveBeenCalled();
     expect(test.attachStripeCheckout).not.toHaveBeenCalled();
   });
 

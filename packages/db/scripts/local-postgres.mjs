@@ -1132,6 +1132,9 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       const commercialRefundTables = await admin.query(
         "SELECT to_regclass('public.commercial_refund_request_v1') IS NOT NULL AS present",
       );
+      const commercialSubscriptionTables = await admin.query(
+        "SELECT to_regclass('public.commercial_subscription_v1') IS NOT NULL AS present",
+      );
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
@@ -1166,6 +1169,11 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT UPDATE (status, frozen_at, revoked_at, version) ON TABLE commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
+      if (commercialSubscriptionTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE commercial_subscription_v1 TO ${APP_ROLE}`,
+        );
+      }
       if (commercialFulfillmentTables.rows[0]?.present === true) {
         await admin.query(
           `GRANT UPDATE (purchased_held) ON TABLE credit_projection TO ${APP_ROLE}`,
@@ -1194,6 +1202,44 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
           );
           await admin.query(
             `GRANT UPDATE (status, confirmed_payment_event_id, confirmed_at, updated_at) ON TABLE commercial_refund_request_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+        }
+        if (commercialSubscriptionTables.rows[0]?.present === true) {
+          await admin.query(
+            `GRANT SELECT ON TABLE commercial_order_v2, commercial_subscription_v1, commercial_subscription_event_v1 TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `GRANT INSERT ON TABLE commercial_subscription_event_v1 TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `REVOKE UPDATE, DELETE, TRUNCATE ON TABLE commercial_subscription_v1, commercial_subscription_event_v1 FROM ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `GRANT SELECT, INSERT ON TABLE commercial_subscription_v1, commercial_subscription_period_v1, commercial_subscription_event_v1, commercial_subscription_allocation_v1, commercial_subscription_outbox_v1, commercial_subscription_review_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (provider_checkout_id, updated_at) ON TABLE commercial_subscription_v1 TO ${APP_ROLE}`,
+          );
+          await admin.query(
+            `GRANT INSERT ON TABLE commercial_entitlement_v2 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (provider_subscription_id, state, cancel_at_period_end, current_period_starts_at, current_period_ends_at, updated_at, version) ON TABLE commercial_subscription_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (processing_state, processing_disposition, processed_at) ON TABLE commercial_subscription_event_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (state, source_ledger_entry_id, granted_at) ON TABLE commercial_subscription_allocation_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (delivery_state, attempt_count, available_at, lease_token_hash, leased_until, completed_at) ON TABLE commercial_subscription_outbox_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (subscription_available, version, updated_at) ON TABLE credit_projection TO ${PAYMENT_FULFILLMENT_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (catalog_version, product_code, product_version, status, source_order_id, frozen_at, revoked_at, version) ON TABLE commercial_entitlement_v2 TO ${PAYMENT_FULFILLMENT_ROLE}`,
           );
         }
       }
