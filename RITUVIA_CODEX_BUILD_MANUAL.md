@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-07-30. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-07-31. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -1078,11 +1078,36 @@ existing human approval gates.
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-30
+**Last reconciled:** 2026-07-31
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-068 are complete, and RIT-069 is the sole Ready task.
+RIT-063 through RIT-069 are complete, and RIT-070 is the sole Ready task.
+
+## Product checkpoint: M6 payment integrity
+
+Checkpoint revision `f1633b6` closes the bounded one-time Stripe Test Mode Credit-pack payment
+slice. It does not activate Stripe Live or declare the complete paid product launch-ready.
+
+- The tracked repository contains 1,112 files and 31,493,492 bytes; 690 TypeScript/JavaScript/CSS/
+  SQL source files contain 198,130 lines and 7,155,963 bytes.
+- The production Web build is 21,056 KiB. Static assets are 1,256 KiB and static chunks are
+  1,240 KiB. The verified maximum gzip payloads are 8,170 B HTML, 12,232 B CSS, and 219,813 B JS.
+- `node_modules` is an 874,556 KiB renewable local dependency cache and `.turbo` is 8,292 KiB;
+  neither is a shipped browser payload.
+- The one-time payment slice now covers server pricing, hosted checkout, signed Test Mode
+  webhooks, pending/failure/expiry, exact duplicate and replay handling, deterministic out-of-order
+  reduction, verified fulfillment, owner restoration, full-unused-pack refund, dispute holds,
+  reconciliation, and privacy export.
+- The milestone workspace run passes 2,241 unit tests with five skips, 96 fixed AI evaluation
+  cases, configuration boundaries, the database foundation, all 16 package typechecks, and a
+  production build. The payment matrix separately passes 18 payment files plus nine isolated
+  PostgreSQL gates against all 36 migrations.
+- Technical paid-launch work remains: subscriptions and lifecycle entitlements (`RIT-070`),
+  customer commerce UI (`RIT-072`), admin/support and dispute workflows (`RIT-073`/`RIT-074`),
+  payment kill switches (`RIT-075`), launch threat/abuse/operations gates (`RIT-121`-`RIT-128`),
+  beta remediation, and staging/launch rehearsal. External provider, entity, tax, country, budget,
+  and owner production approval remain separate blockers.
 
 **Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
 reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
@@ -1112,7 +1137,8 @@ consumed/reserved shortfalls for review without a negative balance. Authenticate
 restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
 noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
 RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
-adds the full-unused-pack Stripe Test refund path. RIT-069 is the sole Ready task. RIT-045
+adds the full-unused-pack Stripe Test refund path. RIT-069 closes the one-time Stripe Test payment
+integrity matrix, and RIT-070 is the sole Ready task. RIT-045
 consented transactional Revisit
 reminders are complete. OWN-011
 option A is approved through D-064, and RIT-080 is complete with an engine-ready English
@@ -1356,8 +1382,9 @@ and records the exact version on orders. The only seed is synthetic local policy
 and production remain empty and paid behavior therefore stays safe-off. Focused 114-test commerce,
 policy, feature-flag, payment, and persistence coverage, the isolated 21-migration policy
 PostgreSQL/seed/privilege/restore gate, configuration/architecture/migration/CI/secret/record
-checks, and Country Policy/DB/Web builds pass. Per D-050, the complete workspace matrix remains
-reserved for RIT-069 or a release candidate.
+checks, and Country Policy/DB/Web builds pass. Per D-050, RIT-069 consumed the milestone complete
+workspace matrix; the next complete local matrix remains reserved for a release candidate or a
+new cross-cutting risk trigger.
 
 RIT-061 adds one strict `catalog-version.v1` contract over the owner-approved 2026-07-23 product
 set: 21 Credit packs, Plus plans, Deep Readings, permanent/free objects, and consumable rituals,
@@ -2456,8 +2483,27 @@ contention, changed-provider conflict, rejection release, signed confirmation, w
 convergence, refund-versus-reservation serialization, composite owner constraints, append-only
 evidence and least privilege. Affected typechecks and migration policy pass. No dependency,
 microservice or runtime queue was added, and no Stripe Live call, production migration,
-deployment, DNS change, legal-policy activation or launch occurred. RIT-069 is the sole Ready
-task.
+deployment, DNS change, legal-policy activation or launch occurred.
+
+RIT-069 is Done at checkpoint revision `f1633b6`. The Stripe Test Mode adapter now accepts the
+already-supported signed `charge.dispute.created` event and binds the retrieved Charge,
+PaymentIntent and exact Checkout Session before normalization. Unpaid Checkout completion remains
+pending, asynchronous failure remains failed, and expiry remains expired; none grants value.
+Provider signature failures are normalized to one private invalid-webhook response.
+
+The database gate now delivers the same verified success event concurrently twenty times, records
+one transition and nineteen duplicates, and rejects a partial refund amount without changing the
+paid order or creating fulfillment work. Existing refund-first/success-second replay, full refund,
+dispute hold, consumed/reserved shortfall, exactly-once grant, reconciliation, owner return-status,
+and forged redirect-query controls remain intact.
+
+The focused payment matrix passes 18 files and nine PostgreSQL gates against all 36 migrations.
+After final fixture additions, the affected four files pass 32 tests. The milestone workspace run
+passes 2,241 unit tests with five skips, all 96 fixed AI eval cases, configuration and database
+foundation gates, formatting, linting, all 16 package typechecks, and the production build with an
+explicit local canonical origin. No Stripe network request, Live key, production payment,
+deployment, DNS change, legal-policy activation or public launch occurred. RIT-070 is the sole
+Ready task.
 
 ## Update rules
 
@@ -3824,8 +3870,8 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 | RIT-066 | M6        |       P0 | Done    | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
 | RIT-067 | M6        |       P0 | Done    | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Daily bounded Stripe Test payment/order/Credit comparison, append-only discrepancy cases, provider settlement-availability evidence, and exact missed-webhook recovery pass focused gates; payout accounting remains explicitly out of scope.              |
 | RIT-068 | M6        |       P0 | Done    | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Exact US/USD/Test eligibility, owner scope, request-time Credit hold, provider idempotency, submitted/confirmed truth, signed-event-linked reversal, rejection/retry and concurrency gates pass.                                                            |
-| RIT-069 | M6        |       P0 | Ready   | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Redirect/webhook races, invalid signatures, duplicate/out-of-order, refund/dispute fixtures pass.                                                                                                                                                          |
-| RIT-070 | M7        |       P0 | Planned | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                                                                                                                                                           |
+| RIT-069 | M6        |       P0 | Done    | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Stripe Test Mode redirect/webhook races, invalid signatures, pending/failure/expiry, 20-way duplicate/out-of-order, partial/full refund, dispute, fulfillment and reconciliation fixtures pass; no Live activation.                                       |
+| RIT-070 | M7        |       P0 | Ready   | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                         | payments_risk | Start/renew/fail/grace/cancel/change/refund states and simple cancellation pass.                                                                                                                                                                           |
 | RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                                          |
 | RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                                                |
 | RIT-073 | M7        |       P0 | Planned | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Authorized owner can inspect/reconcile/refund with reauth, reason, limits, audit.                                                                                                                                                                          |
@@ -4199,6 +4245,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-066 | Product Detail, Checkout Return, and Order Status UX | [tasks/RIT-066.md](./tasks/RIT-066.md) |
 | Task | RIT-067 | Commercial Reconciliation and Discrepancy Cases | [tasks/RIT-067.md](./tasks/RIT-067.md) |
 | Task | RIT-068 | Refund Request and Stripe Sandbox Refund Path | [tasks/RIT-068.md](./tasks/RIT-068.md) |
+| Task | RIT-069 | Full Payment Integrity Matrix and M6 Product Checkpoint | [tasks/RIT-069.md](./tasks/RIT-069.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
