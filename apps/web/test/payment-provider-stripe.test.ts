@@ -285,6 +285,142 @@ describe("Stripe verified event normalization", () => {
     });
   });
 
+  it.each([
+    ["checkout.session.completed", "unpaid", "payment_pending"],
+    ["checkout.session.async_payment_failed", "unpaid", "payment_failed"],
+    ["checkout.session.expired", "unpaid", "payment_expired"],
+  ] as const)(
+    "maps %s into %s without granting value",
+    async (type, paymentStatus, expectedType) => {
+      await expect(
+        verifiedStripePaymentEvent(
+          {} as never,
+          {
+            created: 1_774_000_000,
+            data: {
+              object: {
+                amount_total: 599,
+                client_reference_id: orderId,
+                currency: "usd",
+                id: `cs_test_${expectedType}`,
+                mode: "payment",
+                payment_intent: "pi_12345678",
+                payment_status: paymentStatus,
+              },
+            },
+            id: `evt_${expectedType}`,
+            livemode: false,
+            type,
+          } as never,
+        ),
+      ).resolves.toMatchObject({
+        amountMinor: 599,
+        orderId,
+        providerPaymentIntentId: "pi_12345678",
+        type: expectedType,
+      });
+    },
+  );
+
+  it("accepts a signed Test Mode dispute and binds it to the exact Checkout attempt", async () => {
+    const event = {
+      created: 1_774_000_000,
+      data: {
+        object: {
+          amount: 99,
+          charge: "ch_disputed",
+          currency: "usd",
+          id: "dp_12345678",
+        },
+      },
+      id: "evt_dispute",
+      livemode: false,
+      type: "charge.dispute.created",
+    };
+    const constructEventAsync = vi.fn(async () => event);
+    const retrieveCharge = vi.fn(async () => ({
+      currency: "usd",
+      id: "ch_disputed",
+      metadata: { orderId },
+      payment_intent: "pi_disputed",
+      refunded: false,
+    }));
+    const list = vi.fn(async () => ({ data: [{ id: "cs_disputed" }] }));
+    const runtime = createStripeGateway(
+      {
+        accountId: "acct_12345678",
+        priceIds: {},
+        secretKey: `sk_test_${"a".repeat(24)}`,
+        webhookSecret: `whsec_${"b".repeat(24)}`,
+      },
+      {
+        charges: { retrieve: retrieveCharge },
+        checkout: { sessions: { list } },
+        webhooks: { constructEventAsync },
+      } as never,
+    );
+    const rawBody = new TextEncoder().encode('{"id":"evt_dispute"}');
+
+    await expect(
+      runtime.gateway.verifyWebhook({
+        nowSeconds: 1_774_000_001,
+        rawBody,
+        signatureHeader: "t=1774000000,v1=synthetic",
+        toleranceSeconds: 300,
+      }),
+    ).resolves.toMatchObject({
+      amountMinor: 99,
+      currencyCode: "USD",
+      eventId: "evt_dispute",
+      orderId,
+      providerCheckoutSessionId: "cs_disputed",
+      providerObjectId: "dp_12345678",
+      providerPaymentIntentId: "pi_disputed",
+      type: "payment_disputed",
+    });
+    expect(constructEventAsync).toHaveBeenCalledWith(
+      rawBody,
+      "t=1774000000,v1=synthetic",
+      `whsec_${"b".repeat(24)}`,
+      300,
+      undefined,
+      1_774_000_001_000,
+    );
+    expect(retrieveCharge).toHaveBeenCalledWith("ch_disputed");
+    expect(list).toHaveBeenCalledWith({ limit: 2, payment_intent: "pi_disputed" });
+  });
+
+  it("rejects disputes for refunded charges before changing payment state", async () => {
+    const stripe = {
+      charges: {
+        retrieve: vi.fn(async () => ({
+          id: "ch_refunded",
+          refunded: true,
+        })),
+      },
+    };
+
+    await expect(
+      verifiedStripePaymentEvent(
+        stripe as never,
+        {
+          created: 1_774_000_000,
+          data: {
+            object: {
+              amount: 99,
+              charge: "ch_refunded",
+              currency: "usd",
+              id: "dp_refunded",
+            },
+          },
+          id: "evt_refunded_dispute",
+          livemode: false,
+          type: "charge.dispute.created",
+        } as never,
+      ),
+    ).rejects.toMatchObject({ code: "unavailable" });
+  });
+
   it("rejects every live-mode event before provider object retrieval", async () => {
     const list = vi.fn();
     const stripe = { checkout: { sessions: { list } } };

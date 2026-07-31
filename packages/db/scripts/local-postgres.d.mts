@@ -7,6 +7,7 @@ export type LocalPostgresRuntime = Readonly<{
     adminPassword: string;
     migratorPassword: string;
     paymentFulfillmentPassword: string;
+    paymentReconciliationPassword: string;
   }>;
 }>;
 
@@ -19,6 +20,7 @@ export type LocalPostgresTestDatabase = Readonly<{
   drop(): Promise<void>;
   migrationDatabaseUrl: string;
   paymentFulfillmentDatabaseUrl: string;
+  paymentReconciliationDatabaseUrl: string;
   paymentWebhookDatabaseUrl: string;
   privacyDeletionDatabaseUrl: string;
   adminServiceDatabaseUrl: string;
@@ -30,6 +32,7 @@ export type LocalPostgresLease = Readonly<{
   developmentDatabaseUrl: string;
   developmentMigrationDatabaseUrl: string;
   developmentPaymentFulfillmentDatabaseUrl: string;
+  developmentPaymentReconciliationDatabaseUrl: string;
   developmentPaymentWebhookDatabaseUrl: string;
   runtime: LocalPostgresRuntime;
   startedByInvocation: boolean;

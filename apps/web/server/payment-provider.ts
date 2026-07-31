@@ -324,6 +324,7 @@ export const verifiedStripePaymentEvent = async (
 };
 
 const stripeSandboxWebhookEventTypes = new Set([
+  "charge.dispute.created",
   "charge.refunded",
   "checkout.session.async_payment_failed",
   "checkout.session.async_payment_succeeded",

@@ -189,6 +189,8 @@ describe("Stripe hosted checkout boundary", () => {
   });
 
   it("normalizes provider failures without exposing provider details", async () => {
+    const rawBody = new TextEncoder().encode('{"id":"evt_1"}');
+    const currentSeconds = Math.floor(Date.parse("2026-07-18T12:00:00.000Z") / 1_000);
     const adapter = createStripeHostedCheckoutAdapter({
       clock: () => "2026-07-18T12:00:00.000Z",
       gateway: {
@@ -207,6 +209,12 @@ describe("Stripe hosted checkout boundary", () => {
       expect(error).toMatchObject({ code: "CHECKOUT_PROVIDER_FAILURE" });
       expect(String(error)).not.toContain("private provider canary");
     }
+    await expect(
+      adapter.verifyWebhook({
+        headers: { "stripe-signature": `t=${currentSeconds},v1=${"a".repeat(64)}` },
+        rawBody,
+      }),
+    ).rejects.toMatchObject({ code: "WEBHOOK_INVALID" });
   });
 
   it("normalizes mapper failures without exposing mapper details", async () => {

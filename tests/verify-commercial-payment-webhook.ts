@@ -231,12 +231,33 @@ await withLocalPostgresLease(async (lease) => {
         receivedAt: "2026-07-30T12:01:01.000Z",
       });
       const concurrent = await Promise.all(
-        Array.from({ length: 12 }, () =>
+        Array.from({ length: 20 }, () =>
           events.processStripeSandboxEvent(concurrentSuccess, reduceCommercialPaymentTimeline),
         ),
       );
       assert.equal(concurrent.filter(({ kind }) => kind === "processed").length, 1);
-      assert.equal(concurrent.filter(({ kind }) => kind === "duplicate").length, 11);
+      assert.equal(concurrent.filter(({ kind }) => kind === "duplicate").length, 19);
+
+      assert.deepEqual(
+        await events.processStripeSandboxEvent(
+          event(concurrentOrder, {
+            amountMinor: 100,
+            eventId: "evt_partial_refund",
+            eventType: "payment_refunded",
+            occurredAt: "2026-07-30T12:02:00.000Z",
+            paymentIntentId: "pi_concurrent",
+            receivedAt: "2026-07-30T12:02:01.000Z",
+          }),
+          reduceCommercialPaymentTimeline,
+        ),
+        {
+          disposition: "rejected_mismatch",
+          kind: "processed",
+          orderStatus: null,
+          outboxCreated: false,
+          paymentAttemptState: null,
+        },
+      );
 
       const outOfOrder = await createCheckout();
       const earlyRefundArrival = event(outOfOrder, {
@@ -343,11 +364,11 @@ await withLocalPostgresLease(async (lease) => {
         accountBoundAttempts: 4,
         credits: 0,
         entitlements: 0,
-        events: 6,
+        events: 7,
         outboxes: 3,
         paidOrRefundedOrders: 2,
-        rejectedEvents: 2,
-        signatureEvidence: 6,
+        rejectedEvents: 3,
+        signatureEvidence: 7,
       });
       await expectPostgresError(
         () =>
@@ -472,5 +493,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 console.log(
-  "Verified Stripe sandbox signed-event idempotency, deterministic out-of-order replay, mismatch isolation, transactional outbox, least privilege, and zero fulfillment.",
+  "Verified Stripe sandbox signed-event idempotency, 20-way duplicate delivery, deterministic out-of-order replay, partial-refund mismatch isolation, transactional outbox, least privilege, and zero fulfillment.",
 );
