@@ -58,7 +58,10 @@
 
 ## Item 3 — Protected staging foundation
 
-- **Status:** Awaiting explicit Owner approval.
+- **Status:** Blocked — Owner approved execution, but Vercel Hobby coerces every first deployment
+  path tested to Production. All attempts were deleted, current hosting truth is zero deployments,
+  `live=false`, and zero domains. See `ITEM_3_PROTECTED_STAGING_EVIDENCE.md`; a new Owner hosting
+  decision is required.
 - **Founder Journey IDs:** FJ-00.
 - **Exact user-visible outcome:** Owner receives one clickable allowlisted noindex staging URL that
   identifies environment/source SHA and initially exposes only a safe acceptance shell.
@@ -75,7 +78,8 @@
 - **Explicit exclusions:** No product journeys, production DNS, real funds, production Provider,
   unrestricted AI, public release, or customer migration.
 - **STOP condition:** Access bypass, indexing exposure, production secret/data reuse, absent Owner
-  URL, or failed restore/rollback.
+  URL, failed restore/rollback, or a hosting platform that cannot create the environment without
+  crossing the Production gate. The last condition occurred on 2026-08-04; Item 4 remains blocked.
 
 ## Item 4 — Real non-mocked E2E and runtime truth
 

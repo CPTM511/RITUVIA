@@ -17,8 +17,12 @@ The status vocabulary is closed:
 
 Current state: no standing preview, staging, or production hosting environment exists. RIT-016 is
 a `verified rehearsal` of one isolated loopback staging compatibility window, not a reusable or
-standing staging service. The public GitHub repository in D-090 is source hosting, not product
-hosting, production deployment, DNS, indexing activation, or public product launch.
+standing staging service. Recovery Item 3 created a dedicated Vercel project and connected its
+GitHub source, SSO protection, non-production variables, safe domain settings, and exact recovery
+branch, but Vercel Hobby coerced every first deployment path tested to Production. Every attempt
+was deleted; the project remains `live=false` with zero deployments and zero domains. The public
+GitHub repository in D-090 is source hosting, not product hosting, production deployment, DNS,
+indexing activation, or public product launch.
 
 ## 2. Environment matrix
 
@@ -164,6 +168,10 @@ fail-closed.
 - production credentials, customer data, DNS, public product indexing, or provider activation;
 - production automated encrypted backup/PITR and provider-level isolated restore; and
 - production monitoring, alerting, support, status, on-call, and independent penetration evidence.
+
+Recovery Item 3 evidence is recorded in
+`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. Its Vercel first-deployment blocker requires a
+new Owner hosting decision before Preview or Staging can be claimed.
 
 ## 9. Rollback and emergency actions
 
