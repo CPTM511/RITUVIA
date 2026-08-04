@@ -39,6 +39,23 @@ vi.mock("../server/request-observability", () => ({
   }),
 }));
 
+vi.mock("../server/recovery-staging", () => ({
+  inspectRecoveryStagingRuntime: () => ({
+    baselineSha: "f79fee6713670fdc12b33dd3182569a942782636",
+    database: "not-connected",
+    environment: "staging",
+    indexing: "disabled",
+    objectStorage: "not-connected",
+    productionProviders: "disabled",
+    ready: true,
+    recoveryItem: 3,
+    sourceSha: "1111111111111111111111111111111111111111",
+  }),
+  recoveryHealthPathname: "/api/recovery/health",
+  recoveryReadinessPathname: "/api/recovery/readiness",
+  recoveryStagingPathname: "/recovery",
+}));
+
 import { proxy } from "../proxy";
 
 const request = (pathname: string, init?: ConstructorParameters<typeof NextRequest>[1]) =>
@@ -73,6 +90,53 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(harness.end).toHaveBeenCalledWith({ outcome: "success" });
+  });
+
+  it("locks staging to the exact recovery shell, diagnostics, and disallow-all robots", async () => {
+    harness.deploymentEnvironment = "staging";
+
+    for (const pathname of [
+      "/recovery",
+      "/api/recovery/health",
+      "/api/recovery/readiness",
+      "/icon.svg?icon.3h3gu-n5qsc0q.svg",
+    ]) {
+      const response = await proxy(request(pathname));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-rituvia-environment")).toBe("staging");
+      expect(response.headers.get("x-rituvia-source-sha")).toBe(
+        "1111111111111111111111111111111111111111",
+      );
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+
+    const robots = await proxy(request("/robots.txt"));
+    expect(robots.status).toBe(200);
+    expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n");
+    expect(robots.headers.get("x-robots-tag")).toBe(noIndex);
+  });
+
+  it.each([
+    ["GET", "/"],
+    ["GET", "/en"],
+    ["GET", "/en/privacy"],
+    ["POST", "/api/v1/anonymous/session"],
+    ["GET", "/api/v1/catalog"],
+    ["GET", "/sitemap.xml"],
+    ["GET", "/recovery?private=canary"],
+    ["POST", "/recovery"],
+    ["GET", "/api/recovery/health/"],
+  ])("rejects every non-Item-3 staging surface: %s %s", async (method, pathname) => {
+    harness.deploymentEnvironment = "staging";
+
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
   });
 
   it.each([

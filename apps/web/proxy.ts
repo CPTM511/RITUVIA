@@ -4,6 +4,12 @@ import { NextResponse } from "next/server";
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
 import { loadNumerologyAvailability } from "./server/numerology-state";
 import { loadQuestionIntakeAvailability } from "./server/question-intake-state";
+import {
+  inspectRecoveryStagingRuntime,
+  recoveryHealthPathname,
+  recoveryReadinessPathname,
+  recoveryStagingPathname,
+} from "./server/recovery-staging";
 import { loadTarotReadingAvailability } from "./server/tarot-reading-state";
 import { getWebRuntimeConfiguration } from "./config/server";
 import {
@@ -315,6 +321,44 @@ const discoveryResponse = (request: NextRequest): NextResponse => {
   });
 };
 
+const recoveryStagingResponse = (
+  request: NextRequest,
+  downstreamHeaders: Headers,
+): NextResponse => {
+  const reviewedIconRequest =
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.pathname === "/icon.svg" &&
+    /^(?:|\?icon\.[A-Za-z0-9_-]{1,64}\.svg)$/u.test(request.nextUrl.search);
+  const exactReadRequest =
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.search === "" &&
+    (request.nextUrl.pathname === recoveryStagingPathname ||
+      request.nextUrl.pathname === recoveryHealthPathname ||
+      request.nextUrl.pathname === recoveryReadinessPathname);
+  const response =
+    request.nextUrl.pathname === "/robots.txt" &&
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.search === ""
+      ? discoveryResponse(request)
+      : exactReadRequest || reviewedIconRequest
+        ? NextResponse.next({ request: { headers: downstreamHeaders } })
+        : new NextResponse(null, { status: 404 });
+  const status = inspectRecoveryStagingRuntime();
+
+  response.headers.set("cache-control", "private, no-store, max-age=0");
+  response.headers.set("content-security-policy", shellContentSecurityPolicy);
+  response.headers.set(
+    "permissions-policy",
+    "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
+  );
+  response.headers.set("referrer-policy", "no-referrer");
+  response.headers.set("x-content-type-options", "nosniff");
+  response.headers.set("x-rituvia-environment", status.environment);
+  response.headers.set("x-rituvia-source-sha", status.sourceSha);
+  response.headers.set("x-robots-tag", noIndexDirective);
+  return response;
+};
+
 export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const operation = startWebRequestObservability(classifyHttpMethod(request.method));
   const downstreamHeaders = new Headers(request.headers);
@@ -325,6 +369,16 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   downstreamHeaders.set("traceparent", operation.toTraceHeaders().traceparent);
   const pathname = request.nextUrl.pathname;
   const configuration = getWebRuntimeConfiguration();
+  if (configuration.deploymentEnvironment === "staging") {
+    const response = recoveryStagingResponse(request, downstreamHeaders);
+    response.headers.set("x-request-id", operation.context.correlationId);
+    operation.end(
+      response.status === 200
+        ? { outcome: "success" }
+        : { outcome: "success", statusCode: response.status },
+    );
+    return response;
+  }
   const infrastructure =
     isSafeReadMethod(request.method) &&
     isUngatedInfrastructureRequest(pathname, configuration.deploymentEnvironment);
