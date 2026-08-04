@@ -1,0 +1,9 @@
+.env*
+.local/
+.playwright-cli/
+.release-cache/
+.vercel/
+**/.next/
+**/node_modules/
+*.log
+*.tsbuildinfo
