@@ -2,9 +2,9 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 4 are complete. Item 5 was explicitly approved and
-> is blocked only at hosted browser acceptance; Item 6 and every later item require a new explicit
-> Owner approval. One Codex run may execute exactly one approved item and must then STOP.
+> Repository status is NO-GO. Items 1 through 6 are complete. Item 7 and every later item require a
+> new explicit Owner approval. One Codex run may execute exactly one approved item and must then
+> STOP.
 
 ## Operating rules
 
@@ -133,7 +133,11 @@
 
 ## Item 6 — Golden shell and en/zh-Hans
 
-- **Status:** Planned; depends on Item 5.
+- **Status:** Complete — the exact source is `READY` in protected custom Staging. The locked golden
+  prototype was not changed; reviewed English/Simplified Chinese Home shells, locale persistence,
+  desktop/mobile production-browser evidence, build/cache replay, SSO, noindex, and safe-off gates
+  are recorded in `docs/recovery/ITEM_6_GOLDEN_SHELL_EVIDENCE.md`. Item 7 remains unapproved and
+  cannot start automatically.
 - **Founder Journey IDs:** FJ-00, FJ-01, FJ-06.
 - **Exact user-visible outcome:** Approved golden shell and reviewed English/Simplified Chinese copy
   render consistently with an explicit locale switch.
@@ -150,7 +154,8 @@
 - **Explicit exclusions:** No other locale, golden-baseline update, SEO/GEO expansion, unreviewed
   machine translation, or policy-copy change.
 - **STOP condition:** Unapproved golden mismatch, unreviewed translation, locale leakage,
-  accessibility regression, or missing mobile evidence.
+  accessibility regression, or missing mobile evidence. None occurred in the accepted source.
+  Stop after Item 6; Item 7 requires separate explicit Owner approval.
 
 ## Item 7 — Tarot
 

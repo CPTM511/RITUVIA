@@ -3,23 +3,19 @@
 **Last reconciled:** 2026-08-05
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 5 are complete. Item 5 was
-explicitly approved and deployed to Vercel-authenticated custom Staging as
-`dpl_D8xgNqiqV8SQjotYcH8NT5zmdqs8`, source
-`36936caed5b193a64747fbfb6b5787d451721b5b`. Vercel reports `READY`, `target=null`,
-OIDC/custom-environment `staging`, `live=false`, one `iad1` runtime region, no custom domains, SSO
-on all previews, and zero automation bypass secrets. Exact Node `24.18.0` and pnpm `11.13.1` pass 199
-focused tests, affected formatting/lint/type gates, secret scan, production Web build, and a local
-zero-mock desktop/mobile core journey with offline retry, encrypted private-state reload, and
-Revisit completion. A non-empty PostgreSQL `17.10` backup restores 32 successful migrations plus
-the preserved rolled-back attempt and contains no private canary plaintext. On 2026-08-05 the same
-deployment passed hosted runtime truth and the full anonymous intake → one-card → intention → small
-action → free ritual → private reflection → completed Revisit journey with no route fulfillment
-mocks, desktop reload, `390×844` mobile reload, zero page console errors, and no application
-`4xx/5xx`. The current `pg` SSL alias warning is recorded for a future major-version review; no
-dependency change was made. Git automatic deployment is disabled. Item 6 is unapproved and
-unstarted; production, DNS, real funds, Providers, unrestricted AI, and public release remain
-stopped.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 6 are complete. Item 6 is
+deployed to Vercel-authenticated custom Staging as `dpl_CSWoRBXuooyaGSuHZdthLn6VZca3`, source
+`0aa78cad52d2d8ffd92d91f7eb47994e34853302`. Vercel reports `READY`, `target=null`, source `git`,
+`live=false`, one `iad1` runtime region, no project domains, and SSO on all tested routes. The
+locked golden prototype remains unchanged; reviewed English/Simplified Chinese Home shells,
+locale persistence, desktop/mobile production-browser evidence, localization/writing-system
+checks, 194 focused tests, production Web build, full-loop regression, and Turbo generated-client
+cache replay pass on exact Node `24.18.0` and pnpm `11.13.1`. The accepted Item 5 English core loop
+remains available; the Chinese shell does not activate unreviewed domain/API translation. Hosted
+pixels remain a direct Owner visual check because browser automation could not traverse Vercel SSO;
+no bypass link was created. Git automatic deployment is disabled, and its closure push created no
+new deployment. Item 7 is unapproved and unstarted; production, DNS, real funds, Providers,
+unrestricted AI, public indexing, and public release remain stopped.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
