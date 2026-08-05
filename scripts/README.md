@@ -146,6 +146,13 @@ deletion, mobile keyboard/RTL/touch/axe behavior, and absence of private canarie
 storage, history, metadata, console, or analytics requests. `pnpm test:accessibility` composes this
 continuous gate after the detailed Tarot, intention, ritual, and Revisit verifiers.
 
+`scripts/verify-recovery-runtime-truth-browser.mjs` is the protected Recovery Item 4 browser gate.
+Unlike the legacy full-loop behavior verifier, it installs no request interception or fulfillment
+handler. Set `RITUVIA_RECOVERY_STAGING_URL` to a temporary Vercel-authenticated `/recovery` URL and
+run `pnpm test:recovery-runtime-truth-browser`; desktop and mobile Chromium must record exact
+`200`, `200`, and core-loop `404` responses with staging/source headers and server correlation IDs.
+The focused source guard fails if interception or fulfillment APIs enter this verifier.
+
 `scripts/verify-account-auth-browser.mjs` is the focused RIT-050/RIT-051 browser gate. It uses the
 real local PostgreSQL account boundary to verify uniform sign-in starts, constant local preview
 routing, host-only secure cookies, atomic anonymous merge, exact dropped-response replay,

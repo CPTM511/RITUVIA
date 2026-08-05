@@ -9,6 +9,7 @@ import {
 } from "../../../server/recovery-staging";
 
 import { ConnectivityStatus } from "./connectivity-status";
+import { RuntimeTruthCheck } from "./runtime-truth-check";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,8 @@ export default function RecoveryStagingPage() {
             {status.ready ? messages.readinessPassed : messages.readinessFailed}
           </p>
           <ConnectivityStatus />
+
+          <RuntimeTruthCheck expectedSourceSha={status.sourceSha} />
 
           <ul className="boundaries">
             {messages.boundaries.map((boundary) => (

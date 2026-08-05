@@ -48,7 +48,7 @@ vi.mock("../server/recovery-staging", () => ({
     objectStorage: "not-connected",
     productionProviders: "disabled",
     ready: true,
-    recoveryItem: 3,
+    recoveryItem: 4,
     sourceSha: "1111111111111111111111111111111111111111",
   }),
   recoveryHealthPathname: "/api/recovery/health",
@@ -128,7 +128,7 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/recovery?private=canary"],
     ["POST", "/recovery"],
     ["GET", "/api/recovery/health/"],
-  ])("rejects every non-Item-3 staging surface: %s %s", async (method, pathname) => {
+  ])("rejects every non-Item-4 staging surface: %s %s", async (method, pathname) => {
     harness.deploymentEnvironment = "staging";
 
     const response = await proxy(request(pathname, { method }));

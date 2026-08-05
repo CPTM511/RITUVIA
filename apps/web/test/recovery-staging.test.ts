@@ -14,7 +14,7 @@ import { inspectRecoveryStagingRuntime } from "../server/recovery-staging";
 
 const sourceSha = "1111111111111111111111111111111111111111";
 
-describe("Recovery Item 3 runtime identity", () => {
+describe("Recovery Item 4 runtime identity", () => {
   beforeEach(() => {
     harness.deploymentEnvironment = "staging";
   });
@@ -27,7 +27,7 @@ describe("Recovery Item 3 runtime identity", () => {
       objectStorage: "not-connected",
       productionProviders: "disabled",
       ready: true,
-      recoveryItem: 3,
+      recoveryItem: 4,
       sourceSha,
     });
   });
