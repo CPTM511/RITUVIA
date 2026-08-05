@@ -58,10 +58,10 @@
 
 ## Item 3 — Protected staging foundation
 
-- **Status:** Blocked — Owner approved execution, but Vercel Hobby coerces every first deployment
-  path tested to Production. All attempts were deleted, current hosting truth is zero deployments,
-  `live=false`, and zero domains. See `ITEM_3_PROTECTED_STAGING_EVIDENCE.md`; a new Owner hosting
-  decision is required.
+- **Status:** Complete — the Owner-approved Vercel Pro custom environment is standing at the
+  protected URL recorded in `ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. The accepted deployment is
+  `READY`, `target=null`, OIDC/custom-environment `staging`, `live=false`, and has zero project
+  domains; automatic Git deployment is disabled.
 - **Founder Journey IDs:** FJ-00.
 - **Exact user-visible outcome:** Owner receives one clickable allowlisted noindex staging URL that
   identifies environment/source SHA and initially exposes only a safe acceptance shell.
@@ -79,11 +79,12 @@
   unrestricted AI, public release, or customer migration.
 - **STOP condition:** Access bypass, indexing exposure, production secret/data reuse, absent Owner
   URL, failed restore/rollback, or a hosting platform that cannot create the environment without
-  crossing the Production gate. The last condition occurred on 2026-08-04; Item 4 remains blocked.
+  crossing the Production gate. None occurred in the accepted deployment. Stop after Item 3;
+  Item 4 requires a separate explicit Owner approval.
 
 ## Item 4 — Real non-mocked E2E and runtime truth
 
-- **Status:** Planned; depends on Item 3.
+- **Status:** Ready — Item 3 dependency is complete; explicit Owner approval is still required.
 - **Founder Journey IDs:** FJ-00, FJ-01, FJ-06.
 - **Exact user-visible outcome:** Owner can distinguish real backend behavior from mocked browser
   tests and inspect exact request/status runtime evidence.

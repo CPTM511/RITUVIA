@@ -2,36 +2,36 @@
 
 This is the canonical RITUVIA contract for local, preview, staging, and production environments.
 It consolidates requirements already distributed across configuration, architecture, security,
-search, migration, and launch specifications. It documents required authority and evidence; it
-does not claim that external preview, staging, or production infrastructure currently exists.
+search, migration, and launch specifications. It documents required authority, current external
+truth, and evidence without implying production or public-release authority.
 
 ## 1. Authority and current state
 
 The status vocabulary is closed:
 
-| Status | Meaning |
-| --- | --- |
-| `implemented` | The repository currently implements and verifies the stated local control. |
-| `verified rehearsal` | A bounded, recorded rehearsal proved the pattern; no standing service is implied. |
-| `required before use` | The control must exist and be verified before that environment may be used. |
+| Status                | Meaning                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| `implemented`         | The repository currently implements and verifies the stated local control.                          |
+| `verified rehearsal`  | A bounded, recorded rehearsal proved the pattern; no standing service is implied.                   |
+| `standing protected`  | An Owner-approved authenticated non-production service currently exists within its recorded limits. |
+| `required before use` | The control must exist and be verified before that environment may be used.                         |
 
-Current state: no standing preview, staging, or production hosting environment exists. RIT-016 is
-a `verified rehearsal` of one isolated loopback staging compatibility window, not a reusable or
-standing staging service. Recovery Item 3 created a dedicated Vercel project and connected its
-GitHub source, SSO protection, non-production variables, safe domain settings, and exact recovery
-branch, but Vercel Hobby coerced every first deployment path tested to Production. Every attempt
-was deleted; the project remains `live=false` with zero deployments and zero domains. The public
-GitHub repository in D-090 is source hosting, not product hosting, production deployment, DNS,
-indexing activation, or public product launch.
+Current state: Recovery Item 3 provides one `standing protected` Vercel custom Staging environment
+for the safe acceptance shell only. It is Vercel-authenticated, noindex/no-store, source-bound,
+Provider-safe-off, `live=false`, and has zero project domains. It exposes no product journey,
+database, object storage, Provider, real funds, unrestricted AI, DNS, or public release. Automatic
+Git deployment is disabled. No standing general Preview or Production environment exists. RIT-016
+remains a separate `verified rehearsal` of one isolated loopback compatibility window. The public
+GitHub repository in D-090 remains source hosting, not product hosting or launch authority.
 
 ## 2. Environment matrix
 
-| Environment | `APP_ENV` | Current status | Purpose | Data | Access and network | Lifetime | Promotion source |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Local | `local` | `implemented` | Developer build and focused verification | Synthetic or developer-created local test data only | Loopback by default; developer access | Developer controlled and disposable except explicitly retained local test data | Clean tracked source |
-| Preview | `preview` | `required before use` | Per-PR product and browser review | Synthetic fixtures only | Protected, authenticated, least-privilege access; no unrestricted crawler access | Ephemeral and deleted after review | Protected PR head with required CI |
-| Staging | `staging` | `verified rehearsal` | Production-like release, migration, recovery, DAST, and provider-sandbox rehearsal | Synthetic or explicitly consented dedicated test accounts only | Team/allowlist access, protected ingress, audited privileged access | Persistent only when an approved isolated service is provisioned | Immutable release candidate that passed required CI |
-| Production | `production` | `required before use` | Owner-approved customer service | Real customer data only after legal, privacy, security, and launch gates | Public application ingress; private administrative and service access | Durable, monitored, backed up, and recoverable | Exact staging-approved immutable release |
+| Environment | `APP_ENV`    | Current status        | Purpose                                                                            | Data                                                                     | Access and network                                                               | Lifetime                                                                       | Promotion source                                    |
+| ----------- | ------------ | --------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------- |
+| Local       | `local`      | `implemented`         | Developer build and focused verification                                           | Synthetic or developer-created local test data only                      | Loopback by default; developer access                                            | Developer controlled and disposable except explicitly retained local test data | Clean tracked source                                |
+| Preview     | `preview`    | `required before use` | Per-PR product and browser review                                                  | Synthetic fixtures only                                                  | Protected, authenticated, least-privilege access; no unrestricted crawler access | Ephemeral and deleted after review                                             | Protected PR head with required CI                  |
+| Staging     | `staging`    | `standing protected`  | Production-like release, migration, recovery, DAST, and provider-sandbox rehearsal | Synthetic or explicitly consented dedicated test accounts only           | Team/allowlist access, protected ingress, audited privileged access              | Persistent only while Owner-approved and evidence-current                      | Immutable release candidate that passed required CI |
+| Production  | `production` | `required before use` | Owner-approved customer service                                                    | Real customer data only after legal, privacy, security, and launch gates | Public application ingress; private administrative and service access            | Durable, monitored, backed up, and recoverable                                 | Exact staging-approved immutable release            |
 
 Preview cannot promote directly to production. Staging is the required release rehearsal boundary.
 An artifact promoted between environments must retain the exact Git revision, dependency lock,
@@ -42,16 +42,16 @@ compiled artifact digest, configuration schema version, and Corresponding Source
 Every non-local environment must have independently addressable and independently revocable
 resources. A naming convention or logical schema alone is not isolation.
 
-| Resource | Preview | Staging | Production |
-| --- | --- | --- | --- |
-| PostgreSQL | Per-preview database or equivalent isolated cluster/database with synthetic data | Dedicated production-like database with test data | Dedicated production system of record |
-| Redis/cache | Per-preview namespace plus credentials, or disabled | Dedicated staging instance and credentials | Dedicated production instance and credentials |
-| Object storage | Per-preview bucket/prefix plus credentials, or disabled | Dedicated staging bucket and credentials | Dedicated production bucket and credentials |
-| Encryption/signing keys | Unique ephemeral test keys | Unique staging keys | Unique versioned production KMS keys |
-| Payment/crypto | Mock, CLI fixture, or approved sandbox only | Separate provider test-mode account/project and webhook endpoint | Live account only after provider/legal/owner gates |
-| AI | Disabled, recorded fixture, or dedicated test account | Approved test account with non-production data | Live provider only after privacy, safety, budget, and owner gates |
-| Email/auth | Sink, local capture, or dedicated test tenant | Dedicated test tenant/domain with allowlisted recipients | Approved production tenant/domain and reviewed templates |
-| Analytics/observability | Dedicated non-production destination with synthetic identifiers | Dedicated staging destination and retention | Dedicated production destination with approved retention/access |
+| Resource                | Preview                                                                          | Staging                                                          | Production                                                        |
+| ----------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------- |
+| PostgreSQL              | Per-preview database or equivalent isolated cluster/database with synthetic data | Dedicated production-like database with test data                | Dedicated production system of record                             |
+| Redis/cache             | Per-preview namespace plus credentials, or disabled                              | Dedicated staging instance and credentials                       | Dedicated production instance and credentials                     |
+| Object storage          | Per-preview bucket/prefix plus credentials, or disabled                          | Dedicated staging bucket and credentials                         | Dedicated production bucket and credentials                       |
+| Encryption/signing keys | Unique ephemeral test keys                                                       | Unique staging keys                                              | Unique versioned production KMS keys                              |
+| Payment/crypto          | Mock, CLI fixture, or approved sandbox only                                      | Separate provider test-mode account/project and webhook endpoint | Live account only after provider/legal/owner gates                |
+| AI                      | Disabled, recorded fixture, or dedicated test account                            | Approved test account with non-production data                   | Live provider only after privacy, safety, budget, and owner gates |
+| Email/auth              | Sink, local capture, or dedicated test tenant                                    | Dedicated test tenant/domain with allowlisted recipients         | Approved production tenant/domain and reviewed templates          |
+| Analytics/observability | Dedicated non-production destination with synthetic identifiers                  | Dedicated staging destination and retention                      | Dedicated production destination with approved retention/access   |
 
 Production data MUST NOT be copied, sampled, restored, replayed, or exported into local, preview, or
 staging. Production secrets MUST NOT flow downward. Preview and staging credentials MUST NOT grant
@@ -161,17 +161,27 @@ fail-closed.
   private/no-store responses, disallow-all robots, synthetic data, and forward/rollback/
   roll-forward registry compatibility probes.
 
+`standing protected` evidence:
+
+- Recovery Item 3 uses one Vercel Pro custom environment bound to the exact recovery branch and
+  source SHA, Vercel Authentication, noindex/no-store headers, disallow-all robots, source-visible
+  health/readiness, Provider-safe-off environment, real desktop/mobile acceptance, and an
+  alias-only rollback/forward drill. It has zero project domains, no product journeys, no database
+  or object storage, and no Provider credentials.
+
 `required before use` and not currently claimed:
 
-- standing external preview, staging, or production hosting;
+- general per-PR Preview hosting and any Production hosting;
+- Staging database, cache, object storage, KMS, queue, Provider sandbox, or private-data service;
 - cloud databases, caches, buckets, KMS, queues, provider projects, or environment secret stores;
 - production credentials, customer data, DNS, public product indexing, or provider activation;
 - production automated encrypted backup/PITR and provider-level isolated restore; and
 - production monitoring, alerting, support, status, on-call, and independent penetration evidence.
 
 Recovery Item 3 evidence is recorded in
-`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. Its Vercel first-deployment blocker requires a
-new Owner hosting decision before Preview or Staging can be claimed.
+`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. It authorizes only the recorded protected
+acceptance shell; every later Recovery Item must update the same Staging and requires its own Owner
+approval.
 
 ## 9. Rollback and emergency actions
 

@@ -1,17 +1,17 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-04
+**Last reconciled:** 2026-08-05
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 and 2 are complete. Recovery Item 3
-implemented and locally verified its protected-staging repository foundation, pushed
-`codex/founder-acceptance-recovery`, and connected the dedicated Vercel project to
-`CPTM511/RITUVIA`; it is now Blocked because the Vercel Hobby project coerces every first
-deployment path tested to Production. All such deployments were deleted before acceptance, and
-current external truth is `live=false`, zero deployments, and zero domains. Git automatic
-deployment is disabled again. Recovery Item 4 and all product implementation remain unstarted
-pending a new Owner hosting decision. See
-`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 3 are complete. Item 3 now has
+one standing Vercel-authenticated custom Staging acceptance shell at the Owner URL recorded in
+`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. Accepted deployment
+`dpl_9KoP39Be17B4RUijhayXgpChYjLY` is `READY`, `target=null`, OIDC/custom-environment `staging`,
+source-bound to `cc3ebec5101802e8b5116bab29a6f8883d66bebc`, `live=false`, and has zero project
+domains. Health/readiness, noindex/no-store, route shutdown, desktop/mobile acceptance, isolated
+restore evidence, and alias rollback/forward pass. Git automatic deployment is disabled. Recovery
+Item 4 is dependency-ready but unapproved and unstarted; all product implementation, production,
+DNS, real funds, Providers, unrestricted AI, and public release remain stopped.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

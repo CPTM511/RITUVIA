@@ -260,10 +260,11 @@ no scheduler, provider, support mailbox, or delivery capability is composed.
 ## 11. Environment strategy
 
 The canonical, machine-verified matrix is the
-[Environment contract](21_ENVIRONMENT_CONTRACT.md). Local is the only currently implemented
-standing environment. RIT-016 proved one bounded loopback compatibility rehearsal; it did not
-provision a reusable staging service. Preview, standing staging, and production remain
-`required before use`.
+[Environment contract](21_ENVIRONMENT_CONTRACT.md). Local remains the only standing developer
+environment. Recovery Item 3 provides one Owner-approved `standing protected` custom Staging
+acceptance shell within its recorded safe-off limits; it is not general reusable Staging
+infrastructure. RIT-016 remains a separate bounded loopback compatibility rehearsal. General
+Preview and Production remain `required before use`.
 
 Never share databases, signing secrets, webhook endpoints, storage buckets, analytics projects,
 email authority, provider projects, or AI logs between environments. Never copy production secrets

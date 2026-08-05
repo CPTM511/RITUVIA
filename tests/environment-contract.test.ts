@@ -17,6 +17,11 @@ describe("environment contract policy", () => {
 
   it.each([
     ["preview status", "`required before use`", "`implemented`"],
+    [
+      "staging status",
+      "| Staging     | `staging`    | `standing protected`",
+      "| Staging     | `staging`    | `verified rehearsal`",
+    ],
     ["downward secret flow", "Production secrets MUST NOT flow downward", "Secrets may be shared"],
     [
       "non-production indexing",
