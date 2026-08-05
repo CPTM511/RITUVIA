@@ -6,6 +6,7 @@ const harness = vi.hoisted(() => ({
   end: vi.fn(),
   intakeAvailability: "disabled" as "disabled" | "enabled",
   numerologyAvailability: "disabled" as "disabled" | "enabled",
+  recoveryReady: true,
   tarotReadingAvailability: "disabled" as "disabled" | "enabled",
 }));
 
@@ -42,13 +43,13 @@ vi.mock("../server/request-observability", () => ({
 vi.mock("../server/recovery-staging", () => ({
   inspectRecoveryStagingRuntime: () => ({
     baselineSha: "f79fee6713670fdc12b33dd3182569a942782636",
-    database: "not-connected",
+    database: "connected",
     environment: "staging",
     indexing: "disabled",
     objectStorage: "not-connected",
     productionProviders: "disabled",
-    ready: true,
-    recoveryItem: 4,
+    ready: harness.recoveryReady,
+    recoveryItem: 5,
     sourceSha: "1111111111111111111111111111111111111111",
   }),
   recoveryHealthPathname: "/api/recovery/health",
@@ -69,6 +70,7 @@ describe("public shell request and crawl gate", () => {
     harness.deploymentEnvironment = "local";
     harness.intakeAvailability = "disabled";
     harness.numerologyAvailability = "enabled";
+    harness.recoveryReady = true;
     harness.tarotReadingAvailability = "disabled";
   });
 
@@ -79,7 +81,7 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(response.headers.get("x-request-id")).toBe("req_11111111111111111111111111111111");
     expect(response.headers.get("content-security-policy")).toContain("connect-src 'self'");
-    expect(response.headers.get("content-security-policy")).toContain("font-src 'none'");
+    expect(response.headers.get("content-security-policy")).toContain("font-src 'self'");
     expect(response.headers.get("content-security-policy")).toContain("object-src 'none'");
     expect(response.headers.get("content-security-policy")).toContain("script-src-attr 'none'");
     expect(response.headers.get("content-security-policy")).toContain(
@@ -92,7 +94,7 @@ describe("public shell request and crawl gate", () => {
     expect(harness.end).toHaveBeenCalledWith({ outcome: "success" });
   });
 
-  it("locks staging to the exact recovery shell, diagnostics, and disallow-all robots", async () => {
+  it("keeps the recovery shell, diagnostics, and disallow-all robots in Item 5 staging", async () => {
     harness.deploymentEnvironment = "staging";
 
     for (const pathname of [
@@ -119,16 +121,63 @@ describe("public shell request and crawl gate", () => {
   });
 
   it.each([
+    ["GET", "/en/intake"],
+    ["GET", "/en/tarot/one-card"],
+    ["GET", "/en/sanctuary"],
+    ["GET", "/en/revisit"],
+    ["POST", "/api/v1/anonymous/session"],
+    ["POST", "/api/v1/intake/evaluate"],
+    ["POST", "/api/v1/readings/tarot"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/intentions"],
+    ["GET", "/api/v1/intentions/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/ritual-sessions"],
+    ["POST", "/api/v1/ritual-sessions/33333333-3333-4333-8333-333333333333/complete"],
+    ["POST", "/api/v1/journal-entries"],
+    ["GET", "/api/v1/journal-entries/33333333-3333-4333-8333-333333333333"],
+    ["GET", "/api/v1/revisits"],
+    ["POST", "/api/v1/revisits"],
+    ["POST", "/api/v1/revisits/33333333-3333-4333-8333-333333333333/complete"],
+  ])("allows only the bounded Item 5 core request: %s %s", async (method, pathname) => {
+    harness.deploymentEnvironment = "staging";
+
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("x-rituvia-environment")).toBe("staging");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+  });
+
+  it("fails the Item 5 product surface closed when staging readiness is incomplete", async () => {
+    harness.deploymentEnvironment = "staging";
+    harness.recoveryReady = false;
+
+    const product = await proxy(request("/en/intake"));
+    const readiness = await proxy(request("/api/recovery/readiness"));
+
+    expect(product.status).toBe(404);
+    expect(readiness.status).toBe(200);
+  });
+
+  it.each([
     ["GET", "/"],
     ["GET", "/en"],
     ["GET", "/en/privacy"],
-    ["POST", "/api/v1/anonymous/session"],
+    ["GET", "/api/v1/anonymous/session"],
     ["GET", "/api/v1/catalog"],
+    ["GET", "/api/v1/entitlements"],
+    ["GET", "/api/v1/me"],
+    ["POST", "/api/v1/orders"],
+    ["GET", "/en/tarot/three-card"],
+    ["GET", "/en/intake?question=private-canary"],
+    ["POST", "/api/v1/revisits/33333333-3333-4333-8333-333333333333/reminder"],
     ["GET", "/sitemap.xml"],
     ["GET", "/recovery?private=canary"],
     ["POST", "/recovery"],
     ["GET", "/api/recovery/health/"],
-  ])("rejects every non-Item-4 staging surface: %s %s", async (method, pathname) => {
+  ])("rejects every non-Item-5 staging surface: %s %s", async (method, pathname) => {
     harness.deploymentEnvironment = "staging";
 
     const response = await proxy(request(pathname, { method }));

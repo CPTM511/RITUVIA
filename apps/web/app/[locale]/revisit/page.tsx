@@ -42,6 +42,7 @@ export default async function RevisitPage({ params }: RevisitPageProps) {
   const messages = getRevisitMessages(locale);
   return (
     <PublicSiteFrame
+      accountNavigation={configuration.deploymentEnvironment !== "staging"}
       brandName={configuration.client.brand.name}
       brandTagline={configuration.client.brand.tagline}
       currentPage={null}
@@ -56,7 +57,11 @@ export default async function RevisitPage({ params }: RevisitPageProps) {
           <p className="experience-boundary">{messages.reminderBoundary}</p>
           <p className="experience-privacy">{messages.privacy}</p>
         </header>
-        <RevisitExperience messages={messages} sanctuaryHref={localeSanctuaryPath(locale)} />
+        <RevisitExperience
+          coreLoopOnly={configuration.deploymentEnvironment === "staging"}
+          messages={messages}
+          sanctuaryHref={localeSanctuaryPath(locale)}
+        />
       </main>
     </PublicSiteFrame>
   );

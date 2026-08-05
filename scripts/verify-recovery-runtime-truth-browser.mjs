@@ -9,7 +9,7 @@ const stagingUrl = process.env.RITUVIA_RECOVERY_STAGING_URL;
 assert.ok(stagingUrl, "RITUVIA_RECOVERY_STAGING_URL is required.");
 
 const artifactDirectory = path.resolve(
-  process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-4",
+  process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-5-runtime",
 );
 await mkdir(artifactDirectory, { recursive: true });
 
@@ -17,9 +17,9 @@ const expectedResponses = Object.freeze([
   Object.freeze({ method: "GET", pathname: "/api/recovery/health", status: 200 }),
   Object.freeze({ method: "GET", pathname: "/api/recovery/readiness", status: 200 }),
   Object.freeze({
-    method: "POST",
-    pathname: "/api/v1/ritual-sessions/33333333-3333-4333-8333-333333333333/complete",
-    status: 404,
+    method: "GET",
+    pathname: "/en/intake",
+    status: 200,
   }),
 ]);
 

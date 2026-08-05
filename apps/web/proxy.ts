@@ -46,7 +46,7 @@ const shellContentSecurityPolicy = [
   "base-uri 'none'",
   "connect-src 'self'",
   "default-src 'self'",
-  "font-src 'none'",
+  "font-src 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'",
@@ -280,6 +280,73 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
 
+const recoveryItem5PagePathnames = Object.freeze([
+  localeQuestionIntakePath("en"),
+  localeTarotOneCardPath("en"),
+  localeSanctuaryPath("en"),
+  localeRevisitPath("en"),
+]);
+
+const recoveryItem5ApiPatterns = Object.freeze([
+  { methods: ["POST"], pattern: /^\/api\/v1\/anonymous\/session$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/intake\/evaluate$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/readings\/tarot$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/readings/${uuidPathPart}$`, "u") },
+  { methods: ["POST"], pattern: /^\/api\/v1\/intentions$/u },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/intentions/${uuidPathPart}$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/ritual-sessions$/u },
+  {
+    methods: ["GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/ritual-sessions/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/ritual-sessions/${uuidPathPart}/complete$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/journal-entries$/u },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/journal-entries/${uuidPathPart}$`, "u"),
+  },
+  { methods: ["GET", "POST"], pattern: /^\/api\/v1\/revisits$/u },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}/complete$`, "u"),
+  },
+] as const);
+
+const isRecoveryItem5DocumentRequest = (request: NextRequest): boolean => {
+  const pathname = request.nextUrl.pathname;
+  const matched = recoveryItem5PagePathnames.some(
+    (pagePathname) =>
+      pathname === pagePathname ||
+      pathname === `${pagePathname}.rsc` ||
+      pathname.startsWith(`${pagePathname}.segments/`),
+  );
+  if (!matched || !isSafeReadMethod(request.method)) return false;
+  const frameworkRepresentation = isFrameworkRepresentationRequest(request);
+  return (
+    (request.nextUrl.search === "" || hasOnlyReviewedFrameworkQuery(request)) &&
+    (!frameworkRepresentation || hasReviewedFrameworkNavigationSignal(request))
+  );
+};
+
+const isRecoveryItem5ApiRequest = (request: NextRequest): boolean =>
+  request.nextUrl.search === "" &&
+  !isFrameworkRepresentationRequest(request) &&
+  recoveryItem5ApiPatterns.some(
+    ({ methods, pattern }) =>
+      pattern.test(request.nextUrl.pathname) &&
+      (methods as readonly string[]).includes(request.method),
+  );
+
 const isQuestionIntakePagePathname = (pathname: string): boolean =>
   pathname === questionIntakePagePathname ||
   pathname === `${questionIntakePagePathname}.rsc` ||
@@ -325,6 +392,7 @@ const recoveryStagingResponse = (
   request: NextRequest,
   downstreamHeaders: Headers,
 ): NextResponse => {
+  const status = inspectRecoveryStagingRuntime();
   const reviewedIconRequest =
     isSafeReadMethod(request.method) &&
     request.nextUrl.pathname === "/icon.svg" &&
@@ -335,15 +403,23 @@ const recoveryStagingResponse = (
     (request.nextUrl.pathname === recoveryStagingPathname ||
       request.nextUrl.pathname === recoveryHealthPathname ||
       request.nextUrl.pathname === recoveryReadinessPathname);
+  const reviewedProductAssetRequest =
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.search === "" &&
+    request.nextUrl.pathname.startsWith("/images/");
+  const reviewedCoreLoopRequest =
+    status.ready && (isRecoveryItem5DocumentRequest(request) || isRecoveryItem5ApiRequest(request));
   const response =
     request.nextUrl.pathname === "/robots.txt" &&
     isSafeReadMethod(request.method) &&
     request.nextUrl.search === ""
       ? discoveryResponse(request)
-      : exactReadRequest || reviewedIconRequest
+      : exactReadRequest ||
+          reviewedIconRequest ||
+          reviewedProductAssetRequest ||
+          reviewedCoreLoopRequest
         ? NextResponse.next({ request: { headers: downstreamHeaders } })
         : new NextResponse(null, { status: 404 });
-  const status = inspectRecoveryStagingRuntime();
 
   response.headers.set("cache-control", "private, no-store, max-age=0");
   response.headers.set("content-security-policy", shellContentSecurityPolicy);

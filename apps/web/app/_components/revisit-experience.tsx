@@ -154,11 +154,16 @@ const statusLabel = (resource: RevisitResourceV1, messages: RevisitMessages): st
 };
 
 type RevisitExperienceProps = Readonly<{
+  coreLoopOnly?: boolean;
   messages: RevisitMessages;
   sanctuaryHref: LocalActionHref;
 }>;
 
-export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperienceProps) {
+export function RevisitExperience({
+  coreLoopOnly = false,
+  messages,
+  sanctuaryHref,
+}: RevisitExperienceProps) {
   const [completionId, setCompletionId] = useState<string | null>(null);
   const [customDate, setCustomDate] = useState("");
   const [intention, setIntention] = useState<Intention | null>(null);
@@ -252,11 +257,13 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
               headers: { accept: "application/json" },
             })
           : Promise.resolve(null),
-        fetch(revisitEndpoints.reminders, {
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: { accept: "application/json" },
-        }),
+        coreLoopOnly
+          ? Promise.resolve(null)
+          : fetch(revisitEndpoints.reminders, {
+              cache: "no-store",
+              credentials: "same-origin",
+              headers: { accept: "application/json" },
+            }),
       ]);
       const list = listResponse.ok ? parseList((await listResponse.json()) as unknown) : null;
       if (list === null) throw new TypeError("invalid revisit list");
@@ -266,7 +273,11 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
           : null;
       setRevisits(list.items);
       setIntention(selectedIntention);
-      if (reminderResponse.ok) {
+      if (coreLoopOnly) {
+        accountCsrfToken.current = null;
+        setReminderAccountAvailable(false);
+        setReminders([]);
+      } else if (reminderResponse?.ok === true) {
         const parsedReminders = parseReminderList((await reminderResponse.json()) as unknown);
         if (parsedReminders === null) throw new TypeError("invalid reminder list");
         accountCsrfToken.current = null;
@@ -281,7 +292,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
       setPhase(navigator.onLine ? "error" : "offline");
       setMessage(messages.errorDescription);
     }
-  }, [messages.errorDescription]);
+  }, [coreLoopOnly, messages.errorDescription]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -731,7 +742,9 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
               <>
                 <p>{resource.isDue ? messages.due : messages.early}</p>
                 <div className="revisit-reminder-control">
-                  {reminderAccountAvailable === false ? (
+                  {coreLoopOnly ? (
+                    <p>{messages.noReminder}</p>
+                  ) : reminderAccountAvailable === false ? (
                     <p>{messages.reminderSignIn}</p>
                   ) : reminderAccountAvailable === null ? (
                     <p>{messages.reminderUnavailable}</p>

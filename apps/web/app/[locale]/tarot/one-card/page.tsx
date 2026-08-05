@@ -43,6 +43,7 @@ export default async function TarotOneCardPage({ params }: TarotOneCardPageProps
 
   return (
     <PublicSiteFrame
+      accountNavigation={configuration.deploymentEnvironment !== "staging"}
       brandName={configuration.client.brand.name}
       brandTagline={configuration.client.brand.tagline}
       currentPage={null}

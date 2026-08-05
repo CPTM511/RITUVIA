@@ -47,6 +47,7 @@ export default async function SanctuaryPage({ params }: SanctuaryPageProps) {
 
   return (
     <PublicSiteFrame
+      accountNavigation={configuration.deploymentEnvironment !== "staging"}
       brandName={configuration.client.brand.name}
       brandTagline={configuration.client.brand.tagline}
       currentPage={null}
@@ -63,6 +64,7 @@ export default async function SanctuaryPage({ params }: SanctuaryPageProps) {
         </header>
         <SanctuaryFlow
           accountHref={localeAccountPath(locale)}
+          coreLoopOnly={configuration.deploymentEnvironment === "staging"}
           locale={locale}
           messages={messages}
           readingHref={localeTarotOneCardPath(locale)}

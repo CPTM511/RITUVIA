@@ -33,7 +33,8 @@ export const evaluateTarotReadingAvailability = (
 ): TarotReadingAvailability => {
   try {
     if (
-      configuration.deploymentEnvironment !== "local" ||
+      (configuration.deploymentEnvironment !== "local" &&
+        configuration.deploymentEnvironment !== "staging") ||
       configuration.databaseUrl === undefined ||
       configuration.tarotReadingIntegrityKeyring === undefined ||
       tarotReadingMvpCatalog.catalogId !== "rituvia.major-arcana-catalog" ||

@@ -16,6 +16,7 @@ import { AccountNavigation } from "./account-experience";
 import { ConnectionNotice } from "./connection-notice";
 
 type PublicSiteFrameProps = Readonly<{
+  accountNavigation?: boolean;
   brandName: string;
   brandTagline: string;
   children: ReactNode;
@@ -31,6 +32,7 @@ type NavigationLink = Readonly<{
 }>;
 
 export function PublicSiteFrame({
+  accountNavigation = true,
   brandName,
   brandTagline,
   children,
@@ -121,13 +123,15 @@ export function PublicSiteFrame({
                 {messages.navigation.localeHint}
               </span>
             </div>
-            <AccountNavigation
-              accountHref={localeAccountPath(locale)}
-              accountLabel={messages.navigation.account}
-              loadingLabel={messages.navigation.account}
-              signInHref={localeSignInPath(locale)}
-              signInLabel={messages.navigation.signIn}
-            />
+            {accountNavigation ? (
+              <AccountNavigation
+                accountHref={localeAccountPath(locale)}
+                accountLabel={messages.navigation.account}
+                loadingLabel={messages.navigation.account}
+                signInHref={localeSignInPath(locale)}
+                signInLabel={messages.navigation.signIn}
+              />
+            ) : null}
           </div>
         </div>
       </header>

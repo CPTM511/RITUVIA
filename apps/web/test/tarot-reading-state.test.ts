@@ -20,8 +20,14 @@ const configuredLocalRuntime = Object.freeze({
 });
 
 describe("tarot reading activation state", () => {
-  it("enables the approved catalog only for a fully configured local runtime", () => {
+  it("enables the approved catalog only for a fully configured local or staging runtime", () => {
     expect(evaluateTarotReadingAvailability(configuredLocalRuntime, "2026-07-18")).toBe("enabled");
+    expect(
+      evaluateTarotReadingAvailability(
+        { ...configuredLocalRuntime, deploymentEnvironment: "staging" },
+        "2026-07-18",
+      ),
+    ).toBe("enabled");
     expect(tarotReadingMvpCatalog.editorial.approvalReference).toBe(
       "owner-directive:2026-07-18-major-arcana",
     );
@@ -49,7 +55,6 @@ describe("tarot reading activation state", () => {
     { ...configuredLocalRuntime, databaseUrl: undefined },
     { ...configuredLocalRuntime, tarotReadingIntegrityKeyring: undefined },
     { ...configuredLocalRuntime, deploymentEnvironment: "preview" as const },
-    { ...configuredLocalRuntime, deploymentEnvironment: "staging" as const },
     { ...configuredLocalRuntime, deploymentEnvironment: "production" as const },
   ])("fails closed when runtime approval prerequisites are absent", (configuration) => {
     expect(evaluateTarotReadingAvailability(configuration, "2026-07-18")).toBe("disabled");

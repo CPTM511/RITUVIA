@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { recoveryStagingMessages as messages } from "../../_i18n/recovery-staging-messages";
@@ -74,6 +75,7 @@ export default function RecoveryStagingPage() {
           </ul>
 
           <nav aria-label="Recovery diagnostics" className="diagnostics">
+            <Link href="/en/intake">{messages.coreLoopLink}</Link>
             <a href={recoveryHealthPathname}>{messages.healthLink}</a>
             <a href={recoveryReadinessPathname}>{messages.readinessLink}</a>
           </nav>

@@ -42,10 +42,10 @@ const probes: readonly ProbeDefinition[] = Object.freeze([
     pathname: "/api/recovery/readiness",
   },
   {
-    expectedStatus: 404,
+    expectedStatus: 200,
     label: messages.runtimeCoreLabel,
-    method: "POST",
-    pathname: "/api/v1/ritual-sessions/33333333-3333-4333-8333-333333333333/complete",
+    method: "GET",
+    pathname: "/en/intake",
   },
 ]);
 
