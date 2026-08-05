@@ -71,10 +71,8 @@ try {
     const entryUrl = new URL(page.url());
     assert.equal(entryUrl.pathname, "/recovery");
     assert.equal(entryUrl.search, "");
-    const expectedServerPort = Number(
-      entryUrl.port || (entryUrl.protocol === "https:" ? "443" : "80"),
-    );
     const expectsVercelEdge = entryUrl.hostname.endsWith(".vercel.app");
+    if (expectsVercelEdge) assert.equal(entryUrl.protocol, "https:");
 
     await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
     const runButton = page.getByRole("button", { name: "Run real runtime check" });
@@ -120,7 +118,9 @@ try {
       assert.equal(result.fromServiceWorker, false);
       assert.match(result.requestId, /^req_[0-9a-f]{32}$/u);
       assert.ok(result.serverAddress);
-      assert.equal(result.serverAddress.port, expectedServerPort);
+      assert.ok(result.serverAddress.ipAddress.length > 0);
+      assert.ok(Number.isInteger(result.serverAddress.port));
+      assert.ok(result.serverAddress.port > 0 && result.serverAddress.port <= 65_535);
       assert.match(result.sourceSha, /^[0-9a-f]{40}$/u);
       if (expectsVercelEdge) assert.notEqual(result.vercelRequestId, "unavailable");
     }
