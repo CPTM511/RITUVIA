@@ -3,15 +3,17 @@
 **Last reconciled:** 2026-08-05
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 3 are complete. Item 3 now has
-one standing Vercel-authenticated custom Staging acceptance shell at the Owner URL recorded in
-`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. Accepted deployment
-`dpl_9KoP39Be17B4RUijhayXgpChYjLY` is `READY`, `target=null`, OIDC/custom-environment `staging`,
-source-bound to `cc3ebec5101802e8b5116bab29a6f8883d66bebc`, `live=false`, and has zero project
-domains. Health/readiness, noindex/no-store, route shutdown, desktop/mobile acceptance, isolated
-restore evidence, and alias rollback/forward pass. Git automatic deployment is disabled. Recovery
-Item 4 is dependency-ready but unapproved and unstarted; all product implementation, production,
-DNS, real funds, Providers, unrestricted AI, and public release remain stopped.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 4 are complete. Item 4 updates
+the standing Vercel-authenticated custom Staging shell with source-bound real runtime evidence at the
+Owner URL recorded in `docs/recovery/ITEM_4_RUNTIME_TRUTH_EVIDENCE.md`. Accepted deployment
+`dpl_8seYr3Rf4SHk9Mm9GgLQdeD1JW5E` is `READY`, `target=null`, OIDC/custom-environment `staging`,
+source-bound to `19210b28ed56390bfeb65cd614d7fcf97f68db9b`, `live=false`, and has zero project
+domains. Desktop/mobile zero-fulfillment browser checks record exact `200/200/404` statuses,
+correlation/Vercel request IDs, no Service Worker, no blocking axe finding, and no layout overflow.
+Real isolated PostgreSQL E2E, 32 migrations, idempotent seed, non-empty backup/restore, production
+build, and focused transport/schema gates pass. Git automatic deployment is disabled. Recovery Item
+5 is dependency-ready but unapproved and unstarted; all product implementation, production, DNS,
+real funds, Providers, unrestricted AI, and public release remain stopped.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

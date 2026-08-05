@@ -84,7 +84,8 @@
 
 ## Item 4 — Real non-mocked E2E and runtime truth
 
-- **Status:** Ready — Item 3 dependency is complete; explicit Owner approval is still required.
+- **Status:** Complete — Owner approved execution on 2026-08-05; protected Staging evidence is ready
+  for Owner review in `docs/recovery/ITEM_4_RUNTIME_TRUTH_EVIDENCE.md`.
 - **Founder Journey IDs:** FJ-00, FJ-01, FJ-06.
 - **Exact user-visible outcome:** Owner can distinguish real backend behavior from mocked browser
   tests and inspect exact request/status runtime evidence.
@@ -101,11 +102,12 @@
 - **Explicit exclusions:** Do not fix the core loop, add features, activate Providers, or replace
   failures with mocks.
 - **STOP condition:** Any hidden mock, staging/local divergence, unavailable database evidence, or
-  untraceable request.
+  untraceable request. None occurred in the accepted final deployment. Stop after Item 4; Item 5
+  requires a separate explicit Owner approval.
 
 ## Item 5 — Core reflection loop
 
-- **Status:** Planned; depends on Item 4.
+- **Status:** Ready — Item 4 dependency is complete; explicit Owner approval is still required.
 - **Founder Journey IDs:** FJ-01, FJ-06.
 - **Exact user-visible outcome:** An adult anonymously completes intake → one-card reading →
   intention → small action → free ritual → private reflection → revisit without payment.
