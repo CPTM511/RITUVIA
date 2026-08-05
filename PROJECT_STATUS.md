@@ -3,17 +3,21 @@
 **Last reconciled:** 2026-08-05
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 4 are complete. Item 4 updates
-the standing Vercel-authenticated custom Staging shell with source-bound real runtime evidence at the
-Owner URL recorded in `docs/recovery/ITEM_4_RUNTIME_TRUTH_EVIDENCE.md`. Accepted deployment
-`dpl_8seYr3Rf4SHk9Mm9GgLQdeD1JW5E` is `READY`, `target=null`, OIDC/custom-environment `staging`,
-source-bound to `19210b28ed56390bfeb65cd614d7fcf97f68db9b`, `live=false`, and has zero project
-domains. Desktop/mobile zero-fulfillment browser checks record exact `200/200/404` statuses,
-correlation/Vercel request IDs, no Service Worker, no blocking axe finding, and no layout overflow.
-Real isolated PostgreSQL E2E, 32 migrations, idempotent seed, non-empty backup/restore, production
-build, and focused transport/schema gates pass. Git automatic deployment is disabled. Recovery Item
-5 is dependency-ready but unapproved and unstarted; all product implementation, production, DNS,
-real funds, Providers, unrestricted AI, and public release remain stopped.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 4 are complete. Item 5 was
+explicitly approved and deployed to Vercel-authenticated custom Staging as
+`dpl_D8xgNqiqV8SQjotYcH8NT5zmdqs8`, source
+`36936caed5b193a64747fbfb6b5787d451721b5b`. Vercel reports `READY`, `target=null`,
+OIDC/custom-environment `staging`, `live=false`, `private=true`, one `iad1` runtime region, SSO on
+all previews, and zero automation bypass secrets. Exact Node `24.18.0` and pnpm `11.13.1` pass 199
+focused tests, affected formatting/lint/type gates, secret scan, production Web build, and a local
+zero-mock desktop/mobile core journey with offline retry, encrypted private-state reload, and
+Revisit completion. A non-empty PostgreSQL `17.10` backup restores 32 successful migrations plus
+the preserved rolled-back attempt and contains no private canary plaintext. Item 5 remains blocked
+at hosted browser acceptance because the current regional network misresolves and resets
+`*.vercel.app` before HTTP; the exact Owner URL and test steps are in
+`docs/recovery/ITEM_5_CORE_LOOP_EVIDENCE.md`. Git automatic deployment is disabled. Item 6 is
+unapproved and unstarted; production, DNS, real funds, Providers, unrestricted AI, and public
+release remain stopped.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

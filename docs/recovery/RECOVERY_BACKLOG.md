@@ -2,9 +2,9 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 and 2 are complete through the approved Phase 0 archive and
-> this Prompt B governance activation. Item 3 and every later item require a new explicit Owner
-> approval. One Codex run may execute exactly one approved item and must then STOP.
+> Repository status is NO-GO. Items 1 through 4 are complete. Item 5 was explicitly approved and
+> is blocked only at hosted browser acceptance; Item 6 and every later item require a new explicit
+> Owner approval. One Codex run may execute exactly one approved item and must then STOP.
 
 ## Operating rules
 
@@ -107,7 +107,11 @@
 
 ## Item 5 — Core reflection loop
 
-- **Status:** Ready — Item 4 dependency is complete; explicit Owner approval is still required.
+- **Status:** Blocked at hosted browser acceptance — Owner approved and the exact source is `READY`
+  in protected custom Staging. Local zero-mock desktop/mobile, production build, encryption, and
+  non-empty restore gates pass. Current regional DNS/TLS routing prevents a hosted browser from
+  reaching Vercel before HTTP; see `docs/recovery/ITEM_5_CORE_LOOP_EVIDENCE.md`. Item 5 is not
+  complete and Item 6 cannot start.
 - **Founder Journey IDs:** FJ-01, FJ-06.
 - **Exact user-visible outcome:** An adult anonymously completes intake → one-card reading →
   intention → small action → free ritual → private reflection → revisit without payment.
@@ -124,7 +128,8 @@
 - **Explicit exclusions:** No Tarot expansion, paid ritual, identity requirement, Provider AI,
   SEO/GEO, additional locale, or production activation.
 - **STOP condition:** Any happy-path 4xx/5xx, private prose leak, paid gate, accessibility failure,
-  or restore failure.
+  restore failure, or inability to produce hosted desktop/mobile evidence. The hosted-evidence
+  condition is active; stop after recording the deployment and Owner test steps.
 
 ## Item 6 — Golden shell and en/zh-Hans
 
