@@ -49,7 +49,7 @@ vi.mock("../server/recovery-staging", () => ({
     objectStorage: "not-connected",
     productionProviders: "disabled",
     ready: harness.recoveryReady,
-    recoveryItem: 5,
+    recoveryItem: 6,
     sourceSha: "1111111111111111111111111111111111111111",
   }),
   recoveryHealthPathname: "/api/recovery/health",
@@ -94,7 +94,7 @@ describe("public shell request and crawl gate", () => {
     expect(harness.end).toHaveBeenCalledWith({ outcome: "success" });
   });
 
-  it("keeps the recovery shell, diagnostics, and disallow-all robots in Item 5 staging", async () => {
+  it("keeps the recovery shell, diagnostics, and disallow-all robots in Item 6 staging", async () => {
     harness.deploymentEnvironment = "staging";
 
     for (const pathname of [
@@ -121,6 +121,8 @@ describe("public shell request and crawl gate", () => {
   });
 
   it.each([
+    ["GET", "/en"],
+    ["GET", "/zh-Hans"],
     ["GET", "/en/intake"],
     ["GET", "/en/tarot/one-card"],
     ["GET", "/en/sanctuary"],
@@ -138,23 +140,26 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/api/v1/revisits"],
     ["POST", "/api/v1/revisits"],
     ["POST", "/api/v1/revisits/33333333-3333-4333-8333-333333333333/complete"],
-  ])("allows only the bounded Item 5 core request: %s %s", async (method, pathname) => {
-    harness.deploymentEnvironment = "staging";
+  ])(
+    "allows only the bounded Item 6 shell or preserved core request: %s %s",
+    async (method, pathname) => {
+      harness.deploymentEnvironment = "staging";
 
-    const response = await proxy(request(pathname, { method }));
+      const response = await proxy(request(pathname, { method }));
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get("x-middleware-next")).toBe("1");
-    expect(response.headers.get("x-rituvia-environment")).toBe("staging");
-    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
-  });
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-rituvia-environment")).toBe("staging");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    },
+  );
 
-  it("fails the Item 5 product surface closed when staging readiness is incomplete", async () => {
+  it("fails the Item 6 product surface closed when staging readiness is incomplete", async () => {
     harness.deploymentEnvironment = "staging";
     harness.recoveryReady = false;
 
-    const product = await proxy(request("/en/intake"));
+    const product = await proxy(request("/zh-Hans"));
     const readiness = await proxy(request("/api/recovery/readiness"));
 
     expect(product.status).toBe(404);
@@ -163,8 +168,8 @@ describe("public shell request and crawl gate", () => {
 
   it.each([
     ["GET", "/"],
-    ["GET", "/en"],
     ["GET", "/en/privacy"],
+    ["GET", "/zh-Hans/intake"],
     ["GET", "/api/v1/anonymous/session"],
     ["GET", "/api/v1/catalog"],
     ["GET", "/api/v1/entitlements"],
@@ -177,7 +182,7 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/recovery?private=canary"],
     ["POST", "/recovery"],
     ["GET", "/api/recovery/health/"],
-  ])("rejects every non-Item-5 staging surface: %s %s", async (method, pathname) => {
+  ])("rejects every non-Item-6 staging surface: %s %s", async (method, pathname) => {
     harness.deploymentEnvironment = "staging";
 
     const response = await proxy(request(pathname, { method }));

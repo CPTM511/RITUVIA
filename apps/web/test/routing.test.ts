@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  goldenShellHomePath,
+  goldenShellLocales,
+  parseGoldenShellLocale,
+} from "../app/_i18n/golden-shell-messages";
 import { indexableRitualReflectionPathnames } from "../app/_i18n/ritual-reflection-public-routes";
 import { indexableTarotPathnames } from "../app/_i18n/tarot-public-routes";
 import {
@@ -34,6 +39,18 @@ import {
 } from "../app/_i18n/routing";
 
 describe("Web locale routing", () => {
+  it("admits only the reviewed protected golden-shell locales", () => {
+    expect(goldenShellLocales).toEqual(["en", "zh-Hans"]);
+    expect(parseGoldenShellLocale("en")).toBe("en");
+    expect(parseGoldenShellLocale("zh-Hans")).toBe("zh-Hans");
+    expect(goldenShellHomePath("en")).toBe("/en");
+    expect(goldenShellHomePath("zh-Hans")).toBe("/zh-Hans");
+
+    for (const value of [undefined, null, "", "EN", "zh", "zh-hans", "zh-Hant", "fr"]) {
+      expect(parseGoldenShellLocale(value)).toBeNull();
+    }
+  });
+
   it("activates only exact reviewed English", () => {
     expect(supportedLocales).toEqual(["en"]);
     expect(defaultLocale).toBe("en");

@@ -2,16 +2,18 @@ export const recoveryStagingMessages = Object.freeze({
   badge: "Founder Acceptance Recovery",
   baselineLabel: "Approved recovery baseline",
   boundaries: Object.freeze([
-    "Recovery Item 5 enables only the anonymous intake, one-card reflection, intention, free ritual, private journal, and Revisit path.",
+    "Recovery Item 6 adds only the owner-reviewed English and Simplified Chinese golden home shell while preserving the Item 5 English anonymous core loop.",
     "The dedicated staging database contains synthetic recovery evidence only; object storage remains disconnected.",
-    "Account, reminder, catalog purchase, entitlement, checkout, and paid ritual requests remain outside this staging slice.",
+    "The Simplified Chinese shell does not enter an English journey; account, Provider AI, payment, and Item 7+ product requests remain outside this staging slice.",
     "Production Providers, real payments, unrestricted AI, DNS, and public release remain off.",
   ]),
-  coreLoopLink: "Start the anonymous core loop",
+  chineseShellLink: "Open the Simplified Chinese golden shell",
+  coreLoopLink: "Start the English anonymous core loop",
+  englishShellLink: "Open the English golden shell",
   environmentLabel: "Environment",
   healthLink: "Open liveness JSON",
   intro:
-    "This protected shell exposes only the Recovery Item 5 anonymous core loop and source-bound diagnostics.",
+    "This protected shell exposes the Recovery Item 6 bilingual golden home shell, the preserved English anonymous core loop, and source-bound diagnostics.",
   itemLabel: "Recovery item",
   offline: "Offline / degraded: this already-loaded acceptance shell remains readable.",
   online: "Online: protected staging checks are available.",
@@ -19,7 +21,7 @@ export const recoveryStagingMessages = Object.freeze({
     "STOP: readiness failed. Do not begin another recovery item or treat this deployment as accepted.",
   readinessLink: "Open readiness JSON",
   readinessPassed:
-    "Ready: source identity, database, privacy keys, and Item 5 safe-off controls passed.",
+    "Ready: source identity, database, privacy keys, Item 5 core-loop controls, and Item 6 safe-off boundaries passed.",
   runtimeCoreLabel: "Anonymous intake page request",
   runtimeEyebrow: "Zero-fulfillment runtime evidence",
   runtimeFailed:

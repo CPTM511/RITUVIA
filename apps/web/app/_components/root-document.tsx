@@ -3,11 +3,12 @@ import type { ReactNode } from "react";
 
 import { RuntimeConfigurationProvider } from "../../config/client-provider";
 import { getWebRuntimeConfiguration } from "../../config/server";
-import { getTextDirection, type Locale } from "../_i18n/routing";
+import type { GoldenShellLocale } from "../_i18n/golden-shell-messages";
+import { getTextDirection } from "../_i18n/routing";
 
 type RootDocumentProps = Readonly<{
   children: ReactNode;
-  locale: Locale;
+  locale: GoldenShellLocale;
 }>;
 
 export function RootDocument({ children, locale }: RootDocumentProps) {

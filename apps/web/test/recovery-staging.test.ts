@@ -26,7 +26,7 @@ import { inspectRecoveryStagingRuntime } from "../server/recovery-staging";
 
 const sourceSha = "1111111111111111111111111111111111111111";
 
-describe("Recovery Item 5 runtime identity", () => {
+describe("Recovery Item 6 runtime identity", () => {
   beforeEach(() => {
     harness.anonymousSessionPolicy = {};
     harness.databaseUrl = "postgresql://staging.example.invalid/rituvia";
@@ -50,7 +50,7 @@ describe("Recovery Item 5 runtime identity", () => {
       objectStorage: "not-connected",
       productionProviders: "disabled",
       ready: true,
-      recoveryItem: 5,
+      recoveryItem: 6,
       sourceSha,
     });
   });

@@ -22,7 +22,7 @@ export type RecoveryStagingRuntimeStatus = Readonly<{
   objectStorage: "not-connected";
   productionProviders: "disabled";
   ready: boolean;
-  recoveryItem: 5;
+  recoveryItem: 6;
   sourceSha: string;
 }>;
 
@@ -58,7 +58,7 @@ export const inspectRecoveryStagingRuntime = (
     productionProviders: "disabled",
     ready:
       deploymentEnvironment === "staging" && sourceIdentityValid && safeOff && coreLoopConfigured,
-    recoveryItem: 5,
+    recoveryItem: 6,
     sourceSha: sourceIdentityValid ? sourceSha : "unavailable",
   });
 };

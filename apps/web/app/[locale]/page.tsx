@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 
 import { SiteShell } from "../_components/site-shell";
 import { getWebRuntimeConfiguration } from "../../config/server";
-import { createPublicPageMetadata } from "../_i18n/metadata";
-import { getMessages } from "../_i18n/messages";
-import { parseLocale, supportedLocales, type Locale } from "../_i18n/routing";
-import { loadNumerologyAvailability } from "../../server/numerology-state";
+import {
+  getGoldenShellMessages,
+  goldenShellHomePath,
+  goldenShellLocales,
+  parseGoldenShellLocale,
+  type GoldenShellLocale,
+} from "../_i18n/golden-shell-messages";
 
 type LocalePageProps = Readonly<{
   params: Promise<Readonly<{ locale: string }>>;
@@ -14,26 +17,32 @@ type LocalePageProps = Readonly<{
 
 export const dynamicParams = false;
 
-const resolvePageLocale = async (params: LocalePageProps["params"]): Promise<Locale> => {
-  const locale = parseLocale((await params).locale);
+const resolvePageLocale = async (params: LocalePageProps["params"]): Promise<GoldenShellLocale> => {
+  const locale = parseGoldenShellLocale((await params).locale);
   if (locale === null) notFound();
   return locale;
 };
 
-export const generateStaticParams = () => supportedLocales.map((locale) => ({ locale }));
+export const generateStaticParams = () => goldenShellLocales.map((locale) => ({ locale }));
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const locale = await resolvePageLocale(params);
   const configuration = getWebRuntimeConfiguration();
+  const messages = getGoldenShellMessages(locale);
+  const canonical = new URL(
+    goldenShellHomePath(locale),
+    configuration.brand.canonicalOrigin,
+  ).toString();
 
-  return createPublicPageMetadata({
-    brandName: configuration.brand.name,
-    canonicalOrigin: configuration.brand.canonicalOrigin,
-    deploymentEnvironment: configuration.deploymentEnvironment,
-    locale,
-    messages: getMessages(locale),
-    page: "home",
-  });
+  return {
+    alternates: locale === "en" ? { canonical } : undefined,
+    description: messages.metadata.description,
+    robots:
+      configuration.deploymentEnvironment === "production" && locale === "en"
+        ? undefined
+        : { follow: false, index: false, nocache: true },
+    title: `${configuration.brand.name} — ${messages.metadata.title}`,
+  };
 }
 
 export default async function LocalePage({ params }: LocalePageProps) {
@@ -43,11 +52,8 @@ export default async function LocalePage({ params }: LocalePageProps) {
   return (
     <SiteShell
       brandName={configuration.client.brand.name}
-      brandTagline={configuration.client.brand.tagline}
-      canonicalOrigin={configuration.brand.canonicalOrigin}
       locale={locale}
-      messages={getMessages(locale)}
-      numerologyEnabled={loadNumerologyAvailability() === "enabled"}
+      messages={getGoldenShellMessages(locale)}
     />
   );
 }

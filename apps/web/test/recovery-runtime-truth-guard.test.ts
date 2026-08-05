@@ -11,7 +11,7 @@ const mockedFullLoopVerifier = readFileSync(
   "utf8",
 );
 
-describe("Recovery Item 5 mock detection guard", () => {
+describe("Recovery Item 6 preserved runtime-truth guard", () => {
   it("keeps the legacy full-loop browser evidence explicitly classified as mocked", () => {
     expect(mockedFullLoopVerifier).toContain('context.route("**/api/v1/**"');
     expect(mockedFullLoopVerifier).toContain("route.fulfill");

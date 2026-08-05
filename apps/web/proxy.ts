@@ -19,6 +19,7 @@ import {
   isPublicShellPathname,
 } from "./app/_i18n/public-routes";
 import { createRobotsText, createSitemapXml } from "./app/_i18n/seo";
+import { goldenShellHomePath } from "./app/_i18n/golden-shell-messages";
 import {
   localeAccountPath,
   localeAstrologyPath,
@@ -280,14 +281,16 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
 
-const recoveryItem5PagePathnames = Object.freeze([
+const recoveryItem6PagePathnames = Object.freeze([
+  goldenShellHomePath("en"),
+  goldenShellHomePath("zh-Hans"),
   localeQuestionIntakePath("en"),
   localeTarotOneCardPath("en"),
   localeSanctuaryPath("en"),
   localeRevisitPath("en"),
 ]);
 
-const recoveryItem5ApiPatterns = Object.freeze([
+const recoveryItem6ApiPatterns = Object.freeze([
   { methods: ["POST"], pattern: /^\/api\/v1\/anonymous\/session$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/intake\/evaluate$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/readings\/tarot$/u },
@@ -322,9 +325,9 @@ const recoveryItem5ApiPatterns = Object.freeze([
   },
 ] as const);
 
-const isRecoveryItem5DocumentRequest = (request: NextRequest): boolean => {
+const isRecoveryItem6DocumentRequest = (request: NextRequest): boolean => {
   const pathname = request.nextUrl.pathname;
-  const matched = recoveryItem5PagePathnames.some(
+  const matched = recoveryItem6PagePathnames.some(
     (pagePathname) =>
       pathname === pagePathname ||
       pathname === `${pagePathname}.rsc` ||
@@ -338,10 +341,10 @@ const isRecoveryItem5DocumentRequest = (request: NextRequest): boolean => {
   );
 };
 
-const isRecoveryItem5ApiRequest = (request: NextRequest): boolean =>
+const isRecoveryItem6ApiRequest = (request: NextRequest): boolean =>
   request.nextUrl.search === "" &&
   !isFrameworkRepresentationRequest(request) &&
-  recoveryItem5ApiPatterns.some(
+  recoveryItem6ApiPatterns.some(
     ({ methods, pattern }) =>
       pattern.test(request.nextUrl.pathname) &&
       (methods as readonly string[]).includes(request.method),
@@ -407,8 +410,8 @@ const recoveryStagingResponse = (
     isSafeReadMethod(request.method) &&
     request.nextUrl.search === "" &&
     request.nextUrl.pathname.startsWith("/images/");
-  const reviewedCoreLoopRequest =
-    status.ready && (isRecoveryItem5DocumentRequest(request) || isRecoveryItem5ApiRequest(request));
+  const reviewedRecoveryRequest =
+    status.ready && (isRecoveryItem6DocumentRequest(request) || isRecoveryItem6ApiRequest(request));
   const response =
     request.nextUrl.pathname === "/robots.txt" &&
     isSafeReadMethod(request.method) &&
@@ -417,7 +420,7 @@ const recoveryStagingResponse = (
       : exactReadRequest ||
           reviewedIconRequest ||
           reviewedProductAssetRequest ||
-          reviewedCoreLoopRequest
+          reviewedRecoveryRequest
         ? NextResponse.next({ request: { headers: downstreamHeaders } })
         : new NextResponse(null, { status: 404 });
 

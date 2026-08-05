@@ -75,6 +75,8 @@ export default function RecoveryStagingPage() {
           </ul>
 
           <nav aria-label="Recovery diagnostics" className="diagnostics">
+            <Link href="/en">{messages.englishShellLink}</Link>
+            <Link href="/zh-Hans">{messages.chineseShellLink}</Link>
             <Link href="/en/intake">{messages.coreLoopLink}</Link>
             <a href={recoveryHealthPathname}>{messages.healthLink}</a>
             <a href={recoveryReadinessPathname}>{messages.readinessLink}</a>

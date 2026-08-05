@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const harness = vi.hoisted(() => ({
   isOnline: true,
   isPending: false,
+  pathname: "/en",
   transitionCalls: 0,
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => harness.pathname,
 }));
 
 vi.mock("react", async (importOriginal) => {
@@ -64,6 +69,7 @@ describe("locale error runtime contract", () => {
   beforeEach(() => {
     harness.isOnline = true;
     harness.isPending = false;
+    harness.pathname = "/en";
     harness.transitionCalls = 0;
   });
 
@@ -115,5 +121,17 @@ describe("locale error runtime contract", () => {
     expect(offlineState.props.live).toBe("off");
     expect(offlineHtml).toContain("appears to be offline");
     expect(offlineHtml).not.toContain("private canary");
+  });
+
+  it("keeps the protected Simplified Chinese shell in locale during recovery", () => {
+    vi.stubGlobal("document", { getElementById: () => ({ focus: vi.fn() }) });
+    harness.pathname = "/zh-Hans";
+
+    const tree = LocaleError({ error: new Error("private canary"), reset: vi.fn() });
+    const html = renderToStaticMarkup(tree);
+
+    expect(html).toContain("暂时无法打开这个页面");
+    expect(html).toContain('href="/zh-Hans"');
+    expect(html).not.toContain("private canary");
   });
 });
