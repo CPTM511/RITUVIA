@@ -2,7 +2,7 @@
 
 > Date: 2026-08-05
 >
-> Status: **BLOCKED AT HOSTED BROWSER ACCEPTANCE — DEPLOYED, NOT COMPLETE**
+> Status: **COMPLETE — HOSTED DESKTOP/MOBILE ACCEPTANCE PASSED**
 
 ## Scope and authority
 
@@ -58,18 +58,18 @@ ritual-completion `404` responses. No failing route was repaired before this rep
 
 All applicable local checks used exact Node `24.18.0` and pnpm `11.13.1`.
 
-| Gate                                            | Result                                                                                                                                                                        |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Before-state deny-all proxy reproduction        | PASS; nine assertions, with 139 unrelated tests skipped.                                                                                                                      |
-| Focused Item 5 tests                            | PASS; 199 tests across five files.                                                                                                                                            |
-| Formatting, affected-file ESLint, Web typecheck | PASS.                                                                                                                                                                         |
-| Secret scan and diff check                      | PASS; 1,097 tracked/unignored files.                                                                                                                                          |
-| Production Web build                            | PASS; Next.js `16.2.11`, 60 static pages generated, dynamic Item 5 routes built.                                                                                              |
-| Local real core-loop browser                    | PASS; zero route interception/fulfillment mocks, desktop/mobile, keyboard, reduced motion, offline/retry, same-owner reload, private journal, and Revisit.                    |
-| Accessibility                                   | PASS for zero serious/critical axe violations; color-contrast items remain recorded as incomplete manual checks.                                                              |
-| Non-empty backup/restore                        | PASS; PostgreSQL `17.10`, 32 successful migrations, one preserved rolled-back attempt, and non-empty Item 5 tables.                                                           |
-| Private plaintext scan                          | PASS; question, intention, action, journal, and Revisit canaries absent from restored data.                                                                                   |
-| Hosted browser                                  | BLOCKED before HTTP; current network resolves `*.vercel.app` to unrelated IPs and resets direct Vercel Edge TLS. No application request or happy-path `4xx/5xx` was observed. |
+| Gate                                            | Result                                                                                                                                                                                                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Before-state deny-all proxy reproduction        | PASS; nine assertions, with 139 unrelated tests skipped.                                                                                                                                                                                       |
+| Focused Item 5 tests                            | PASS; 199 tests across five files.                                                                                                                                                                                                             |
+| Formatting, affected-file ESLint, Web typecheck | PASS.                                                                                                                                                                                                                                          |
+| Secret scan and diff check                      | PASS; 1,097 tracked/unignored files.                                                                                                                                                                                                           |
+| Production Web build                            | PASS; Next.js `16.2.11`, 60 static pages generated, dynamic Item 5 routes built.                                                                                                                                                               |
+| Local real core-loop browser                    | PASS; zero route interception/fulfillment mocks, desktop/mobile, keyboard, reduced motion, offline/retry, same-owner reload, private journal, and Revisit.                                                                                     |
+| Accessibility                                   | PASS for zero serious/critical axe violations; color-contrast items remain recorded as incomplete manual checks.                                                                                                                               |
+| Non-empty backup/restore                        | PASS; PostgreSQL `17.10`, 32 successful migrations, one preserved rolled-back attempt, and non-empty Item 5 tables.                                                                                                                            |
+| Private plaintext scan                          | PASS; question, intention, action, journal, and Revisit canaries absent from restored data.                                                                                                                                                    |
+| Hosted browser                                  | PASS; the same protected deployment completed runtime truth plus the anonymous core loop with zero route fulfillment mocks, desktop reload, `390×844` mobile reload, Revisit completion, no page console errors, and no application `4xx/5xx`. |
 
 ## Local browser and restore evidence
 
@@ -87,14 +87,37 @@ All applicable local checks used exact Node `24.18.0` and pnpm `11.13.1`.
   changing runtime grants. Restore ran in an isolated local PostgreSQL cluster and the temporary
   database, dump, plaintext scan file, and credentials were removed after checksums were recorded.
 
-## Hosted acceptance blocker
+## Hosted browser acceptance
 
-Vercel control-plane APIs independently confirm the exact source, `READY` state, stable alias,
-custom/OIDC Staging identity, SSO protection, and `live=false`. Automated Playwright, Vercel CLI
-curl, the Codex in-app browser, and user Chrome all timed out or reset before HTTP from the current
-network. Direct DNS queries returned unrelated addresses, while direct probes to Vercel Edge IPs
-reached TCP `443` but reset during TLS. This is retained as an environmental blocker rather than
-reported as a hosted product pass.
+On 2026-08-05 the network path became available to the Codex in-app browser, which retained Vercel
+Authentication and did not install a Service Worker, route interception, fulfillment mock, or
+automation bypass. The exact protected deployment and source passed:
+
+- Runtime truth: `/api/recovery/health`, `/api/recovery/readiness`, and `/en/intake` each returned
+  `200`, environment `staging`, source `36936caed5b193a64747fbfb6b5787d451721b5b`, and valid server
+  correlation IDs `req_22bef5f99beadbf8b875c2456d5e8a3b`,
+  `req_906a76f1a7f3577cbda163a29d6d71b8`, and
+  `req_70b729c236356c913ef096cf6ab3538c`.
+- The real browser completed intake → server-fixed one-card draw → intention → small action → free
+  candle ritual → encrypted private reflection → scheduled and completed Revisit.
+- Reloading Sanctuary restored the same owner's intention, action, and journal. Reloading Revisit
+  restored the completed reflection.
+- At `390×844`, Sanctuary restored all three private values and Revisit restored the completed
+  reflection; document width remained `390`, horizontal overflow was absent, and no visible enabled
+  main-content target measured below `44×44`.
+- The acceptance interval recorded 38 `200`, five `201`, and five `204` runtime responses. Vercel
+  returned no `4xx`, no `5xx`, and no failed application request in that interval. The page console
+  returned zero warnings or errors.
+- Account, payment, paid ritual, production AI, Provider, three-card, numerology, astrology,
+  additional locale, DNS, and production paths were not invoked or enabled.
+
+Machine-readable evidence is in `docs/recovery/ITEM_5_HOSTED_BROWSER_EVIDENCE.json`. The earlier
+regional DNS/TLS failure remains preserved in Git history and the preceding evidence commit; it is
+not rewritten as though the first attempt passed.
+
+Vercel emitted one dependency warning that current `pg` SSL aliases are treated as `verify-full`
+but will change semantics in a future major version. The current connection remains verified; the
+warning is recorded for dependency-upgrade review and is not fixed in Item 5.
 
 ## Direct Owner test
 
@@ -114,9 +137,8 @@ reported as a hosted product pass.
 
 ## Remaining authority
 
-Item 5 is not complete until the same deployed SHA passes the hosted desktop/mobile browser journey
-from a Vercel-reachable network or the Owner records equivalent direct acceptance. Item 6 remains
-unapproved and unstarted. Production, DNS, real funds, Providers, unrestricted AI, public indexing,
-and public release remain separate Owner gates.
+Item 5 is complete for protected Staging. Item 6 remains unapproved and unstarted. Production,
+DNS, real funds, Providers, unrestricted AI, public indexing, and public release remain separate
+Owner gates.
 
 **STOP — NO RECOVERY ITEM 6 STARTED.**

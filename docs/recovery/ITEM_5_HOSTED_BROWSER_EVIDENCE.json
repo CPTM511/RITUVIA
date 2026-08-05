@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-08-05T13:59:03.256Z",
+  "status": "passed",
+  "environment": "staging",
+  "recoveryItem": 5,
+  "recoveryBaseline": "f79fee6713670fdc12b33dd3182569a942782636",
+  "sourceSha": "36936caed5b193a64747fbfb6b5787d451721b5b",
+  "deploymentId": "dpl_D8xgNqiqV8SQjotYcH8NT5zmdqs8",
+  "projectId": "prj_UzHHiLzjdPcf8DsJuCHYiDBVWs63",
+  "teamId": "team_f6TQU7mloG5OnQGNmtXwFkOi",
+  "customEnvironmentId": "env_IpAngjZlPXtMM1A5GGuYDCAGZF66",
+  "browser": {
+    "surface": "Codex in-app browser",
+    "mockedRoutes": 0,
+    "serviceWorkerControlled": false,
+    "pageConsoleErrors": 0,
+    "pageConsoleWarnings": 0
+  },
+  "runtimeTruth": [
+    {
+      "method": "GET",
+      "path": "/api/recovery/health",
+      "status": 200,
+      "correlationId": "req_22bef5f99beadbf8b875c2456d5e8a3b"
+    },
+    {
+      "method": "GET",
+      "path": "/api/recovery/readiness",
+      "status": 200,
+      "correlationId": "req_906a76f1a7f3577cbda163a29d6d71b8"
+    },
+    {
+      "method": "GET",
+      "path": "/en/intake",
+      "status": 200,
+      "correlationId": "req_70b729c236356c913ef096cf6ab3538c"
+    }
+  ],
+  "journey": {
+    "intake": "passed",
+    "serverFixedOneCard": "passed",
+    "intention": "passed",
+    "smallAction": "passed",
+    "freeCandleRitual": "passed",
+    "privateReflection": "passed",
+    "revisitScheduled": "passed",
+    "revisitCompleted": "passed",
+    "sameOwnerSanctuaryReload": "passed",
+    "sameOwnerRevisitReload": "passed"
+  },
+  "privateSyntheticInputDigests": {
+    "questionSha256": "8a1dcae2876dda22d022fb60caca614d9980ce35ea1f970eaef73015a7726988",
+    "intentionSha256": "642542a1cddb9934eab02995220d516e69d92bd1d101479d8d7be68e8f011d0f",
+    "actionSha256": "980a2193a6e0e2218f92fe5d7eec28227e020dbc22ad26c62a17bfb108655555",
+    "journalSha256": "8ea80b9c4c2b02e5e9ba417e156e99714372aaac5c9c39de6925dd382cf42a17",
+    "revisitSha256": "e65364d0c28f0f66b0519b3b3e6ac6bffc68a0581d02a522ab4377fa78aef766"
+  },
+  "mobile": {
+    "height": 844,
+    "width": 390,
+    "documentScrollWidth": 390,
+    "horizontalOverflow": false,
+    "visibleEnabledTargetsBelow44Px": 0,
+    "sanctuaryPrivateValuesRestored": true,
+    "revisitReflectionRestored": true
+  },
+  "runtimeResponses": {
+    "status200": 38,
+    "status201": 5,
+    "status204": 5,
+    "status4xx": 0,
+    "status5xx": 0
+  },
+  "safeOff": {
+    "accountDependency": false,
+    "paymentDependency": false,
+    "paidRitualDependency": false,
+    "productionAi": false,
+    "productionProviders": false,
+    "dnsChanged": false,
+    "live": false,
+    "publicRelease": false
+  },
+  "residualWarnings": [
+    "Current pg SSL aliases verify with verify-full semantics; review before a future pg major-version upgrade."
+  ]
+}

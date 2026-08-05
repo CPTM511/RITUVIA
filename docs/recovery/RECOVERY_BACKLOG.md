@@ -107,11 +107,11 @@
 
 ## Item 5 — Core reflection loop
 
-- **Status:** Blocked at hosted browser acceptance — Owner approved and the exact source is `READY`
-  in protected custom Staging. Local zero-mock desktop/mobile, production build, encryption, and
-  non-empty restore gates pass. Current regional DNS/TLS routing prevents a hosted browser from
-  reaching Vercel before HTTP; see `docs/recovery/ITEM_5_CORE_LOOP_EVIDENCE.md`. Item 5 is not
-  complete and Item 6 cannot start.
+- **Status:** Complete — the exact source is `READY` in protected custom Staging. Local zero-mock
+  desktop/mobile, production build, encryption, and non-empty restore gates pass. The same deployed
+  SHA completed the hosted runtime check and anonymous desktop/mobile core journey with no
+  application `4xx/5xx`; see `docs/recovery/ITEM_5_CORE_LOOP_EVIDENCE.md`. Item 6 remains unapproved
+  and cannot start automatically.
 - **Founder Journey IDs:** FJ-01, FJ-06.
 - **Exact user-visible outcome:** An adult anonymously completes intake → one-card reading →
   intention → small action → free ritual → private reflection → revisit without payment.
@@ -128,8 +128,8 @@
 - **Explicit exclusions:** No Tarot expansion, paid ritual, identity requirement, Provider AI,
   SEO/GEO, additional locale, or production activation.
 - **STOP condition:** Any happy-path 4xx/5xx, private prose leak, paid gate, accessibility failure,
-  restore failure, or inability to produce hosted desktop/mobile evidence. The hosted-evidence
-  condition is active; stop after recording the deployment and Owner test steps.
+  restore failure, or inability to produce hosted desktop/mobile evidence. None occurred in the
+  accepted Item 5 deployment. Stop after Item 5; Item 6 requires separate explicit Owner approval.
 
 ## Item 6 — Golden shell and en/zh-Hans
 
