@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-08-05. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-08-06. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -1079,22 +1079,21 @@ existing human approval gates.
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-05
+**Last reconciled:** 2026-08-06
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 6 are complete. Item 6 is
-deployed to Vercel-authenticated custom Staging as `dpl_CSWoRBXuooyaGSuHZdthLn6VZca3`, source
-`0aa78cad52d2d8ffd92d91f7eb47994e34853302`. Vercel reports `READY`, `target=null`, source `git`,
-`live=false`, one `iad1` runtime region, no project domains, and SSO on all tested routes. The
-locked golden prototype remains unchanged; reviewed English/Simplified Chinese Home shells,
-locale persistence, desktop/mobile production-browser evidence, localization/writing-system
-checks, 194 focused tests, production Web build, full-loop regression, and Turbo generated-client
-cache replay pass on exact Node `24.18.0` and pnpm `11.13.1`. The accepted Item 5 English core loop
-remains available; the Chinese shell does not activate unreviewed domain/API translation. Hosted
-pixels remain a direct Owner visual check because browser automation could not traverse Vercel SSO;
-no bypass link was created. Git automatic deployment is disabled, and its closure push created no
-new deployment. Item 7 is unapproved and unstarted; production, DNS, real funds, Providers,
-unrestricted AI, public indexing, and public release remain stopped.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 7 are complete. Item 7 is
+deployed to Vercel-authenticated custom Staging as `dpl_9W3Lc17ZGcQZMtAaremRTzJvutiu`, source
+`23ab9b97e34c4240d0e23ea4d782a37ef4a157c5`, with the stable Owner URL recorded in
+`docs/recovery/ITEM_7_TAROT_EVIDENCE.md`. Vercel reports `READY`, target/custom environment/OIDC
+`staging`, source `cli` bound to the exact Git SHA, one `iad1` runtime region, no project domains,
+and login protection. Hosted zero-mock desktop/mobile browser evidence passes one-card and
+three-card draws, refresh restore, idempotent replay, content/source integrity, safe disclosures,
+categorical no-free-text reporting, Sanctuary handoff, 390-pixel layout, touch/keyboard controls,
+and critical/serious accessibility gates. Provider AI, account, payment, public Tarot library,
+`zh-Hans` Tarot, interpretation Provider routes, public indexing, production, DNS, real funds, and
+public release remain off. Git automatic deployment remains disabled. Item 8 is unapproved and
+unstarted.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

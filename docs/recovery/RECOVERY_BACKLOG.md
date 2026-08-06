@@ -2,7 +2,7 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 6 are complete. Item 7 and every later item require a
+> Repository status is NO-GO. Items 1 through 7 are complete. Item 8 and every later item require a
 > new explicit Owner approval. One Codex run may execute exactly one approved item and must then
 > STOP.
 
@@ -155,11 +155,16 @@
   machine translation, or policy-copy change.
 - **STOP condition:** Unapproved golden mismatch, unreviewed translation, locale leakage,
   accessibility regression, or missing mobile evidence. None occurred in the accepted source.
-  Stop after Item 6; Item 7 requires separate explicit Owner approval.
+  Item 7 proceeded only after separate explicit Owner approval; this Item 6 closure granted no
+  authority for Item 8.
 
 ## Item 7 — Tarot
 
-- **Status:** Planned; depends on Item 6.
+- **Status:** Complete — exact source `23ab9b97e34c4240d0e23ea4d782a37ef4a157c5` is `READY` in
+  Vercel-authenticated custom Staging as `dpl_9W3Lc17ZGcQZMtAaremRTzJvutiu`. One-card and
+  three-card desktop/mobile zero-mock journeys, refresh stability, idempotency, content authority,
+  safe-off, accessibility, and Sanctuary handoff evidence are recorded in
+  `docs/recovery/ITEM_7_TAROT_EVIDENCE.md`. Item 8 remains unapproved and unstarted.
 - **Founder Journey IDs:** FJ-01, FJ-02, FJ-06.
 - **Exact user-visible outcome:** One-card and three-card Tarot produce server-fixed transparent
   non-deterministic draws, bounded interpretations, and safe core-loop handoff.
@@ -176,11 +181,13 @@
 - **Explicit exclusions:** No prediction claim, paid efficacy, general-model cultural authority,
   Provider AI, new deck/tradition, private-content sharing, or production release.
 - **STOP condition:** Client-invented draw, changed refresh result, unsafe claim, source ambiguity,
-  privacy leak, or failed handoff.
+  privacy leak, or failed handoff. None occurred in the accepted Item 7 deployment. Stop after Item
+  7; Item 8 requires separate explicit Owner approval.
 
 ## Item 8 — Numerology and Astrology
 
-- **Status:** Planned; depends on Item 7.
+- **Status:** Planned; Item 7 dependency is satisfied, but execution requires separate explicit
+  Owner approval.
 - **Founder Journey IDs:** FJ-03, FJ-04, FJ-05, FJ-06.
 - **Exact user-visible outcome:** Numerology and exact/uncertain-time astrology show transparent
   deterministic inputs, calculations, source limits, and uncertainty.

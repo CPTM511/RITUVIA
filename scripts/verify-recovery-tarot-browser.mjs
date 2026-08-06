@@ -9,6 +9,7 @@ import { chromium } from "playwright";
 const configuredUrl = process.env.RITUVIA_RECOVERY_STAGING_URL?.trim();
 assert.ok(configuredUrl, "RITUVIA_RECOVERY_STAGING_URL is required.");
 
+const configuredAccessUrl = new URL(configuredUrl);
 const configuredBaseUrl = new URL(configuredUrl);
 configuredBaseUrl.pathname = "/";
 configuredBaseUrl.search = "";
@@ -16,6 +17,7 @@ configuredBaseUrl.hash = "";
 const origin = configuredBaseUrl.origin;
 const expectedSourceSha = process.env.RITUVIA_EXPECTED_SOURCE_SHA?.trim();
 const bypass = process.env.RITUVIA_VERCEL_PROTECTION_BYPASS?.trim();
+const browserProxyServer = process.env.RITUVIA_BROWSER_PROXY_SERVER?.trim();
 const artifactRoot = path.resolve(
   process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-7-tarot",
 );
@@ -157,7 +159,13 @@ const waitForReadingResponse = (page, method) =>
     { timeout: 60_000 },
   );
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+  headless: true,
+  proxy:
+    browserProxyServer === undefined || browserProxyServer === ""
+      ? undefined
+      : { server: browserProxyServer },
+});
 const context = await browser.newContext({
   baseURL: origin,
   colorScheme: "dark",
@@ -196,7 +204,16 @@ page.on("console", (message) => {
 
 const acceptance = {};
 const deniedEvidence = [];
+let protectionBootstrapStatus;
 try {
+  if (configuredAccessUrl.searchParams.has("_vercel_share")) {
+    const protectionBootstrap = await context.request.get(configuredAccessUrl.toString(), {
+      timeout: 60_000,
+    });
+    protectionBootstrapStatus = protectionBootstrap.status();
+    assert.ok([200, 404].includes(protectionBootstrapStatus));
+  }
+
   const health = await context.request.get("/api/recovery/health");
   assert.equal(health.status(), 200);
   const healthBody = await health.json();
@@ -463,7 +480,10 @@ try {
     },
     mockFulfillmentCount: 0,
     origin,
+    browserProxyUsed: browserProxyServer !== undefined && browserProxyServer !== "",
     productionProviders: readinessBody.controls.productionProviders,
+    protectionAccessUrlUsed: configuredAccessUrl.searchParams.has("_vercel_share"),
+    protectionBootstrapStatus,
     protectionBypassUsed: bypass !== undefined && bypass !== "",
     recoveryItem: healthBody.recoveryItem,
     requestCount: requests.length,
