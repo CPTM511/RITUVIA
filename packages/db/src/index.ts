@@ -126,6 +126,17 @@ export {
   type AccountSessionSummary,
 } from "./account-identity.js";
 export {
+  createWalletIdentityService,
+  walletIdentityErrorCodes,
+  WalletIdentityError,
+  type WalletAuthChallengeResult,
+  type WalletAuthVerificationResult,
+  type WalletIdentityErrorCode,
+  type WalletIdentityPolicy,
+  type WalletIdentityService,
+  type WalletIdentitySummary,
+} from "./wallet-identity.js";
+export {
   commercePersistenceErrorCodes,
   CommercePersistenceError,
   createCommercePersistence,

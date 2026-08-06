@@ -1,6 +1,6 @@
 import "server-only";
 
-import { randomBytes, randomUUID } from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from "node:crypto";
 
 import { normalizeAccountEmail, parseAuthProviderKey } from "@rituvia/domain";
 
@@ -40,10 +40,9 @@ export type LocalPasswordlessStart = Readonly<{
 
 export type AccountAuthProvider = Readonly<{
   capabilities: typeof accountAuthProviderCapabilities;
-  consumeLocalPreview(stateToken: string): boolean;
   issueSessionToken(): string;
-  readLocalPreview(stateToken: string): LocalPasswordlessStart | null;
-  stageLocalPreview(started: LocalPasswordlessStart): void;
+  readLocalPreview(envelope: string): LocalPasswordlessStart | null;
+  sealLocalPreview(started: LocalPasswordlessStart): string;
   startEmailMagicLink(
     input: Readonly<{ email: unknown; returnTo: unknown }>,
   ): LocalPasswordlessStart;
@@ -61,13 +60,18 @@ export const createAccountAuthProvider = (input: {
   canonicalOrigin: string;
   challengeTtlSeconds: number;
   deploymentEnvironment: "local" | "preview" | "production" | "staging";
+  encryptionKey: Uint8Array;
   now?: (() => Date) | undefined;
+  sandboxEnabled?: boolean | undefined;
 }): AccountAuthProvider => {
   if (
-    input.deploymentEnvironment !== "local" ||
+    (input.deploymentEnvironment !== "local" &&
+      !(input.deploymentEnvironment === "staging" && input.sandboxEnabled === true)) ||
     !Number.isSafeInteger(input.challengeTtlSeconds) ||
     input.challengeTtlSeconds < 60 ||
-    input.challengeTtlSeconds > 3_600
+    input.challengeTtlSeconds > 3_600 ||
+    !(input.encryptionKey instanceof Uint8Array) ||
+    input.encryptionKey.byteLength !== 32
   ) {
     throw new AccountAuthProviderUnavailableError();
   }
@@ -76,34 +80,62 @@ export const createAccountAuthProvider = (input: {
     throw new AccountAuthProviderUnavailableError();
   }
   const now = input.now ?? (() => new Date());
-  const localPreviews = new Map<string, LocalPasswordlessStart>();
-
-  const purgeExpiredPreviews = (): void => {
-    const currentTime = now().getTime();
-    for (const [stateToken, preview] of localPreviews) {
-      if (Date.parse(preview.expiresAt) <= currentTime) localPreviews.delete(stateToken);
-    }
-  };
+  const previewEnvelopePattern = /^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{64,1024}$/u;
+  const previewAdditionalData = Buffer.from("rituvia.auth-sandbox-preview.v1", "utf8");
 
   return Object.freeze({
     capabilities: accountAuthProviderCapabilities,
-    consumeLocalPreview(stateToken) {
-      return localPreviews.delete(stateToken);
-    },
     issueSessionToken: issueOpaqueToken,
-    readLocalPreview(stateToken) {
-      if (!/^[A-Za-z0-9_-]{43}$/u.test(stateToken)) return null;
-      const started = localPreviews.get(stateToken);
-      return started !== undefined && Date.parse(started.expiresAt) > now().getTime()
-        ? started
-        : null;
-    },
-    stageLocalPreview(started) {
-      purgeExpiredPreviews();
-      if (localPreviews.size >= 1_000 || localPreviews.has(started.state)) {
-        throw new AccountAuthProviderUnavailableError();
+    readLocalPreview(envelope) {
+      if (!previewEnvelopePattern.test(envelope)) return null;
+      const [, encodedNonce, encodedSealed] = envelope.split(".");
+      if (encodedNonce === undefined || encodedSealed === undefined) return null;
+      const nonce = Buffer.from(encodedNonce, "base64url");
+      const sealed = Buffer.from(encodedSealed, "base64url");
+      if (
+        nonce.byteLength !== 12 ||
+        sealed.byteLength <= 16 ||
+        nonce.toString("base64url") !== encodedNonce ||
+        sealed.toString("base64url") !== encodedSealed
+      ) {
+        return null;
       }
-      localPreviews.set(started.state, started);
+      try {
+        const ciphertext = sealed.subarray(0, -16);
+        const tag = sealed.subarray(-16);
+        const decipher = createDecipheriv("aes-256-gcm", input.encryptionKey, nonce);
+        decipher.setAAD(previewAdditionalData);
+        decipher.setAuthTag(tag);
+        const parsed = JSON.parse(
+          Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8"),
+        ) as unknown;
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed) ||
+          Object.keys(parsed).sort().join("\u0000") !==
+            "callbackUrl\u0000challengeId\u0000email\u0000expiresAt\u0000providerKey\u0000returnTo\u0000state\u0000token" ||
+          !("expiresAt" in parsed) ||
+          typeof parsed.expiresAt !== "string" ||
+          Date.parse(parsed.expiresAt) <= now().getTime()
+        ) {
+          return null;
+        }
+        return parsed as LocalPasswordlessStart;
+      } catch {
+        return null;
+      }
+    },
+    sealLocalPreview(started) {
+      const nonce = randomBytes(12);
+      const cipher = createCipheriv("aes-256-gcm", input.encryptionKey, nonce);
+      cipher.setAAD(previewAdditionalData);
+      const ciphertext = Buffer.concat([
+        cipher.update(JSON.stringify(started), "utf8"),
+        cipher.final(),
+      ]);
+      const sealed = Buffer.concat([ciphertext, cipher.getAuthTag()]);
+      return `v1.${nonce.toString("base64url")}.${sealed.toString("base64url")}`;
     },
     startEmailMagicLink(raw) {
       let email: string;

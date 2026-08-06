@@ -22,6 +22,7 @@ import { createRobotsText, createSitemapXml } from "./app/_i18n/seo";
 import { goldenShellHomePath } from "./app/_i18n/golden-shell-messages";
 import {
   localeAccountPath,
+  localeAccountPrivacyPath,
   localeAstrologyPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
@@ -82,6 +83,7 @@ const tarotReadingPagePathnames = Object.freeze([
 ]);
 const privateExperiencePagePathnames = Object.freeze([
   localeAccountPath("en"),
+  localeAccountPrivacyPath("en"),
   localeAstrologyPath("en"),
   localeCheckoutReturnPath("en"),
   localeLocalCheckoutPath("en"),
@@ -95,6 +97,7 @@ const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/callback$/u, query: "auth_callback" },
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/wallet\/(?:challenge|verify)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements|ritual-objects)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/readings\/astrology\/natal$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
@@ -130,6 +133,8 @@ const reviewedMvpApiPatterns = Object.freeze([
   },
   { methods: ["GET"], pattern: /^\/api\/v1\/me\/sessions$/u },
   { methods: ["DELETE"], pattern: new RegExp(`^/api/v1/me/sessions/${uuidPathPart}$`, "u") },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/wallets$/u },
+  { methods: ["DELETE"], pattern: new RegExp(`^/api/v1/me/wallets/${uuidPathPart}$`, "u") },
   { methods: ["POST"], pattern: /^\/api\/v1\/orders$/u },
   { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
   { methods: ["POST"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}/checkout$`, "u") },
@@ -282,7 +287,7 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
 
-const recoveryItem8PagePathnames = Object.freeze([
+const recoveryItem9PagePathnames = Object.freeze([
   goldenShellHomePath("en"),
   goldenShellHomePath("zh-Hans"),
   localeQuestionIntakePath("en"),
@@ -293,9 +298,12 @@ const recoveryItem8PagePathnames = Object.freeze([
   localeRevisitPath("en"),
   localeNumerologyPath("en"),
   localeAstrologyPath("en"),
+  localeSignInPath("en"),
+  localeAccountPath("en"),
+  localeAccountPrivacyPath("en"),
 ]);
 
-const recoveryItem8ApiPatterns = Object.freeze([
+const recoveryItem9ApiPatterns = Object.freeze([
   { methods: ["POST"], pattern: /^\/api\/v1\/anonymous\/session$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/intake\/evaluate$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/readings\/tarot$/u },
@@ -334,11 +342,29 @@ const recoveryItem8ApiPatterns = Object.freeze([
   },
   { methods: ["POST"], pattern: /^\/api\/v1\/numerology\/calculate$/u },
   { methods: ["POST"], pattern: /^\/api\/recovery\/item-8\/astrology$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/account-merge$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/wallet\/(?:challenge|verify)$/u },
+  { methods: ["GET", "PATCH"], pattern: /^\/api\/v1\/me$/u },
+  { methods: ["GET", "POST"], pattern: /^\/api\/v1\/me\/consents$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/(?:history|readings)$/u, query: "account_history" },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/(?:sessions|wallets)$/u },
+  {
+    methods: ["DELETE"],
+    pattern: new RegExp(`^/api/v1/me/(?:sessions|wallets)/${uuidPathPart}$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/privacy\/(?:deletions|export)$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}$`, "u") },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}/download$`, "u"),
+  },
 ] as const);
 
-const isRecoveryItem8DocumentRequest = (request: NextRequest): boolean => {
+const isRecoveryItem9DocumentRequest = (request: NextRequest): boolean => {
   const pathname = request.nextUrl.pathname;
-  const matched = recoveryItem8PagePathnames.some(
+  const matched = recoveryItem9PagePathnames.some(
     (pagePathname) =>
       pathname === pagePathname ||
       pathname === `${pagePathname}.rsc` ||
@@ -346,20 +372,29 @@ const isRecoveryItem8DocumentRequest = (request: NextRequest): boolean => {
   );
   if (!matched || !isSafeReadMethod(request.method)) return false;
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
+  const reviewedQuery = matchesPrivateExperienceDocument(pathname)
+    ? hasReviewedPrivateDocumentQuery(request)
+    : request.nextUrl.search === "" || hasOnlyReviewedFrameworkQuery(request);
   return (
-    (request.nextUrl.search === "" || hasOnlyReviewedFrameworkQuery(request)) &&
-    (!frameworkRepresentation || hasReviewedFrameworkNavigationSignal(request))
+    reviewedQuery && (!frameworkRepresentation || hasReviewedFrameworkNavigationSignal(request))
   );
 };
 
-const isRecoveryItem8ApiRequest = (request: NextRequest): boolean =>
-  request.nextUrl.search === "" &&
-  !isFrameworkRepresentationRequest(request) &&
-  recoveryItem8ApiPatterns.some(
-    ({ methods, pattern }) =>
-      pattern.test(request.nextUrl.pathname) &&
-      (methods as readonly string[]).includes(request.method),
-  );
+const isRecoveryItem9ApiRequest = (request: NextRequest): boolean => {
+  if (isFrameworkRepresentationRequest(request)) return false;
+  for (const route of recoveryItem9ApiPatterns) {
+    if (
+      !route.pattern.test(request.nextUrl.pathname) ||
+      !(route.methods as readonly string[]).includes(request.method)
+    ) {
+      continue;
+    }
+    return "query" in route && route.query === "account_history"
+      ? hasExactAccountHistoryQuery(request)
+      : request.nextUrl.search === "";
+  }
+  return false;
+};
 
 const isQuestionIntakePagePathname = (pathname: string): boolean =>
   pathname === questionIntakePagePathname ||
@@ -422,7 +457,7 @@ const recoveryStagingResponse = (
     request.nextUrl.search === "" &&
     request.nextUrl.pathname.startsWith("/images/");
   const reviewedRecoveryRequest =
-    status.ready && (isRecoveryItem8DocumentRequest(request) || isRecoveryItem8ApiRequest(request));
+    status.ready && (isRecoveryItem9DocumentRequest(request) || isRecoveryItem9ApiRequest(request));
   const response =
     request.nextUrl.pathname === "/robots.txt" &&
     isSafeReadMethod(request.method) &&

@@ -26,6 +26,7 @@ import { getAccountMessages } from "../app/_i18n/account-messages";
 import { getCommerceMessages } from "../app/_i18n/commerce-messages";
 import {
   localeAccountPath,
+  localeAccountPrivacyPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeRevisitPath,
@@ -236,6 +237,7 @@ describe("MVP server-rendered initial states", () => {
         locale: "en",
         messages: getAccountMessages("en").account,
         oneCardHref: localeTarotOneCardPath("en"),
+        privacyHref: localeAccountPrivacyPath("en"),
         sanctuaryHref: localeSanctuaryPath("en"),
         signInHref: localeSignInPath("en"),
         threeCardHref: localeTarotThreeCardPath("en"),

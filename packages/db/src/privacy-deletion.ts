@@ -83,6 +83,7 @@ export type PrivacyDeletionCounts = Readonly<{
   revisits: number;
   subjects: number;
   verifications: number;
+  wallets: number;
 }>;
 
 export type PrivacyDeletionResult = Readonly<{
@@ -131,6 +132,7 @@ type DeletionRow = Readonly<{
   scope: string;
   subjectCount: number;
   verificationCount: number;
+  walletIdentityCount: number;
 }>;
 
 const validatePolicy = (policy: PrivacyDeletionPolicy): PrivacyDeletionPolicy => {
@@ -271,6 +273,7 @@ const readDeletion = async (
            completion.auth_identity_count AS "authIdentityCount",
            completion.account_session_count AS "accountSessionCount",
            completion.passkey_count AS "passkeyCount",
+           completion.wallet_identity_count AS "walletIdentityCount",
            completion.birth_profile_count AS "birthProfileCount",
            completion.astrology_calculation_count AS "astrologyCalculationCount",
            completion.completed_at AS "completedAt"
@@ -308,6 +311,7 @@ const result = (row: DeletionRow): PrivacyDeletionResult => {
       revisits: row.revisitCount,
       subjects: row.subjectCount,
       verifications: row.verificationCount,
+      wallets: row.walletIdentityCount,
     }),
     id: row.id,
     policyVersion: deletionPolicyVersion,
@@ -677,6 +681,7 @@ export const createPrivacyDeletionPersistence = (
         let authIdentityCount = 0;
         let accountSessionCount = 0;
         let passkeyCount = 0;
+        let walletIdentityCount = 0;
         if (scope === "account") {
           const identitySubjects = await transaction.$queryRaw<
             Array<{ providerKey: string; providerSubject: string }>
@@ -764,6 +769,41 @@ export const createPrivacyDeletionPersistence = (
             `,
           );
 
+          await transaction.$executeRaw`
+            UPDATE wallet_auth_challenge AS challenge
+               SET address = '0x' || substr(
+                     md5(${tombstoneSalt} || ':wallet-challenge:' || challenge.id::text) ||
+                     md5(challenge.id::text || ':wallet-challenge:' || ${tombstoneSalt}),
+                     1,
+                     40
+                   ),
+                   message = 'Private wallet challenge deleted.',
+                   message_hash = ${tombstoneCiphertext}::bytea,
+                   canonical_request_hash = ${tombstoneCiphertext}::bytea
+              FROM wallet_identity AS wallet
+             WHERE wallet.user_id = ${active.userId}::uuid
+               AND wallet.address = challenge.address
+          `;
+
+          walletIdentityCount = await countRows(
+            transaction,
+            Prisma.sql`
+              WITH changed AS (
+                UPDATE wallet_identity AS wallet
+                   SET address = '0x' || substr(
+                         md5(${tombstoneSalt} || ':wallet:' || wallet.id::text) ||
+                         md5(wallet.id::text || ':wallet:' || ${tombstoneSalt}),
+                         1,
+                         40
+                       ),
+                       revoked_at = COALESCE(wallet.revoked_at, CURRENT_TIMESTAMP)
+                 WHERE wallet.user_id = ${active.userId}::uuid
+                 RETURNING wallet.id
+              )
+              SELECT COUNT(*)::bigint AS count FROM changed
+            `,
+          );
+
           accountSessionCount = await countRows(
             transaction,
             Prisma.sql`
@@ -836,6 +876,7 @@ export const createPrivacyDeletionPersistence = (
           revisits: revisitCount,
           subjects: subjectCount,
           verifications: verificationCount,
+          wallets: walletIdentityCount,
         });
         const evidenceSha256 = await digest(
           JSON.stringify({
@@ -853,14 +894,15 @@ export const createPrivacyDeletionPersistence = (
             current_journal_count, revisit_count, export_artifact_count,
             interpretation_count, verification_count,
             auth_identity_count, account_session_count, passkey_count,
-            birth_profile_count, astrology_calculation_count,
+            wallet_identity_count, birth_profile_count, astrology_calculation_count,
             evidence_sha256, completed_at
           ) VALUES (
             ${requestId}::uuid, ${active.userId}::uuid, ${subjectCount}, ${intentionCount},
             ${legacyJournalCount}, ${currentJournalCount}, ${revisitCount},
             ${exportArtifactCount}, ${interpretationCount}, ${verificationCount},
             ${authIdentityCount}, ${accountSessionCount},
-            ${passkeyCount}, ${birthProfileCount}, ${astrologyCalculationCount},
+            ${passkeyCount}, ${walletIdentityCount}, ${birthProfileCount},
+            ${astrologyCalculationCount},
             ${evidenceSha256}, CURRENT_TIMESTAMP
           )
           RETURNING completed_at AS "completedAt"

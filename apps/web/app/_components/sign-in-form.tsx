@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import type { AccountMessages } from "../_i18n/account-messages";
+import { WalletAuthControl } from "./wallet-auth-control";
 
 export const authenticationStartEndpoint = "/api/v1/auth/start";
 
@@ -165,6 +166,7 @@ export function SignInForm({ invalidInitial = false, messages, returnTo }: SignI
             type="submit"
           />
         </form>
+        <WalletAuthControl messages={messages.wallet} mode="sign_in" />
       </section>
 
       {alert === null ? null : (

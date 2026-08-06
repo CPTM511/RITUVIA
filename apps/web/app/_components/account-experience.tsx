@@ -27,6 +27,7 @@ import {
   type AccountSessionSummary,
 } from "./account-control";
 import { storeTarotReadingResumeId } from "./tarot-reading-resume-storage";
+import { WalletAuthControl } from "./wallet-auth-control";
 
 export const currentAccountEndpoint = "/api/v1/me";
 export const accountHistoryEndpoint = "/api/v1/me/history";
@@ -225,6 +226,7 @@ type AccountExperienceProps = Readonly<{
   locale: Locale;
   messages: AccountMessages["account"];
   oneCardHref: LocalActionHref;
+  privacyHref: LocalActionHref;
   sanctuaryHref: LocalActionHref;
   signInHref: LocalActionHref;
   threeCardHref: LocalActionHref;
@@ -234,6 +236,7 @@ export function AccountExperience({
   locale,
   messages,
   oneCardHref,
+  privacyHref,
   sanctuaryHref,
   signInHref,
   threeCardHref,
@@ -266,6 +269,7 @@ export function AccountExperience({
   const [signingOut, setSigningOut] = useState(false);
   const [signingOutAll, setSigningOutAll] = useState(false);
   const [timeZone, setTimeZone] = useState("UTC");
+  const [walletCsrfToken, setWalletCsrfToken] = useState<string | null>(null);
   const csrfToken = useRef<string | null>(null);
   const statusRegion = useRef<HTMLElement | null>(null);
   const ageId = createUiControlId("account-age-confirmation");
@@ -285,6 +289,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -311,6 +316,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -350,6 +356,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -375,6 +382,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -390,6 +398,7 @@ export function AccountExperience({
       setDisplayName(parsed.displayName ?? "");
       setTimeZone(parsed.timeZone);
       csrfToken.current = issuedCsrfToken;
+      setWalletCsrfToken(issuedCsrfToken);
       setPhase("ready");
       setSessionActionStatus("idle");
       setConsentStatus("idle");
@@ -398,6 +407,7 @@ export function AccountExperience({
       void loadSessions();
     } catch {
       csrfToken.current = null;
+      setWalletCsrfToken(null);
       setAccount(null);
       setError(messages.error);
       setPhase("error");
@@ -451,6 +461,7 @@ export function AccountExperience({
       const parsed = parseAccountSummary((await response.json()) as unknown);
       if (parsed === null) throw new TypeError("invalid profile response");
       csrfToken.current = issuedCsrfToken;
+      setWalletCsrfToken(issuedCsrfToken);
       setAccount(parsed);
       setDisplayName(parsed.displayName ?? "");
       setTimeZone(parsed.timeZone);
@@ -556,6 +567,7 @@ export function AccountExperience({
         const parsed = parseAccountSummary((await response.json()) as unknown);
         if (parsed === null) throw new TypeError("invalid age response");
         csrfToken.current = issuedCsrfToken;
+        setWalletCsrfToken(issuedCsrfToken);
         setAccount(parsed);
       }
       setAgeChecked(false);
@@ -584,6 +596,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -740,6 +753,9 @@ export function AccountExperience({
               tone="quiet"
             />
           </div>
+          <ActionLink href={privacyHref} variant="secondary">
+            {messages.privacyAction}
+          </ActionLink>
           {error === null ? null : (
             <InlineAlert message={error} title={messages.errorTitle} tone="error" />
           )}
@@ -783,6 +799,11 @@ export function AccountExperience({
       </section>
 
       <aside className="account-control-stack" aria-label={messages.title}>
+        <WalletAuthControl
+          csrfToken={walletCsrfToken}
+          messages={messages.wallet}
+          mode="link_wallet"
+        />
         <section
           className="account-panel account-consent-panel"
           aria-labelledby="account-consent-title"

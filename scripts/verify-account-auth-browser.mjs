@@ -180,7 +180,7 @@ try {
   assert.equal(startResponse.status(), 202);
   const firstStartPayload = await startResponse.json();
   assertAcceptedShape(firstStartPayload);
-  await page.getByRole("link", { name: "Complete local sign-in" }).waitFor();
+  await page.getByRole("link", { name: "Complete sandbox sign-in" }).waitFor();
   assert.equal(
     await page.evaluate(() => document.activeElement?.classList.contains("sign-in-status")),
     true,
@@ -204,7 +204,7 @@ try {
 
   await Promise.all([
     page.waitForURL(`${origin}/en/account`, { timeout: 30_000 }),
-    page.getByRole("link", { name: "Complete local sign-in" }).click(),
+    page.getByRole("link", { name: "Complete sandbox sign-in" }).click(),
   ]);
   const accountMeResponse = await page.evaluate(async () => {
     const response = await fetch("/api/v1/me", {
@@ -259,7 +259,7 @@ try {
   const rotationResponse = await rotationResponsePromise;
   assert.equal(rotationResponse.status(), 202);
   assertAcceptedShape(await rotationResponse.json());
-  await page.getByRole("link", { name: "Complete local sign-in" }).click();
+  await page.getByRole("link", { name: "Complete sandbox sign-in" }).click();
   await page.waitForURL(`${origin}/en/account`);
   await page.getByRole("heading", { name: "Your reflection space" }).waitFor();
   const rotatedAccountCookie = (await context.cookies()).find(

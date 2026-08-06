@@ -91,7 +91,7 @@ const readBoundedJson = async (request: NextRequest): Promise<unknown> => {
 
 export const POST = async (request: NextRequest): Promise<NextResponse> => {
   const recovery = inspectRecoveryStagingRuntime();
-  if (!recovery.ready || recovery.recoveryItem !== 8 || !acceptedOrigin(request)) {
+  if (!recovery.ready || recovery.recoveryItem < 8 || !acceptedOrigin(request)) {
     return problem("RECOVERY_ASTROLOGY_REQUEST_REJECTED", 403);
   }
   if (

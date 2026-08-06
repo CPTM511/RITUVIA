@@ -210,6 +210,59 @@ await withLocalPostgresLease(async (lease) => {
         state: otherState,
         token: otherToken,
       });
+      const walletIdentityId = randomUUID();
+      const walletChallengeId = randomUUID();
+      const walletSignInChallengeId = randomUUID();
+      const walletAddress = "0x1111111111111111111111111111111111111111";
+      await migrator.query(
+        `
+          INSERT INTO wallet_identity (
+            id, user_id, chain_family, chain_id, address, linked_by_session_id,
+            verified_at, created_at
+          ) VALUES (
+            $1::uuid, $2::uuid, 'eip155', 84532, $3, $4::uuid,
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+        `,
+        [walletIdentityId, completed.context.userId, walletAddress, completed.context.sessionId],
+      );
+      await migrator.query(
+        `
+          INSERT INTO wallet_auth_challenge (
+            id, address, chain_id, purpose, message, message_hash, nonce_hash,
+            idempotency_key_hash, canonical_request_hash, requested_by_user_id,
+            requested_by_session_id, created_at, expires_at, consumed_at
+          ) VALUES (
+            $1::uuid, $2, 84532, 'sign_in', 'private wallet sign-in challenge canary',
+            $3, $4, $5, $6, NULL, NULL, CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP + INTERVAL '5 minutes', CURRENT_TIMESTAMP
+          )
+        `,
+        [walletSignInChallengeId, walletAddress, digest(), digest(), digest(), digest()],
+      );
+      await migrator.query(
+        `
+          INSERT INTO wallet_auth_challenge (
+            id, address, chain_id, purpose, message, message_hash, nonce_hash,
+            idempotency_key_hash, canonical_request_hash, requested_by_user_id,
+            requested_by_session_id, created_at, expires_at, consumed_at
+          ) VALUES (
+            $1::uuid, $2, 84532, 'link_wallet', 'private wallet challenge canary',
+            $3, $4, $5, $6, $7::uuid, $8::uuid, CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP + INTERVAL '5 minutes', CURRENT_TIMESTAMP
+          )
+        `,
+        [
+          walletChallengeId,
+          walletAddress,
+          digest(),
+          digest(),
+          digest(),
+          digest(),
+          completed.context.userId,
+          completed.context.sessionId,
+        ],
+      );
       await deletionRuntime.$transaction(async (transaction) => {
         await transaction.$queryRaw<Array<{ set_config: string }>>`
           SELECT set_config(
@@ -616,6 +669,7 @@ await withLocalPostgresLease(async (lease) => {
         revisits: 1,
         subjects: 1,
         verifications: 0,
+        wallets: 0,
       });
       const deletedBirthProfile = await migrator.query<{
         encryption_key_version: string;
@@ -739,6 +793,7 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(account.counts.subjects, 0);
       assert(account.counts.accountSessions >= 2);
       assert.equal(account.counts.authIdentities, 1);
+      assert.equal(account.counts.wallets, 1);
       assert.equal(
         (
           await deletions.request({
@@ -776,6 +831,35 @@ await withLocalPostgresLease(async (lease) => {
         identity_key_version: "privacy-deleted.v1",
         status: "deleted",
       });
+      const deletedWallet = await migrator.query<{
+        address: string;
+        message: string;
+        revoked: boolean;
+      }>(
+        `
+          SELECT wallet.address,
+                 wallet.revoked_at IS NOT NULL AS revoked,
+                 challenge.message
+            FROM wallet_identity AS wallet
+            JOIN wallet_auth_challenge AS challenge ON challenge.id = $2::uuid
+           WHERE wallet.id = $1::uuid
+        `,
+        [walletIdentityId, walletChallengeId],
+      );
+      assert.equal(deletedWallet.rows[0]?.revoked, true);
+      assert.notEqual(deletedWallet.rows[0]?.address, walletAddress);
+      assert.equal(deletedWallet.rows[0]?.message, "Private wallet challenge deleted.");
+      const deletedWalletSignInChallenge = await migrator.query<{
+        address: string;
+        message: string;
+      }>(`SELECT address, message FROM wallet_auth_challenge WHERE id = $1::uuid`, [
+        walletSignInChallengeId,
+      ]);
+      assert.notEqual(deletedWalletSignInChallenge.rows[0]?.address, walletAddress);
+      assert.equal(
+        deletedWalletSignInChallenge.rows[0]?.message,
+        "Private wallet challenge deleted.",
+      );
       const reauthenticationChallengeId = randomUUID();
       const reauthenticationState = bearer();
       const reauthenticationToken = bearer();

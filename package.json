@@ -80,6 +80,7 @@
     "test:ritual-browser": "node scripts/verify-ritual-browser.mjs",
     "test:recovery-runtime-truth-browser": "node scripts/verify-recovery-runtime-truth-browser.mjs",
     "test:recovery-item-8-browser": "node scripts/verify-recovery-item-8-browser.mjs",
+    "test:recovery-item-9-browser": "node scripts/verify-recovery-item-9-browser.mjs",
     "test:recovery-tarot-browser": "node scripts/verify-recovery-tarot-browser.mjs",
     "test:revisit-browser": "node scripts/verify-revisit-browser.mjs",
     "test:writing-systems-browser": "node scripts/verify-writing-systems-browser.mjs",

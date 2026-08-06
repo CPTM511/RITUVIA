@@ -176,7 +176,10 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
   ],
 ]);
 const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>([
-  ["@rituvia/web", new Set(["@next/env", "next", "react", "react-dom", "server-only", "stripe"])],
+  [
+    "@rituvia/web",
+    new Set(["@next/env", "next", "react", "react-dom", "server-only", "stripe", "viem"]),
+  ],
   ["@rituvia/worker", new Set(["@next/env"])],
   ["@rituvia/admin", new Set()],
   ["@rituvia/config", new Set(["zod"])],
@@ -239,6 +242,9 @@ const paymentProviderPackages = new Set([
 const reviewedCrossOwnerProviderAdapterFiles = new Map<string, ReadonlySet<string>>([
   ["stripe", new Set(["apps/web/server/payment-provider.ts"])],
 ]);
+const reviewedExternalRuntimeAdapterFiles = new Map<string, ReadonlySet<string>>([
+  ["viem", new Set(["apps/web/server/wallet-auth.ts"])],
+]);
 const reviewedAdapterManifestOwners = new Set(["apps/web|stripe"]);
 const reviewedWebDatabaseTestFiles = new Set([
   "apps/web/test/commerce-server.test.ts",
@@ -253,6 +259,7 @@ const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
       "packages/db/src/account-identity.ts",
       "packages/db/src/admin-security.ts",
       "packages/db/src/revisit-reminder.ts",
+      "packages/db/src/wallet-identity.ts",
     ]),
   ],
 ]);
@@ -463,6 +470,9 @@ const isReviewedCrossOwnerProviderAdapter = (filePath: string, dependency: strin
 
 const isReviewedAdapterManifestOwner = (moduleRoot: string, dependency: string): boolean =>
   reviewedAdapterManifestOwners.has(`${moduleRoot}|${dependency}`);
+
+const isReviewedExternalRuntimeAdapterFile = (filePath: string, dependency: string): boolean =>
+  reviewedExternalRuntimeAdapterFiles.get(dependency)?.has(filePath) ?? false;
 
 const isAllowedRuntimeNodeBuiltin = (
   moduleName: string,
@@ -2158,6 +2168,13 @@ export const auditArchitecture = (
       }
       if (owner && sourceModule.root === owner && !isProviderAdapterFile(file.path, owner)) {
         add(findings, "provider-outside-adapter", location, dependency);
+      }
+      if (
+        isProductionFile(file.path) &&
+        reviewedExternalRuntimeAdapterFiles.has(dependency) &&
+        !isReviewedExternalRuntimeAdapterFile(file.path, dependency)
+      ) {
+        add(findings, "external-runtime-outside-adapter", location, dependency);
       }
       if (
         isRuntimeDependencyFile(file.path) &&

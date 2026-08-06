@@ -90,6 +90,9 @@ export const localeSignInPath = (locale: Locale): LocalActionHref =>
 export const localeAccountPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/account`);
 
+export const localeAccountPrivacyPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account/privacy`);
+
 export const localeCheckoutReturnPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/checkout/return`);
 

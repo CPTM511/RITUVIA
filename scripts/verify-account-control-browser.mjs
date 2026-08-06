@@ -53,7 +53,7 @@ const signIn = async (context) => {
   await page.goto("/en/sign-in", { timeout: 30_000, waitUntil: "load" });
   await page.getByRole("textbox", { name: /Email address/u }).fill(accountEmail);
   await page.getByRole("button", { name: "Continue securely" }).click();
-  await page.getByRole("link", { name: "Complete local sign-in" }).click();
+  await page.getByRole("link", { name: "Complete sandbox sign-in" }).click();
   await page.waitForURL(`${origin}/en/account`);
   await page.getByRole("heading", { name: "Your reflection space" }).waitFor();
   return page;

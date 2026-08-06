@@ -125,6 +125,11 @@ describe("package architecture policy", () => {
       source:
         'import { webcrypto } from "node:crypto"; export const digest = (value: Uint8Array) => webcrypto.subtle.digest("SHA-256", value);',
     });
+    accepted.push({
+      path: "packages/db/src/wallet-identity.ts",
+      source:
+        'import { createHash } from "node:crypto"; export const digest = (value: string) => createHash("sha256").update(value).digest("hex");',
+    });
     expect(rules(accepted)).not.toContain("node-runtime-dependency");
 
     const misplaced = baseline();
@@ -1242,6 +1247,36 @@ describe("package architecture policy", () => {
       },
     );
     expect(rules(misplacedPackage)).toContain("provider-outside-adapter");
+  });
+
+  it("keeps the wallet verification dependency inside its reviewed server adapter", () => {
+    const accepted = baseline();
+    replaceSource(
+      accepted,
+      "apps/web/package.json",
+      JSON.stringify({
+        dependencies: {
+          "@rituvia/config": "workspace:*",
+          react: "19.2.7",
+          viem: "2.45.1",
+        },
+        name: "@rituvia/web",
+        private: true,
+      }),
+    );
+    accepted.push({
+      path: "apps/web/server/wallet-auth.ts",
+      source: 'import { recoverMessageAddress } from "viem"; export { recoverMessageAddress };',
+    });
+    expect(rules(accepted)).not.toContain("external-runtime-dependency");
+    expect(rules(accepted)).not.toContain("external-runtime-outside-adapter");
+
+    const misplaced = [...accepted];
+    misplaced.push({
+      path: "apps/web/server/wallet-bypass.ts",
+      source: 'import { recoverMessageAddress } from "viem"; export { recoverMessageAddress };',
+    });
+    expect(rules(misplaced)).toContain("external-runtime-outside-adapter");
   });
 
   it("fails closed on computed imports, syntax errors, symlinks, and unknown modules", () => {

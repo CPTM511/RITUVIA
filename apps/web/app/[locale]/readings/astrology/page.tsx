@@ -35,7 +35,7 @@ export const generateMetadata = async ({ params }: AstrologyPageProps): Promise<
   const locale = await resolveLocale(params);
   const recovery = inspectRecoveryStagingRuntime();
   const metadata =
-    locale === "en" && recovery.ready && recovery.recoveryItem === 8
+    locale === "en" && recovery.ready && recovery.recoveryItem >= 8
       ? recoveryAstrologyMessages.astrology.metadata
       : getAstrologyMessages(locale).metadata;
   return {
@@ -49,7 +49,7 @@ export default async function AstrologyPage({ params }: AstrologyPageProps) {
   const locale = await resolveLocale(params);
   const configuration = getWebRuntimeConfiguration();
   const recovery = inspectRecoveryStagingRuntime();
-  const recoveryEnabled = locale === "en" && recovery.ready && recovery.recoveryItem === 8;
+  const recoveryEnabled = locale === "en" && recovery.ready && recovery.recoveryItem >= 8;
   const messages = recoveryEnabled
     ? recoveryAstrologyMessages.astrology
     : getAstrologyMessages(locale);

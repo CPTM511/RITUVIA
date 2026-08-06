@@ -1,6 +1,7 @@
 import type { QuestionIntakeThemeCode } from "@rituvia/domain";
 
 import type { Locale } from "./routing";
+import type { WalletAuthMessages } from "../_components/wallet-auth-control";
 
 export type AccountMessages = Readonly<{
   navigation: Readonly<{
@@ -30,6 +31,7 @@ export type AccountMessages = Readonly<{
     invalid: string;
     error: string;
     unavailable: string;
+    wallet: WalletAuthMessages;
   }>;
   account: Readonly<{
     eyebrow: string;
@@ -44,6 +46,7 @@ export type AccountMessages = Readonly<{
     retry: string;
     profileTitle: string;
     profileDescription: string;
+    privacyAction: string;
     displayNameLabel: string;
     displayNameDescription: string;
     timeZoneLabel: string;
@@ -128,6 +131,7 @@ export type AccountMessages = Readonly<{
     signOut: string;
     signingOut: string;
     signOutError: string;
+    wallet: WalletAuthMessages;
   }>;
 }>;
 
@@ -151,10 +155,10 @@ const englishMessages = {
     requiredLabel: "required",
     submit: "Continue securely",
     submitting: "Preparing sign-in",
-    localTitle: "Local preview sign-in is ready",
+    localTitle: "Protected sandbox sign-in is ready",
     localDescription:
-      "Local test only: no email was sent. Use the secure callback below to finish this local sign-in.",
-    localAction: "Complete local sign-in",
+      "Protected staging or local test only: no email was sent. Use the secure callback below to finish this sandbox sign-in.",
+    localAction: "Complete sandbox sign-in",
     sentTitle: "Check your email",
     sentDescription: "Use the short-lived link we sent to finish signing in.",
     offline: "You appear to be offline. Reconnect before requesting a sign-in link.",
@@ -162,6 +166,25 @@ const englishMessages = {
     invalid: "That sign-in link is invalid or has expired. Request a new one below.",
     error: "Sign-in could not be started. No account changes were made. Try again.",
     unavailable: "Account sign-in is temporarily unavailable in this environment.",
+    wallet: {
+      action: "Sign in with a linked wallet",
+      description:
+        "Use a wallet already linked to a RITUVIA sandbox account. This signs a message only; RITUVIA never requests funds or a transaction.",
+      empty: "No wallet is linked to this sandbox account.",
+      error: "Wallet sign-in could not be verified. No account authority was granted.",
+      linked: "Wallet verified.",
+      linkedTitle: "Wallet verified",
+      loading: "Checking linked wallets",
+      noProvider:
+        "No browser wallet was found. Open this protected staging page inside a wallet browser or install an EIP-1193 wallet.",
+      rejected: "The wallet signature request was canceled. No account authority was granted.",
+      remove: "Unlink wallet",
+      removeConfirm: "Unlink this wallet from sign-in?",
+      removed: "The wallet was unlinked and its wallet-authenticated sessions were revoked.",
+      signing: "Waiting for wallet signature",
+      title: "Wallet sign-in",
+      wrongChain: "Switch your wallet to Base Sepolia, then try again.",
+    },
   },
   account: {
     eyebrow: "Private account",
@@ -179,6 +202,7 @@ const englishMessages = {
     profileTitle: "Profile preferences",
     profileDescription:
       "Display name is optional. Language and time zone keep dates and future reminders understandable.",
+    privacyAction: "Manage privacy & data",
     displayNameLabel: "Display name",
     displayNameDescription: "Optional and visible only inside your private account.",
     timeZoneLabel: "Time zone",
@@ -287,6 +311,25 @@ const englishMessages = {
     signOut: "Sign out",
     signingOut: "Signing out",
     signOutError: "Sign-out could not be completed. Try again before leaving this device.",
+    wallet: {
+      action: "Link a Base Sepolia wallet",
+      description:
+        "Link one non-custodial wallet for sign-in. Payment wallets remain separate, and RITUVIA never receives your private key or requests a transaction.",
+      empty: "No wallet is linked to this account.",
+      error: "The wallet operation could not be completed. Existing account access was unchanged.",
+      linked: "The wallet is linked and can now be used for sign-in.",
+      linkedTitle: "Wallet identity updated",
+      loading: "Loading linked wallets",
+      noProvider:
+        "No browser wallet was found. Open this protected staging page inside a wallet browser or install an EIP-1193 wallet.",
+      rejected: "The wallet signature request was canceled. Nothing was linked.",
+      remove: "Unlink wallet",
+      removeConfirm: "Unlink this wallet and revoke its wallet-authenticated sessions?",
+      removed: "The wallet was unlinked and its wallet-authenticated sessions were revoked.",
+      signing: "Waiting for wallet signature",
+      title: "Linked sign-in wallets",
+      wrongChain: "Switch your wallet to Base Sepolia, then try again.",
+    },
   },
 } as const satisfies AccountMessages;
 

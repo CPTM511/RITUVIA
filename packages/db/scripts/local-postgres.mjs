@@ -988,6 +988,20 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT UPDATE (token_hash, last_seen_at, revoked_at) ON TABLE account_session TO ${APP_ROLE}`,
       );
+      const walletIdentityTables = await admin.query(
+        "SELECT to_regclass('public.wallet_identity') IS NOT NULL AS present",
+      );
+      if (walletIdentityTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT, INSERT ON TABLE wallet_identity, wallet_auth_challenge, wallet_auth_event TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (last_sign_in_at, revoked_at) ON TABLE wallet_identity TO ${APP_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (attempt_count, consumed_at) ON TABLE wallet_auth_challenge TO ${APP_ROLE}`,
+        );
+      }
       await admin.query(`GRANT SELECT, INSERT ON TABLE account_subject_link TO ${APP_ROLE}`);
       if (accountTables.rows[0]?.consentPresent === true) {
         await admin.query(`GRANT SELECT, INSERT ON TABLE account_consent_record TO ${APP_ROLE}`);
@@ -1167,6 +1181,20 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT SELECT ON TABLE app_user, account_session, account_subject_link, anonymous_session, intention, journal_entry, private_journal_entry, revisit, interpretation, interpretation_verification, privacy_export, privacy_export_artifact, auth_identity, commerce_order, payment_attempt, auth_challenge, passkey_credential, privacy_deletion_request, privacy_deletion_completion, auth_identity_suppression TO ${PRIVACY_DELETION_ROLE}`,
       );
+      const walletIdentityTables = await admin.query(
+        "SELECT to_regclass('public.wallet_identity') IS NOT NULL AS present",
+      );
+      if (walletIdentityTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE wallet_identity, wallet_auth_challenge, wallet_auth_event TO ${PRIVACY_DELETION_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (address, revoked_at) ON TABLE wallet_identity TO ${PRIVACY_DELETION_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (address, message, message_hash, canonical_request_hash) ON TABLE wallet_auth_challenge TO ${PRIVACY_DELETION_ROLE}`,
+        );
+      }
       if (accountTables.rows[0]?.birthProfilePresent === true) {
         await admin.query(`GRANT SELECT ON TABLE birth_profile TO ${PRIVACY_DELETION_ROLE}`);
         await admin.query(

@@ -6,12 +6,15 @@ import {
   createAccountAuthProvider,
 } from "../server/auth-provider";
 
+const encryptionKey = new Uint8Array(32).fill(7);
+
 describe("local passwordless account provider", () => {
   it("issues unique bounded one-time local callback material for synthetic email only", () => {
     const provider = createAccountAuthProvider({
       canonicalOrigin: "https://example.test",
       challengeTtlSeconds: 600,
       deploymentEnvironment: "local",
+      encryptionKey,
       now: () => new Date("2026-07-18T00:00:00.000Z"),
     });
     const first = provider.startEmailMagicLink({
@@ -43,11 +46,10 @@ describe("local passwordless account provider", () => {
       emailMagicLink: "active",
       passkey: "schema_ready",
     });
-    provider.stageLocalPreview(first);
-    expect(provider.readLocalPreview(first.state)).toEqual(first);
-    expect(provider.consumeLocalPreview(first.state)).toBe(true);
-    expect(provider.readLocalPreview(first.state)).toBeNull();
-    expect(provider.consumeLocalPreview(first.state)).toBe(false);
+    const envelope = provider.sealLocalPreview(first);
+    expect(envelope).toMatch(/^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{64,1024}$/u);
+    expect(provider.readLocalPreview(envelope)).toEqual(first);
+    expect(provider.readLocalPreview(`${envelope}x`)).toBeNull();
   });
 
   it.each(["preview", "staging", "production"] as const)(
@@ -58,6 +60,7 @@ describe("local passwordless account provider", () => {
           canonicalOrigin: "https://example.test",
           challengeTtlSeconds: 600,
           deploymentEnvironment,
+          encryptionKey,
         }),
       ).toThrow(AccountAuthProviderUnavailableError);
     },
@@ -68,6 +71,7 @@ describe("local passwordless account provider", () => {
       canonicalOrigin: "https://example.test",
       challengeTtlSeconds: 600,
       deploymentEnvironment: "local",
+      encryptionKey,
     });
     expect(
       provider.startEmailMagicLink({ email: "Person@Example.com", returnTo: "/en/account" }).email,
@@ -86,6 +90,7 @@ describe("local passwordless account provider", () => {
         canonicalOrigin: "https://example.test/private",
         challengeTtlSeconds: 600,
         deploymentEnvironment: "local",
+        encryptionKey,
       }),
     ).toThrow(AccountAuthProviderUnavailableError);
   });
@@ -95,6 +100,7 @@ describe("local passwordless account provider", () => {
       canonicalOrigin: "https://example.test",
       challengeTtlSeconds: 600,
       deploymentEnvironment: "local",
+      encryptionKey,
     });
     const checkout = provider.startEmailMagicLink({
       email: "person@example.test",
@@ -107,5 +113,18 @@ describe("local passwordless account provider", () => {
         returnTo: "/en/checkout/local?checkout_id=bad&next=https://foreign.test",
       }),
     ).toThrow(AccountAuthProviderInputError);
+  });
+
+  it("enables only the explicitly configured staging sandbox", () => {
+    const provider = createAccountAuthProvider({
+      canonicalOrigin: "https://staging.example.test",
+      challengeTtlSeconds: 600,
+      deploymentEnvironment: "staging",
+      encryptionKey,
+      sandboxEnabled: true,
+    });
+    expect(
+      provider.startEmailMagicLink({ email: "owner@example.test", returnTo: "/en/account" }),
+    ).toMatchObject({ email: "owner@example.test", providerKey: "local.passwordless.v1" });
   });
 });

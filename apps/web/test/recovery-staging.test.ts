@@ -6,8 +6,12 @@ const harness = vi.hoisted(() => ({
   deploymentEnvironment: "staging" as "local" | "preview" | "production" | "staging",
   nativeMetadataPath: "/private/recovery/build-metadata.json" as string | undefined,
   privateContentKeyring: {} as object | undefined,
+  privacyDeletionDatabaseUrl: "postgresql://deletion.example.invalid/rituvia" as string | undefined,
+  privacyDeletionPolicy: {} as object | undefined,
+  privacyExport: {} as object | undefined,
   questionIntakeActivationReference: "own-009.recovery-item-5" as string | undefined,
   reflectionPolicy: {} as object | undefined,
+  recoveryIdentitySandbox: {} as object | undefined,
   tarotReadingIntegrityKeyring: {} as object | undefined,
   tarotReadingAvailability: "enabled" as "disabled" | "enabled",
 }));
@@ -18,8 +22,12 @@ vi.mock("../config/server", () => ({
     databaseUrl: harness.databaseUrl,
     deploymentEnvironment: harness.deploymentEnvironment,
     privateContentKeyring: harness.privateContentKeyring,
+    privacyDeletionDatabaseUrl: harness.privacyDeletionDatabaseUrl,
+    privacyDeletionPolicy: harness.privacyDeletionPolicy,
+    privacyExport: harness.privacyExport,
     questionIntakeActivationReference: harness.questionIntakeActivationReference,
     reflectionPolicy: harness.reflectionPolicy,
+    recoveryIdentitySandbox: harness.recoveryIdentitySandbox,
     tarotReadingIntegrityKeyring: harness.tarotReadingIntegrityKeyring,
   }),
 }));
@@ -36,15 +44,19 @@ import { inspectRecoveryStagingRuntime } from "../server/recovery-staging";
 
 const sourceSha = "1111111111111111111111111111111111111111";
 
-describe("Recovery Item 8 runtime identity", () => {
+describe("Recovery Item 9 runtime identity", () => {
   beforeEach(() => {
     harness.anonymousSessionPolicy = {};
     harness.databaseUrl = "postgresql://staging.example.invalid/rituvia";
     harness.deploymentEnvironment = "staging";
     harness.nativeMetadataPath = "/private/recovery/build-metadata.json";
     harness.privateContentKeyring = {};
+    harness.privacyDeletionDatabaseUrl = "postgresql://deletion.example.invalid/rituvia";
+    harness.privacyDeletionPolicy = {};
+    harness.privacyExport = {};
     harness.questionIntakeActivationReference = "own-009.recovery-item-5";
     harness.reflectionPolicy = {};
+    harness.recoveryIdentitySandbox = {};
     harness.tarotReadingIntegrityKeyring = {};
     harness.tarotReadingAvailability = "enabled";
   });
@@ -59,12 +71,14 @@ describe("Recovery Item 8 runtime identity", () => {
       database: "connected",
       environment: "staging",
       indexing: "disabled",
+      identitySandbox: "enabled",
       nativeAstrology: "enabled",
       numerologyEngine: "enabled",
       objectStorage: "not-connected",
       productionProviders: "disabled",
+      privacyControls: "enabled",
       ready: true,
-      recoveryItem: 8,
+      recoveryItem: 9,
       sourceSha,
       tarotCatalog: "enabled",
       timeZoneRuntime: "pinned",

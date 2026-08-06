@@ -21,6 +21,7 @@
     "generate": "prisma generate",
     "test:account-merge": "node --import tsx scripts/verify-account-merge.ts",
     "test:account-control": "node --import tsx scripts/verify-account-control.ts",
+    "test:wallet-identity": "node --import tsx scripts/verify-wallet-identity.ts",
     "test:account-consent": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-account-consent.ts",
     "test:astrology-calculation": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-astrology-calculation-persistence.ts",
     "test:birth-profile": "pnpm --filter @rituvia/domain build && node --import tsx scripts/verify-birth-profile-persistence.ts",

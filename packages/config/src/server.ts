@@ -53,6 +53,7 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
   "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
+  "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
   "RITUVIA_PAYMENT_PROVIDER",
   "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
@@ -97,6 +98,7 @@ export type ServerConfiguration = Readonly<{
   privacyDeletionDatabaseUrl: string | undefined;
   privacyExport: PrivacyExportConfiguration | undefined;
   questionIntakeActivationReference: string | undefined;
+  recoveryIdentitySandbox: RecoveryIdentitySandboxConfiguration | undefined;
   reflectionPolicy: ReflectionPolicyConfiguration | undefined;
   tarotReadingIntegrityKeyring: TarotReadingIntegrityKeyringConfiguration | undefined;
 }>;
@@ -166,6 +168,13 @@ const normalizeEnvironmentValue = (value: string | undefined) => {
   const normalized = value?.trim();
   return normalized === "" ? undefined : normalized;
 };
+
+export type RecoveryIdentitySandboxConfiguration = Readonly<{
+  allowedWalletChainIds: readonly [84532];
+  enabled: true;
+  walletChallengeTtlSeconds: 300;
+  walletRecentAuthenticationSeconds: 900;
+}>;
 
 const emailSenderSchema = z.union([
   z.email(),
@@ -258,6 +267,7 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_AUTH_CHALLENGE_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_AUTH_DATA_KEY_V1: encodedSecretKeySchema.optional(),
+  RITUVIA_RECOVERY_IDENTITY_SANDBOX: z.literal("item-9").optional(),
   RITUVIA_AUTH_START_GLOBAL_LIMIT: z
     .string()
     .regex(/^[1-9][0-9]{0,5}$/u)
@@ -863,6 +873,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: normalizeEnvironmentValue(
       environment.RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1,
     ),
+    RITUVIA_RECOVERY_IDENTITY_SANDBOX: normalizeEnvironmentValue(
+      environment.RITUVIA_RECOVERY_IDENTITY_SANDBOX,
+    ),
     RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: normalizeEnvironmentValue(
       environment.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
     ),
@@ -923,6 +936,24 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const reflection = parseReflectionConfiguration(server);
   const accountIdentityPolicy = parseAccountIdentityPolicy(server);
   const privacyExport = parsePrivacyExportConfiguration(server);
+  const recoveryIdentitySandbox =
+    server.RITUVIA_RECOVERY_IDENTITY_SANDBOX === undefined
+      ? undefined
+      : (build.deploymentEnvironment === "local" || build.deploymentEnvironment === "staging") &&
+          accountIdentityPolicy !== undefined &&
+          privacyExport !== undefined &&
+          parsePrivacyDeletionPolicy(server) !== undefined
+        ? Object.freeze({
+            allowedWalletChainIds: Object.freeze([84532] as const),
+            enabled: true as const,
+            walletChallengeTtlSeconds: 300 as const,
+            walletRecentAuthenticationSeconds: 900 as const,
+          })
+        : (() => {
+            throw new ConfigurationError("server", [
+              { code: "invalid", key: "RITUVIA_RECOVERY_IDENTITY_SANDBOX" },
+            ]);
+          })();
   const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
   assertPaymentWebhookDatabaseBoundary(
     payment,
@@ -959,6 +990,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     privacyDeletionDatabaseUrl: server.PRIVACY_DELETION_DATABASE_URL,
     privacyExport,
     questionIntakeActivationReference,
+    recoveryIdentitySandbox,
     reflectionPolicy: reflection.policy,
     tarotReadingIntegrityKeyring: parseTarotReadingIntegrityKeyring(
       server.RITUVIA_TAROT_INTEGRITY_KEY_V1,

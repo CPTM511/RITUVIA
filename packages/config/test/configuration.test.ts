@@ -95,6 +95,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
       "RITUVIA_AUTH_START_WINDOW_SECONDS",
       "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
+      "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
       "RITUVIA_PAYMENT_PROVIDER",
       "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
@@ -296,6 +297,35 @@ describe("server and client configuration boundary", () => {
         RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
       }),
     ).toThrowError("RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS:invalid");
+  });
+
+  it("enables the exact Item 9 identity sandbox only for local or staging", () => {
+    const identitySandbox = {
+      PRIVACY_DELETION_DATABASE_URL: "postgresql://privacy-delete:password@127.0.0.1:5432/app",
+      RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+      RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+      RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_KEY_V1: Buffer.alloc(32, 3).toString("base64url"),
+      RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+      RITUVIA_RECOVERY_IDENTITY_SANDBOX: "item-9",
+    } as const;
+    expect(
+      parseServerConfiguration({ APP_ENV: "local", ...identitySandbox }).recoveryIdentitySandbox,
+    ).toMatchObject({
+      allowedWalletChainIds: [84_532],
+      enabled: true,
+      walletChallengeTtlSeconds: 300,
+      walletRecentAuthenticationSeconds: 900,
+    });
+    expect(
+      parseServerConfiguration({ APP_ENV: "staging", ...identitySandbox }).recoveryIdentitySandbox,
+    ).toMatchObject({ enabled: true });
+    expect(() => parseServerConfiguration({ APP_ENV: "preview", ...identitySandbox })).toThrowError(
+      "RITUVIA_RECOVERY_IDENTITY_SANDBOX:invalid",
+    );
   });
 
   it("keeps question intake safe-off and requires an owner reference for production", () => {

@@ -726,6 +726,8 @@ model AppUser {
   profileVersion               Int                           @default(1) @map("profile_version")
   authIdentities               AuthIdentity[]
   accountSessions              AccountSession[]
+  walletIdentities             WalletIdentity[]              @relation("WalletIdentityOwner")
+  walletAuthChallenges         WalletAuthChallenge[]          @relation("WalletChallengeRequester")
   accountConsents              AccountConsentRecord[]
   revisitReminderSubscriptions RevisitReminderSubscription[]
   accountSubjectLinks          AccountSubjectLink[]
@@ -811,6 +813,7 @@ model AccountSession {
   id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId             String                   @map("user_id") @db.Uuid
   authIdentityId     String                   @map("auth_identity_id") @db.Uuid
+  walletIdentityId   String?                  @map("wallet_identity_id") @db.Uuid
   tokenHash          Bytes                    @unique(map: "account_session_token_hash_key") @map("token_hash")
   tokenHashVersion   Int                      @default(1) @map("token_hash_version") @db.SmallInt
   authenticatedAt    DateTime?                @map("authenticated_at") @db.Timestamptz(6)
@@ -820,6 +823,9 @@ model AccountSession {
   revokedAt          DateTime?                @map("revoked_at") @db.Timestamptz(6)
   user               AppUser                  @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   authIdentity       AuthIdentity             @relation(fields: [authIdentityId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  walletIdentity     WalletIdentity?          @relation("WalletAuthenticatedSessions", fields: [walletIdentityId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  linkedWalletIdentities WalletIdentity[]      @relation("WalletLinkingSession")
+  walletAuthChallenges WalletAuthChallenge[]  @relation("WalletChallengeSession")
   privacyExports     PrivacyExport[]
   privacyAudits      PrivacyExportAudit[]
   privacyDeletions   PrivacyDeletionRequest[]
@@ -830,7 +836,70 @@ model AccountSession {
   @@unique([id, userId, authIdentityId], map: "account_session_user_auth_identity_key")
   @@index([userId, expiresAt, id], map: "account_session_user_expiry_idx")
   @@index([expiresAt, id], map: "account_session_expiry_idx")
+  @@index([walletIdentityId, expiresAt, id], map: "account_session_wallet_identity_idx")
   @@map("account_session")
+}
+
+model WalletIdentity {
+  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String            @map("user_id") @db.Uuid
+  chainFamily           String            @default("eip155") @map("chain_family") @db.VarChar(16)
+  chainId               BigInt            @map("chain_id")
+  address               String            @db.VarChar(42)
+  linkedBySessionId     String            @map("linked_by_session_id") @db.Uuid
+  verifiedAt            DateTime          @default(now()) @map("verified_at") @db.Timestamptz(6)
+  lastSignInAt          DateTime?         @map("last_sign_in_at") @db.Timestamptz(6)
+  revokedAt             DateTime?         @map("revoked_at") @db.Timestamptz(6)
+  createdAt             DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  user                  AppUser           @relation("WalletIdentityOwner", fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  linkedBySession       AccountSession     @relation("WalletLinkingSession", fields: [linkedBySessionId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  authenticatedSessions AccountSession[]   @relation("WalletAuthenticatedSessions")
+  authEvents            WalletAuthEvent[]
+
+  @@unique([id, userId], map: "wallet_identity_id_user_key")
+  @@unique([chainFamily, address], map: "wallet_identity_chain_address_key")
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)], map: "wallet_identity_user_created_idx")
+  @@map("wallet_identity")
+}
+
+model WalletAuthChallenge {
+  id                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  address                  String            @db.VarChar(42)
+  chainId                  BigInt            @map("chain_id")
+  purpose                  String            @db.VarChar(16)
+  message                  String            @db.VarChar(2048)
+  messageHash              Bytes             @map("message_hash")
+  nonceHash                Bytes             @unique(map: "wallet_auth_challenge_nonce_key") @map("nonce_hash")
+  idempotencyKeyHash       Bytes             @unique(map: "wallet_auth_challenge_idempotency_key") @map("idempotency_key_hash")
+  canonicalRequestHash     Bytes             @map("canonical_request_hash")
+  requestedByUserId        String?           @map("requested_by_user_id") @db.Uuid
+  requestedBySessionId     String?           @map("requested_by_session_id") @db.Uuid
+  createdAt                DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt                DateTime          @map("expires_at") @db.Timestamptz(6)
+  consumedAt               DateTime?         @map("consumed_at") @db.Timestamptz(6)
+  attemptCount             Int               @default(0) @map("attempt_count") @db.SmallInt
+  requestedByUser          AppUser?          @relation("WalletChallengeRequester", fields: [requestedByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  requestedBySession       AccountSession?   @relation("WalletChallengeSession", fields: [requestedBySessionId, requestedByUserId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+  events                   WalletAuthEvent[]
+
+  @@index([expiresAt, id], map: "wallet_auth_challenge_expiry_idx")
+  @@map("wallet_auth_challenge")
+}
+
+model WalletAuthEvent {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengeId        String              @map("challenge_id") @db.Uuid
+  userId             String?             @map("user_id") @db.Uuid
+  walletIdentityId   String?             @map("wallet_identity_id") @db.Uuid
+  outcome            String              @db.VarChar(16)
+  reasonCode         String              @map("reason_code") @db.VarChar(40)
+  signatureHash      Bytes?              @map("signature_hash")
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  challenge          WalletAuthChallenge @relation(fields: [challengeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  walletIdentity     WalletIdentity?     @relation(fields: [walletIdentityId, userId], references: [id, userId], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([challengeId, createdAt, id], map: "wallet_auth_event_challenge_created_idx")
+  @@map("wallet_auth_event")
 }
 
 model PasskeyCredential {
@@ -1046,6 +1115,7 @@ model PrivacyDeletionCompletion {
   authIdentityCount   Int                    @map("auth_identity_count")
   accountSessionCount Int                    @map("account_session_count")
   passkeyCount        Int                    @map("passkey_count")
+  walletIdentityCount Int                    @map("wallet_identity_count")
   birthProfileCount   Int                    @map("birth_profile_count")
   astrologyCalculationCount Int              @map("astrology_calculation_count")
   evidenceSha256      Bytes                  @map("evidence_sha256")

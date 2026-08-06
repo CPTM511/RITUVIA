@@ -46,7 +46,7 @@ export default async function NumerologyPage({ params }: NumerologyPageProps) {
   const configuration = getWebRuntimeConfiguration();
   const messages = getNumerologyMessages(locale);
   const recovery = inspectRecoveryStagingRuntime();
-  const recoveryEnabled = locale === "en" && recovery.ready && recovery.recoveryItem === 8;
+  const recoveryEnabled = locale === "en" && recovery.ready && recovery.recoveryItem >= 8;
 
   return (
     <PublicSiteFrame
