@@ -83,6 +83,7 @@ describe("server and client configuration boundary", () => {
       "DATABASE_URL",
       "PAYMENT_WEBHOOK_DATABASE_URL",
       "PRIVACY_DELETION_DATABASE_URL",
+      "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD",
       "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
@@ -326,6 +327,56 @@ describe("server and client configuration boundary", () => {
     expect(() => parseServerConfiguration({ APP_ENV: "preview", ...identitySandbox })).toThrowError(
       "RITUVIA_RECOVERY_IDENTITY_SANDBOX:invalid",
     );
+  });
+
+  it("derives the exact deletion-role connection only in Item 9 staging", () => {
+    const rolePassword = Buffer.alloc(32, 4).toString("base64url");
+    const applicationUrl = new URL("postgresql://staging.invalid/rituvia?sslmode=require");
+    applicationUrl.username = "rituvia_app";
+    applicationUrl.password = "application-password";
+    const staging = parseServerConfiguration({
+      APP_ENV: "staging",
+      DATABASE_URL: applicationUrl.toString(),
+      RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+      RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+      RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: rolePassword,
+      RITUVIA_PRIVACY_EXPORT_KEY_V1: Buffer.alloc(32, 3).toString("base64url"),
+      RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+      RITUVIA_RECOVERY_IDENTITY_SANDBOX: "item-9",
+    });
+    const deletionUrl = new URL(staging.privacyDeletionDatabaseUrl!);
+    expect(decodeURIComponent(deletionUrl.username)).toBe("rituvia_privacy_deletion");
+    expect(decodeURIComponent(deletionUrl.password)).toBe(rolePassword);
+    expect(deletionUrl.hostname).toBe("staging.invalid");
+    expect(deletionUrl.searchParams.get("sslmode")).toBe("require");
+
+    for (const environment of ["local", "preview", "production"] as const) {
+      expect(() =>
+        parseServerConfiguration({
+          APP_ENV: environment,
+          ...(environment === "production"
+            ? {
+                BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+                BRAND_CANONICAL_ORIGIN: "https://example.com",
+                BRAND_LEGAL_ENTITY: "Entity",
+                BRAND_NAME: "Brand",
+                BRAND_SHORT_NAME: "Brand",
+                BRAND_SOCIAL_HANDLES: "{}",
+                BRAND_SUPPORT_EMAIL: "support@example.com",
+                BRAND_TAGLINE: "Tagline",
+                BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+              }
+            : {}),
+          DATABASE_URL: applicationUrl.toString(),
+          RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: rolePassword,
+          RITUVIA_RECOVERY_IDENTITY_SANDBOX: "item-9",
+        }),
+      ).toThrowError("RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD:invalid");
+    }
   });
 
   it("keeps question intake safe-off and requires an owner reference for production", () => {

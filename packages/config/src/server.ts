@@ -44,6 +44,7 @@ export const serverEnvironmentVariables = Object.freeze([
   "DATABASE_URL",
   "PAYMENT_WEBHOOK_DATABASE_URL",
   "PRIVACY_DELETION_DATABASE_URL",
+  "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD",
   "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
   ...anonymousSessionEnvironmentVariables,
   "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
@@ -240,6 +241,7 @@ const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
   PAYMENT_WEBHOOK_DATABASE_URL: databaseUrlSchema.optional(),
   PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
+  RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: encodedSecretKeySchema.optional(),
   RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: absoluteMetadataPathSchema.optional(),
   RITUVIA_ACCOUNT_SESSION_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: z
@@ -667,6 +669,46 @@ const decodeDatabaseCredential = (value: string): string | null => {
   }
 };
 
+const resolvePrivacyDeletionDatabaseUrl = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): string | undefined => {
+  const explicitUrl = parsed.PRIVACY_DELETION_DATABASE_URL;
+  const rolePassword = parsed.RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD;
+  if (rolePassword === undefined) return explicitUrl;
+  if (
+    explicitUrl !== undefined ||
+    deploymentEnvironment !== "staging" ||
+    parsed.RITUVIA_RECOVERY_IDENTITY_SANDBOX !== "item-9" ||
+    parsed.DATABASE_URL === undefined
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD" },
+    ]);
+  }
+
+  const application = new URL(parsed.DATABASE_URL);
+  const applicationUsername = decodeDatabaseCredential(application.username);
+  const applicationPassword = decodeDatabaseCredential(application.password);
+  if (
+    applicationUsername === null ||
+    applicationUsername === "" ||
+    applicationUsername === "rituvia_privacy_deletion" ||
+    applicationPassword === null ||
+    applicationPassword === "" ||
+    applicationPassword === rolePassword
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD" },
+    ]);
+  }
+
+  const deletion = new URL(parsed.DATABASE_URL);
+  deletion.username = "rituvia_privacy_deletion";
+  deletion.password = rolePassword;
+  return deletion.toString();
+};
+
 const assertPaymentWebhookDatabaseBoundary = (
   payment: PaymentConfiguration | undefined,
   databaseUrl: string | undefined,
@@ -839,6 +881,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     PRIVACY_DELETION_DATABASE_URL: normalizeEnvironmentValue(
       environment.PRIVACY_DELETION_DATABASE_URL,
     ),
+    RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: normalizeEnvironmentValue(
+      environment.RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD,
+    ),
     RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: normalizeEnvironmentValue(
       environment.RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH,
     ),
@@ -936,13 +981,18 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const reflection = parseReflectionConfiguration(server);
   const accountIdentityPolicy = parseAccountIdentityPolicy(server);
   const privacyExport = parsePrivacyExportConfiguration(server);
+  const privacyDeletionDatabaseUrl = resolvePrivacyDeletionDatabaseUrl(
+    server,
+    build.deploymentEnvironment,
+  );
   const recoveryIdentitySandbox =
     server.RITUVIA_RECOVERY_IDENTITY_SANDBOX === undefined
       ? undefined
       : (build.deploymentEnvironment === "local" || build.deploymentEnvironment === "staging") &&
           accountIdentityPolicy !== undefined &&
           privacyExport !== undefined &&
-          parsePrivacyDeletionPolicy(server) !== undefined
+          parsePrivacyDeletionPolicy(server) !== undefined &&
+          privacyDeletionDatabaseUrl !== undefined
         ? Object.freeze({
             allowedWalletChainIds: Object.freeze([84532] as const),
             enabled: true as const,
@@ -987,7 +1037,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     paymentWebhookDatabaseUrl: server.PAYMENT_WEBHOOK_DATABASE_URL,
     privateContentKeyring: reflection.keyring,
     privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
-    privacyDeletionDatabaseUrl: server.PRIVACY_DELETION_DATABASE_URL,
+    privacyDeletionDatabaseUrl,
     privacyExport,
     questionIntakeActivationReference,
     recoveryIdentitySandbox,
