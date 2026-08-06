@@ -59,15 +59,20 @@ export default async function TarotOneCardPage({ params }: TarotOneCardPageProps
           <p className="tarot-reading-privacy">{messages.page.privacy}</p>
         </header>
         <TarotOneCardFlow
-          brandName={configuration.client.brand.name}
+          enhancedInterpretationAvailable={configuration.deploymentEnvironment !== "staging"}
           locale={locale}
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}
           sanctuaryHref={localeSanctuaryPath(locale)}
-          shareCanonicalUrl={new URL(
-            localeTarotLibraryPath(locale),
-            configuration.client.brand.canonicalOrigin,
-          ).toString()}
+          {...(configuration.deploymentEnvironment === "staging"
+            ? {}
+            : {
+                brandName: configuration.client.brand.name,
+                shareCanonicalUrl: new URL(
+                  localeTarotLibraryPath(locale),
+                  configuration.client.brand.canonicalOrigin,
+                ).toString(),
+              })}
         />
       </main>
     </PublicSiteFrame>

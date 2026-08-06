@@ -1082,15 +1082,19 @@ existing human approval gates.
 **Last reconciled:** 2026-08-05
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 3 are complete. Item 3 now has
-one standing Vercel-authenticated custom Staging acceptance shell at the Owner URL recorded in
-`docs/recovery/ITEM_3_PROTECTED_STAGING_EVIDENCE.md`. Accepted deployment
-`dpl_9KoP39Be17B4RUijhayXgpChYjLY` is `READY`, `target=null`, OIDC/custom-environment `staging`,
-source-bound to `cc3ebec5101802e8b5116bab29a6f8883d66bebc`, `live=false`, and has zero project
-domains. Health/readiness, noindex/no-store, route shutdown, desktop/mobile acceptance, isolated
-restore evidence, and alias rollback/forward pass. Git automatic deployment is disabled. Recovery
-Item 4 is dependency-ready but unapproved and unstarted; all product implementation, production,
-DNS, real funds, Providers, unrestricted AI, and public release remain stopped.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 6 are complete. Item 6 is
+deployed to Vercel-authenticated custom Staging as `dpl_CSWoRBXuooyaGSuHZdthLn6VZca3`, source
+`0aa78cad52d2d8ffd92d91f7eb47994e34853302`. Vercel reports `READY`, `target=null`, source `git`,
+`live=false`, one `iad1` runtime region, no project domains, and SSO on all tested routes. The
+locked golden prototype remains unchanged; reviewed English/Simplified Chinese Home shells,
+locale persistence, desktop/mobile production-browser evidence, localization/writing-system
+checks, 194 focused tests, production Web build, full-loop regression, and Turbo generated-client
+cache replay pass on exact Node `24.18.0` and pnpm `11.13.1`. The accepted Item 5 English core loop
+remains available; the Chinese shell does not activate unreviewed domain/API translation. Hosted
+pixels remain a direct Owner visual check because browser automation could not traverse Vercel SSO;
+no bypass link was created. Git automatic deployment is disabled, and its closure push created no
+new deployment. Item 7 is unapproved and unstarted; production, DNS, real funds, Providers,
+unrestricted AI, public indexing, and public release remain stopped.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
@@ -13133,6 +13137,20 @@ and Revisit. It proves the real cross-page actions, UUID-only handoffs, same-key
 deletion, mobile keyboard/RTL/touch/axe behavior, and absence of private canaries from browser
 storage, history, metadata, console, or analytics requests. `pnpm test:accessibility` composes this
 continuous gate after the detailed Tarot, intention, ritual, and Revisit verifiers.
+
+`scripts/verify-recovery-runtime-truth-browser.mjs` is the protected Recovery Item 4 browser gate.
+Unlike the legacy full-loop behavior verifier, it installs no request interception or fulfillment
+handler. Set `RITUVIA_RECOVERY_STAGING_URL` to a temporary Vercel-authenticated `/recovery` URL and
+run `pnpm test:recovery-runtime-truth-browser`; desktop and mobile Chromium must record exact
+`200`, `200`, and core-loop `404` responses with staging/source headers and server correlation IDs.
+The focused source guard fails if interception or fulfillment APIs enter this verifier.
+
+`scripts/verify-recovery-tarot-browser.mjs` is the protected Recovery Item 7 Tarot gate. It uses
+the real staging API with no interception or fulfillment, then verifies one-card and ordered
+three-card draws, refresh stability, idempotent replay, reviewed content, Provider safe-off,
+Sanctuary handoff, desktop/mobile layout, keyboard access, and axe results. Set
+`RITUVIA_RECOVERY_STAGING_URL` and optionally `RITUVIA_EXPECTED_SOURCE_SHA`, then run
+`pnpm test:recovery-tarot-browser`; artifacts are private local evidence and must not be committed.
 
 `scripts/verify-account-auth-browser.mjs` is the focused RIT-050/RIT-051 browser gate. It uses the
 real local PostgreSQL account boundary to verify uniform sign-in starts, constant local preview

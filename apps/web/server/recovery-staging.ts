@@ -4,6 +4,7 @@ import type { RawEnvironment } from "@rituvia/config/server";
 
 import { getWebRuntimeConfiguration } from "../config/server";
 import { resolveRecoverySourceRevision } from "../config/recovery-environment";
+import { loadTarotReadingAvailability } from "./tarot-reading-state";
 
 export const recoveryStagingPathname = "/recovery" as const;
 export const recoveryHealthPathname = "/api/recovery/health" as const;
@@ -22,8 +23,9 @@ export type RecoveryStagingRuntimeStatus = Readonly<{
   objectStorage: "not-connected";
   productionProviders: "disabled";
   ready: boolean;
-  recoveryItem: 6;
+  recoveryItem: 7;
   sourceSha: string;
+  tarotCatalog: "disabled" | "enabled";
 }>;
 
 const hasForbiddenServiceEnvironment = (environment: RawEnvironment): boolean =>
@@ -40,6 +42,7 @@ export const inspectRecoveryStagingRuntime = (
   const sourceSha = resolveRecoverySourceRevision(environment) || embeddedBuildSourceSha;
   const sourceIdentityValid = sourceSha !== "";
   const safeOff = !hasForbiddenServiceEnvironment(environment);
+  const tarotCatalog = loadTarotReadingAvailability();
   const databaseConnected = configuration.databaseUrl !== undefined;
   const coreLoopConfigured =
     databaseConnected &&
@@ -57,8 +60,13 @@ export const inspectRecoveryStagingRuntime = (
     objectStorage: "not-connected",
     productionProviders: "disabled",
     ready:
-      deploymentEnvironment === "staging" && sourceIdentityValid && safeOff && coreLoopConfigured,
-    recoveryItem: 6,
+      deploymentEnvironment === "staging" &&
+      sourceIdentityValid &&
+      safeOff &&
+      coreLoopConfigured &&
+      tarotCatalog === "enabled",
+    recoveryItem: 7,
     sourceSha: sourceIdentityValid ? sourceSha : "unavailable",
+    tarotCatalog,
   });
 };

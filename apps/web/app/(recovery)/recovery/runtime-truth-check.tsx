@@ -45,7 +45,7 @@ const probes: readonly ProbeDefinition[] = Object.freeze([
     expectedStatus: 200,
     label: messages.runtimeCoreLabel,
     method: "GET",
-    pathname: "/en/intake",
+    pathname: "/en/tarot/three-card",
   },
 ]);
 

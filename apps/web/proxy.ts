@@ -26,6 +26,7 @@ import {
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeNumerologyPath,
+  localePublicPagePath,
   localeQuestionIntakePath,
   localeRevisitPath,
   localeSanctuaryPath,
@@ -281,20 +282,26 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
 
-const recoveryItem6PagePathnames = Object.freeze([
+const recoveryItem7PagePathnames = Object.freeze([
   goldenShellHomePath("en"),
   goldenShellHomePath("zh-Hans"),
   localeQuestionIntakePath("en"),
   localeTarotOneCardPath("en"),
+  localeTarotThreeCardPath("en"),
+  localePublicPagePath("en", "methodology"),
   localeSanctuaryPath("en"),
   localeRevisitPath("en"),
 ]);
 
-const recoveryItem6ApiPatterns = Object.freeze([
+const recoveryItem7ApiPatterns = Object.freeze([
   { methods: ["POST"], pattern: /^\/api\/v1\/anonymous\/session$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/intake\/evaluate$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/readings\/tarot$/u },
   { methods: ["GET"], pattern: new RegExp(`^/api/v1/readings/${uuidPathPart}$`, "u") },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/readings/${uuidPathPart}/report$`, "u"),
+  },
   { methods: ["POST"], pattern: /^\/api\/v1\/intentions$/u },
   {
     methods: ["DELETE", "GET", "PATCH"],
@@ -325,9 +332,9 @@ const recoveryItem6ApiPatterns = Object.freeze([
   },
 ] as const);
 
-const isRecoveryItem6DocumentRequest = (request: NextRequest): boolean => {
+const isRecoveryItem7DocumentRequest = (request: NextRequest): boolean => {
   const pathname = request.nextUrl.pathname;
-  const matched = recoveryItem6PagePathnames.some(
+  const matched = recoveryItem7PagePathnames.some(
     (pagePathname) =>
       pathname === pagePathname ||
       pathname === `${pagePathname}.rsc` ||
@@ -341,10 +348,10 @@ const isRecoveryItem6DocumentRequest = (request: NextRequest): boolean => {
   );
 };
 
-const isRecoveryItem6ApiRequest = (request: NextRequest): boolean =>
+const isRecoveryItem7ApiRequest = (request: NextRequest): boolean =>
   request.nextUrl.search === "" &&
   !isFrameworkRepresentationRequest(request) &&
-  recoveryItem6ApiPatterns.some(
+  recoveryItem7ApiPatterns.some(
     ({ methods, pattern }) =>
       pattern.test(request.nextUrl.pathname) &&
       (methods as readonly string[]).includes(request.method),
@@ -411,7 +418,7 @@ const recoveryStagingResponse = (
     request.nextUrl.search === "" &&
     request.nextUrl.pathname.startsWith("/images/");
   const reviewedRecoveryRequest =
-    status.ready && (isRecoveryItem6DocumentRequest(request) || isRecoveryItem6ApiRequest(request));
+    status.ready && (isRecoveryItem7DocumentRequest(request) || isRecoveryItem7ApiRequest(request));
   const response =
     request.nextUrl.pathname === "/robots.txt" &&
     isSafeReadMethod(request.method) &&

@@ -2,9 +2,9 @@ export const recoveryStagingMessages = Object.freeze({
   badge: "Founder Acceptance Recovery",
   baselineLabel: "Approved recovery baseline",
   boundaries: Object.freeze([
-    "Recovery Item 6 adds only the owner-reviewed English and Simplified Chinese golden home shell while preserving the Item 5 English anonymous core loop.",
+    "Recovery Item 7 adds the reviewed English one-card and three-card Tarot experiences while preserving the Item 5 anonymous core loop and Item 6 bilingual golden home shell.",
     "The dedicated staging database contains synthetic recovery evidence only; object storage remains disconnected.",
-    "The Simplified Chinese shell does not enter an English journey; account, Provider AI, payment, and Item 7+ product requests remain outside this staging slice.",
+    "Tarot draws are server-fixed from the approved Major Arcana catalog; Provider AI, payment, account, and Item 8+ product requests remain outside this staging slice.",
     "Production Providers, real payments, unrestricted AI, DNS, and public release remain off.",
   ]),
   chineseShellLink: "Open the Simplified Chinese golden shell",
@@ -13,7 +13,7 @@ export const recoveryStagingMessages = Object.freeze({
   environmentLabel: "Environment",
   healthLink: "Open liveness JSON",
   intro:
-    "This protected shell exposes the Recovery Item 6 bilingual golden home shell, the preserved English anonymous core loop, and source-bound diagnostics.",
+    "This protected shell exposes Recovery Item 7 one-card and three-card Tarot, the preserved core loop and bilingual golden home shell, and source-bound diagnostics.",
   itemLabel: "Recovery item",
   offline: "Offline / degraded: this already-loaded acceptance shell remains readable.",
   online: "Online: protected staging checks are available.",
@@ -21,15 +21,15 @@ export const recoveryStagingMessages = Object.freeze({
     "STOP: readiness failed. Do not begin another recovery item or treat this deployment as accepted.",
   readinessLink: "Open readiness JSON",
   readinessPassed:
-    "Ready: source identity, database, privacy keys, Item 5 core-loop controls, and Item 6 safe-off boundaries passed.",
-  runtimeCoreLabel: "Anonymous intake page request",
+    "Ready: source identity, database, privacy keys, approved Tarot catalog, core-loop controls, and Item 7 safe-off boundaries passed.",
+  runtimeCoreLabel: "Protected three-card Tarot page request",
   runtimeEyebrow: "Zero-fulfillment runtime evidence",
   runtimeFailed:
     "STOP: runtime evidence did not match. Retry once, then stop and preserve the request details.",
   runtimeHealthLabel: "Protected liveness request",
   runtimeIdle: "Run the check to issue three real same-origin requests from this browser.",
   runtimeIntro:
-    "This check sends two protected diagnostics and one anonymous intake page request. It expects three HTTP 200 responses and records each server correlation ID.",
+    "This check sends two protected diagnostics and one three-card Tarot page request. It expects three HTTP 200 responses and records each server correlation ID.",
   runtimeMockLabel: "Browser fulfillment mocks",
   runtimeMockValue: "None in this check",
   runtimePassed:
@@ -51,4 +51,6 @@ export const recoveryStagingMessages = Object.freeze({
   skip: "Skip to staging identity",
   sourceLabel: "Deployed source SHA",
   title: "Protected staging runtime truth",
+  oneCardLink: "Open the one-card Tarot experience",
+  threeCardLink: "Open the three-card Tarot experience",
 });

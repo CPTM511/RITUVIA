@@ -79,6 +79,7 @@
     "test:numerology-browser": "node scripts/verify-numerology-browser.mjs",
     "test:ritual-browser": "node scripts/verify-ritual-browser.mjs",
     "test:recovery-runtime-truth-browser": "node scripts/verify-recovery-runtime-truth-browser.mjs",
+    "test:recovery-tarot-browser": "node scripts/verify-recovery-tarot-browser.mjs",
     "test:revisit-browser": "node scripts/verify-revisit-browser.mjs",
     "test:writing-systems-browser": "node scripts/verify-writing-systems-browser.mjs",
     "test:lifecycle-message-preview": "node --import tsx scripts/verify-lifecycle-message-preview.ts",

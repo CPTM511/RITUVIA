@@ -14,6 +14,7 @@ export const GET = () => {
         indexing: status.indexing,
         objectStorage: status.objectStorage,
         productionProviders: status.productionProviders,
+        tarotCatalog: status.tarotCatalog,
       },
       environment: status.environment,
       recoveryItem: status.recoveryItem,

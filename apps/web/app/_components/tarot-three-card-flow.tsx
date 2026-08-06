@@ -6,6 +6,7 @@ import { TarotReadingFlow } from "./tarot-one-card-flow";
 import type { LocalActionHref } from "@rituvia/ui";
 
 type TarotThreeCardFlowProps = Readonly<{
+  enhancedInterpretationAvailable: boolean;
   locale: Locale;
   messages: TarotThreeCardMessages;
   methodologyHref: LocalActionHref;

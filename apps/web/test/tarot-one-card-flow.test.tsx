@@ -12,6 +12,7 @@ describe("private one-card server render", () => {
     const html = renderToStaticMarkup(
       createElement(TarotOneCardFlow, {
         brandName: "RITUVIA",
+        enhancedInterpretationAvailable: false,
         locale: "en",
         messages: getTarotOneCardMessages("en"),
         methodologyHref: createLocalActionHref("/en/methodology"),
@@ -26,6 +27,10 @@ describe("private one-card server render", () => {
     expect(html).toMatch(/<fieldset\b[^>]*disabled/gu);
     expect(html).toContain("JavaScript is required");
     expect(html).not.toMatch(/textarea|name="question|localStorage|sessionStorage/iu);
+    expect(html).not.toContain("Explore a deeper interpretation");
+    expect(getTarotOneCardMessages("en").result.providerSafeOff).toContain(
+      "Provider AI is disabled in protected staging",
+    );
   });
 
   it("server-renders a closed categorical report control for the whole reading or card", () => {
@@ -46,6 +51,21 @@ describe("private one-card server render", () => {
     expect(html).toContain('value="reading"');
     expect(html).toContain('value="single"');
     expect(html).not.toMatch(/textarea|name="(?:question|comment|journal|prayer)/iu);
+  });
+
+  it("keeps the share surface absent when staging omits public share inputs", () => {
+    const html = renderToStaticMarkup(
+      createElement(TarotOneCardFlow, {
+        enhancedInterpretationAvailable: false,
+        locale: "en",
+        messages: getTarotOneCardMessages("en"),
+        methodologyHref: createLocalActionHref("/en/methodology"),
+        sanctuaryHref: createLocalActionHref("/en/sanctuary"),
+      }),
+    );
+
+    expect(html).not.toContain("Share this card");
+    expect(html).not.toContain("https://");
   });
 
   it("server-renders an exact interpretation report without exposing its request identifier", () => {

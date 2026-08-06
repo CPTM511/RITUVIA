@@ -148,6 +148,7 @@ const getSessionResumeStorage = (): Storage | null => {
 
 export type TarotReadingFlowProps = Readonly<{
   brandName?: string;
+  enhancedInterpretationAvailable: boolean;
   locale: Locale;
   messages: TarotReadingMessages;
   methodologyHref: LocalActionHref;
@@ -158,15 +159,16 @@ export type TarotReadingFlowProps = Readonly<{
 
 export type TarotOneCardFlowProps = Readonly<
   Omit<TarotReadingFlowProps, "brandName" | "messages" | "readingType" | "shareCanonicalUrl"> & {
-    brandName: string;
+    brandName?: string;
     messages: TarotOneCardMessages;
-    shareCanonicalUrl: string;
+    shareCanonicalUrl?: string;
   }
 >;
 
 export function TarotReadingFlow(props: TarotReadingFlowProps) {
   const {
     brandName,
+    enhancedInterpretationAvailable,
     locale,
     messages,
     methodologyHref,
@@ -678,17 +680,23 @@ export function TarotReadingFlow(props: TarotReadingFlowProps) {
               themeLabel={themeLabel(response.themeCode, messages)}
             />
           ) : null}
-          <Suspense
-            fallback={<p className="tarot-ai-boundary">{messages.result.interpretation.heading}</p>}
-          >
-            <TarotInterpretationPanel
-              key={response.readingId}
-              locale={locale}
-              messages={messages.result.interpretation}
-              reportMessages={messages.result.report}
-              readingId={response.readingId}
-            />
-          </Suspense>
+          {enhancedInterpretationAvailable ? (
+            <Suspense
+              fallback={
+                <p className="tarot-ai-boundary">{messages.result.interpretation.heading}</p>
+              }
+            >
+              <TarotInterpretationPanel
+                key={response.readingId}
+                locale={locale}
+                messages={messages.result.interpretation}
+                reportMessages={messages.result.report}
+                readingId={response.readingId}
+              />
+            </Suspense>
+          ) : (
+            <p className="tarot-ai-boundary">{messages.result.providerSafeOff}</p>
+          )}
           {displayedResult.restored ? <p>{messages.result.restored}</p> : null}
           <p>{displayedResult.resumeStored ? messages.result.saved : messages.result.notStored}</p>
           {displayedResult.replayed ? <p>{messages.result.replayed}</p> : null}

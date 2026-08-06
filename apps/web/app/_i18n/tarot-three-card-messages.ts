@@ -142,6 +142,8 @@ const englishTarotThreeCardMessages = {
       "Your previous fixed result remains available while a separate new reflection is unfinished.",
     positionBoundary:
       "Situation and Action are reflective lenses. Possibility is something to consider, not a prediction of what will happen.",
+    providerSafeOff:
+      "Provider AI is disabled in protected staging. The three reviewed card meanings above are the complete Item 7 interpretation.",
     reflectionTitle: "A question to reflect on",
     replayed: "This was the same verified result from an earlier matching attempt.",
     restored:

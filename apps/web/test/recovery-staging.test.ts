@@ -8,6 +8,7 @@ const harness = vi.hoisted(() => ({
   questionIntakeActivationReference: "own-009.recovery-item-5" as string | undefined,
   reflectionPolicy: {} as object | undefined,
   tarotReadingIntegrityKeyring: {} as object | undefined,
+  tarotReadingAvailability: "enabled" as "disabled" | "enabled",
 }));
 
 vi.mock("../config/server", () => ({
@@ -22,11 +23,15 @@ vi.mock("../config/server", () => ({
   }),
 }));
 
+vi.mock("../server/tarot-reading-state", () => ({
+  loadTarotReadingAvailability: () => harness.tarotReadingAvailability,
+}));
+
 import { inspectRecoveryStagingRuntime } from "../server/recovery-staging";
 
 const sourceSha = "1111111111111111111111111111111111111111";
 
-describe("Recovery Item 6 runtime identity", () => {
+describe("Recovery Item 7 runtime identity", () => {
   beforeEach(() => {
     harness.anonymousSessionPolicy = {};
     harness.databaseUrl = "postgresql://staging.example.invalid/rituvia";
@@ -35,6 +40,7 @@ describe("Recovery Item 6 runtime identity", () => {
     harness.questionIntakeActivationReference = "own-009.recovery-item-5";
     harness.reflectionPolicy = {};
     harness.tarotReadingIntegrityKeyring = {};
+    harness.tarotReadingAvailability = "enabled";
   });
 
   it("reports ready only for staging with the complete bounded core-loop configuration", () => {
@@ -50,8 +56,9 @@ describe("Recovery Item 6 runtime identity", () => {
       objectStorage: "not-connected",
       productionProviders: "disabled",
       ready: true,
-      recoveryItem: 6,
+      recoveryItem: 7,
       sourceSha,
+      tarotCatalog: "enabled",
     });
   });
 
@@ -70,6 +77,14 @@ describe("Recovery Item 6 runtime identity", () => {
     expect(inspectRecoveryStagingRuntime({ RITUVIA_BUILD_SOURCE_SHA: sourceSha }).ready).toBe(
       false,
     );
+  });
+
+  it("fails closed when the approved Tarot catalog is unavailable", () => {
+    harness.tarotReadingAvailability = "disabled";
+    expect(inspectRecoveryStagingRuntime({ RITUVIA_BUILD_SOURCE_SHA: sourceSha })).toMatchObject({
+      ready: false,
+      tarotCatalog: "disabled",
+    });
   });
 
   it("fails closed outside the protected staging classification", () => {

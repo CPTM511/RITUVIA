@@ -23,8 +23,9 @@ meanings and abstract Unicode interface symbols are adapted from that repository
 RITUVIA-original, agency-preserving prompts. No historical deck artwork is copied; the assigned
 visuals are original abstract interface symbols rather than reproductions of a traditional deck.
 Every card has reviewed upright and reversed content for all intake themes. Publication eligibility
-is time-bounded by its editorial review date, and the web activation layer still restricts new draws
-to a fully configured local deployment.
+is time-bounded by its editorial review date. The web activation layer restricts new draws to a
+fully configured local deployment or the Owner-approved, login-protected recovery staging; this
+does not authorize production, public access, Provider AI, payment, another locale, or another deck.
 
 `rituvia-major-arcana-library.en.v1.json` is the D-081-approved finite English public-education
 projection derived from that exact catalog. It declares one hub, 22 card routes, and two spread

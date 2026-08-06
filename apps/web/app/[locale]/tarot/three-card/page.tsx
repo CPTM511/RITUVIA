@@ -42,6 +42,7 @@ export default async function TarotThreeCardPage({ params }: TarotThreeCardPageP
 
   return (
     <PublicSiteFrame
+      accountNavigation={configuration.deploymentEnvironment !== "staging"}
       brandName={configuration.client.brand.name}
       brandTagline={configuration.client.brand.tagline}
       currentPage={null}
@@ -57,6 +58,7 @@ export default async function TarotThreeCardPage({ params }: TarotThreeCardPageP
           <p className="tarot-reading-privacy">{messages.page.privacy}</p>
         </header>
         <TarotThreeCardFlow
+          enhancedInterpretationAvailable={configuration.deploymentEnvironment !== "staging"}
           locale={locale}
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}

@@ -9,7 +9,7 @@ const stagingUrl = process.env.RITUVIA_RECOVERY_STAGING_URL;
 assert.ok(stagingUrl, "RITUVIA_RECOVERY_STAGING_URL is required.");
 
 const artifactDirectory = path.resolve(
-  process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-5-runtime",
+  process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-7-runtime",
 );
 await mkdir(artifactDirectory, { recursive: true });
 
@@ -18,7 +18,7 @@ const expectedResponses = Object.freeze([
   Object.freeze({ method: "GET", pathname: "/api/recovery/readiness", status: 200 }),
   Object.freeze({
     method: "GET",
-    pathname: "/en/intake",
+    pathname: "/en/tarot/three-card",
     status: 200,
   }),
 ]);

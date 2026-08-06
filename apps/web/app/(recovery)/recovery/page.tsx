@@ -78,6 +78,8 @@ export default function RecoveryStagingPage() {
             <Link href="/en">{messages.englishShellLink}</Link>
             <Link href="/zh-Hans">{messages.chineseShellLink}</Link>
             <Link href="/en/intake">{messages.coreLoopLink}</Link>
+            <Link href="/en/tarot/one-card">{messages.oneCardLink}</Link>
+            <Link href="/en/tarot/three-card">{messages.threeCardLink}</Link>
             <a href={recoveryHealthPathname}>{messages.healthLink}</a>
             <a href={recoveryReadinessPathname}>{messages.readinessLink}</a>
           </nav>

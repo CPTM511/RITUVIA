@@ -91,6 +91,7 @@ export type TarotReadingMessages = Readonly<{
     perspectiveTitle: string;
     previousPreserved: string;
     positionBoundary: string;
+    providerSafeOff: string;
     reflectionTitle: string;
     replayed: string;
     restored: string;
@@ -315,6 +316,8 @@ const englishTarotOneCardMessages = {
       "Your previous fixed result remains available while a separate new reflection is unfinished.",
     positionBoundary:
       "This symbolic perspective offers something to consider, not a prediction or instruction.",
+    providerSafeOff:
+      "Provider AI is disabled in protected staging. The reviewed card meaning above is the complete Item 7 interpretation.",
     reflectionTitle: "A question to reflect on",
     replayed: "This was the same verified result from an earlier matching attempt.",
     restored:
