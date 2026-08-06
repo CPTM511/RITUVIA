@@ -40,6 +40,9 @@ const profiles = Object.freeze({
   desktop: Object.freeze({ height: 900, width: 1_440 }),
   mobile: Object.freeze({ height: 844, width: 390 }),
 });
+const isExpectedHostedPlatformConsoleNoise = (message) =>
+  message.includes("https://vercel.live/_next-live/feedback/feedback.js") &&
+  message.includes("violates the following Content Security Policy directive");
 
 const assertAxe = async (page) => {
   const result = await new AxeBuilder({ page }).analyze();
@@ -306,7 +309,11 @@ try {
 
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(
-    consoleErrors.filter((message) => !message.startsWith("Failed to load resource:")),
+    consoleErrors.filter(
+      (message) =>
+        !message.startsWith("Failed to load resource:") &&
+        !isExpectedHostedPlatformConsoleNoise(message),
+    ),
     [],
   );
   assert.deepEqual(
