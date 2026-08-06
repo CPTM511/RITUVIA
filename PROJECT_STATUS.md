@@ -3,18 +3,19 @@
 **Last reconciled:** 2026-08-06
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 7 are complete. Item 7 is
-deployed to Vercel-authenticated custom Staging as `dpl_9W3Lc17ZGcQZMtAaremRTzJvutiu`, source
-`23ab9b97e34c4240d0e23ea4d782a37ef4a157c5`, with the stable Owner URL recorded in
-`docs/recovery/ITEM_7_TAROT_EVIDENCE.md`. Vercel reports `READY`, target/custom environment/OIDC
-`staging`, source `cli` bound to the exact Git SHA, one `iad1` runtime region, no project domains,
-and login protection. Hosted zero-mock desktop/mobile browser evidence passes one-card and
-three-card draws, refresh restore, idempotent replay, content/source integrity, safe disclosures,
-categorical no-free-text reporting, Sanctuary handoff, 390-pixel layout, touch/keyboard controls,
-and critical/serious accessibility gates. Provider AI, account, payment, public Tarot library,
-`zh-Hans` Tarot, interpretation Provider routes, public indexing, production, DNS, real funds, and
-public release remain off. Git automatic deployment remains disabled. Item 8 is unapproved and
-unstarted.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 8 are complete. Item 8 is
+deployed to Vercel-authenticated custom Staging as `dpl_GuAVFXenqS4g4By52Xcjuu52JrVH`, source
+`8f4d5255f8625a8a74bfa78c0c861d85ab8d491a`, with the stable Owner URL recorded in
+`docs/recovery/ITEM_8_NUMEROLOGY_ASTROLOGY_EVIDENCE.md`. Vercel reports `READY`,
+`readySubstate=STAGED`, custom environment/OIDC and CLI target `staging`, source `cli` bound to the
+exact Git SHA, one `iad1` runtime region, `public=false`, `live=null`, one Vercel-managed domain,
+no custom/production domain, and login protection. Hosted zero-mock desktop/mobile Chromium passes
+the `4`/`1`/`22` numerology vector, exact/approximate/unknown-time astrology, strict uncertainty,
+source/runtime/license disclosure, zero browser storage, zero account/payment/Provider requests,
+390-pixel layout, touch controls, and critical/serious accessibility gates. Provider AI, account,
+wallet, payment, public numerology/astrology hubs, `zh-Hans` calculators, public indexing,
+production, DNS, real funds, and public release remain off. Git automatic deployment remains
+disabled. Item 9 is dependency-ready but unapproved and unstarted.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

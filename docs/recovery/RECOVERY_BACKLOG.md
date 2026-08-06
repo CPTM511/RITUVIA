@@ -2,7 +2,7 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 7 are complete. Item 8 and every later item require a
+> Repository status is NO-GO. Items 1 through 8 are complete. Item 9 and every later item require a
 > new explicit Owner approval. One Codex run may execute exactly one approved item and must then
 > STOP.
 
@@ -186,8 +186,11 @@
 
 ## Item 8 — Numerology and Astrology
 
-- **Status:** Planned; Item 7 dependency is satisfied, but execution requires separate explicit
-  Owner approval.
+- **Status:** Complete — exact source `8f4d5255f8625a8a74bfa78c0c861d85ab8d491a` is `READY` in
+  Vercel-authenticated custom Staging as `dpl_GuAVFXenqS4g4By52Xcjuu52JrVH`. Deterministic
+  numerology and exact/approximate/unknown-time astrology, native source/runtime/license,
+  privacy/restore, desktop/mobile zero-mock, safe-off, and denylist evidence are recorded in
+  `docs/recovery/ITEM_8_NUMEROLOGY_ASTROLOGY_EVIDENCE.md`. Item 9 remains unapproved and unstarted.
 - **Founder Journey IDs:** FJ-03, FJ-04, FJ-05, FJ-06.
 - **Exact user-visible outcome:** Numerology and exact/uncertain-time astrology show transparent
   deterministic inputs, calculations, source limits, and uncertainty.
@@ -203,12 +206,14 @@
   source SHA, and current license disclosure.
 - **Explicit exclusions:** No medical/fertility/death/legal/financial claims, biometric reading,
   new tradition, public indexing expansion, production activation, or license conclusion.
-- **STOP condition:** Vector mismatch, hidden time assumption, birth-data leak, missing source/license
-  disclosure, or inaccessible mobile chart.
+- **STOP condition:** Vector mismatch, hidden time assumption, birth-data leak, missing
+  source/license disclosure, or inaccessible mobile chart. None occurred in the accepted Item 8
+  deployment. Stop after Item 8; Item 9 requires separate explicit Owner approval.
 
 ## Item 9 — Identity, wallet and privacy
 
-- **Status:** Planned; depends on Item 8.
+- **Status:** Planned; Item 8 dependency is satisfied, but execution requires separate explicit
+  Owner approval.
 - **Founder Journey IDs:** FJ-07, FJ-08, FJ-09, FJ-18, FJ-19.
 - **Exact user-visible outcome:** Owner can test email-sandbox and wallet sign-in, account merge,
   sessions, consent, history, export, and deletion without custody.
