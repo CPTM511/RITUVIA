@@ -6,6 +6,7 @@
   "scripts": {
     "build": "NEXT_TELEMETRY_DISABLED=1 next build",
     "dev": "NEXT_TELEMETRY_DISABLED=1 next dev",
+    "prebuild": "pnpm --filter @rituvia/astrology-engine-native native:prepare -- --allow-download",
     "start": "node start.mjs",
     "typecheck": "node ../../scripts/remove-next-type-duplicates.mjs && tsc --noEmit"
   },

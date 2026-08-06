@@ -584,6 +584,10 @@ const unwrapExpression = (expression: ts.Expression): ts.Expression => {
 
 const reviewedComputedDataAccesses = new Map<string, ReadonlySet<string>>([
   [
+    "apps/web/app/_components/site-shell.tsx",
+    new Set(["heroMetaIcons|index", "methodIcons|index"]),
+  ],
+  [
     "apps/web/app/_components/sanctuary-flow.tsx",
     new Set(["messages.intention.themes|selectedTheme"]),
   ],
@@ -736,6 +740,42 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
     if (name === "poweredByHeader") {
       const value = unwrapExpression(property.initializer);
       return value.kind === ts.SyntaxKind.FalseKeyword;
+    }
+    if (name === "outputFileTracingRoot") {
+      const value = unwrapExpression(property.initializer);
+      return ts.isStringLiteralLike(value) && value.text === "../..";
+    }
+    if (name === "outputFileTracingIncludes") {
+      const value = unwrapExpression(property.initializer);
+      if (!ts.isObjectLiteralExpression(value) || value.properties.length !== 1) return false;
+      const [route] = value.properties;
+      if (
+        !route ||
+        !ts.isPropertyAssignment(route) ||
+        ts.isComputedPropertyName(route.name) ||
+        !ts.isStringLiteralLike(route.name) ||
+        route.name.text !== "/api/recovery/item-8/astrology"
+      ) {
+        return false;
+      }
+      const includes = unwrapExpression(route.initializer);
+      if (!ts.isArrayLiteralExpression(includes)) return false;
+      const actualIncludes: string[] = [];
+      for (const element of includes.elements) {
+        const value = unwrapExpression(element);
+        if (!ts.isStringLiteralLike(value)) return false;
+        actualIncludes.push(value.text);
+      }
+      return (
+        actualIncludes.sort().join("\0") ===
+        [
+          "../../packages/astrology-engine-native/.native-cache/bin/rituvia-swisseph",
+          "../../packages/astrology-engine-native/.native-cache/build-metadata.json",
+          "../../packages/astrology-engine-native/.native-cache/ephe/*.se1",
+        ]
+          .sort()
+          .join("\0")
+      );
     }
     if (name === null || !allowedBooleanKeys.has(name)) return false;
     const value = unwrapExpression(property.initializer);

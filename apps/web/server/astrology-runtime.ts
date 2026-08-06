@@ -51,15 +51,23 @@ export const createWebAstrologyCalculationRuntime = (
 let runtimeService: AstrologyCalculationService | undefined;
 let ephemerisPromise: Promise<AstrologyEphemerisAdapterV1> | undefined;
 
-const loadRuntimeEphemeris = (): Promise<AstrologyEphemerisAdapterV1> => {
+export const resolveWebAstrologyNativeBuildMetadataPath = (): string | undefined => {
+  const configuration = getWebRuntimeConfiguration();
+  return configuration.astrologyNativeBuildMetadataPath;
+};
+
+export const loadWebAstrologyEphemeris = (): Promise<AstrologyEphemerisAdapterV1> => {
   if (ephemerisPromise !== undefined) return ephemerisPromise;
-  const metadataPath = getWebRuntimeConfiguration().astrologyNativeBuildMetadataPath;
+  const metadataPath = resolveWebAstrologyNativeBuildMetadataPath();
   if (metadataPath === undefined) {
     return Promise.reject(new TypeError("Native astrology configuration is unavailable."));
   }
   ephemerisPromise = loadSwissEphemerisAdapterV1FromBuildMetadata({
     buildMetadataPath: metadataPath,
     maximumOutputBytes: 65_536,
+    ...(getWebRuntimeConfiguration().deploymentEnvironment === "staging"
+      ? { useBuildMetadataDirectoryAsRuntimeRoot: true }
+      : {}),
     timeoutMilliseconds: 3_000,
   }).catch((error: unknown) => {
     ephemerisPromise = undefined;
@@ -82,7 +90,7 @@ export const loadWebAstrologyCalculationService = (): AstrologyCalculationServic
     birthProfiles: createBirthProfilePersistence(database),
     calculations: createAstrologyCalculationPersistence(database),
     cryptography: createPrivateContentCryptography(configuration.privateContentKeyring),
-    loadEphemeris: loadRuntimeEphemeris,
+    loadEphemeris: loadWebAstrologyEphemeris,
     loadFeatureFlagEvaluator: loadWebFeatureFlagEvaluator,
   });
   return runtimeService;

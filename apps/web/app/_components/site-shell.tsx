@@ -17,6 +17,7 @@ type FooterLink = Readonly<{
 }>;
 
 const methodIcons = Object.freeze(["☼", "✦", "∞"] as const);
+const heroMetaIcons = Object.freeze(["◉", "⌁", "✦", "◌"] as const);
 
 const footerLinks = (
   locale: GoldenShellLocale,
@@ -114,7 +115,7 @@ export function SiteShell({ brandName, locale, messages }: SiteShellProps) {
               <ul aria-label={messages.hero.eyebrow} className="golden-hero-meta">
                 {messages.hero.meta.map((item, index) => (
                   <li className="golden-pill" key={item}>
-                    <span aria-hidden="true">{["◉", "⌁", "✦", "◌"][index]}</span>
+                    <span aria-hidden="true">{heroMetaIcons[index]}</span>
                     {item}
                   </li>
                 ))}

@@ -3,7 +3,7 @@ import "server-only";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { lstat, readFile } from "node:fs/promises";
-import { isAbsolute, resolve } from "node:path";
+import { dirname, isAbsolute, resolve } from "node:path";
 
 import {
   astrologyNativeExecutionSchemaVersion,
@@ -52,6 +52,7 @@ export type SwissEphemerisBuildMetadataConfigurationV1 = Readonly<{
   buildMetadataPath: string;
   maximumOutputBytes: number;
   timeoutMilliseconds: number;
+  useBuildMetadataDirectoryAsRuntimeRoot?: boolean;
 }>;
 
 const ephemerisFiles = Object.freeze([
@@ -244,6 +245,8 @@ export const loadSwissEphemerisAdapterV1FromBuildMetadata = async (
     !Number.isSafeInteger(configuration.maximumOutputBytes) ||
     configuration.maximumOutputBytes < 1_024 ||
     configuration.maximumOutputBytes > 1_048_576 ||
+    (configuration.useBuildMetadataDirectoryAsRuntimeRoot !== undefined &&
+      typeof configuration.useBuildMetadataDirectoryAsRuntimeRoot !== "boolean") ||
     !Number.isSafeInteger(configuration.timeoutMilliseconds) ||
     configuration.timeoutMilliseconds < 100 ||
     configuration.timeoutMilliseconds > 10_000
@@ -300,10 +303,16 @@ export const loadSwissEphemerisAdapterV1FromBuildMetadata = async (
     throw new SwissEphemerisNativeError("NATIVE_CONFIGURATION_INVALID");
   }
   const executor = createSwissEphemerisNativeExecutorV1({
-    binaryPath: runtime.binaryPath,
+    binaryPath:
+      configuration.useBuildMetadataDirectoryAsRuntimeRoot !== true
+        ? runtime.binaryPath
+        : resolve(dirname(configuration.buildMetadataPath), "bin/rituvia-swisseph"),
     binarySha256: engine.binarySha256,
     ephemerisFiles,
-    ephemerisPath: runtime.ephemerisPath,
+    ephemerisPath:
+      configuration.useBuildMetadataDirectoryAsRuntimeRoot !== true
+        ? runtime.ephemerisPath
+        : resolve(dirname(configuration.buildMetadataPath), "ephe"),
     maximumOutputBytes: configuration.maximumOutputBytes,
     timeoutMilliseconds: configuration.timeoutMilliseconds,
   });

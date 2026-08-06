@@ -43,9 +43,15 @@ const probes: readonly ProbeDefinition[] = Object.freeze([
   },
   {
     expectedStatus: 200,
-    label: messages.runtimeCoreLabel,
+    label: messages.runtimeNumerologyLabel,
     method: "GET",
-    pathname: "/en/tarot/three-card",
+    pathname: "/en/readings/numerology",
+  },
+  {
+    expectedStatus: 200,
+    label: messages.runtimeAstrologyLabel,
+    method: "GET",
+    pathname: "/en/readings/astrology",
   },
 ]);
 

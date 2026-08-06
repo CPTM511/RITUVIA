@@ -70,7 +70,15 @@ const verifyRegularFile = async (filePath, expectedSha256) => {
 };
 
 const downloadOnce = async (path) => {
-  const url = `${manifest.source.repository}/raw/${manifest.source.commit}/${path}`;
+  const repository = new URL(manifest.source.repository);
+  if (repository.hostname !== "github.com") {
+    throw new Error("Pinned native source repository is invalid.");
+  }
+  const repositoryPath = repository.pathname.replace(/^\/+|\/+$/gu, "");
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repositoryPath)) {
+    throw new Error("Pinned native source repository path is invalid.");
+  }
+  const url = `https://raw.githubusercontent.com/${repositoryPath}/${manifest.source.commit}/${path}`;
   return await new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(
       "curl",

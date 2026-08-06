@@ -46,12 +46,15 @@ vi.mock("../server/recovery-staging", () => ({
     database: "connected",
     environment: "staging",
     indexing: "disabled",
+    nativeAstrology: "enabled",
+    numerologyEngine: "enabled",
     objectStorage: "not-connected",
     productionProviders: "disabled",
     ready: harness.recoveryReady,
-    recoveryItem: 7,
+    recoveryItem: 8,
     sourceSha: "1111111111111111111111111111111111111111",
     tarotCatalog: "enabled",
+    timeZoneRuntime: "pinned",
   }),
   recoveryHealthPathname: "/api/recovery/health",
   recoveryReadinessPathname: "/api/recovery/readiness",
@@ -95,7 +98,7 @@ describe("public shell request and crawl gate", () => {
     expect(harness.end).toHaveBeenCalledWith({ outcome: "success" });
   });
 
-  it("keeps the recovery shell, diagnostics, and disallow-all robots in Item 7 staging", async () => {
+  it("keeps the recovery shell, diagnostics, and disallow-all robots in Item 8 staging", async () => {
     harness.deploymentEnvironment = "staging";
 
     for (const pathname of [
@@ -130,6 +133,8 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/en/methodology"],
     ["GET", "/en/sanctuary"],
     ["GET", "/en/revisit"],
+    ["GET", "/en/readings/numerology"],
+    ["GET", "/en/readings/astrology"],
     ["POST", "/api/v1/anonymous/session"],
     ["POST", "/api/v1/intake/evaluate"],
     ["POST", "/api/v1/readings/tarot"],
@@ -144,8 +149,10 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/api/v1/revisits"],
     ["POST", "/api/v1/revisits"],
     ["POST", "/api/v1/revisits/33333333-3333-4333-8333-333333333333/complete"],
+    ["POST", "/api/v1/numerology/calculate"],
+    ["POST", "/api/recovery/item-8/astrology"],
   ])(
-    "allows only the bounded Item 7 Tarot shell or preserved core request: %s %s",
+    "allows only the bounded Item 8 calculators or preserved requests: %s %s",
     async (method, pathname) => {
       harness.deploymentEnvironment = "staging";
 
@@ -159,7 +166,7 @@ describe("public shell request and crawl gate", () => {
     },
   );
 
-  it("fails the Item 7 product surface closed when staging readiness is incomplete", async () => {
+  it("fails the Item 8 product surface closed when staging readiness is incomplete", async () => {
     harness.deploymentEnvironment = "staging";
     harness.recoveryReady = false;
 
@@ -177,6 +184,12 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/api/v1/anonymous/session"],
     ["GET", "/api/v1/catalog"],
     ["GET", "/api/v1/entitlements"],
+    ["GET", "/api/v1/readings/astrology/natal"],
+    ["POST", "/api/v1/readings/astrology/natal"],
+    ["GET", "/en/astrology"],
+    ["GET", "/en/numerology"],
+    ["GET", "/zh-Hans/readings/astrology"],
+    ["GET", "/zh-Hans/readings/numerology"],
     ["GET", "/api/v1/me"],
     ["POST", "/api/v1/orders"],
     ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation"],
@@ -186,7 +199,7 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/recovery?private=canary"],
     ["POST", "/recovery"],
     ["GET", "/api/recovery/health/"],
-  ])("rejects every non-Item-7 staging surface: %s %s", async (method, pathname) => {
+  ])("rejects every non-Item-8 staging surface: %s %s", async (method, pathname) => {
     harness.deploymentEnvironment = "staging";
 
     const response = await proxy(request(pathname, { method }));

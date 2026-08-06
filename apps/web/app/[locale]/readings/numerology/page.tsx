@@ -13,6 +13,7 @@ import {
   type Locale,
 } from "../../../_i18n/routing";
 import { getWebRuntimeConfiguration } from "../../../../config/server";
+import { inspectRecoveryStagingRuntime } from "../../../../server/recovery-staging";
 
 type NumerologyPageProps = Readonly<{
   params: Promise<Readonly<{ locale: string }>>;
@@ -44,6 +45,8 @@ export default async function NumerologyPage({ params }: NumerologyPageProps) {
   const locale = await resolveLocale(params);
   const configuration = getWebRuntimeConfiguration();
   const messages = getNumerologyMessages(locale);
+  const recovery = inspectRecoveryStagingRuntime();
+  const recoveryEnabled = locale === "en" && recovery.ready && recovery.recoveryItem === 8;
 
   return (
     <PublicSiteFrame
@@ -60,11 +63,32 @@ export default async function NumerologyPage({ params }: NumerologyPageProps) {
           <p className="experience-introduction">{messages.page.introduction}</p>
           <p className="experience-boundary">{messages.page.boundary}</p>
           <p className="experience-privacy">{messages.page.privacy}</p>
-          <ActionLink href={localeNumerologyLibraryPath(locale)} variant="secondary">
-            {messages.page.libraryAction}
-          </ActionLink>
+          {recoveryEnabled ? null : (
+            <ActionLink href={localeNumerologyLibraryPath(locale)} variant="secondary">
+              {messages.page.libraryAction}
+            </ActionLink>
+          )}
         </header>
         <NumerologyCalculator messages={messages} />
+        {recoveryEnabled ? (
+          <aside className="recovery-numerology-source">
+            <h2>Method, source, and license</h2>
+            <p>
+              Displayed values come from the deterministic RITUVIA numerology engine. No Provider AI
+              produces or changes them, and this calculator does not persist the birth date.
+            </p>
+            <p>
+              Repository license: AGPL-3.0-only. Engine version and exact rule versions appear in
+              each result.
+            </p>
+            <a
+              href={`https://github.com/CPTM511/RITUVIA/tree/${recovery.sourceSha}`}
+              rel="noreferrer"
+            >
+              Review this deployed source revision: <code>{recovery.sourceSha}</code>
+            </a>
+          </aside>
+        ) : null}
       </main>
     </PublicSiteFrame>
   );

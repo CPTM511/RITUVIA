@@ -10,12 +10,16 @@ const tarotVerifier = readFileSync(
   new URL("../../../scripts/verify-recovery-tarot-browser.mjs", import.meta.url),
   "utf8",
 );
+const item8Verifier = readFileSync(
+  new URL("../../../scripts/verify-recovery-item-8-browser.mjs", import.meta.url),
+  "utf8",
+);
 const mockedFullLoopVerifier = readFileSync(
   new URL("../../../scripts/verify-full-loop-browser.mjs", import.meta.url),
   "utf8",
 );
 
-describe("Recovery Item 7 preserved runtime-truth guard", () => {
+describe("Recovery Item 8 preserved runtime-truth guard", () => {
   it("keeps the legacy full-loop browser evidence explicitly classified as mocked", () => {
     expect(mockedFullLoopVerifier).toContain('context.route("**/api/v1/**"');
     expect(mockedFullLoopVerifier).toContain("route.fulfill");
@@ -53,5 +57,24 @@ describe("Recovery Item 7 preserved runtime-truth guard", () => {
     expect(tarotVerifier).toContain("mockFulfillmentCount: 0");
     expect(tarotVerifier).toContain("forbiddenRequestPattern");
     expect(tarotVerifier).toContain("recoveryItem, 7");
+  });
+
+  it("rejects fulfillment and interception from the real Item 8 verifier", () => {
+    for (const forbidden of [
+      "context.route(",
+      "page.route(",
+      "route.abort(",
+      "route.continue(",
+      "route.fulfill(",
+      "route.fallback(",
+    ]) {
+      expect(item8Verifier).not.toContain(forbidden);
+    }
+    expect(item8Verifier).toContain('page.on("response"');
+    expect(item8Verifier).toContain("mockFulfillmentCount: 0");
+    expect(item8Verifier).toContain("forbiddenRequestPattern");
+    expect(item8Verifier).toContain("recoveryItem, 8");
+    expect(item8Verifier).toContain("desktop");
+    expect(item8Verifier).toContain("mobile");
   });
 });

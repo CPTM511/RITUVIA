@@ -12,9 +12,12 @@ export const GET = () => {
       controls: {
         database: status.database,
         indexing: status.indexing,
+        nativeAstrology: status.nativeAstrology,
+        numerologyEngine: status.numerologyEngine,
         objectStorage: status.objectStorage,
         productionProviders: status.productionProviders,
         tarotCatalog: status.tarotCatalog,
+        timeZoneRuntime: status.timeZoneRuntime,
       },
       environment: status.environment,
       recoveryItem: status.recoveryItem,

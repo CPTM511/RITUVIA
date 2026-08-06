@@ -657,6 +657,22 @@ h3 {
   outline-offset: 0.2rem;
 }
 
+.recovery-numerology-source,
+.recovery-astrology-source {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.25rem;
+  background: var(--surface-muted);
+  overflow-wrap: anywhere;
+}
+
+.recovery-numerology-source > *,
+.recovery-astrology-source > * {
+  margin-block: 0;
+}
+
 .tarot-reading-main {
   inline-size: min(100% - 2rem, 68rem);
   margin-inline: auto;
@@ -2578,6 +2594,48 @@ h3 {
   gap: 1rem;
 }
 
+.recovery-astrology-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.72fr) minmax(0, 1.28fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.recovery-astrology-layout > * {
+  min-inline-size: 0;
+}
+
+.recovery-astrology-layout > .astrology-viewer-state {
+  max-inline-size: none;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border: 1px solid var(--line-subtle);
+  border-radius: 1.5rem;
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.recovery-astrology-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.recovery-astrology-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.recovery-astrology-source {
+  grid-column: 1 / -1;
+}
+
+.recovery-astrology-source ul {
+  display: grid;
+  gap: 0.45rem;
+  margin-block: 0;
+  padding-inline-start: 1.25rem;
+}
+
 .astrology-result {
   padding: clamp(1.25rem, 4vw, 2.5rem);
   border: 1px solid var(--line-subtle);
@@ -2979,7 +3037,8 @@ h3 {
   .numerology-form,
   .numerology-result,
   .tarot-panel,
-  .astrology-result {
+  .astrology-result,
+  .recovery-astrology-layout > .astrology-viewer-state {
     border-radius: 1rem;
   }
 
@@ -2987,11 +3046,18 @@ h3 {
   .numerology-actions .rvt-action,
   .tarot-completion .rvt-action,
   .tarot-share-actions .rvt-action,
-  .astrology-viewer-state .rvt-action {
+  .astrology-viewer-state .rvt-action,
+  .recovery-astrology-actions .rvt-action {
     inline-size: 100%;
   }
 
   .astrology-method dl > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (width <= 58rem) {
+  .recovery-astrology-layout {
     grid-template-columns: 1fr;
   }
 }
@@ -3174,6 +3240,9 @@ h3 {
   .numerology-result-card,
   .numerology-method,
   .astrology-result,
+  .recovery-numerology-source,
+  .recovery-astrology-source,
+  .recovery-astrology-layout > .astrology-viewer-state,
   .astrology-table-section,
   .astrology-method,
   .question-intake-form,
