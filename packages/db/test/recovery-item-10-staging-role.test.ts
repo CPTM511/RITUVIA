@@ -32,6 +32,45 @@ describe("Recovery Item 10 staging configuration boundary", () => {
     expect(source).not.toContain("sk_live_");
   });
 
+  it("binds the app only to the catalog reader group", () => {
+    expect(source).toContain('const catalogReaderRole = "rituvia_catalog_reader"');
+    expect(source).toContain("catalog_product_localization, catalog_price TO ${catalogReaderRole}");
+    expect(source).toContain("GRANT ${catalogReaderRole} TO ${appRole}");
+    expect(source).toContain("pg_has_role($4, $5, 'MEMBER')");
+    expect(source).toContain('AS "appCanReadCatalog"');
+    expect(source).toContain('AS "appCanMutateCatalog"');
+    expect(source).toContain("!state.appCanReadCatalog");
+    expect(source).toContain("state.appCanMutateCatalog");
+  });
+
+  it("binds the app only to the country-policy reader group", () => {
+    expect(source).toContain('const countryPolicyReaderRole = "rituvia_country_policy_reader"');
+    expect(source).toContain("country_policy_version TO ${countryPolicyReaderRole}");
+    expect(source).toContain("GRANT ${countryPolicyReaderRole} TO ${appRole}");
+    expect(source).toContain("pg_has_role($4, $6, 'MEMBER')");
+    expect(source).toContain('AS "appCanReadCountryPolicy"');
+    expect(source).toContain('AS "appCanMutateCountryPolicy"');
+    expect(source).toContain("!state.appCanReadCountryPolicy");
+    expect(source).toContain("state.appCanMutateCountryPolicy");
+  });
+
+  it("grants only the app checkout columns needed before signed fulfillment", () => {
+    expect(source).toContain("commercial_payment_attempt_v2 TO ${appRole}");
+    expect(source).toContain(
+      "GRANT UPDATE (status, updated_at) ON TABLE commercial_order_v2 TO ${appRole}",
+    );
+    expect(source).toContain("provider_checkout_url, expires_at, updated_at)");
+    expect(source).toContain('AS "appCanCreateCheckout"');
+    expect(source).toContain('AS "appCanAttachCheckout"');
+    expect(source).toContain('AS "appCanReadCommerceAccount"');
+    expect(source).toContain('AS "appCanInsertPaymentEvent"');
+    expect(source).toContain('AS "appCanInsertCreditLedger"');
+    expect(source).toContain("!state.appCanCreateCheckout");
+    expect(source).toContain("!state.appCanAttachCheckout");
+    expect(source).toContain("state.appCanInsertPaymentEvent");
+    expect(source).toContain("state.appCanInsertCreditLedger");
+  });
+
   it("keeps catalog and country policy append-only and staging-only", () => {
     expect(source).toContain('environment: "staging"');
     expect(source).toContain('fiatApprovalReference: "D-098:OWN-017:stripe-test:item-10"');

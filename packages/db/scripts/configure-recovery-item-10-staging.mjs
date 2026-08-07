@@ -9,6 +9,8 @@ const { Client } = pg;
 const resourceName = "rituvia-recovery-staging";
 const databaseName = "neondb";
 const appRole = "rituvia_app";
+const catalogReaderRole = "rituvia_catalog_reader";
+const countryPolicyReaderRole = "rituvia_country_policy_reader";
 const paymentWebhookRole = "rituvia_payment_webhook";
 const catalogVersion = "staging.catalog.2026-08-07.item10.v1";
 const countryPolicyVersion = "staging.us.stripe-test.item10.v1";
@@ -184,6 +186,9 @@ try {
             current_user AS "currentUser",
             EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $1) AS "appRoleExists",
             EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $2) AS "paymentRoleExists",
+            EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $3) AS "catalogReaderRoleExists",
+            EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $4)
+              AS "countryPolicyReaderRoleExists",
             COALESCE(
               (
                 SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
@@ -199,7 +204,7 @@ try {
               SELECT 1 FROM "_prisma_migrations"
                WHERE finished_at IS NULL AND rolled_back_at IS NULL
             ) AS "incompleteMigrationExists"`,
-    [appRole, paymentWebhookRole],
+    [appRole, paymentWebhookRole, catalogReaderRole, countryPolicyReaderRole],
   );
   const facts = before.rows[0];
   if (
@@ -207,6 +212,8 @@ try {
     facts.databaseName !== databaseName ||
     [appRole, paymentWebhookRole].includes(facts.currentUser) ||
     !facts.appRoleExists ||
+    !facts.catalogReaderRoleExists ||
+    !facts.countryPolicyReaderRoleExists ||
     (!facts.paymentRoleExists && !facts.currentUserCanCreateRole) ||
     facts.paymentRolePrivileged ||
     facts.incompleteMigrationExists
@@ -231,7 +238,30 @@ try {
     );
     await client.query(`GRANT CONNECT ON DATABASE ${databaseName} TO ${paymentWebhookRole}`);
     await client.query(`GRANT USAGE ON SCHEMA public TO ${appRole}, ${paymentWebhookRole}`);
-    await client.query(`GRANT SELECT ON TABLE commercial_subscription_v2 TO ${appRole}`);
+    await client.query(
+      `GRANT SELECT ON TABLE catalog_version, catalog_product,
+         catalog_product_localization, catalog_price TO ${catalogReaderRole}`,
+    );
+    await client.query(
+      `GRANT SELECT ON TABLE country_policy_version TO ${countryPolicyReaderRole}`,
+    );
+    await client.query(`GRANT ${catalogReaderRole} TO ${appRole}`);
+    await client.query(`GRANT ${countryPolicyReaderRole} TO ${appRole}`);
+    await client.query(
+      `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2,
+         commercial_payment_attempt_v2 TO ${appRole}`,
+    );
+    await client.query(
+      `GRANT UPDATE (status, updated_at) ON TABLE commercial_order_v2 TO ${appRole}`,
+    );
+    await client.query(
+      `GRANT UPDATE (state, provider_checkout_id, provider_checkout_url, expires_at, updated_at)
+         ON TABLE commercial_payment_attempt_v2 TO ${appRole}`,
+    );
+    await client.query(
+      `GRANT SELECT ON TABLE credit_ledger_entry, credit_projection,
+         commercial_subscription_v2 TO ${appRole}`,
+    );
     await client.query(
       `GRANT SELECT ON TABLE commercial_order_v2, commercial_order_item_v2,
          commercial_payment_attempt_v2, commercial_payment_event_v2,
@@ -420,8 +450,88 @@ try {
          has_table_privilege($4, 'commercial_subscription_v2', 'INSERT')
            AS "appCanInsertSubscription",
          has_any_column_privilege($4, 'commercial_subscription_v2', 'UPDATE')
-           AS "appCanUpdateSubscription"`,
-      [itemTenMigration, catalogVersion, paymentWebhookRole, appRole],
+           AS "appCanUpdateSubscription",
+         has_table_privilege($4, 'commercial_order_v2', 'SELECT')
+           AND has_table_privilege($4, 'commercial_order_v2', 'INSERT')
+           AND has_table_privilege($4, 'commercial_order_item_v2', 'SELECT')
+           AND has_table_privilege($4, 'commercial_order_item_v2', 'INSERT')
+           AND has_table_privilege($4, 'commercial_payment_attempt_v2', 'SELECT')
+           AND has_table_privilege($4, 'commercial_payment_attempt_v2', 'INSERT')
+           AS "appCanCreateCheckout",
+         has_column_privilege($4, 'commercial_order_v2', 'status', 'UPDATE')
+           AND has_column_privilege($4, 'commercial_order_v2', 'updated_at', 'UPDATE')
+           AND has_column_privilege(
+             $4,
+             'commercial_payment_attempt_v2',
+             'state',
+             'UPDATE'
+           )
+           AND has_column_privilege(
+             $4,
+             'commercial_payment_attempt_v2',
+             'provider_checkout_id',
+             'UPDATE'
+           )
+           AND has_column_privilege(
+             $4,
+             'commercial_payment_attempt_v2',
+             'provider_checkout_url',
+             'UPDATE'
+           )
+           AND has_column_privilege(
+             $4,
+             'commercial_payment_attempt_v2',
+             'expires_at',
+             'UPDATE'
+           )
+           AND has_column_privilege(
+             $4,
+             'commercial_payment_attempt_v2',
+             'updated_at',
+             'UPDATE'
+           ) AS "appCanAttachCheckout",
+         has_table_privilege($4, 'credit_ledger_entry', 'SELECT')
+           AND has_table_privilege($4, 'credit_projection', 'SELECT')
+           AND has_table_privilege($4, 'commercial_subscription_v2', 'SELECT')
+           AS "appCanReadCommerceAccount",
+         has_table_privilege($4, 'commercial_payment_event_v2', 'INSERT')
+           AS "appCanInsertPaymentEvent",
+         has_table_privilege($4, 'credit_ledger_entry', 'INSERT')
+           AS "appCanInsertCreditLedger",
+         pg_has_role($4, $5, 'MEMBER') AS "appIsCatalogReader",
+         has_table_privilege($4, 'catalog_version', 'SELECT')
+           AND has_table_privilege($4, 'catalog_product', 'SELECT')
+           AND has_table_privilege($4, 'catalog_product_localization', 'SELECT')
+           AND has_table_privilege($4, 'catalog_price', 'SELECT')
+           AS "appCanReadCatalog",
+         has_table_privilege(
+           $4,
+           'catalog_version',
+           'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN'
+         )
+           OR has_any_column_privilege($4, 'catalog_version', 'INSERT,UPDATE,REFERENCES')
+           AS "appCanMutateCatalog",
+         pg_has_role($4, $6, 'MEMBER') AS "appIsCountryPolicyReader",
+         has_table_privilege($4, 'country_policy_version', 'SELECT')
+           AS "appCanReadCountryPolicy",
+         has_table_privilege(
+           $4,
+           'country_policy_version',
+           'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN'
+         )
+           OR has_any_column_privilege(
+             $4,
+             'country_policy_version',
+             'INSERT,UPDATE,REFERENCES'
+           ) AS "appCanMutateCountryPolicy"`,
+      [
+        itemTenMigration,
+        catalogVersion,
+        paymentWebhookRole,
+        appRole,
+        catalogReaderRole,
+        countryPolicyReaderRole,
+      ],
     );
     const state = attestation.rows[0];
     if (
@@ -436,7 +546,18 @@ try {
       state.paymentCanCreateSchema ||
       state.paymentCanDeleteAudit ||
       state.appCanInsertSubscription ||
-      state.appCanUpdateSubscription
+      state.appCanUpdateSubscription ||
+      !state.appCanCreateCheckout ||
+      !state.appCanAttachCheckout ||
+      !state.appCanReadCommerceAccount ||
+      state.appCanInsertPaymentEvent ||
+      state.appCanInsertCreditLedger ||
+      !state.appIsCatalogReader ||
+      !state.appCanReadCatalog ||
+      state.appCanMutateCatalog ||
+      !state.appIsCountryPolicyReader ||
+      !state.appCanReadCountryPolicy ||
+      state.appCanMutateCountryPolicy
     ) {
       fail("Recovery Item 10 least-privilege or registry attestation failed.");
     }

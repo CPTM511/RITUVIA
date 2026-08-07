@@ -127,7 +127,8 @@ await withLocalPostgresLease(async (lease) => {
         attachedAt: "2026-07-30T12:00:01.000Z",
         checkoutExpiresAt: "2026-07-30T12:30:00.000Z",
         checkoutId: "cs_test_12345678",
-        checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_12345678",
+        checkoutUrl:
+          "https://checkout.stripe.com/c/pay/cs_test_12345678#fidkdWxOYHwnPyd1blpxYHZxWjA0",
         orderId: created.checkout.orderId,
         userId,
       });
@@ -139,7 +140,8 @@ await withLocalPostgresLease(async (lease) => {
             attachedAt: "2026-07-30T12:00:02.000Z",
             checkoutExpiresAt: "2026-07-30T12:30:00.000Z",
             checkoutId: "cs_test_12345678",
-            checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_12345678",
+            checkoutUrl:
+              "https://checkout.stripe.com/c/pay/cs_test_12345678#fidkdWxOYHwnPyd1blpxYHZxWjA0",
             orderId: created.checkout.orderId,
             userId,
           })

@@ -200,7 +200,6 @@ const requireHttpsCheckoutUrl = (value: string): string => {
       parsed.protocol !== "https:" ||
       parsed.username !== "" ||
       parsed.password !== "" ||
-      parsed.hash !== "" ||
       parsed.hostname === ""
     ) {
       throw new TypeError();

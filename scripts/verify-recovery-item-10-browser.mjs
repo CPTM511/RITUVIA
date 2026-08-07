@@ -117,6 +117,18 @@ const signInWithEmail = async (page) => {
   await page.getByRole("heading", { name: "Your reflection space" }).waitFor();
 };
 
+const confirmPaidEligibility = async (page) => {
+  const response = page.waitForResponse(
+    (candidate) =>
+      candidate.request().method() === "PATCH" &&
+      new URL(candidate.url()).pathname === "/api/v1/me",
+  );
+  await page.getByRole("checkbox", { name: "I confirm that I am 18 or older." }).check();
+  await page.getByRole("button", { name: "Save 18+ confirmation" }).click();
+  assert.equal((await response).status(), 200);
+  await page.getByText("Your 18+ confirmation was saved.").waitFor();
+};
+
 const readOrder = async (context, orderId) => {
   const response = await context.request.get(`/api/v1/orders/${encodeURIComponent(orderId)}`, {
     headers: { accept: "application/json" },
@@ -216,6 +228,28 @@ const startCheckout = async (page, productName) => {
   );
   await card.getByRole("button", { name: "Continue to Stripe Test Checkout" }).click();
   const response = await responsePromise;
+  if (response.status() !== 201) {
+    const headers = await response.request().allHeaders();
+    const responseBody = await response.json().catch(() => null);
+    throw new Error(
+      JSON.stringify({
+        code:
+          typeof responseBody === "object" && responseBody !== null && "code" in responseBody
+            ? responseBody.code
+            : null,
+        contentType: headers["content-type"] ?? null,
+        cookieNames: (headers.cookie ?? "")
+          .split(";")
+          .map((entry) => entry.split("=").at(0)?.trim())
+          .filter(Boolean),
+        csrfLength: headers["x-csrf-token"]?.length ?? 0,
+        fetchSite: headers["sec-fetch-site"] ?? null,
+        idempotencyKeyLength: headers["idempotency-key"]?.length ?? 0,
+        origin: headers.origin ?? null,
+        status: response.status(),
+      }),
+    );
+  }
   assert.equal(response.status(), 201);
   const checkout = await response.json();
   assert.equal(typeof checkout.orderId, "string");
@@ -304,6 +338,8 @@ try {
 
   await signInWithEmail(ownerPage);
   progress("sandbox owner signed in");
+  await confirmPaidEligibility(ownerPage);
+  progress("explicit 18+ paid eligibility confirmed");
   await ownerPage.goto(`${origin}/en/plans`, { timeout: 60_000, waitUntil: "load" });
   await ownerPage.getByRole("heading", { name: "Plus & Credits" }).waitFor();
   await ownerPage.getByText("Protected Staging only.", { exact: false }).waitFor();
