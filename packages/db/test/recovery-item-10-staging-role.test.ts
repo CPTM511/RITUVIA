@@ -18,7 +18,13 @@ describe("Recovery Item 10 staging configuration boundary", () => {
 
   it("rotates only the payment webhook role and denies privileged or destructive grants", () => {
     expect(source).toContain('const paymentWebhookRole = "rituvia_payment_webhook"');
-    expect(source).toContain("ALTER ROLE ${paymentWebhookRole} WITH LOGIN PASSWORD");
+    expect(source).toContain("if (!facts.paymentRoleExists)");
+    expect(source).toContain("CREATE ROLE ${paymentWebhookRole}");
+    expect(source).toContain("NOLOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE");
+    expect(source).toContain("ALTER ROLE ${paymentWebhookRole}");
+    expect(source).toContain("LOGIN PASSWORD");
+    expect(source).toContain("(!facts.paymentRoleExists && !facts.currentUserCanCreateRole)");
+    expect(source).toContain("facts.paymentRolePrivileged");
     expect(source).toContain("paymentCanDeleteAudit");
     expect(source).not.toMatch(/GRANT\s+ALL/iu);
     expect(source).not.toMatch(/\bDROP\s+(?:DATABASE|TABLE|ROLE)\b/iu);

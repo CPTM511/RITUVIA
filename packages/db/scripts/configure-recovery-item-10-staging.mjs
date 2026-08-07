@@ -184,6 +184,17 @@ try {
             current_user AS "currentUser",
             EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $1) AS "appRoleExists",
             EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $2) AS "paymentRoleExists",
+            COALESCE(
+              (
+                SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
+                  FROM pg_roles WHERE rolname = $2
+              ),
+              false
+            ) AS "paymentRolePrivileged",
+            COALESCE(
+              (SELECT rolsuper OR rolcreaterole FROM pg_roles WHERE rolname = current_user),
+              false
+            ) AS "currentUserCanCreateRole",
             EXISTS (
               SELECT 1 FROM "_prisma_migrations"
                WHERE finished_at IS NULL AND rolled_back_at IS NULL
@@ -196,17 +207,28 @@ try {
     facts.databaseName !== databaseName ||
     [appRole, paymentWebhookRole].includes(facts.currentUser) ||
     !facts.appRoleExists ||
-    !facts.paymentRoleExists ||
+    (!facts.paymentRoleExists && !facts.currentUserCanCreateRole) ||
+    facts.paymentRolePrivileged ||
     facts.incompleteMigrationExists
   ) {
     fail("Recovery Item 10 staging database attestation failed.");
+  }
+
+  if (!facts.paymentRoleExists) {
+    await client.query(
+      `CREATE ROLE ${paymentWebhookRole}
+         NOLOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`,
+    );
   }
 
   runMigrations();
 
   await client.query("BEGIN");
   try {
-    await client.query(`ALTER ROLE ${paymentWebhookRole} WITH LOGIN PASSWORD '${rolePassword}'`);
+    await client.query(
+      `ALTER ROLE ${paymentWebhookRole}
+         LOGIN PASSWORD '${rolePassword}'`,
+    );
     await client.query(`GRANT CONNECT ON DATABASE ${databaseName} TO ${paymentWebhookRole}`);
     await client.query(`GRANT USAGE ON SCHEMA public TO ${appRole}, ${paymentWebhookRole}`);
     await client.query(`GRANT SELECT ON TABLE commercial_subscription_v2 TO ${appRole}`);
