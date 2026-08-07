@@ -2,7 +2,7 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 8 are complete. Item 9 and every later item require a
+> Repository status is NO-GO. Items 1 through 9 are complete. Item 10 and every later item require a
 > new explicit Owner approval. One Codex run may execute exactly one approved item and must then
 > STOP.
 
@@ -190,7 +190,8 @@
   Vercel-authenticated custom Staging as `dpl_GuAVFXenqS4g4By52Xcjuu52JrVH`. Deterministic
   numerology and exact/approximate/unknown-time astrology, native source/runtime/license,
   privacy/restore, desktop/mobile zero-mock, safe-off, and denylist evidence are recorded in
-  `docs/recovery/ITEM_8_NUMEROLOGY_ASTROLOGY_EVIDENCE.md`. Item 9 remains unapproved and unstarted.
+  `docs/recovery/ITEM_8_NUMEROLOGY_ASTROLOGY_EVIDENCE.md`. Item 9 was separately approved later and
+  is now complete below.
 - **Founder Journey IDs:** FJ-03, FJ-04, FJ-05, FJ-06.
 - **Exact user-visible outcome:** Numerology and exact/uncertain-time astrology show transparent
   deterministic inputs, calculations, source limits, and uncertainty.
@@ -208,12 +209,17 @@
   new tradition, public indexing expansion, production activation, or license conclusion.
 - **STOP condition:** Vector mismatch, hidden time assumption, birth-data leak, missing
   source/license disclosure, or inaccessible mobile chart. None occurred in the accepted Item 8
-  deployment. Stop after Item 8; Item 9 requires separate explicit Owner approval.
+  deployment. Item 8 stopped there; a later explicit Owner approval separately authorized Item 9.
 
 ## Item 9 — Identity, wallet and privacy
 
-- **Status:** Planned; Item 8 dependency is satisfied, but execution requires separate explicit
-  Owner approval.
+- **Status:** Complete — exact application source `808342544c2f8ea8e9fb593f47937e51211482b1`
+  is `READY` in Vercel-authenticated custom Staging as
+  `dpl_92w16KNvvZDfC7QhFNb45GLrHy6u`. Final least-privilege role configuration is committed at
+  `db4cd1bd5fdc26f8f85551deeaeb40470098cb9b`. Identity sandbox, Base Sepolia wallet authority,
+  owner isolation, export, deletion, desktop/mobile zero-mock, credential destruction, and
+  safe-off evidence are recorded in `docs/recovery/ITEM_9_IDENTITY_WALLET_PRIVACY_EVIDENCE.md`.
+  Item 10 remains unapproved and unstarted.
 - **Founder Journey IDs:** FJ-07, FJ-08, FJ-09, FJ-18, FJ-19.
 - **Exact user-visible outcome:** Owner can test email-sandbox and wallet sign-in, account merge,
   sessions, consent, history, export, and deletion without custody.
@@ -230,11 +236,13 @@
 - **Explicit exclusions:** No stored-value wallet, token/NFT, cash-out, biometric auth, minors' paid
   flow, production identity Provider, or irreversible production deletion.
 - **STOP condition:** Cross-user access, replayable signature, secret/private-data leak, deletion
-  ambiguity, audit loss, or custody behavior.
+  ambiguity, audit loss, or custody behavior. None occurred in the accepted Item 9 deployment. Stop
+  after Item 9; Item 10 requires separate explicit Owner approval.
 
 ## Item 10 — Credits, Stripe Test and Plus
 
-- **Status:** Planned; depends on Item 9.
+- **Status:** Planned; Item 9 dependency is satisfied, but execution requires separate explicit
+  Owner approval.
 - **Founder Journey IDs:** FJ-10, FJ-11, FJ-12, FJ-13, FJ-14, FJ-20.
 - **Exact user-visible outcome:** In staging only, Owner can test an approved Test SKU, verified
   fulfillment, bounded Credits/entitlements, Plus lifecycle, and refund/dispute audit.

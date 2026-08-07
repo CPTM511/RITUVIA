@@ -1,21 +1,23 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-06
+**Last reconciled:** 2026-08-07
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 8 are complete. Item 8 is
-deployed to Vercel-authenticated custom Staging as `dpl_GuAVFXenqS4g4By52Xcjuu52JrVH`, source
-`8f4d5255f8625a8a74bfa78c0c861d85ab8d491a`, with the stable Owner URL recorded in
-`docs/recovery/ITEM_8_NUMEROLOGY_ASTROLOGY_EVIDENCE.md`. Vercel reports `READY`,
-`readySubstate=STAGED`, custom environment/OIDC and CLI target `staging`, source `cli` bound to the
-exact Git SHA, one `iad1` runtime region, `public=false`, `live=null`, one Vercel-managed domain,
-no custom/production domain, and login protection. Hosted zero-mock desktop/mobile Chromium passes
-the `4`/`1`/`22` numerology vector, exact/approximate/unknown-time astrology, strict uncertainty,
-source/runtime/license disclosure, zero browser storage, zero account/payment/Provider requests,
-390-pixel layout, touch controls, and critical/serious accessibility gates. Provider AI, account,
-wallet, payment, public numerology/astrology hubs, `zh-Hans` calculators, public indexing,
-production, DNS, real funds, and public release remain off. Git automatic deployment remains
-disabled. Item 9 is dependency-ready but unapproved and unstarted.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 9 are complete. Item 9 is
+deployed to Vercel-authenticated custom Staging as `dpl_92w16KNvvZDfC7QhFNb45GLrHy6u`, exact
+application source `808342544c2f8ea8e9fb593f47937e51211482b1`, with final database-connect role
+configuration `db4cd1bd5fdc26f8f85551deeaeb40470098cb9b` and the stable Owner URL recorded in
+`docs/recovery/ITEM_9_IDENTITY_WALLET_PRIVACY_EVIDENCE.md`. Vercel reports `READY`, CLI target
+`staging`, one `iad1` runtime region, a Vercel-managed protected alias, no custom/production domain,
+and login protection. Hosted zero-mock desktop/mobile Chromium passes email-sandbox sign-in, Base
+Sepolia wallet link/sign-in/replay denial, cross-owner wallet/export `404`, private export, account
+deletion, two-session revocation, post-deletion wallet denial, accessibility, and safe-off
+assertions with zero mocked fulfillment, external product request, or Provider AI request. The
+temporary 23-hour share URL, browser Cookie, Vercel CLI authorization, Neon administrator URL, and
+Item 9 secret source were deleted immediately after acceptance. Item 8 remains preserved in the
+same protected Staging history. Item 10 remains unapproved and unstarted. Production, DNS, real
+funds, public release, live Stripe, Credits/Plus activation, Provider AI, and unrestricted public
+service remain separate Owner gates. Git automatic deployment remains disabled.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

@@ -177,10 +177,31 @@ const expectedUnauthorizedConsolePattern =
 const unexpectedConsoleErrors = (messages) =>
   messages.filter(
     (message) =>
-      !message.includes("400 (Bad Request)") &&
       !message.includes("404 (Not Found)") &&
       !message.includes("https://vercel.live/_next-live/feedback/feedback.js"),
   );
+
+const expectedBadRequestConsolePattern =
+  /^Failed to load resource: the server responded with a status of 400 \((?:Bad Request)?\)$/u;
+
+const removeExpectedBadRequestConsoleErrors = (messages, responses) => {
+  const expectedBadRequestResponseCount = responses.filter(
+    ({ pathname, status }) => status === 400 && pathname === "/api/v1/auth/wallet/verify",
+  ).length;
+  let consumed = 0;
+  const remaining = messages.filter((message) => {
+    if (
+      consumed < expectedBadRequestResponseCount &&
+      expectedBadRequestConsolePattern.test(message)
+    ) {
+      consumed += 1;
+      return false;
+    }
+    return true;
+  });
+  assert.equal(consumed <= expectedBadRequestResponseCount, true);
+  return remaining;
+};
 
 const removeExpectedUnauthorizedConsoleErrors = (messages, responses) => {
   const expectedUnauthorizedResponseCount = responses.filter(
@@ -258,6 +279,8 @@ const externalRequests = [];
 const providerAiRequests = [];
 const forbiddenProviderRequestPattern =
   /(?:api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|openrouter\.ai|gateway\.ai\.vercel\.com)/u;
+const isVercelProtectionResource = (hostname) =>
+  hostname === "vercel.live" || hostname.endsWith(".vercel.live");
 try {
   if (!hosted) {
     progress("preparing local database");
@@ -359,7 +382,7 @@ try {
   ownerPage.on("request", (request) => {
     const url = new URL(request.url());
     requests.push({ method: request.method(), pathname: url.pathname });
-    if (url.origin !== origin && !url.hostname.endsWith(".vercel.live")) {
+    if (url.origin !== origin && !isVercelProtectionResource(url.hostname)) {
       externalRequests.push(request.url());
     }
     if (forbiddenProviderRequestPattern.test(request.url())) {
@@ -561,7 +584,10 @@ try {
   assert.equal(crossExport.status, 404);
   assert.deepEqual(
     unexpectedConsoleErrors(
-      removeExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence),
+      removeExpectedBadRequestConsoleErrors(
+        removeExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence),
+        responseEvidence,
+      ),
     ),
     [],
   );
@@ -589,14 +615,17 @@ try {
     (await ownerContext.cookies()).some(({ name }) => name === accountCookieName),
     false,
   );
-  assert.equal(
-    (
-      await fetch(`${origin}/api/v1/me`, {
-        headers: { cookie: `${accountCookieName}=${walletSessionCookie.value}` },
-      })
-    ).status,
-    401,
-  );
+  const protectionCookies = (await ownerContext.cookies())
+    .filter(({ name }) => name !== accountCookieName)
+    .map(({ name, value }) => `${name}=${value}`);
+  const revokedSession = await ownerContext.request.get("/api/v1/me", {
+    headers: {
+      cookie: [...protectionCookies, `${accountCookieName}=${walletSessionCookie.value}`].join(
+        "; ",
+      ),
+    },
+  });
+  assert.equal(revokedSession.status(), 401);
 
   await ownerPage.goto("/en/sign-in", { waitUntil: "load" });
   const deniedWalletSignIn = ownerPage.waitForResponse(
@@ -635,7 +664,10 @@ try {
   assert.equal(serverError.includes(walletSessionCookie.value), false);
   assert.deepEqual(
     unexpectedConsoleErrors(
-      removeExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence),
+      removeExpectedBadRequestConsoleErrors(
+        removeExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence),
+        responseEvidence,
+      ),
     ),
     [],
   );
