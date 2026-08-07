@@ -10,7 +10,8 @@ const userId = "11111111-1111-4111-8111-111111111111";
 const orderId = "22222222-2222-4222-8222-222222222222";
 const now = "2026-07-30T12:00:00.000Z";
 const expiresAt = "2026-07-30T12:30:00.000Z";
-const checkoutUrl = "https://checkout.stripe.com/c/pay/cs_test_12345678";
+const checkoutUrl =
+  "https://checkout.stripe.com/c/pay/cs_test_12345678#fidkdWxOYHwnPyd1blpxYHZxWjA0";
 const request = Object.freeze({
   cancelPath: "/en/store",
   productCode: "pack_6",

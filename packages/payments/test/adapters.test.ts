@@ -118,7 +118,7 @@ describe("Stripe hosted checkout boundary", () => {
     const createCheckoutSession = vi.fn(async () => ({
       expiresAt: "2026-07-18T12:30:00.000Z",
       id: "cs_test_11111111",
-      url: "https://checkout.stripe.com/c/pay/cs_test_11111111",
+      url: "https://checkout.stripe.com/c/pay/cs_test_11111111#fidkdWxOYHwnPyd1blpxYHZxWjA0",
     }));
     const gateway: StripeGateway = {
       createCheckoutSession,
@@ -132,6 +132,7 @@ describe("Stripe hosted checkout boundary", () => {
     await expect(adapter.createCheckout(stripeInput())).resolves.toMatchObject({
       checkoutId: "cs_test_11111111",
       providerId: "stripe",
+      url: "https://checkout.stripe.com/c/pay/cs_test_11111111#fidkdWxOYHwnPyd1blpxYHZxWjA0",
     });
     expect(createCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -31,14 +31,14 @@ export interface HostedCheckoutAdapter {
   verifyWebhook(request: RawWebhookRequest): Promise<NormalizedPaymentEventV1>;
 }
 
-const parseAbsoluteUrl = (value: string): URL => {
+const parseAbsoluteUrl = (value: string, allowFragment = false): URL => {
   try {
     const parsed = new URL(value);
     if (
       (parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
       parsed.username !== "" ||
       parsed.password !== "" ||
-      parsed.hash !== ""
+      (!allowFragment && parsed.hash !== "")
     ) {
       throw new CommerceError("COMMERCE_INPUT_INVALID");
     }
@@ -78,7 +78,7 @@ export const validateHostedCheckout = (
   value: HostedCheckout,
   expectedProviderId: string,
 ): HostedCheckout => {
-  const parsed = parseAbsoluteUrl(value.url);
+  const parsed = parseAbsoluteUrl(value.url, expectedProviderId === "stripe");
   if (value.providerId !== expectedProviderId || parsed.protocol !== "https:") {
     throw new CommerceError("CHECKOUT_PROVIDER_FAILURE");
   }
