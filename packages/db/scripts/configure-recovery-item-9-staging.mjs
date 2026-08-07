@@ -5,6 +5,7 @@ import pg from "pg";
 const { Client } = pg;
 
 const resourceName = "rituvia-recovery-staging";
+const databaseName = "neondb";
 const appRole = "rituvia_app";
 const deletionRole = "rituvia_privacy_deletion";
 const expectedConfirmation = `rotate:${resourceName}/${deletionRole}`;
@@ -107,6 +108,7 @@ try {
   const facts = attestation.rows[0];
   if (
     facts === undefined ||
+    facts.databaseName !== databaseName ||
     [appRole, deletionRole].includes(facts.currentUser) ||
     facts.appRoleExists !== true ||
     facts.deletionRoleExists !== true ||
@@ -137,6 +139,7 @@ try {
   await client.query("BEGIN");
   try {
     await client.query(`ALTER ROLE ${deletionRole} WITH LOGIN PASSWORD '${rolePassword}'`);
+    await client.query(`GRANT CONNECT ON DATABASE ${databaseName} TO ${deletionRole}`);
     await client.query(`GRANT USAGE ON SCHEMA public TO ${appRole}, ${deletionRole}`);
     await client.query(
       `GRANT SELECT, INSERT ON TABLE app_user, auth_identity, auth_challenge, account_session TO ${appRole}`,
@@ -312,6 +315,7 @@ try {
               has_table_privilege($2, 'wallet_auth_event', 'SELECT') AS "walletEventSelect",
               has_table_privilege($2, 'privacy_deletion_request', 'INSERT') AS "privacyDeletionRequestInsert",
               has_table_privilege($2, 'privacy_export_artifact', 'DELETE') AS "privacyExportArtifactDelete",
+              has_database_privilege($2, current_database(), 'CONNECT') AS "privacyDeletionDatabaseConnect",
               has_column_privilege($2, 'revisit_reminder_subscription', 'user_id', 'SELECT') AS "reminderUserSelect",
               has_column_privilege($2, 'revisit_reminder_subscription', 'preference_state', 'UPDATE') AS "reminderPreferenceUpdate",
               has_table_privilege($2, 'birth_profile', 'SELECT') AS "birthProfileSelect",

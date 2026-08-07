@@ -26,6 +26,7 @@ describe("Recovery Item 9 staging role configuration", () => {
   it("pins the existing resource and role without creation authority", () => {
     const source = readFileSync(scriptPath, "utf8");
     expect(source).toContain('const resourceName = "rituvia-recovery-staging"');
+    expect(source).toContain('const databaseName = "neondb"');
     expect(source).toContain('const appRole = "rituvia_app"');
     expect(source).toContain('const deletionRole = "rituvia_privacy_deletion"');
     expect(source).toContain('process.env.APP_ENV !== "staging"');
@@ -54,6 +55,8 @@ describe("Recovery Item 9 staging role configuration", () => {
     );
     expect(source).toContain("has_table_privilege($1, 'auth_start_rate_limit', 'INSERT')");
     expect(source).toContain("has_table_privilege($2, 'privacy_deletion_request', 'INSERT')");
+    expect(source).toContain("GRANT CONNECT ON DATABASE ${databaseName} TO ${deletionRole}");
+    expect(source).toContain("has_database_privilege($2, current_database(), 'CONNECT')");
     expect(source).toContain(
       "GRANT SELECT (user_id) ON TABLE revisit_reminder_subscription TO ${deletionRole}",
     );
