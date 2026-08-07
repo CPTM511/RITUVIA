@@ -194,6 +194,7 @@ describe("Stripe sandbox checkout application service", () => {
     expect(test.createCheckout).toHaveBeenCalledWith({
       accountId: userId,
       amount: { amountMinor: 599, currencyCode: "USD" },
+      billingInterval: "one_time",
       cancelUrl: "https://example.test/en/store",
       countryCode: "US",
       idempotencyKey: `stripe:${orderId}:1`,

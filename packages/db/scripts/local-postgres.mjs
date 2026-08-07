@@ -1121,6 +1121,9 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       const commercialPaymentEventTables = await admin.query(
         "SELECT to_regclass('public.commercial_payment_event_v2') IS NOT NULL AS present",
       );
+      const recoveryItemTenTables = await admin.query(
+        "SELECT to_regclass('public.commercial_subscription_v2') IS NOT NULL AS present",
+      );
       await admin.query(
         `GRANT SELECT, INSERT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, credit_reservation, credit_ledger_entry, credit_allocation, credit_projection, commercial_entitlement_v2 TO ${APP_ROLE}`,
       );
@@ -1158,6 +1161,24 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
         await admin.query(
           `GRANT UPDATE (delivery_state, attempt_count, available_at, lease_token_hash, leased_until, completed_at, last_failure_code, dead_lettered_at) ON TABLE commercial_payment_outbox_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
         );
+        if (recoveryItemTenTables.rows[0]?.present === true) {
+          await admin.query(`GRANT SELECT ON TABLE commercial_subscription_v2 TO ${APP_ROLE}`);
+          await admin.query(
+            `GRANT SELECT ON TABLE commercial_order_item_v2, catalog_price, credit_ledger_entry, credit_projection, commercial_entitlement_v2, commercial_subscription_v2, commercial_subscription_period_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `GRANT INSERT ON TABLE credit_ledger_entry, credit_projection, commercial_entitlement_v2, commercial_subscription_v2, commercial_subscription_period_v2, commercial_commerce_audit_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (subscription_available, promotional_available, purchased_available, reserved, version, updated_at) ON TABLE credit_projection TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (status, frozen_at, revoked_at, version) ON TABLE commercial_entitlement_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+          await admin.query(
+            `GRANT UPDATE (provider_subscription_id, status, cancel_at_period_end, current_period_start, current_period_end, updated_at, cancelled_at) ON TABLE commercial_subscription_v2 TO ${PAYMENT_WEBHOOK_ROLE}`,
+          );
+        }
       }
     }
     const privacyExportTables = await admin.query(

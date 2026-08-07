@@ -10,6 +10,7 @@ export const GET = () => {
     {
       baselineSha: status.baselineSha,
       controls: {
+        commerceSandbox: status.commerceSandbox,
         database: status.database,
         indexing: status.indexing,
         identitySandbox: status.identitySandbox,

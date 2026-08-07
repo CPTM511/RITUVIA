@@ -120,8 +120,33 @@ export type VerifiedStripePaymentEvent = Readonly<{
   providerCheckoutSessionId: string;
   providerObjectId: string;
   providerPaymentIntentId: string | null;
+  providerInvoiceId: string | null;
+  providerSubscriptionId: string | null;
+  subscriptionCancelAtPeriodEnd: boolean | null;
+  subscriptionPeriodEnd: string | null;
+  subscriptionPeriodStart: string | null;
+  subscriptionState: "active" | "cancelled" | "past_due" | null;
   type: NormalizedPaymentEventV1["type"];
 }>;
+
+type StripeSubscriptionContext = Pick<
+  VerifiedStripePaymentEvent,
+  | "providerInvoiceId"
+  | "providerSubscriptionId"
+  | "subscriptionCancelAtPeriodEnd"
+  | "subscriptionPeriodEnd"
+  | "subscriptionPeriodStart"
+  | "subscriptionState"
+>;
+
+const noStripeSubscriptionContext = Object.freeze({
+  providerInvoiceId: null,
+  providerSubscriptionId: null,
+  subscriptionCancelAtPeriodEnd: null,
+  subscriptionPeriodEnd: null,
+  subscriptionPeriodStart: null,
+  subscriptionState: null,
+}) satisfies StripeSubscriptionContext;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -173,6 +198,69 @@ const stripeCheckoutSessionIdForPaymentIntent = async (
   return session.id;
 };
 
+const stripeCheckoutSessionIdForSubscription = async (
+  stripe: Stripe,
+  providerSubscriptionId: string,
+): Promise<string> => {
+  const sessions = await stripe.checkout.sessions.list({
+    limit: 2,
+    subscription: providerSubscriptionId,
+  });
+  const session = sessions.data[0];
+  if (sessions.data.length !== 1 || session === undefined) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return session.id;
+};
+
+const normalizedStripeSubscriptionState = (
+  status: Stripe.Subscription.Status,
+): StripeSubscriptionContext["subscriptionState"] => {
+  if (["active", "trialing"].includes(status)) return "active";
+  if (["incomplete", "incomplete_expired", "past_due", "unpaid", "paused"].includes(status)) {
+    return "past_due";
+  }
+  if (status === "canceled") return "cancelled";
+  throw new WebPaymentProviderError("unavailable");
+};
+
+const stripeSubscriptionContext = (
+  subscription: Stripe.Subscription,
+  providerInvoiceId: string | null,
+): StripeSubscriptionContext => {
+  const item = subscription.items.data[0];
+  if (subscription.items.data.length !== 1 || item === undefined) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return Object.freeze({
+    providerInvoiceId,
+    providerSubscriptionId: subscription.id,
+    subscriptionCancelAtPeriodEnd: subscription.cancel_at_period_end,
+    subscriptionPeriodEnd: new Date(item.current_period_end * 1_000).toISOString(),
+    subscriptionPeriodStart: new Date(item.current_period_start * 1_000).toISOString(),
+    subscriptionState: normalizedStripeSubscriptionState(subscription.status),
+  });
+};
+
+const stripeInvoiceSubscriptionId = (invoice: Stripe.Invoice): string => {
+  const parent = invoice.parent;
+  if (parent?.type !== "subscription_details" || parent.subscription_details === null) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  const subscription = parent.subscription_details.subscription;
+  const id = stripeExpandableId(subscription);
+  if (id === null) throw new WebPaymentProviderError("unavailable");
+  return id;
+};
+
+const stripeInvoiceOrderId = (invoice: Stripe.Invoice): string => {
+  const parent = invoice.parent;
+  if (parent?.type !== "subscription_details" || parent.subscription_details === null) {
+    throw new WebPaymentProviderError("unavailable");
+  }
+  return requireStripeOrderId(metadataOrderId(parent.subscription_details));
+};
+
 type StripeChargeContext = Readonly<{
   orderId: string;
   providerCheckoutSessionId: string;
@@ -214,10 +302,21 @@ export const verifiedStripePaymentEvent = async (
     case "checkout.session.async_payment_failed":
     case "checkout.session.expired": {
       const session = event.data.object as Stripe.Checkout.Session;
-      if (session.mode !== "payment") throw new WebPaymentProviderError("unavailable");
+      if (session.mode !== "payment" && session.mode !== "subscription") {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      const subscriptionId = stripeExpandableId(session.subscription);
+      const subscriptionContext =
+        session.mode === "subscription"
+          ? subscriptionId === null
+            ? (() => {
+                throw new WebPaymentProviderError("unavailable");
+              })()
+            : stripeSubscriptionContext(await stripe.subscriptions.retrieve(subscriptionId), null)
+          : noStripeSubscriptionContext;
       const type =
         event.type === "checkout.session.completed"
-          ? session.payment_status === "paid"
+          ? session.payment_status === "paid" || session.mode === "subscription"
             ? "payment_succeeded"
             : "payment_pending"
           : event.type === "checkout.session.async_payment_succeeded"
@@ -234,6 +333,7 @@ export const verifiedStripePaymentEvent = async (
         providerCheckoutSessionId: session.id,
         providerObjectId: session.id,
         providerPaymentIntentId: stripeExpandableId(session.payment_intent),
+        ...subscriptionContext,
         type,
       });
     }
@@ -254,6 +354,7 @@ export const verifiedStripePaymentEvent = async (
         providerCheckoutSessionId,
         providerObjectId: paymentIntent.id,
         providerPaymentIntentId: paymentIntent.id,
+        ...noStripeSubscriptionContext,
         type:
           event.type === "payment_intent.processing"
             ? "payment_pending"
@@ -277,6 +378,7 @@ export const verifiedStripePaymentEvent = async (
         providerCheckoutSessionId: context.providerCheckoutSessionId,
         providerObjectId: charge.id,
         providerPaymentIntentId: context.providerPaymentIntentId,
+        ...noStripeSubscriptionContext,
         type: "payment_refunded",
       });
     }
@@ -295,7 +397,58 @@ export const verifiedStripePaymentEvent = async (
         providerCheckoutSessionId: context.providerCheckoutSessionId,
         providerObjectId: dispute.id,
         providerPaymentIntentId: context.providerPaymentIntentId,
+        ...noStripeSubscriptionContext,
         type: "payment_disputed",
+      });
+    }
+    case "invoice.paid":
+    case "invoice.payment_failed": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const providerSubscriptionId = stripeInvoiceSubscriptionId(invoice);
+      const subscription = await stripe.subscriptions.retrieve(providerSubscriptionId);
+      return Object.freeze({
+        amountMinor: requireStripeAmount(
+          event.type === "invoice.paid" ? invoice.amount_paid : invoice.amount_due,
+        ),
+        currencyCode: requireStripeCurrency(invoice.currency),
+        eventId: event.id,
+        occurredAt,
+        orderId: stripeInvoiceOrderId(invoice),
+        providerCheckoutSessionId: await stripeCheckoutSessionIdForSubscription(
+          stripe,
+          providerSubscriptionId,
+        ),
+        providerObjectId: invoice.id,
+        providerPaymentIntentId: null,
+        ...stripeSubscriptionContext(subscription, invoice.id),
+        type: event.type === "invoice.paid" ? "payment_succeeded" : "payment_failed",
+      });
+    }
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      const item = subscription.items.data[0];
+      if (
+        subscription.items.data.length !== 1 ||
+        item === undefined ||
+        item.price.unit_amount === null
+      ) {
+        throw new WebPaymentProviderError("unavailable");
+      }
+      return Object.freeze({
+        amountMinor: requireStripeAmount(item.price.unit_amount),
+        currencyCode: requireStripeCurrency(item.price.currency),
+        eventId: event.id,
+        occurredAt,
+        orderId: requireStripeOrderId(metadataOrderId(subscription)),
+        providerCheckoutSessionId: await stripeCheckoutSessionIdForSubscription(
+          stripe,
+          subscription.id,
+        ),
+        providerObjectId: subscription.id,
+        providerPaymentIntentId: null,
+        ...stripeSubscriptionContext(subscription, null),
+        type: "payment_pending",
       });
     }
     default:
@@ -308,6 +461,15 @@ const stripeSandboxWebhookEventTypes = new Set([
   "checkout.session.async_payment_succeeded",
   "checkout.session.completed",
   "checkout.session.expired",
+  "charge.dispute.created",
+  "charge.refunded",
+  "customer.subscription.deleted",
+  "customer.subscription.updated",
+  "invoice.paid",
+  "invoice.payment_failed",
+  "payment_intent.payment_failed",
+  "payment_intent.processing",
+  "payment_intent.succeeded",
 ]);
 
 export const createStripeGateway = (
@@ -346,7 +508,9 @@ export const createStripeGateway = (
       if (
         price.livemode ||
         !price.active ||
-        price.type !== "one_time" ||
+        (request.mode === "payment"
+          ? price.type !== "one_time"
+          : price.type !== "recurring" || price.recurring?.interval !== request.billingInterval) ||
         price.currency.toUpperCase() !== request.currencyCode ||
         price.unit_amount !== request.unitAmountMinor
       ) {
@@ -358,8 +522,10 @@ export const createStripeGateway = (
           client_reference_id: request.clientReferenceId,
           line_items: [{ price: price.id, quantity: 1 }],
           metadata: request.metadata,
-          mode: "payment",
-          payment_intent_data: { metadata: request.metadata },
+          mode: request.mode,
+          ...(request.mode === "payment"
+            ? { payment_intent_data: { metadata: request.metadata } }
+            : { subscription_data: { metadata: request.metadata } }),
           success_url: request.returnUrl,
         },
         { idempotencyKey: request.idempotencyKey },
@@ -410,6 +576,12 @@ export const createStripeGateway = (
         providerId: stripeHostedCheckoutProviderId,
         providerObjectId: value.providerObjectId as string,
         providerPaymentIntentId: value.providerPaymentIntentId as string | null,
+        providerInvoiceId: value.providerInvoiceId as string | null,
+        providerSubscriptionId: value.providerSubscriptionId as string | null,
+        subscriptionCancelAtPeriodEnd: value.subscriptionCancelAtPeriodEnd as boolean | null,
+        subscriptionPeriodEnd: value.subscriptionPeriodEnd as string | null,
+        subscriptionPeriodStart: value.subscriptionPeriodStart as string | null,
+        subscriptionState: value.subscriptionState as "active" | "cancelled" | "past_due" | null,
         type: value.type as NormalizedPaymentEventV1["type"],
       });
     },

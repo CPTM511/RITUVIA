@@ -1,12 +1,13 @@
 export const recoveryStagingMessages = Object.freeze({
   badge: "Founder Acceptance Recovery",
   baselineLabel: "Approved recovery baseline",
+  billingLink: "Review protected billing and Credits",
   boundaries: Object.freeze([
-    "Recovery Item 8 adds reviewed English numerology and natal-astrology calculators while preserving Items 5–7 core-loop, shell, and Tarot behavior.",
+    "Recovery Item 10 adds Stripe Test Checkout, non-transferable Credits, and Plus lifecycle evidence while preserving Items 5–9.",
     "The dedicated staging database contains synthetic recovery evidence only; object storage remains disconnected.",
-    "Numerology is deterministic. Astrology uses the reviewed native Swiss Ephemeris build and pinned civil-time runtime; synthetic calculator inputs are not persisted.",
-    "Provider AI, payment, account activation, and Item 9+ product requests remain outside this staging slice.",
-    "Production Providers, real payments, unrestricted AI, DNS, and public release remain off.",
+    "Checkout prices are server-owned; redirects grant nothing; only signed Stripe Test events can change the append-only ledger and access state.",
+    "Credits have no cash value, cannot be transferred or withdrawn, and never claim stronger spiritual efficacy.",
+    "Live Stripe, real funds, crypto checkout, Provider AI, Production, DNS, and public release remain off.",
   ]),
   astrologyLink: "Open the protected natal astrology calculator",
   chineseShellLink: "Open the Simplified Chinese golden shell",
@@ -14,16 +15,20 @@ export const recoveryStagingMessages = Object.freeze({
   englishShellLink: "Open the English golden shell",
   environmentLabel: "Environment",
   healthLink: "Open liveness JSON",
+  identityLink: "Open the identity sandbox",
   intro:
-    "This protected shell exposes Recovery Item 8 deterministic numerology and real-engine natal astrology, preserved earlier recovery journeys, and source-bound diagnostics.",
+    "This protected shell exposes Recovery Item 10 Stripe Test and private commerce acceptance, preserves earlier recovery journeys, and reports source-bound diagnostics.",
   itemLabel: "Recovery item",
   offline: "Offline / degraded: this already-loaded acceptance shell remains readable.",
   online: "Online: protected staging checks are available.",
+  ordersLink: "Review protected orders",
+  plansLink: "Open Stripe Test plans",
+  privacyLink: "Open privacy controls",
   readinessFailed:
     "STOP: readiness failed. Do not begin another recovery item or treat this deployment as accepted.",
   readinessLink: "Open readiness JSON",
   readinessPassed:
-    "Ready: source identity, database, privacy keys, deterministic engines, pinned timezone runtime, core-loop controls, and Item 8 safe-off boundaries passed.",
+    "Ready: source identity, database, privacy controls, deterministic engines, commerce sandbox, and Item 10 safe-off boundaries passed.",
   runtimeAstrologyLabel: "Protected natal astrology page request",
   runtimeEyebrow: "Zero-fulfillment runtime evidence",
   runtimeFailed:

@@ -51,7 +51,7 @@ vi.mock("../server/recovery-staging", () => ({
     objectStorage: "not-connected",
     productionProviders: "disabled",
     ready: harness.recoveryReady,
-    recoveryItem: 9,
+    recoveryItem: 10,
     sourceSha: "1111111111111111111111111111111111111111",
     tarotCatalog: "enabled",
     timeZoneRuntime: "pinned",
@@ -154,6 +154,10 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/en/sign-in"],
     ["GET", "/en/account"],
     ["GET", "/en/account/privacy"],
+    ["GET", "/en/plans"],
+    ["GET", "/en/account/billing"],
+    ["GET", "/en/account/orders"],
+    ["GET", "/en/checkout/return"],
     ["POST", "/api/v1/auth/start"],
     ["POST", "/api/v1/auth/logout"],
     ["POST", "/api/v1/auth/logout-all"],
@@ -167,8 +171,13 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/api/v1/privacy/exports/33333333-3333-4333-8333-333333333333"],
     ["POST", "/api/v1/privacy/exports/33333333-3333-4333-8333-333333333333/download"],
     ["POST", "/api/v1/privacy/deletions"],
+    ["GET", "/api/v1/catalog"],
+    ["POST", "/api/v1/checkout/stripe"],
+    ["GET", "/api/v1/commerce/account"],
+    ["GET", "/api/v1/orders/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/webhooks/payments/stripe"],
   ])(
-    "allows only the bounded Item 9 calculators, identity, wallet, and privacy requests: %s %s",
+    "allows only the bounded protected-recovery product requests through Item 10: %s %s",
     async (method, pathname) => {
       harness.deploymentEnvironment = "staging";
 
@@ -182,7 +191,26 @@ describe("public shell request and crawl gate", () => {
     },
   );
 
-  it("fails the Item 9 product surface closed when staging readiness is incomplete", async () => {
+  it("allows only the exact Stripe webhook protection-bypass query", async () => {
+    harness.deploymentEnvironment = "staging";
+    const valid = await proxy(
+      request(`/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=${"a".repeat(32)}`, {
+        method: "POST",
+      }),
+    );
+    expect(valid.status).toBe(200);
+    expect(valid.headers.get("x-middleware-next")).toBe("1");
+
+    for (const pathname of [
+      "/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=short",
+      `/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=${"a".repeat(32)}&extra=1`,
+      `/api/v1/webhooks/payments/stripe?wrong=${"a".repeat(32)}`,
+    ]) {
+      expect((await proxy(request(pathname, { method: "POST" }))).status).toBe(404);
+    }
+  });
+
+  it("fails the protected product surface closed when staging readiness is incomplete", async () => {
     harness.deploymentEnvironment = "staging";
     harness.recoveryReady = false;
 
@@ -198,7 +226,6 @@ describe("public shell request and crawl gate", () => {
     ["GET", "/en/privacy"],
     ["GET", "/zh-Hans/intake"],
     ["GET", "/api/v1/anonymous/session"],
-    ["GET", "/api/v1/catalog"],
     ["GET", "/api/v1/entitlements"],
     ["GET", "/api/v1/readings/astrology/natal"],
     ["POST", "/api/v1/readings/astrology/natal"],
@@ -219,7 +246,7 @@ describe("public shell request and crawl gate", () => {
     ["POST", "/api/v1/me/wallets"],
     ["DELETE", "/api/v1/me/wallets/not-a-uuid"],
     ["GET", "/api/v1/privacy/deletions"],
-  ])("rejects every non-Item-9 staging surface: %s %s", async (method, pathname) => {
+  ])("rejects every unreviewed staging surface: %s %s", async (method, pathname) => {
     harness.deploymentEnvironment = "staging";
 
     const response = await proxy(request(pathname, { method }));

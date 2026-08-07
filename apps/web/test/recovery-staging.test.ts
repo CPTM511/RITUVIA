@@ -9,9 +9,12 @@ const harness = vi.hoisted(() => ({
   privacyDeletionDatabaseUrl: "postgresql://deletion.example.invalid/rituvia" as string | undefined,
   privacyDeletionPolicy: {} as object | undefined,
   privacyExport: {} as object | undefined,
+  payment: { provider: "stripe" } as object | undefined,
+  paymentWebhookDatabaseUrl: "postgresql://webhook.example.invalid/rituvia" as string | undefined,
   questionIntakeActivationReference: "own-009.recovery-item-5" as string | undefined,
   reflectionPolicy: {} as object | undefined,
   recoveryIdentitySandbox: {} as object | undefined,
+  recoveryCommerceSandbox: {} as object | undefined,
   tarotReadingIntegrityKeyring: {} as object | undefined,
   tarotReadingAvailability: "enabled" as "disabled" | "enabled",
 }));
@@ -25,9 +28,12 @@ vi.mock("../config/server", () => ({
     privacyDeletionDatabaseUrl: harness.privacyDeletionDatabaseUrl,
     privacyDeletionPolicy: harness.privacyDeletionPolicy,
     privacyExport: harness.privacyExport,
+    payment: harness.payment,
+    paymentWebhookDatabaseUrl: harness.paymentWebhookDatabaseUrl,
     questionIntakeActivationReference: harness.questionIntakeActivationReference,
     reflectionPolicy: harness.reflectionPolicy,
     recoveryIdentitySandbox: harness.recoveryIdentitySandbox,
+    recoveryCommerceSandbox: harness.recoveryCommerceSandbox,
     tarotReadingIntegrityKeyring: harness.tarotReadingIntegrityKeyring,
   }),
 }));
@@ -44,7 +50,7 @@ import { inspectRecoveryStagingRuntime } from "../server/recovery-staging";
 
 const sourceSha = "1111111111111111111111111111111111111111";
 
-describe("Recovery Item 9 runtime identity", () => {
+describe("Recovery Item 10 runtime identity", () => {
   beforeEach(() => {
     harness.anonymousSessionPolicy = {};
     harness.databaseUrl = "postgresql://staging.example.invalid/rituvia";
@@ -54,9 +60,12 @@ describe("Recovery Item 9 runtime identity", () => {
     harness.privacyDeletionDatabaseUrl = "postgresql://deletion.example.invalid/rituvia";
     harness.privacyDeletionPolicy = {};
     harness.privacyExport = {};
+    harness.payment = { provider: "stripe" };
+    harness.paymentWebhookDatabaseUrl = "postgresql://webhook.example.invalid/rituvia";
     harness.questionIntakeActivationReference = "own-009.recovery-item-5";
     harness.reflectionPolicy = {};
     harness.recoveryIdentitySandbox = {};
+    harness.recoveryCommerceSandbox = {};
     harness.tarotReadingIntegrityKeyring = {};
     harness.tarotReadingAvailability = "enabled";
   });
@@ -69,6 +78,7 @@ describe("Recovery Item 9 runtime identity", () => {
       }),
     ).toMatchObject({
       database: "connected",
+      commerceSandbox: "enabled",
       environment: "staging",
       indexing: "disabled",
       identitySandbox: "enabled",
@@ -78,7 +88,7 @@ describe("Recovery Item 9 runtime identity", () => {
       productionProviders: "disabled",
       privacyControls: "enabled",
       ready: true,
-      recoveryItem: 9,
+      recoveryItem: 10,
       sourceSha,
       tarotCatalog: "enabled",
       timeZoneRuntime: "pinned",

@@ -13,6 +13,7 @@ const harness = vi.hoisted(() => {
     CommerceError,
     completeLocalCheckout: vi.fn(),
     createOrder: vi.fn(),
+    getCommercialOrder: vi.fn(),
     getOrder: vi.fn(),
     listEntitlements: vi.fn(),
     startCheckout: vi.fn(),
@@ -38,6 +39,12 @@ vi.mock("../server/commerce", () => ({
     startCheckout: harness.startCheckout,
   }),
   WebCommerceError: harness.CommerceError,
+}));
+
+vi.mock("../server/commercial-account", () => ({
+  loadWebCommercialAccountApplicationService: () => ({
+    getOrder: harness.getCommercialOrder,
+  }),
 }));
 
 import { POST as completeLocalCheckout } from "../app/api/v1/checkout/local/complete/route";
@@ -72,6 +79,7 @@ describe("commerce order HTTP contracts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     harness.createOrder.mockResolvedValue({ kind: "created", order });
+    harness.getCommercialOrder.mockRejectedValue(new harness.CommerceError("not_found"));
     harness.getOrder.mockResolvedValue(order);
     harness.listEntitlements.mockResolvedValue([]);
     harness.startCheckout.mockResolvedValue({

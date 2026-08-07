@@ -34,10 +34,21 @@ const allowedRecoveryIdentityEnvironment = new Set([
   "RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS",
   "RITUVIA_PRIVACY_EXPORT_TTL_SECONDS",
 ]);
+const allowedRecoveryCommerceEnvironment = new Set([
+  "PAYMENT_WEBHOOK_DATABASE_URL",
+  "RITUVIA_PAYMENT_PROVIDER",
+  "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
+  "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
+  "RITUVIA_STRIPE_ACCOUNT_ID",
+  "RITUVIA_STRIPE_PRICE_IDS",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+]);
 
 export type RecoveryStagingRuntimeStatus = Readonly<{
   baselineSha: typeof approvedRecoveryBaselineSha;
   database: "connected" | "not-connected";
+  commerceSandbox: "disabled" | "enabled";
   environment: "staging";
   indexing: "disabled";
   identitySandbox: "disabled" | "enabled";
@@ -47,19 +58,21 @@ export type RecoveryStagingRuntimeStatus = Readonly<{
   productionProviders: "disabled";
   privacyControls: "disabled" | "enabled";
   ready: boolean;
-  recoveryItem: 9;
+  recoveryItem: 10;
   sourceSha: string;
   tarotCatalog: "disabled" | "enabled";
   timeZoneRuntime: "invalid" | "pinned";
 }>;
 
 const hasForbiddenServiceEnvironment = (environment: RawEnvironment): boolean =>
+  environment.STRIPE_SECRET_KEY?.startsWith("sk_live_") === true ||
   Object.entries(environment).some(
     ([key, value]) =>
       value !== undefined &&
       value.trim() !== "" &&
       key !== allowedRecoveryAstrologyEnvironment &&
       !allowedRecoveryIdentityEnvironment.has(key) &&
+      !allowedRecoveryCommerceEnvironment.has(key) &&
       forbiddenServiceEnvironmentPattern.test(key),
   );
 
@@ -86,6 +99,10 @@ export const inspectRecoveryStagingRuntime = (
     configuration.privacyExport !== undefined &&
     configuration.privacyDeletionPolicy !== undefined &&
     configuration.privacyDeletionDatabaseUrl !== undefined;
+  const commerceSandbox =
+    configuration.recoveryCommerceSandbox !== undefined &&
+    configuration.payment?.provider === "stripe" &&
+    configuration.paymentWebhookDatabaseUrl !== undefined;
   const coreLoopConfigured =
     databaseConnected &&
     configuration.anonymousSessionPolicy !== undefined &&
@@ -97,6 +114,7 @@ export const inspectRecoveryStagingRuntime = (
   return Object.freeze({
     baselineSha: approvedRecoveryBaselineSha,
     database: databaseConnected ? "connected" : "not-connected",
+    commerceSandbox: commerceSandbox ? "enabled" : "disabled",
     environment: "staging",
     indexing: "disabled",
     identitySandbox: identitySandbox ? "enabled" : "disabled",
@@ -114,8 +132,9 @@ export const inspectRecoveryStagingRuntime = (
       nativeAstrology === "enabled" &&
       timeZoneRuntime === "pinned" &&
       identitySandbox &&
-      privacyControls,
-    recoveryItem: 9,
+      privacyControls &&
+      commerceSandbox,
+    recoveryItem: 10,
     sourceSha: sourceIdentityValid ? sourceSha : "unavailable",
     tarotCatalog,
     timeZoneRuntime,

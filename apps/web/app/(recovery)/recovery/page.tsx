@@ -82,8 +82,11 @@ export default function RecoveryStagingPage() {
             <Link href="/en/tarot/three-card">{messages.threeCardLink}</Link>
             <Link href="/en/readings/numerology">{messages.numerologyLink}</Link>
             <Link href="/en/readings/astrology">{messages.astrologyLink}</Link>
-            <Link href="/en/sign-in">Identity sandbox</Link>
-            <Link href="/en/account/privacy">Privacy controls</Link>
+            <Link href="/en/sign-in">{messages.identityLink}</Link>
+            <Link href="/en/account/privacy">{messages.privacyLink}</Link>
+            <Link href="/en/plans">{messages.plansLink}</Link>
+            <Link href="/en/account/billing">{messages.billingLink}</Link>
+            <Link href="/en/account/orders">{messages.ordersLink}</Link>
             <a href={recoveryHealthPathname}>{messages.healthLink}</a>
             <a href={recoveryReadinessPathname}>{messages.readinessLink}</a>
           </nav>

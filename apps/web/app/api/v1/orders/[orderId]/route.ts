@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { accountSessionCookieName } from "../../../../../server/account-auth";
+import { loadWebCommercialAccountApplicationService } from "../../../../../server/commercial-account";
 import {
   loadWebCommerceApplicationService,
   WebCommerceError,
@@ -23,6 +24,23 @@ const notFound = (): NextResponse =>
 export const GET = async (request: NextRequest, context: Context): Promise<NextResponse> => {
   if (!hasAcceptedPrivateCommerceRead(request) || request.nextUrl.search !== "") return notFound();
   const { orderId } = await context.params;
+  try {
+    const commercialOrder = await loadWebCommercialAccountApplicationService().getOrder({
+      orderId,
+      sessionToken: request.cookies.get(accountSessionCookieName)?.value,
+    });
+    return NextResponse.json(
+      { ...commercialOrder, schemaVersion: 2 },
+      { headers: commercePrivateHeaders, status: 200 },
+    );
+  } catch (commercialError) {
+    if (
+      !(commercialError instanceof WebCommerceError) ||
+      !["not_found", "session_required"].includes(commercialError.code)
+    ) {
+      return commerceProblem(commercialError);
+    }
+  }
   try {
     const order = await loadWebCommerceApplicationService().getOrder({
       orderId,

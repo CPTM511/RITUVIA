@@ -43,6 +43,7 @@ export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
   "PAYMENT_WEBHOOK_DATABASE_URL",
+  "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
   "PRIVACY_DELETION_DATABASE_URL",
   "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD",
   "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
@@ -55,6 +56,7 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
   "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
+  "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
   "RITUVIA_PAYMENT_PROVIDER",
   "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
@@ -94,6 +96,7 @@ export type ServerConfiguration = Readonly<{
   deploymentEnvironment: DeploymentEnvironment;
   payment: PaymentConfiguration | undefined;
   paymentWebhookDatabaseUrl: string | undefined;
+  recoveryCommerceSandbox: Readonly<{ enabled: true }> | undefined;
   privateContentKeyring: PrivateContentKeyringConfiguration | undefined;
   privacyDeletionPolicy: PrivacyDeletionPolicyConfiguration | undefined;
   privacyDeletionDatabaseUrl: string | undefined;
@@ -240,6 +243,7 @@ const absoluteMetadataPathSchema = z
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
   PAYMENT_WEBHOOK_DATABASE_URL: databaseUrlSchema.optional(),
+  RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: encodedSecretKeySchema.optional(),
   PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
   RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: encodedSecretKeySchema.optional(),
   RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH: absoluteMetadataPathSchema.optional(),
@@ -270,6 +274,7 @@ const serverEnvironmentSchema = z.object({
   RITUVIA_AUTH_CHALLENGE_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_AUTH_DATA_KEY_V1: encodedSecretKeySchema.optional(),
   RITUVIA_RECOVERY_IDENTITY_SANDBOX: z.literal("item-9").optional(),
+  RITUVIA_RECOVERY_COMMERCE_SANDBOX: z.literal("item-10").optional(),
   RITUVIA_AUTH_START_GLOBAL_LIMIT: z
     .string()
     .regex(/^[1-9][0-9]{0,5}$/u)
@@ -709,6 +714,44 @@ const resolvePrivacyDeletionDatabaseUrl = (
   return deletion.toString();
 };
 
+const resolvePaymentWebhookDatabaseUrl = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): string | undefined => {
+  const explicitUrl = parsed.PAYMENT_WEBHOOK_DATABASE_URL;
+  const rolePassword = parsed.RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD;
+  if (rolePassword === undefined) return explicitUrl;
+  if (
+    explicitUrl !== undefined ||
+    deploymentEnvironment !== "staging" ||
+    parsed.RITUVIA_RECOVERY_COMMERCE_SANDBOX !== "item-10" ||
+    parsed.DATABASE_URL === undefined
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD" },
+    ]);
+  }
+  const application = new URL(parsed.DATABASE_URL);
+  const applicationUsername = decodeDatabaseCredential(application.username);
+  const applicationPassword = decodeDatabaseCredential(application.password);
+  if (
+    applicationUsername === null ||
+    applicationUsername === "" ||
+    applicationUsername === "rituvia_payment_webhook" ||
+    applicationPassword === null ||
+    applicationPassword === "" ||
+    applicationPassword === rolePassword
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD" },
+    ]);
+  }
+  const webhook = new URL(parsed.DATABASE_URL);
+  webhook.username = "rituvia_payment_webhook";
+  webhook.password = rolePassword;
+  return webhook.toString();
+};
+
 const assertPaymentWebhookDatabaseBoundary = (
   payment: PaymentConfiguration | undefined,
   databaseUrl: string | undefined,
@@ -878,6 +921,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     PAYMENT_WEBHOOK_DATABASE_URL: normalizeEnvironmentValue(
       environment.PAYMENT_WEBHOOK_DATABASE_URL,
     ),
+    RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: normalizeEnvironmentValue(
+      environment.RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD,
+    ),
     PRIVACY_DELETION_DATABASE_URL: normalizeEnvironmentValue(
       environment.PRIVACY_DELETION_DATABASE_URL,
     ),
@@ -920,6 +966,9 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     ),
     RITUVIA_RECOVERY_IDENTITY_SANDBOX: normalizeEnvironmentValue(
       environment.RITUVIA_RECOVERY_IDENTITY_SANDBOX,
+    ),
+    RITUVIA_RECOVERY_COMMERCE_SANDBOX: normalizeEnvironmentValue(
+      environment.RITUVIA_RECOVERY_COMMERCE_SANDBOX,
     ),
     RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: normalizeEnvironmentValue(
       environment.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
@@ -1005,11 +1054,21 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
             ]);
           })();
   const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
-  assertPaymentWebhookDatabaseBoundary(
-    payment,
-    server.DATABASE_URL,
-    server.PAYMENT_WEBHOOK_DATABASE_URL,
+  const paymentWebhookDatabaseUrl = resolvePaymentWebhookDatabaseUrl(
+    server,
+    build.deploymentEnvironment,
   );
+  assertPaymentWebhookDatabaseBoundary(payment, server.DATABASE_URL, paymentWebhookDatabaseUrl);
+  const recoveryCommerceSandbox =
+    server.RITUVIA_RECOVERY_COMMERCE_SANDBOX === undefined
+      ? undefined
+      : build.deploymentEnvironment === "staging" && payment?.provider === "stripe"
+        ? Object.freeze({ enabled: true as const })
+        : (() => {
+            throw new ConfigurationError("server", [
+              { code: "invalid", key: "RITUVIA_RECOVERY_COMMERCE_SANDBOX" },
+            ]);
+          })();
   if (
     privacyExport !== undefined &&
     ((accountIdentityPolicy !== undefined &&
@@ -1034,12 +1093,13 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     databaseUrl: server.DATABASE_URL,
     deploymentEnvironment: build.deploymentEnvironment,
     payment,
-    paymentWebhookDatabaseUrl: server.PAYMENT_WEBHOOK_DATABASE_URL,
+    paymentWebhookDatabaseUrl,
     privateContentKeyring: reflection.keyring,
     privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
     privacyDeletionDatabaseUrl,
     privacyExport,
     questionIntakeActivationReference,
+    recoveryCommerceSandbox,
     recoveryIdentitySandbox,
     reflectionPolicy: reflection.policy,
     tarotReadingIntegrityKeyring: parseTarotReadingIntegrityKeyring(

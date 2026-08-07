@@ -445,7 +445,11 @@ export const parseCountryPolicyVersionV1 = (value: unknown): CountryPolicyVersio
       !evidence.cryptoApprovalReference?.startsWith("OWN-006:")) ||
     (fiat.enabled &&
       value.environment !== "local" &&
-      !evidence.fiatApprovalReference?.startsWith("OWN-002:"))
+      !evidence.fiatApprovalReference?.startsWith("OWN-002:") &&
+      !(
+        value.environment === "staging" &&
+        evidence.fiatApprovalReference?.startsWith("D-098:OWN-017:stripe-test:")
+      ))
   ) {
     throw new TypeError("Country policy version is invalid.");
   }

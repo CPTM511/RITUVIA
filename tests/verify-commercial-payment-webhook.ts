@@ -71,15 +71,18 @@ await withLocalPostgresLease(async (lease) => {
         sequence += 1;
         const created = await checkout.createOrReplayStripeCheckout({
           amountMinor: 599,
+          billingInterval: "one_time",
           canonicalRequestHash: digest(`checkout-request-${sequence}`),
           catalogVersion: "local.catalog.2026-07-23.v1",
           countryCode: "US",
           countryPolicyVersion: "local.us.stripe-sandbox.v1",
           createdAt: "2026-07-30T12:00:00.000Z",
           creditsGranted: 6,
+          creditsPerMonth: null,
           currencyCode: "USD",
           exactContents: ["6 Credits", "Credits do not represent cash or stored value"],
           fulfillmentCode: "credits.pack_6",
+          fulfillmentKind: "credit_pack",
           idempotencyKeyHash: digest(`checkout-idempotency-${sequence}`),
           priceId: "price.pack_6.usd.2026-07-23",
           priceVersion: "2026-07-23",
@@ -102,6 +105,50 @@ await withLocalPostgresLease(async (lease) => {
         });
         return Object.freeze({ checkoutId, orderId: created.checkout.orderId });
       };
+      const createSubscriptionCheckout = async (billingInterval: "month" | "year") => {
+        sequence += 1;
+        const annual = billingInterval === "year";
+        const productCode = annual ? "plus_annual" : "plus_monthly";
+        const amountMinor = annual ? 6_999 : 999;
+        const created = await checkout.createOrReplayStripeCheckout({
+          amountMinor,
+          billingInterval,
+          canonicalRequestHash: digest(`checkout-request-${sequence}`),
+          catalogVersion: "local.catalog.2026-07-23.v1",
+          countryCode: "US",
+          countryPolicyVersion: "local.us.stripe-sandbox.v1",
+          createdAt: "2026-07-30T12:00:00.000Z",
+          creditsGranted: null,
+          creditsPerMonth: 8,
+          currencyCode: "USD",
+          exactContents: [
+            "8 Credits allocated each month",
+            annual ? "Annual recurring subscription" : "Monthly recurring subscription",
+          ],
+          fulfillmentCode: `subscription.${productCode}`,
+          fulfillmentKind: "subscription",
+          idempotencyKeyHash: digest(`checkout-idempotency-${sequence}`),
+          priceId: `price.${productCode}.usd.2026-07-23`,
+          priceVersion: "2026-07-23",
+          productCode,
+          productVersion: "2026-07-23",
+          providerAccountFingerprint: "acct_12345678",
+          provisionalExpiresAt: "2026-07-31T12:00:00.000Z",
+          refundPolicyVersion: "test:local:refund.v1",
+          termsVersion: "local.terms.v1",
+          userId,
+        });
+        const checkoutId = `cs_test_${String(sequence).padStart(8, "0")}`;
+        await checkout.attachStripeCheckout({
+          attachedAt: "2026-07-30T12:00:01.000Z",
+          checkoutExpiresAt: "2026-07-30T12:30:00.000Z",
+          checkoutId,
+          checkoutUrl: `https://checkout.stripe.com/c/pay/${checkoutId}`,
+          orderId: created.checkout.orderId,
+          userId,
+        });
+        return Object.freeze({ amountMinor, checkoutId, orderId: created.checkout.orderId });
+      };
       const event = (
         order: Readonly<{ checkoutId: string; orderId: string }>,
         input: Readonly<{
@@ -111,6 +158,14 @@ await withLocalPostgresLease(async (lease) => {
           occurredAt: string;
           paymentIntentId?: string | null;
           receivedAt: string;
+          subscription?: Readonly<{
+            cancelAtPeriodEnd: boolean;
+            invoiceId: string | null;
+            periodEnd: string;
+            periodStart: string;
+            state: "active" | "cancelled" | "past_due";
+            subscriptionId: string;
+          }>;
         }>,
       ): PreparedCommercialPaymentEvent =>
         Object.freeze({
@@ -126,20 +181,71 @@ await withLocalPostgresLease(async (lease) => {
               eventId: input.eventId,
               eventType: input.eventType,
               orderId: order.orderId,
-              paymentIntentId: input.paymentIntentId ?? "pi_00000001",
+              paymentIntentId:
+                input.paymentIntentId === undefined ? "pi_00000001" : input.paymentIntentId,
+              subscription: input.subscription ?? null,
             }),
           ),
           providerAccountFingerprint: "acct_12345678",
           providerCheckoutId: order.checkoutId,
           providerEventId: input.eventId,
-          providerObjectId: input.paymentIntentId ?? order.checkoutId,
-          providerPaymentIntentId: input.paymentIntentId ?? "pi_00000001",
+          providerObjectId:
+            input.subscription?.invoiceId ??
+            input.subscription?.subscriptionId ??
+            input.paymentIntentId ??
+            order.checkoutId,
+          providerPaymentIntentId:
+            input.paymentIntentId === undefined ? "pi_00000001" : input.paymentIntentId,
+          providerInvoiceId: input.subscription?.invoiceId ?? null,
+          providerSubscriptionId: input.subscription?.subscriptionId ?? null,
           receivedAt: input.receivedAt,
           signatureTimestampSeconds: Math.floor(Date.parse(input.receivedAt) / 1_000),
+          subscriptionCancelAtPeriodEnd: input.subscription?.cancelAtPeriodEnd ?? null,
+          subscriptionPeriodEnd: input.subscription?.periodEnd ?? null,
+          subscriptionPeriodStart: input.subscription?.periodStart ?? null,
+          subscriptionState: input.subscription?.state ?? null,
           verifierVersion: "stripe-signature.v1",
         });
 
       const firstOrder = await createCheckout();
+      const firstOrderMatch = await migrator.query<{
+        amountMinor: number;
+        billingInterval: string;
+        checkoutId: string | null;
+        currencyCode: string;
+        paymentIntentId: string | null;
+        providerAccountFingerprint: string;
+      }>(
+        `
+          SELECT
+            orders.total_minor AS "amountMinor",
+            prices.billing_interval AS "billingInterval",
+            attempts.provider_checkout_id AS "checkoutId",
+            orders.currency_code AS "currencyCode",
+            attempts.provider_payment_intent_id AS "paymentIntentId",
+            attempts.provider_account_fingerprint AS "providerAccountFingerprint"
+          FROM commercial_order_v2 AS orders
+          JOIN commercial_payment_attempt_v2 AS attempts
+            ON attempts.order_id = orders.id
+           AND attempts.attempt_number = 1
+          JOIN catalog_price AS prices
+            ON prices.catalog_version = orders.catalog_version
+           AND prices.price_id = orders.price_id
+           AND prices.version = orders.price_version
+          WHERE orders.public_id = $1::uuid
+        `,
+        [firstOrder.orderId],
+      );
+      assert.deepEqual(firstOrderMatch.rows, [
+        {
+          amountMinor: 599,
+          billingInterval: "one_time",
+          checkoutId: firstOrder.checkoutId,
+          currencyCode: "USD",
+          paymentIntentId: null,
+          providerAccountFingerprint: "acct_12345678",
+        },
+      ]);
       await assert.rejects(
         wronglyPrivilegedEvents.processStripeSandboxEvent(
           event(firstOrder, {
@@ -155,9 +261,7 @@ await withLocalPostgresLease(async (lease) => {
           error.code === "COMMERCIAL_PAYMENT_EVENT_UNAVAILABLE",
       );
 
-      await migrator.query(
-        "GRANT SELECT (id) ON TABLE credit_ledger_entry TO rituvia_payment_webhook",
-      );
+      await migrator.query("GRANT DELETE ON TABLE credit_ledger_entry TO rituvia_payment_webhook");
       const columnDriftDatabase = createDatabaseClient(database.paymentWebhookDatabaseUrl);
       try {
         const columnDriftEvents = createCommercialPaymentEventPersistence(columnDriftDatabase);
@@ -178,9 +282,63 @@ await withLocalPostgresLease(async (lease) => {
       } finally {
         await columnDriftDatabase.$disconnect();
         await migrator.query(
-          "REVOKE SELECT (id) ON TABLE credit_ledger_entry FROM rituvia_payment_webhook",
+          "REVOKE DELETE ON TABLE credit_ledger_entry FROM rituvia_payment_webhook",
         );
       }
+      const firstOrderAfterPrivilegeChecks = await migrator.query<{
+        checkoutId: string | null;
+        paymentIntentId: string | null;
+      }>(
+        `
+          SELECT
+            provider_checkout_id AS "checkoutId",
+            provider_payment_intent_id AS "paymentIntentId"
+          FROM commercial_payment_attempt_v2
+          WHERE order_id = (
+            SELECT id FROM commercial_order_v2 WHERE public_id = $1::uuid
+          )
+            AND attempt_number = 1
+        `,
+        [firstOrder.orderId],
+      );
+      assert.deepEqual(firstOrderAfterPrivilegeChecks.rows, [
+        { checkoutId: firstOrder.checkoutId, paymentIntentId: null },
+      ]);
+      const webhookVisibleMatch = await paymentWebhook.$queryRaw<
+        Readonly<{
+          checkoutId: string | null;
+          currencyCode: string;
+          paymentIntentId: string | null;
+          providerAccountFingerprint: string;
+          totalMinor: number;
+        }>[]
+      >`
+        SELECT
+          attempts.provider_checkout_id AS "checkoutId",
+          orders.currency_code AS "currencyCode",
+          attempts.provider_payment_intent_id AS "paymentIntentId",
+          attempts.provider_account_fingerprint AS "providerAccountFingerprint",
+          orders.total_minor AS "totalMinor"
+        FROM commercial_order_v2 AS orders
+        JOIN commercial_payment_attempt_v2 AS attempts
+          ON attempts.order_id = orders.id
+         AND attempts.attempt_number = 1
+        JOIN commercial_order_item_v2 AS items ON items.order_id = orders.id
+        JOIN catalog_price AS prices
+          ON prices.catalog_version = orders.catalog_version
+         AND prices.price_id = orders.price_id
+         AND prices.version = orders.price_version
+        WHERE orders.public_id = ${firstOrder.orderId}::uuid
+      `;
+      assert.deepEqual(webhookVisibleMatch, [
+        {
+          checkoutId: firstOrder.checkoutId,
+          currencyCode: "USD",
+          paymentIntentId: null,
+          providerAccountFingerprint: "acct_12345678",
+          totalMinor: 599,
+        },
+      ]);
 
       const pending = event(firstOrder, {
         eventId: "evt_pending",
@@ -405,6 +563,196 @@ await withLocalPostgresLease(async (lease) => {
         lastFailureCode: "max_attempts",
       });
 
+      const monthlyOrder = await createSubscriptionCheckout("month");
+      const monthlySubscription = Object.freeze({
+        cancelAtPeriodEnd: false,
+        invoiceId: "in_monthly_202608",
+        periodEnd: "2026-09-01T00:00:00.000Z",
+        periodStart: "2026-08-01T00:00:00.000Z",
+        state: "active" as const,
+        subscriptionId: "sub_monthly_0001",
+      });
+      const monthlySuccess = event(monthlyOrder, {
+        amountMinor: monthlyOrder.amountMinor,
+        eventId: "evt_monthly_success",
+        eventType: "payment_succeeded",
+        occurredAt: "2026-08-01T00:00:00.000Z",
+        paymentIntentId: null,
+        receivedAt: "2026-08-01T00:00:01.000Z",
+        subscription: monthlySubscription,
+      });
+      assert.deepEqual(
+        await events.processStripeSandboxEvent(monthlySuccess, reduceCommercialPaymentTimeline),
+        {
+          disposition: "applied",
+          kind: "processed",
+          orderStatus: "paid",
+          outboxCreated: true,
+          paymentAttemptState: "succeeded",
+        },
+      );
+      assert.equal(
+        (await events.processStripeSandboxEvent(monthlySuccess, reduceCommercialPaymentTimeline))
+          .kind,
+        "duplicate",
+      );
+      await events.processStripeSandboxEvent(
+        event(monthlyOrder, {
+          amountMinor: monthlyOrder.amountMinor,
+          eventId: "evt_monthly_cancel_scheduled",
+          eventType: "payment_pending",
+          occurredAt: "2026-08-15T00:00:00.000Z",
+          paymentIntentId: null,
+          receivedAt: "2026-08-15T00:00:01.000Z",
+          subscription: {
+            ...monthlySubscription,
+            cancelAtPeriodEnd: true,
+            invoiceId: null,
+          },
+        }),
+        reduceCommercialPaymentTimeline,
+      );
+      await events.processStripeSandboxEvent(
+        event(monthlyOrder, {
+          amountMinor: monthlyOrder.amountMinor,
+          eventId: "evt_monthly_cancelled",
+          eventType: "payment_pending",
+          occurredAt: "2026-09-01T00:00:00.000Z",
+          paymentIntentId: null,
+          receivedAt: "2026-09-01T00:00:01.000Z",
+          subscription: {
+            ...monthlySubscription,
+            cancelAtPeriodEnd: true,
+            invoiceId: null,
+            state: "cancelled",
+          },
+        }),
+        reduceCommercialPaymentTimeline,
+      );
+
+      const annualOrder = await createSubscriptionCheckout("year");
+      const annualSubscription = Object.freeze({
+        cancelAtPeriodEnd: false,
+        invoiceId: "in_annual_202608",
+        periodEnd: "2027-08-01T00:00:00.000Z",
+        periodStart: "2026-08-01T00:00:00.000Z",
+        state: "active" as const,
+        subscriptionId: "sub_annual_0001",
+      });
+      await events.processStripeSandboxEvent(
+        event(annualOrder, {
+          amountMinor: annualOrder.amountMinor,
+          eventId: "evt_annual_success",
+          eventType: "payment_succeeded",
+          occurredAt: "2026-08-01T00:00:00.000Z",
+          paymentIntentId: null,
+          receivedAt: "2026-08-01T00:00:02.000Z",
+          subscription: annualSubscription,
+        }),
+        reduceCommercialPaymentTimeline,
+      );
+      const annualReconciliations = await Promise.all(
+        Array.from({ length: 8 }, () =>
+          events.reconcileDueAnnualSubscriptionCredits({
+            asOf: "2026-10-01T00:00:00.000Z",
+            userId,
+          }),
+        ),
+      );
+      assert.equal(
+        annualReconciliations.reduce((total, count) => total + count, 0),
+        2,
+      );
+      assert.equal(
+        await events.reconcileDueAnnualSubscriptionCredits({
+          asOf: "2026-10-01T00:00:00.000Z",
+          userId,
+        }),
+        0,
+      );
+      const beforeAnnualDispute = await migrator.query<{
+        annualCredits: number;
+        annualPeriods: number;
+        purchasedAvailable: number;
+        subscriptionAvailable: number;
+      }>(
+        `
+          SELECT
+            (SELECT COALESCE(sum(entries.amount), 0)::int
+               FROM credit_ledger_entry AS entries
+               JOIN commercial_order_v2 AS orders ON orders.id = entries.order_id
+              WHERE orders.public_id = $1::uuid
+                AND entries.direction = 'grant') AS "annualCredits",
+            (SELECT count(*)::int
+               FROM commercial_subscription_period_v2 AS periods
+               JOIN commercial_subscription_v2 AS subscriptions
+                 ON subscriptions.id = periods.subscription_id
+               JOIN commercial_order_v2 AS orders ON orders.id = subscriptions.source_order_id
+              WHERE orders.public_id = $1::uuid) AS "annualPeriods",
+            (SELECT purchased_available FROM credit_projection WHERE user_id = $2::uuid)
+              AS "purchasedAvailable",
+            (SELECT subscription_available FROM credit_projection WHERE user_id = $2::uuid)
+              AS "subscriptionAvailable"
+        `,
+        [annualOrder.orderId, userId],
+      );
+      assert.deepEqual(beforeAnnualDispute.rows[0], {
+        annualCredits: 24,
+        annualPeriods: 3,
+        purchasedAvailable: 6,
+        subscriptionAvailable: 32,
+      });
+      await events.processStripeSandboxEvent(
+        event(annualOrder, {
+          amountMinor: annualOrder.amountMinor,
+          eventId: "evt_annual_disputed",
+          eventType: "payment_disputed",
+          occurredAt: "2026-10-02T00:00:00.000Z",
+          paymentIntentId: null,
+          receivedAt: "2026-10-02T00:00:01.000Z",
+          subscription: { ...annualSubscription, invoiceId: null },
+        }),
+        reduceCommercialPaymentTimeline,
+      );
+      const afterAnnualDispute = await migrator.query<{
+        annualEntitlementStatus: string;
+        annualSubscriptionStatus: string;
+        monthlyEntitlementStatus: string;
+        purchasedAvailable: number;
+        subscriptionAvailable: number;
+      }>(
+        `
+          SELECT
+            (SELECT entitlements.status
+               FROM commercial_entitlement_v2 AS entitlements
+              WHERE entitlements.user_id = $1::uuid
+                AND entitlements.fulfillment_code = 'subscription.plus_annual')
+              AS "annualEntitlementStatus",
+            (SELECT subscriptions.status
+               FROM commercial_subscription_v2 AS subscriptions
+              WHERE subscriptions.user_id = $1::uuid
+                AND subscriptions.product_code = 'plus_annual')
+              AS "annualSubscriptionStatus",
+            (SELECT entitlements.status
+               FROM commercial_entitlement_v2 AS entitlements
+              WHERE entitlements.user_id = $1::uuid
+                AND entitlements.fulfillment_code = 'subscription.plus_monthly')
+              AS "monthlyEntitlementStatus",
+            (SELECT purchased_available FROM credit_projection WHERE user_id = $1::uuid)
+              AS "purchasedAvailable",
+            (SELECT subscription_available FROM credit_projection WHERE user_id = $1::uuid)
+              AS "subscriptionAvailable"
+        `,
+        [userId],
+      );
+      assert.deepEqual(afterAnnualDispute.rows[0], {
+        annualEntitlementStatus: "frozen",
+        annualSubscriptionStatus: "disputed",
+        monthlyEntitlementStatus: "revoked",
+        purchasedAvailable: 6,
+        subscriptionAvailable: 8,
+      });
+
       const counts = await migrator.query<{
         accountBoundAttempts: number;
         credits: number;
@@ -414,6 +762,8 @@ await withLocalPostgresLease(async (lease) => {
         paidOrRefundedOrders: number;
         rejectedEvents: number;
         signatureEvidence: number;
+        subscriptionPeriods: number;
+        subscriptions: number;
       }>(
         `
           SELECT
@@ -430,19 +780,28 @@ await withLocalPostgresLease(async (lease) => {
               WHERE status IN ('paid', 'refunded')) AS "paidOrRefundedOrders",
             (SELECT count(*)::int FROM credit_ledger_entry WHERE user_id = $1::uuid) AS credits,
             (SELECT count(*)::int FROM commercial_entitlement_v2 WHERE user_id = $1::uuid)
-              AS entitlements
+              AS entitlements,
+            (SELECT count(*)::int FROM commercial_subscription_v2 WHERE user_id = $1::uuid)
+              AS subscriptions,
+            (SELECT count(*)::int
+               FROM commercial_subscription_period_v2 AS periods
+               JOIN commercial_subscription_v2 AS subscriptions
+                 ON subscriptions.id = periods.subscription_id
+              WHERE subscriptions.user_id = $1::uuid) AS "subscriptionPeriods"
         `,
         [userId],
       );
       assert.deepEqual(counts.rows[0], {
-        accountBoundAttempts: 4,
-        credits: 0,
-        entitlements: 0,
-        events: 6,
-        outboxes: 3,
-        paidOrRefundedOrders: 2,
+        accountBoundAttempts: 6,
+        credits: 10,
+        entitlements: 2,
+        events: 11,
+        outboxes: 6,
+        paidOrRefundedOrders: 3,
         rejectedEvents: 2,
-        signatureEvidence: 6,
+        signatureEvidence: 11,
+        subscriptionPeriods: 4,
+        subscriptions: 2,
       });
       await expectPostgresError(
         () =>
@@ -501,12 +860,15 @@ await withLocalPostgresLease(async (lease) => {
             ),
           ["23503"],
         );
-        await expectPostgresError(
-          () => paymentWebhookSql.query("SELECT count(*) FROM credit_ledger_entry"),
-          ["42501"],
+        assert.equal(
+          Number(
+            (await paymentWebhookSql.query("SELECT count(*) FROM credit_ledger_entry")).rows[0]
+              ?.count,
+          ),
+          10,
         );
         await expectPostgresError(
-          () => paymentWebhookSql.query("SELECT count(*) FROM commercial_entitlement_v2"),
+          () => paymentWebhookSql.query("DELETE FROM credit_ledger_entry"),
           ["42501"],
         );
       } finally {
@@ -560,5 +922,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 console.log(
-  "Verified Stripe sandbox signed-event idempotency, deterministic out-of-order replay, mismatch isolation, transactional outbox, least privilege, and zero fulfillment.",
+  "Verified Stripe sandbox signed-event idempotency, monthly and annual Plus allocation, cancellation, refund/dispute reversal, deterministic out-of-order replay, transactional outbox, least privilege, and zero redirect fulfillment.",
 );

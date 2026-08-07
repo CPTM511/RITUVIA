@@ -93,6 +93,15 @@ export const localeAccountPath = (locale: Locale): LocalActionHref =>
 export const localeAccountPrivacyPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/account/privacy`);
 
+export const localePlansPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/plans`);
+
+export const localeAccountBillingPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account/billing`);
+
+export const localeAccountOrdersPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account/orders`);
+
 export const localeCheckoutReturnPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/checkout/return`);
 

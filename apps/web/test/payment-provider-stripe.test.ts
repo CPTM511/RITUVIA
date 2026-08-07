@@ -68,6 +68,7 @@ describe("Stripe verified event normalization", () => {
       stripe as never,
     );
     const request = {
+      billingInterval: "one_time" as const,
       cancelUrl: "https://example.test/en/store",
       clientReferenceId: orderId,
       countryCode: "US",

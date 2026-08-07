@@ -1,6 +1,46 @@
 import type { Locale } from "./routing";
 
 export type CommerceMessages = Readonly<{
+  recoveryCommerce: Readonly<{
+    accountRequired: string;
+    billingEmpty: string;
+    billingTitle: string;
+    cancellationScheduled: string;
+    checkout: string;
+    checkoutError: string;
+    checkoutPending: string;
+    creditsLabel: string;
+    creditsPlusLabel: string;
+    creditsPurchasedLabel: string;
+    creditsReservedLabel: string;
+    fulfillmentAwaiting: string;
+    fulfillmentVerified: string;
+    ledgerTitle: string;
+    ledgerAdded: string;
+    ledgerAdjustment: string;
+    ledgerOther: string;
+    ledgerPurchased: string;
+    ledgerRemoved: string;
+    ledgerSubscription: string;
+    loadError: string;
+    loading: string;
+    ordersEmpty: string;
+    ordersTitle: string;
+    plansIntroduction: string;
+    plansTitle: string;
+    priceMonthSuffix: string;
+    priceYearSuffix: string;
+    productNames: Readonly<Record<string, string>>;
+    reconciliationFail: string;
+    reconciliationPass: string;
+    safetyNote: string;
+    signIn: string;
+    stagingEyebrow: string;
+    statusLabel: string;
+    statusLabels: Readonly<Record<string, string>>;
+    subscriptionCredits: string;
+    subscriptionPeriodEnd: string;
+  }>;
   localCheckout: Readonly<{
     eyebrow: string;
     title: string;
@@ -42,6 +82,68 @@ export type CommerceMessages = Readonly<{
 }>;
 
 const englishMessages = {
+  recoveryCommerce: {
+    accountRequired: "Sign in to use Stripe Test Checkout or review private billing records.",
+    billingEmpty: "No Plus subscription has been verified for this account.",
+    billingTitle: "Billing and Credits",
+    cancellationScheduled: "Cancellation is scheduled for the end of this paid period.",
+    checkout: "Continue to Stripe Test Checkout",
+    checkoutError: "Test Checkout could not be created. Nothing was charged or granted.",
+    checkoutPending: "Creating a protected Test Checkout",
+    creditsLabel: "available Credits",
+    creditsPlusLabel: "Plus",
+    creditsPurchasedLabel: "Purchased",
+    creditsReservedLabel: "Reserved",
+    fulfillmentAwaiting: "Awaiting a signed Stripe Test event",
+    fulfillmentVerified: "Verified fulfillment recorded",
+    ledgerAdded: "added",
+    ledgerAdjustment: "Refund or dispute adjustment",
+    ledgerOther: "Credit activity",
+    ledgerPurchased: "Purchased Credits",
+    ledgerRemoved: "removed",
+    ledgerSubscription: "Plus Credits",
+    ledgerTitle: "Credit activity",
+    loadError: "Private commerce records are temporarily unavailable.",
+    loading: "Loading verified commerce state",
+    ordersEmpty: "No verified Stripe Test orders yet.",
+    ordersTitle: "Orders",
+    plansIntroduction:
+      "Choose a test-only Credit pack or Plus plan. Prices are server-owned and Credits are granted only after a signed Stripe Test event.",
+    plansTitle: "Plus & Credits",
+    priceMonthSuffix: "per month",
+    priceYearSuffix: "per year",
+    productNames: {
+      pack_6: "6 Credits",
+      pack_15: "15 Credits",
+      pack_40: "40 Credits",
+      plus_annual: "Plus Annual",
+      plus_monthly: "Plus Monthly",
+    },
+    reconciliationFail: "Ledger reconciliation needs review. Do not create another checkout.",
+    reconciliationPass: "Ledger and balance projection reconcile.",
+    safetyNote:
+      "Protected Staging only. Stripe Test Mode uses no real funds, creates no cash balance, and does not authorize production billing.",
+    signIn: "Sign in",
+    stagingEyebrow: "Founder Acceptance · Item 10",
+    statusLabel: "Status",
+    statusLabels: {
+      active: "Active",
+      cancelled: "Cancelled",
+      checkout_created: "Checkout created",
+      created: "Created",
+      disputed: "Disputed",
+      expired: "Expired",
+      failed: "Failed",
+      paid: "Paid",
+      partially_refunded: "Partially refunded",
+      past_due: "Past due",
+      pending: "Pending",
+      refund_requested: "Refund requested",
+      refunded: "Refunded",
+    },
+    subscriptionCredits: "Credits per verified month",
+    subscriptionPeriodEnd: "Current paid period ends",
+  },
   localCheckout: {
     eyebrow: "Local hosted checkout",
     title: "Complete a local test payment",
@@ -64,18 +166,18 @@ const englishMessages = {
   },
   checkoutReturn: {
     eyebrow: "Secure checkout return",
-    title: "Confirming your digital item",
+    title: "Confirming your Credits or Plus access",
     introduction:
-      "The return page does not grant an item. We wait for the server's verified payment event before showing access.",
+      "The return page grants nothing. We wait for the server's verified payment event before showing Credits or Plus access.",
     verifying: "Checking the verified order status",
     pendingTitle: "Payment confirmation is still processing",
     pending:
       "This can take a moment. Keep this page open or return to your account later. Do not pay again.",
-    successTitle: "Your ritual object is ready",
+    successTitle: "Your verified access is ready",
     success: "The verified payment event was received and your account access is active.",
     failedTitle: "The checkout was not completed",
     failed:
-      "No item was granted. You can return to the sanctuary and try again when you are ready.",
+      "No Credits or Plus access were granted. You can return to the sanctuary and try again when you are ready.",
     missingTitle: "Order reference missing",
     missing: "Open this page from the secure checkout return link or review your account.",
     unavailableTitle: "Order status is temporarily unavailable",

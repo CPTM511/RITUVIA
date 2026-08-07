@@ -24,8 +24,18 @@ const rejected = (status: 400 | 413): NextResponse =>
     { headers: commercePrivateHeaders, status },
   );
 
+const hasAcceptedProtectionBypassQuery = (request: NextRequest): boolean => {
+  if (request.nextUrl.search === "") return true;
+  const entries = [...request.nextUrl.searchParams.entries()];
+  return (
+    entries.length === 1 &&
+    entries[0]?.[0] === "x-vercel-protection-bypass" &&
+    /^[A-Za-z0-9_-]{32,256}$/u.test(entries[0][1])
+  );
+};
+
 export const POST = async (request: NextRequest): Promise<NextResponse> => {
-  if (!hasAcceptedWebhookMetadata(request) || request.nextUrl.search !== "") {
+  if (!hasAcceptedWebhookMetadata(request) || !hasAcceptedProtectionBypassQuery(request)) {
     return rejected(400);
   }
   let rawBody: Uint8Array;

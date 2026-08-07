@@ -89,6 +89,39 @@ describe("payment webhook HTTP boundary", () => {
     expect(harness.processWebhook).not.toHaveBeenCalled();
   });
 
+  it("accepts only the bounded Vercel automation bypass query needed by Stripe Test", async () => {
+    const signature = `t=1784366400,v1=${"b".repeat(64)}`;
+    const valid = await stripeWebhook(
+      new NextRequest(
+        `https://example.test/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=${"a".repeat(32)}`,
+        {
+          body: '{"id":"evt_protected"}',
+          headers: { "content-type": "application/json", "stripe-signature": signature },
+          method: "POST",
+        },
+      ),
+    );
+    expect(valid.status).toBe(204);
+    expect(harness.processStripeWebhook).toHaveBeenCalledOnce();
+
+    for (const query of [
+      "x-vercel-protection-bypass=short",
+      `x-vercel-protection-bypass=${"a".repeat(32)}&extra=1`,
+      `wrong=${"a".repeat(32)}`,
+    ]) {
+      vi.clearAllMocks();
+      const rejected = await stripeWebhook(
+        new NextRequest(`https://example.test/api/v1/webhooks/payments/stripe?${query}`, {
+          body: '{"id":"evt_rejected"}',
+          headers: { "content-type": "application/json", "stripe-signature": signature },
+          method: "POST",
+        }),
+      );
+      expect(rejected.status).toBe(400);
+      expect(harness.processStripeWebhook).not.toHaveBeenCalled();
+    }
+  });
+
   it("rejects encoded, oversized, or malformed webhook bodies before verification", async () => {
     const encoded = await localWebhook(request("local", "{}", { "content-encoding": "gzip" }));
     const oversized = await localWebhook(request("local", "{}", { "content-length": "262145" }));

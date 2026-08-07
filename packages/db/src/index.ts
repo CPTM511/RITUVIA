@@ -151,6 +151,12 @@ export {
   type ProcessedPaymentEvent,
 } from "./commerce-persistence.js";
 export {
+  createCommercialAccountPersistence,
+  type CommercialAccountOrder,
+  type CommercialAccountPersistence,
+  type CommercialAccountSnapshot,
+} from "./commercial-account-persistence.js";
+export {
   commercialCheckoutPersistenceErrorCodes,
   CommercialCheckoutPersistenceError,
   createCommercialCheckoutPersistence,

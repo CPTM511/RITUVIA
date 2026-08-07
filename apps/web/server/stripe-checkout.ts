@@ -218,19 +218,23 @@ export const createStripeCheckoutApplicationService = (
           (candidate) =>
             candidate.code === request.productCode &&
             candidate.status === "active" &&
-            candidate.kind === "credit_pack" &&
-            candidate.subscriptionInterval === null &&
-            candidate.creditsGranted !== null,
+            ((candidate.kind === "credit_pack" &&
+              candidate.subscriptionInterval === null &&
+              candidate.creditsGranted !== null) ||
+              (candidate.kind === "plus_plan" &&
+                candidate.subscriptionInterval !== null &&
+                candidate.creditsPerMonth !== null)),
         );
         if (product === undefined) throw new WebCommerceError("not_eligible");
         const creditsGranted = product.creditsGranted;
-        if (creditsGranted === null) throw new WebCommerceError("not_eligible");
+        const creditsPerMonth = product.creditsPerMonth;
+        const billingInterval = product.subscriptionInterval ?? "one_time";
         const prices = catalog.prices.filter(
           (candidate) =>
             candidate.status === "active" &&
             candidate.productCode === product.code &&
             candidate.productVersion === product.version &&
-            candidate.billingInterval === "one_time" &&
+            candidate.billingInterval === billingInterval &&
             candidate.currencyCode === sandboxCurrencyCode &&
             candidate.countryCodes.includes(sandboxCountryCode) &&
             candidate.providerEligibility.includes("stripe") &&
@@ -262,7 +266,7 @@ export const createStripeCheckoutApplicationService = (
               kind: "fiat",
               method: "card",
               providerId: stripeHostedCheckoutProviderId,
-              recurring: false,
+              recurring: billingInterval !== "one_time",
             },
             productCode: product.code,
           },
@@ -288,15 +292,18 @@ export const createStripeCheckoutApplicationService = (
         const canonical = canonicalRequest(request);
         const prepared = await dependencies.persistence.createOrReplayStripeCheckout({
           amountMinor: price.amountMinor,
+          billingInterval,
           canonicalRequestHash: sha256(canonical),
           catalogVersion: catalog.version,
           countryCode: sandboxCountryCode,
           countryPolicyVersion: policyDecision.snapshot.policyVersion,
           createdAt: now,
           creditsGranted,
+          creditsPerMonth,
           currencyCode: sandboxCurrencyCode,
           exactContents: localization.exactContents,
           fulfillmentCode: product.fulfillmentCode,
+          fulfillmentKind: product.kind === "credit_pack" ? "credit_pack" : "subscription",
           idempotencyKeyHash: sha256(idempotencyKey),
           priceId: price.priceId,
           priceVersion: price.version,
@@ -331,6 +338,7 @@ export const createStripeCheckoutApplicationService = (
         const checkout = await dependencies.paymentProvider.createCheckout({
           accountId: session.userId,
           amount: createMoney(prepared.checkout.amountMinor, prepared.checkout.currencyCode),
+          billingInterval,
           cancelUrl: sandboxReturnUrl(dependencies.canonicalOrigin, request.cancelPath),
           countryCode: sandboxCountryCode,
           idempotencyKey: prepared.checkout.providerIdempotencyKey,

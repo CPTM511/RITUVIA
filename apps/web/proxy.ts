@@ -21,12 +21,15 @@ import {
 import { createRobotsText, createSitemapXml } from "./app/_i18n/seo";
 import { goldenShellHomePath } from "./app/_i18n/golden-shell-messages";
 import {
+  localeAccountBillingPath,
+  localeAccountOrdersPath,
   localeAccountPath,
   localeAccountPrivacyPath,
   localeAstrologyPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeNumerologyPath,
+  localePlansPath,
   localePublicPagePath,
   localeQuestionIntakePath,
   localeRevisitPath,
@@ -84,8 +87,11 @@ const tarotReadingPagePathnames = Object.freeze([
 const privateExperiencePagePathnames = Object.freeze([
   localeAccountPath("en"),
   localeAccountPrivacyPath("en"),
-  localeAstrologyPath("en"),
   localeCheckoutReturnPath("en"),
+  localePlansPath("en"),
+  localeAccountBillingPath("en"),
+  localeAccountOrdersPath("en"),
+  localeAstrologyPath("en"),
   localeLocalCheckoutPath("en"),
   localeRevisitPath("en"),
   localeSanctuaryPath("en"),
@@ -287,7 +293,7 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
 
-const recoveryItem9PagePathnames = Object.freeze([
+const recoveryProtectedPagePathnames = Object.freeze([
   goldenShellHomePath("en"),
   goldenShellHomePath("zh-Hans"),
   localeQuestionIntakePath("en"),
@@ -301,9 +307,13 @@ const recoveryItem9PagePathnames = Object.freeze([
   localeSignInPath("en"),
   localeAccountPath("en"),
   localeAccountPrivacyPath("en"),
+  localeCheckoutReturnPath("en"),
+  localePlansPath("en"),
+  localeAccountBillingPath("en"),
+  localeAccountOrdersPath("en"),
 ]);
 
-const recoveryItem9ApiPatterns = Object.freeze([
+const recoveryProtectedApiPatterns = Object.freeze([
   { methods: ["POST"], pattern: /^\/api\/v1\/anonymous\/session$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/intake\/evaluate$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/readings\/tarot$/u },
@@ -360,11 +370,16 @@ const recoveryItem9ApiPatterns = Object.freeze([
     methods: ["POST"],
     pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}/download$`, "u"),
   },
+  { methods: ["GET"], pattern: /^\/api\/v1\/catalog$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/stripe$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/commerce\/account$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
+  { methods: ["POST"], pattern: /^\/api\/v1\/webhooks\/payments\/stripe$/u },
 ] as const);
 
-const isRecoveryItem9DocumentRequest = (request: NextRequest): boolean => {
+const isRecoveryProtectedDocumentRequest = (request: NextRequest): boolean => {
   const pathname = request.nextUrl.pathname;
-  const matched = recoveryItem9PagePathnames.some(
+  const matched = recoveryProtectedPagePathnames.some(
     (pagePathname) =>
       pathname === pagePathname ||
       pathname === `${pagePathname}.rsc` ||
@@ -380,18 +395,30 @@ const isRecoveryItem9DocumentRequest = (request: NextRequest): boolean => {
   );
 };
 
-const isRecoveryItem9ApiRequest = (request: NextRequest): boolean => {
+const isRecoveryProtectedApiRequest = (request: NextRequest): boolean => {
   if (isFrameworkRepresentationRequest(request)) return false;
-  for (const route of recoveryItem9ApiPatterns) {
+  for (const route of recoveryProtectedApiPatterns) {
     if (
       !route.pattern.test(request.nextUrl.pathname) ||
       !(route.methods as readonly string[]).includes(request.method)
     ) {
       continue;
     }
-    return "query" in route && route.query === "account_history"
-      ? hasExactAccountHistoryQuery(request)
-      : request.nextUrl.search === "";
+    if ("query" in route && route.query === "account_history") {
+      return hasExactAccountHistoryQuery(request);
+    }
+    if (
+      request.nextUrl.pathname === "/api/v1/webhooks/payments/stripe" &&
+      request.nextUrl.search !== ""
+    ) {
+      const entries = [...request.nextUrl.searchParams.entries()];
+      return (
+        entries.length === 1 &&
+        entries[0]?.[0] === "x-vercel-protection-bypass" &&
+        /^[A-Za-z0-9_-]{32,256}$/u.test(entries[0][1])
+      );
+    }
+    return request.nextUrl.search === "";
   }
   return false;
 };
@@ -457,7 +484,8 @@ const recoveryStagingResponse = (
     request.nextUrl.search === "" &&
     request.nextUrl.pathname.startsWith("/images/");
   const reviewedRecoveryRequest =
-    status.ready && (isRecoveryItem9DocumentRequest(request) || isRecoveryItem9ApiRequest(request));
+    status.ready &&
+    (isRecoveryProtectedDocumentRequest(request) || isRecoveryProtectedApiRequest(request));
   const response =
     request.nextUrl.pathname === "/robots.txt" &&
     isSafeReadMethod(request.method) &&

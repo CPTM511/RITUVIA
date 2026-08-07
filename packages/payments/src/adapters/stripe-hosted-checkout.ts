@@ -10,13 +10,14 @@ import { parseNormalizedPaymentEventV1, type NormalizedPaymentEventV1 } from "..
 import { readSignedWebhookEnvelope, type RawWebhookRequest } from "../webhook.js";
 
 export type StripeCheckoutSessionRequest = Readonly<{
+  billingInterval: "month" | "one_time" | "year";
   cancelUrl: string;
   clientReferenceId: string;
   countryCode: string;
   currencyCode: string;
   idempotencyKey: string;
   metadata: Readonly<{ orderId: string; productCode: string }>;
-  mode: "payment";
+  mode: "payment" | "subscription";
   productName: string;
   quantity: 1;
   returnUrl: string;
@@ -75,9 +76,15 @@ export const createStripeHostedCheckoutAdapter = (input: {
       }
       let result: StripeCheckoutSessionResult;
       try {
+        const mode =
+          checkoutInput.billingInterval === undefined ||
+          checkoutInput.billingInterval === "one_time"
+            ? "payment"
+            : "subscription";
         result = await input.gateway.createCheckoutSession(
           Object.freeze({
             cancelUrl: urls.cancelUrl.toString(),
+            billingInterval: checkoutInput.billingInterval ?? "one_time",
             clientReferenceId: checkoutInput.orderId,
             countryCode: checkoutInput.countryCode,
             currencyCode: checkoutInput.amount.currencyCode,
@@ -86,7 +93,7 @@ export const createStripeHostedCheckoutAdapter = (input: {
               orderId: checkoutInput.orderId,
               productCode: checkoutInput.productCode,
             }),
-            mode: "payment",
+            mode,
             productName: checkoutInput.productName,
             quantity: 1,
             returnUrl: urls.returnUrl.toString(),

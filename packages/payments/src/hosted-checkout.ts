@@ -7,6 +7,7 @@ import type { RawWebhookRequest } from "./webhook.js";
 export type CreateHostedCheckoutInput = Readonly<{
   accountId: string;
   amount: Money;
+  billingInterval?: "month" | "one_time" | "year";
   cancelUrl: string;
   countryCode: string;
   idempotencyKey: string;
@@ -60,6 +61,7 @@ export const validateCreateHostedCheckoutInput = (
     !Number.isSafeInteger(input.amount.amountMinor) ||
     !/^[A-Z]{3}$/u.test(input.amount.currencyCode) ||
     !/^[A-Z]{2}$/u.test(input.countryCode) ||
+    !["month", "one_time", "year"].includes(input.billingInterval ?? "one_time") ||
     input.productName.length === 0 ||
     input.productName.length > 120 ||
     /[\r\n]/u.test(input.productName)

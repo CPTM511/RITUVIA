@@ -63,15 +63,18 @@ await withLocalPostgresLease(async (lease) => {
       const persistence = createCommercialCheckoutPersistence(application);
       const prepared = Object.freeze({
         amountMinor: 599,
+        billingInterval: "one_time" as const,
         canonicalRequestHash: digest("pack_6:/en/checkout/return:/en/store"),
         catalogVersion: "local.catalog.2026-07-23.v1",
         countryCode: "US",
         countryPolicyVersion: "local.us.stripe-sandbox.v1",
         createdAt: "2026-07-30T12:00:00.000Z",
         creditsGranted: 6,
+        creditsPerMonth: null,
         currencyCode: "USD",
         exactContents: ["6 Credits", "Credits do not represent cash or stored value"],
         fulfillmentCode: "credits.pack_6",
+        fulfillmentKind: "credit_pack" as const,
         idempotencyKeyHash: digest("checkout-key-one"),
         priceId: "price.pack_6.usd.2026-07-23",
         priceVersion: "2026-07-23",

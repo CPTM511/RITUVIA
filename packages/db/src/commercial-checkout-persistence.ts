@@ -30,15 +30,18 @@ export class CommercialCheckoutPersistenceError extends Error {
 
 export type PreparedCommercialStripeCheckout = Readonly<{
   amountMinor: number;
+  billingInterval: "month" | "one_time" | "year";
   canonicalRequestHash: Uint8Array;
   catalogVersion: string;
   countryCode: string;
   countryPolicyVersion: string;
   createdAt: string;
-  creditsGranted: number;
+  creditsGranted: number | null;
+  creditsPerMonth: number | null;
   currencyCode: string;
   exactContents: readonly string[];
   fulfillmentCode: string;
+  fulfillmentKind: "credit_pack" | "subscription";
   idempotencyKeyHash: Uint8Array;
   priceId: string;
   priceVersion: string;
@@ -315,8 +318,19 @@ export const createCommercialCheckoutPersistence = (
         throw new TypeError("Commercial checkout expiry is invalid.");
       }
       const exactContents = requireContents(input.exactContents);
-      const creditsGranted = input.creditsGranted;
-      if (!Number.isSafeInteger(creditsGranted) || creditsGranted < 1) {
+      const validCreditPack =
+        input.fulfillmentKind === "credit_pack" &&
+        input.billingInterval === "one_time" &&
+        Number.isSafeInteger(input.creditsGranted) &&
+        (input.creditsGranted ?? 0) > 0 &&
+        input.creditsPerMonth === null;
+      const validSubscription =
+        input.fulfillmentKind === "subscription" &&
+        ["month", "year"].includes(input.billingInterval) &&
+        input.creditsGranted === null &&
+        Number.isSafeInteger(input.creditsPerMonth) &&
+        (input.creditsPerMonth ?? 0) > 0;
+      if (!validCreditPack && !validSubscription) {
         throw new TypeError("Commercial checkout fulfillment is invalid.");
       }
       for (const reference of [
@@ -381,11 +395,11 @@ export const createCommercialCheckoutPersistence = (
               transaction.commercialOrderItemV2.create({
                 data: {
                   catalogVersion: input.catalogVersion,
-                  creditsGranted,
-                  creditsPerMonth: null,
+                  creditsGranted: input.creditsGranted,
+                  creditsPerMonth: input.creditsPerMonth,
                   exactContentsSnapshot: [...exactContents],
                   fulfillmentCode: input.fulfillmentCode,
-                  fulfillmentKind: "credit_pack",
+                  fulfillmentKind: input.fulfillmentKind,
                   orderId: order.id,
                   productCode: input.productCode,
                   productVersion: input.productVersion,

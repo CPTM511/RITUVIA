@@ -278,6 +278,23 @@ describe("versioned country policy", () => {
     });
   });
 
+  it("accepts the D-098 Stripe Test approval only in protected staging", () => {
+    const written = {
+      ...policy(),
+      approvalMode: "written" as const,
+      environment: "staging" as const,
+      evidence: {
+        ...policy().evidence,
+        fiatApprovalReference: "D-098:OWN-017:stripe-test:item-10",
+        legalReference: "D-098:protected-staging",
+        ownerReference: "D-098:item-10",
+        providerReference: "D-091:stripe-test-mode",
+      },
+    };
+    expect(parseCountryPolicyVersionV1(written).environment).toBe("staging");
+    expect(() => parseCountryPolicyVersionV1({ ...written, environment: "production" })).toThrow();
+  });
+
   it("strictly rejects unknown, duplicate, unsorted, and private input without echoing it", () => {
     expect(() =>
       parseCountryPolicyVersionV1({

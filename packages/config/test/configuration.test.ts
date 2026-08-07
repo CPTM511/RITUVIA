@@ -82,6 +82,7 @@ describe("server and client configuration boundary", () => {
       ...buildEnvironmentVariables,
       "DATABASE_URL",
       "PAYMENT_WEBHOOK_DATABASE_URL",
+      "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
       "PRIVACY_DELETION_DATABASE_URL",
       "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD",
       "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
@@ -97,6 +98,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_AUTH_START_WINDOW_SECONDS",
       "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
       "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
+      "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
       "RITUVIA_PAYMENT_PROVIDER",
       "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
@@ -531,6 +533,41 @@ describe("server and client configuration boundary", () => {
       provider: "stripe",
       secretKey: sandbox.STRIPE_SECRET_KEY,
     });
+    expect(
+      parseServerConfiguration({
+        ...sandbox,
+        RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      }).recoveryCommerceSandbox,
+    ).toEqual({ enabled: true });
+    const rolePassword = Buffer.alloc(32, 5).toString("base64url");
+    const derivedRoleConfiguration = parseServerConfiguration({
+      ...sandbox,
+      PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+      RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: rolePassword,
+      RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+    });
+    const derivedWebhookUrl = new URL(derivedRoleConfiguration.paymentWebhookDatabaseUrl!);
+    expect(decodeURIComponent(derivedWebhookUrl.username)).toBe("rituvia_payment_webhook");
+    expect(decodeURIComponent(derivedWebhookUrl.password)).toBe(rolePassword);
+    expect(derivedWebhookUrl.hostname).toBe("127.0.0.1");
+    expect(derivedWebhookUrl.searchParams.get("sslmode")).toBe("require");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+        RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: "app-password",
+        RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      }),
+    ).toThrowError("RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "local",
+        PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+        RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: rolePassword,
+        RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      }),
+    ).toThrowError("RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD:invalid");
     expect(() =>
       parseServerConfiguration({
         ...sandbox,
