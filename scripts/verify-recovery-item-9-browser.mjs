@@ -28,6 +28,7 @@ originUrl.hash = "";
 const origin = originUrl.origin;
 const bypass = process.env.RITUVIA_VERCEL_PROTECTION_BYPASS?.trim();
 const browserProxyServer = process.env.RITUVIA_BROWSER_PROXY_SERVER?.trim();
+const vercelStorageState = process.env.RITUVIA_VERCEL_STORAGE_STATE?.trim();
 const expectedSourceSha = process.env.RITUVIA_EXPECTED_SOURCE_SHA?.trim();
 const artifactRoot = path.resolve(
   process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-9",
@@ -170,24 +171,35 @@ const browserRequest = async (page, pathname, init = {}) =>
     { init, pathname },
   );
 
-const unexpectedConsoleErrors = (messages, { allowUnauthorized = false } = {}) =>
+const expectedUnauthorizedConsolePattern =
+  /^Failed to load resource: the server responded with a status of 401 \((?:Unauthorized)?\)$/u;
+
+const unexpectedConsoleErrors = (messages) =>
   messages.filter(
     (message) =>
       !message.includes("400 (Bad Request)") &&
       !message.includes("404 (Not Found)") &&
-      (!allowUnauthorized || !message.includes("401 (Unauthorized)")) &&
       !message.includes("https://vercel.live/_next-live/feedback/feedback.js"),
   );
 
-const assertExpectedUnauthorizedConsoleErrors = (messages, responses) => {
-  const unauthorizedConsoleCount = messages.filter((message) =>
-    message.includes("401 (Unauthorized)"),
-  ).length;
+const removeExpectedUnauthorizedConsoleErrors = (messages, responses) => {
   const expectedUnauthorizedResponseCount = responses.filter(
     ({ pathname, status }) =>
       status === 401 && ["/api/v1/me", "/api/v1/me/wallets"].includes(pathname),
   ).length;
-  assert.equal(unauthorizedConsoleCount <= expectedUnauthorizedResponseCount, true);
+  let consumed = 0;
+  const remaining = messages.filter((message) => {
+    if (
+      consumed < expectedUnauthorizedResponseCount &&
+      expectedUnauthorizedConsolePattern.test(message)
+    ) {
+      consumed += 1;
+      return false;
+    }
+    return true;
+  });
+  assert.equal(consumed <= expectedUnauthorizedResponseCount, true);
+  return remaining;
 };
 
 const installWalletProvider = async (page) => {
@@ -332,6 +344,7 @@ try {
     extraHTTPHeaders,
     locale: "en-US",
     reducedMotion: "reduce",
+    storageState: vercelStorageState || undefined,
     timezoneId: "Asia/Shanghai",
     viewport: profiles.desktop,
   });
@@ -519,6 +532,7 @@ try {
     baseURL: origin,
     extraHTTPHeaders,
     locale: "en-US",
+    storageState: vercelStorageState || undefined,
     timezoneId: "Asia/Shanghai",
     viewport: profiles.mobile,
   });
@@ -545,8 +559,12 @@ try {
   assert.equal(crossWallet.status, 404);
   const crossExport = await browserRequest(otherPage, `/api/v1/privacy/exports/${exportId}`);
   assert.equal(crossExport.status, 404);
-  assertExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence);
-  assert.deepEqual(unexpectedConsoleErrors(consoleErrors, { allowUnauthorized: true }), []);
+  assert.deepEqual(
+    unexpectedConsoleErrors(
+      removeExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence),
+    ),
+    [],
+  );
 
   await ownerPage.goto("/en/account/privacy", { timeout: 60_000, waitUntil: "load" });
   await ownerPage
@@ -615,8 +633,12 @@ try {
   assert.deepEqual(providerAiRequests, []);
   assert.equal(serverError.includes(ownerEmail), false);
   assert.equal(serverError.includes(walletSessionCookie.value), false);
-  assertExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence);
-  assert.deepEqual(unexpectedConsoleErrors(consoleErrors, { allowUnauthorized: true }), []);
+  assert.deepEqual(
+    unexpectedConsoleErrors(
+      removeExpectedUnauthorizedConsoleErrors(consoleErrors, responseEvidence),
+    ),
+    [],
+  );
 
   const evidence = Object.freeze({
     artifactDirectory,
