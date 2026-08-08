@@ -2,7 +2,7 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 9 are complete. Item 10 and every later item require a
+> Repository status is NO-GO. Items 1 through 10 are complete. Item 11 and every later item require a
 > new explicit Owner approval. One Codex run may execute exactly one approved item and must then
 > STOP.
 
@@ -219,7 +219,7 @@
   `db4cd1bd5fdc26f8f85551deeaeb40470098cb9b`. Identity sandbox, Base Sepolia wallet authority,
   owner isolation, export, deletion, desktop/mobile zero-mock, credential destruction, and
   safe-off evidence are recorded in `docs/recovery/ITEM_9_IDENTITY_WALLET_PRIVACY_EVIDENCE.md`.
-  Item 10 remains unapproved and unstarted.
+  Item 10 was separately approved later and is now complete.
 - **Founder Journey IDs:** FJ-07, FJ-08, FJ-09, FJ-18, FJ-19.
 - **Exact user-visible outcome:** Owner can test email-sandbox and wallet sign-in, account merge,
   sessions, consent, history, export, and deletion without custody.
@@ -237,12 +237,17 @@
   flow, production identity Provider, or irreversible production deletion.
 - **STOP condition:** Cross-user access, replayable signature, secret/private-data leak, deletion
   ambiguity, audit loss, or custody behavior. None occurred in the accepted Item 9 deployment. Stop
-  after Item 9; Item 10 requires separate explicit Owner approval.
+  after Item 9; the later explicit Owner approval separately authorized Item 10.
 
 ## Item 10 — Credits, Stripe Test and Plus
 
-- **Status:** Planned; Item 9 dependency is satisfied, but execution requires separate explicit
-  Owner approval.
+- **Status:** Complete — exact application source `c2bbd107909f2ab06391a68f5e4377a7fe7e9c82`
+  is `READY` in Vercel-authenticated custom Staging as
+  `dpl_DDT5hLDHsxNPLLQVJjdNQUTxbkJA`. Redirect-only fulfillment denial, signed Stripe Test
+  fulfillment, exactly-once Credits, Plus, ledger reconciliation, desktop/mobile zero-mock,
+  webhook replacement, temporary-credential destruction, and safe-off evidence are recorded in
+  `docs/recovery/ITEM_10_CREDITS_STRIPE_TEST_PLUS_EVIDENCE.md`. Item 11 remains unapproved and
+  unstarted.
 - **Founder Journey IDs:** FJ-10, FJ-11, FJ-12, FJ-13, FJ-14, FJ-20.
 - **Exact user-visible outcome:** In staging only, Owner can test an approved Test SKU, verified
   fulfillment, bounded Credits/entitlements, Plus lifecycle, and refund/dispute audit.
@@ -259,11 +264,15 @@
 - **Explicit exclusions:** No live Stripe, real funds, final pricing/tax/refund/legal policy,
   required-preload production decision, merchant-category claim, payout, or production activation.
 - **STOP condition:** Value before verified webhook, double grant/charge, ledger imbalance, live key,
-  real transaction, unaudited dispute, or mobile checkout blocker.
+  real transaction, unaudited dispute, or mobile checkout blocker. A same-timestamp double-grant
+  defect was found during bounded Staging verification, fixed, regression-tested, and reverified;
+  its append-only synthetic history was preserved. None occurred in the final accepted account.
+  Stop after Item 10; Item 11 requires separate explicit Owner approval.
 
 ## Item 11 — USDC/Base sandbox and Provider AI
 
-- **Status:** Planned; depends on Item 10.
+- **Status:** Planned; Item 10 dependency is satisfied, but execution requires separate explicit
+  Owner approval.
 - **Founder Journey IDs:** FJ-15, FJ-16, FJ-17.
 - **Exact user-visible outcome:** Owner can test hosted non-custodial USDC/Base sandbox checkout and
   bounded Provider AI with disclosure, safety, fallback, and rollback.

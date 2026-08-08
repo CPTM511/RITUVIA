@@ -51,6 +51,23 @@ const ownerEmail = `item10-owner-${randomBytes(8).toString("hex")}@example.test`
 const progress = (message) => process.stderr.write(`[item10-browser] ${message}\n`);
 const providerAiPattern =
   /(?:api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|openrouter\.ai|gateway\.ai\.vercel\.com)/u;
+const isExpectedHostedPlatformConsoleNoise = (message) => {
+  const text = message.text();
+  const locationUrl = message.location().url;
+  return (
+    (text.includes("https://vercel.live/_next-live/feedback/feedback.js") &&
+      text.includes("violates the following Content Security Policy directive")) ||
+    (text === "Failed to load resource: the server responded with a status of 401 ()" &&
+      locationUrl.startsWith("https://vercel.live/"))
+  );
+};
+const isExpectedStripeCheckoutPageError = (error, pageUrl) => {
+  try {
+    return error.message === "network-error" && new URL(pageUrl).hostname === "checkout.stripe.com";
+  } catch {
+    return false;
+  }
+};
 
 const assertAxe = async (page) => {
   const result = await new AxeBuilder({ page }).analyze();
@@ -156,14 +173,18 @@ const waitForOrderFulfillment = async (context, orderId) => {
   throw new Error(`Signed Stripe Test fulfillment did not arrive for order ${orderId}.`);
 };
 
-const locateVisible = async (page, selectors) => {
-  for (const frame of page.frames()) {
-    for (const selector of selectors) {
-      const locator = frame.locator(selector).first();
-      if ((await locator.count()) > 0 && (await locator.isVisible().catch(() => false))) {
-        return locator;
+const locateVisible = async (page, selectors, timeoutMilliseconds = 30_000) => {
+  const deadline = Date.now() + timeoutMilliseconds;
+  while (Date.now() < deadline) {
+    for (const frame of page.frames()) {
+      for (const selector of selectors) {
+        const locator = frame.locator(selector).first();
+        if ((await locator.count()) > 0 && (await locator.isVisible().catch(() => false))) {
+          return locator;
+        }
       }
     }
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
   return null;
 };
@@ -172,7 +193,25 @@ const fillStripeField = async (page, selectors, value, optional = false) => {
   const locator = await locateVisible(page, selectors);
   if (locator === null) {
     if (optional) return false;
-    throw new Error(`Stripe Test Checkout field was not found: ${selectors.join(", ")}`);
+    const frames = await Promise.all(
+      page.frames().map(async (frame) => ({
+        hostname: new URL(frame.url()).hostname,
+        inputs: await frame.locator("input").evaluateAll((nodes) =>
+          nodes.slice(0, 24).map((node) => ({
+            ariaLabel: node.getAttribute("aria-label"),
+            autocomplete: node.getAttribute("autocomplete"),
+            name: node.getAttribute("name"),
+            placeholder: node.getAttribute("placeholder"),
+            type: node.getAttribute("type"),
+          })),
+        ),
+      })),
+    );
+    await page.screenshot({
+      fullPage: true,
+      path: path.join(artifactDirectory, "stripe-field-missing.png"),
+    });
+    throw new Error(JSON.stringify({ code: "STRIPE_TEST_FIELD_MISSING", frames, selectors }));
   }
   await locator.fill(value);
   return true;
@@ -184,11 +223,17 @@ const completeStripeTestCheckout = async (page) => {
   assert.equal(page.url().includes("cs_test_"), true);
 
   await fillStripeField(page, ['input[type="email"]', 'input[name="email"]'], ownerEmail, true);
-  await fillStripeField(
-    page,
-    ['input[autocomplete="cc-number"]', 'input[name="cardNumber"]'],
-    "4242424242424242",
-  );
+  const usdOption = page.getByText(/^\$\d+[.]\d{2}$/u).first();
+  if ((await usdOption.count()) > 0 && (await usdOption.isVisible().catch(() => false))) {
+    await usdOption.click();
+  }
+  const cardNumberSelectors = ['input[autocomplete="cc-number"]', 'input[name="cardNumber"]'];
+  if ((await locateVisible(page, cardNumberSelectors, 2_000)) === null) {
+    const cardOption = page.getByRole("button", { name: "Pay with card" }).first();
+    assert.equal((await cardOption.count()) > 0, true);
+    await cardOption.evaluate((node) => node.click());
+  }
+  await fillStripeField(page, cardNumberSelectors, "4242424242424242");
   await fillStripeField(page, ['input[autocomplete="cc-exp"]', 'input[name="cardExpiry"]'], "1234");
   await fillStripeField(page, ['input[autocomplete="cc-csc"]', 'input[name="cardCvc"]'], "123");
   await fillStripeField(
@@ -221,16 +266,37 @@ const startCheckout = async (page, productName) => {
   const card = page
     .locator("article")
     .filter({ has: page.getByRole("heading", { name: productName }) });
-  const responsePromise = page.waitForResponse(
-    (response) =>
-      response.request().method() === "POST" &&
-      new URL(response.url()).pathname === "/api/v1/checkout/stripe",
+  let resolveCheckoutResponse;
+  let rejectCheckoutResponse;
+  const responsePromise = new Promise((resolve, reject) => {
+    resolveCheckoutResponse = resolve;
+    rejectCheckoutResponse = reject;
+  });
+  await page.route(
+    "**/api/v1/checkout/stripe",
+    async (route) => {
+      try {
+        const response = await route.fetch();
+        const body = await response.body();
+        const requestHeaders = await route.request().allHeaders();
+        await route.fulfill({ body, response });
+        resolveCheckoutResponse({
+          body: JSON.parse(body.toString("utf8")),
+          requestHeaders,
+          status: response.status(),
+        });
+      } catch (error) {
+        rejectCheckoutResponse(error);
+        await route.abort().catch(() => undefined);
+      }
+    },
+    { times: 1 },
   );
   await card.getByRole("button", { name: "Continue to Stripe Test Checkout" }).click();
   const response = await responsePromise;
-  if (response.status() !== 201) {
-    const headers = await response.request().allHeaders();
-    const responseBody = await response.json().catch(() => null);
+  if (response.status !== 201) {
+    const headers = response.requestHeaders;
+    const responseBody = response.body;
     throw new Error(
       JSON.stringify({
         code:
@@ -246,12 +312,11 @@ const startCheckout = async (page, productName) => {
         fetchSite: headers["sec-fetch-site"] ?? null,
         idempotencyKeyLength: headers["idempotency-key"]?.length ?? 0,
         origin: headers.origin ?? null,
-        status: response.status(),
+        status: response.status,
       }),
     );
   }
-  assert.equal(response.status(), 201);
-  const checkout = await response.json();
+  const checkout = response.body;
   assert.equal(typeof checkout.orderId, "string");
   assert.equal(typeof checkout.checkoutUrl, "string");
   assert.equal(checkout.checkoutUrl.startsWith("https://checkout.stripe.com/"), true);
@@ -270,7 +335,7 @@ const proveRedirectIsNotFulfillment = async (context, orderId) => {
       timeout: 60_000,
       waitUntil: "load",
     });
-    await page.getByRole("heading", { name: "Payment confirmation is still processing" }).waitFor();
+    await page.getByText("Payment confirmation is still processing", { exact: true }).waitFor();
   } finally {
     await page.close();
   }
@@ -282,6 +347,12 @@ let primaryError;
 const requestUrls = [];
 const pageErrors = [];
 const appConsoleErrors = [];
+const unauthorizedResponseUrls = [];
+let hostedPlatformConsoleNoiseCount = 0;
+let ownerSignedIn = false;
+let pendingAnonymousMeConsoleErrors = 0;
+let expectedAnonymousMeUnauthorizedCount = 0;
+let stripeHostedCheckoutPageErrorCount = 0;
 try {
   progress("launching protected-staging browser");
   browser = await chromium.launch({
@@ -312,10 +383,44 @@ try {
   ownerPage.on("request", (request) => {
     requestUrls.push(request.url());
   });
-  ownerPage.on("pageerror", (error) => pageErrors.push(error.message));
+  ownerPage.on("response", (response) => {
+    if (response.status() !== 401) return;
+    const responseUrl = new URL(response.url());
+    if (
+      !ownerSignedIn &&
+      response.request().method() === "GET" &&
+      responseUrl.origin === origin &&
+      responseUrl.pathname === "/api/v1/me"
+    ) {
+      pendingAnonymousMeConsoleErrors += 1;
+      expectedAnonymousMeUnauthorizedCount += 1;
+    } else {
+      unauthorizedResponseUrls.push(response.url());
+    }
+  });
+  ownerPage.on("pageerror", (error) => {
+    const pageUrl = ownerPage.url();
+    if (isExpectedStripeCheckoutPageError(error, pageUrl)) {
+      stripeHostedCheckoutPageErrorCount += 1;
+    } else {
+      pageErrors.push(`${error.message} @ ${pageUrl}: ${error.stack || "no stack"}`);
+    }
+  });
   ownerPage.on("console", (message) => {
-    if (message.type() === "error" && ownerPage.url().startsWith(origin)) {
-      appConsoleErrors.push(message.text());
+    if (message.type() !== "error" || !ownerPage.url().startsWith(origin)) return;
+    const locationUrl = message.location().url;
+    const isExpectedAnonymousMeConsoleError =
+      message.text() === "Failed to load resource: the server responded with a status of 401 ()" &&
+      pendingAnonymousMeConsoleErrors > 0 &&
+      locationUrl === `${origin}/api/v1/me`;
+    if (isExpectedHostedPlatformConsoleNoise(message)) {
+      hostedPlatformConsoleNoiseCount += 1;
+    } else if (isExpectedAnonymousMeConsoleError) {
+      pendingAnonymousMeConsoleErrors -= 1;
+    } else {
+      appConsoleErrors.push(
+        `${message.text()} @ ${message.location().url || ownerPage.url()} | 401 responses: ${unauthorizedResponseUrls.join(", ") || "none"}`,
+      );
     }
   });
 
@@ -337,6 +442,7 @@ try {
   assert.equal(readinessBody.controls.productionProviders, "disabled");
 
   await signInWithEmail(ownerPage);
+  ownerSignedIn = true;
   progress("sandbox owner signed in");
   await confirmPaidEligibility(ownerPage);
   progress("explicit 18+ paid eligibility confirmed");
@@ -393,7 +499,9 @@ try {
 
   await ownerPage.goto(`${origin}/en/account/orders`, { timeout: 60_000, waitUntil: "load" });
   await ownerPage.getByRole("heading", { name: "Orders" }).waitFor();
-  assert.equal(await ownerPage.getByText("Verified fulfillment recorded").count(), 2);
+  const verifiedFulfillments = ownerPage.getByText("Verified fulfillment recorded");
+  await verifiedFulfillments.first().waitFor();
+  assert.equal(await verifiedFulfillments.count(), 2);
   await assertAxe(ownerPage);
   await assertLayout(ownerPage);
 
@@ -441,6 +549,8 @@ try {
     artifactDirectory,
     browserProfiles: Object.keys(profiles),
     environment: "protected-staging",
+    expectedAnonymousMeUnauthorizedCount,
+    hostedPlatformConsoleNoiseCount,
     mockFulfillmentCount: 0,
     orders: Object.freeze([
       Object.freeze({ orderId: creditCheckout.orderId, productCode: "pack_6" }),
@@ -449,6 +559,7 @@ try {
     providerAiRequestCount: requestUrls.filter((url) => providerAiPattern.test(url)).length,
     requestCount: requestUrls.length,
     sourceSha: expectedSourceSha,
+    stripeHostedCheckoutPageErrorCount,
     stripeMode: "test",
     totals: Object.freeze({ purchasedCredits: 6, subscriptionCredits: 8, totalAvailable: 14 }),
   });

@@ -1,23 +1,27 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-07
+**Last reconciled:** 2026-08-08
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 9 are complete. Item 9 is
-deployed to Vercel-authenticated custom Staging as `dpl_92w16KNvvZDfC7QhFNb45GLrHy6u`, exact
-application source `808342544c2f8ea8e9fb593f47937e51211482b1`, with final database-connect role
-configuration `db4cd1bd5fdc26f8f85551deeaeb40470098cb9b` and the stable Owner URL recorded in
-`docs/recovery/ITEM_9_IDENTITY_WALLET_PRIVACY_EVIDENCE.md`. Vercel reports `READY`, CLI target
-`staging`, one `iad1` runtime region, a Vercel-managed protected alias, no custom/production domain,
-and login protection. Hosted zero-mock desktop/mobile Chromium passes email-sandbox sign-in, Base
-Sepolia wallet link/sign-in/replay denial, cross-owner wallet/export `404`, private export, account
-deletion, two-session revocation, post-deletion wallet denial, accessibility, and safe-off
-assertions with zero mocked fulfillment, external product request, or Provider AI request. The
-temporary 23-hour share URL, browser Cookie, Vercel CLI authorization, Neon administrator URL, and
-Item 9 secret source were deleted immediately after acceptance. Item 8 remains preserved in the
-same protected Staging history. Item 10 remains unapproved and unstarted. Production, DNS, real
-funds, public release, live Stripe, Credits/Plus activation, Provider AI, and unrestricted public
-service remain separate Owner gates. Git automatic deployment remains disabled.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 10 are complete. Item 10 is
+deployed to Vercel-authenticated custom Staging as `dpl_DDT5hLDHsxNPLLQVJjdNQUTxbkJA`, exact
+application source `c2bbd107909f2ab06391a68f5e4377a7fe7e9c82`, with the stable Owner URL and
+evidence recorded in `docs/recovery/ITEM_10_CREDITS_STRIPE_TEST_PLUS_EVIDENCE.md`. Vercel reports
+`READY`, `readySubstate=STAGED`, OIDC/custom environment `staging`, one `iad1` runtime region, a
+Vercel-managed protected alias, no custom/production domain, and login protection. Hosted
+zero-mock desktop/mobile Chromium passes email-sandbox sign-in, explicit 18+ eligibility, real
+Stripe Test Checkout, redirect-only fulfillment denial, signed webhook fulfillment, one six-Credit
+grant, one eight-Credit monthly Plus grant, two paid orders, ledger reconciliation, accessibility,
+and safe-off assertions with zero mocked fulfillment or Provider AI requests. The final read-only
+Neon audit confirms the accepted account has exactly one purchased and one subscription grant. A
+pre-fix synthetic duplicate-grant history remains append-only and was not deleted or overwritten.
+The previous Stripe Test endpoint was removed only after acceptance; one replacement Test endpoint
+remains enabled. Stripe and Neon resources are disconnected, and temporary webhook secret, Vercel
+bypass, browser Cookie/state, and administrator files were deleted. Item 9 remains preserved in the
+same protected Staging history. Item 11 remains unapproved and unstarted. Production, DNS, real
+funds, public release, live Stripe, final price/tax/refund/legal decisions, USDC/Base sandbox,
+Provider AI, and unrestricted public service remain separate Owner gates. Git automatic deployment
+remains disabled.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
