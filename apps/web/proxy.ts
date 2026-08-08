@@ -371,10 +371,12 @@ const recoveryProtectedApiPatterns = Object.freeze([
     pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}/download$`, "u"),
   },
   { methods: ["GET"], pattern: /^\/api\/v1\/catalog$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/coinbase$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/stripe$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/commerce\/account$/u },
   { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
-  { methods: ["POST"], pattern: /^\/api\/v1\/webhooks\/payments\/stripe$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/recovery\/item-11\/interpretation$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/webhooks\/payments\/(?:coinbase|stripe)$/u },
 ] as const);
 
 const isRecoveryProtectedDocumentRequest = (request: NextRequest): boolean => {
@@ -408,7 +410,7 @@ const isRecoveryProtectedApiRequest = (request: NextRequest): boolean => {
       return hasExactAccountHistoryQuery(request);
     }
     if (
-      request.nextUrl.pathname === "/api/v1/webhooks/payments/stripe" &&
+      /^\/api\/v1\/webhooks\/payments\/(?:coinbase|stripe)$/u.test(request.nextUrl.pathname) &&
       request.nextUrl.search !== ""
     ) {
       const entries = [...request.nextUrl.searchParams.entries()];

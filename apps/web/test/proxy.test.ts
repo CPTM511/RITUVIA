@@ -172,12 +172,15 @@ describe("public shell request and crawl gate", () => {
     ["POST", "/api/v1/privacy/exports/33333333-3333-4333-8333-333333333333/download"],
     ["POST", "/api/v1/privacy/deletions"],
     ["GET", "/api/v1/catalog"],
+    ["POST", "/api/v1/checkout/coinbase"],
     ["POST", "/api/v1/checkout/stripe"],
     ["GET", "/api/v1/commerce/account"],
     ["GET", "/api/v1/orders/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/recovery/item-11/interpretation"],
+    ["POST", "/api/v1/webhooks/payments/coinbase"],
     ["POST", "/api/v1/webhooks/payments/stripe"],
   ])(
-    "allows only the bounded protected-recovery product requests through Item 10: %s %s",
+    "allows only the bounded protected-recovery product requests through Item 11: %s %s",
     async (method, pathname) => {
       harness.deploymentEnvironment = "staging";
 
@@ -191,24 +194,30 @@ describe("public shell request and crawl gate", () => {
     },
   );
 
-  it("allows only the exact Stripe webhook protection-bypass query", async () => {
-    harness.deploymentEnvironment = "staging";
-    const valid = await proxy(
-      request(`/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=${"a".repeat(32)}`, {
-        method: "POST",
-      }),
-    );
-    expect(valid.status).toBe(200);
-    expect(valid.headers.get("x-middleware-next")).toBe("1");
+  it.each(["coinbase", "stripe"])(
+    "allows only the exact %s webhook protection-bypass query",
+    async (provider) => {
+      harness.deploymentEnvironment = "staging";
+      const valid = await proxy(
+        request(
+          `/api/v1/webhooks/payments/${provider}?x-vercel-protection-bypass=${"a".repeat(32)}`,
+          {
+            method: "POST",
+          },
+        ),
+      );
+      expect(valid.status).toBe(200);
+      expect(valid.headers.get("x-middleware-next")).toBe("1");
 
-    for (const pathname of [
-      "/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=short",
-      `/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=${"a".repeat(32)}&extra=1`,
-      `/api/v1/webhooks/payments/stripe?wrong=${"a".repeat(32)}`,
-    ]) {
-      expect((await proxy(request(pathname, { method: "POST" }))).status).toBe(404);
-    }
-  });
+      for (const pathname of [
+        `/api/v1/webhooks/payments/${provider}?x-vercel-protection-bypass=short`,
+        `/api/v1/webhooks/payments/${provider}?x-vercel-protection-bypass=${"a".repeat(32)}&extra=1`,
+        `/api/v1/webhooks/payments/${provider}?wrong=${"a".repeat(32)}`,
+      ]) {
+        expect((await proxy(request(pathname, { method: "POST" }))).status).toBe(404);
+      }
+    },
+  );
 
   it("fails the protected product surface closed when staging readiness is incomplete", async () => {
     harness.deploymentEnvironment = "staging";

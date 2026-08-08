@@ -42,6 +42,8 @@ const anonymousSessionEnvironmentVariables = Object.freeze([
 export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
+  "AI_GENERATION_DATABASE_URL",
+  "RITUVIA_AI_GENERATION_ROLE_PASSWORD",
   "PAYMENT_WEBHOOK_DATABASE_URL",
   "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
   "PRIVACY_DELETION_DATABASE_URL",
@@ -55,7 +57,16 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
   "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
+  "RITUVIA_AI_DAILY_USER_LIMIT",
+  "RITUVIA_AI_GATEWAY_MODEL",
+  "RITUVIA_AI_MAX_COST_MICROS",
+  "RITUVIA_AI_MAX_OUTPUT_TOKENS",
+  "RITUVIA_AI_TIMEOUT_MS",
+  "RITUVIA_COINBASE_API_KEY_ID",
+  "RITUVIA_COINBASE_API_KEY_SECRET",
+  "RITUVIA_COINBASE_WEBHOOK_SECRET",
   "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
+  "RITUVIA_RECOVERY_ITEM_11_SANDBOX",
   "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
   "RITUVIA_PAYMENT_PROVIDER",
@@ -88,6 +99,7 @@ export type BuildConfiguration = Readonly<{
 
 export type ServerConfiguration = Readonly<{
   accountIdentityPolicy: AccountIdentityPolicyConfiguration | undefined;
+  aiGenerationDatabaseUrl: string | undefined;
   anonymousSessionPolicy: AnonymousSessionPolicyConfiguration | undefined;
   astrologyNativeBuildMetadataPath: string | undefined;
   brand: BuildConfiguration["brand"];
@@ -103,6 +115,7 @@ export type ServerConfiguration = Readonly<{
   privacyExport: PrivacyExportConfiguration | undefined;
   questionIntakeActivationReference: string | undefined;
   recoveryIdentitySandbox: RecoveryIdentitySandboxConfiguration | undefined;
+  recoveryItem11Sandbox: RecoveryItem11SandboxConfiguration | undefined;
   reflectionPolicy: ReflectionPolicyConfiguration | undefined;
   tarotReadingIntegrityKeyring: TarotReadingIntegrityKeyringConfiguration | undefined;
 }>;
@@ -180,6 +193,22 @@ export type RecoveryIdentitySandboxConfiguration = Readonly<{
   walletRecentAuthenticationSeconds: 900;
 }>;
 
+export type RecoveryItem11SandboxConfiguration = Readonly<{
+  ai: Readonly<{
+    dailyUserLimit: 3;
+    maxCostMicros: 25_000;
+    maxOutputTokens: 384;
+    model: "openai/gpt-5.4-nano";
+    timeoutMs: 8_000;
+  }>;
+  coinbase: Readonly<{
+    apiKeyId: string;
+    apiKeySecret: string;
+    webhookSecret: string;
+  }>;
+  enabled: true;
+}>;
+
 const emailSenderSchema = z.union([
   z.email(),
   z
@@ -242,6 +271,8 @@ const absoluteMetadataPathSchema = z
 
 const serverEnvironmentSchema = z.object({
   DATABASE_URL: databaseUrlSchema.optional(),
+  AI_GENERATION_DATABASE_URL: databaseUrlSchema.optional(),
+  RITUVIA_AI_GENERATION_ROLE_PASSWORD: encodedSecretKeySchema.optional(),
   PAYMENT_WEBHOOK_DATABASE_URL: databaseUrlSchema.optional(),
   RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: encodedSecretKeySchema.optional(),
   PRIVACY_DELETION_DATABASE_URL: databaseUrlSchema.optional(),
@@ -273,7 +304,31 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_AUTH_CHALLENGE_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_AUTH_DATA_KEY_V1: encodedSecretKeySchema.optional(),
+  RITUVIA_AI_DAILY_USER_LIMIT: z.literal("3").optional(),
+  RITUVIA_AI_GATEWAY_MODEL: z.literal("openai/gpt-5.4-nano").optional(),
+  RITUVIA_AI_MAX_COST_MICROS: z.literal("25000").optional(),
+  RITUVIA_AI_MAX_OUTPUT_TOKENS: z.literal("384").optional(),
+  RITUVIA_AI_TIMEOUT_MS: z.literal("8000").optional(),
+  RITUVIA_COINBASE_API_KEY_ID: z
+    .string()
+    .regex(/^organizations\/[A-Za-z0-9_-]{1,128}\/apiKeys\/[A-Za-z0-9_-]{1,128}$/u)
+    .optional(),
+  RITUVIA_COINBASE_API_KEY_SECRET: z
+    .string()
+    .min(100)
+    .max(8_192)
+    .refine(
+      (value) =>
+        /-----BEGIN (?:EC )?PRIVATE KEY-----/u.test(value) &&
+        /-----END (?:EC )?PRIVATE KEY-----/u.test(value),
+    )
+    .optional(),
+  RITUVIA_COINBASE_WEBHOOK_SECRET: z
+    .string()
+    .regex(/^[A-Za-z0-9_+=/-]{16,255}$/u)
+    .optional(),
   RITUVIA_RECOVERY_IDENTITY_SANDBOX: z.literal("item-9").optional(),
+  RITUVIA_RECOVERY_ITEM_11_SANDBOX: z.literal("item-11").optional(),
   RITUVIA_RECOVERY_COMMERCE_SANDBOX: z.literal("item-10").optional(),
   RITUVIA_AUTH_START_GLOBAL_LIMIT: z
     .string()
@@ -651,6 +706,72 @@ const parsePaymentConfiguration = (
   });
 };
 
+const parseRecoveryItem11Sandbox = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): RecoveryItem11SandboxConfiguration | undefined => {
+  const values = {
+    RITUVIA_AI_DAILY_USER_LIMIT: parsed.RITUVIA_AI_DAILY_USER_LIMIT,
+    RITUVIA_AI_GATEWAY_MODEL: parsed.RITUVIA_AI_GATEWAY_MODEL,
+    RITUVIA_AI_MAX_COST_MICROS: parsed.RITUVIA_AI_MAX_COST_MICROS,
+    RITUVIA_AI_MAX_OUTPUT_TOKENS: parsed.RITUVIA_AI_MAX_OUTPUT_TOKENS,
+    RITUVIA_AI_TIMEOUT_MS: parsed.RITUVIA_AI_TIMEOUT_MS,
+    RITUVIA_COINBASE_API_KEY_ID: parsed.RITUVIA_COINBASE_API_KEY_ID,
+    RITUVIA_COINBASE_API_KEY_SECRET: parsed.RITUVIA_COINBASE_API_KEY_SECRET,
+    RITUVIA_COINBASE_WEBHOOK_SECRET: parsed.RITUVIA_COINBASE_WEBHOOK_SECRET,
+    RITUVIA_RECOVERY_ITEM_11_SANDBOX: parsed.RITUVIA_RECOVERY_ITEM_11_SANDBOX,
+  } as const;
+  const databaseCredentialConfigured =
+    parsed.AI_GENERATION_DATABASE_URL !== undefined ||
+    parsed.RITUVIA_AI_GENERATION_ROLE_PASSWORD !== undefined;
+  const configured =
+    Object.values(values).filter((value) => value !== undefined).length +
+    (databaseCredentialConfigured ? 1 : 0);
+  if (configured === 0) return undefined;
+  const missing = [
+    ...Object.entries(values)
+      .filter(([, value]) => value === undefined)
+      .map(([key]) => ({ code: "missing" as const, key })),
+    ...(!databaseCredentialConfigured
+      ? [{ code: "missing" as const, key: "AI_GENERATION_DATABASE_URL" }]
+      : []),
+  ];
+  if (
+    missing.length > 0 ||
+    (parsed.AI_GENERATION_DATABASE_URL !== undefined &&
+      parsed.RITUVIA_AI_GENERATION_ROLE_PASSWORD !== undefined) ||
+    deploymentEnvironment !== "staging" ||
+    parsed.RITUVIA_RECOVERY_COMMERCE_SANDBOX !== "item-10"
+  ) {
+    throw new ConfigurationError("server", [
+      ...missing,
+      ...(parsed.AI_GENERATION_DATABASE_URL !== undefined &&
+      parsed.RITUVIA_AI_GENERATION_ROLE_PASSWORD !== undefined
+        ? [{ code: "invalid" as const, key: "AI_GENERATION_DATABASE_URL" }]
+        : []),
+      ...(deploymentEnvironment !== "staging" ||
+      parsed.RITUVIA_RECOVERY_COMMERCE_SANDBOX !== "item-10"
+        ? [{ code: "invalid" as const, key: "RITUVIA_RECOVERY_ITEM_11_SANDBOX" }]
+        : []),
+    ]);
+  }
+  return Object.freeze({
+    ai: Object.freeze({
+      dailyUserLimit: 3 as const,
+      maxCostMicros: 25_000 as const,
+      maxOutputTokens: 384 as const,
+      model: "openai/gpt-5.4-nano" as const,
+      timeoutMs: 8_000 as const,
+    }),
+    coinbase: Object.freeze({
+      apiKeyId: parsed.RITUVIA_COINBASE_API_KEY_ID!,
+      apiKeySecret: parsed.RITUVIA_COINBASE_API_KEY_SECRET!.replaceAll("\\n", "\n"),
+      webhookSecret: parsed.RITUVIA_COINBASE_WEBHOOK_SECRET!,
+    }),
+    enabled: true as const,
+  });
+};
+
 const normalizedDatabaseTarget = (value: string): string => {
   const url = new URL(value);
   const parameters = [...url.searchParams.entries()].sort(
@@ -752,6 +873,44 @@ const resolvePaymentWebhookDatabaseUrl = (
   return webhook.toString();
 };
 
+const resolveAiGenerationDatabaseUrl = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): string | undefined => {
+  const explicitUrl = parsed.AI_GENERATION_DATABASE_URL;
+  const rolePassword = parsed.RITUVIA_AI_GENERATION_ROLE_PASSWORD;
+  if (rolePassword === undefined) return explicitUrl;
+  if (
+    explicitUrl !== undefined ||
+    deploymentEnvironment !== "staging" ||
+    parsed.RITUVIA_RECOVERY_ITEM_11_SANDBOX !== "item-11" ||
+    parsed.DATABASE_URL === undefined
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_AI_GENERATION_ROLE_PASSWORD" },
+    ]);
+  }
+  const application = new URL(parsed.DATABASE_URL);
+  const applicationUsername = decodeDatabaseCredential(application.username);
+  const applicationPassword = decodeDatabaseCredential(application.password);
+  if (
+    applicationUsername === null ||
+    applicationUsername === "" ||
+    applicationUsername === "rituvia_ai_generation" ||
+    applicationPassword === null ||
+    applicationPassword === "" ||
+    applicationPassword === rolePassword
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_AI_GENERATION_ROLE_PASSWORD" },
+    ]);
+  }
+  const aiGeneration = new URL(parsed.DATABASE_URL);
+  aiGeneration.username = "rituvia_ai_generation";
+  aiGeneration.password = rolePassword;
+  return aiGeneration.toString();
+};
+
 const assertPaymentWebhookDatabaseBoundary = (
   payment: PaymentConfiguration | undefined,
   databaseUrl: string | undefined,
@@ -790,6 +949,44 @@ const assertPaymentWebhookDatabaseBoundary = (
   ) {
     throw new ConfigurationError("server", [
       { code: "invalid", key: "PAYMENT_WEBHOOK_DATABASE_URL" },
+    ]);
+  }
+};
+
+const assertAiGenerationDatabaseBoundary = (
+  recoveryItem11Sandbox: RecoveryItem11SandboxConfiguration | undefined,
+  databaseUrl: string | undefined,
+  aiGenerationDatabaseUrl: string | undefined,
+): void => {
+  if (recoveryItem11Sandbox === undefined) return;
+  if (databaseUrl === undefined || aiGenerationDatabaseUrl === undefined) {
+    throw new ConfigurationError("server", [
+      {
+        code: "missing",
+        key: databaseUrl === undefined ? "DATABASE_URL" : "AI_GENERATION_DATABASE_URL",
+      },
+    ]);
+  }
+  const application = new URL(databaseUrl);
+  const aiGeneration = new URL(aiGenerationDatabaseUrl);
+  const applicationUsername = decodeDatabaseCredential(application.username);
+  const applicationPassword = decodeDatabaseCredential(application.password);
+  const aiUsername = decodeDatabaseCredential(aiGeneration.username);
+  const aiPassword = decodeDatabaseCredential(aiGeneration.password);
+  if (
+    normalizedDatabaseTarget(databaseUrl) !== normalizedDatabaseTarget(aiGenerationDatabaseUrl) ||
+    applicationUsername === null ||
+    applicationUsername === "" ||
+    applicationPassword === null ||
+    applicationPassword === "" ||
+    aiUsername !== "rituvia_ai_generation" ||
+    aiPassword === null ||
+    aiPassword === "" ||
+    applicationUsername === aiUsername ||
+    applicationPassword === aiPassword
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "AI_GENERATION_DATABASE_URL" },
     ]);
   }
 };
@@ -918,6 +1115,10 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   const build = parseBuildConfiguration(environment);
   const server = parseConfiguration("server", serverEnvironmentSchema, {
     DATABASE_URL: normalizeEnvironmentValue(environment.DATABASE_URL),
+    AI_GENERATION_DATABASE_URL: normalizeEnvironmentValue(environment.AI_GENERATION_DATABASE_URL),
+    RITUVIA_AI_GENERATION_ROLE_PASSWORD: normalizeEnvironmentValue(
+      environment.RITUVIA_AI_GENERATION_ROLE_PASSWORD,
+    ),
     PAYMENT_WEBHOOK_DATABASE_URL: normalizeEnvironmentValue(
       environment.PAYMENT_WEBHOOK_DATABASE_URL,
     ),
@@ -964,8 +1165,25 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: normalizeEnvironmentValue(
       environment.RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1,
     ),
+    RITUVIA_AI_DAILY_USER_LIMIT: normalizeEnvironmentValue(environment.RITUVIA_AI_DAILY_USER_LIMIT),
+    RITUVIA_AI_GATEWAY_MODEL: normalizeEnvironmentValue(environment.RITUVIA_AI_GATEWAY_MODEL),
+    RITUVIA_AI_MAX_COST_MICROS: normalizeEnvironmentValue(environment.RITUVIA_AI_MAX_COST_MICROS),
+    RITUVIA_AI_MAX_OUTPUT_TOKENS: normalizeEnvironmentValue(
+      environment.RITUVIA_AI_MAX_OUTPUT_TOKENS,
+    ),
+    RITUVIA_AI_TIMEOUT_MS: normalizeEnvironmentValue(environment.RITUVIA_AI_TIMEOUT_MS),
+    RITUVIA_COINBASE_API_KEY_ID: normalizeEnvironmentValue(environment.RITUVIA_COINBASE_API_KEY_ID),
+    RITUVIA_COINBASE_API_KEY_SECRET: normalizeEnvironmentValue(
+      environment.RITUVIA_COINBASE_API_KEY_SECRET,
+    ),
+    RITUVIA_COINBASE_WEBHOOK_SECRET: normalizeEnvironmentValue(
+      environment.RITUVIA_COINBASE_WEBHOOK_SECRET,
+    ),
     RITUVIA_RECOVERY_IDENTITY_SANDBOX: normalizeEnvironmentValue(
       environment.RITUVIA_RECOVERY_IDENTITY_SANDBOX,
+    ),
+    RITUVIA_RECOVERY_ITEM_11_SANDBOX: normalizeEnvironmentValue(
+      environment.RITUVIA_RECOVERY_ITEM_11_SANDBOX,
     ),
     RITUVIA_RECOVERY_COMMERCE_SANDBOX: normalizeEnvironmentValue(
       environment.RITUVIA_RECOVERY_COMMERCE_SANDBOX,
@@ -1054,11 +1272,21 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
             ]);
           })();
   const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
+  const recoveryItem11Sandbox = parseRecoveryItem11Sandbox(server, build.deploymentEnvironment);
   const paymentWebhookDatabaseUrl = resolvePaymentWebhookDatabaseUrl(
     server,
     build.deploymentEnvironment,
   );
+  const aiGenerationDatabaseUrl = resolveAiGenerationDatabaseUrl(
+    server,
+    build.deploymentEnvironment,
+  );
   assertPaymentWebhookDatabaseBoundary(payment, server.DATABASE_URL, paymentWebhookDatabaseUrl);
+  assertAiGenerationDatabaseBoundary(
+    recoveryItem11Sandbox,
+    server.DATABASE_URL,
+    aiGenerationDatabaseUrl,
+  );
   const recoveryCommerceSandbox =
     server.RITUVIA_RECOVERY_COMMERCE_SANDBOX === undefined
       ? undefined
@@ -1086,6 +1314,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   }
   return Object.freeze({
     accountIdentityPolicy,
+    aiGenerationDatabaseUrl,
     anonymousSessionPolicy: parseAnonymousSessionPolicy(server, build.deploymentEnvironment),
     astrologyNativeBuildMetadataPath: server.RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH,
     brand: build.brand,
@@ -1101,6 +1330,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     questionIntakeActivationReference,
     recoveryCommerceSandbox,
     recoveryIdentitySandbox,
+    recoveryItem11Sandbox,
     reflectionPolicy: reflection.policy,
     tarotReadingIntegrityKeyring: parseTarotReadingIntegrityKeyring(
       server.RITUVIA_TAROT_INTEGRITY_KEY_V1,

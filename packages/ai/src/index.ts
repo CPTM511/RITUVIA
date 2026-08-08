@@ -110,6 +110,22 @@ export type {
 } from "./provider.js";
 
 export {
+  createVercelAiGatewayOpenAiStructuredGenerationProviderV1,
+  vercelAiGatewayOpenAiMaximumEstimatedCostMicros,
+  vercelAiGatewayOpenAiMaximumReportedTokenCount,
+  vercelAiGatewayOpenAiStructuredGenerationAdapterVersion,
+} from "./vercel-ai-gateway-openai.js";
+export type {
+  JsonValue,
+  ResolveGatewayEstimatedCostV1,
+  ResolveStructuredOutputSchemaV1,
+  VercelAiGatewayOpenAiResponseV1,
+  VercelAiGatewayOpenAiStructuredGenerationProviderOptionsV1,
+  VercelAiGatewayOpenAiTransportRequestV1,
+  VercelAiGatewayOpenAiTransportV1,
+} from "./vercel-ai-gateway-openai.js";
+
+export {
   TarotGenerationError,
   executePreparedTarotInterpretationGenerationV1,
   generateTarotInterpretationV1,

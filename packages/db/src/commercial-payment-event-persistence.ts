@@ -6,6 +6,27 @@ const fingerprintPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 const currencyPattern = /^[A-Z]{3}$/u;
 const maximumMinorAmount = 2_147_483_647;
 const maximumTimelineEvents = 100;
+type CommercialPaymentEventProfile = Readonly<{
+  auditPrefix: "coinbase" | "stripe";
+  creditGrantReason: "coinbase_credit_pack_verified" | "stripe_credit_pack_verified";
+  provider: "coinbase_usdc_base" | "stripe";
+  recoveryScope: "D-098:OWNER:item-11:protected-staging" | null;
+  reversalReason: "coinbase_refund" | "stripe_refund_or_dispute";
+}>;
+const stripePaymentEventProfile: CommercialPaymentEventProfile = Object.freeze({
+  auditPrefix: "stripe",
+  creditGrantReason: "stripe_credit_pack_verified",
+  provider: "stripe",
+  recoveryScope: null,
+  reversalReason: "stripe_refund_or_dispute",
+});
+const coinbasePaymentEventProfile: CommercialPaymentEventProfile = Object.freeze({
+  auditPrefix: "coinbase",
+  creditGrantReason: "coinbase_credit_pack_verified",
+  provider: "coinbase_usdc_base",
+  recoveryScope: "D-098:OWNER:item-11:protected-staging",
+  reversalReason: "coinbase_refund",
+});
 
 export const commercialPaymentEventPersistenceErrorCodes = Object.freeze([
   "COMMERCIAL_PAYMENT_EVENT_CONFLICT",
@@ -58,6 +79,13 @@ export type PreparedCommercialPaymentEvent = Readonly<{
   subscriptionState: "active" | "cancelled" | "past_due" | null;
   verifierVersion: string;
 }>;
+
+export type PreparedCommercialCoinbasePaymentEvent = PreparedCommercialPaymentEvent &
+  Readonly<{
+    observedAsset: "USDC";
+    observedNetwork: "base";
+    recoveryScope: "D-098:OWNER:item-11:protected-staging";
+  }>;
 
 export type CommercialPaymentTimelineRecord = Readonly<{
   eventId: string;
@@ -142,6 +170,10 @@ export type CommercialPaymentEventPersistence = Readonly<{
     input: PreparedCommercialPaymentEvent,
     reduce: CommercialPaymentEventReducer,
   ): Promise<ProcessedCommercialPaymentEvent>;
+  processCoinbaseSandboxEvent(
+    input: PreparedCommercialCoinbasePaymentEvent,
+    reduce: CommercialPaymentEventReducer,
+  ): Promise<ProcessedCommercialPaymentEvent>;
 }>;
 
 type AnnualSubscriptionReconciliationRow = Readonly<{
@@ -186,6 +218,8 @@ type LockedOrderAttemptRow = Readonly<{
   attemptId: string;
   attemptState: ReducedCommercialPaymentState["attemptState"];
   checkoutId: string | null;
+  expectedAsset: string | null;
+  expectedNetwork: string | null;
   currencyCode: string;
   billingInterval: "month" | "one_time" | "year";
   catalogVersion: string;
@@ -748,6 +782,7 @@ const reverseAvailableOrderCredits = async (
   input: Readonly<{
     eventId: string;
     match: LockedOrderAttemptRow;
+    profile: CommercialPaymentEventProfile;
     receivedAt: Date;
   }>,
 ): Promise<number> => {
@@ -785,10 +820,10 @@ const reverseAvailableOrderCredits = async (
           `commercial-credit-reversal.v1\0${input.eventId}\0${grant.id}`,
         ),
         idempotencyKeyVersion: "commercial-credit-reversal.v1",
-        operation: "stripe_refund_or_dispute",
+        operation: input.profile.reversalReason,
         orderId: input.match.orderId,
         policyVersion: input.match.countryPolicyVersion,
-        reason: "stripe_refund_or_dispute",
+        reason: input.profile.reversalReason,
         sourceEntryId: grant.id,
         termsVersion: input.match.termsVersion,
         userId: input.match.userId,
@@ -814,7 +849,8 @@ const reverseAvailableOrderCredits = async (
 
 const processInTransaction = async (
   database: Prisma.TransactionClient,
-  input: PreparedCommercialPaymentEvent,
+  input: PreparedCommercialCoinbasePaymentEvent | PreparedCommercialPaymentEvent,
+  profile: CommercialPaymentEventProfile,
   reduce: CommercialPaymentEventReducer,
   parsed: Readonly<{
     occurredAt: Date;
@@ -832,7 +868,7 @@ const processInTransaction = async (
       subscription_period_end, subscription_cancel_at_period_end, subscription_state,
       amount_minor, currency_code
     ) VALUES (
-      'stripe', 'sandbox', ${input.providerAccountFingerprint}, ${input.providerEventId},
+      ${profile.provider}, 'sandbox', ${input.providerAccountFingerprint}, ${input.providerEventId},
       ${input.normalizationVersion}, ${input.eventType}, ${input.providerObjectId},
       ${parsed.payloadDigest}, ${input.signatureTimestampSeconds}, ${input.verifierVersion},
       ${parsed.occurredAt}, ${parsed.receivedAt}, ${input.orderId}::uuid,
@@ -890,7 +926,7 @@ const processInTransaction = async (
         subscription_period_start AS "subscriptionPeriodStart",
         subscription_state AS "subscriptionState"
       FROM commercial_payment_event_v2
-      WHERE provider = 'stripe'
+      WHERE provider = ${profile.provider}
         AND environment = 'sandbox'
         AND provider_account_fingerprint = ${input.providerAccountFingerprint}
         AND provider_event_id = ${input.providerEventId}
@@ -918,6 +954,8 @@ const processInTransaction = async (
       attempts.id AS "attemptId",
       attempts.state AS "attemptState",
       attempts.provider_checkout_id AS "checkoutId",
+      attempts.expected_asset AS "expectedAsset",
+      attempts.expected_network AS "expectedNetwork",
       prices.billing_interval AS "billingInterval",
       orders.catalog_version AS "catalogVersion",
       orders.country_policy_version AS "countryPolicyVersion",
@@ -952,7 +990,7 @@ const processInTransaction = async (
      AND prices.price_id = orders.price_id
      AND prices.version = orders.price_version
     WHERE orders.public_id = ${input.orderId}::uuid
-      AND attempts.provider = 'stripe'
+      AND attempts.provider = ${profile.provider}
       AND attempts.environment = 'sandbox'
     FOR UPDATE OF orders, attempts
   `;
@@ -963,6 +1001,15 @@ const processInTransaction = async (
     match.checkoutId !== input.providerCheckoutId ||
     match.totalMinor !== input.amountMinor ||
     match.currencyCode !== input.currencyCode ||
+    (profile.provider === "coinbase_usdc_base" &&
+      (!("observedAsset" in input) ||
+        input.observedAsset !== "USDC" ||
+        input.observedNetwork !== "base" ||
+        !match.countryPolicyVersion.startsWith("staging.us.coinbase-sandbox.item11.") ||
+        match.expectedAsset !== input.observedAsset ||
+        match.expectedNetwork !== input.observedNetwork ||
+        match.fulfillmentKind !== "credit_pack" ||
+        match.billingInterval !== "one_time")) ||
     (match.paymentIntentId !== null &&
       input.providerPaymentIntentId !== null &&
       match.paymentIntentId !== input.providerPaymentIntentId);
@@ -1113,7 +1160,7 @@ const processInTransaction = async (
         creditType: "purchased_credit",
         direction: "grant",
         orderId: match.orderId,
-        reason: "stripe_credit_pack_verified",
+        reason: profile.creditGrantReason,
         userId: match.userId,
       },
     });
@@ -1128,7 +1175,7 @@ const processInTransaction = async (
         policyVersion: match.countryPolicyVersion,
         productCode: match.productCode,
         productVersion: match.productVersion,
-        reason: "stripe_credit_pack_verified",
+        reason: profile.creditGrantReason,
         subscriptionPeriodId: null,
         termsVersion: match.termsVersion,
         userId: match.userId,
@@ -1140,6 +1187,7 @@ const processInTransaction = async (
     creditsChanged = -(await reverseAvailableOrderCredits(database, {
       eventId: created.id,
       match,
+      profile,
       receivedAt: parsed.receivedAt,
     }));
     if (match.fulfillmentKind === "subscription") {
@@ -1190,7 +1238,7 @@ const processInTransaction = async (
       ${match.orderId}::uuid,
       ${subscriptionId}::uuid,
       ${created.id}::uuid,
-      ${`stripe_${input.eventType}`},
+      ${`${profile.auditPrefix}_${input.eventType}`},
       ${auditOutcome},
       ${auditDetails}::jsonb,
       ${parsed.receivedAt}
@@ -1324,6 +1372,81 @@ const reconcileAnnualCreditsInTransaction = async (
     }
   }
   return allocations;
+};
+
+const processSandboxPaymentEvent = async (
+  database: PrismaClient,
+  input: PreparedCommercialCoinbasePaymentEvent | PreparedCommercialPaymentEvent,
+  reduce: CommercialPaymentEventReducer,
+  profile: CommercialPaymentEventProfile,
+): Promise<ProcessedCommercialPaymentEvent> => {
+  await assertCommercialPaymentWebhookRuntimeDatabasePrivileges(database);
+  if (
+    !uuidV4Pattern.test(input.orderId) ||
+    !fingerprintPattern.test(input.providerAccountFingerprint) ||
+    !commercialVerifiedPaymentEventTypes.includes(input.eventType) ||
+    !currencyPattern.test(input.currencyCode) ||
+    !Number.isSafeInteger(input.amountMinor) ||
+    input.amountMinor < 1 ||
+    input.amountMinor > maximumMinorAmount ||
+    !Number.isSafeInteger(input.signatureTimestampSeconds) ||
+    input.signatureTimestampSeconds < 1 ||
+    typeof reduce !== "function"
+  ) {
+    throw new TypeError("Commercial payment event is invalid.");
+  }
+  if (
+    profile.provider === "coinbase_usdc_base" &&
+    (profile.recoveryScope === null ||
+      !("recoveryScope" in input) ||
+      input.recoveryScope !== profile.recoveryScope ||
+      input.observedAsset !== "USDC" ||
+      input.observedNetwork !== "base" ||
+      input.providerPaymentIntentId !== null ||
+      input.providerInvoiceId !== null ||
+      input.providerSubscriptionId !== null)
+  ) {
+    throw new TypeError("Commercial payment recovery scope is invalid.");
+  }
+  requireResource(input.providerEventId);
+  requireResource(input.providerObjectId);
+  requireResource(input.providerCheckoutId);
+  if (input.providerPaymentIntentId !== null) requireResource(input.providerPaymentIntentId);
+  if (input.providerInvoiceId !== null) requireResource(input.providerInvoiceId);
+  if (input.providerSubscriptionId !== null) requireResource(input.providerSubscriptionId);
+  const hasSubscriptionContext = input.providerSubscriptionId !== null;
+  if (
+    hasSubscriptionContext !== (input.subscriptionState !== null) ||
+    hasSubscriptionContext !== (input.subscriptionCancelAtPeriodEnd !== null) ||
+    hasSubscriptionContext !== (input.subscriptionPeriodStart !== null) ||
+    hasSubscriptionContext !== (input.subscriptionPeriodEnd !== null) ||
+    (input.providerInvoiceId !== null && !hasSubscriptionContext)
+  ) {
+    throw new TypeError("Commercial payment subscription context is invalid.");
+  }
+  requireResource(input.normalizationVersion);
+  requireResource(input.verifierVersion);
+  const parsed = Object.freeze({
+    occurredAt: requireInstant(input.occurredAt),
+    payloadDigest: requireDigest(input.payloadDigest),
+    receivedAt: requireInstant(input.receivedAt),
+  });
+  if (parsed.occurredAt.getTime() - parsed.receivedAt.getTime() > 300_000) {
+    throw new TypeError("Commercial payment event occurrence exceeds clock tolerance.");
+  }
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      return await database.$transaction(
+        (transaction) => processInTransaction(transaction, input, profile, reduce, parsed),
+        { isolationLevel: "Serializable" },
+      );
+    } catch (error) {
+      if (!isSerializationFailure(error) || attempt === 5) throw error;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 5));
+    }
+  }
+  throw new CommercialPaymentEventPersistenceError("COMMERCIAL_PAYMENT_EVENT_UNAVAILABLE");
 };
 
 export const createCommercialPaymentEventPersistence = (
@@ -1487,62 +1610,8 @@ export const createCommercialPaymentEventPersistence = (
       throw new CommercialPaymentEventPersistenceError("COMMERCIAL_PAYMENT_EVENT_UNAVAILABLE");
     },
 
-    async processStripeSandboxEvent(input, reduce) {
-      await assertCommercialPaymentWebhookRuntimeDatabasePrivileges(database);
-      if (
-        !uuidV4Pattern.test(input.orderId) ||
-        !fingerprintPattern.test(input.providerAccountFingerprint) ||
-        !commercialVerifiedPaymentEventTypes.includes(input.eventType) ||
-        !currencyPattern.test(input.currencyCode) ||
-        !Number.isSafeInteger(input.amountMinor) ||
-        input.amountMinor < 1 ||
-        input.amountMinor > maximumMinorAmount ||
-        !Number.isSafeInteger(input.signatureTimestampSeconds) ||
-        input.signatureTimestampSeconds < 1 ||
-        typeof reduce !== "function"
-      ) {
-        throw new TypeError("Commercial payment event is invalid.");
-      }
-      requireResource(input.providerEventId);
-      requireResource(input.providerObjectId);
-      requireResource(input.providerCheckoutId);
-      if (input.providerPaymentIntentId !== null) {
-        requireResource(input.providerPaymentIntentId);
-      }
-      if (input.providerInvoiceId !== null) requireResource(input.providerInvoiceId);
-      if (input.providerSubscriptionId !== null) requireResource(input.providerSubscriptionId);
-      const hasSubscriptionContext = input.providerSubscriptionId !== null;
-      if (
-        hasSubscriptionContext !== (input.subscriptionState !== null) ||
-        hasSubscriptionContext !== (input.subscriptionCancelAtPeriodEnd !== null) ||
-        hasSubscriptionContext !== (input.subscriptionPeriodStart !== null) ||
-        hasSubscriptionContext !== (input.subscriptionPeriodEnd !== null) ||
-        (input.providerInvoiceId !== null && !hasSubscriptionContext)
-      ) {
-        throw new TypeError("Commercial payment subscription context is invalid.");
-      }
-      requireResource(input.normalizationVersion);
-      requireResource(input.verifierVersion);
-      const parsed = Object.freeze({
-        occurredAt: requireInstant(input.occurredAt),
-        payloadDigest: requireDigest(input.payloadDigest),
-        receivedAt: requireInstant(input.receivedAt),
-      });
-      if (parsed.occurredAt.getTime() - parsed.receivedAt.getTime() > 300_000) {
-        throw new TypeError("Commercial payment event occurrence exceeds clock tolerance.");
-      }
-
-      for (let attempt = 1; attempt <= 5; attempt += 1) {
-        try {
-          return await database.$transaction(
-            (transaction) => processInTransaction(transaction, input, reduce, parsed),
-            { isolationLevel: "Serializable" },
-          );
-        } catch (error) {
-          if (!isSerializationFailure(error) || attempt === 5) throw error;
-          await new Promise((resolve) => setTimeout(resolve, attempt * 5));
-        }
-      }
-      throw new CommercialPaymentEventPersistenceError("COMMERCIAL_PAYMENT_EVENT_UNAVAILABLE");
-    },
+    processCoinbaseSandboxEvent: (input, reduce) =>
+      processSandboxPaymentEvent(database, input, reduce, coinbasePaymentEventProfile),
+    processStripeSandboxEvent: (input, reduce) =>
+      processSandboxPaymentEvent(database, input, reduce, stripePaymentEventProfile),
   });

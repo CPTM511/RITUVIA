@@ -16,29 +16,32 @@ import {
 import {
   CommerceError,
   createMoney,
-  type CatalogEnvironment,
   type CatalogVersionV1,
-  type HostedCheckoutAdapter,
+  type HostedCryptoCheckoutAdapter,
 } from "@rituvia/payments";
+import {
+  coinbaseBusinessProviderId,
+  createCoinbaseBusinessHostedCheckoutAdapter,
+} from "@rituvia/payments/adapters/coinbase-business";
 
 import { getWebRuntimeConfiguration } from "../config/server";
 import { loadWebAccountIdentityService } from "./account-auth";
+import {
+  createRecoveryItem11CoinbaseBusinessGateway,
+  mapCoinbaseBusinessReconciliationResult,
+  mapCoinbaseBusinessVerifiedWebhookEvent,
+} from "./coinbase-business-gateway";
 import { WebCommerceError } from "./commerce";
 import { loadWebDatabase } from "./database";
-import {
-  loadWebPaymentProviderRegistry,
-  stripeHostedCheckoutProviderId,
-  WebPaymentProviderError,
-} from "./payment-provider";
 import { loadWebProductCatalogApplicationService } from "./product-catalog";
 
+const recoveryScope = "D-098:OWNER:item-11:protected-staging" as const;
 const idempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
-const productCodePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const boundedPathPattern = /^\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]{0,299}$/u;
+const checkoutRequestSchemaVersion = "coinbase-sandbox-checkout-request.v1";
 const sandboxCountryCode = "US";
 const sandboxCurrencyCode = "USD";
-const checkoutRequestSchemaVersion = "stripe-checkout-request.v1";
 
 type AccountGateway = Readonly<{
   getProfile(token: string): Promise<
@@ -52,67 +55,57 @@ type AccountGateway = Readonly<{
   resolveSession(token: string): Promise<Readonly<{ userId: string }> | null>;
 }>;
 
-export type StripeCheckoutApplicationDependencies = Readonly<{
+export type CoinbaseCheckoutApplicationDependencies = Readonly<{
   accounts: AccountGateway;
   canonicalOrigin: string;
   catalog: Readonly<{ readActive(): Promise<CatalogVersionV1> }>;
   clock(): string;
   countryPolicies: Readonly<{
-    read(
-      countryCode: string,
-      environment: CountryPolicyVersionV1["environment"],
-    ): Promise<readonly CountryPolicyVersionV1[]>;
+    read(countryCode: string, environment: "staging"): Promise<readonly CountryPolicyVersionV1[]>;
   }>;
-  environment: CatalogEnvironment;
-  providerAccountFingerprint: string;
-  paymentProvider: HostedCheckoutAdapter;
+  environment: "staging";
+  paymentProvider: HostedCryptoCheckoutAdapter;
   persistence: Pick<
     CommercialCheckoutPersistence,
-    "attachStripeCheckout" | "createOrReplayStripeCheckout"
+    "attachCoinbaseCheckout" | "createOrReplayCoinbaseCheckout"
   >;
+  providerAccountFingerprint: string;
+  recoveryScope: typeof recoveryScope;
 }>;
 
-export type WebStripeCheckout = Readonly<{
-  amountMinor: number;
+export type WebCoinbaseCheckout = Readonly<{
   checkoutUrl: string;
-  currencyCode: string;
   expiresAt: string;
   kind: "created" | "replayed";
+  networkCode: "base";
   orderId: string;
-  productCode: string;
+  productCode: "pack_6";
+  settlementAsset: "USDC";
   state: "checkout_created";
+  usdAmountMinor: number;
 }>;
-
-const exactKeys = (value: Record<string, unknown>, expected: readonly string[]): boolean => {
-  const actual = Object.keys(value).sort();
-  const sortedExpected = [...expected].sort();
-  return (
-    actual.length === sortedExpected.length &&
-    actual.every((key, index) => key === sortedExpected.at(index))
-  );
-};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const parseRequest = (
   value: unknown,
-): Readonly<{ cancelPath: string; productCode: string; successPath: string }> => {
+): Readonly<{ cancelPath: string; productCode: "pack_6"; successPath: string }> => {
   if (
     !isRecord(value) ||
-    !exactKeys(value, ["cancelPath", "productCode", "successPath"]) ||
+    Object.keys(value).sort().join("\0") !==
+      ["cancelPath", "productCode", "successPath"].sort().join("\0") ||
     typeof value.cancelPath !== "string" ||
-    typeof value.productCode !== "string" ||
-    typeof value.successPath !== "string" ||
     !boundedPathPattern.test(value.cancelPath) ||
-    !boundedPathPattern.test(value.successPath) ||
-    !productCodePattern.test(value.productCode)
+    value.productCode !== "pack_6" ||
+    typeof value.successPath !== "string" ||
+    !boundedPathPattern.test(value.successPath)
   ) {
     throw new WebCommerceError("input_invalid");
   }
   return Object.freeze({
     cancelPath: value.cancelPath,
-    productCode: value.productCode,
+    productCode: "pack_6" as const,
     successPath: value.successPath,
   });
 };
@@ -128,11 +121,12 @@ const sha256 = (value: string): Uint8Array<ArrayBuffer> =>
   new Uint8Array(createHash("sha256").update(value, "utf8").digest());
 
 const canonicalRequest = (
-  request: Readonly<{ cancelPath: string; productCode: string; successPath: string }>,
+  request: Readonly<{ cancelPath: string; productCode: "pack_6"; successPath: string }>,
 ): string =>
   JSON.stringify({
     cancelPath: request.cancelPath,
     productCode: request.productCode,
+    recoveryScope,
     schemaVersion: checkoutRequestSchemaVersion,
     successPath: request.successPath,
   });
@@ -150,11 +144,11 @@ const sandboxReturnUrl = (origin: string, path: string, orderId?: string): strin
     const canonicalOrigin = new URL(origin);
     if (
       canonicalOrigin.protocol !== "https:" ||
-      canonicalOrigin.username !== "" ||
-      canonicalOrigin.password !== "" ||
       canonicalOrigin.pathname !== "/" ||
       canonicalOrigin.search !== "" ||
-      canonicalOrigin.hash !== ""
+      canonicalOrigin.hash !== "" ||
+      canonicalOrigin.username !== "" ||
+      canonicalOrigin.password !== ""
     ) {
       throw new Error();
     }
@@ -174,80 +168,76 @@ const mapError = (error: unknown): never => {
       error.code === "COMMERCIAL_CHECKOUT_CONFLICT" ? "conflict" : "unavailable",
     );
   }
-  if (error instanceof WebPaymentProviderError || error instanceof CommerceError) {
+  if (error instanceof CommerceError || error instanceof TypeError) {
     throw new WebCommerceError("unavailable");
   }
   throw new WebCommerceError("unavailable");
 };
 
-export const createStripeCheckoutApplicationService = (
-  dependencies: StripeCheckoutApplicationDependencies,
+export const createCoinbaseCheckoutApplicationService = (
+  dependencies: CoinbaseCheckoutApplicationDependencies,
 ) => {
   if (
-    dependencies.environment === "production" ||
-    dependencies.paymentProvider.providerId !== stripeHostedCheckoutProviderId
+    dependencies.environment !== "staging" ||
+    dependencies.recoveryScope !== recoveryScope ||
+    dependencies.paymentProvider.providerId !== coinbaseBusinessProviderId
   ) {
     throw new WebCommerceError("unavailable");
   }
-
   return Object.freeze({
     async createCheckout(input: {
       idempotencyKey: unknown;
       request: unknown;
       sessionToken: string | undefined;
-    }): Promise<WebStripeCheckout> {
+    }): Promise<WebCoinbaseCheckout> {
       try {
         if (input.sessionToken === undefined) throw new WebCommerceError("session_required");
         const request = parseRequest(input.request);
         const idempotencyKey = parseIdempotencyKey(input.idempotencyKey);
         const now = requireInstant(dependencies.clock());
         const session = await dependencies.accounts.resolveSession(input.sessionToken);
-        if (session === null) {
-          throw new WebCommerceError("session_required");
-        }
+        if (session === null) throw new WebCommerceError("session_required");
         const profile = await dependencies.accounts.getProfile(input.sessionToken);
-        if (session.userId !== profile.id || profile.status !== "active") {
-          throw new WebCommerceError("session_required");
-        }
-        if (!profile.emailVerified || !profile.ageAttested) {
+        if (
+          session.userId !== profile.id ||
+          profile.status !== "active" ||
+          !profile.emailVerified ||
+          !profile.ageAttested
+        ) {
           throw new WebCommerceError("not_eligible");
         }
         const [catalog, policyVersions] = await Promise.all([
           dependencies.catalog.readActive(),
-          dependencies.countryPolicies.read(sandboxCountryCode, dependencies.environment),
+          dependencies.countryPolicies.read(sandboxCountryCode, "staging"),
         ]);
-
+        if (!catalog.version.startsWith("recovery.item11.")) {
+          throw new WebCommerceError("not_eligible");
+        }
         const product = catalog.products.find(
           (candidate) =>
-            candidate.code === request.productCode &&
+            candidate.code === "pack_6" &&
             candidate.status === "active" &&
-            ((candidate.kind === "credit_pack" &&
-              candidate.subscriptionInterval === null &&
-              candidate.creditsGranted !== null) ||
-              (candidate.kind === "plus_plan" &&
-                candidate.subscriptionInterval !== null &&
-                candidate.creditsPerMonth !== null)),
+            candidate.kind === "credit_pack" &&
+            candidate.subscriptionInterval === null &&
+            candidate.creditsGranted === 6 &&
+            candidate.creditsPerMonth === null,
         );
-        if (product === undefined) throw new WebCommerceError("not_eligible");
-        const creditsGranted = product.creditsGranted;
-        const creditsPerMonth = product.creditsPerMonth;
-        const billingInterval = product.subscriptionInterval ?? "one_time";
-        const prices = catalog.prices.filter(
+        const price = catalog.prices.find(
           (candidate) =>
+            product !== undefined &&
             candidate.status === "active" &&
             candidate.productCode === product.code &&
             candidate.productVersion === product.version &&
-            candidate.billingInterval === billingInterval &&
+            candidate.billingInterval === "one_time" &&
             candidate.currencyCode === sandboxCurrencyCode &&
             candidate.countryCodes.includes(sandboxCountryCode) &&
-            candidate.providerEligibility.includes("stripe") &&
+            candidate.providerEligibility.includes(coinbaseBusinessProviderId) &&
             Date.parse(candidate.effectiveFrom) <= Date.parse(now) &&
             (candidate.effectiveUntil === null ||
               Date.parse(now) < Date.parse(candidate.effectiveUntil)),
         );
-        const price = prices.at(0);
-        const localization = product.localizations.find(({ locale }) => locale === "en");
-        if (prices.length !== 1 || price === undefined || localization === undefined) {
+        const localization = product?.localizations.find(({ locale }) => locale === "en");
+        if (product === undefined || price === undefined || localization === undefined) {
           throw new WebCommerceError("not_eligible");
         }
 
@@ -262,20 +252,22 @@ export const createStripeCheckoutApplicationService = (
               geolocationCountryCode: null,
               localeCountryCode: null,
             },
-            environment: dependencies.environment,
+            environment: "staging",
             modality: "ritual",
             payment: {
-              currencyCode: sandboxCurrencyCode,
-              kind: "fiat",
-              method: "card",
-              providerId: stripeHostedCheckoutProviderId,
-              recurring: billingInterval !== "one_time",
+              currencyCode: "USDC",
+              kind: "crypto",
+              method: null,
+              providerId: coinbaseBusinessProviderId,
+              recurring: false,
             },
             productCode: product.code,
           },
           policyVersions,
         );
-        if (!policyDecision.allowed) throw new WebCommerceError("not_eligible");
+        if (!policyDecision.allowed || policyDecision.snapshot === null) {
+          throw new WebCommerceError("not_eligible");
+        }
         const policy = policyVersions.find(
           ({ version }) => version === policyDecision.snapshot.policyVersion,
         );
@@ -285,6 +277,7 @@ export const createStripeCheckoutApplicationService = (
         const termsDocument = terms.at(0);
         if (
           policy === undefined ||
+          !policy.version.startsWith("staging.us.coinbase-sandbox.item11.") ||
           policy.refundPolicyVersion !== price.refundPolicyVersion ||
           terms.length !== 1 ||
           termsDocument === undefined
@@ -292,33 +285,32 @@ export const createStripeCheckoutApplicationService = (
           throw new WebCommerceError("not_eligible");
         }
 
-        const canonical = canonicalRequest(request);
-        const prepared = await dependencies.persistence.createOrReplayStripeCheckout({
+        const prepared = await dependencies.persistence.createOrReplayCoinbaseCheckout({
           amountMinor: price.amountMinor,
-          billingInterval,
-          canonicalRequestHash: sha256(canonical),
+          billingInterval: "one_time",
+          canonicalRequestHash: sha256(canonicalRequest(request)),
           catalogVersion: catalog.version,
           countryCode: sandboxCountryCode,
-          countryPolicyVersion: policyDecision.snapshot.policyVersion,
+          countryPolicyVersion: policy.version,
           createdAt: now,
-          creditsGranted,
-          creditsPerMonth,
+          creditsGranted: 6,
+          creditsPerMonth: null,
           currencyCode: sandboxCurrencyCode,
           exactContents: localization.exactContents,
           fulfillmentCode: product.fulfillmentCode,
-          fulfillmentKind: product.kind === "credit_pack" ? "credit_pack" : "subscription",
+          fulfillmentKind: "credit_pack",
           idempotencyKeyHash: sha256(idempotencyKey),
           priceId: price.priceId,
           priceVersion: price.version,
           productCode: product.code,
           productVersion: product.version,
           providerAccountFingerprint: dependencies.providerAccountFingerprint,
-          provisionalExpiresAt: new Date(Date.parse(now) + 86_400_000).toISOString(),
+          provisionalExpiresAt: new Date(Date.parse(now) + 30 * 60 * 1_000).toISOString(),
+          recoveryScope,
           refundPolicyVersion: price.refundPolicyVersion,
           termsVersion: termsDocument.version,
           userId: session.userId,
         });
-
         if (
           prepared.checkout.state === "checkout_created" &&
           prepared.checkout.checkoutUrl !== null
@@ -327,40 +319,49 @@ export const createStripeCheckoutApplicationService = (
             throw new WebCommerceError("conflict");
           }
           return Object.freeze({
-            amountMinor: prepared.checkout.amountMinor,
             checkoutUrl: prepared.checkout.checkoutUrl,
-            currencyCode: prepared.checkout.currencyCode,
             expiresAt: prepared.checkout.checkoutExpiresAt,
-            kind: "replayed",
+            kind: "replayed" as const,
+            networkCode: "base" as const,
             orderId: prepared.checkout.orderId,
-            productCode: prepared.checkout.productCode,
-            state: "checkout_created",
+            productCode: "pack_6" as const,
+            settlementAsset: "USDC" as const,
+            state: "checkout_created" as const,
+            usdAmountMinor: prepared.checkout.amountMinor,
           });
         }
 
         const checkout = await dependencies.paymentProvider.createCheckout({
           accountId: session.userId,
-          amount: createMoney(prepared.checkout.amountMinor, prepared.checkout.currencyCode),
-          billingInterval,
+          amount: createMoney(prepared.checkout.amountMinor, sandboxCurrencyCode),
+          billingInterval: "one_time",
           cancelUrl: sandboxReturnUrl(dependencies.canonicalOrigin, request.cancelPath),
           countryCode: sandboxCountryCode,
           idempotencyKey: prepared.checkout.providerIdempotencyKey,
           orderId: prepared.checkout.orderId,
-          productCode: prepared.checkout.productCode,
+          productCode: "pack_6",
           productName: localization.title,
-          providerId: stripeHostedCheckoutProviderId,
+          providerId: coinbaseBusinessProviderId,
           returnUrl: sandboxReturnUrl(
             dependencies.canonicalOrigin,
             request.successPath,
             prepared.checkout.orderId,
           ),
         });
-        const attached = await dependencies.persistence.attachStripeCheckout({
+        if (
+          checkout.settlementQuote.usdAmount.amountMinor !== prepared.checkout.amountMinor ||
+          checkout.settlementQuote.assetCode !== "USDC" ||
+          checkout.settlementQuote.networkCode !== "base"
+        ) {
+          throw new WebCommerceError("unavailable");
+        }
+        const attached = await dependencies.persistence.attachCoinbaseCheckout({
           attachedAt: now,
           checkoutExpiresAt: checkout.expiresAt,
           checkoutId: checkout.checkoutId,
           checkoutUrl: checkout.url,
           orderId: prepared.checkout.orderId,
+          recoveryScope,
           userId: session.userId,
         });
         if (
@@ -371,14 +372,15 @@ export const createStripeCheckoutApplicationService = (
           throw new WebCommerceError("unavailable");
         }
         return Object.freeze({
-          amountMinor: attached.amountMinor,
           checkoutUrl: attached.checkoutUrl,
-          currencyCode: attached.currencyCode,
           expiresAt: attached.checkoutExpiresAt,
           kind: prepared.kind,
+          networkCode: "base" as const,
           orderId: attached.orderId,
-          productCode: attached.productCode,
-          state: "checkout_created",
+          productCode: "pack_6" as const,
+          settlementAsset: "USDC" as const,
+          state: "checkout_created" as const,
+          usdAmountMinor: attached.amountMinor,
         });
       } catch (error) {
         return mapError(error);
@@ -387,25 +389,34 @@ export const createStripeCheckoutApplicationService = (
   });
 };
 
-export type StripeCheckoutApplicationService = ReturnType<
-  typeof createStripeCheckoutApplicationService
+export type CoinbaseCheckoutApplicationService = ReturnType<
+  typeof createCoinbaseCheckoutApplicationService
 >;
 
-let service: StripeCheckoutApplicationService | undefined;
+let service: CoinbaseCheckoutApplicationService | undefined;
 
-export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplicationService => {
+export const loadWebCoinbaseCheckoutApplicationService = (): CoinbaseCheckoutApplicationService => {
   if (service !== undefined) return service;
   const configuration = getWebRuntimeConfiguration();
   if (
-    configuration.deploymentEnvironment === "production" ||
-    configuration.payment?.provider !== "stripe"
+    configuration.deploymentEnvironment !== "staging" ||
+    configuration.recoveryItem11Sandbox === undefined
   ) {
     throw new WebCommerceError("unavailable");
   }
   const accounts = loadWebAccountIdentityService();
-  const paymentProviders = loadWebPaymentProviderRegistry();
-  const paymentProvider = paymentProviders.get(stripeHostedCheckoutProviderId);
-  service = createStripeCheckoutApplicationService({
+  const coinbase = configuration.recoveryItem11Sandbox.coinbase;
+  const paymentProvider = createCoinbaseBusinessHostedCheckoutAdapter({
+    clock: () => new Date().toISOString(),
+    gateway: createRecoveryItem11CoinbaseBusinessGateway({
+      ...coinbase,
+      clock: () => new Date().toISOString(),
+      recoveryScope,
+    }),
+    mapReconciliationResult: mapCoinbaseBusinessReconciliationResult,
+    mapVerifiedWebhookEvent: mapCoinbaseBusinessVerifiedWebhookEvent,
+  });
+  service = createCoinbaseCheckoutApplicationService({
     accounts: {
       getProfile: (token) => accounts.getProfile(token),
       resolveSession: (token) => accounts.resolveSession(token),
@@ -415,17 +426,17 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
     clock: () => new Date().toISOString(),
     countryPolicies: {
       read: async (countryCode, environment) =>
-        (
-          await readCountryPolicyVersions(loadWebDatabase(), {
-            countryCode,
-            environment,
-          })
-        ).map((record) => parseCountryPolicyVersionV1(record.policyDocument)),
+        (await readCountryPolicyVersions(loadWebDatabase(), { countryCode, environment })).map(
+          (record) => parseCountryPolicyVersionV1(record.policyDocument),
+        ),
     },
-    environment: configuration.deploymentEnvironment,
-    providerAccountFingerprint: paymentProviders.accountFingerprint(stripeHostedCheckoutProviderId),
+    environment: "staging",
     paymentProvider,
     persistence: createCommercialCheckoutPersistence(loadWebDatabase()),
+    providerAccountFingerprint: `sha256:${createHash("sha256")
+      .update(coinbase.apiKeyId, "utf8")
+      .digest("hex")}`,
+    recoveryScope,
   });
   return service;
 };

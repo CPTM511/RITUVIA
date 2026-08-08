@@ -3,10 +3,20 @@ import type { Locale } from "./routing";
 export type CommerceMessages = Readonly<{
   recoveryCommerce: Readonly<{
     accountRequired: string;
+    aiAction: string;
+    aiConsumed: string;
+    aiError: string;
+    aiFallback: string;
+    aiIntroduction: string;
+    aiPending: string;
+    aiSafety: string;
+    aiSmallActionLabel: string;
+    aiTitle: string;
     billingEmpty: string;
     billingTitle: string;
     cancellationScheduled: string;
     checkout: string;
+    coinbaseCheckout: string;
     checkoutError: string;
     checkoutPending: string;
     creditsLabel: string;
@@ -83,11 +93,26 @@ export type CommerceMessages = Readonly<{
 
 const englishMessages = {
   recoveryCommerce: {
-    accountRequired: "Sign in to use Stripe Test Checkout or review private billing records.",
+    accountRequired:
+      "Sign in to use protected test checkout, synthetic Provider AI, or private billing records.",
+    aiAction: "Use 1 Credit for synthetic Provider AI",
+    aiConsumed: "One Credit was consumed after the structured result passed safety checks.",
+    aiError:
+      "The synthetic generation could not start. No new Provider AI request or Credit consumption was accepted.",
+    aiFallback:
+      "The provider result was not accepted. A deterministic safe fallback is shown and no Credit was consumed.",
+    aiIntroduction:
+      "Run one fixed synthetic Lantern reflection through Vercel AI Gateway. No private question or journal text is sent.",
+    aiPending: "Running the protected structured generation",
+    aiSafety:
+      "Protected Staging only · maximum 3 accepted generations per account each UTC day · 384 output tokens · no static AI key.",
+    aiSmallActionLabel: "Optional small action",
+    aiTitle: "Synthetic one-card Provider AI",
     billingEmpty: "No Plus subscription has been verified for this account.",
     billingTitle: "Billing and Credits",
     cancellationScheduled: "Cancellation is scheduled for the end of this paid period.",
     checkout: "Continue to Stripe Test Checkout",
+    coinbaseCheckout: "Continue to Coinbase USDC/Base Sandbox",
     checkoutError: "Test Checkout could not be created. Nothing was charged or granted.",
     checkoutPending: "Creating a protected Test Checkout",
     creditsLabel: "available Credits",
@@ -124,7 +149,7 @@ const englishMessages = {
     safetyNote:
       "Protected Staging only. Stripe Test Mode uses no real funds, creates no cash balance, and does not authorize production billing.",
     signIn: "Sign in",
-    stagingEyebrow: "Founder Acceptance · Item 10",
+    stagingEyebrow: "Founder Acceptance · Item 11",
     statusLabel: "Status",
     statusLabels: {
       active: "Active",

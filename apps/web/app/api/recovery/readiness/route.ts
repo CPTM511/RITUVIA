@@ -10,6 +10,7 @@ export const GET = () => {
     {
       baselineSha: status.baselineSha,
       controls: {
+        coinbaseSandbox: status.coinbaseSandbox,
         commerceSandbox: status.commerceSandbox,
         database: status.database,
         indexing: status.indexing,
@@ -17,6 +18,7 @@ export const GET = () => {
         nativeAstrology: status.nativeAstrology,
         numerologyEngine: status.numerologyEngine,
         objectStorage: status.objectStorage,
+        providerAi: status.providerAi,
         productionProviders: status.productionProviders,
         privacyControls: status.privacyControls,
         tarotCatalog: status.tarotCatalog,

@@ -178,7 +178,16 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
 const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>([
   [
     "@rituvia/web",
-    new Set(["@next/env", "next", "react", "react-dom", "server-only", "stripe", "viem"]),
+    new Set([
+      "@next/env",
+      "@vercel/oidc",
+      "next",
+      "react",
+      "react-dom",
+      "server-only",
+      "stripe",
+      "viem",
+    ]),
   ],
   ["@rituvia/worker", new Set(["@next/env"])],
   ["@rituvia/admin", new Set()],

@@ -54,6 +54,12 @@ export default defineConfig({
       "@rituvia/payments/adapters/local": fileURLToPath(
         new URL("./packages/payments/src/adapters/local-hosted-checkout.ts", import.meta.url),
       ),
+      "@rituvia/payments/adapters/coinbase-business": fileURLToPath(
+        new URL(
+          "./packages/payments/src/adapters/coinbase-business-hosted-checkout.ts",
+          import.meta.url,
+        ),
+      ),
       "@rituvia/payments/adapters/stripe": fileURLToPath(
         new URL("./packages/payments/src/adapters/stripe-hosted-checkout.ts", import.meta.url),
       ),
@@ -70,7 +76,7 @@ export default defineConfig({
   test: {
     include: [
       "tests/**/*.test.ts",
-      "apps/web/server/stripe-webhook.test.ts",
+      "apps/web/server/*.test.ts",
       "apps/web/test/**/*.test.ts",
       "apps/web/test/**/*.test.tsx",
       "apps/worker/test/**/*.test.ts",

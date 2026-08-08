@@ -278,6 +278,27 @@ describe("versioned country policy", () => {
     });
   });
 
+  it("accepts the exact Item 11 Coinbase sandbox approval only in staging", () => {
+    const staging = {
+      ...policy(),
+      approvalMode: "written" as const,
+      crypto: { assets: ["USDC"], enabled: true, providerRoute: "coinbase_usdc_base" },
+      environment: "staging" as const,
+      evidence: {
+        cryptoApprovalReference: "D-098:OWNER:item-11:coinbase-sandbox:2026-08-08",
+        fiatApprovalReference: "OWN-002:stripe-us",
+        legalReference: "D-098:protected-staging",
+        ownerReference: "D-098:OWNER:item-11",
+        providerReference: "coinbase-business:sandbox",
+      },
+      version: "staging.us.coinbase-sandbox.item11.v1",
+    };
+    expect(parseCountryPolicyVersionV1(staging).environment).toBe("staging");
+    expect(() => parseCountryPolicyVersionV1({ ...staging, environment: "production" })).toThrow(
+      "Country policy version is invalid.",
+    );
+  });
+
   it("accepts the D-098 Stripe Test approval only in protected staging", () => {
     const written = {
       ...policy(),

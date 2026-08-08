@@ -27,6 +27,7 @@ type Catalog = Readonly<{
   environment: string;
   prices: readonly CatalogPrice[];
   products: readonly CatalogProduct[];
+  version: string;
 }>;
 
 type Snapshot = Readonly<{
@@ -63,6 +64,19 @@ type Snapshot = Readonly<{
   }>[];
 }>;
 
+type AiResult = Readonly<{
+  creditConsumed: boolean;
+  kind: "fallback" | "generated";
+  output: Readonly<{
+    boundaryNote: string;
+    perspectives: readonly string[];
+    reflectionQuestions: readonly string[];
+    smallAction: Readonly<{ label: string; rationale: string }>;
+    summary: string;
+    title: string;
+  }>;
+}>;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -78,6 +92,7 @@ const parseCatalog = (value: unknown): Catalog => {
   if (
     !isRecord(value) ||
     value.environment !== "staging" ||
+    !isString(value.version) ||
     !Array.isArray(value.prices) ||
     !Array.isArray(value.products) ||
     !value.prices.every(
@@ -159,6 +174,27 @@ const parseSnapshot = (value: unknown): Snapshot => {
   return value as Snapshot;
 };
 
+const parseAiResult = (value: unknown): AiResult => {
+  if (
+    !isRecord(value) ||
+    typeof value.creditConsumed !== "boolean" ||
+    (value.kind !== "fallback" && value.kind !== "generated") ||
+    !isRecord(value.output) ||
+    !isString(value.output.boundaryNote) ||
+    !isStringArray(value.output.perspectives) ||
+    !isStringArray(value.output.reflectionQuestions) ||
+    !isRecord(value.output.smallAction) ||
+    !isString(value.output.smallAction.label) ||
+    !isString(value.output.smallAction.rationale) ||
+    !isString(value.output.summary) ||
+    !isString(value.output.title) ||
+    value.creditConsumed !== (value.kind === "generated")
+  ) {
+    throw new TypeError("Invalid protected-staging AI response.");
+  }
+  return value as AiResult;
+};
+
 const formatUsd = (amountMinor: number): string =>
   new Intl.NumberFormat("en", { currency: "USD", style: "currency" }).format(amountMinor / 100);
 
@@ -182,6 +218,8 @@ export function RecoveryPlans({
   signInHref,
 }: Readonly<{ messages: CommerceMessages["recoveryCommerce"]; signInHref: string }>) {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [aiResult, setAiResult] = useState<AiResult | null>(null);
+  const [aiState, setAiState] = useState<"error" | "idle" | "running">("idle");
   const [phase, setPhase] = useState<"error" | "loading" | "ready">("loading");
   const [signedIn, setSignedIn] = useState(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
@@ -218,11 +256,12 @@ export function RecoveryPlans({
   }, []);
 
   const checkout = useCallback(
-    async (productCode: string): Promise<void> => {
+    async (productCode: string, provider: "coinbase" | "stripe"): Promise<void> => {
       if (csrfToken.current === null || submitting !== null) return;
-      setSubmitting(productCode);
+      const submissionId = `${provider}:${productCode}`;
+      setSubmitting(submissionId);
       try {
-        const response = await fetch("/api/v1/checkout/stripe", {
+        const response = await fetch(`/api/v1/checkout/${provider}`, {
           body: JSON.stringify({
             cancelPath: "/en/plans",
             productCode,
@@ -241,7 +280,9 @@ export function RecoveryPlans({
           throw new TypeError();
         }
         const checkoutUrl = new URL(body.checkoutUrl);
-        if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== "checkout.stripe.com") {
+        const expectedHostname =
+          provider === "stripe" ? "checkout.stripe.com" : "payments.coinbase.com";
+        if (checkoutUrl.protocol !== "https:" || checkoutUrl.hostname !== expectedHostname) {
           throw new TypeError();
         }
         window.location.assign(checkoutUrl.toString());
@@ -252,8 +293,32 @@ export function RecoveryPlans({
     [submitting],
   );
 
+  const generateSyntheticInterpretation = useCallback(async (): Promise<void> => {
+    if (csrfToken.current === null || aiState === "running") return;
+    setAiState("running");
+    setAiResult(null);
+    try {
+      const response = await fetch("/api/v1/recovery/item-11/interpretation", {
+        body: "{}",
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json",
+          "idempotency-key": crypto.randomUUID(),
+          "x-csrf-token": csrfToken.current,
+        },
+        method: "POST",
+      });
+      if (!response.ok) throw new TypeError();
+      setAiResult(parseAiResult((await response.json()) as unknown));
+      setAiState("idle");
+    } catch {
+      setAiState("error");
+    }
+  }, [aiState]);
+
   const products =
     catalog?.products.filter(({ kind }) => kind === "credit_pack" || kind === "plus_plan") ?? [];
+  const item11Enabled = catalog?.version.startsWith("recovery.item11.") === true;
 
   return (
     <section aria-busy={phase === "loading"} className="golden-shell-container">
@@ -294,16 +359,70 @@ export function RecoveryPlans({
               <button
                 className="rvt-action rvt-action--primary"
                 disabled={!signedIn || submitting !== null}
-                onClick={() => void checkout(product.code)}
+                onClick={() => void checkout(product.code, "stripe")}
                 type="button"
               >
-                {submitting === product.code ? messages.checkoutPending : messages.checkout}
+                {submitting === `stripe:${product.code}`
+                  ? messages.checkoutPending
+                  : messages.checkout}
               </button>
+              {item11Enabled && product.code === "pack_6" ? (
+                <button
+                  className="rvt-action"
+                  disabled={!signedIn || submitting !== null}
+                  onClick={() => void checkout(product.code, "coinbase")}
+                  type="button"
+                >
+                  {submitting === `coinbase:${product.code}`
+                    ? messages.checkoutPending
+                    : messages.coinbaseCheckout}
+                </button>
+              ) : null}
             </article>
           );
         })}
       </div>
       {submitting === "error" ? <p role="alert">{messages.checkoutError}</p> : null}
+      {item11Enabled ? (
+        <article className="golden-value-card">
+          <p className="eyebrow">{messages.stagingEyebrow}</p>
+          <h2>{messages.aiTitle}</h2>
+          <p>{messages.aiIntroduction}</p>
+          <p className="privacy-note">{messages.aiSafety}</p>
+          <button
+            className="rvt-action rvt-action--primary"
+            disabled={!signedIn || aiState === "running"}
+            onClick={() => void generateSyntheticInterpretation()}
+            type="button"
+          >
+            {aiState === "running" ? messages.aiPending : messages.aiAction}
+          </button>
+          {aiState === "error" ? <p role="alert">{messages.aiError}</p> : null}
+          {aiResult !== null ? (
+            <section aria-live="polite">
+              <p className="privacy-note">
+                {aiResult.creditConsumed ? messages.aiConsumed : messages.aiFallback}
+              </p>
+              <h3>{aiResult.output.title}</h3>
+              <p>{aiResult.output.summary}</p>
+              {aiResult.output.perspectives.map((perspective) => (
+                <p key={perspective}>{perspective}</p>
+              ))}
+              <ul>
+                {aiResult.output.reflectionQuestions.map((question) => (
+                  <li key={question}>{question}</li>
+                ))}
+              </ul>
+              <h3>{messages.aiSmallActionLabel}</h3>
+              <p>
+                <strong>{aiResult.output.smallAction.label}</strong>{" "}
+                {aiResult.output.smallAction.rationale}
+              </p>
+              <p className="privacy-note">{aiResult.output.boundaryNote}</p>
+            </section>
+          ) : null}
+        </article>
+      ) : null}
     </section>
   );
 }

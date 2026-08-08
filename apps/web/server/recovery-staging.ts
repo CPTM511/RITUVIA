@@ -15,7 +15,7 @@ export const approvedRecoveryBaselineSha = "f79fee6713670fdc12b33dd3182569a94278
 
 const embeddedBuildSourceSha = resolveRecoverySourceRevision(process.env);
 const forbiddenServiceEnvironmentPattern =
-  /^(?:AI_|ANTHROPIC_|AWS_|BLOB_|COINBASE_|EMAIL_|GOOGLE_|KMS_|KV_|OPENAI_|PAYMENT_WEBHOOK_DATABASE_URL$|POSTGRES_|PRIVACY_DELETION_DATABASE_URL$|REDIS_|RESEND_|RITUVIA_(?:ACCOUNT|ASTROLOGY|AUTH|LOCAL_CHECKOUT|PAYMENT|PRIVACY|STRIPE)|S3_|SMTP_|STRIPE_)/u;
+  /^(?:AI_|ANTHROPIC_|AWS_|BLOB_|COINBASE_|EMAIL_|GOOGLE_|KMS_|KV_|OPENAI_|PAYMENT_WEBHOOK_DATABASE_URL$|POSTGRES_|PRIVACY_DELETION_DATABASE_URL$|REDIS_|RESEND_|RITUVIA_(?:ACCOUNT|AI|ASTROLOGY|AUTH|COINBASE|LOCAL_CHECKOUT|PAYMENT|PRIVACY|RECOVERY_ITEM_11|STRIPE)|S3_|SMTP_|STRIPE_)/u;
 const allowedRecoveryAstrologyEnvironment = "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH";
 const allowedRecoveryIdentityEnvironment = new Set([
   "PRIVACY_DELETION_DATABASE_URL",
@@ -44,9 +44,23 @@ const allowedRecoveryCommerceEnvironment = new Set([
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ]);
+const allowedRecoveryItem11Environment = new Set([
+  "AI_GENERATION_DATABASE_URL",
+  "RITUVIA_AI_DAILY_USER_LIMIT",
+  "RITUVIA_AI_GATEWAY_MODEL",
+  "RITUVIA_AI_GENERATION_ROLE_PASSWORD",
+  "RITUVIA_AI_MAX_COST_MICROS",
+  "RITUVIA_AI_MAX_OUTPUT_TOKENS",
+  "RITUVIA_AI_TIMEOUT_MS",
+  "RITUVIA_COINBASE_API_KEY_ID",
+  "RITUVIA_COINBASE_API_KEY_SECRET",
+  "RITUVIA_COINBASE_WEBHOOK_SECRET",
+  "RITUVIA_RECOVERY_ITEM_11_SANDBOX",
+]);
 
 export type RecoveryStagingRuntimeStatus = Readonly<{
   baselineSha: typeof approvedRecoveryBaselineSha;
+  coinbaseSandbox: "disabled" | "enabled";
   database: "connected" | "not-connected";
   commerceSandbox: "disabled" | "enabled";
   environment: "staging";
@@ -55,10 +69,11 @@ export type RecoveryStagingRuntimeStatus = Readonly<{
   nativeAstrology: "disabled" | "enabled";
   numerologyEngine: "enabled";
   objectStorage: "not-connected";
+  providerAi: "disabled" | "enabled";
   productionProviders: "disabled";
   privacyControls: "disabled" | "enabled";
   ready: boolean;
-  recoveryItem: 10;
+  recoveryItem: 11;
   sourceSha: string;
   tarotCatalog: "disabled" | "enabled";
   timeZoneRuntime: "invalid" | "pinned";
@@ -73,6 +88,7 @@ const hasForbiddenServiceEnvironment = (environment: RawEnvironment): boolean =>
       key !== allowedRecoveryAstrologyEnvironment &&
       !allowedRecoveryIdentityEnvironment.has(key) &&
       !allowedRecoveryCommerceEnvironment.has(key) &&
+      !allowedRecoveryItem11Environment.has(key) &&
       forbiddenServiceEnvironmentPattern.test(key),
   );
 
@@ -103,6 +119,9 @@ export const inspectRecoveryStagingRuntime = (
     configuration.recoveryCommerceSandbox !== undefined &&
     configuration.payment?.provider === "stripe" &&
     configuration.paymentWebhookDatabaseUrl !== undefined;
+  const item11Sandbox =
+    configuration.recoveryItem11Sandbox !== undefined &&
+    configuration.aiGenerationDatabaseUrl !== undefined;
   const coreLoopConfigured =
     databaseConnected &&
     configuration.anonymousSessionPolicy !== undefined &&
@@ -113,6 +132,7 @@ export const inspectRecoveryStagingRuntime = (
 
   return Object.freeze({
     baselineSha: approvedRecoveryBaselineSha,
+    coinbaseSandbox: item11Sandbox ? "enabled" : "disabled",
     database: databaseConnected ? "connected" : "not-connected",
     commerceSandbox: commerceSandbox ? "enabled" : "disabled",
     environment: "staging",
@@ -121,6 +141,7 @@ export const inspectRecoveryStagingRuntime = (
     nativeAstrology,
     numerologyEngine: "enabled",
     objectStorage: "not-connected",
+    providerAi: item11Sandbox ? "enabled" : "disabled",
     productionProviders: "disabled",
     privacyControls: privacyControls ? "enabled" : "disabled",
     ready:
@@ -133,8 +154,9 @@ export const inspectRecoveryStagingRuntime = (
       timeZoneRuntime === "pinned" &&
       identitySandbox &&
       privacyControls &&
-      commerceSandbox,
-    recoveryItem: 10,
+      commerceSandbox &&
+      item11Sandbox,
+    recoveryItem: 11,
     sourceSha: sourceIdentityValid ? sourceSha : "unavailable",
     tarotCatalog,
     timeZoneRuntime,

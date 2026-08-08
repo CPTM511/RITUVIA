@@ -442,7 +442,11 @@ export const parseCountryPolicyVersionV1 = (value: unknown): CountryPolicyVersio
     (!fiat.enabled && evidence.fiatApprovalReference !== null) ||
     (crypto.enabled &&
       value.environment !== "local" &&
-      !evidence.cryptoApprovalReference?.startsWith("OWN-006:")) ||
+      !evidence.cryptoApprovalReference?.startsWith("OWN-006:") &&
+      !(
+        value.environment === "staging" &&
+        evidence.cryptoApprovalReference?.startsWith("D-098:OWNER:item-11:coinbase-sandbox:")
+      )) ||
     (fiat.enabled &&
       value.environment !== "local" &&
       !evidence.fiatApprovalReference?.startsWith("OWN-002:") &&

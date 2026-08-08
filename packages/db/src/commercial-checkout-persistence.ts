@@ -7,8 +7,32 @@ const checkoutResourcePattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,254}$/u;
 const countryPattern = /^[A-Z]{2}$/u;
 const currencyPattern = /^[A-Z]{3}$/u;
 const maximumMinorAmount = 2_147_483_647;
-const idempotencyKeyVersion = "stripe.checkout.api.v1";
-const providerIdempotencyKeyVersion = "stripe.checkout.provider.v1";
+type CommercialHostedCheckoutProvider = "coinbase_usdc_base" | "stripe";
+type CheckoutProfile = Readonly<{
+  apiIdempotencyKeyVersion: string;
+  expectedAsset: "USDC" | null;
+  expectedNetwork: "base" | null;
+  provider: CommercialHostedCheckoutProvider;
+  providerIdempotencyKeyVersion: string;
+  recoveryScope: "D-098:OWNER:item-11:protected-staging" | null;
+}>;
+
+const stripeCheckoutProfile: CheckoutProfile = Object.freeze({
+  apiIdempotencyKeyVersion: "stripe.checkout.api.v1",
+  expectedAsset: null,
+  expectedNetwork: null,
+  provider: "stripe",
+  providerIdempotencyKeyVersion: "stripe.checkout.provider.v1",
+  recoveryScope: null,
+});
+const coinbaseCheckoutProfile: CheckoutProfile = Object.freeze({
+  apiIdempotencyKeyVersion: "coinbase.checkout.api.v1",
+  expectedAsset: "USDC",
+  expectedNetwork: "base",
+  provider: "coinbase_usdc_base",
+  providerIdempotencyKeyVersion: "coinbase.checkout.provider.v1",
+  recoveryScope: "D-098:OWNER:item-11:protected-staging",
+});
 
 export const commercialCheckoutPersistenceErrorCodes = Object.freeze([
   "COMMERCIAL_CHECKOUT_CONFLICT",
@@ -54,6 +78,9 @@ export type PreparedCommercialStripeCheckout = Readonly<{
   userId: string;
 }>;
 
+export type PreparedCommercialCoinbaseCheckout = PreparedCommercialStripeCheckout &
+  Readonly<{ recoveryScope: "D-098:OWNER:item-11:protected-staging" }>;
+
 export type PersistedCommercialStripeCheckout = Readonly<{
   amountMinor: number;
   checkoutExpiresAt: string;
@@ -76,11 +103,23 @@ export type PreparedCommercialCheckoutAttachment = Readonly<{
   userId: string;
 }>;
 
+export type PreparedCommercialCoinbaseCheckoutAttachment = PreparedCommercialCheckoutAttachment &
+  Readonly<{ recoveryScope: "D-098:OWNER:item-11:protected-staging" }>;
+
 export type CommercialCheckoutPersistence = Readonly<{
+  attachCoinbaseCheckout(
+    input: PreparedCommercialCoinbaseCheckoutAttachment,
+  ): Promise<PersistedCommercialStripeCheckout>;
   attachStripeCheckout(
     input: PreparedCommercialCheckoutAttachment,
   ): Promise<PersistedCommercialStripeCheckout>;
   createOrReplayStripeCheckout(input: PreparedCommercialStripeCheckout): Promise<
+    Readonly<{
+      checkout: PersistedCommercialStripeCheckout;
+      kind: "created" | "replayed";
+    }>
+  >;
+  createOrReplayCoinbaseCheckout(input: PreparedCommercialCoinbaseCheckout): Promise<
     Readonly<{
       checkout: PersistedCommercialStripeCheckout;
       kind: "created" | "replayed";
@@ -96,6 +135,8 @@ type CheckoutRecord = Readonly<{
     expiresAt: Date;
     idempotencyKeyHash: Uint8Array;
     idempotencyKeyVersion: string;
+    expectedAsset: string | null;
+    expectedNetwork: string | null;
     provider: string;
     providerAccountFingerprint: string | null;
     providerCheckoutId: string | null;
@@ -108,6 +149,7 @@ type CheckoutRecord = Readonly<{
   order: Readonly<{
     canonicalRequestHash: Uint8Array;
     countryCode: string;
+    countryPolicyVersion: string;
     currencyCode: string;
     id: string;
     publicId: string;
@@ -163,7 +205,8 @@ const sha256 = async (value: string): Promise<Uint8Array<ArrayBuffer>> =>
     await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)),
   ) as Uint8Array<ArrayBuffer>;
 
-const providerIdempotencyKey = (orderId: string): string => `stripe:${orderId}:1`;
+const providerIdempotencyKey = (profile: CheckoutProfile, orderId: string): string =>
+  profile.provider === "stripe" ? `stripe:${orderId}:1` : orderId;
 
 const requireMoney = (amountMinor: number, currencyCode: string): void => {
   if (
@@ -219,6 +262,7 @@ const requireCheckoutId = (value: string): string => {
 
 const readCheckoutRecord = async (
   database: Prisma.TransactionClient | PrismaClient,
+  profile: CheckoutProfile,
   input:
     | Readonly<{ idempotencyKeyHash: Uint8Array<ArrayBuffer>; userId: string }>
     | Readonly<{ orderId: string; userId: string }>,
@@ -231,7 +275,7 @@ const readCheckoutRecord = async (
       : await database.commercialOrderV2.findFirst({
           where: {
             idempotencyKeyHash: input.idempotencyKeyHash,
-            idempotencyKeyVersion,
+            idempotencyKeyVersion: profile.apiIdempotencyKeyVersion,
             userId: input.userId,
           },
         });
@@ -253,20 +297,27 @@ const readCheckoutRecord = async (
   return Object.freeze({ attempt, item, order });
 };
 
-const mapCheckout = async (record: CheckoutRecord): Promise<PersistedCommercialStripeCheckout> => {
+const mapCheckout = async (
+  record: CheckoutRecord,
+  profile: CheckoutProfile,
+): Promise<PersistedCommercialStripeCheckout> => {
   if (
     record.order.userId.length === 0 ||
     record.order.totalMinor !== record.attempt.amountMinor ||
     record.order.currencyCode !== record.attempt.currencyCode ||
-    record.attempt.provider !== "stripe" ||
+    record.attempt.provider !== profile.provider ||
     record.attempt.providerAccountFingerprint === null ||
-    record.attempt.idempotencyKeyVersion !== providerIdempotencyKeyVersion ||
+    record.attempt.idempotencyKeyVersion !== profile.providerIdempotencyKeyVersion ||
+    record.attempt.expectedNetwork !== profile.expectedNetwork ||
+    record.attempt.expectedAsset !== profile.expectedAsset ||
+    (profile.provider === "coinbase_usdc_base" &&
+      !record.order.countryPolicyVersion.startsWith("staging.us.coinbase-sandbox.item11.")) ||
     !["created", "checkout_created"].includes(record.order.status) ||
     record.order.status !== record.attempt.state
   ) {
     throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");
   }
-  const expectedProviderKey = providerIdempotencyKey(record.order.publicId);
+  const expectedProviderKey = providerIdempotencyKey(profile, record.order.publicId);
   if (
     !digestsEqual(record.attempt.idempotencyKeyHash, await sha256(expectedProviderKey)) ||
     !digestsEqual(record.attempt.canonicalRequestHash, record.order.canonicalRequestHash)
@@ -301,229 +352,263 @@ const isRetryableCreationConflict = (error: unknown): boolean =>
 
 export const createCommercialCheckoutPersistence = (
   database: PrismaClient,
-): CommercialCheckoutPersistence =>
-  Object.freeze({
-    async createOrReplayStripeCheckout(input) {
-      requireUuid(input.userId);
-      requireMoney(input.amountMinor, input.currencyCode);
-      if (!countryPattern.test(input.countryCode)) {
-        throw new TypeError("Commercial checkout country is invalid.");
-      }
-      const canonicalRequestHash = requireDigest(input.canonicalRequestHash);
-      const idempotencyKeyHash = requireDigest(input.idempotencyKeyHash);
-      const createdAt = requireInstant(input.createdAt);
-      const provisionalExpiresAt = requireInstant(input.provisionalExpiresAt);
-      if (provisionalExpiresAt.getTime() <= createdAt.getTime()) {
-        throw new TypeError("Commercial checkout expiry is invalid.");
-      }
-      const exactContents = requireContents(input.exactContents);
-      const validCreditPack =
-        input.fulfillmentKind === "credit_pack" &&
-        input.billingInterval === "one_time" &&
-        Number.isSafeInteger(input.creditsGranted) &&
-        (input.creditsGranted ?? 0) > 0 &&
-        input.creditsPerMonth === null;
-      const validSubscription =
-        input.fulfillmentKind === "subscription" &&
-        ["month", "year"].includes(input.billingInterval) &&
-        input.creditsGranted === null &&
-        Number.isSafeInteger(input.creditsPerMonth) &&
-        (input.creditsPerMonth ?? 0) > 0;
-      if (!validCreditPack && !validSubscription) {
-        throw new TypeError("Commercial checkout fulfillment is invalid.");
-      }
-      for (const reference of [
-        input.catalogVersion,
-        input.countryPolicyVersion,
-        input.priceId,
-        input.priceVersion,
-        input.productVersion,
-        input.refundPolicyVersion,
-        input.termsVersion,
-      ]) {
-        requireResource(reference);
-      }
-      requireResource(input.providerAccountFingerprint);
-      requireIdentifier(input.productCode);
-      requireIdentifier(input.fulfillmentCode);
+): CommercialCheckoutPersistence => {
+  const createOrReplayCheckout = async (
+    input: PreparedCommercialStripeCheckout | PreparedCommercialCoinbaseCheckout,
+    profile: CheckoutProfile,
+  ) => {
+    if (
+      profile.provider === "coinbase_usdc_base" &&
+      (profile.recoveryScope === null ||
+        !("recoveryScope" in input) ||
+        input.recoveryScope !== profile.recoveryScope ||
+        !input.countryPolicyVersion.startsWith("staging.us.coinbase-sandbox.item11.") ||
+        input.fulfillmentKind !== "credit_pack" ||
+        input.billingInterval !== "one_time")
+    ) {
+      throw new TypeError("Commercial checkout recovery scope is invalid.");
+    }
+    requireUuid(input.userId);
+    requireMoney(input.amountMinor, input.currencyCode);
+    if (!countryPattern.test(input.countryCode)) {
+      throw new TypeError("Commercial checkout country is invalid.");
+    }
+    const canonicalRequestHash = requireDigest(input.canonicalRequestHash);
+    const idempotencyKeyHash = requireDigest(input.idempotencyKeyHash);
+    const createdAt = requireInstant(input.createdAt);
+    const provisionalExpiresAt = requireInstant(input.provisionalExpiresAt);
+    if (provisionalExpiresAt.getTime() <= createdAt.getTime()) {
+      throw new TypeError("Commercial checkout expiry is invalid.");
+    }
+    const exactContents = requireContents(input.exactContents);
+    const validCreditPack =
+      input.fulfillmentKind === "credit_pack" &&
+      input.billingInterval === "one_time" &&
+      Number.isSafeInteger(input.creditsGranted) &&
+      (input.creditsGranted ?? 0) > 0 &&
+      input.creditsPerMonth === null;
+    const validSubscription =
+      input.fulfillmentKind === "subscription" &&
+      ["month", "year"].includes(input.billingInterval) &&
+      input.creditsGranted === null &&
+      Number.isSafeInteger(input.creditsPerMonth) &&
+      (input.creditsPerMonth ?? 0) > 0;
+    if (!validCreditPack && !validSubscription) {
+      throw new TypeError("Commercial checkout fulfillment is invalid.");
+    }
+    for (const reference of [
+      input.catalogVersion,
+      input.countryPolicyVersion,
+      input.priceId,
+      input.priceVersion,
+      input.productVersion,
+      input.refundPolicyVersion,
+      input.termsVersion,
+    ]) {
+      requireResource(reference);
+    }
+    requireResource(input.providerAccountFingerprint);
+    requireIdentifier(input.productCode);
+    requireIdentifier(input.fulfillmentCode);
 
-      const existing = await readCheckoutRecord(database, {
-        idempotencyKeyHash,
-        userId: input.userId,
+    const existing = await readCheckoutRecord(database, profile, {
+      idempotencyKeyHash,
+      userId: input.userId,
+    });
+    if (existing !== null) {
+      if (
+        !digestsEqual(existing.order.canonicalRequestHash, canonicalRequestHash) ||
+        existing.attempt.providerAccountFingerprint !== input.providerAccountFingerprint
+      ) {
+        throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
+      }
+      return Object.freeze({
+        checkout: await mapCheckout(existing, profile),
+        kind: "replayed" as const,
       });
-      if (existing !== null) {
-        if (
-          !digestsEqual(existing.order.canonicalRequestHash, canonicalRequestHash) ||
-          existing.attempt.providerAccountFingerprint !== input.providerAccountFingerprint
-        ) {
-          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
-        }
-        return Object.freeze({
-          checkout: await mapCheckout(existing),
-          kind: "replayed" as const,
-        });
-      }
+    }
 
-      try {
-        const created = await database.$transaction(
-          async (transaction) => {
-            const order = await transaction.commercialOrderV2.create({
+    try {
+      const created = await database.$transaction(
+        async (transaction) => {
+          const order = await transaction.commercialOrderV2.create({
+            data: {
+              canonicalRequestHash,
+              catalogVersion: input.catalogVersion,
+              countryCode: input.countryCode,
+              countryPolicyVersion: input.countryPolicyVersion,
+              createdAt,
+              currencyCode: input.currencyCode,
+              idempotencyKeyHash,
+              idempotencyKeyVersion: profile.apiIdempotencyKeyVersion,
+              priceId: input.priceId,
+              priceVersion: input.priceVersion,
+              refundPolicyVersion: input.refundPolicyVersion,
+              status: "created",
+              subtotalMinor: input.amountMinor,
+              taxMinor: 0,
+              termsVersion: input.termsVersion,
+              totalMinor: input.amountMinor,
+              updatedAt: createdAt,
+              userId: input.userId,
+            },
+          });
+          const providerKey = providerIdempotencyKey(profile, order.publicId);
+          const [item, attempt] = await Promise.all([
+            transaction.commercialOrderItemV2.create({
               data: {
-                canonicalRequestHash,
                 catalogVersion: input.catalogVersion,
-                countryCode: input.countryCode,
-                countryPolicyVersion: input.countryPolicyVersion,
+                creditsGranted: input.creditsGranted,
+                creditsPerMonth: input.creditsPerMonth,
+                exactContentsSnapshot: [...exactContents],
+                fulfillmentCode: input.fulfillmentCode,
+                fulfillmentKind: input.fulfillmentKind,
+                orderId: order.id,
+                productCode: input.productCode,
+                productVersion: input.productVersion,
+                quantity: 1,
+                totalMinor: input.amountMinor,
+                unitAmountMinor: input.amountMinor,
+              },
+            }),
+            transaction.commercialPaymentAttemptV2.create({
+              data: {
+                amountMinor: input.amountMinor,
+                attemptNumber: 1,
+                canonicalRequestHash,
                 createdAt,
                 currencyCode: input.currencyCode,
-                idempotencyKeyHash,
-                idempotencyKeyVersion,
-                priceId: input.priceId,
-                priceVersion: input.priceVersion,
-                refundPolicyVersion: input.refundPolicyVersion,
-                status: "created",
-                subtotalMinor: input.amountMinor,
-                taxMinor: 0,
-                termsVersion: input.termsVersion,
-                totalMinor: input.amountMinor,
+                environment: "sandbox",
+                expiresAt: provisionalExpiresAt,
+                idempotencyKeyHash: await sha256(providerKey),
+                expectedAsset: profile.expectedAsset,
+                expectedNetwork: profile.expectedNetwork,
+                idempotencyKeyVersion: profile.providerIdempotencyKeyVersion,
+                orderId: order.id,
+                provider: profile.provider,
+                providerAccountFingerprint: input.providerAccountFingerprint,
+                state: "created",
                 updatedAt: createdAt,
-                userId: input.userId,
               },
-            });
-            const providerKey = providerIdempotencyKey(order.publicId);
-            const [item, attempt] = await Promise.all([
-              transaction.commercialOrderItemV2.create({
-                data: {
-                  catalogVersion: input.catalogVersion,
-                  creditsGranted: input.creditsGranted,
-                  creditsPerMonth: input.creditsPerMonth,
-                  exactContentsSnapshot: [...exactContents],
-                  fulfillmentCode: input.fulfillmentCode,
-                  fulfillmentKind: input.fulfillmentKind,
-                  orderId: order.id,
-                  productCode: input.productCode,
-                  productVersion: input.productVersion,
-                  quantity: 1,
-                  totalMinor: input.amountMinor,
-                  unitAmountMinor: input.amountMinor,
-                },
-              }),
-              transaction.commercialPaymentAttemptV2.create({
-                data: {
-                  amountMinor: input.amountMinor,
-                  attemptNumber: 1,
-                  canonicalRequestHash,
-                  createdAt,
-                  currencyCode: input.currencyCode,
-                  environment: "sandbox",
-                  expiresAt: provisionalExpiresAt,
-                  idempotencyKeyHash: await sha256(providerKey),
-                  idempotencyKeyVersion: providerIdempotencyKeyVersion,
-                  orderId: order.id,
-                  provider: "stripe",
-                  providerAccountFingerprint: input.providerAccountFingerprint,
-                  state: "created",
-                  updatedAt: createdAt,
-                },
-              }),
-            ]);
-            return Object.freeze({ attempt, item, order });
-          },
-          { isolationLevel: "Serializable" },
-        );
-        return Object.freeze({
-          checkout: await mapCheckout(created),
-          kind: "created" as const,
-        });
-      } catch (error) {
-        if (!isRetryableCreationConflict(error)) throw error;
-        const winner = await readCheckoutRecord(database, {
-          idempotencyKeyHash,
-          userId: input.userId,
-        });
-        if (winner === null) {
-          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");
-        }
-        if (!digestsEqual(winner.order.canonicalRequestHash, canonicalRequestHash)) {
-          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
-        }
-        return Object.freeze({
-          checkout: await mapCheckout(winner),
-          kind: "replayed" as const,
-        });
-      }
-    },
-
-    async attachStripeCheckout(input) {
-      requireUuid(input.userId);
-      requireUuid(input.orderId);
-      const attachedAt = requireInstant(input.attachedAt);
-      const checkoutExpiresAt = requireInstant(input.checkoutExpiresAt);
-      if (checkoutExpiresAt.getTime() <= attachedAt.getTime()) {
-        throw new TypeError("Commercial checkout expiry is invalid.");
-      }
-      const checkoutId = requireCheckoutId(input.checkoutId);
-      const checkoutUrl = requireHttpsCheckoutUrl(input.checkoutUrl);
-
-      return database.$transaction(
-        async (transaction) => {
-          const current = await readCheckoutRecord(transaction, {
-            orderId: input.orderId,
-            userId: input.userId,
-          });
-          if (current === null) {
-            throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_NOT_FOUND");
-          }
-          if (current.order.status === "checkout_created") {
-            if (
-              current.attempt.providerCheckoutId === checkoutId &&
-              current.attempt.providerCheckoutUrl === checkoutUrl &&
-              current.attempt.expiresAt.getTime() === checkoutExpiresAt.getTime()
-            ) {
-              return mapCheckout(current);
-            }
-            throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
-          }
-          if (
-            current.order.status !== "created" ||
-            current.attempt.state !== "created" ||
-            current.attempt.providerCheckoutId !== null ||
-            current.attempt.providerCheckoutUrl !== null
-          ) {
-            throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
-          }
-          const attemptUpdate = await transaction.commercialPaymentAttemptV2.updateMany({
-            data: {
-              expiresAt: checkoutExpiresAt,
-              providerCheckoutId: checkoutId,
-              providerCheckoutUrl: checkoutUrl,
-              state: "checkout_created",
-              updatedAt: attachedAt,
-            },
-            where: {
-              attemptNumber: 1,
-              orderId: current.order.id,
-              providerCheckoutId: null,
-              providerCheckoutUrl: null,
-              state: "created",
-            },
-          });
-          const orderUpdate = await transaction.commercialOrderV2.updateMany({
-            data: { status: "checkout_created", updatedAt: attachedAt },
-            where: { id: current.order.id, status: "created" },
-          });
-          if (attemptUpdate.count !== 1 || orderUpdate.count !== 1) {
-            throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
-          }
-          const attached = await readCheckoutRecord(transaction, {
-            orderId: input.orderId,
-            userId: input.userId,
-          });
-          if (attached === null) {
-            throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");
-          }
-          return mapCheckout(attached);
+            }),
+          ]);
+          return Object.freeze({ attempt, item, order });
         },
         { isolationLevel: "Serializable" },
       );
-    },
+      return Object.freeze({
+        checkout: await mapCheckout(created, profile),
+        kind: "created" as const,
+      });
+    } catch (error) {
+      if (!isRetryableCreationConflict(error)) throw error;
+      const winner = await readCheckoutRecord(database, profile, {
+        idempotencyKeyHash,
+        userId: input.userId,
+      });
+      if (winner === null) {
+        throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");
+      }
+      if (!digestsEqual(winner.order.canonicalRequestHash, canonicalRequestHash)) {
+        throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
+      }
+      return Object.freeze({
+        checkout: await mapCheckout(winner, profile),
+        kind: "replayed" as const,
+      });
+    }
+  };
+
+  const attachCheckout = async (
+    input: PreparedCommercialCheckoutAttachment | PreparedCommercialCoinbaseCheckoutAttachment,
+    profile: CheckoutProfile,
+  ) => {
+    if (
+      profile.provider === "coinbase_usdc_base" &&
+      (profile.recoveryScope === null ||
+        !("recoveryScope" in input) ||
+        input.recoveryScope !== profile.recoveryScope)
+    ) {
+      throw new TypeError("Commercial checkout recovery scope is invalid.");
+    }
+    requireUuid(input.userId);
+    requireUuid(input.orderId);
+    const attachedAt = requireInstant(input.attachedAt);
+    const checkoutExpiresAt = requireInstant(input.checkoutExpiresAt);
+    if (checkoutExpiresAt.getTime() <= attachedAt.getTime()) {
+      throw new TypeError("Commercial checkout expiry is invalid.");
+    }
+    const checkoutId = requireCheckoutId(input.checkoutId);
+    const checkoutUrl = requireHttpsCheckoutUrl(input.checkoutUrl);
+
+    return database.$transaction(
+      async (transaction) => {
+        const current = await readCheckoutRecord(transaction, profile, {
+          orderId: input.orderId,
+          userId: input.userId,
+        });
+        if (current === null) {
+          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_NOT_FOUND");
+        }
+        if (current.order.status === "checkout_created") {
+          if (
+            current.attempt.providerCheckoutId === checkoutId &&
+            current.attempt.providerCheckoutUrl === checkoutUrl &&
+            current.attempt.expiresAt.getTime() === checkoutExpiresAt.getTime()
+          ) {
+            return mapCheckout(current, profile);
+          }
+          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
+        }
+        if (
+          current.order.status !== "created" ||
+          current.attempt.state !== "created" ||
+          current.attempt.providerCheckoutId !== null ||
+          current.attempt.providerCheckoutUrl !== null
+        ) {
+          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
+        }
+        const attemptUpdate = await transaction.commercialPaymentAttemptV2.updateMany({
+          data: {
+            expiresAt: checkoutExpiresAt,
+            providerCheckoutId: checkoutId,
+            providerCheckoutUrl: checkoutUrl,
+            state: "checkout_created",
+            updatedAt: attachedAt,
+          },
+          where: {
+            attemptNumber: 1,
+            orderId: current.order.id,
+            providerCheckoutId: null,
+            providerCheckoutUrl: null,
+            state: "created",
+          },
+        });
+        const orderUpdate = await transaction.commercialOrderV2.updateMany({
+          data: { status: "checkout_created", updatedAt: attachedAt },
+          where: { id: current.order.id, status: "created" },
+        });
+        if (attemptUpdate.count !== 1 || orderUpdate.count !== 1) {
+          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
+        }
+        const attached = await readCheckoutRecord(transaction, profile, {
+          orderId: input.orderId,
+          userId: input.userId,
+        });
+        if (attached === null) {
+          throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");
+        }
+        return mapCheckout(attached, profile);
+      },
+      { isolationLevel: "Serializable" },
+    );
+  };
+
+  return Object.freeze({
+    attachCoinbaseCheckout: (input) => attachCheckout(input, coinbaseCheckoutProfile),
+    attachStripeCheckout: (input) => attachCheckout(input, stripeCheckoutProfile),
+    createOrReplayCoinbaseCheckout: (input) =>
+      createOrReplayCheckout(input, coinbaseCheckoutProfile),
+    createOrReplayStripeCheckout: (input) => createOrReplayCheckout(input, stripeCheckoutProfile),
   });
+};

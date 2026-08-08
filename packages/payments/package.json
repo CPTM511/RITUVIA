@@ -16,6 +16,10 @@
     "./adapters/stripe": {
       "types": "./src/adapters/stripe-hosted-checkout.ts",
       "import": "./dist/adapters/stripe-hosted-checkout.js"
+    },
+    "./adapters/coinbase-business": {
+      "types": "./src/adapters/coinbase-business-hosted-checkout.ts",
+      "import": "./dist/adapters/coinbase-business-hosted-checkout.js"
     }
   },
   "scripts": {

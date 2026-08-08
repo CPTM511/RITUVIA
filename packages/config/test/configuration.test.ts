@@ -81,6 +81,8 @@ describe("server and client configuration boundary", () => {
     expect(serverEnvironmentVariables).toEqual([
       ...buildEnvironmentVariables,
       "DATABASE_URL",
+      "AI_GENERATION_DATABASE_URL",
+      "RITUVIA_AI_GENERATION_ROLE_PASSWORD",
       "PAYMENT_WEBHOOK_DATABASE_URL",
       "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
       "PRIVACY_DELETION_DATABASE_URL",
@@ -97,7 +99,16 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
       "RITUVIA_AUTH_START_WINDOW_SECONDS",
       "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
+      "RITUVIA_AI_DAILY_USER_LIMIT",
+      "RITUVIA_AI_GATEWAY_MODEL",
+      "RITUVIA_AI_MAX_COST_MICROS",
+      "RITUVIA_AI_MAX_OUTPUT_TOKENS",
+      "RITUVIA_AI_TIMEOUT_MS",
+      "RITUVIA_COINBASE_API_KEY_ID",
+      "RITUVIA_COINBASE_API_KEY_SECRET",
+      "RITUVIA_COINBASE_WEBHOOK_SECRET",
       "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
+      "RITUVIA_RECOVERY_ITEM_11_SANDBOX",
       "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
       "RITUVIA_PAYMENT_PROVIDER",
@@ -628,6 +639,66 @@ describe("server and client configuration boundary", () => {
         }),
       }),
     ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
+  });
+
+  it("allows Item 11 only as a complete protected-staging sandbox", () => {
+    const databaseUrl = (username: string, password: string) => {
+      const url = new URL("postgresql://127.0.0.1:5432/app");
+      url.username = username;
+      url.password = password;
+      return url.toString();
+    };
+    const item11 = {
+      AI_GENERATION_DATABASE_URL: databaseUrl("rituvia_ai_generation", "ai-password"),
+      APP_ENV: "staging",
+      DATABASE_URL: databaseUrl("rituvia_app", "app-password"),
+      PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl("rituvia_payment_webhook", "webhook-password"),
+      RITUVIA_AI_DAILY_USER_LIMIT: "3",
+      RITUVIA_AI_GATEWAY_MODEL: "openai/gpt-5.4-nano",
+      RITUVIA_AI_MAX_COST_MICROS: "25000",
+      RITUVIA_AI_MAX_OUTPUT_TOKENS: "384",
+      RITUVIA_AI_TIMEOUT_MS: "8000",
+      RITUVIA_COINBASE_API_KEY_ID: "organizations/recovery/apiKeys/item11",
+      RITUVIA_COINBASE_API_KEY_SECRET: `-----BEGIN EC ${"PRIVATE KEY"}-----\n${"a".repeat(100)}\n-----END EC ${"PRIVATE KEY"}-----`,
+      RITUVIA_COINBASE_WEBHOOK_SECRET: "sandbox_webhook_secret_123456",
+      RITUVIA_PAYMENT_PROVIDER: "stripe",
+      RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      RITUVIA_RECOVERY_ITEM_11_SANDBOX: "item-11",
+      RITUVIA_STRIPE_ACCOUNT_ID: "acct_12345678",
+      RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
+        pack_15: "price_pack15test",
+        pack_40: "price_pack40test",
+        pack_6: "price_pack06test",
+        plus_annual: "price_plusannual",
+        plus_monthly: "price_plusmonthly",
+      }),
+      STRIPE_SECRET_KEY: `sk_test_${"a".repeat(24)}`,
+      STRIPE_WEBHOOK_SECRET: `whsec_${"b".repeat(24)}`,
+    } as const;
+
+    expect(parseServerConfiguration(item11).recoveryItem11Sandbox).toMatchObject({
+      ai: {
+        dailyUserLimit: 3,
+        maxCostMicros: 25_000,
+        maxOutputTokens: 384,
+        model: "openai/gpt-5.4-nano",
+        timeoutMs: 8_000,
+      },
+      coinbase: { apiKeyId: item11.RITUVIA_COINBASE_API_KEY_ID },
+      enabled: true,
+    });
+    expect(() => parseServerConfiguration({ ...item11, APP_ENV: "preview" })).toThrowError(
+      "RITUVIA_RECOVERY_ITEM_11_SANDBOX:invalid",
+    );
+    expect(() =>
+      parseServerConfiguration({ ...item11, RITUVIA_COINBASE_WEBHOOK_SECRET: undefined }),
+    ).toThrowError("RITUVIA_COINBASE_WEBHOOK_SECRET:missing");
+    expect(() =>
+      parseServerConfiguration({
+        ...item11,
+        AI_GENERATION_DATABASE_URL: item11.DATABASE_URL,
+      }),
+    ).toThrowError("AI_GENERATION_DATABASE_URL:invalid");
   });
 
   it("revalidates serialized client input and rejects extra fields", () => {

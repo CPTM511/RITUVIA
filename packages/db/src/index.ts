@@ -100,6 +100,13 @@ export {
   type PersistedInterpretationVerification,
 } from "./interpretation-generation-persistence.js";
 export {
+  assertRecoveryItem11AiGenerationRuntimeDatabasePrivileges,
+  createRecoveryItem11AiCreditPersistence,
+  RecoveryItem11AiCreditPersistenceError,
+  type RecoveryItem11AiCreditPersistence,
+  type RecoveryItem11AiCreditReservation,
+} from "./recovery-item-11-ai-credit-persistence.js";
+export {
   accountConsentErrorCodes,
   AccountConsentError,
   assertAccountConsentRuntimeDatabasePrivileges,
@@ -163,6 +170,8 @@ export {
   type CommercialCheckoutPersistence,
   type CommercialCheckoutPersistenceErrorCode,
   type PersistedCommercialStripeCheckout,
+  type PreparedCommercialCoinbaseCheckout,
+  type PreparedCommercialCoinbaseCheckoutAttachment,
   type PreparedCommercialCheckoutAttachment,
   type PreparedCommercialStripeCheckout,
 } from "./commercial-checkout-persistence.js";
@@ -178,6 +187,7 @@ export {
   type CommercialPaymentStateOutboxClaim,
   type CommercialPaymentTimelineRecord,
   type CommercialVerifiedPaymentEventType,
+  type PreparedCommercialCoinbasePaymentEvent,
   type PreparedCommercialPaymentEvent,
   type ProcessedCommercialPaymentEvent,
   type ReducedCommercialPaymentState,

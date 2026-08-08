@@ -3,11 +3,13 @@ export const recoveryStagingMessages = Object.freeze({
   baselineLabel: "Approved recovery baseline",
   billingLink: "Review protected billing and Credits",
   boundaries: Object.freeze([
-    "Recovery Item 10 adds Stripe Test Checkout, non-transferable Credits, and Plus lifecycle evidence while preserving Items 5–9.",
+    "Recovery Item 11 adds Coinbase Business Sandbox USDC/Base checkout and fixed synthetic Provider AI while preserving Items 5–10.",
     "The dedicated staging database contains synthetic recovery evidence only; object storage remains disconnected.",
-    "Checkout prices are server-owned; redirects grant nothing; only signed Stripe Test events can change the append-only ledger and access state.",
+    "Checkout prices are server-owned; redirects grant nothing; only signed and reconciled provider sandbox events can change the append-only ledger and access state.",
     "Credits have no cash value, cannot be transferred or withdrawn, and never claim stronger spiritual efficacy.",
-    "Live Stripe, real funds, crypto checkout, Provider AI, Production, DNS, and public release remain off.",
+    "Coinbase is sandbox-only and uses simulated USDC on Base Sepolia; no keys, custody, balances, transfers, refunds, or real assets are handled by RITUVIA.",
+    "Provider AI receives only a fixed synthetic Lantern input through short-lived Vercel OIDC; private questions and journal text remain excluded.",
+    "Live Stripe, real crypto collection, production AI, Production, DNS, and public release remain off.",
   ]),
   astrologyLink: "Open the protected natal astrology calculator",
   chineseShellLink: "Open the Simplified Chinese golden shell",
@@ -17,18 +19,18 @@ export const recoveryStagingMessages = Object.freeze({
   healthLink: "Open liveness JSON",
   identityLink: "Open the identity sandbox",
   intro:
-    "This protected shell exposes Recovery Item 10 Stripe Test and private commerce acceptance, preserves earlier recovery journeys, and reports source-bound diagnostics.",
+    "This protected shell exposes Recovery Item 11 sandbox payment and synthetic Provider AI acceptance, preserves earlier recovery journeys, and reports source-bound diagnostics.",
   itemLabel: "Recovery item",
   offline: "Offline / degraded: this already-loaded acceptance shell remains readable.",
   online: "Online: protected staging checks are available.",
   ordersLink: "Review protected orders",
-  plansLink: "Open Stripe Test plans",
+  plansLink: "Open protected Stripe, Coinbase Sandbox, and Provider AI acceptance",
   privacyLink: "Open privacy controls",
   readinessFailed:
     "STOP: readiness failed. Do not begin another recovery item or treat this deployment as accepted.",
   readinessLink: "Open readiness JSON",
   readinessPassed:
-    "Ready: source identity, database, privacy controls, deterministic engines, commerce sandbox, and Item 10 safe-off boundaries passed.",
+    "Ready: source identity, database, privacy controls, deterministic engines, sandbox commerce, synthetic Provider AI, and Item 11 safe-off boundaries passed.",
   runtimeAstrologyLabel: "Protected natal astrology page request",
   runtimeEyebrow: "Zero-fulfillment runtime evidence",
   runtimeFailed:
