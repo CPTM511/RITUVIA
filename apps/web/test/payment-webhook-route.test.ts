@@ -89,6 +89,35 @@ describe("payment webhook HTTP boundary", () => {
     expect(harness.processWebhook).not.toHaveBeenCalled();
   });
 
+  it("accepts Stripe UTF-8 JSON metadata and rejects other webhook media types", async () => {
+    const signature = `t=1784366400,v1=${"b".repeat(64)}`;
+    const accepted = await stripeWebhook(
+      request("stripe", '{"id":"evt_charset"}', {
+        "content-type": "application/json; charset=utf-8",
+        "stripe-signature": signature,
+      }),
+    );
+
+    expect(accepted.status).toBe(204);
+    expect(harness.processStripeWebhook).toHaveBeenCalledOnce();
+
+    for (const contentType of [
+      "application/json; charset=iso-8859-1",
+      "application/json; charset=utf-8; profile=unexpected",
+      "text/json",
+    ]) {
+      vi.clearAllMocks();
+      const rejected = await stripeWebhook(
+        request("stripe", '{"id":"evt_media_rejected"}', {
+          "content-type": contentType,
+          "stripe-signature": signature,
+        }),
+      );
+      expect(rejected.status).toBe(400);
+      expect(harness.processStripeWebhook).not.toHaveBeenCalled();
+    }
+  });
+
   it("accepts only the bounded Vercel automation bypass query needed by Stripe Test", async () => {
     const signature = `t=1784366400,v1=${"b".repeat(64)}`;
     const valid = await stripeWebhook(
