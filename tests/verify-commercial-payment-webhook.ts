@@ -394,6 +394,38 @@ await withLocalPostgresLease(async (lease) => {
       );
       assert.equal(concurrent.filter(({ kind }) => kind === "processed").length, 1);
       assert.equal(concurrent.filter(({ kind }) => kind === "duplicate").length, 11);
+      assert.deepEqual(
+        await events.processStripeSandboxEvent(
+          event(concurrentOrder, {
+            eventId: "evt_000_concurrent_success",
+            eventType: "payment_succeeded",
+            occurredAt: "2026-07-30T12:01:00.000Z",
+            paymentIntentId: "pi_concurrent",
+            receivedAt: "2026-07-30T12:01:02.000Z",
+          }),
+          reduceCommercialPaymentTimeline,
+        ),
+        {
+          disposition: "applied",
+          kind: "processed",
+          orderStatus: "paid",
+          outboxCreated: false,
+          paymentAttemptState: "succeeded",
+        },
+      );
+      const concurrentOrderGrants = await migrator.query<{ amount: number; grants: number }>(
+        `
+          SELECT count(*)::int AS grants, COALESCE(sum(ledger.amount), 0)::int AS amount
+            FROM credit_ledger_entry AS ledger
+            JOIN commercial_order_v2 AS orders ON orders.id = ledger.order_id
+           WHERE orders.public_id = $1::uuid
+             AND ledger.direction = 'grant'
+             AND ledger.credit_type = 'purchased_credit'
+             AND ledger.reason = 'stripe_credit_pack_verified'
+        `,
+        [concurrentOrder.orderId],
+      );
+      assert.deepEqual(concurrentOrderGrants.rows, [{ amount: 6, grants: 1 }]);
 
       const outOfOrder = await createCheckout();
       const earlyRefundArrival = event(outOfOrder, {
@@ -795,11 +827,11 @@ await withLocalPostgresLease(async (lease) => {
         accountBoundAttempts: 6,
         credits: 10,
         entitlements: 2,
-        events: 11,
+        events: 12,
         outboxes: 6,
         paidOrRefundedOrders: 3,
         rejectedEvents: 2,
-        signatureEvidence: 11,
+        signatureEvidence: 12,
         subscriptionPeriods: 4,
         subscriptions: 2,
       });

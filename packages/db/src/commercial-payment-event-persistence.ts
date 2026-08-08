@@ -1107,22 +1107,34 @@ const processInTransaction = async (
     if (match.creditsGranted === null || match.creditsGranted < 1) {
       throw new CommercialPaymentEventPersistenceError("COMMERCIAL_PAYMENT_EVENT_UNAVAILABLE");
     }
-    await grantProjectionCredits(database, {
-      amount: match.creditsGranted,
-      catalogVersion: match.catalogVersion,
-      createdAt: parsed.receivedAt,
-      creditType: "purchased_credit",
-      eventId: created.id,
-      orderId: match.orderId,
-      policyVersion: match.countryPolicyVersion,
-      productCode: match.productCode,
-      productVersion: match.productVersion,
-      reason: "stripe_credit_pack_verified",
-      subscriptionPeriodId: null,
-      termsVersion: match.termsVersion,
-      userId: match.userId,
+    const existingGrant = await database.creditLedgerEntry.findFirst({
+      select: { id: true },
+      where: {
+        creditType: "purchased_credit",
+        direction: "grant",
+        orderId: match.orderId,
+        reason: "stripe_credit_pack_verified",
+        userId: match.userId,
+      },
     });
-    creditsChanged = match.creditsGranted;
+    if (existingGrant === null) {
+      await grantProjectionCredits(database, {
+        amount: match.creditsGranted,
+        catalogVersion: match.catalogVersion,
+        createdAt: parsed.receivedAt,
+        creditType: "purchased_credit",
+        eventId: created.id,
+        orderId: match.orderId,
+        policyVersion: match.countryPolicyVersion,
+        productCode: match.productCode,
+        productVersion: match.productVersion,
+        reason: "stripe_credit_pack_verified",
+        subscriptionPeriodId: null,
+        termsVersion: match.termsVersion,
+        userId: match.userId,
+      });
+      creditsChanged = match.creditsGranted;
+    }
   }
   if (["disputed", "refunded"].includes(reduced.orderStatus)) {
     creditsChanged = -(await reverseAvailableOrderCredits(database, {
