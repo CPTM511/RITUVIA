@@ -18,6 +18,16 @@ const privateKey = generateKeyPairSync("ec", { namedCurve: "prime256v1" }).priva
   format: "pem",
   type: "pkcs8",
 }) as string;
+const ed25519KeyPair = generateKeyPairSync("ed25519");
+const ed25519PrivateJwk = ed25519KeyPair.privateKey.export({ format: "jwk" });
+const ed25519KeyId = "22222222-2222-4222-8222-222222222222";
+if (ed25519PrivateJwk.d === undefined || ed25519PrivateJwk.x === undefined) {
+  throw new TypeError("Missing synthetic Ed25519 key material.");
+}
+const ed25519Secret = Buffer.concat([
+  Buffer.from(ed25519PrivateJwk.d, "base64url"),
+  Buffer.from(ed25519PrivateJwk.x, "base64url"),
+]).toString("base64");
 
 type GatewayFetchInput = Readonly<{
   body?: string;
@@ -49,6 +59,52 @@ const gateway = (fetchImplementation = vi.fn()) =>
     recoveryScope: "D-098:OWNER:item-11:protected-staging",
     webhookSecret,
   });
+
+it("accepts the current CDP UUID and raw Ed25519 key format", async () => {
+  const fetchImplementation = vi.fn(async (input: string, init: GatewayFetchInput) => {
+    void input;
+    void init;
+    return {
+      json: async () => checkoutResponse(),
+      ok: true,
+      status: 200,
+    };
+  });
+  const provider = createRecoveryItem11CoinbaseBusinessGateway({
+    apiKeyId: ed25519KeyId,
+    apiKeySecret: ed25519Secret,
+    clock: () => now,
+    fetch: fetchImplementation,
+    recoveryScope: "D-098:OWNER:item-11:protected-staging",
+    webhookSecret,
+  });
+  await provider.createCheckout({
+    cancelUrl: "https://staging.example/en/plans",
+    idempotencyKey: orderId,
+    metadata: { orderId, productCode: "pack_6" },
+    price: {
+      assetCode: "USDC",
+      currencyCode: "USD",
+      networkCode: "base",
+      usdAmountMinor: 599,
+      usdcAmountDecimal: "5.99",
+    },
+    productName: "6 Credits",
+    redirectUrl: `https://staging.example/en/checkout/return?order_id=${orderId}`,
+  });
+  const authorization = fetchImplementation.mock.calls[0]?.[1].headers.authorization;
+  if (authorization === undefined) throw new TypeError("Missing synthetic authorization.");
+  const [header, payload] = authorization.replace("Bearer ", "").split(".");
+  expect(JSON.parse(Buffer.from(header!, "base64url").toString("utf8"))).toMatchObject({
+    alg: "EdDSA",
+    kid: ed25519KeyId,
+    typ: "JWT",
+  });
+  expect(JSON.parse(Buffer.from(payload!, "base64url").toString("utf8"))).toMatchObject({
+    sub: ed25519KeyId,
+    uri: "POST business.coinbase.com/sandbox/api/v1/checkouts",
+  });
+});
 
 describe("Coinbase Business protected sandbox gateway", () => {
   it("uses only the exact sandbox endpoint with a URI-bound 120-second ES256 JWT", async () => {

@@ -29,6 +29,9 @@ const sandboxHost = "business.coinbase.com" as const;
 const sandboxPath = "/sandbox/api/v1/checkouts" as const;
 const checkoutIdPattern = /^[0-9a-f]{24}$/u;
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const apiKeyIdPattern =
+  /^(?:organizations\/[A-Za-z0-9_-]{1,128}\/apiKeys\/[A-Za-z0-9_-]{1,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
+const ed25519Pkcs8Prefix = Buffer.from("302e020100300506032b657004220420", "hex");
 
 type FetchResponse = Readonly<{
   json(): Promise<unknown>;
@@ -126,15 +129,40 @@ const parseCheckout = (value: unknown) => {
 const base64UrlJson = (value: unknown): string =>
   Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
 
+const readApiPrivateKey = (
+  value: string,
+): Readonly<{ algorithm: "EdDSA" | "ES256"; key: KeyObject }> => {
+  if (value.includes("PRIVATE KEY")) {
+    const key = createPrivateKey(value);
+    if (key.asymmetricKeyType !== "ec" || key.asymmetricKeyDetails?.namedCurve !== "prime256v1") {
+      throw new TypeError("Coinbase sandbox key is invalid.");
+    }
+    return Object.freeze({ algorithm: "ES256" as const, key });
+  }
+  const decoded = Buffer.from(value, "base64");
+  if (decoded.byteLength !== 64 || decoded.toString("base64") !== value) {
+    throw new TypeError("Coinbase sandbox key is invalid.");
+  }
+  const key = createPrivateKey({
+    format: "der",
+    key: Buffer.concat([ed25519Pkcs8Prefix, decoded.subarray(0, 32)]),
+    type: "pkcs8",
+  });
+  if (key.asymmetricKeyType !== "ed25519") {
+    throw new TypeError("Coinbase sandbox key is invalid.");
+  }
+  return Object.freeze({ algorithm: "EdDSA" as const, key });
+};
+
 const createJwt = (
-  key: KeyObject,
+  credential: Readonly<{ algorithm: "EdDSA" | "ES256"; key: KeyObject }>,
   keyId: string,
   method: "GET" | "POST",
   path: string,
   nowSeconds: number,
 ): string => {
   const header = base64UrlJson({
-    alg: "ES256",
+    alg: credential.algorithm,
     kid: keyId,
     nonce: randomBytes(16).toString("hex"),
     typ: "JWT",
@@ -147,10 +175,13 @@ const createJwt = (
     uri: `${method} ${sandboxHost}${path}`,
   });
   const signingInput = `${header}.${payload}`;
-  const signature = sign("sha256", Buffer.from(signingInput, "utf8"), {
-    dsaEncoding: "ieee-p1363",
-    key,
-  }).toString("base64url");
+  const signature =
+    credential.algorithm === "EdDSA"
+      ? sign(null, Buffer.from(signingInput, "utf8"), credential.key).toString("base64url")
+      : sign("sha256", Buffer.from(signingInput, "utf8"), {
+          dsaEncoding: "ieee-p1363",
+          key: credential.key,
+        }).toString("base64url");
   return `${signingInput}.${signature}`;
 };
 
@@ -161,7 +192,7 @@ const readNow = (clock: () => string): Readonly<{ iso: string; seconds: number }
 
 const requestJson = async (
   fetchImplementation: FetchLike,
-  key: KeyObject,
+  credential: Readonly<{ algorithm: "EdDSA" | "ES256"; key: KeyObject }>,
   keyId: string,
   clock: () => string,
   method: "GET" | "POST",
@@ -176,7 +207,7 @@ const requestJson = async (
       ...(input === undefined ? {} : { body: JSON.stringify(input.body) }),
       headers: Object.freeze({
         accept: "application/json",
-        authorization: `Bearer ${createJwt(key, keyId, method, path, now.seconds)}`,
+        authorization: `Bearer ${createJwt(credential, keyId, method, path, now.seconds)}`,
         ...(input === undefined
           ? {}
           : { "content-type": "application/json", "x-idempotency-key": input.idempotencyKey }),
@@ -279,17 +310,12 @@ export const createRecoveryItem11CoinbaseBusinessGateway = (
 ): CoinbaseBusinessGateway => {
   if (
     options.recoveryScope !== recoveryScope ||
-    !/^organizations\/[A-Za-z0-9_-]{1,128}\/apiKeys\/[A-Za-z0-9_-]{1,128}$/u.test(
-      options.apiKeyId,
-    ) ||
+    !apiKeyIdPattern.test(options.apiKeyId) ||
     options.webhookSecret.length < 16
   ) {
     throw new TypeError("Coinbase sandbox configuration is invalid.");
   }
-  const key = createPrivateKey(options.apiKeySecret);
-  if (key.asymmetricKeyType !== "ec" || key.asymmetricKeyDetails?.namedCurve !== "prime256v1") {
-    throw new TypeError("Coinbase sandbox key is invalid.");
-  }
+  const credential = readApiPrivateKey(options.apiKeySecret);
   const fetchImplementation = options.fetch ?? (globalThis.fetch as FetchLike);
   if (typeof fetchImplementation !== "function") {
     throw new TypeError("Coinbase sandbox fetch is unavailable.");
@@ -315,7 +341,7 @@ export const createRecoveryItem11CoinbaseBusinessGateway = (
       const parsed = parseCheckout(
         await requestJson(
           fetchImplementation,
-          key,
+          credential,
           options.apiKeyId,
           options.clock,
           "POST",
@@ -345,7 +371,7 @@ export const createRecoveryItem11CoinbaseBusinessGateway = (
       }
       return requestJson(
         fetchImplementation,
-        key,
+        credential,
         options.apiKeyId,
         options.clock,
         "GET",

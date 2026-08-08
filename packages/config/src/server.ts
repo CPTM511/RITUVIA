@@ -250,6 +250,26 @@ const encodedSecretKeySchema = z
     return decoded.byteLength === 32 && decoded.toString("base64url") === value;
   });
 
+const coinbaseApiKeyIdSchema = z
+  .string()
+  .regex(
+    /^(?:organizations\/[A-Za-z0-9_-]{1,128}\/apiKeys\/[A-Za-z0-9_-]{1,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u,
+  );
+const coinbaseApiKeySecretSchema = z
+  .string()
+  .min(88)
+  .max(8_192)
+  .refine((value) => {
+    if (
+      /-----BEGIN (?:EC )?PRIVATE KEY-----/u.test(value) &&
+      /-----END (?:EC )?PRIVATE KEY-----/u.test(value)
+    ) {
+      return true;
+    }
+    const decoded = Buffer.from(value, "base64");
+    return decoded.byteLength === 64 && decoded.toString("base64") === value;
+  });
+
 const positiveSecondsSchema = z
   .string()
   .regex(/^[1-9][0-9]{0,7}$/u)
@@ -309,20 +329,8 @@ const serverEnvironmentSchema = z.object({
   RITUVIA_AI_MAX_COST_MICROS: z.literal("25000").optional(),
   RITUVIA_AI_MAX_OUTPUT_TOKENS: z.literal("384").optional(),
   RITUVIA_AI_TIMEOUT_MS: z.literal("8000").optional(),
-  RITUVIA_COINBASE_API_KEY_ID: z
-    .string()
-    .regex(/^organizations\/[A-Za-z0-9_-]{1,128}\/apiKeys\/[A-Za-z0-9_-]{1,128}$/u)
-    .optional(),
-  RITUVIA_COINBASE_API_KEY_SECRET: z
-    .string()
-    .min(100)
-    .max(8_192)
-    .refine(
-      (value) =>
-        /-----BEGIN (?:EC )?PRIVATE KEY-----/u.test(value) &&
-        /-----END (?:EC )?PRIVATE KEY-----/u.test(value),
-    )
-    .optional(),
+  RITUVIA_COINBASE_API_KEY_ID: coinbaseApiKeyIdSchema.optional(),
+  RITUVIA_COINBASE_API_KEY_SECRET: coinbaseApiKeySecretSchema.optional(),
   RITUVIA_COINBASE_WEBHOOK_SECRET: z
     .string()
     .regex(/^[A-Za-z0-9_+=/-]{16,255}$/u)

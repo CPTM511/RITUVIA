@@ -658,8 +658,8 @@ describe("server and client configuration boundary", () => {
       RITUVIA_AI_MAX_COST_MICROS: "25000",
       RITUVIA_AI_MAX_OUTPUT_TOKENS: "384",
       RITUVIA_AI_TIMEOUT_MS: "8000",
-      RITUVIA_COINBASE_API_KEY_ID: "organizations/recovery/apiKeys/item11",
-      RITUVIA_COINBASE_API_KEY_SECRET: `-----BEGIN EC ${"PRIVATE KEY"}-----\n${"a".repeat(100)}\n-----END EC ${"PRIVATE KEY"}-----`,
+      RITUVIA_COINBASE_API_KEY_ID: "11111111-1111-4111-8111-111111111111",
+      RITUVIA_COINBASE_API_KEY_SECRET: Buffer.alloc(64, 7).toString("base64"),
       RITUVIA_COINBASE_WEBHOOK_SECRET: "sandbox_webhook_secret_123456",
       RITUVIA_PAYMENT_PROVIDER: "stripe",
       RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
@@ -693,6 +693,13 @@ describe("server and client configuration boundary", () => {
     expect(() =>
       parseServerConfiguration({ ...item11, RITUVIA_COINBASE_WEBHOOK_SECRET: undefined }),
     ).toThrowError("RITUVIA_COINBASE_WEBHOOK_SECRET:missing");
+    expect(
+      parseServerConfiguration({
+        ...item11,
+        RITUVIA_COINBASE_API_KEY_ID: "organizations/recovery/apiKeys/item11",
+        RITUVIA_COINBASE_API_KEY_SECRET: `-----BEGIN EC ${"PRIVATE KEY"}-----\n${"a".repeat(100)}\n-----END EC ${"PRIVATE KEY"}-----`,
+      }).recoveryItem11Sandbox,
+    ).toMatchObject({ enabled: true });
     expect(() =>
       parseServerConfiguration({
         ...item11,
