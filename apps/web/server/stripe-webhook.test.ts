@@ -31,6 +31,7 @@ const normalizedEvent: NormalizedPaymentEventV1 = Object.freeze({
 });
 
 const harness = () => {
+  const attestAccount = vi.fn(async () => undefined);
   const verifyWebhook = vi.fn(async () => normalizedEvent);
   const processStripeSandboxEvent =
     vi.fn<CommercialPaymentEventPersistence["processStripeSandboxEvent"]>();
@@ -56,9 +57,10 @@ const harness = () => {
     service: createStripeWebhookApplicationService({
       clock: () => "2026-07-30T12:00:02.000Z",
       paymentProvider,
-      paymentProviders: { accountFingerprint: () => "acct_12345678" },
+      paymentProviders: { accountFingerprint: () => "acct_12345678", attestAccount },
       persistence,
     }),
+    attestAccount,
     verifyWebhook,
   };
 };
@@ -78,6 +80,8 @@ describe("Stripe v2 webhook application service", () => {
     ).resolves.toMatchObject({ disposition: "applied", orderStatus: "paid" });
 
     expect(test.verifyWebhook).toHaveBeenCalledOnce();
+    expect(test.attestAccount).toHaveBeenCalledOnce();
+    expect(test.attestAccount).toHaveBeenCalledWith("stripe");
     expect(test.processStripeSandboxEvent).toHaveBeenCalledOnce();
     const [prepared, reduce] = test.processStripeSandboxEvent.mock.calls[0]!;
     expect(prepared).toMatchObject({
@@ -100,12 +104,29 @@ describe("Stripe v2 webhook application service", () => {
     expect(typeof reduce).toBe("function");
   });
 
+  it("attests the Stripe account inside the webhook function boundary", async () => {
+    const test = harness();
+    test.attestAccount.mockRejectedValueOnce(new Error("provider unavailable"));
+
+    await expect(
+      test.service.processWebhook({
+        headers: { "stripe-signature": signatureHeader },
+        rawBody,
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+
+    expect(test.verifyWebhook).toHaveBeenCalledOnce();
+    expect(test.attestAccount).toHaveBeenCalledOnce();
+    expect(test.processStripeSandboxEvent).not.toHaveBeenCalled();
+  });
+
   it("maps signature, replay, and altered-event conflicts to one private invalid response", async () => {
     const signature = harness();
     signature.verifyWebhook.mockRejectedValueOnce(new CommerceError("WEBHOOK_INVALID"));
     await expect(signature.service.processWebhook({ headers: {}, rawBody })).rejects.toMatchObject({
       code: "webhook_invalid",
     });
+    expect(signature.attestAccount).not.toHaveBeenCalled();
 
     const conflict = harness();
     conflict.processStripeSandboxEvent.mockRejectedValueOnce(
@@ -151,7 +172,7 @@ describe("Stripe v2 webhook application service", () => {
       createStripeWebhookApplicationService({
         clock: () => "2026-07-30T12:00:02.000Z",
         paymentProvider: { ...test.paymentProvider, providerId: "local_hosted" },
-        paymentProviders: { accountFingerprint: () => "cfg_local" },
+        paymentProviders: { accountFingerprint: () => "cfg_local", attestAccount: vi.fn() },
         persistence: test.persistence,
       }),
     ).toThrow();

@@ -31,7 +31,7 @@ const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 export type StripeWebhookApplicationDependencies = Readonly<{
   clock(): string;
   paymentProvider: HostedCheckoutAdapter;
-  paymentProviders: Pick<WebPaymentProviderRegistry, "accountFingerprint">;
+  paymentProviders: Pick<WebPaymentProviderRegistry, "accountFingerprint" | "attestAccount">;
   persistence: CommercialPaymentEventPersistence;
 }>;
 
@@ -74,6 +74,7 @@ export const createStripeWebhookApplicationService = (
           signatureHeaderName: "stripe-signature",
         });
         const event = await dependencies.paymentProvider.verifyWebhook(request);
+        await dependencies.paymentProviders.attestAccount(stripeHostedCheckoutProviderId);
         if (
           event.providerId !== stripeHostedCheckoutProviderId ||
           !uuidV4Pattern.test(event.orderId) ||
@@ -132,7 +133,6 @@ export const loadWebStripeWebhookApplicationService = (): StripeWebhookApplicati
     throw new WebCommerceError("unavailable");
   }
   const paymentProviders = loadWebPaymentProviderRegistry();
-  paymentProviders.assertAccountAttested(stripeHostedCheckoutProviderId);
   service = createStripeWebhookApplicationService({
     clock: () => new Date().toISOString(),
     paymentProvider: paymentProviders.get(stripeHostedCheckoutProviderId),
