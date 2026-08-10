@@ -353,27 +353,44 @@ try {
   assert.equal(fundedAccount.reconciliation.balanced, true);
   progress("six Credits funded by signed Stripe Test event");
 
-  const coinbaseCheckout = await startCheckout(ownerPage, "coinbase");
-  assert.equal(coinbaseCheckout.networkCode, "base");
-  assert.equal(coinbaseCheckout.settlementAsset, "USDC");
-  assert.equal(coinbaseCheckout.state, "checkout_created");
-  await ownerPage.screenshot({
-    fullPage: true,
-    path: path.join(artifactDirectory, "coinbase-sandbox-hosted.png"),
-  });
   await ownerPage.goto(`${origin}/en/plans`, { timeout: 60_000, waitUntil: "load" });
-  const abandonedOrder = await readOrder(ownerContext, coinbaseCheckout.orderId);
-  assert.equal(abandonedOrder.state, "checkout_created");
-  assert.equal(abandonedOrder.entitlementGranted, false);
-  progress("Coinbase Sandbox hosted checkout opened; abandoned flow granted nothing");
-
+  const aiResponsePromise = ownerPage.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/recovery/item-11/interpretation",
+  );
   await ownerPage.getByRole("button", { name: "Use 1 Credit for synthetic Provider AI" }).click();
+  const aiResponse = await aiResponsePromise;
+  assert.equal(aiResponse.status(), 200);
+  const aiBody = await aiResponse.json();
+  assert.equal(typeof aiBody, "object");
+  assert.notEqual(aiBody, null);
+  assert.equal(aiBody.creditConsumed, aiBody.kind === "generated");
+  assert.equal(aiBody.kind === "fallback" || aiBody.kind === "generated", true);
+  const aiCreditConsumed = aiBody.creditConsumed ? 1 : 0;
+  await writeFile(
+    path.join(artifactDirectory, "provider-ai-outcome.json"),
+    `${JSON.stringify(
+      {
+        creditConsumed: aiBody.creditConsumed,
+        kind: aiBody.kind,
+        reason: typeof aiBody.reason === "string" ? aiBody.reason : null,
+      },
+      null,
+      2,
+    )}\n`,
+    { mode: 0o600 },
+  );
   await ownerPage
-    .getByText("One Credit was consumed after the structured result passed safety checks.")
+    .getByText(
+      aiCreditConsumed === 1
+        ? "One Credit was consumed after the structured result passed safety checks."
+        : "The provider result was not accepted. A deterministic safe fallback is shown and no Credit was consumed.",
+    )
     .waitFor({ timeout: 60_000 });
   await ownerPage.getByText("Optional small action", { exact: true }).waitFor();
   const afterAi = await readAccount(ownerContext);
-  assert.equal(afterAi.credits.purchased, 5);
+  assert.equal(afterAi.credits.purchased, 6 - aiCreditConsumed);
   assert.equal(afterAi.credits.reserved, 0);
   assert.equal(afterAi.reconciliation.balanced, true);
   await assertAxe(ownerPage);
@@ -382,7 +399,11 @@ try {
     fullPage: true,
     path: path.join(artifactDirectory, "provider-ai-desktop.png"),
   });
-  progress("bounded Provider AI generated safely and consumed exactly one Credit");
+  progress(
+    aiCreditConsumed === 1
+      ? "bounded Provider AI generated safely and consumed exactly one Credit"
+      : "bounded Provider AI returned reviewed fallback and consumed no Credit",
+  );
 
   const mobileContext = await browser.newContext({
     baseURL: origin,
@@ -412,6 +433,21 @@ try {
     path: path.join(artifactDirectory, "item11-mobile.png"),
   });
 
+  const coinbaseCheckout = await startCheckout(ownerPage, "coinbase");
+  assert.equal(coinbaseCheckout.networkCode, "base");
+  assert.equal(coinbaseCheckout.settlementAsset, "USDC");
+  assert.equal(coinbaseCheckout.state, "checkout_created");
+  await ownerPage.screenshot({
+    fullPage: true,
+    path: path.join(artifactDirectory, "coinbase-sandbox-hosted.png"),
+  });
+  await ownerPage.goto(`${origin}/en/plans`, { timeout: 60_000, waitUntil: "load" });
+  const abandonedOrder = await readOrder(ownerContext, coinbaseCheckout.orderId);
+  assert.equal(abandonedOrder.state, "checkout_created");
+  assert.equal(abandonedOrder.entitlementGranted, false);
+  progress("Coinbase Sandbox hosted checkout opened; abandoned flow granted nothing");
+  assert.equal(aiCreditConsumed, 1);
+
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(appConsoleErrors, []);
   assert.equal(
@@ -428,7 +464,7 @@ try {
   );
 
   const evidence = Object.freeze({
-    ai: Object.freeze({ creditConsumed: 1, directBrowserProviderRequests: 0 }),
+    ai: Object.freeze({ creditConsumed: aiCreditConsumed, directBrowserProviderRequests: 0 }),
     artifactDirectory,
     browserProfiles: Object.keys(profiles),
     coinbase: Object.freeze({

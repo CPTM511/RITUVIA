@@ -154,6 +154,12 @@ describe("Recovery Item 11 synthetic provider AI service", () => {
     expect(test.reserve).toHaveBeenCalledOnce();
     expect(test.getVerifiedOidcToken).toHaveBeenCalledOnce();
     expect(test.generateStructured).toHaveBeenCalledOnce();
+    expect(test.generateStructured).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outputSchema: expect.objectContaining({ version: "1.0.1" }),
+      }),
+      expect.anything(),
+    );
     expect(test.consume).toHaveBeenCalledWith({
       asOf: now,
       generationId: requestId,

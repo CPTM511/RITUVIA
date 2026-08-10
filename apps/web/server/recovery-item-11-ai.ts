@@ -32,7 +32,7 @@ const vercelProjectId = "prj_UzHHiLzjdPcf8DsJuCHYiDBVWs63";
 const vercelOwnerId = "team_f6TQU7mloG5OnQGNmtXwFkOi";
 const modelVersion = "2026.3.17";
 const promptVersion = "1.0.0";
-const outputSchemaVersion = "1.0.0";
+const outputSchemaVersion = "1.0.1";
 const providerVersion = "1.0.0";
 const idempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
@@ -63,14 +63,12 @@ const outputSchema = Object.freeze({
       maxItems: 3,
       minItems: 1,
       type: "array",
-      uniqueItems: true,
     },
     reflectionQuestions: {
       items: { maxLength: 500, minLength: 1, type: "string" },
       maxItems: 2,
       minItems: 1,
       type: "array",
-      uniqueItems: true,
     },
     safety: {
       additionalProperties: false,
