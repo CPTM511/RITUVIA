@@ -2,9 +2,9 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 10 are complete. Item 11 and every later item require a
-> new explicit Owner approval. One Codex run may execute exactly one approved item and must then
-> STOP.
+> Repository status is NO-GO. Items 1 through 10 are complete. Item 11 was explicitly approved,
+> started, and is Blocked on Coinbase Business Checkout entitlement. Item 12 remains unapproved and
+> unstarted. One Codex run may execute exactly one approved item and must then STOP.
 
 ## Operating rules
 
@@ -246,8 +246,8 @@
   `dpl_DDT5hLDHsxNPLLQVJjdNQUTxbkJA`. Redirect-only fulfillment denial, signed Stripe Test
   fulfillment, exactly-once Credits, Plus, ledger reconciliation, desktop/mobile zero-mock,
   webhook replacement, temporary-credential destruction, and safe-off evidence are recorded in
-  `docs/recovery/ITEM_10_CREDITS_STRIPE_TEST_PLUS_EVIDENCE.md`. Item 11 remains unapproved and
-  unstarted.
+  `docs/recovery/ITEM_10_CREDITS_STRIPE_TEST_PLUS_EVIDENCE.md`. Item 11 was later approved and is
+  now blocked as recorded below.
 - **Founder Journey IDs:** FJ-10, FJ-11, FJ-12, FJ-13, FJ-14, FJ-20.
 - **Exact user-visible outcome:** In staging only, Owner can test an approved Test SKU, verified
   fulfillment, bounded Credits/entitlements, Plus lifecycle, and refund/dispute audit.
@@ -267,12 +267,17 @@
   real transaction, unaudited dispute, or mobile checkout blocker. A same-timestamp double-grant
   defect was found during bounded Staging verification, fixed, regression-tested, and reverified;
   its append-only synthetic history was preserved. None occurred in the final accepted account.
-  Stop after Item 10; Item 11 requires separate explicit Owner approval.
+  The Item 10 run stopped here. A later explicit Owner approval separately started Item 11.
 
 ## Item 11 — USDC/Base sandbox and Provider AI
 
-- **Status:** Planned; Item 10 dependency is satisfied, but execution requires separate explicit
-  Owner approval.
+- **Status:** **Blocked** — the accepted application source is
+  `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed to protected custom Staging as
+  `dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2`. FJ-16/FJ-17 pass with real bounded Provider AI, one-Credit
+  consumption, reconciliation, desktop/mobile, accessibility, safe-off, webhook rotation, and
+  credential cleanup. FJ-15 is blocked because Coinbase returns `403` without Coinbase Business
+  Checkout entitlement; the application fails closed with `503` and no value grant. Exact evidence
+  is in `docs/recovery/ITEM_11_USDC_BASE_PROVIDER_AI_EVIDENCE.md`.
 - **Founder Journey IDs:** FJ-15, FJ-16, FJ-17.
 - **Exact user-visible outcome:** Owner can test hosted non-custodial USDC/Base sandbox checkout and
   bounded Provider AI with disclosure, safety, fallback, and rollback.
@@ -290,11 +295,14 @@
 - **Explicit exclusions:** No real USDC, custody, user keys, crypto balance, production AI with
   private content, production model change, or unrestricted generation.
 - **STOP condition:** Real-value path, custody/key handling, AI-invented deterministic fact, unsafe
-  output, prompt leak, unbounded cost, or incorrect value rollback.
+  output, prompt leak, unbounded cost, incorrect value rollback, or inability to complete the real
+  hosted Sandbox checkout. The hosted-checkout condition occurred. Stop Item 11; do not begin
+  Coinbase Business onboarding or Item 12 without separate explicit Owner approval.
 
 ## Item 12 — Full Founder Acceptance, security, restore and source-disclosure gate
 
-- **Status:** Planned; depends on Items 3–11.
+- **Status:** Blocked and unapproved; Item 11 is incomplete and no Owner authority exists to start
+  Item 12.
 - **Founder Journey IDs:** FJ-00–FJ-20.
 - **Exact user-visible outcome:** Owner executes one source-disclosed desktop/mobile acceptance
   manual on protected staging and receives a factual GO/NO-GO recommendation.
