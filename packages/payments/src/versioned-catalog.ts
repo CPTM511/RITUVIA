@@ -471,7 +471,7 @@ export const selectActiveCatalogVersionV1 = (
   input: Readonly<{ asOf: string; environment: CatalogEnvironment }>,
 ): CatalogVersionV1 => {
   const evaluatedAt = Date.parse(parseInstant(input.asOf));
-  const matches = candidates.filter(
+  const activeCandidates = candidates.filter(
     (candidate) =>
       candidate.environment === input.environment &&
       candidate.status === "active" &&
@@ -479,6 +479,32 @@ export const selectActiveCatalogVersionV1 = (
       (candidate.effectiveUntil === null || evaluatedAt < Date.parse(candidate.effectiveUntil)) &&
       evaluatedAt < Date.parse(candidate.nextReviewAt),
   );
-  if (matches.length !== 1) throw new CommerceError("COMMERCE_STATE_CONFLICT");
-  return matches[0] as CatalogVersionV1;
+  if (
+    activeCandidates.length === 0 ||
+    new Set(activeCandidates.map(({ version }) => version)).size !== activeCandidates.length
+  ) {
+    throw new CommerceError("COMMERCE_STATE_CONFLICT");
+  }
+  const superseded = new Set(
+    activeCandidates.flatMap(({ supersedesVersion }) =>
+      supersedesVersion === null ? [] : [supersedesVersion],
+    ),
+  );
+  const activeHeads = activeCandidates.filter(({ version }) => !superseded.has(version));
+  if (activeHeads.length !== 1) throw new CommerceError("COMMERCE_STATE_CONFLICT");
+  const selected = activeHeads[0];
+  if (selected === undefined) throw new CommerceError("COMMERCE_STATE_CONFLICT");
+  const reachable = new Set<string>();
+  let cursor: CatalogVersionV1 | undefined = selected;
+  while (cursor !== undefined && !reachable.has(cursor.version)) {
+    reachable.add(cursor.version);
+    cursor =
+      cursor.supersedesVersion === null
+        ? undefined
+        : activeCandidates.find(({ version }) => version === cursor?.supersedesVersion);
+  }
+  if (cursor !== undefined || activeCandidates.some(({ version }) => !reachable.has(version))) {
+    throw new CommerceError("COMMERCE_STATE_CONFLICT");
+  }
+  return selected;
 };
