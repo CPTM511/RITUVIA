@@ -31,8 +31,8 @@ const recoveryScope = "D-098:OWNER:item-11:protected-staging" as const;
 const vercelProjectId = "prj_UzHHiLzjdPcf8DsJuCHYiDBVWs63";
 const vercelOwnerId = "team_f6TQU7mloG5OnQGNmtXwFkOi";
 const modelVersion = "2026.3.17";
-const promptVersion = "1.0.0";
-const outputSchemaVersion = "1.0.2";
+const promptVersion = "1.0.1";
+const outputSchemaVersion = "1.0.3";
 const providerVersion = "1.0.0";
 const idempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
@@ -45,11 +45,15 @@ const approvedContent = Object.freeze({
   tradition: "secular-reflection",
   version: "1.0.0",
 });
+const requiredBoundaryNote =
+  "This is a symbolic reflection, not a prediction or professional instruction.";
 
 const systemPrompt = [
   "RITUVIA protected-staging synthetic reflection only.",
   "Explain only the supplied deterministic Lantern fact and approved content.",
   "Use tentative language such as may, might, can, or could.",
+  `Set boundaryNote exactly to: "${requiredBoundaryNote}"`,
+  "Keep every other text field to one short sentence.",
   "Never predict, guarantee, diagnose, advise professionally, intensify fear, or claim hidden knowledge.",
   "Return only JSON matching the strict schema. Do not add a ritual suggestion.",
 ].join(" ");
@@ -57,16 +61,16 @@ const systemPrompt = [
 export const recoveryItem11ProviderOutputSchema = Object.freeze({
   additionalProperties: false,
   properties: {
-    boundaryNote: { maxLength: 800, minLength: 1, type: "string" },
+    boundaryNote: { const: requiredBoundaryNote, type: "string" },
     perspectives: {
       items: { maxLength: 800, minLength: 1, type: "string" },
-      maxItems: 3,
+      maxItems: 1,
       minItems: 1,
       type: "array",
     },
     reflectionQuestions: {
       items: { maxLength: 500, minLength: 1, type: "string" },
-      maxItems: 2,
+      maxItems: 1,
       minItems: 1,
       type: "array",
     },
@@ -131,7 +135,7 @@ export const recoveryItem11ProviderOutputSchema = Object.freeze({
 }) satisfies JsonValue;
 
 const fallbackOutput = Object.freeze({
-  boundaryNote: "This is a symbolic reflection, not a prediction or professional instruction.",
+  boundaryNote: requiredBoundaryNote,
   perspectives: Object.freeze([
     "The Lantern may invite attention to one detail that is already observable.",
   ]),
@@ -328,8 +332,7 @@ const passesPostGenerationSafety = (output: TarotInterpretationOutputV1): boolea
   const serialized = JSON.stringify(output);
   return (
     !forbiddenOutputPattern.test(serialized) &&
-    /\bsymbolic\b/iu.test(output.boundaryNote) &&
-    /\bnot\b/iu.test(output.boundaryNote) &&
+    output.boundaryNote === requiredBoundaryNote &&
     output.symbols.every(
       ({ meaning, possibility }) =>
         tentativeLanguagePattern.test(meaning) && tentativeLanguagePattern.test(possibility),

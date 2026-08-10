@@ -21,7 +21,7 @@ const attemptId = "44444444-4444-4444-8444-444444444444";
 const now = "2026-08-08T12:00:00.000Z";
 
 const validOutput = JSON.stringify({
-  boundaryNote: "This is a symbolic possibility, not a prediction or professional instruction.",
+  boundaryNote: "This is a symbolic reflection, not a prediction or professional instruction.",
   perspectives: ["A narrow focus may make one observable detail easier to notice."],
   reflectionQuestions: ["What is observable now?"],
   safety: {
@@ -146,6 +146,12 @@ const request = Object.freeze({
 describe("Recovery Item 11 synthetic provider AI service", () => {
   it("keeps the provider schema within the current Gateway subset", () => {
     expect(JSON.stringify(recoveryItem11ProviderOutputSchema)).not.toContain("uniqueItems");
+    expect(recoveryItem11ProviderOutputSchema.properties.boundaryNote).toEqual({
+      const: "This is a symbolic reflection, not a prediction or professional instruction.",
+      type: "string",
+    });
+    expect(recoveryItem11ProviderOutputSchema.properties.perspectives.maxItems).toBe(1);
+    expect(recoveryItem11ProviderOutputSchema.properties.reflectionQuestions.maxItems).toBe(1);
   });
 
   it("reserves one Credit, validates structured output, then consumes exactly once", async () => {
@@ -161,7 +167,16 @@ describe("Recovery Item 11 synthetic provider AI service", () => {
     expect(test.generateStructured).toHaveBeenCalledOnce();
     expect(test.generateStructured).toHaveBeenCalledWith(
       expect.objectContaining({
-        outputSchema: expect.objectContaining({ version: "1.0.2" }),
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            content: expect.stringContaining(
+              'Set boundaryNote exactly to: "This is a symbolic reflection, not a prediction or professional instruction."',
+            ),
+            role: "system",
+          }),
+        ]),
+        outputSchema: expect.objectContaining({ version: "1.0.3" }),
+        prompt: expect.objectContaining({ version: "1.0.1" }),
       }),
       expect.anything(),
     );
@@ -208,6 +223,19 @@ describe("Recovery Item 11 synthetic provider AI service", () => {
       reason: "safety_block",
     });
     expect(unsafe.release).toHaveBeenCalledOnce();
+
+    const softenedBoundary = harness({
+      outputJson: validOutput.replace(
+        "This is a symbolic reflection, not a prediction or professional instruction.",
+        "This is symbolic and not deterministic.",
+      ),
+    });
+    await expect(softenedBoundary.service.generate(request)).resolves.toMatchObject({
+      creditConsumed: false,
+      kind: "fallback",
+      reason: "safety_block",
+    });
+    expect(softenedBoundary.release).toHaveBeenCalledOnce();
   });
 
   it("enforces the exact three-per-day limit before reserving or calling a provider", async () => {
