@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { Client, type DatabaseError } from "pg";
 
 import { createDatabaseClient } from "../src/client.js";
+import { createCommercialAccountPersistence } from "../src/commercial-account-persistence.js";
 import {
   assertRecoveryItem11AiGenerationRuntimeDatabasePrivileges,
   createRecoveryItem11AiCreditPersistence,
@@ -157,11 +158,13 @@ await withLocalPostgresLease(async (lease) => {
 
       const aiDatabaseUrl = roleDatabaseUrl(database.adminDatabaseUrl, password);
       const aiDatabase = createDatabaseClient(aiDatabaseUrl);
+      const accountDatabase = createDatabaseClient(database.migrationDatabaseUrl);
       const aiSql = new Client({ connectionString: aiDatabaseUrl });
       await aiSql.connect();
       try {
         await assertRecoveryItem11AiGenerationRuntimeDatabasePrivileges(aiDatabase);
         const persistence = createRecoveryItem11AiCreditPersistence(aiDatabase);
+        const commercialAccount = createCommercialAccountPersistence(accountDatabase);
         assert.equal(
           await persistence.countConsumedToday({
             asOf: "2026-08-08T12:00:00.000Z",
@@ -216,6 +219,11 @@ await withLocalPostgresLease(async (lease) => {
           }),
           1,
         );
+        const consumedSnapshot = await commercialAccount.readSnapshot(userId);
+        assert.equal(consumedSnapshot.credits.promotional, 1);
+        assert.equal(consumedSnapshot.credits.reserved, 0);
+        assert.equal(consumedSnapshot.reconciliation.expectedPromotional, 1);
+        assert.equal(consumedSnapshot.reconciliation.balanced, true);
 
         const secondReservation = await persistence.reserve({
           ...firstReservationInput,
@@ -242,6 +250,11 @@ await withLocalPostgresLease(async (lease) => {
           }),
           "replayed",
         );
+        const releasedSnapshot = await commercialAccount.readSnapshot(userId);
+        assert.equal(releasedSnapshot.credits.promotional, 1);
+        assert.equal(releasedSnapshot.credits.reserved, 0);
+        assert.equal(releasedSnapshot.reconciliation.expectedPromotional, 1);
+        assert.equal(releasedSnapshot.reconciliation.balanced, true);
 
         await expectPostgresError(() => aiSql.query("SELECT id FROM app_user LIMIT 1"), ["42501"]);
         await expectPostgresError(
@@ -278,6 +291,7 @@ await withLocalPostgresLease(async (lease) => {
       } finally {
         await aiSql.end();
         await aiDatabase.$disconnect();
+        await accountDatabase.$disconnect();
       }
     } finally {
       await migrator.end();

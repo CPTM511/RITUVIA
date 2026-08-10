@@ -124,7 +124,9 @@ export const createCommercialAccountPersistence = (
           SELECT
             COALESCE(SUM(
               CASE WHEN entries.direction IN ('grant', 'release')
-                THEN entries.amount ELSE -entries.amount END
+                THEN entries.amount
+                WHEN entries.direction = 'consume' THEN 0
+                ELSE -entries.amount END
             ), 0)::int AS amount,
             COALESCE(sources.credit_type, entries.credit_type) AS "sourceCreditType"
           FROM credit_ledger_entry AS entries
