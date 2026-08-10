@@ -1,6 +1,5 @@
 import { createHash } from "node:crypto";
 
-import { parseCountryPolicyVersionV1 } from "../../country-policy/dist/index.js";
 import pg from "pg";
 
 const { Client } = pg;
@@ -29,6 +28,10 @@ const expectedCorrectedProductCodes = Object.freeze([
   "plus_annual",
   "plus_monthly",
 ]);
+const expectedInvalidPolicySha256 =
+  "4959f0d75df9285c32c4090c22af34a220a1bcc64da4270f54168f492b5bf95a";
+const expectedCorrectedPolicySha256 =
+  "620d70096efbe9cb6d86a01c70576ee61fbdd15c65d8374efa986bea0d30a156";
 
 const fail = (message) => {
   throw new TypeError(message);
@@ -131,8 +134,7 @@ try {
       policyDocument.environment !== "staging" ||
       policyDocument.status !== "paid" ||
       policyDocument.approvalMode !== "written" ||
-      policyDocument.evidence?.ownerReference !==
-        "D-098:OWNER:item-11:protected-staging" ||
+      policyDocument.evidence?.ownerReference !== "D-098:OWNER:item-11:protected-staging" ||
       policyDocument.evidence?.providerReference !==
         "coinbase-business:sandbox:usdc-base:item-11" ||
       policyDocument.crypto?.enabled !== true ||
@@ -146,10 +148,10 @@ try {
     const beforeSha256 = sha256(beforeCanonicalJson);
     const currentProductCodes = policyDocument.products.map(({ productCode }) => productCode);
 
-    if (
-      canonicalJson(currentProductCodes) === canonicalJson(expectedCorrectedProductCodes)
-    ) {
-      parseCountryPolicyVersionV1(policyDocument);
+    if (canonicalJson(currentProductCodes) === canonicalJson(expectedCorrectedProductCodes)) {
+      if (beforeSha256 !== expectedCorrectedPolicySha256) {
+        fail("Recovery Item 11 repair found an unexpected corrected policy document.");
+      }
       await client.query("COMMIT");
       process.stdout.write(
         `${JSON.stringify({
@@ -166,6 +168,9 @@ try {
       if (canonicalJson(currentProductCodes) !== canonicalJson(expectedInvalidProductCodes)) {
         fail("Recovery Item 11 repair found an unexpected product order.");
       }
+      if (beforeSha256 !== expectedInvalidPolicySha256) {
+        fail("Recovery Item 11 repair found an unexpected invalid policy document.");
+      }
 
       const productByCode = new Map(
         policyDocument.products.map((product) => [product.productCode, product]),
@@ -180,10 +185,11 @@ try {
           return product;
         }),
       };
-      parseCountryPolicyVersionV1(correctedPolicyDocument);
-
       const afterCanonicalJson = canonicalJson(correctedPolicyDocument);
       const afterSha256 = sha256(afterCanonicalJson);
+      if (afterSha256 !== expectedCorrectedPolicySha256) {
+        fail("Recovery Item 11 repair produced an unexpected corrected policy document.");
+      }
       const updated = await client.query(
         `UPDATE country_policy_version
             SET policy_document = $3::jsonb

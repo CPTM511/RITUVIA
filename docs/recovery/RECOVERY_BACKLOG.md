@@ -306,11 +306,14 @@
 
 ## Item 12 — Full Founder Acceptance, security, restore and source-disclosure gate
 
-- **Status:** **Blocked — mandatory architecture gate failed.** Node `24.18.0` / pnpm `11.13.1`
-  reached `check:architecture` and reported three findings for the unchanged
-  `packages/db/scripts/repair-recovery-item-11-country-policy.mjs` cross-package import. Per the
-  STOP condition, later workspace, browser, restore, deployment, and source-disclosure gates were
-  not executed. Exact evidence is in `docs/recovery/ITEM_12_FOUNDER_ACCEPTANCE_EVIDENCE.md`.
+- **Status:** **Blocked — mandatory RTL gate failed after the approved architecture repair.** The
+  2026-08-11 bounded rerun used Node `24.18.0` / pnpm `11.13.1`; `check:architecture` passed for 610
+  source files across 16 modules, resolving the exact three authorized findings. The next
+  workspace boundary, `check:rtl`, reported one pre-existing `physical-directional-css` finding at
+  `apps/web/app/(recovery)/recovery/recovery.css:40`. That finding was not repaired because it is
+  outside the Owner's three-finding authorization. Per the STOP condition, privacy/restore,
+  browser, deployment, and source-disclosure gates were not executed. Exact evidence is in
+  `docs/recovery/ITEM_12_FOUNDER_ACCEPTANCE_EVIDENCE.md`.
 - **Founder Journey IDs:** FJ-00–FJ-14 and FJ-16–FJ-20. FJ-15 is an explicit Owner-approved
   exclusion for this recovery and must not be executed.
 - **Exact user-visible outcome:** Owner executes one source-disclosed desktop/mobile acceptance

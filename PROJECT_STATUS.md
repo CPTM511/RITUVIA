@@ -1,16 +1,18 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-10
+**Last reconciled:** 2026-08-11
 
 Founder Acceptance Recovery is active with recovery baseline
 `f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 11 are complete. FJ-16/FJ-17
 Provider AI acceptance passed. The Owner's 2026-08-10 amendment excludes FJ-15 hosted crypto
 checkout from this recovery, directs Codex not to execute it during Item 12, and preserves
 non-custodial crypto payment as a future option behind separate Owner, Provider, legal, security,
-sandbox, production, and real-value approvals. Item 12 was explicitly approved, started, and is now
-**Blocked** at its first mandatory full workspace gate: `check:architecture` reports three findings
-for the unchanged Item 11 country-policy repair script. Per the Item 12 STOP condition, no browser,
-restore, deployment, or later gate was executed.
+sandbox, production, and real-value approvals. On 2026-08-11 the Owner approved only the three
+recorded architecture fixes and a new before-state Item 12 rerun. The architecture policy now
+passes for 610 source files across 16 modules. The mandatory workspace command then stopped at
+`check:rtl`, which reports one pre-existing `physical-directional-css` finding at
+`apps/web/app/(recovery)/recovery/recovery.css:40`. Item 12 remains **Blocked**. Per its STOP
+condition, no privacy/restore, browser, deployment, or later gate was executed.
 
 The accepted Item 11 application source is `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed as
 `dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2` to the Vercel-authenticated custom `staging` target. Readiness is

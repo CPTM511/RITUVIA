@@ -23,7 +23,13 @@ describe("Recovery Item 11 country-policy repair boundary", () => {
   it("accepts only the known invalid order and its sorted replacement", () => {
     expect(source).toContain("expectedInvalidProductCodes");
     expect(source).toContain("expectedCorrectedProductCodes");
-    expect(source).toContain("parseCountryPolicyVersionV1(correctedPolicyDocument)");
+    expect(source).toContain('"4959f0d75df9285c32c4090c22af34a220a1bcc64da4270f54168f492b5bf95a"');
+    expect(source).toContain('"620d70096efbe9cb6d86a01c70576ee61fbdd15c65d8374efa986bea0d30a156"');
+    expect(source).toContain("beforeSha256 !== expectedInvalidPolicySha256");
+    expect(source).toContain("beforeSha256 !== expectedCorrectedPolicySha256");
+    expect(source).toContain("afterSha256 !== expectedCorrectedPolicySha256");
+    expect(source).not.toContain("country-policy/dist");
+    expect(source).not.toContain("parseCountryPolicyVersionV1");
     expect(source).toContain("found an unexpected product order");
     expect(source).toContain("outside the approved envelope");
   });
