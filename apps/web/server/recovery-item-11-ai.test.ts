@@ -23,7 +23,7 @@ const now = "2026-08-08T12:00:00.000Z";
 const validOutput = JSON.stringify({
   boundaryNote: "This is a symbolic reflection, not a prediction or professional instruction.",
   perspectives: ["A narrow focus may make one observable detail easier to notice."],
-  reflectionQuestions: ["What is observable now?"],
+  reflectionQuestions: ["What is one observable detail you can notice without judging it?"],
   safety: {
     certaintyLevel: "reflective",
     containsGuaranteedOutcome: false,
@@ -151,7 +151,20 @@ describe("Recovery Item 11 synthetic provider AI service", () => {
       type: "string",
     });
     expect(recoveryItem11ProviderOutputSchema.properties.perspectives.maxItems).toBe(1);
-    expect(recoveryItem11ProviderOutputSchema.properties.reflectionQuestions.maxItems).toBe(1);
+    expect(recoveryItem11ProviderOutputSchema.properties.reflectionQuestions).toMatchObject({
+      items: {
+        const: "What is one observable detail you can notice without judging it?",
+        type: "string",
+      },
+      maxItems: 1,
+    });
+    expect(recoveryItem11ProviderOutputSchema.properties.symbols.items.properties).toMatchObject({
+      meaning: { const: "The Lantern may represent focused attention.", type: "string" },
+      possibility: {
+        const: "One visible detail could support a useful next step.",
+        type: "string",
+      },
+    });
   });
 
   it("reserves one Credit, validates structured output, then consumes exactly once", async () => {
@@ -175,8 +188,8 @@ describe("Recovery Item 11 synthetic provider AI service", () => {
             role: "system",
           }),
         ]),
-        outputSchema: expect.objectContaining({ version: "1.0.3" }),
-        prompt: expect.objectContaining({ version: "1.0.1" }),
+        outputSchema: expect.objectContaining({ version: "1.0.4" }),
+        prompt: expect.objectContaining({ version: "1.0.2" }),
       }),
       expect.anything(),
     );

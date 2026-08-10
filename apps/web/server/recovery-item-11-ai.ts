@@ -31,8 +31,8 @@ const recoveryScope = "D-098:OWNER:item-11:protected-staging" as const;
 const vercelProjectId = "prj_UzHHiLzjdPcf8DsJuCHYiDBVWs63";
 const vercelOwnerId = "team_f6TQU7mloG5OnQGNmtXwFkOi";
 const modelVersion = "2026.3.17";
-const promptVersion = "1.0.1";
-const outputSchemaVersion = "1.0.3";
+const promptVersion = "1.0.2";
+const outputSchemaVersion = "1.0.4";
 const providerVersion = "1.0.0";
 const idempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
@@ -47,12 +47,17 @@ const approvedContent = Object.freeze({
 });
 const requiredBoundaryNote =
   "This is a symbolic reflection, not a prediction or professional instruction.";
+const requiredReflectionQuestion =
+  "What is one observable detail you can notice without judging it?";
+const requiredSymbolMeaning = "The Lantern may represent focused attention.";
+const requiredSymbolPossibility = "One visible detail could support a useful next step.";
 
 const systemPrompt = [
   "RITUVIA protected-staging synthetic reflection only.",
   "Explain only the supplied deterministic Lantern fact and approved content.",
   "Use tentative language such as may, might, can, or could.",
   `Set boundaryNote exactly to: "${requiredBoundaryNote}"`,
+  "Use every exact string required by a schema const without paraphrasing it.",
   "Keep every other text field to one short sentence.",
   "Never predict, guarantee, diagnose, advise professionally, intensify fear, or claim hidden knowledge.",
   "Return only JSON matching the strict schema. Do not add a ritual suggestion.",
@@ -69,7 +74,7 @@ export const recoveryItem11ProviderOutputSchema = Object.freeze({
       type: "array",
     },
     reflectionQuestions: {
-      items: { maxLength: 500, minLength: 1, type: "string" },
+      items: { const: requiredReflectionQuestion, type: "string" },
       maxItems: 1,
       minItems: 1,
       type: "array",
@@ -107,8 +112,8 @@ export const recoveryItem11ProviderOutputSchema = Object.freeze({
         additionalProperties: false,
         properties: {
           factRef: { const: "tarot.position.perspective", type: "string" },
-          meaning: { maxLength: 800, minLength: 1, type: "string" },
-          possibility: { maxLength: 800, minLength: 1, type: "string" },
+          meaning: { const: requiredSymbolMeaning, type: "string" },
+          possibility: { const: requiredSymbolPossibility, type: "string" },
         },
         required: ["factRef", "meaning", "possibility"],
         type: "object",
@@ -139,7 +144,7 @@ const fallbackOutput = Object.freeze({
   perspectives: Object.freeze([
     "The Lantern may invite attention to one detail that is already observable.",
   ]),
-  reflectionQuestions: Object.freeze(["What is one detail you can notice without judging it?"]),
+  reflectionQuestions: Object.freeze([requiredReflectionQuestion]),
   safety: Object.freeze({
     certaintyLevel: "reflective" as const,
     containsGuaranteedOutcome: false as const,
@@ -156,8 +161,8 @@ const fallbackOutput = Object.freeze({
   symbols: Object.freeze([
     Object.freeze({
       factRef: "tarot.position.perspective",
-      meaning: "The Lantern may represent focused attention.",
-      possibility: "One visible detail could support a useful next step.",
+      meaning: requiredSymbolMeaning,
+      possibility: requiredSymbolPossibility,
     }),
   ]),
   title: "A bounded lens on attention",
@@ -326,17 +331,17 @@ const userPrompt = (requestId: string): string =>
 
 const forbiddenOutputPattern =
   /\b(?:curse|diagnos(?:e|is)|financial advice|guarantee(?:d|s)?|hidden truth|legal advice|medical advice|must happen|only I can|psychic certainty|will definitely)\b/iu;
-const tentativeLanguagePattern = /\b(?:can|could|invite|may|might|offer)\w*\b/iu;
-
 const passesPostGenerationSafety = (output: TarotInterpretationOutputV1): boolean => {
   const serialized = JSON.stringify(output);
   return (
     !forbiddenOutputPattern.test(serialized) &&
     output.boundaryNote === requiredBoundaryNote &&
-    output.symbols.every(
-      ({ meaning, possibility }) =>
-        tentativeLanguagePattern.test(meaning) && tentativeLanguagePattern.test(possibility),
-    )
+    output.perspectives.length === 1 &&
+    output.reflectionQuestions.length === 1 &&
+    output.reflectionQuestions[0] === requiredReflectionQuestion &&
+    output.symbols.length === 1 &&
+    output.symbols[0]?.meaning === requiredSymbolMeaning &&
+    output.symbols[0]?.possibility === requiredSymbolPossibility
   );
 };
 
