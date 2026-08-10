@@ -209,7 +209,9 @@ const completeStripeTestCheckout = async (page) => {
   }
   const cardNumberSelectors = ['input[autocomplete="cc-number"]', 'input[name="cardNumber"]'];
   if ((await locateVisible(page, cardNumberSelectors, 2_000)) === null) {
-    await page.getByRole("button", { name: "Pay with card" }).first().click();
+    const cardOption = page.getByRole("button", { name: "Pay with card" }).first();
+    assert.equal((await cardOption.count()) > 0, true);
+    await cardOption.evaluate((node) => node.click());
   }
   await fillStripeField(page, cardNumberSelectors, "4242424242424242");
   await fillStripeField(page, ['input[autocomplete="cc-exp"]', 'input[name="cardExpiry"]'], "1234");
@@ -228,6 +230,7 @@ const completeStripeTestCheckout = async (page) => {
   );
   let submit = page.getByRole("button", { name: /^(?:Pay|Subscribe)/iu }).last();
   if ((await submit.count()) === 0) submit = page.locator('button[type="submit"]').last();
+  assert.equal((await submit.count()) > 0, true);
   await Promise.all([
     page.waitForURL((url) => url.origin === origin && url.pathname === "/en/checkout/return", {
       timeout: 120_000,
