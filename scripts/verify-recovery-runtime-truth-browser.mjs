@@ -7,6 +7,10 @@ import { chromium } from "playwright";
 
 const stagingUrl = process.env.RITUVIA_RECOVERY_STAGING_URL;
 assert.ok(stagingUrl, "RITUVIA_RECOVERY_STAGING_URL is required.");
+const expectedSourceSha = process.env.RITUVIA_EXPECTED_SOURCE_SHA?.trim();
+const expectedRecoveryItem = Number(process.env.RITUVIA_EXPECTED_RECOVERY_ITEM ?? "12");
+assert.match(expectedSourceSha ?? "", /^[0-9a-f]{40}$/u);
+assert.ok(Number.isSafeInteger(expectedRecoveryItem) && expectedRecoveryItem > 0);
 
 const artifactDirectory = path.resolve(
   process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-7-runtime",
@@ -73,6 +77,30 @@ try {
     assert.equal(entryUrl.search, "");
     const expectsVercelEdge = entryUrl.hostname.endsWith(".vercel.app");
     if (expectsVercelEdge) assert.equal(entryUrl.protocol, "https:");
+
+    await page.getByText(String(expectedRecoveryItem), { exact: true }).first().waitFor();
+    await page.getByText(expectedSourceSha, { exact: true }).first().waitFor();
+    await page.getByRole("heading", { name: "Immutable acceptance manifest" }).waitFor();
+    await page.getByText("FJ-00-FJ-14, FJ-16-FJ-20", { exact: true }).waitFor();
+    await page.getByText("FJ-15", { exact: true }).waitFor();
+    await page.getByText("AGPL-3.0-only", { exact: true }).waitFor();
+    await page.getByText("NO-GO", { exact: true }).waitFor();
+    const manifestChecksum = await page
+      .locator("[data-recovery-manifest-sha256]")
+      .getAttribute("data-recovery-manifest-sha256");
+    assert.match(manifestChecksum ?? "", /^[0-9a-f]{64}$/u);
+    const sourceLink = page.getByRole("link", { name: "Review exact deployed source on GitHub" });
+    assert.equal(
+      await sourceLink.getAttribute("href"),
+      `https://github.com/CPTM511/RITUVIA/tree/${expectedSourceSha}`,
+    );
+    const signoffChecks = page.getByRole("checkbox");
+    assert.equal(await signoffChecks.count(), 4);
+    for (let index = 0; index < 4; index += 1) await signoffChecks.nth(index).check();
+    assert.equal(
+      await signoffChecks.evaluateAll((elements) => elements.every((element) => element.checked)),
+      true,
+    );
 
     await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
     const runButton = page.getByRole("button", { name: "Run real runtime check" });
@@ -151,6 +179,8 @@ try {
       layout,
       pageErrors,
       profile: profile.name,
+      recoveryItem: expectedRecoveryItem,
+      recoveryManifestSha256: manifestChecksum,
       runtimeResponses,
       screenshotPath,
       tracePath,

@@ -60,7 +60,7 @@ describe("Recovery Item 9 preserved runtime-truth guard", () => {
     expect(tarotVerifier).toContain('page.on("response"');
     expect(tarotVerifier).toContain("mockFulfillmentCount: 0");
     expect(tarotVerifier).toContain("forbiddenRequestPattern");
-    expect(tarotVerifier).toContain("recoveryItem, 7");
+    expect(tarotVerifier).toContain('RITUVIA_EXPECTED_RECOVERY_ITEM ?? "7"');
   });
 
   it("rejects fulfillment and interception from the real Item 8 verifier", () => {
@@ -77,7 +77,7 @@ describe("Recovery Item 9 preserved runtime-truth guard", () => {
     expect(item8Verifier).toContain('page.on("response"');
     expect(item8Verifier).toContain("mockFulfillmentCount: 0");
     expect(item8Verifier).toContain("forbiddenRequestPattern");
-    expect(item8Verifier).toContain("recoveryItem, 8");
+    expect(item8Verifier).toContain('RITUVIA_EXPECTED_RECOVERY_ITEM ?? "8"');
     expect(item8Verifier).toContain("desktop");
     expect(item8Verifier).toContain("mobile");
   });

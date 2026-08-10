@@ -54,7 +54,7 @@ import { inspectRecoveryStagingRuntime } from "../server/recovery-staging";
 
 const sourceSha = "1111111111111111111111111111111111111111";
 
-describe("Recovery Item 11 runtime identity", () => {
+describe("Recovery Item 12 runtime identity", () => {
   beforeEach(() => {
     harness.aiGenerationDatabaseUrl = "postgresql://ai.example.invalid/rituvia";
     harness.anonymousSessionPolicy = {};
@@ -96,7 +96,15 @@ describe("Recovery Item 11 runtime identity", () => {
       productionProviders: "disabled",
       privacyControls: "enabled",
       ready: true,
-      recoveryItem: 11,
+      recoveryItem: 12,
+      recoveryManifest: {
+        excludedJourneys: ["FJ-15"],
+        license: "AGPL-3.0-only",
+        mandatoryJourneys: ["FJ-00-FJ-14", "FJ-16-FJ-20"],
+        productionDecision: "NO-GO",
+        recoveryItem: 12,
+      },
+      recoveryManifestSha256: expect.stringMatching(/^[0-9a-f]{64}$/u),
       sourceSha,
       tarotCatalog: "enabled",
       timeZoneRuntime: "pinned",
@@ -126,7 +134,7 @@ describe("Recovery Item 11 runtime identity", () => {
     );
   });
 
-  it("fails closed without the dedicated Item 11 sandbox or least-privilege AI database", () => {
+  it("fails closed without the retained Item 11 sandbox or least-privilege AI database", () => {
     harness.recoveryItem11Sandbox = undefined;
     expect(inspectRecoveryStagingRuntime({ RITUVIA_BUILD_SOURCE_SHA: sourceSha })).toMatchObject({
       coinbaseSandbox: "disabled",

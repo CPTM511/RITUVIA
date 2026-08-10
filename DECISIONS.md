@@ -885,3 +885,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
   acceptance criterion requires external provider evidence that an internal approval cannot
   truthfully replace.
 - **Date:** 2026-07-30
+
+### [D-098 — Founder Acceptance Recovery scope and governance](records/decisions/D-098.md)
+
+- **Decision:** Use `f79fee6` as the recovery baseline and one protected-staging twelve-item queue;
+  retain all D-097 safety/production gates; exclude FJ-15 from the current Item 12 acceptance while
+  preserving non-custodial crypto payment as a future separately gated option.
+- **Reason:** Recovery needs bounded authority to prove Founder journeys without merging the
+  archival snapshot or implying production, while the unavailable Coinbase Business entitlement
+  must not force crypto activation or permanently remove the product option.
+- **Date:** 2026-08-03; activated 2026-08-04; amended 2026-08-10

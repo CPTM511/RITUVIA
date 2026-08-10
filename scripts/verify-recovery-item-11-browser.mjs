@@ -24,6 +24,9 @@ const expectedSourceSha = process.env.RITUVIA_EXPECTED_SOURCE_SHA?.trim();
 if (!/^[0-9a-f]{40}$/u.test(expectedSourceSha ?? "")) {
   throw new Error("Recovery Item 11 browser verification requires the exact deployed source SHA.");
 }
+const expectedRecoveryItem = Number(process.env.RITUVIA_EXPECTED_RECOVERY_ITEM ?? "11");
+assert.ok(Number.isSafeInteger(expectedRecoveryItem) && expectedRecoveryItem > 0);
+const executeFj15 = process.env.RITUVIA_EXECUTE_FJ_15 === "true";
 const browserProxyServer = process.env.RITUVIA_BROWSER_PROXY_SERVER?.trim();
 const vercelStorageState = process.env.RITUVIA_VERCEL_STORAGE_STATE?.trim();
 const bypass = process.env.RITUVIA_VERCEL_PROTECTION_BYPASS?.trim();
@@ -335,7 +338,7 @@ try {
   assert.equal(readiness.status(), 200);
   const readinessBody = await readiness.json();
   assert.equal(readinessBody.environment, "staging");
-  assert.equal(readinessBody.recoveryItem, 11);
+  assert.equal(readinessBody.recoveryItem, expectedRecoveryItem);
   assert.equal(readinessBody.sourceSha, expectedSourceSha);
   assert.equal(readinessBody.controls.coinbaseSandbox, "enabled");
   assert.equal(readinessBody.controls.providerAi, "enabled");
@@ -418,7 +421,7 @@ try {
   contexts.push(mobileContext);
   const mobilePage = await mobileContext.newPage();
   await mobilePage.goto(`${origin}/en/plans`, { timeout: 60_000, waitUntil: "load" });
-  await mobilePage.getByText("Founder Acceptance · Item 11").first().waitFor();
+  await mobilePage.getByText(`Founder Acceptance · Item ${expectedRecoveryItem}`).first().waitFor();
   await mobilePage
     .getByRole("button", { name: "Continue to Coinbase USDC/Base Sandbox" })
     .waitFor();
@@ -433,19 +436,31 @@ try {
     path: path.join(artifactDirectory, "item11-mobile.png"),
   });
 
-  const coinbaseCheckout = await startCheckout(ownerPage, "coinbase");
-  assert.equal(coinbaseCheckout.networkCode, "base");
-  assert.equal(coinbaseCheckout.settlementAsset, "USDC");
-  assert.equal(coinbaseCheckout.state, "checkout_created");
-  await ownerPage.screenshot({
-    fullPage: true,
-    path: path.join(artifactDirectory, "coinbase-sandbox-hosted.png"),
-  });
-  await ownerPage.goto(`${origin}/en/plans`, { timeout: 60_000, waitUntil: "load" });
-  const abandonedOrder = await readOrder(ownerContext, coinbaseCheckout.orderId);
-  assert.equal(abandonedOrder.state, "checkout_created");
-  assert.equal(abandonedOrder.entitlementGranted, false);
-  progress("Coinbase Sandbox hosted checkout opened; abandoned flow granted nothing");
+  let coinbaseEvidence = Object.freeze({ executed: false });
+  if (executeFj15) {
+    const coinbaseCheckout = await startCheckout(ownerPage, "coinbase");
+    assert.equal(coinbaseCheckout.networkCode, "base");
+    assert.equal(coinbaseCheckout.settlementAsset, "USDC");
+    assert.equal(coinbaseCheckout.state, "checkout_created");
+    await ownerPage.screenshot({
+      fullPage: true,
+      path: path.join(artifactDirectory, "coinbase-sandbox-hosted.png"),
+    });
+    await ownerPage.goto(`${origin}/en/plans`, { timeout: 60_000, waitUntil: "load" });
+    const abandonedOrder = await readOrder(ownerContext, coinbaseCheckout.orderId);
+    assert.equal(abandonedOrder.state, "checkout_created");
+    assert.equal(abandonedOrder.entitlementGranted, false);
+    coinbaseEvidence = Object.freeze({
+      abandonedEntitlementGranted: false,
+      executed: true,
+      networkCode: "base",
+      orderId: coinbaseCheckout.orderId,
+      settlementAsset: "USDC",
+    });
+    progress("Coinbase Sandbox hosted checkout opened; abandoned flow granted nothing");
+  } else {
+    progress("FJ-15 excluded by D-098; no Coinbase checkout request was issued");
+  }
   assert.equal(aiCreditConsumed, 1);
 
   assert.deepEqual(pageErrors, []);
@@ -467,12 +482,7 @@ try {
     ai: Object.freeze({ creditConsumed: aiCreditConsumed, directBrowserProviderRequests: 0 }),
     artifactDirectory,
     browserProfiles: Object.keys(profiles),
-    coinbase: Object.freeze({
-      abandonedEntitlementGranted: false,
-      networkCode: "base",
-      orderId: coinbaseCheckout.orderId,
-      settlementAsset: "USDC",
-    }),
+    coinbase: coinbaseEvidence,
     environment: "protected-staging",
     hostedPlatformConsoleNoiseCount,
     mockFulfillmentCount: 0,
@@ -486,7 +496,7 @@ try {
     { mode: 0o600 },
   );
   process.stdout.write(
-    `Verified Recovery Item 11 Coinbase Sandbox abandonment, Provider AI, Credits, desktop/mobile, and accessibility at ${origin}.\nArtifacts: ${artifactDirectory}\n`,
+    `Verified Recovery Item ${expectedRecoveryItem} Provider AI, Credits, desktop/mobile, accessibility, and FJ-15 execution=${executeFj15} at ${origin}.\nArtifacts: ${artifactDirectory}\n`,
   );
 } catch (error) {
   primaryError = error;

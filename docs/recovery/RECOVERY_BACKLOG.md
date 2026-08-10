@@ -2,9 +2,10 @@
 
 > Status: **ACTIVE GOVERNANCE QUEUE**
 >
-> Repository status is NO-GO. Items 1 through 10 are complete. Item 11 was explicitly approved,
-> started, and is Blocked on Coinbase Business Checkout entitlement. Item 12 remains unapproved and
-> unstarted. One Codex run may execute exactly one approved item and must then STOP.
+> Repository status is NO-GO. Items 1 through 11 are complete under recorded evidence and the
+> Owner's explicit 2026-08-10 exclusion of FJ-15 from this recovery. Item 12 was explicitly
+> approved, started, and is now Blocked at the mandatory architecture gate. No remediation, rerun,
+> deployment, or later work starts automatically.
 
 ## Operating rules
 
@@ -271,16 +272,19 @@
 
 ## Item 11 — USDC/Base sandbox and Provider AI
 
-- **Status:** **Blocked** — the accepted application source is
+- **Status:** **Complete under explicit Owner scope amendment** — the accepted application source is
   `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed to protected custom Staging as
   `dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2`. FJ-16/FJ-17 pass with real bounded Provider AI, one-Credit
   consumption, reconciliation, desktop/mobile, accessibility, safe-off, webhook rotation, and
-  credential cleanup. FJ-15 is blocked because Coinbase returns `403` without Coinbase Business
-  Checkout entitlement; the application fails closed with `503` and no value grant. Exact evidence
-  is in `docs/recovery/ITEM_11_USDC_BASE_PROVIDER_AI_EVIDENCE.md`.
-- **Founder Journey IDs:** FJ-15, FJ-16, FJ-17.
-- **Exact user-visible outcome:** Owner can test hosted non-custodial USDC/Base sandbox checkout and
-  bounded Provider AI with disclosure, safety, fallback, and rollback.
+  credential cleanup. FJ-15 was attempted before the amendment and failed closed because Coinbase
+  returned `403` without Coinbase Business Checkout entitlement; no value was granted. On
+  2026-08-10 the Owner excluded FJ-15 from this recovery and directed Codex not to execute it in
+  Item 12, while preserving non-custodial crypto payment as a future gated option. Exact evidence is
+  in `docs/recovery/ITEM_11_USDC_BASE_PROVIDER_AI_EVIDENCE.md`.
+- **Founder Journey IDs:** FJ-16 and FJ-17. FJ-15 is retained only as historical blocked evidence
+  and a future separately gated option.
+- **Exact user-visible outcome:** Owner can test bounded Provider AI with disclosure, safety,
+  fallback, and rollback. No hosted crypto checkout is required or executed in this recovery.
 - **First before-state reproduction:** Run sandbox success/cancel/expiry/network mismatch and AI
   success/timeout/malformed/unsafe/quota cases; capture first custody/value/safety gap.
 - **One objective acceptance test:** No sandbox or AI failure grants/consumes value incorrectly; no
@@ -296,20 +300,26 @@
   private content, production model change, or unrestricted generation.
 - **STOP condition:** Real-value path, custody/key handling, AI-invented deterministic fact, unsafe
   output, prompt leak, unbounded cost, incorrect value rollback, or inability to complete the real
-  hosted Sandbox checkout. The hosted-checkout condition occurred. Stop Item 11; do not begin
-  Coinbase Business onboarding or Item 12 without separate explicit Owner approval.
+  hosted Sandbox checkout. The hosted-checkout condition occurred and the run stopped. The later
+  Owner amendment excluded FJ-15, closed Item 11 on FJ-16/FJ-17 evidence, and separately approved
+  Item 12. Do not begin Coinbase Business onboarding or execute crypto checkout under Item 12.
 
 ## Item 12 — Full Founder Acceptance, security, restore and source-disclosure gate
 
-- **Status:** Blocked and unapproved; Item 11 is incomplete and no Owner authority exists to start
-  Item 12.
-- **Founder Journey IDs:** FJ-00–FJ-20.
+- **Status:** **Blocked — mandatory architecture gate failed.** Node `24.18.0` / pnpm `11.13.1`
+  reached `check:architecture` and reported three findings for the unchanged
+  `packages/db/scripts/repair-recovery-item-11-country-policy.mjs` cross-package import. Per the
+  STOP condition, later workspace, browser, restore, deployment, and source-disclosure gates were
+  not executed. Exact evidence is in `docs/recovery/ITEM_12_FOUNDER_ACCEPTANCE_EVIDENCE.md`.
+- **Founder Journey IDs:** FJ-00–FJ-14 and FJ-16–FJ-20. FJ-15 is an explicit Owner-approved
+  exclusion for this recovery and must not be executed.
 - **Exact user-visible outcome:** Owner executes one source-disclosed desktop/mobile acceptance
   manual on protected staging and receives a factual GO/NO-GO recommendation.
 - **First before-state reproduction:** Run the full matrix and list every unresolved defect,
   waiver, source/license gap, security finding, restore gap, and staging/commit mismatch.
-- **One objective acceptance test:** All mandatory journeys pass or have explicit Owner-approved
-  exclusions; zero Critical/High finding; restore/rollback objectives pass; disclosures match SHA.
+- **One objective acceptance test:** All mandatory in-scope journeys pass; FJ-15 is recorded as the
+  sole explicit Owner-approved exclusion; zero Critical/High finding; restore/rollback objectives
+  pass; disclosures match SHA.
 - **Required automated checks:** complete workspace matrix; real E2E; desktop/mobile/accessibility;
   security/dependency/secret/license scans; payment/AI evals; migrations; backup/non-empty restore;
   disaster recovery; observability; privacy export/deletion; rollback.
@@ -319,7 +329,8 @@
   SHA, checksums, test accounts/data, rollback point, disclosures, and sign-off field.
 - **Explicit exclusions:** No production deployment, DNS, public indexing, real funds, live Stripe,
   real crypto, production AI/private content, legal activation, unrestricted public service, or
-  irreversible migration.
+  irreversible migration. FJ-15 hosted crypto checkout is not executed; the future product option
+  remains safe-off and requires a separate recovery or post-recovery approval.
 - **STOP condition:** Any mandatory journey failure, Critical/High finding, restore/rollback failure,
   source/license mismatch, unresolved Owner gate, or staging drift. On PASS, still stop for a
   separate production-candidate decision.

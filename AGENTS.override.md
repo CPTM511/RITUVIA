@@ -17,6 +17,11 @@
    delete, or selectively alter that preserved state without a later explicit recovery-item approval.
 5. Keep AGPL-3.0-only unchanged. This does not settle the separate long-term commercial-license
    gate for unrestricted public service.
+6. The Owner's 2026-08-10 amendment excludes FJ-15 from the current recovery acceptance and
+   directs Codex not to execute hosted crypto checkout during Item 12. This is not a permanent
+   product removal: non-custodial crypto payment remains a future option behind separate Owner,
+   Provider, legal, security, sandbox, production, and real-value approvals. Existing Coinbase
+   Sandbox code and configuration remain safe-off evidence only.
 
 ## Queue override
 
@@ -24,9 +29,12 @@
 RIT-169, commercial expansion, SEO/GEO expansion, additional localization, Node 26 adoption, and
 speculative work do not authorize execution during recovery.
 
-Recovery Items 1 and 2 are closed by the approved archive/baseline evidence and this governance
-activation. Item 3 and every later item require a new, explicit Owner instruction. Nothing in this
-file automatically starts protected staging, product implementation, deployment, or Provider work.
+Recovery Items 1 through 11 are closed under their recorded evidence and the explicit FJ-15
+exclusion. Item 12 was explicitly approved on 2026-08-10 and stopped at its first mandatory full
+workspace gate because the architecture policy reported three findings in the unchanged Item 11
+country-policy repair script. Item 12 is Blocked and requires a later explicit Owner instruction
+before remediation or rerun. Nothing in this file authorizes a later product item, production,
+DNS, public release, live payments, real crypto, or Provider activation.
 
 ## Required operating loop
 

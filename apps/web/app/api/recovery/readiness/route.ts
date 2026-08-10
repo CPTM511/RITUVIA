@@ -26,6 +26,8 @@ export const GET = () => {
       },
       environment: status.environment,
       recoveryItem: status.recoveryItem,
+      recoveryManifest: status.recoveryManifest,
+      recoveryManifestSha256: status.recoveryManifestSha256,
       sourceSha: status.sourceSha,
       status: status.ready ? "ready" : "not-ready",
     },

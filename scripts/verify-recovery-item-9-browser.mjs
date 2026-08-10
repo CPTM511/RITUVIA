@@ -30,6 +30,8 @@ const bypass = process.env.RITUVIA_VERCEL_PROTECTION_BYPASS?.trim();
 const browserProxyServer = process.env.RITUVIA_BROWSER_PROXY_SERVER?.trim();
 const vercelStorageState = process.env.RITUVIA_VERCEL_STORAGE_STATE?.trim();
 const expectedSourceSha = process.env.RITUVIA_EXPECTED_SOURCE_SHA?.trim();
+const expectedRecoveryItem = Number(process.env.RITUVIA_EXPECTED_RECOVERY_ITEM ?? "9");
+assert.ok(Number.isSafeInteger(expectedRecoveryItem) && expectedRecoveryItem > 0);
 const artifactRoot = path.resolve(
   process.env.RITUVIA_RECOVERY_ARTIFACT_DIR ?? "output/playwright/recovery-item-9",
 );
@@ -409,7 +411,7 @@ try {
     assert.equal(health.status(), 200);
     const healthBody = await health.json();
     assert.equal(healthBody.environment, "staging");
-    assert.equal(healthBody.recoveryItem, 9);
+    assert.equal(healthBody.recoveryItem, expectedRecoveryItem);
     if (expectedSourceSha !== undefined && expectedSourceSha !== "") {
       assert.equal(healthBody.sourceSha, expectedSourceSha);
     }

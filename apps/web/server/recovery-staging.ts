@@ -5,6 +5,10 @@ import type { RawEnvironment } from "@rituvia/config/server";
 import { getWebRuntimeConfiguration } from "../config/server";
 import { resolveRecoverySourceRevision } from "../config/recovery-environment";
 import { resolveWebAstrologyNativeBuildMetadataPath } from "./astrology-runtime";
+import {
+  recoveryItem12AcceptanceManifest,
+  recoveryItem12AcceptanceManifestSha256,
+} from "./recovery-item-12-manifest";
 import { webAstrologyTimeZoneRuntimePin } from "./astrology-location-time-zone";
 import { loadTarotReadingAvailability } from "./tarot-reading-state";
 
@@ -73,7 +77,9 @@ export type RecoveryStagingRuntimeStatus = Readonly<{
   productionProviders: "disabled";
   privacyControls: "disabled" | "enabled";
   ready: boolean;
-  recoveryItem: 11;
+  recoveryItem: 12;
+  recoveryManifest: typeof recoveryItem12AcceptanceManifest;
+  recoveryManifestSha256: string;
   sourceSha: string;
   tarotCatalog: "disabled" | "enabled";
   timeZoneRuntime: "invalid" | "pinned";
@@ -156,7 +162,9 @@ export const inspectRecoveryStagingRuntime = (
       privacyControls &&
       commerceSandbox &&
       item11Sandbox,
-    recoveryItem: 11,
+    recoveryItem: 12,
+    recoveryManifest: recoveryItem12AcceptanceManifest,
+    recoveryManifestSha256: recoveryItem12AcceptanceManifestSha256,
     sourceSha: sourceIdentityValid ? sourceSha : "unavailable",
     tarotCatalog,
     timeZoneRuntime,

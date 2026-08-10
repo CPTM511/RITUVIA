@@ -24,6 +24,8 @@ const expectedSourceSha = process.env.RITUVIA_EXPECTED_SOURCE_SHA?.trim();
 if (!/^[0-9a-f]{40}$/u.test(expectedSourceSha ?? "")) {
   throw new Error("Recovery Item 10 browser verification requires the exact deployed source SHA.");
 }
+const expectedRecoveryItem = Number(process.env.RITUVIA_EXPECTED_RECOVERY_ITEM ?? "10");
+assert.ok(Number.isSafeInteger(expectedRecoveryItem) && expectedRecoveryItem > 0);
 const browserProxyServer = process.env.RITUVIA_BROWSER_PROXY_SERVER?.trim();
 const vercelStorageState = process.env.RITUVIA_VERCEL_STORAGE_STATE?.trim();
 const bypass = process.env.RITUVIA_VERCEL_PROTECTION_BYPASS?.trim();
@@ -433,10 +435,10 @@ try {
   const healthBody = await health.json();
   const readinessBody = await readiness.json();
   assert.equal(healthBody.environment, "staging");
-  assert.equal(healthBody.recoveryItem, 10);
+  assert.equal(healthBody.recoveryItem, expectedRecoveryItem);
   assert.equal(healthBody.sourceSha, expectedSourceSha);
   assert.equal(readinessBody.status, "ready");
-  assert.equal(readinessBody.recoveryItem, 10);
+  assert.equal(readinessBody.recoveryItem, expectedRecoveryItem);
   assert.equal(readinessBody.sourceSha, expectedSourceSha);
   assert.equal(readinessBody.controls.commerceSandbox, "enabled");
   assert.equal(readinessBody.controls.productionProviders, "disabled");
@@ -520,7 +522,7 @@ try {
   mobilePage.setDefaultTimeout(25_000);
   for (const pathname of ["/en/plans", "/en/account/billing", "/en/account/orders"]) {
     await mobilePage.goto(`${origin}${pathname}`, { timeout: 60_000, waitUntil: "load" });
-    await mobilePage.getByText("Founder Acceptance · Item 10").waitFor();
+    await mobilePage.getByText(`Founder Acceptance · Item ${expectedRecoveryItem}`).waitFor();
     await assertAxe(mobilePage);
     await assertLayout(mobilePage);
     await assertTouchTargets(mobilePage);

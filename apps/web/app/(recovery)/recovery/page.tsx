@@ -68,6 +68,70 @@ export default function RecoveryStagingPage() {
 
           <RuntimeTruthCheck expectedSourceSha={status.sourceSha} />
 
+          <section aria-labelledby="acceptance-manifest-title" className="acceptance-manifest">
+            <p className="eyebrow">{messages.badge}</p>
+            <h2 id="acceptance-manifest-title">{messages.manifestTitle}</h2>
+            <dl>
+              <div>
+                <dt>{messages.manifestJourneysLabel}</dt>
+                <dd>{status.recoveryManifest.mandatoryJourneys.join(", ")}</dd>
+              </div>
+              <div>
+                <dt>{messages.manifestExcludedLabel}</dt>
+                <dd>{status.recoveryManifest.excludedJourneys.join(", ")}</dd>
+              </div>
+              <div>
+                <dt>{messages.manifestDecisionLabel}</dt>
+                <dd>{status.recoveryManifest.decisionReference}</dd>
+              </div>
+              <div>
+                <dt>{messages.manifestLicenseLabel}</dt>
+                <dd>{status.recoveryManifest.license}</dd>
+              </div>
+              <div>
+                <dt>{messages.manifestProductionLabel}</dt>
+                <dd>{status.recoveryManifest.productionDecision}</dd>
+              </div>
+              <div>
+                <dt>{messages.manifestRollbackLabel}</dt>
+                <dd>
+                  <code>{status.recoveryManifest.rollbackSourceSha}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>{messages.manifestBeforeStateLabel}</dt>
+                <dd>
+                  <code>{status.recoveryManifest.beforeStateManifestSha256}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>{messages.manifestChecksumLabel}</dt>
+                <dd>
+                  <code data-recovery-manifest-sha256={status.recoveryManifestSha256}>
+                    {status.recoveryManifestSha256}
+                  </code>
+                </dd>
+              </div>
+            </dl>
+            <a
+              href={`https://github.com/CPTM511/RITUVIA/tree/${status.sourceSha}`}
+              rel="noreferrer"
+            >
+              {messages.manifestSourceLink}
+            </a>
+          </section>
+
+          <fieldset className="signoff">
+            <legend>{messages.signoffTitle}</legend>
+            {messages.signoffChecks.map((label) => (
+              <label key={label}>
+                <input type="checkbox" />
+                <span>{label}</span>
+              </label>
+            ))}
+            <p>{messages.signoffLocalOnly}</p>
+          </fieldset>
+
           <ul className="boundaries">
             {messages.boundaries.map((boundary) => (
               <li key={boundary}>{boundary}</li>

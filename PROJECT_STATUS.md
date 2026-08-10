@@ -3,10 +3,14 @@
 **Last reconciled:** 2026-08-10
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 10 are complete. Item 11 was
-explicitly approved, started, and is now **Blocked** because the Coinbase account lacks Coinbase
-Business Checkout entitlement. FJ-16/FJ-17 Provider AI acceptance passed; FJ-15 hosted Coinbase
-Sandbox checkout did not.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 11 are complete. FJ-16/FJ-17
+Provider AI acceptance passed. The Owner's 2026-08-10 amendment excludes FJ-15 hosted crypto
+checkout from this recovery, directs Codex not to execute it during Item 12, and preserves
+non-custodial crypto payment as a future option behind separate Owner, Provider, legal, security,
+sandbox, production, and real-value approvals. Item 12 was explicitly approved, started, and is now
+**Blocked** at its first mandatory full workspace gate: `check:architecture` reports three findings
+for the unchanged Item 11 country-policy repair script. Per the Item 12 STOP condition, no browser,
+restore, deployment, or later gate was executed.
 
 The accepted Item 11 application source is `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed as
 `dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2` to the Vercel-authenticated custom `staging` target. Readiness is
@@ -14,16 +18,17 @@ HTTP `200` and `ready`; the stable Owner URL and exact evidence are recorded in
 `docs/recovery/ITEM_11_USDC_BASE_PROVIDER_AI_EVIDENCE.md`. Hosted zero-mock desktop/mobile evidence
 passes email-sandbox sign-in, age eligibility, Stripe Test funding, real OIDC-backed Provider AI,
 one-Credit consumption, ledger reconciliation, accessibility, layout, touch, and safe-off checks.
-The same run stops at the real Coinbase request with provider `403` / application `503`, with no
-value granted.
+The prior run stopped at the real Coinbase request with provider `403` / application `503`, with no
+value granted. This is retained as fail-closed evidence, not as FJ-15 acceptance.
 
 One Stripe Test webhook and one Coinbase Sandbox webhook remain enabled only for the protected
 Staging host. Two exposed Vercel bypass tokens and two superseded Coinbase subscriptions were
 revoked/deleted after replacement. Exactly one sealed Vercel bypass remains; Stripe and Neon
 Marketplace resources are disconnected, and temporary credentials and browser state were securely
-deleted. Item 12 remains unapproved and unstarted. Production, DNS, real funds/assets, public
-release, live Stripe, Coinbase Business onboarding, unrestricted AI, and unrestricted public
-service remain separate Owner gates. Git automatic deployment remains disabled.
+deleted. The accepted protected Staging remains the Item 11 application deployment; the Item 12
+candidate was not deployed. Production, DNS, real funds/assets, public release, live Stripe,
+Coinbase Business onboarding, unrestricted AI, and unrestricted public service remain separate
+Owner gates. Git automatic deployment remains disabled.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.

@@ -149,7 +149,7 @@ const englishMessages = {
     safetyNote:
       "Protected Staging only. Stripe Test Mode uses no real funds, creates no cash balance, and does not authorize production billing.",
     signIn: "Sign in",
-    stagingEyebrow: "Founder Acceptance · Item 11",
+    stagingEyebrow: "Founder Acceptance · Item 12",
     statusLabel: "Status",
     statusLabels: {
       active: "Active",

@@ -36,7 +36,7 @@ not as a branch to merge.
 | FJ-12 | Checkout return cannot grant value before verified fulfillment. |
 | FJ-13 | Credits/entitlement display and bounded staging consumption. |
 | FJ-14 | Plus Test start, state display, cancellation, and renewal boundary. |
-| FJ-15 | Hosted USDC/Base sandbox checkout with no custody or real-value authorization. |
+| FJ-15 | **Owner-excluded from this recovery acceptance on 2026-08-10.** Hosted non-custodial crypto checkout remains a future option behind new sandbox, Provider, legal, security, production, and real-value approvals. |
 | FJ-16 | Provider AI staging interpretation with disclosure, safety, and bounded usage. |
 | FJ-17 | Provider failure, timeout, safety block, and value rollback. |
 | FJ-18 | Private data export. |
@@ -71,9 +71,11 @@ does not create or deploy it.
 
 ## Founder Acceptance gate
 
-The release remains NO-GO until Recovery Item 12 proves all mandatory journeys, source disclosure,
-dependency/license disclosure, security, privacy, payment-test integrity, AI safety, database
-restore, rollback, accessibility, desktop/mobile behavior, and explicit Owner acceptance.
+The release remains NO-GO until Recovery Item 12 proves all mandatory in-scope journeys, source
+disclosure, dependency/license disclosure, security, privacy, payment-test integrity, AI safety,
+database restore, rollback, accessibility, desktop/mobile behavior, and explicit Owner acceptance.
+FJ-15 is the one explicit Owner-approved exclusion and must not be executed during Item 12. Its
+exclusion does not authorize removing the safe-off adapter or claiming crypto checkout acceptance.
 
 Even after Item 12, production deployment, DNS, unrestricted public service, live Stripe, real
 crypto, production AI with private content, production email, legal activation, and irreversible

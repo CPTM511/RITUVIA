@@ -2,7 +2,10 @@
 
 > Date: 2026-08-10
 >
-> Status: **BLOCKED — PROVIDER AI ACCEPTED; COINBASE BUSINESS CHECKOUT ENTITLEMENT MISSING**
+> Original result: **BLOCKED — PROVIDER AI ACCEPTED; COINBASE BUSINESS CHECKOUT ENTITLEMENT
+> MISSING**
+>
+> Governance resolution on 2026-08-10: **COMPLETE UNDER EXPLICIT FJ-15 EXCLUSION**
 
 ## Scope and authority
 
@@ -10,15 +13,16 @@ The Owner explicitly approved Recovery Item 11 and the bounded Protected Staging
 Vercel, Stripe Test, Coinbase Sandbox webhook, Provider AI, temporary-credential, and credential
 rotation operations used below.
 
-This item remains limited to the existing Vercel-authenticated custom Staging. It does not
-authorize Production, DNS, public release, real funds or assets, custody, unrestricted AI,
-Coinbase Business onboarding, merchant activation, or Recovery Item 12.
+This item remains limited to the existing Vercel-authenticated custom Staging. Its original
+approval did not authorize Production, DNS, public release, real funds or assets, custody,
+unrestricted AI, Coinbase Business onboarding, merchant activation, or Recovery Item 12. The
+Owner later approved Item 12 separately without FJ-15.
 
 Founder Journey coverage:
 
 - FJ-16 and FJ-17: accepted in Protected Staging.
-- FJ-15: blocked before hosted checkout because the Coinbase account lacks Coinbase Business
-  Checkout entitlement.
+- FJ-15: blocked before hosted checkout, then explicitly excluded from this recovery by the Owner;
+  it is not an Item 12 test.
 
 ## First before-state reproduction
 
@@ -192,16 +196,17 @@ webhook, entitlement, bypass, resource-disconnection, and official-document summ
 
 ## Remaining blocker and owner decision
 
-Item 11 is not complete because FJ-15 requires a real hosted Coinbase Sandbox checkout and the
-current account has no Coinbase Business Checkout entitlement.
+At the end of the original Item 11 run, Item 11 was not complete because FJ-15 required a real
+hosted Coinbase Sandbox checkout and the current account did not have the required Business
+Checkout entitlement.
 
-Recommended decision: keep Item 11 **Blocked** and retain the current safe protected staging until
-the Owner separately decides whether to complete Coinbase Business onboarding/KYC and request
-Checkout access. That future action is a payment-provider onboarding/activation Owner Gate and is
-not implied by this Item 11 approval.
+The Owner made the alternative decision on 2026-08-10: do not execute FJ-15 in this recovery,
+retain non-custodial crypto payment as a future gated option, close Item 11 on the accepted
+FJ-16/FJ-17 evidence, and continue to Item 12. Coinbase Business onboarding, crypto checkout
+acceptance, production, DNS, real assets, and public release are not implied by that amendment.
 
-Alternative: explicitly remove FJ-15 from Item 11 through a new governance decision. Do not treat
-the passing webhook API or Provider AI evidence as equivalent to hosted checkout acceptance.
+The safe-off adapter and sandbox evidence remain available for a future separately approved item.
+No Coinbase request or hosted crypto checkout is part of Item 12.
 
 ## Direct Owner test
 
@@ -217,8 +222,7 @@ the passing webhook API or Provider AI evidence as equivalent to hosted checkout
    private question or journal is sent, the structured Lantern reflection appears, one Credit is
    consumed only after safety acceptance, and billing reconciles to five available Credits.
 6. Repeat the plans and AI result surfaces near 390-pixel width with keyboard and touch.
-7. Select **Continue to Coinbase USDC/Base Sandbox** only to reproduce the known blocker. Confirm
-   the product reports that Test Checkout could not be created and that nothing was charged or
-   granted. Do not use real assets or attempt Coinbase Business onboarding under this approval.
+7. Do not select **Continue to Coinbase USDC/Base Sandbox**. FJ-15 is excluded from the current
+   recovery; preserve the safe-off option for a future separately approved test.
 
-**STOP — NO RECOVERY ITEM 12 STARTED.**
+**HISTORICAL STOP SATISFIED — ITEM 12 STARTED ONLY AFTER THE LATER OWNER APPROVAL.**
