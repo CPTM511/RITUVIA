@@ -24,7 +24,7 @@ const paidProductCodes = Object.freeze([
   "plus_annual",
   "plus_monthly",
 ]);
-const productCodes = Object.freeze([...paidProductCodes, "deep_one"]);
+const productCodes = Object.freeze(["deep_one", ...paidProductCodes]);
 
 const fail = (message) => {
   throw new TypeError(message);

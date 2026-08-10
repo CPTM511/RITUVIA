@@ -55,6 +55,9 @@ describe("Recovery Item 11 staging configuration boundary", () => {
     );
     expect(source).toContain('providerRoute: "coinbase_usdc_base"');
     expect(source).toContain('? ["stripe", "coinbase_usdc_base"] : ["stripe"]');
+    expect(source).toContain(
+      'const productCodes = Object.freeze(["deep_one", ...paidProductCodes])',
+    );
     expect(source).toContain("ON CONFLICT (version) DO NOTHING");
     expect(source).toContain("migrationsApplied: 0");
     expect(source).not.toMatch(/prisma\s+.*migrate/iu);

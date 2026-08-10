@@ -22,6 +22,7 @@
     "staging:configure-recovery-item-9": "node scripts/configure-recovery-item-9-staging.mjs",
     "staging:configure-recovery-item-10": "pnpm --filter @rituvia/domain build && node scripts/configure-recovery-item-10-staging.mjs",
     "staging:configure-recovery-item-11": "pnpm --filter @rituvia/domain build && node scripts/configure-recovery-item-11-staging.mjs",
+    "staging:repair-recovery-item-11-country-policy": "pnpm --filter @rituvia/country-policy build && node scripts/repair-recovery-item-11-country-policy.mjs",
     "test:account-merge": "node --import tsx scripts/verify-account-merge.ts",
     "test:account-control": "node --import tsx scripts/verify-account-control.ts",
     "test:wallet-identity": "node --import tsx scripts/verify-wallet-identity.ts",
