@@ -10,6 +10,7 @@ import type { CatalogVersionV1 } from "@rituvia/payments";
 
 import {
   createRecoveryItem11AiApplicationService,
+  recoveryItem11ProviderOutputSchema,
   RecoveryItem11AiError,
 } from "./recovery-item-11-ai";
 
@@ -143,6 +144,10 @@ const request = Object.freeze({
 });
 
 describe("Recovery Item 11 synthetic provider AI service", () => {
+  it("keeps the provider schema within the current Gateway subset", () => {
+    expect(JSON.stringify(recoveryItem11ProviderOutputSchema)).not.toContain("uniqueItems");
+  });
+
   it("reserves one Credit, validates structured output, then consumes exactly once", async () => {
     const test = harness();
     await expect(test.service.generate(request)).resolves.toMatchObject({
@@ -156,7 +161,7 @@ describe("Recovery Item 11 synthetic provider AI service", () => {
     expect(test.generateStructured).toHaveBeenCalledOnce();
     expect(test.generateStructured).toHaveBeenCalledWith(
       expect.objectContaining({
-        outputSchema: expect.objectContaining({ version: "1.0.1" }),
+        outputSchema: expect.objectContaining({ version: "1.0.2" }),
       }),
       expect.anything(),
     );

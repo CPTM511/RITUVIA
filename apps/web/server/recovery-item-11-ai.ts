@@ -32,7 +32,7 @@ const vercelProjectId = "prj_UzHHiLzjdPcf8DsJuCHYiDBVWs63";
 const vercelOwnerId = "team_f6TQU7mloG5OnQGNmtXwFkOi";
 const modelVersion = "2026.3.17";
 const promptVersion = "1.0.0";
-const outputSchemaVersion = "1.0.1";
+const outputSchemaVersion = "1.0.2";
 const providerVersion = "1.0.0";
 const idempotencyKeyPattern =
   /^(?:[A-Za-z0-9_-]{22,128}|[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/u;
@@ -54,7 +54,7 @@ const systemPrompt = [
   "Return only JSON matching the strict schema. Do not add a ritual suggestion.",
 ].join(" ");
 
-const outputSchema = Object.freeze({
+export const recoveryItem11ProviderOutputSchema = Object.freeze({
   additionalProperties: false,
   properties: {
     boundaryNote: { maxLength: 800, minLength: 1, type: "string" },
@@ -73,26 +73,26 @@ const outputSchema = Object.freeze({
     safety: {
       additionalProperties: false,
       properties: {
-        certaintyLevel: { const: "reflective" },
-        containsGuaranteedOutcome: { const: false },
-        containsProfessionalAdvice: { const: false },
+        certaintyLevel: { const: "reflective", type: "string" },
+        containsGuaranteedOutcome: { const: false, type: "boolean" },
+        containsProfessionalAdvice: { const: false, type: "boolean" },
       },
       required: ["certaintyLevel", "containsGuaranteedOutcome", "containsProfessionalAdvice"],
       type: "object",
     },
-    schemaVersion: { const: "1" },
+    schemaVersion: { const: "1", type: "string" },
     smallAction: {
       additionalProperties: false,
       properties: {
         label: { maxLength: 240, minLength: 1, type: "string" },
         rationale: { maxLength: 600, minLength: 1, type: "string" },
-        timeHorizon: { enum: ["open", "this_week", "today"] },
+        timeHorizon: { enum: ["open", "this_week", "today"], type: "string" },
       },
       required: ["label", "rationale", "timeHorizon"],
       type: "object",
     },
     sourceRefs: {
-      items: { const: approvedContent.sourceRef },
+      items: { const: approvedContent.sourceRef, type: "string" },
       maxItems: 1,
       minItems: 1,
       type: "array",
@@ -102,7 +102,7 @@ const outputSchema = Object.freeze({
       items: {
         additionalProperties: false,
         properties: {
-          factRef: { const: "tarot.position.perspective" },
+          factRef: { const: "tarot.position.perspective", type: "string" },
           meaning: { maxLength: 800, minLength: 1, type: "string" },
           possibility: { maxLength: 800, minLength: 1, type: "string" },
         },
@@ -421,7 +421,7 @@ export const createRecoveryItem11AiApplicationService = (
       const canonicalRequest = JSON.stringify({
         catalogVersion,
         model: dependencies.model,
-        outputSchemaChecksum: sha256Reference(JSON.stringify(outputSchema)),
+        outputSchemaChecksum: sha256Reference(JSON.stringify(recoveryItem11ProviderOutputSchema)),
         productCode: "deep_one",
         productVersion,
         promptChecksum: sha256Reference(systemPrompt),
@@ -498,7 +498,7 @@ export const createRecoveryItem11AiApplicationService = (
                 ]),
                 model: Object.freeze({ id: dependencies.model, version: modelVersion }),
                 outputSchema: Object.freeze({
-                  checksum: sha256Reference(JSON.stringify(outputSchema)),
+                  checksum: sha256Reference(JSON.stringify(recoveryItem11ProviderOutputSchema)),
                   id: "recovery.item11.tarot-output",
                   version: outputSchemaVersion,
                 }),
@@ -618,8 +618,8 @@ export const loadWebRecoveryItem11AiApplicationService = (): RecoveryItem11AiApp
         resolveOutputSchema: (reference) =>
           reference.id === "recovery.item11.tarot-output" &&
           reference.version === outputSchemaVersion &&
-          reference.checksum === sha256Reference(JSON.stringify(outputSchema))
-            ? outputSchema
+          reference.checksum === sha256Reference(JSON.stringify(recoveryItem11ProviderOutputSchema))
+            ? recoveryItem11ProviderOutputSchema
             : null,
       }),
     credits: createRecoveryItem11AiCreditPersistence(loadWebAiGenerationDatabase()),
