@@ -30,13 +30,14 @@ RIT-169, commercial expansion, SEO/GEO expansion, additional localization, Node 
 speculative work do not authorize execution during recovery.
 
 Recovery Items 1 through 11 are closed under their recorded evidence and the explicit FJ-15
-exclusion. Item 12 was explicitly approved on 2026-08-10. On 2026-08-11 the Owner approved only the
-three recorded architecture remediations and a new before-state rerun. Those three findings are
-resolved, but the rerun stopped at the next mandatory workspace gate because `check:rtl` reported
-one pre-existing physical-directional CSS finding in the recovery page. Item 12 remains Blocked and
-requires a later explicit Owner instruction before that finding may be remediated or Item 12 rerun.
-Nothing in this file authorizes a later product item, production, DNS, public release, live
-payments, real crypto, or Provider activation.
+exclusion. Item 12 was explicitly approved on 2026-08-10. On 2026-08-11 the Owner first approved
+only three architecture remediations and then separately approved the single recorded RTL
+remediation, each with a new before-state rerun. The architecture and RTL policies now pass. The
+latest rerun stopped in the mandatory unit matrix because two unchanged contract test files report
+five failures against the existing recovery configuration and Web shell. Item 12 remains Blocked
+and requires a later explicit Owner instruction before those contract failures may be remediated or
+Item 12 rerun. Nothing in this file authorizes a later product item, production, DNS, public
+release, live payments, real crypto, or Provider activation.
 
 ## Required operating loop
 

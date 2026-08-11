@@ -146,12 +146,67 @@ The Item 12 STOP condition therefore ended the rerun. No remaining workspace, pr
 deletion, restore, rollback, dependency/license, Corresponding Source, browser, staging deployment,
 Provider, database, secret, FJ-15, Production, DNS, public, or real-value action was executed.
 
+## Bounded RTL remediation rerun — 2026-08-11
+
+The Owner separately approved only the single recorded RTL remediation and required Item 12 to
+restart from another new before-state. The before-state was clean at local commit
+`e0627d2064ae498d54e806475c3e9c914110e25a`, tree
+`397b3f91e26ba68a4c4379198abc37bdde205e67`. The baseline remained an ancestor, the archive commit
+remained excluded, and the original worktree remained at 243 staged and 0 unstaged files.
+
+| Field                           | Exact evidence                                                                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| RTL rerun before-state manifest | `/private/tmp/rituvia-item12-rtl-rerun-before/MANIFEST.md`; SHA-256 `4ad166bff26bd296fc33d3e51a514f0c9f7b551d7cef3c95565eccd0d1d70402`    |
+| Reproduced RTL failure          | `/private/tmp/rituvia-item12-rtl-rerun-before/rtl-before.log`; SHA-256 `8f4fb88604800b8402ac411a039698177e4b58c242bcc64dfeb83ea6e8c30dd3` |
+| Before CSS                      | Git blob `72b698eeb502c124d27dc08af957eabcae8f9fc3`; SHA-256 `192b1deb38ea2f070aa36fbb6a606dcce1cdb87b7193f83ccbf4c8dea77dcaf4`           |
+| Corrected CSS                   | SHA-256 `4633a06a8aa6e6542ef6cbb3579e18c16cad02245bc0c53f3164cf97e11dc32d`                                                                |
+
+The minimal repair changed only two physical inline-direction declarations in
+`apps/web/app/(recovery)/recovery/recovery.css` to their logical equivalents. It did not change
+copy, layout dimensions, business logic, Provider behavior, data, routes, license, or environment
+authority. The repository-mandated compiled manual and checksum outputs were mechanically
+resynchronized.
+
+Focused `check:rtl`, its four policy tests, Prettier, and diff checks passed. The full-gate attempts
+then handled three non-product execution prerequisites: staging the authorized source for the
+generated-evidence policy, synchronizing generated evidence, and rerunning outside the filesystem
+sandbox so Prisma could update its existing local engine cache. The fourth attempt is the valid
+complete-gate evidence.
+
+| Valid rerun gate             | Result                                                                              | Evidence                                                                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frozen offline install       | PASS; 17 workspace projects already up to date                                      | `/private/tmp/rituvia-item12-rtl-rerun-gates/install-attempt4.log`; SHA-256 `173be2b0172c9f71177608902bbe96513990c89a39e2acec2bf97775a1a15f16`                                                                          |
+| Evidence through secret scan | PASS                                                                                | CI authority, architecture, environment, AI operations, localization, editorial, public-page, search, RTL, writing systems, 149 records, 37 migrations, generated evidence, instruction pack, and 1181-file secret scan |
+| Formatting and lint          | PASS                                                                                | Complete configured workspace scope                                                                                                                                                                                     |
+| Type checking                | PASS                                                                                | 16 of 16 packages plus root TypeScript                                                                                                                                                                                  |
+| Unit matrix                  | FAIL; 209 files passed, 2 skipped, 2 failed; 2370 tests passed, 6 skipped, 5 failed | `/private/tmp/rituvia-item12-rtl-rerun-gates/check-attempt4.log`; SHA-256 `a8b7615f6f61d7cf76bf01330bfd81f177686e336586a2ecdbbcb464026fe055`                                                                            |
+
+The five failures are all source-contract assertions:
+
+1. `.env.example` no longer satisfies the test's all-empty-value expectation.
+2. `turbo.json` includes `RITUVIA_BUILD_SOURCE_SHA` beyond the test's expected build environment.
+3. The process-environment reader allowlist differs from the existing recovery adapters and
+   one-time database scripts.
+4. `apps/web/next.config.ts` no longer contains the environment-loader calls expected by the test.
+5. `apps/web/app/[locale]/page.tsx` uses `parseGoldenShellLocale` while the test still requires the
+   literal `parseLocale` contract.
+
+Both failing test files and all compared source files have identical working-tree and HEAD Git
+blobs. They were not changed by this RTL remediation. No conclusion is made here about whether the
+tests or implementations should change; that decision and repair are outside the Owner's current
+authorization.
+
+The mandatory unit failure triggered STOP. No privacy export/deletion, backup restore, disaster
+recovery, rollback, dependency/license, Corresponding Source, browser, protected Staging
+deployment, Provider, database, secret, FJ-15, Production, DNS, public, or real-value action was
+executed after the failure.
+
 ## Factual recommendation
 
 Recovery Item 12 is **Blocked** and the repository remains **NO-GO**. The smallest next Owner
-decision is whether to authorize one bounded remediation of the single recorded RTL finding,
-capture another new before-state, and rerun the complete Item 12 gate from the beginning. That
-authority must not include FJ-15, Production, DNS, public release, real funds, live Providers, or
-automatic follow-on work unless separately stated.
+decision is whether to authorize a bounded contract-truth audit and remediation for only the five
+recorded assertions in the two failing test files, capture another new before-state, and rerun the
+complete Item 12 gate from the beginning. That authority must not include FJ-15, Production, DNS,
+public release, real funds, live Providers, or automatic follow-on work unless separately stated.
 
 **STOP — ITEM 12 DID NOT PASS; NO PRODUCT DEPLOYMENT OR FJ-15 EXECUTION STARTED.**

@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-08-08. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-08-11. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -1079,28 +1079,40 @@ existing human approval gates.
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-08
+**Last reconciled:** 2026-08-11
 
 Founder Acceptance Recovery is active with recovery baseline
-`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 10 are complete. Item 10 is
-deployed to Vercel-authenticated custom Staging as `dpl_DDT5hLDHsxNPLLQVJjdNQUTxbkJA`, exact
-application source `c2bbd107909f2ab06391a68f5e4377a7fe7e9c82`, with the stable Owner URL and
-evidence recorded in `docs/recovery/ITEM_10_CREDITS_STRIPE_TEST_PLUS_EVIDENCE.md`. Vercel reports
-`READY`, `readySubstate=STAGED`, OIDC/custom environment `staging`, one `iad1` runtime region, a
-Vercel-managed protected alias, no custom/production domain, and login protection. Hosted
-zero-mock desktop/mobile Chromium passes email-sandbox sign-in, explicit 18+ eligibility, real
-Stripe Test Checkout, redirect-only fulfillment denial, signed webhook fulfillment, one six-Credit
-grant, one eight-Credit monthly Plus grant, two paid orders, ledger reconciliation, accessibility,
-and safe-off assertions with zero mocked fulfillment or Provider AI requests. The final read-only
-Neon audit confirms the accepted account has exactly one purchased and one subscription grant. A
-pre-fix synthetic duplicate-grant history remains append-only and was not deleted or overwritten.
-The previous Stripe Test endpoint was removed only after acceptance; one replacement Test endpoint
-remains enabled. Stripe and Neon resources are disconnected, and temporary webhook secret, Vercel
-bypass, browser Cookie/state, and administrator files were deleted. Item 9 remains preserved in the
-same protected Staging history. Item 11 remains unapproved and unstarted. Production, DNS, real
-funds, public release, live Stripe, final price/tax/refund/legal decisions, USDC/Base sandbox,
-Provider AI, and unrestricted public service remain separate Owner gates. Git automatic deployment
-remains disabled.
+`f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 11 are complete. FJ-16/FJ-17
+Provider AI acceptance passed. The Owner's 2026-08-10 amendment excludes FJ-15 hosted crypto
+checkout from this recovery, directs Codex not to execute it during Item 12, and preserves
+non-custodial crypto payment as a future option behind separate Owner, Provider, legal, security,
+sandbox, production, and real-value approvals. On 2026-08-11 the Owner approved the three recorded
+architecture fixes and later the single recorded RTL fix, each with a new before-state Item 12
+rerun. Architecture now passes for 610 source files across 16 modules and RTL passes for 213
+production files. The latest mandatory workspace command also passed evidence, environment,
+writing-system, record, migration, generated-evidence, secret, formatting, lint, and all 16 package
+typecheck gates. It then stopped in the unit matrix: `tests/configuration-contract.test.ts` reports
+four failures and `tests/web-shell-contract.test.ts` reports one. Both test files and their compared
+sources are unchanged by the RTL remediation. Item 12 remains **Blocked**. Per its STOP condition,
+no privacy/restore, deployment, browser, or later gate was executed.
+
+The accepted Item 11 application source is `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed as
+`dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2` to the Vercel-authenticated custom `staging` target. Readiness is
+HTTP `200` and `ready`; the stable Owner URL and exact evidence are recorded in
+`docs/recovery/ITEM_11_USDC_BASE_PROVIDER_AI_EVIDENCE.md`. Hosted zero-mock desktop/mobile evidence
+passes email-sandbox sign-in, age eligibility, Stripe Test funding, real OIDC-backed Provider AI,
+one-Credit consumption, ledger reconciliation, accessibility, layout, touch, and safe-off checks.
+The prior run stopped at the real Coinbase request with provider `403` / application `503`, with no
+value granted. This is retained as fail-closed evidence, not as FJ-15 acceptance.
+
+One Stripe Test webhook and one Coinbase Sandbox webhook remain enabled only for the protected
+Staging host. Two exposed Vercel bypass tokens and two superseded Coinbase subscriptions were
+revoked/deleted after replacement. Exactly one sealed Vercel bypass remains; Stripe and Neon
+Marketplace resources are disconnected, and temporary credentials and browser state were securely
+deleted. The accepted protected Staging remains the Item 11 application deployment; the Item 12
+candidate was not deployed. Production, DNS, real funds/assets, public release, live Stripe,
+Coinbase Business onboarding, unrestricted AI, and unrestricted public service remain separate
+Owner gates. Git automatic deployment remains disabled.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
@@ -1212,13 +1224,12 @@ deployment SHA, upload and re-download the archive, verify its digest, expose a 
 source link, and bind that link to the deployed revision before RIT-143 owner go/no-go. RIT-094 is
 Done with a table-authoritative presentation-only SVG, strict client response parser, exact,
 approximate, unknown, empty, offline, unauthorized, and unavailable states, and no raw birth input
-surface. `experience.astrology` remains disabled. The
-repository remains
-a local production-capable foundation, not a public production service. The new golden UI,
-bilingual route inventory, wallet/SIWE, Credits
-provider-backed Credit fulfillment, subscriptions, Coinbase checkout, provider-backed Deep Readings, production privacy
-delivery/retention operations, outbox/reconciliation, and operational beta gates are not
-implemented or activated. The pinned
+surface. `experience.astrology` remains disabled. The repository remains a production-capable
+foundation and protected Staging, not a public production service. The golden UI, bilingual routes,
+wallet/SIWE, Credits, Stripe Test fulfillment, subscriptions, Coinbase Sandbox adapter/webhooks,
+and bounded synthetic Provider AI now exist in protected Staging. Coinbase hosted checkout remains
+blocked by account entitlement; production privacy delivery/retention operations and operational
+beta gates are not activated. The pinned
 production-artifact accessibility and full PostgreSQL foundation suites passed in the owner's
 unrestricted shell before the later numerology/dynamic-home changes. The configuration-boundary
 rerun now passes typed configuration, isolated production compilation, and the current nine-page
@@ -3420,6 +3431,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   truthfully replace.
 - **Date:** 2026-07-30
 
+### [D-098 — Founder Acceptance Recovery scope and governance](records/decisions/D-098.md)
+
+- **Decision:** Use `f79fee6` as the recovery baseline and one protected-staging twelve-item queue;
+  retain all D-097 safety/production gates; exclude FJ-15 from the current Item 12 acceptance while
+  preserving non-custodial crypto payment as a future separately gated option.
+- **Reason:** Recovery needs bounded authority to prove Founder journeys without merging the
+  archival snapshot or implying production, while the unavailable Coinbase Business entitlement
+  must not force crypto activation or permanently remove the product option.
+- **Date:** 2026-08-03; activated 2026-08-04; amended 2026-08-10
+
 ---
 
 # File: `ROADMAP.md`
@@ -4054,6 +4075,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-089 | Complete the public-shell registry compatibility window | [decisions/D-089.md](./decisions/D-089.md) |
 | Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
+| Decision | D-098 | Founder Acceptance Recovery scope and governance | [decisions/D-098.md](./decisions/D-098.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
