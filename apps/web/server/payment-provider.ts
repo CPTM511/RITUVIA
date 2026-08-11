@@ -19,6 +19,7 @@ import { getWebRuntimeConfiguration } from "../config/server";
 
 export const localHostedCheckoutProviderId = "local_hosted" as const;
 export const stripeHostedCheckoutProviderId = "stripe" as const;
+export type StripePaymentMode = "live" | "test";
 export type WebPaymentProviderId =
   typeof localHostedCheckoutProviderId | typeof stripeHostedCheckoutProviderId;
 
@@ -293,8 +294,9 @@ const stripeChargeContext = async (
 export const verifiedStripePaymentEvent = async (
   stripe: Stripe,
   event: Stripe.Event,
+  mode: StripePaymentMode,
 ): Promise<VerifiedStripePaymentEvent> => {
-  if (event.livemode !== false) throw new WebPaymentProviderError("unavailable");
+  if (event.livemode !== (mode === "live")) throw new WebPaymentProviderError("unavailable");
   const occurredAt = new Date(event.created * 1_000).toISOString();
   switch (event.type) {
     case "checkout.session.completed":
@@ -475,6 +477,7 @@ const stripeSandboxWebhookEventTypes = new Set([
 export const createStripeGateway = (
   input: {
     accountId: string;
+    mode: StripePaymentMode;
     priceIds: Readonly<Record<string, string>>;
     secretKey: string;
     webhookSecret: string;
@@ -485,10 +488,19 @@ export const createStripeGateway = (
   gateway: StripeGateway;
   mapVerifiedEvent: (value: unknown) => NormalizedPaymentEventV1;
 }> => {
+  const expectedLivemode = input.mode === "live";
+  const expectedSecretPrefix = expectedLivemode ? "sk_live_" : "sk_test_";
+  const expectedSessionPrefix = expectedLivemode ? "cs_live_" : "cs_test_";
+  if (!input.secretKey.startsWith(expectedSecretPrefix)) {
+    throw new WebPaymentProviderError("configuration");
+  }
   let accountVerification: Promise<void> | undefined;
   const verifyAccount = async (): Promise<void> => {
     accountVerification ??= stripe.accounts.retrieveCurrent().then((account) => {
-      if (account.id !== input.accountId) {
+      if (
+        account.id !== input.accountId ||
+        (expectedLivemode && (!account.charges_enabled || !account.details_submitted))
+      ) {
         throw new WebPaymentProviderError("configuration");
       }
     });
@@ -506,7 +518,7 @@ export const createStripeGateway = (
       if (priceId === undefined) throw new WebPaymentProviderError("configuration");
       const price = await stripe.prices.retrieve(priceId);
       if (
-        price.livemode ||
+        price.livemode !== expectedLivemode ||
         !price.active ||
         (request.mode === "payment"
           ? price.type !== "one_time"
@@ -530,7 +542,11 @@ export const createStripeGateway = (
         },
         { idempotencyKey: request.idempotencyKey },
       );
-      if (session.url === null || session.livemode || !session.id.startsWith("cs_test_")) {
+      if (
+        session.url === null ||
+        session.livemode !== expectedLivemode ||
+        !session.id.startsWith(expectedSessionPrefix)
+      ) {
         throw new WebPaymentProviderError("unavailable");
       }
       return Object.freeze({
@@ -556,7 +572,7 @@ export const createStripeGateway = (
       if (!stripeSandboxWebhookEventTypes.has(event.type)) {
         throw new WebPaymentProviderError("unavailable");
       }
-      return verifiedStripePaymentEvent(stripe, event);
+      return verifiedStripePaymentEvent(stripe, event, input.mode);
     },
   });
   return Object.freeze({

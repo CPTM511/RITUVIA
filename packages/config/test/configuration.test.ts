@@ -513,7 +513,7 @@ describe("server and client configuration boundary", () => {
     ).toThrowError("BRAND_CANONICAL_ORIGIN:invalid");
   });
 
-  it("allows only complete Stripe Test Mode configuration outside production", () => {
+  it("binds Stripe Test and Live credentials to the deployment environment", () => {
     const databaseUrl = (username: string, password: string, database = "app") => {
       const url = new URL(`postgresql://127.0.0.1:5432/${database}`);
       url.username = username;
@@ -541,6 +541,7 @@ describe("server and client configuration boundary", () => {
 
     expect(parseServerConfiguration(sandbox).payment).toMatchObject({
       accountId: sandbox.RITUVIA_STRIPE_ACCOUNT_ID,
+      mode: "test",
       provider: "stripe",
       secretKey: sandbox.STRIPE_SECRET_KEY,
     });
@@ -616,6 +617,22 @@ describe("server and client configuration boundary", () => {
         STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
       }),
     ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "production",
+        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+        BRAND_CANONICAL_ORIGIN: "https://example.com",
+        BRAND_LEGAL_ENTITY: "Entity",
+        BRAND_NAME: "Brand",
+        BRAND_SHORT_NAME: "Brand",
+        BRAND_SOCIAL_HANDLES: "{}",
+        BRAND_SUPPORT_EMAIL: "support@example.com",
+        BRAND_TAGLINE: "Tagline",
+        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      }).payment,
+    ).toMatchObject({ mode: "live", provider: "stripe" });
     expect(() =>
       parseServerConfiguration({
         ...sandbox,

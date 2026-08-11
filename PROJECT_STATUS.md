@@ -10,12 +10,16 @@ non-custodial crypto payment as a future option behind separate Owner, Provider,
 sandbox, production, and real-value approvals. On 2026-08-11 the Owner approved the three recorded
 architecture fixes and later the single recorded RTL fix, each with a new before-state Item 12
 rerun. Architecture now passes for 610 source files across 16 modules and RTL passes for 213
-production files. The latest mandatory workspace command also passed evidence, environment,
-writing-system, record, migration, generated-evidence, secret, formatting, lint, and all 16 package
-typecheck gates. It then stopped in the unit matrix: `tests/configuration-contract.test.ts` reports
-four failures and `tests/web-shell-contract.test.ts` reports one. Both test files and their compared
-sources are unchanged by the RTL remediation. Item 12 remains **Blocked**. Per its STOP condition,
-no privacy/restore, deployment, browser, or later gate was executed.
+production files. The Owner next approved only the five recorded configuration/Web-shell contract
+assertions. The new before-state rerun repaired two source defects, aligned three stale contract
+expectations, and now passes both contract files 13/13. The formal workspace command passed CI,
+architecture, environment, AI-operations, localization, editorial, public-page, search, RTL,
+writing-system, record, migration, and generated-evidence gates, then stopped at the secret scan:
+the existing multiline `npm-auth` rule misclassifies the newly empty `.env.example` password
+placeholder at line 22. An earlier direct configuration-boundary preflight also failed because its
+temporary Web build symlinks dependencies outside Turbopack's filesystem root. Neither new finding
+was repaired. Item 12 remains **Blocked**; no privacy/restore, deployment, browser, or later gate
+was executed.
 
 The accepted Item 11 application source is `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed as
 `dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2` to the Vercel-authenticated custom `staging` target. Readiness is

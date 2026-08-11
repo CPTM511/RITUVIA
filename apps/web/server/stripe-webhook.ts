@@ -33,6 +33,7 @@ export type StripeWebhookApplicationDependencies = Readonly<{
   paymentProvider: HostedCheckoutAdapter;
   paymentProviders: Pick<WebPaymentProviderRegistry, "accountFingerprint" | "attestAccount">;
   persistence: CommercialPaymentEventPersistence;
+  providerEnvironment: "live" | "sandbox";
 }>;
 
 const requireInstant = (value: string): string => {
@@ -82,7 +83,7 @@ export const createStripeWebhookApplicationService = (
         ) {
           throw new WebCommerceError("webhook_invalid");
         }
-        return await dependencies.persistence.processStripeSandboxEvent(
+        return await dependencies.persistence.processStripeEvent(
           {
             amountMinor: event.amount.amountMinor,
             currencyCode: event.amount.currencyCode,
@@ -98,6 +99,7 @@ export const createStripeWebhookApplicationService = (
             providerEventId: event.eventId,
             providerObjectId: event.providerObjectId,
             providerPaymentIntentId: event.providerPaymentIntentId,
+            providerEnvironment: dependencies.providerEnvironment,
             providerInvoiceId: event.providerInvoiceId ?? null,
             providerSubscriptionId: event.providerSubscriptionId ?? null,
             receivedAt,
@@ -126,10 +128,7 @@ let service: StripeWebhookApplicationService | undefined;
 export const loadWebStripeWebhookApplicationService = (): StripeWebhookApplicationService => {
   if (service !== undefined) return service;
   const configuration = getWebRuntimeConfiguration();
-  if (
-    configuration.deploymentEnvironment === "production" ||
-    configuration.payment?.provider !== "stripe"
-  ) {
+  if (configuration.payment?.provider !== "stripe") {
     throw new WebCommerceError("unavailable");
   }
   const paymentProviders = loadWebPaymentProviderRegistry();
@@ -138,6 +137,7 @@ export const loadWebStripeWebhookApplicationService = (): StripeWebhookApplicati
     paymentProvider: paymentProviders.get(stripeHostedCheckoutProviderId),
     paymentProviders,
     persistence: createCommercialPaymentEventPersistence(loadWebPaymentWebhookDatabase()),
+    providerEnvironment: configuration.payment.mode === "live" ? "live" : "sandbox",
   });
   return service;
 };

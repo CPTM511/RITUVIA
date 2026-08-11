@@ -14,9 +14,23 @@ const harness = vi.hoisted(() => {
     createChallenge: vi.fn(),
     createDatabase: vi.fn(() => Object.freeze({ kind: "database" })),
     createService: vi.fn(),
+    deploymentEnvironment: "staging" as "local" | "staging",
     IdentityError,
     listWallets: vi.fn(),
     recordRejectedVerification: vi.fn(),
+    recoveryIdentitySandbox: {
+      allowedWalletChainIds: [84_532],
+      enabled: true,
+      walletChallengeTtlSeconds: 300,
+      walletRecentAuthenticationSeconds: 900,
+    } as
+      | {
+          allowedWalletChainIds: number[];
+          enabled: true;
+          walletChallengeTtlSeconds: 300;
+          walletRecentAuthenticationSeconds: 900;
+        }
+      | undefined,
     revokeWallet: vi.fn(),
     verifyChallenge: vi.fn(),
   };
@@ -33,12 +47,8 @@ vi.mock("../config/server", () => ({
     accountIdentityPolicy: { sessionTtlSeconds: 3_600 },
     brand: { canonicalOrigin: "https://example.test" },
     databaseUrl: "postgresql://app:private@127.0.0.1:5432/rituvia",
-    recoveryIdentitySandbox: {
-      allowedWalletChainIds: [84_532],
-      enabled: true,
-      walletChallengeTtlSeconds: 300,
-      walletRecentAuthenticationSeconds: 900,
-    },
+    deploymentEnvironment: harness.deploymentEnvironment,
+    recoveryIdentitySandbox: harness.recoveryIdentitySandbox,
   }),
 }));
 
@@ -53,6 +63,13 @@ describe("wallet authentication Web composition", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    harness.deploymentEnvironment = "staging";
+    harness.recoveryIdentitySandbox = {
+      allowedWalletChainIds: [84_532],
+      enabled: true,
+      walletChallengeTtlSeconds: 300,
+      walletRecentAuthenticationSeconds: 900,
+    };
     harness.createChallenge.mockImplementation(async (input) => ({
       expiresAt: "2026-08-06T14:05:00.000Z",
       message: input.message,
@@ -167,5 +184,33 @@ describe("wallet authentication Web composition", () => {
     ).rejects.toEqual(expect.objectContaining({ code: "invalid" }));
     expect(harness.recordRejectedVerification).toHaveBeenCalledTimes(2);
     expect(harness.verifyChallenge).not.toHaveBeenCalled();
+  });
+
+  it("uses the bounded Base Sepolia policy for local wallet reads", async () => {
+    harness.deploymentEnvironment = "local";
+    harness.recoveryIdentitySandbox = undefined;
+    harness.listWallets.mockResolvedValue([]);
+
+    const { listWebWalletIdentities } = await import("../server/wallet-auth");
+    await expect(listWebWalletIdentities("s".repeat(43))).resolves.toEqual([]);
+    expect(harness.createService).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        allowedChainIds: [84_532],
+        challengeTtlSeconds: 300,
+        recentAuthenticationSeconds: 900,
+        sessionTtlSeconds: 3_600,
+      }),
+    );
+  });
+
+  it("keeps wallet identity unavailable outside local without an approved sandbox", async () => {
+    harness.recoveryIdentitySandbox = undefined;
+
+    const { listWebWalletIdentities } = await import("../server/wallet-auth");
+    await expect(listWebWalletIdentities("s".repeat(43))).rejects.toEqual(
+      expect.objectContaining({ code: "unavailable" }),
+    );
+    expect(harness.createService).not.toHaveBeenCalled();
   });
 });

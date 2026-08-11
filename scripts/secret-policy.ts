@@ -40,7 +40,7 @@ const rules: readonly SecretRule[] = Object.freeze([
   },
   {
     id: "npm-auth",
-    pattern: /(?:_authToken|_password)\s*=\s*(?!\$\{)[^\s]{8,}/gi,
+    pattern: /(?:_authToken|_password)[\t ]*=[\t ]*(?!\$\{)[^\s]{8,}/gi,
   },
 ]);
 

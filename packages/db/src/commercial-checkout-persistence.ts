@@ -8,6 +8,7 @@ const countryPattern = /^[A-Z]{2}$/u;
 const currencyPattern = /^[A-Z]{3}$/u;
 const maximumMinorAmount = 2_147_483_647;
 type CommercialHostedCheckoutProvider = "coinbase_usdc_base" | "stripe";
+export type CommercialProviderEnvironment = "live" | "sandbox";
 type CheckoutProfile = Readonly<{
   apiIdempotencyKeyVersion: string;
   expectedAsset: "USDC" | null;
@@ -72,6 +73,7 @@ export type PreparedCommercialStripeCheckout = Readonly<{
   productCode: string;
   productVersion: string;
   providerAccountFingerprint: string;
+  providerEnvironment: CommercialProviderEnvironment;
   provisionalExpiresAt: string;
   refundPolicyVersion: string;
   termsVersion: string;
@@ -79,7 +81,10 @@ export type PreparedCommercialStripeCheckout = Readonly<{
 }>;
 
 export type PreparedCommercialCoinbaseCheckout = PreparedCommercialStripeCheckout &
-  Readonly<{ recoveryScope: "D-098:OWNER:item-11:protected-staging" }>;
+  Readonly<{
+    providerEnvironment: "sandbox";
+    recoveryScope: "D-098:OWNER:item-11:protected-staging";
+  }>;
 
 export type PersistedCommercialStripeCheckout = Readonly<{
   amountMinor: number;
@@ -100,11 +105,15 @@ export type PreparedCommercialCheckoutAttachment = Readonly<{
   checkoutId: string;
   checkoutUrl: string;
   orderId: string;
+  providerEnvironment: CommercialProviderEnvironment;
   userId: string;
 }>;
 
 export type PreparedCommercialCoinbaseCheckoutAttachment = PreparedCommercialCheckoutAttachment &
-  Readonly<{ recoveryScope: "D-098:OWNER:item-11:protected-staging" }>;
+  Readonly<{
+    providerEnvironment: "sandbox";
+    recoveryScope: "D-098:OWNER:item-11:protected-staging";
+  }>;
 
 export type CommercialCheckoutPersistence = Readonly<{
   attachCoinbaseCheckout(
@@ -132,6 +141,7 @@ type CheckoutRecord = Readonly<{
     amountMinor: number;
     canonicalRequestHash: Uint8Array;
     currencyCode: string;
+    environment: string;
     expiresAt: Date;
     idempotencyKeyHash: Uint8Array;
     idempotencyKeyVersion: string;
@@ -300,12 +310,14 @@ const readCheckoutRecord = async (
 const mapCheckout = async (
   record: CheckoutRecord,
   profile: CheckoutProfile,
+  providerEnvironment: CommercialProviderEnvironment,
 ): Promise<PersistedCommercialStripeCheckout> => {
   if (
     record.order.userId.length === 0 ||
     record.order.totalMinor !== record.attempt.amountMinor ||
     record.order.currencyCode !== record.attempt.currencyCode ||
     record.attempt.provider !== profile.provider ||
+    record.attempt.environment !== providerEnvironment ||
     record.attempt.providerAccountFingerprint === null ||
     record.attempt.idempotencyKeyVersion !== profile.providerIdempotencyKeyVersion ||
     record.attempt.expectedNetwork !== profile.expectedNetwork ||
@@ -357,11 +369,15 @@ export const createCommercialCheckoutPersistence = (
     input: PreparedCommercialStripeCheckout | PreparedCommercialCoinbaseCheckout,
     profile: CheckoutProfile,
   ) => {
+    if (!(["live", "sandbox"] as const).includes(input.providerEnvironment)) {
+      throw new TypeError("Commercial checkout provider environment is invalid.");
+    }
     if (
       profile.provider === "coinbase_usdc_base" &&
       (profile.recoveryScope === null ||
         !("recoveryScope" in input) ||
         input.recoveryScope !== profile.recoveryScope ||
+        input.providerEnvironment !== "sandbox" ||
         !input.countryPolicyVersion.startsWith("staging.us.coinbase-sandbox.item11.") ||
         input.fulfillmentKind !== "credit_pack" ||
         input.billingInterval !== "one_time")
@@ -423,7 +439,7 @@ export const createCommercialCheckoutPersistence = (
         throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
       }
       return Object.freeze({
-        checkout: await mapCheckout(existing, profile),
+        checkout: await mapCheckout(existing, profile, input.providerEnvironment),
         kind: "replayed" as const,
       });
     }
@@ -478,7 +494,7 @@ export const createCommercialCheckoutPersistence = (
                 canonicalRequestHash,
                 createdAt,
                 currencyCode: input.currencyCode,
-                environment: "sandbox",
+                environment: input.providerEnvironment,
                 expiresAt: provisionalExpiresAt,
                 idempotencyKeyHash: await sha256(providerKey),
                 expectedAsset: profile.expectedAsset,
@@ -497,7 +513,7 @@ export const createCommercialCheckoutPersistence = (
         { isolationLevel: "Serializable" },
       );
       return Object.freeze({
-        checkout: await mapCheckout(created, profile),
+        checkout: await mapCheckout(created, profile, input.providerEnvironment),
         kind: "created" as const,
       });
     } catch (error) {
@@ -513,7 +529,7 @@ export const createCommercialCheckoutPersistence = (
         throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
       }
       return Object.freeze({
-        checkout: await mapCheckout(winner, profile),
+        checkout: await mapCheckout(winner, profile, input.providerEnvironment),
         kind: "replayed" as const,
       });
     }
@@ -523,11 +539,15 @@ export const createCommercialCheckoutPersistence = (
     input: PreparedCommercialCheckoutAttachment | PreparedCommercialCoinbaseCheckoutAttachment,
     profile: CheckoutProfile,
   ) => {
+    if (!(["live", "sandbox"] as const).includes(input.providerEnvironment)) {
+      throw new TypeError("Commercial checkout provider environment is invalid.");
+    }
     if (
       profile.provider === "coinbase_usdc_base" &&
       (profile.recoveryScope === null ||
         !("recoveryScope" in input) ||
-        input.recoveryScope !== profile.recoveryScope)
+        input.recoveryScope !== profile.recoveryScope ||
+        input.providerEnvironment !== "sandbox")
     ) {
       throw new TypeError("Commercial checkout recovery scope is invalid.");
     }
@@ -556,7 +576,7 @@ export const createCommercialCheckoutPersistence = (
             current.attempt.providerCheckoutUrl === checkoutUrl &&
             current.attempt.expiresAt.getTime() === checkoutExpiresAt.getTime()
           ) {
-            return mapCheckout(current, profile);
+            return mapCheckout(current, profile, input.providerEnvironment);
           }
           throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_CONFLICT");
         }
@@ -598,7 +618,7 @@ export const createCommercialCheckoutPersistence = (
         if (attached === null) {
           throw new CommercialCheckoutPersistenceError("COMMERCIAL_CHECKOUT_UNAVAILABLE");
         }
-        return mapCheckout(attached, profile);
+        return mapCheckout(attached, profile, input.providerEnvironment);
       },
       { isolationLevel: "Serializable" },
     );

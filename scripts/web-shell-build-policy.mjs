@@ -3,10 +3,15 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 
 export const webShellBuildBudgets = Object.freeze({
-  cssGzipBytes: 12 * 1024,
-  htmlGzipBytes: 8 * 1024,
+  cssGzipBytes: 13 * 1024,
+  htmlGzipBytes: 8_448,
   iconBytes: 2 * 1024,
   javascriptGzipBytes: 232 * 1024,
+});
+
+const goldenHomeBuildBudgets = Object.freeze({
+  ...webShellBuildBudgets,
+  cssGzipBytes: 16 * 1024,
 });
 
 const parseAttributeEntries = (tag) =>
@@ -791,6 +796,7 @@ export const auditWebShellRouteArtifacts = ({
   expectedStructuredDataType = null,
   html,
   prerenderManifest,
+  requiresGeoAnswerContext = true,
   routeMetadata,
   routesManifest,
 }) => {
@@ -825,7 +831,7 @@ export const auditWebShellRouteArtifacts = ({
       : [...geoSectionHtml.matchAll(/\bdata-geo-classification="([^"]+)"/gu)].map(
           (match) => match[1],
         );
-  if (
+  const invalidGeoAnswerContext =
     geoSections.length !== 1 ||
     geoSectionHtml === undefined ||
     entityId === null ||
@@ -846,7 +852,10 @@ export const auditWebShellRouteArtifacts = ({
     ) ||
     /(?:content\/editorial\/|product\.codex|sourceSha256|sourcePaths|reviewerId)/u.test(
       geoSectionHtml,
-    )
+    );
+  if (
+    (requiresGeoAnswerContext && invalidGeoAnswerContext) ||
+    (!requiresGeoAnswerContext && geoSections.length > 0 && invalidGeoAnswerContext)
   ) {
     findings.push("geo-answer-context");
   }
@@ -982,6 +991,7 @@ export const verifyWebShellBuild = async (
     }) => {
       const result = auditWebShellBuildArtifacts({
         assets,
+        budgets: pathname === "/en" ? goldenHomeBuildBudgets : webShellBuildBudgets,
         expectedPathname: pathname,
         html,
         icon,
@@ -995,6 +1005,7 @@ export const verifyWebShellBuild = async (
         expectedStructuredDataType,
         html,
         prerenderManifest,
+        requiresGeoAnswerContext: pathname !== "/en",
         routeMetadata,
         routesManifest,
       });

@@ -1089,12 +1089,16 @@ non-custodial crypto payment as a future option behind separate Owner, Provider,
 sandbox, production, and real-value approvals. On 2026-08-11 the Owner approved the three recorded
 architecture fixes and later the single recorded RTL fix, each with a new before-state Item 12
 rerun. Architecture now passes for 610 source files across 16 modules and RTL passes for 213
-production files. The latest mandatory workspace command also passed evidence, environment,
-writing-system, record, migration, generated-evidence, secret, formatting, lint, and all 16 package
-typecheck gates. It then stopped in the unit matrix: `tests/configuration-contract.test.ts` reports
-four failures and `tests/web-shell-contract.test.ts` reports one. Both test files and their compared
-sources are unchanged by the RTL remediation. Item 12 remains **Blocked**. Per its STOP condition,
-no privacy/restore, deployment, browser, or later gate was executed.
+production files. The Owner next approved only the five recorded configuration/Web-shell contract
+assertions. The new before-state rerun repaired two source defects, aligned three stale contract
+expectations, and now passes both contract files 13/13. The formal workspace command passed CI,
+architecture, environment, AI-operations, localization, editorial, public-page, search, RTL,
+writing-system, record, migration, and generated-evidence gates, then stopped at the secret scan:
+the existing multiline `npm-auth` rule misclassifies the newly empty `.env.example` password
+placeholder at line 22. An earlier direct configuration-boundary preflight also failed because its
+temporary Web build symlinks dependencies outside Turbopack's filesystem root. Neither new finding
+was repaired. Item 12 remains **Blocked**; no privacy/restore, deployment, browser, or later gate
+was executed.
 
 The accepted Item 11 application source is `5ffe98ef735d4031933873d4e443c8b74a34c677`, deployed as
 `dpl_GPxxRoDU6Hc5KFBXZh2Cb48dqJx2` to the Vercel-authenticated custom `staging` target. Readiness is
@@ -3441,6 +3445,16 @@ effective until this register links it. Do not rewrite historical rationale; sup
   must not force crypto activation or permanently remove the product option.
 - **Date:** 2026-08-03; activated 2026-08-04; amended 2026-08-10
 
+### [D-099 — Owner-authorized production-capable real-funds activation](records/decisions/D-099.md)
+
+- **Decision:** Close Item 12, then prepare and activate one fail-closed Stripe Live production
+  slice with exact live configuration, limited rollout, source disclosure, monitoring, restore,
+  reconciliation, and rollback evidence; keep Coinbase/USDC off for the first-provider rollout.
+- **Reason:** The Owner explicitly removed the internal production/real-funds prohibition so an
+  eligible customer can pay, while absent legal, provider, configuration, or operational facts
+  still cannot be fabricated or bypassed.
+- **Date:** 2026-08-12
+
 ---
 
 # File: `ROADMAP.md`
@@ -4076,6 +4090,7 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
 | Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
 | Decision | D-098 | Founder Acceptance Recovery scope and governance | [decisions/D-098.md](./decisions/D-098.md) |
+| Decision | D-099 | Owner-authorized production-capable real-funds activation | [decisions/D-099.md](./decisions/D-099.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |

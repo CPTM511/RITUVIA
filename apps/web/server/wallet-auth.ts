@@ -30,10 +30,21 @@ export class WebWalletAuthError extends Error {
 
 let service: WalletIdentityService | undefined;
 
+const localWalletAuthPolicy = Object.freeze({
+  allowedWalletChainIds: Object.freeze([84_532] as const),
+  enabled: true as const,
+  walletChallengeTtlSeconds: 300 as const,
+  walletRecentAuthenticationSeconds: 900 as const,
+});
+
+const resolveWalletAuthPolicy = (configuration: ReturnType<typeof getWebRuntimeConfiguration>) =>
+  configuration.recoveryIdentitySandbox ??
+  (configuration.deploymentEnvironment === "local" ? localWalletAuthPolicy : undefined);
+
 const loadService = (): WalletIdentityService => {
   if (service !== undefined) return service;
   const configuration = getWebRuntimeConfiguration();
-  const sandbox = configuration.recoveryIdentitySandbox;
+  const sandbox = resolveWalletAuthPolicy(configuration);
   const account = configuration.accountIdentityPolicy;
   if (configuration.databaseUrl === undefined || sandbox === undefined || account === undefined) {
     throw new WebWalletAuthError("unavailable");
@@ -82,7 +93,7 @@ export const startWebWalletAuth = async (input: {
   sessionToken?: string | undefined;
 }) => {
   const configuration = getWebRuntimeConfiguration();
-  const sandbox = configuration.recoveryIdentitySandbox;
+  const sandbox = resolveWalletAuthPolicy(configuration);
   if (sandbox === undefined) throw new WebWalletAuthError("unavailable");
   const address = normalizeWalletAddress(input.address);
   if (

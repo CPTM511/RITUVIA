@@ -305,6 +305,7 @@ export const createCoinbaseCheckoutApplicationService = (
           productCode: product.code,
           productVersion: product.version,
           providerAccountFingerprint: dependencies.providerAccountFingerprint,
+          providerEnvironment: "sandbox",
           provisionalExpiresAt: new Date(Date.parse(now) + 30 * 60 * 1_000).toISOString(),
           recoveryScope,
           refundPolicyVersion: price.refundPolicyVersion,
@@ -361,6 +362,7 @@ export const createCoinbaseCheckoutApplicationService = (
           checkoutId: checkout.checkoutId,
           checkoutUrl: checkout.url,
           orderId: prepared.checkout.orderId,
+          providerEnvironment: "sandbox",
           recoveryScope,
           userId: session.userId,
         });

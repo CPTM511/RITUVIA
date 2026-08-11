@@ -33,9 +33,8 @@ const normalizedEvent: NormalizedPaymentEventV1 = Object.freeze({
 const harness = () => {
   const attestAccount = vi.fn(async () => undefined);
   const verifyWebhook = vi.fn(async () => normalizedEvent);
-  const processStripeSandboxEvent =
-    vi.fn<CommercialPaymentEventPersistence["processStripeSandboxEvent"]>();
-  processStripeSandboxEvent.mockResolvedValue({
+  const processStripeEvent = vi.fn<CommercialPaymentEventPersistence["processStripeEvent"]>();
+  processStripeEvent.mockResolvedValue({
     disposition: "applied",
     kind: "processed",
     orderStatus: "paid",
@@ -48,17 +47,18 @@ const harness = () => {
     verifyWebhook,
   } as unknown as HostedCheckoutAdapter;
   const persistence = {
-    processStripeSandboxEvent,
+    processStripeEvent,
   } as unknown as CommercialPaymentEventPersistence;
   return {
     paymentProvider,
     persistence,
-    processStripeSandboxEvent,
+    processStripeEvent,
     service: createStripeWebhookApplicationService({
       clock: () => "2026-07-30T12:00:02.000Z",
       paymentProvider,
       paymentProviders: { accountFingerprint: () => "acct_12345678", attestAccount },
       persistence,
+      providerEnvironment: "sandbox",
     }),
     attestAccount,
     verifyWebhook,
@@ -82,8 +82,8 @@ describe("Stripe v2 webhook application service", () => {
     expect(test.verifyWebhook).toHaveBeenCalledOnce();
     expect(test.attestAccount).toHaveBeenCalledOnce();
     expect(test.attestAccount).toHaveBeenCalledWith("stripe");
-    expect(test.processStripeSandboxEvent).toHaveBeenCalledOnce();
-    const [prepared, reduce] = test.processStripeSandboxEvent.mock.calls[0]!;
+    expect(test.processStripeEvent).toHaveBeenCalledOnce();
+    const [prepared, reduce] = test.processStripeEvent.mock.calls[0]!;
     expect(prepared).toMatchObject({
       amountMinor: 599,
       currencyCode: "USD",
@@ -94,6 +94,7 @@ describe("Stripe v2 webhook application service", () => {
       providerCheckoutId: "cs_test_12345678",
       providerEventId: "evt_success",
       providerPaymentIntentId: "pi_12345678",
+      providerEnvironment: "sandbox",
       receivedAt: "2026-07-30T12:00:02.000Z",
       signatureTimestampSeconds: Math.floor(Date.parse("2026-07-30T12:00:02.000Z") / 1_000),
       verifierVersion: "stripe-signature.v1",
@@ -117,7 +118,7 @@ describe("Stripe v2 webhook application service", () => {
 
     expect(test.verifyWebhook).toHaveBeenCalledOnce();
     expect(test.attestAccount).toHaveBeenCalledOnce();
-    expect(test.processStripeSandboxEvent).not.toHaveBeenCalled();
+    expect(test.processStripeEvent).not.toHaveBeenCalled();
   });
 
   it("maps signature, replay, and altered-event conflicts to one private invalid response", async () => {
@@ -129,7 +130,7 @@ describe("Stripe v2 webhook application service", () => {
     expect(signature.attestAccount).not.toHaveBeenCalled();
 
     const conflict = harness();
-    conflict.processStripeSandboxEvent.mockRejectedValueOnce(
+    conflict.processStripeEvent.mockRejectedValueOnce(
       new CommercialPaymentEventPersistenceError("COMMERCIAL_PAYMENT_EVENT_CONFLICT"),
     );
     await expect(
@@ -142,7 +143,7 @@ describe("Stripe v2 webhook application service", () => {
 
   it("keeps database outages retryable and rejects unbound provider events", async () => {
     const unavailable = harness();
-    unavailable.processStripeSandboxEvent.mockRejectedValueOnce(
+    unavailable.processStripeEvent.mockRejectedValueOnce(
       new CommercialPaymentEventPersistenceError("COMMERCIAL_PAYMENT_EVENT_UNAVAILABLE"),
     );
     await expect(
@@ -163,7 +164,7 @@ describe("Stripe v2 webhook application service", () => {
         rawBody,
       }),
     ).rejects.toMatchObject({ code: "webhook_invalid" });
-    expect(unbound.processStripeSandboxEvent).not.toHaveBeenCalled();
+    expect(unbound.processStripeEvent).not.toHaveBeenCalled();
   });
 
   it("cannot be constructed around a non-Stripe adapter", () => {
@@ -174,6 +175,7 @@ describe("Stripe v2 webhook application service", () => {
         paymentProvider: { ...test.paymentProvider, providerId: "local_hosted" },
         paymentProviders: { accountFingerprint: () => "cfg_local", attestAccount: vi.fn() },
         persistence: test.persistence,
+        providerEnvironment: "sandbox",
       }),
     ).toThrow();
   });

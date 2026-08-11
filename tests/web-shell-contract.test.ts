@@ -74,11 +74,13 @@ describe("Web shell repository contract", () => {
     const publicRoute = read("apps/web/app/[locale]/[page]/page.tsx");
 
     expect(root).toContain("permanentRedirect(localeHomePath(defaultLocale) as Route)");
-    expect(route).toContain("parseLocale");
+    expect(route).toContain("parseGoldenShellLocale");
+    expect(route).toContain("goldenShellLocales");
     expect(route).toContain("notFound()");
     expect(route).toContain("export const dynamicParams = false");
     expect(route).not.toContain('"use client"');
-    expect(localeLayout).toContain("parseLocale");
+    expect(localeLayout).toContain("parseGoldenShellLocale");
+    expect(localeLayout).toContain("goldenShellLocales");
     expect(localeLayout).toContain("<RootDocument locale={locale}>");
     expect(publicRoute).toContain("publicRouteRegistry.routeByPathname");
     expect(publicRoute).toContain("notFound()");

@@ -137,6 +137,7 @@ const harness = (options?: {
       read: async () => [policy(options?.policyRefundVersion)],
     },
     environment: "local",
+    paymentMode: "test",
     providerAccountFingerprint: "acct_12345678",
     paymentProvider: {
       createCheckout,
@@ -187,6 +188,7 @@ describe("Stripe sandbox checkout application service", () => {
         priceId: "price.pack_6.usd.2026-07-23",
         productCode: "pack_6",
         providerAccountFingerprint: "acct_12345678",
+        providerEnvironment: "sandbox",
         refundPolicyVersion: "test:local:refund.v1",
         termsVersion: "local.terms.v1",
         userId,
@@ -211,6 +213,7 @@ describe("Stripe sandbox checkout application service", () => {
       checkoutId: "cs_test_12345678",
       checkoutUrl,
       orderId,
+      providerEnvironment: "sandbox",
       userId,
     });
   });

@@ -242,7 +242,7 @@ const assertDeliveryBoundary = async (nextRoot) => {
     "BRAND_TRANSACTIONAL_SENDER",
     "DATABASE_URL",
     "PRIVACY_DELETION_DATABASE_URL",
-    "RITUVIA",
+    "http://localhost:3000",
   ]) {
     if (await containsCanary(staticFiles, forbiddenClientLiteral)) {
       fail("A server-only or fallback configuration literal entered a client-static asset.");
@@ -427,6 +427,19 @@ try {
     path.join(repositoryRoot, "tsconfig.base.json"),
     path.join(temporaryRoot, "tsconfig.base.json"),
   );
+  const temporaryNextConfigPath = path.join(temporaryWebRoot, "next.config.ts");
+  const temporaryNextConfig = await readFile(temporaryNextConfigPath, "utf8");
+  const outputTracingRootMarker = 'outputFileTracingRoot: "../..",';
+  if (temporaryNextConfig.split(outputTracingRootMarker).length !== 2) {
+    fail("The isolated Web build could not identify its exact output tracing root.");
+  }
+  await writeFile(
+    temporaryNextConfigPath,
+    temporaryNextConfig.replace(
+      outputTracingRootMarker,
+      `outputFileTracingRoot: ${JSON.stringify(repositoryRoot)},`,
+    ),
+  );
   await symlink(path.join(webRoot, "node_modules"), path.join(temporaryWebRoot, "node_modules"));
   await writeFile(
     path.join(temporaryWebRoot, "server/feature-flags.ts"),
@@ -454,6 +467,12 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   },
   kind: "created",
   token: "${anonymousSessionTokenCanary}",
+});
+
+export const resolveWebAnonymousSession = async (_token: string) => ({
+  expiresAt: new Date(Date.now() + 3600000).toISOString(),
+  sessionId: "synthetic-session-id",
+  subjectId: "synthetic-subject-id",
 });
 `,
   );

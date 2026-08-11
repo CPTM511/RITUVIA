@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "./generated/prisma/client.js";
+import type { CommercialProviderEnvironment } from "./commercial-checkout-persistence.js";
 
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const resourcePattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,254}$/u;
@@ -69,6 +70,7 @@ export type PreparedCommercialPaymentEvent = Readonly<{
   providerEventId: string;
   providerObjectId: string;
   providerPaymentIntentId: string | null;
+  providerEnvironment: CommercialProviderEnvironment;
   providerInvoiceId: string | null;
   providerSubscriptionId: string | null;
   receivedAt: string;
@@ -84,6 +86,7 @@ export type PreparedCommercialCoinbasePaymentEvent = PreparedCommercialPaymentEv
   Readonly<{
     observedAsset: "USDC";
     observedNetwork: "base";
+    providerEnvironment: "sandbox";
     recoveryScope: "D-098:OWNER:item-11:protected-staging";
   }>;
 
@@ -166,7 +169,7 @@ export type CommercialPaymentEventPersistence = Readonly<{
     retryAt: string | null;
   }): Promise<"dead_lettered" | "retry_wait" | null>;
   reconcileDueAnnualSubscriptionCredits(input: { asOf: string; userId: string }): Promise<number>;
-  processStripeSandboxEvent(
+  processStripeEvent(
     input: PreparedCommercialPaymentEvent,
     reduce: CommercialPaymentEventReducer,
   ): Promise<ProcessedCommercialPaymentEvent>;
@@ -705,7 +708,7 @@ const applySubscriptionContext = async (
       creditsPerMonth: match.creditsPerMonth,
       currentPeriodEnd: periodEnd,
       currentPeriodStart: periodStart,
-      environment: "sandbox",
+      environment: input.providerEnvironment,
       productCode: match.productCode,
       productVersion: match.productVersion,
       provider: "stripe",
@@ -868,7 +871,7 @@ const processInTransaction = async (
       subscription_period_end, subscription_cancel_at_period_end, subscription_state,
       amount_minor, currency_code
     ) VALUES (
-      ${profile.provider}, 'sandbox', ${input.providerAccountFingerprint}, ${input.providerEventId},
+      ${profile.provider}, ${input.providerEnvironment}, ${input.providerAccountFingerprint}, ${input.providerEventId},
       ${input.normalizationVersion}, ${input.eventType}, ${input.providerObjectId},
       ${parsed.payloadDigest}, ${input.signatureTimestampSeconds}, ${input.verifierVersion},
       ${parsed.occurredAt}, ${parsed.receivedAt}, ${input.orderId}::uuid,
@@ -927,7 +930,7 @@ const processInTransaction = async (
         subscription_state AS "subscriptionState"
       FROM commercial_payment_event_v2
       WHERE provider = ${profile.provider}
-        AND environment = 'sandbox'
+        AND environment = ${input.providerEnvironment}
         AND provider_account_fingerprint = ${input.providerAccountFingerprint}
         AND provider_event_id = ${input.providerEventId}
       FOR UPDATE
@@ -991,7 +994,7 @@ const processInTransaction = async (
      AND prices.version = orders.price_version
     WHERE orders.public_id = ${input.orderId}::uuid
       AND attempts.provider = ${profile.provider}
-      AND attempts.environment = 'sandbox'
+      AND attempts.environment = ${input.providerEnvironment}
     FOR UPDATE OF orders, attempts
   `;
   const match = matches.at(0);
@@ -1374,7 +1377,7 @@ const reconcileAnnualCreditsInTransaction = async (
   return allocations;
 };
 
-const processSandboxPaymentEvent = async (
+const processPaymentEvent = async (
   database: PrismaClient,
   input: PreparedCommercialCoinbasePaymentEvent | PreparedCommercialPaymentEvent,
   reduce: CommercialPaymentEventReducer,
@@ -1395,11 +1398,15 @@ const processSandboxPaymentEvent = async (
   ) {
     throw new TypeError("Commercial payment event is invalid.");
   }
+  if (!(["live", "sandbox"] as const).includes(input.providerEnvironment)) {
+    throw new TypeError("Commercial payment provider environment is invalid.");
+  }
   if (
     profile.provider === "coinbase_usdc_base" &&
     (profile.recoveryScope === null ||
       !("recoveryScope" in input) ||
       input.recoveryScope !== profile.recoveryScope ||
+      input.providerEnvironment !== "sandbox" ||
       input.observedAsset !== "USDC" ||
       input.observedNetwork !== "base" ||
       input.providerPaymentIntentId !== null ||
@@ -1611,7 +1618,7 @@ export const createCommercialPaymentEventPersistence = (
     },
 
     processCoinbaseSandboxEvent: (input, reduce) =>
-      processSandboxPaymentEvent(database, input, reduce, coinbasePaymentEventProfile),
-    processStripeSandboxEvent: (input, reduce) =>
-      processSandboxPaymentEvent(database, input, reduce, stripePaymentEventProfile),
+      processPaymentEvent(database, input, reduce, coinbasePaymentEventProfile),
+    processStripeEvent: (input, reduce) =>
+      processPaymentEvent(database, input, reduce, stripePaymentEventProfile),
   });

@@ -397,6 +397,20 @@ describe("Web shell build policy", () => {
     };
 
     expect(auditWebShellRouteArtifacts(input)).toEqual([]);
+    expect(
+      auditWebShellRouteArtifacts({
+        ...input,
+        html: canonicalHtml.replace(geoAuthority, ""),
+        requiresGeoAnswerContext: false,
+      }),
+    ).toEqual([]);
+    expect(
+      auditWebShellRouteArtifacts({
+        ...input,
+        html: canonicalHtml.replace("Reviewed source", "content/editorial/private.json"),
+        requiresGeoAnswerContext: false,
+      }),
+    ).toContain("geo-answer-context");
     for (const mutation of [
       canonicalHtml.replace(geoAuthority, ""),
       canonicalHtml.replace("<section", "<section hidden"),

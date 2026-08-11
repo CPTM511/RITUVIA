@@ -64,6 +64,7 @@ export type StripeCheckoutApplicationDependencies = Readonly<{
     ): Promise<readonly CountryPolicyVersionV1[]>;
   }>;
   environment: CatalogEnvironment;
+  paymentMode: "live" | "test";
   providerAccountFingerprint: string;
   paymentProvider: HostedCheckoutAdapter;
   persistence: Pick<
@@ -184,7 +185,7 @@ export const createStripeCheckoutApplicationService = (
   dependencies: StripeCheckoutApplicationDependencies,
 ) => {
   if (
-    dependencies.environment === "production" ||
+    (dependencies.environment === "production") !== (dependencies.paymentMode === "live") ||
     dependencies.paymentProvider.providerId !== stripeHostedCheckoutProviderId
   ) {
     throw new WebCommerceError("unavailable");
@@ -313,6 +314,7 @@ export const createStripeCheckoutApplicationService = (
           productCode: product.code,
           productVersion: product.version,
           providerAccountFingerprint: dependencies.providerAccountFingerprint,
+          providerEnvironment: dependencies.paymentMode === "live" ? "live" : "sandbox",
           provisionalExpiresAt: new Date(Date.parse(now) + 86_400_000).toISOString(),
           refundPolicyVersion: price.refundPolicyVersion,
           termsVersion: termsDocument.version,
@@ -361,6 +363,7 @@ export const createStripeCheckoutApplicationService = (
           checkoutId: checkout.checkoutId,
           checkoutUrl: checkout.url,
           orderId: prepared.checkout.orderId,
+          providerEnvironment: dependencies.paymentMode === "live" ? "live" : "sandbox",
           userId: session.userId,
         });
         if (
@@ -396,10 +399,7 @@ let service: StripeCheckoutApplicationService | undefined;
 export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplicationService => {
   if (service !== undefined) return service;
   const configuration = getWebRuntimeConfiguration();
-  if (
-    configuration.deploymentEnvironment === "production" ||
-    configuration.payment?.provider !== "stripe"
-  ) {
+  if (configuration.payment?.provider !== "stripe") {
     throw new WebCommerceError("unavailable");
   }
   const accounts = loadWebAccountIdentityService();
@@ -423,6 +423,7 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
         ).map((record) => parseCountryPolicyVersionV1(record.policyDocument)),
     },
     environment: configuration.deploymentEnvironment,
+    paymentMode: configuration.payment.mode,
     providerAccountFingerprint: paymentProviders.accountFingerprint(stripeHostedCheckoutProviderId),
     paymentProvider,
     persistence: createCommercialCheckoutPersistence(loadWebDatabase()),

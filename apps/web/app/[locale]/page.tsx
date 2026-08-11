@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PublicStructuredData } from "../_components/public-structured-data";
 import { SiteShell } from "../_components/site-shell";
 import { getWebRuntimeConfiguration } from "../../config/server";
 import {
@@ -10,6 +11,8 @@ import {
   parseGoldenShellLocale,
   type GoldenShellLocale,
 } from "../_i18n/golden-shell-messages";
+
+import "../golden-shell.css";
 
 type LocalePageProps = Readonly<{
   params: Promise<Readonly<{ locale: string }>>;
@@ -33,27 +36,53 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
     goldenShellHomePath(locale),
     configuration.brand.canonicalOrigin,
   ).toString();
+  const title = `${configuration.brand.name} — ${messages.metadata.title}`;
+  const indexable = configuration.deploymentEnvironment === "production" && locale === "en";
 
   return {
-    alternates: locale === "en" ? { canonical } : undefined,
+    alternates:
+      locale === "en"
+        ? {
+            canonical,
+            languages: { en: canonical, "x-default": canonical },
+          }
+        : undefined,
     description: messages.metadata.description,
-    robots:
-      configuration.deploymentEnvironment === "production" && locale === "en"
-        ? undefined
-        : { follow: false, index: false, nocache: true },
-    title: `${configuration.brand.name} — ${messages.metadata.title}`,
+    openGraph:
+      locale === "en"
+        ? {
+            description: messages.metadata.description,
+            siteName: configuration.brand.name,
+            title,
+            type: "website",
+            url: canonical,
+          }
+        : undefined,
+    robots: {
+      follow: indexable,
+      index: indexable,
+    },
+    title,
   };
 }
 
 export default async function LocalePage({ params }: LocalePageProps) {
   const locale = await resolvePageLocale(params);
   const configuration = getWebRuntimeConfiguration();
+  const messages = getGoldenShellMessages(locale);
 
   return (
-    <SiteShell
-      brandName={configuration.client.brand.name}
-      locale={locale}
-      messages={getGoldenShellMessages(locale)}
-    />
+    <>
+      {locale === "en" ? (
+        <PublicStructuredData
+          canonicalOrigin={configuration.brand.canonicalOrigin}
+          description={messages.hero.introduction}
+          locale={locale}
+          routeId="home"
+          title={`${messages.hero.titleLead} ${messages.hero.titleAccent}`}
+        />
+      ) : null}
+      <SiteShell brandName={configuration.client.brand.name} locale={locale} messages={messages} />
+    </>
   );
 }

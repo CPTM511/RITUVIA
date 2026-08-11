@@ -61,6 +61,7 @@ describe("Stripe verified event normalization", () => {
     const runtime = createStripeGateway(
       {
         accountId: "acct_12345678",
+        mode: "test",
         priceIds: { pack_6: "price_pack06test" },
         secretKey: `sk_test_${"a".repeat(24)}`,
         webhookSecret: `whsec_${"b".repeat(24)}`,
@@ -96,6 +97,7 @@ describe("Stripe verified event normalization", () => {
     const mismatched = createStripeGateway(
       {
         accountId: "acct_87654321",
+        mode: "test",
         priceIds: { pack_6: "price_pack06test" },
         secretKey: `sk_test_${"a".repeat(24)}`,
         webhookSecret: `whsec_${"b".repeat(24)}`,
@@ -106,6 +108,74 @@ describe("Stripe verified event normalization", () => {
       code: "configuration",
     });
     expect(retrievePrice).toHaveBeenCalledTimes(2);
+  });
+
+  it("accepts only fully activated Live account, Price, and Checkout objects in live mode", async () => {
+    const stripe = {
+      accounts: {
+        retrieveCurrent: vi.fn(async () => ({
+          charges_enabled: true,
+          details_submitted: true,
+          id: "acct_12345678",
+        })),
+      },
+      checkout: {
+        sessions: {
+          create: vi.fn(async () => ({
+            expires_at: 1_775_000_000,
+            id: "cs_live_12345678",
+            livemode: true,
+            url: "https://checkout.stripe.com/c/pay/cs_live_12345678",
+          })),
+        },
+      },
+      prices: {
+        retrieve: vi.fn(async () => ({
+          active: true,
+          currency: "usd",
+          id: "price_pack06live",
+          livemode: true,
+          type: "one_time",
+          unit_amount: 599,
+        })),
+      },
+    };
+    const runtime = createStripeGateway(
+      {
+        accountId: "acct_12345678",
+        mode: "live",
+        priceIds: { pack_6: "price_pack06live" },
+        secretKey: `sk_live_${"a".repeat(24)}`,
+        webhookSecret: `whsec_${"b".repeat(24)}`,
+      },
+      stripe as never,
+    );
+
+    await expect(
+      runtime.gateway.createCheckoutSession({
+        billingInterval: "one_time",
+        cancelUrl: "https://example.com/en/plans",
+        clientReferenceId: orderId,
+        countryCode: "US",
+        currencyCode: "USD",
+        idempotencyKey: `stripe:${orderId}:1`,
+        metadata: { orderId, productCode: "pack_6" },
+        mode: "payment",
+        productName: "6 Credits",
+        quantity: 1,
+        returnUrl: "https://example.com/en/checkout/return",
+        unitAmountMinor: 599,
+      }),
+    ).resolves.toMatchObject({ id: "cs_live_12345678" });
+    expect(() =>
+      createStripeGateway({
+        accountId: "acct_12345678",
+        mode: "live",
+        priceIds: { pack_6: "price_pack06live" },
+        secretKey: `sk_test_${"a".repeat(24)}`,
+        webhookSecret: `whsec_${"b".repeat(24)}`,
+      }),
+    ).toThrowError("The payment provider is unavailable.");
   });
 
   it("resolves a payment intent to its exact Checkout Session", async () => {
@@ -128,6 +198,7 @@ describe("Stripe verified event normalization", () => {
         id: "evt_payment_intent_succeeded",
         type: "payment_intent.succeeded",
       } as never,
+      "test",
     );
 
     expect(list).toHaveBeenCalledWith({ limit: 2, payment_intent: "pi_old" });
@@ -162,6 +233,7 @@ describe("Stripe verified event normalization", () => {
           id: "evt_unbound",
           type: "payment_intent.succeeded",
         } as never,
+        "test",
       ),
     ).rejects.toMatchObject({ code: "unavailable" });
   });
@@ -191,6 +263,7 @@ describe("Stripe verified event normalization", () => {
           id: "evt_refund",
           type: "charge.refunded",
         } as never,
+        "test",
       ),
     ).resolves.toMatchObject({
       orderId,
@@ -215,6 +288,7 @@ describe("Stripe verified event normalization", () => {
           livemode: true,
           type: "payment_intent.succeeded",
         } as never,
+        "test",
       ),
     ).rejects.toMatchObject({ code: "unavailable" });
     expect(list).not.toHaveBeenCalled();

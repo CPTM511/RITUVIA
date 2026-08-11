@@ -4,8 +4,9 @@
 >
 > Repository status is NO-GO. Items 1 through 11 are complete under recorded evidence and the
 > Owner's explicit 2026-08-10 exclusion of FJ-15 from this recovery. Item 12 was explicitly
-> approved, started, and is now Blocked at the mandatory architecture gate. No remediation, rerun,
-> deployment, or later work starts automatically.
+> approved, started, and is now Blocked at the mandatory secret-scan gate after bounded
+> architecture, RTL, and contract remediations. No remediation, rerun, deployment, or later work
+> starts automatically.
 
 ## Operating rules
 
@@ -306,15 +307,17 @@
 
 ## Item 12 — Full Founder Acceptance, security, restore and source-disclosure gate
 
-- **Status:** **Blocked — mandatory unit contract matrix failed after the approved RTL repair.**
-  The 2026-08-11 bounded rerun used Node `24.18.0` / pnpm `11.13.1`; architecture passed for 610
-  source files across 16 modules and RTL passed for 213 production files. Evidence, environment,
-  writing-system, record, migration, generated-evidence, secret, formatting, lint, and all 16
-  package typecheck gates also passed. The unit matrix then reported four failures in unchanged
-  `tests/configuration-contract.test.ts` and one in unchanged `tests/web-shell-contract.test.ts`.
-  Those failures were not repaired because they are outside the Owner's single RTL authorization.
-  Per the STOP condition, privacy/restore, browser, deployment, and source-disclosure gates were not
-  executed. Exact evidence is in `docs/recovery/ITEM_12_FOUNDER_ACCEPTANCE_EVIDENCE.md`.
+- **Status:** **Blocked — mandatory secret scan failed after the approved contract repair.** The
+  2026-08-11 contract rerun used Node `24.18.0` / pnpm `11.13.1`, repaired only the five recorded
+  configuration/Web-shell assertions, and passes the two focused files 13/13. The formal workspace
+  command passed CI, architecture, environment, AI operations, localization, editorial,
+  public-page, search, RTL, writing-system, record, migration, and generated-evidence gates. It
+  then stopped because the existing multiline `npm-auth` rule reports the intentionally empty
+  `.env.example` password placeholder at line 22. A separate preflight also found the unchanged
+  configuration-boundary harness symlinking dependencies outside its temporary Turbopack root.
+  Neither new finding was repaired. Per the STOP condition, remaining workspace, privacy/restore,
+  browser, deployment, and source-disclosure gates were not executed. Exact evidence is in
+  `docs/recovery/ITEM_12_FOUNDER_ACCEPTANCE_EVIDENCE.md`.
 - **Founder Journey IDs:** FJ-00–FJ-14 and FJ-16–FJ-20. FJ-15 is an explicit Owner-approved
   exclusion for this recovery and must not be executed.
 - **Exact user-visible outcome:** Owner executes one source-disclosed desktop/mobile acceptance

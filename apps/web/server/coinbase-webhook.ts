@@ -157,6 +157,7 @@ export const createCoinbaseWebhookApplicationService = (
             providerInvoiceId: null,
             providerObjectId: event.providerObjectId,
             providerPaymentIntentId: null,
+            providerEnvironment: "sandbox",
             providerSubscriptionId: null,
             receivedAt,
             recoveryScope,

@@ -49,6 +49,7 @@ export function auditWebShellRouteArtifacts(
     expectedRobots?: "index, follow" | "noindex, nofollow";
     html: string;
     prerenderManifest: unknown;
+    requiresGeoAnswerContext?: boolean;
     routeMetadata: unknown;
     routesManifest: unknown;
   }>,

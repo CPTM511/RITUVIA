@@ -67,7 +67,7 @@ await withLocalPostgresLease(async (lease) => {
       const events = createCommercialPaymentEventPersistence(paymentWebhook);
       const wronglyPrivilegedEvents = createCommercialPaymentEventPersistence(application);
       let sequence = 0;
-      const createCheckout = async () => {
+      const createCheckout = async (providerEnvironment: "live" | "sandbox" = "sandbox") => {
         sequence += 1;
         const created = await checkout.createOrReplayStripeCheckout({
           amountMinor: 599,
@@ -89,21 +89,27 @@ await withLocalPostgresLease(async (lease) => {
           productCode: "pack_6",
           productVersion: "2026-07-23",
           providerAccountFingerprint: "acct_12345678",
+          providerEnvironment,
           provisionalExpiresAt: "2026-07-31T12:00:00.000Z",
           refundPolicyVersion: "test:local:refund.v1",
           termsVersion: "local.terms.v1",
           userId,
         });
-        const checkoutId = `cs_test_${String(sequence).padStart(8, "0")}`;
+        const checkoutId = `cs_${providerEnvironment === "live" ? "live" : "test"}_${String(sequence).padStart(8, "0")}`;
         await checkout.attachStripeCheckout({
           attachedAt: "2026-07-30T12:00:01.000Z",
           checkoutExpiresAt: "2026-07-30T12:30:00.000Z",
           checkoutId,
           checkoutUrl: `https://checkout.stripe.com/c/pay/${checkoutId}`,
           orderId: created.checkout.orderId,
+          providerEnvironment,
           userId,
         });
-        return Object.freeze({ checkoutId, orderId: created.checkout.orderId });
+        return Object.freeze({
+          checkoutId,
+          orderId: created.checkout.orderId,
+          providerEnvironment,
+        });
       };
       const createSubscriptionCheckout = async (billingInterval: "month" | "year") => {
         sequence += 1;
@@ -133,6 +139,7 @@ await withLocalPostgresLease(async (lease) => {
           productCode,
           productVersion: "2026-07-23",
           providerAccountFingerprint: "acct_12345678",
+          providerEnvironment: "sandbox",
           provisionalExpiresAt: "2026-07-31T12:00:00.000Z",
           refundPolicyVersion: "test:local:refund.v1",
           termsVersion: "local.terms.v1",
@@ -145,12 +152,22 @@ await withLocalPostgresLease(async (lease) => {
           checkoutId,
           checkoutUrl: `https://checkout.stripe.com/c/pay/${checkoutId}`,
           orderId: created.checkout.orderId,
+          providerEnvironment: "sandbox",
           userId,
         });
-        return Object.freeze({ amountMinor, checkoutId, orderId: created.checkout.orderId });
+        return Object.freeze({
+          amountMinor,
+          checkoutId,
+          orderId: created.checkout.orderId,
+          providerEnvironment: "sandbox" as const,
+        });
       };
       const event = (
-        order: Readonly<{ checkoutId: string; orderId: string }>,
+        order: Readonly<{
+          checkoutId: string;
+          orderId: string;
+          providerEnvironment: "live" | "sandbox";
+        }>,
         input: Readonly<{
           amountMinor?: number;
           eventId: string;
@@ -196,6 +213,7 @@ await withLocalPostgresLease(async (lease) => {
             order.checkoutId,
           providerPaymentIntentId:
             input.paymentIntentId === undefined ? "pi_00000001" : input.paymentIntentId,
+          providerEnvironment: order.providerEnvironment,
           providerInvoiceId: input.subscription?.invoiceId ?? null,
           providerSubscriptionId: input.subscription?.subscriptionId ?? null,
           receivedAt: input.receivedAt,
@@ -247,7 +265,7 @@ await withLocalPostgresLease(async (lease) => {
         },
       ]);
       await assert.rejects(
-        wronglyPrivilegedEvents.processStripeSandboxEvent(
+        wronglyPrivilegedEvents.processStripeEvent(
           event(firstOrder, {
             eventId: "evt_wrong_role",
             eventType: "payment_pending",
@@ -266,7 +284,7 @@ await withLocalPostgresLease(async (lease) => {
       try {
         const columnDriftEvents = createCommercialPaymentEventPersistence(columnDriftDatabase);
         await assert.rejects(
-          columnDriftEvents.processStripeSandboxEvent(
+          columnDriftEvents.processStripeEvent(
             event(firstOrder, {
               eventId: "evt_column_privilege_drift",
               eventType: "payment_pending",
@@ -340,29 +358,57 @@ await withLocalPostgresLease(async (lease) => {
         },
       ]);
 
+      const liveOrder = await createCheckout("live");
+      await events.processStripeEvent(
+        event(liveOrder, {
+          eventId: "evt_live_failed",
+          eventType: "payment_failed",
+          occurredAt: "2026-07-30T12:00:30.000Z",
+          receivedAt: "2026-07-30T12:00:31.000Z",
+        }),
+        reduceCommercialPaymentTimeline,
+      );
+      const liveBoundary = await migrator.query<{
+        attemptEnvironment: string;
+        eventEnvironment: string;
+        orderStatus: string;
+      }>(
+        `
+          SELECT
+            attempts.environment AS "attemptEnvironment",
+            events.environment AS "eventEnvironment",
+            orders.status AS "orderStatus"
+          FROM commercial_order_v2 AS orders
+          JOIN commercial_payment_attempt_v2 AS attempts ON attempts.order_id = orders.id
+          JOIN commercial_payment_event_v2 AS events ON events.order_id = orders.id
+          WHERE orders.public_id = $1::uuid
+        `,
+        [liveOrder.orderId],
+      );
+      assert.deepEqual(liveBoundary.rows, [
+        { attemptEnvironment: "live", eventEnvironment: "live", orderStatus: "failed" },
+      ]);
+
       const pending = event(firstOrder, {
         eventId: "evt_pending",
         eventType: "payment_pending",
         occurredAt: "2026-07-30T12:01:00.000Z",
         receivedAt: "2026-07-30T12:01:01.000Z",
       });
-      assert.deepEqual(
-        await events.processStripeSandboxEvent(pending, reduceCommercialPaymentTimeline),
-        {
-          disposition: "applied",
-          kind: "processed",
-          orderStatus: "pending",
-          outboxCreated: true,
-          paymentAttemptState: "pending",
-        },
-      );
+      assert.deepEqual(await events.processStripeEvent(pending, reduceCommercialPaymentTimeline), {
+        disposition: "applied",
+        kind: "processed",
+        orderStatus: "pending",
+        outboxCreated: true,
+        paymentAttemptState: "pending",
+      });
       assert.equal(
-        (await events.processStripeSandboxEvent(pending, reduceCommercialPaymentTimeline)).kind,
+        (await events.processStripeEvent(pending, reduceCommercialPaymentTimeline)).kind,
         "duplicate",
       );
       assert.equal(
         (
-          await events.processStripeSandboxEvent(
+          await events.processStripeEvent(
             { ...pending, normalizationVersion: "stripe-commercial-event.v2" },
             reduceCommercialPaymentTimeline,
           )
@@ -370,7 +416,7 @@ await withLocalPostgresLease(async (lease) => {
         "duplicate",
       );
       await assert.rejects(
-        events.processStripeSandboxEvent(
+        events.processStripeEvent(
           { ...pending, payloadDigest: digest("altered-payload") },
           reduceCommercialPaymentTimeline,
         ),
@@ -389,13 +435,13 @@ await withLocalPostgresLease(async (lease) => {
       });
       const concurrent = await Promise.all(
         Array.from({ length: 12 }, () =>
-          events.processStripeSandboxEvent(concurrentSuccess, reduceCommercialPaymentTimeline),
+          events.processStripeEvent(concurrentSuccess, reduceCommercialPaymentTimeline),
         ),
       );
       assert.equal(concurrent.filter(({ kind }) => kind === "processed").length, 1);
       assert.equal(concurrent.filter(({ kind }) => kind === "duplicate").length, 11);
       assert.deepEqual(
-        await events.processStripeSandboxEvent(
+        await events.processStripeEvent(
           event(concurrentOrder, {
             eventId: "evt_000_concurrent_success",
             eventType: "payment_succeeded",
@@ -436,7 +482,7 @@ await withLocalPostgresLease(async (lease) => {
         receivedAt: "2026-07-30T12:02:01.000Z",
       });
       assert.deepEqual(
-        await events.processStripeSandboxEvent(earlyRefundArrival, reduceCommercialPaymentTimeline),
+        await events.processStripeEvent(earlyRefundArrival, reduceCommercialPaymentTimeline),
         {
           disposition: "ignored_out_of_order",
           kind: "processed",
@@ -453,7 +499,7 @@ await withLocalPostgresLease(async (lease) => {
         receivedAt: "2026-07-30T12:03:00.000Z",
       });
       assert.deepEqual(
-        await events.processStripeSandboxEvent(lateSuccessArrival, reduceCommercialPaymentTimeline),
+        await events.processStripeEvent(lateSuccessArrival, reduceCommercialPaymentTimeline),
         {
           disposition: "applied",
           kind: "processed",
@@ -466,7 +512,7 @@ await withLocalPostgresLease(async (lease) => {
       const mismatchOrder = await createCheckout();
       assert.equal(
         (
-          await events.processStripeSandboxEvent(
+          await events.processStripeEvent(
             event(mismatchOrder, {
               amountMinor: 500,
               eventId: "evt_amount_mismatch",
@@ -482,7 +528,7 @@ await withLocalPostgresLease(async (lease) => {
       );
       assert.equal(
         (
-          await events.processStripeSandboxEvent(
+          await events.processStripeEvent(
             {
               ...event(mismatchOrder, {
                 eventId: "evt_account_mismatch",
@@ -614,7 +660,7 @@ await withLocalPostgresLease(async (lease) => {
         subscription: monthlySubscription,
       });
       assert.deepEqual(
-        await events.processStripeSandboxEvent(monthlySuccess, reduceCommercialPaymentTimeline),
+        await events.processStripeEvent(monthlySuccess, reduceCommercialPaymentTimeline),
         {
           disposition: "applied",
           kind: "processed",
@@ -624,11 +670,10 @@ await withLocalPostgresLease(async (lease) => {
         },
       );
       assert.equal(
-        (await events.processStripeSandboxEvent(monthlySuccess, reduceCommercialPaymentTimeline))
-          .kind,
+        (await events.processStripeEvent(monthlySuccess, reduceCommercialPaymentTimeline)).kind,
         "duplicate",
       );
-      await events.processStripeSandboxEvent(
+      await events.processStripeEvent(
         event(monthlyOrder, {
           amountMinor: monthlyOrder.amountMinor,
           eventId: "evt_monthly_cancel_scheduled",
@@ -644,7 +689,7 @@ await withLocalPostgresLease(async (lease) => {
         }),
         reduceCommercialPaymentTimeline,
       );
-      await events.processStripeSandboxEvent(
+      await events.processStripeEvent(
         event(monthlyOrder, {
           amountMinor: monthlyOrder.amountMinor,
           eventId: "evt_monthly_cancelled",
@@ -671,7 +716,7 @@ await withLocalPostgresLease(async (lease) => {
         state: "active" as const,
         subscriptionId: "sub_annual_0001",
       });
-      await events.processStripeSandboxEvent(
+      await events.processStripeEvent(
         event(annualOrder, {
           amountMinor: annualOrder.amountMinor,
           eventId: "evt_annual_success",
@@ -734,7 +779,7 @@ await withLocalPostgresLease(async (lease) => {
         purchasedAvailable: 6,
         subscriptionAvailable: 32,
       });
-      await events.processStripeSandboxEvent(
+      await events.processStripeEvent(
         event(annualOrder, {
           amountMinor: annualOrder.amountMinor,
           eventId: "evt_annual_disputed",
@@ -824,14 +869,14 @@ await withLocalPostgresLease(async (lease) => {
         [userId],
       );
       assert.deepEqual(counts.rows[0], {
-        accountBoundAttempts: 6,
+        accountBoundAttempts: 7,
         credits: 10,
         entitlements: 2,
-        events: 12,
-        outboxes: 6,
+        events: 13,
+        outboxes: 7,
         paidOrRefundedOrders: 3,
         rejectedEvents: 2,
-        signatureEvidence: 12,
+        signatureEvidence: 13,
         subscriptionPeriods: 4,
         subscriptions: 2,
       });

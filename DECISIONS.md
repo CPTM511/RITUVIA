@@ -895,3 +895,13 @@ effective until this register links it. Do not rewrite historical rationale; sup
   archival snapshot or implying production, while the unavailable Coinbase Business entitlement
   must not force crypto activation or permanently remove the product option.
 - **Date:** 2026-08-03; activated 2026-08-04; amended 2026-08-10
+
+### [D-099 — Owner-authorized production-capable real-funds activation](records/decisions/D-099.md)
+
+- **Decision:** Close Item 12, then prepare and activate one fail-closed Stripe Live production
+  slice with exact live configuration, limited rollout, source disclosure, monitoring, restore,
+  reconciliation, and rollback evidence; keep Coinbase/USDC off for the first-provider rollout.
+- **Reason:** The Owner explicitly removed the internal production/real-funds prohibition so an
+  eligible customer can pay, while absent legal, provider, configuration, or operational facts
+  still cannot be fabricated or bypassed.
+- **Date:** 2026-08-12

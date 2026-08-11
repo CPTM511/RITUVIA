@@ -205,7 +205,8 @@ try {
   assert.equal(downloadResponse.status, 200);
   assert.match(downloadResponse.headers["content-type"] ?? "", /application\/json/u);
   const exportPackage = JSON.parse(downloadResponse.body);
-  assert.equal(exportPackage.schemaVersion, "privacy-export-package.v1");
+  assert.equal(exportPackage.schemaVersion, "privacy-export-package.v2");
+  assert.equal(Array.isArray(exportPackage.machineReadable?.astrologyCalculations), true);
   assert.equal(JSON.stringify(exportPackage).includes(accountCookie.value), false);
   assert.equal(JSON.stringify(exportPackage).includes(csrfToken), false);
 

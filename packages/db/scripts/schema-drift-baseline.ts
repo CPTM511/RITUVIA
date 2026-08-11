@@ -76,7 +76,9 @@ export const verifySchemaDriftBaseline = (
     fingerprint.normalizedBytes !== baseline.normalizedBytes ||
     fingerprint.normalizedLines !== baseline.normalizedLines
   ) {
-    throw new Error("Schema drift differs from the reviewed baseline.");
+    throw new Error(
+      `Schema drift differs from the reviewed baseline: actual bytes=${fingerprint.normalizedBytes} lines=${fingerprint.normalizedLines} sha256=${fingerprint.sha256}.`,
+    );
   }
   return Object.freeze(fingerprint);
 };

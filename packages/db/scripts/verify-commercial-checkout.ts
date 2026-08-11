@@ -81,6 +81,7 @@ await withLocalPostgresLease(async (lease) => {
         productCode: "pack_6",
         productVersion: "2026-07-23",
         providerAccountFingerprint: "acct_12345678",
+        providerEnvironment: "sandbox" as const,
         provisionalExpiresAt: "2026-07-31T12:00:00.000Z",
         refundPolicyVersion: "test:local:refund.v1",
         termsVersion: "local.terms.v1",
@@ -130,6 +131,7 @@ await withLocalPostgresLease(async (lease) => {
         checkoutUrl:
           "https://checkout.stripe.com/c/pay/cs_test_12345678#fidkdWxOYHwnPyd1blpxYHZxWjA0",
         orderId: created.checkout.orderId,
+        providerEnvironment: "sandbox",
         userId,
       });
       assert.equal(attached.state, "checkout_created");
@@ -143,6 +145,7 @@ await withLocalPostgresLease(async (lease) => {
             checkoutUrl:
               "https://checkout.stripe.com/c/pay/cs_test_12345678#fidkdWxOYHwnPyd1blpxYHZxWjA0",
             orderId: created.checkout.orderId,
+            providerEnvironment: "sandbox",
             userId,
           })
         ).checkoutId,
@@ -155,6 +158,7 @@ await withLocalPostgresLease(async (lease) => {
           checkoutId: "cs_test_changed",
           checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_changed",
           orderId: created.checkout.orderId,
+          providerEnvironment: "sandbox",
           userId,
         }),
         (error: unknown) =>

@@ -201,12 +201,70 @@ recovery, rollback, dependency/license, Corresponding Source, browser, protected
 deployment, Provider, database, secret, FJ-15, Production, DNS, public, or real-value action was
 executed after the failure.
 
+## Bounded contract remediation rerun — 2026-08-11
+
+The Owner separately approved only a truth audit and repair of the five recorded assertions in
+`tests/configuration-contract.test.ts` and `tests/web-shell-contract.test.ts`, followed by another
+new-before-state Item 12 rerun. The recovery branch remained descended from the approved baseline,
+the archival snapshot commit remained excluded, and the original worktree remained at 243 staged
+and 0 unstaged files.
+
+| Field                       | Exact evidence                                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contract rerun HEAD / tree  | `c87fa802e81a1e90d85f79735cb2d277aeb3b36d` / `6b239a21084a9f8c20f9c5212ec2960da15c272d`                                                     |
+| New before-state manifest   | `/private/tmp/rituvia-item12-contract-rerun-before/MANIFEST.md`; SHA-256 `c08f30eaf4f8fe2db9951bbbc0bb7910127e4f4ebb6d22e2700f044f0c19a061` |
+| Reproduced contract failure | 2 files, 13 tests; 8 passed, 5 failed; SHA-256 `3c11050c3d8ad1cfbbcc595efa108f0416d7e544aa62b2c996adfa5fd7a39f52`                           |
+| Corrected contract result   | 2 files, 13 tests; 13 passed; SHA-256 `a8a467f2b95096670eb222b2d552a9e81db8eacb1d967e791baace6022e1dd3d`                                    |
+| Frozen offline install      | PASS; SHA-256 `e9d4eef0c6ba14dbde0d54975e3b0dc89c020165ead1dc9a86cacb83dff024ce`                                                            |
+| Formal workspace command    | FAIL at secret scan; SHA-256 `2abcdf384c36a5866c28831a34ac4706da171163985dd395cf1ce0ef5ec6e302`                                             |
+
+The truth audit classified and repaired the five recorded areas without changing business logic,
+Provider behavior, routes, locale availability, deployment authority, or license:
+
+1. `.env.example` violated the canonical empty-value contract; the Item 11 self-reference was
+   removed. Corrected SHA-256: `7f920a1885e4f5645a83f884b75de9dffb41ff49aa1ddb7bfa943662628c5346`.
+2. `RITUVIA_BUILD_SOURCE_SHA` is a deliberate non-secret build-cache identity input; the stale
+   exact-list assertion now permits that one additional value while continuing to reject database
+   secrets.
+3. The process-environment adapter list now exactly includes the approved recovery observability
+   adapters and bounded Item 9–11 database scripts rather than silently excluding them.
+4. D-016 was not superseded by recovery governance; `apps/web/next.config.ts` again loads the
+   repository-root `@next/env` set and validates build configuration. Corrected SHA-256:
+   `dc366b29d8549b6e52e450e4f328a94978a28d00ad1c1445410256a0c3b00d1b`.
+5. The Web-shell contract now names the Item 6 `parseGoldenShellLocale` / `goldenShellLocales`
+   boundary in both the page and layout assertions rather than the superseded generic parser.
+
+The focused environment contract passed for four environments, ten control sections, and ten
+repository references. The formal `pnpm check` then passed CI authority, architecture across 610
+source files and 16 modules, environment, AI operations, localization, editorial, public-page,
+search, RTL, writing-system, 149-record, 37-migration, and generated-evidence gates. The first
+mandatory failure was the repository secret scan:
+
+`path=".env.example" line=22 rule=npm-auth fingerprint=f22ae124b099a0da`
+
+The unchanged `npm-auth` expression in `scripts/secret-policy.ts` uses `\s*` after `=`, so an empty
+password assignment can consume the newline and classify text from the following line as a secret.
+Its source SHA-256 is
+`a679bf7fa3875c1c385808324a338185b2d9325664003d3e0baec882c363eb7c`. This new scanner finding is
+outside the five-assertion authorization and was not repaired.
+
+Before the formal run, the unchanged `test:configuration-boundary` preflight independently failed
+its isolated Next.js build because `apps/web/node_modules` was symlinked outside the temporary
+Turbopack filesystem root. The harness source SHA-256 is
+`51022c7b9fbcb0027fdf1d67a1e323a0dffb94c0176e527f0f7ac74f3b740b7f`. This second new finding was
+also not repaired. The formal STOP occurred earlier at the secret scan, so no later workspace,
+privacy, restore, rollback, source/license, browser, or protected-Staging gate was executed.
+
+No deployment, Vercel setting, database, secret, Provider, webhook, DNS, Production, public,
+real-value, or FJ-15 action occurred. Protected Staging remains on the accepted Item 11 source.
+
 ## Factual recommendation
 
 Recovery Item 12 is **Blocked** and the repository remains **NO-GO**. The smallest next Owner
-decision is whether to authorize a bounded contract-truth audit and remediation for only the five
-recorded assertions in the two failing test files, capture another new before-state, and rerun the
-complete Item 12 gate from the beginning. That authority must not include FJ-15, Production, DNS,
-public release, real funds, live Providers, or automatic follow-on work unless separately stated.
+decision is whether to authorize a bounded audit and repair of only the newline-crossing
+`npm-auth` scanner rule and the isolated configuration-boundary dependency layout, capture another
+new before-state, and rerun Item 12 from the beginning. That authority must not include FJ-15,
+Production, DNS, public release, real funds, live Providers, or automatic follow-on work unless
+separately stated.
 
 **STOP — ITEM 12 DID NOT PASS; NO PRODUCT DEPLOYMENT OR FJ-15 EXECUTION STARTED.**

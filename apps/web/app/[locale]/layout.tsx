@@ -6,7 +6,6 @@ import { goldenShellLocales, parseGoldenShellLocale } from "../_i18n/golden-shel
 
 import "@rituvia/ui/styles";
 import "../styles.css";
-import "../golden-shell.css";
 
 type LocaleRootLayoutProps = Readonly<{
   children: ReactNode;

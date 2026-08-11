@@ -170,6 +170,7 @@ export type PaymentConfiguration =
     }>
   | Readonly<{
       accountId: string;
+      mode: "live" | "test";
       priceIds: Readonly<Record<string, string>>;
       provider: "stripe";
       secretKey: string;
@@ -676,11 +677,12 @@ const parsePaymentConfiguration = (
       provider: "local",
     });
   }
+  const stripeMode = deploymentEnvironment === "production" ? "live" : "test";
+  const stripeSecretPrefix = stripeMode === "live" ? "sk_live_" : "sk_test_";
   if (
-    deploymentEnvironment === "production" ||
     parsed.RITUVIA_STRIPE_ACCOUNT_ID === undefined ||
     parsed.STRIPE_SECRET_KEY === undefined ||
-    !parsed.STRIPE_SECRET_KEY.startsWith("sk_test_") ||
+    !parsed.STRIPE_SECRET_KEY.startsWith(stripeSecretPrefix) ||
     parsed.STRIPE_WEBHOOK_SECRET === undefined ||
     parsed.RITUVIA_STRIPE_PRICE_IDS === undefined ||
     parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1 !== undefined
@@ -688,7 +690,7 @@ const parsePaymentConfiguration = (
     throw new ConfigurationError("server", [
       ...(parsed.STRIPE_SECRET_KEY === undefined
         ? [{ code: "missing" as const, key: "STRIPE_SECRET_KEY" }]
-        : deploymentEnvironment === "production" || !parsed.STRIPE_SECRET_KEY.startsWith("sk_test_")
+        : !parsed.STRIPE_SECRET_KEY.startsWith(stripeSecretPrefix)
           ? [{ code: "invalid" as const, key: "STRIPE_SECRET_KEY" }]
           : []),
       ...(parsed.RITUVIA_STRIPE_ACCOUNT_ID === undefined
@@ -707,6 +709,7 @@ const parsePaymentConfiguration = (
   }
   return Object.freeze({
     accountId: parsed.RITUVIA_STRIPE_ACCOUNT_ID,
+    mode: stripeMode,
     priceIds: parseStripePriceIds(parsed.RITUVIA_STRIPE_PRICE_IDS),
     provider: "stripe",
     secretKey: parsed.STRIPE_SECRET_KEY,
