@@ -203,8 +203,8 @@ try {
     assert.equal(node.url, canonical);
     assert.equal(node.inLanguage, "en");
     assert.equal(
-      node[route.structuredType === "Article" ? "headline" : "name"],
-      (await page.getByRole("heading", { level: 1 }).innerText()).trim(),
+      node[route.structuredType === "Article" ? "headline" : "name"].replace(/\s+/gu, " ").trim(),
+      (await page.getByRole("heading", { level: 1 }).innerText()).replace(/\s+/gu, " ").trim(),
     );
     assert.equal(
       (await page.locator("main#main-content").innerText()).includes(node.description),
