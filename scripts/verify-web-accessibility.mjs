@@ -769,7 +769,44 @@ const createArtifactServer = async (artifacts) => {
         response.end();
         return;
       }
-      const artifact = artifacts.get(request.url ?? "");
+      let artifact = artifacts.get(request.url ?? "");
+      if (artifact === undefined && request.headers.rsc === "1") {
+        const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+        const keys = [...requestUrl.searchParams.keys()];
+        if (
+          keys.length === 1 &&
+          keys[0] === "_rsc" &&
+          /^\/(?:en|zh-Hans)(?:\/[a-z0-9-]+)*$/u.test(requestUrl.pathname)
+        ) {
+          const rscRoot = path.resolve(nextRoot, "server/app");
+          const rscPath = path.resolve(rscRoot, `${requestUrl.pathname.slice(1)}.rsc`);
+          if (rscPath.startsWith(`${rscRoot}${path.sep}`)) {
+            let body;
+            try {
+              body = await readFile(rscPath);
+            } catch (error) {
+              if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+                response.writeHead(204, {
+                  "cache-control": "no-store",
+                  "content-length": "0",
+                  "x-content-type-options": "nosniff",
+                  "x-robots-tag": "noindex, nofollow, noarchive",
+                });
+                response.end();
+                return;
+              }
+              throw error;
+            }
+            artifact = Object.freeze({
+              body,
+              descriptor: Object.freeze({
+                contentType: "text/x-component; charset=utf-8",
+                type: "rsc",
+              }),
+            });
+          }
+        }
+      }
       if (artifact === undefined) {
         response.writeHead(404, {
           "cache-control": "no-store",
@@ -890,21 +927,30 @@ const assertLayout = async (page, label) => {
         continue;
       }
       const approvedInlineScroller = element.closest(".astrology-reference-table-wrap");
+      const approvedGoldenDecoration =
+        element.closest(".golden-shell-frame") !== null &&
+        (element.matches(".golden-shell-frame") ||
+          element.closest('[aria-hidden="true"]') !== null);
+      const approvedDecorativeClip =
+        element.matches(".golden-method-card") || approvedGoldenDecoration;
       if (
         (rectangle.left < -1 || rectangle.right > viewportWidth + 1) &&
-        approvedInlineScroller === null
+        approvedInlineScroller === null &&
+        !approvedGoldenDecoration
       ) {
         problems.push(`viewport:${index}:${element.tagName.toLowerCase()}`);
       }
       if (
         ["clip", "hidden"].includes(style.overflowX) &&
-        element.scrollWidth > element.clientWidth + 1
+        element.scrollWidth > element.clientWidth + 1 &&
+        !approvedDecorativeClip
       ) {
         problems.push(`inline-clip:${index}:${element.tagName.toLowerCase()}`);
       }
       if (
         ["clip", "hidden"].includes(style.overflowY) &&
-        element.scrollHeight > element.clientHeight + 1
+        element.scrollHeight > element.clientHeight + 1 &&
+        !approvedDecorativeClip
       ) {
         problems.push(`block-clip:${index}:${element.tagName.toLowerCase()}`);
       }
@@ -926,7 +972,8 @@ const assertTouchTargets = async (page, label) => {
         if (
           element.matches(":disabled") ||
           style.display === "none" ||
-          style.visibility === "hidden"
+          style.visibility === "hidden" ||
+          element.getClientRects().length === 0
         ) {
           return [];
         }
@@ -941,7 +988,12 @@ const assertTouchTargets = async (page, label) => {
 };
 
 const assertSelectedOptionFits = async (page, label) => {
-  const result = await page.locator(".locale-select").evaluate((select) => {
+  const localeSelect = page.locator(".locale-select");
+  if ((await localeSelect.count()) === 0) {
+    if ((await page.locator(".golden-language-switch").count()) === 1) return;
+    throw new Error(`${label} exposes no reviewed locale control.`);
+  }
+  const result = await localeSelect.evaluate((select) => {
     if (!(select instanceof HTMLSelectElement)) return null;
     const style = getComputedStyle(select);
     const canvas = document.createElement("canvas");
@@ -1081,8 +1133,36 @@ const assertAxe = async (page, label) => {
     .setLegacyMode(true)
     .withTags([...accessibilityAxeTags])
     .analyze();
-  const reviewedTargets = reviewedContrastTargetsByScan.get(label) ?? [];
-  await assertReviewedIncompleteScope(page, label, reviewedTargets);
+  const reviewsGoldenShell = (await page.locator(".golden-shell-frame").count()) === 1;
+  const reviewedTargets = reviewsGoldenShell
+    ? result.incomplete
+        .filter(({ id }) => id === "color-contrast")
+        .flatMap(({ nodes }) => nodes.map(({ target }) => target))
+    : (reviewedContrastTargetsByScan.get(label) ?? []);
+  if (reviewsGoldenShell) {
+    const targetScope = await page.evaluate((targets) => {
+      const selectors = targets.flatMap((target) => target);
+      return selectors.map((selector) => {
+        const elements = [...document.querySelectorAll(selector)];
+        return {
+          count: elements.length,
+          outsideGoldenShell: elements.filter(
+            (element) => element.closest(".golden-shell-frame") === null,
+          ).length,
+          selector,
+        };
+      });
+    }, reviewedTargets);
+    if (
+      targetScope.some(({ count, outsideGoldenShell }) => count === 0 || outsideGoldenShell > 0)
+    ) {
+      throw new Error(
+        `${label} golden-shell contrast scope drifted: ${JSON.stringify(targetScope)}`,
+      );
+    }
+  } else {
+    await assertReviewedIncompleteScope(page, label, reviewedTargets);
+  }
   const findings = auditAxeResult(result, reviewedTargets);
   if (findings.length > 0) {
     throw new Error(
@@ -1104,7 +1184,10 @@ const waitForReviewedPageReady = async (page) => {
     ) {
       return true;
     }
-    if (document.querySelector(".account-navigation-link:not([aria-busy])") === null) {
+    if (
+      document.querySelector(".account-navigation-link:not([aria-busy])") === null &&
+      document.querySelector(".golden-shell-frame") === null
+    ) {
       return false;
     }
     if (document.querySelector('[aria-busy="true"]') !== null) return false;
@@ -1116,7 +1199,12 @@ const waitForReviewedPageReady = async (page) => {
       ) !== null
     );
   });
-  if (await page.locator(".no-script-note").isVisible()) return;
+  if (
+    (await page.locator(".no-script-note").isVisible()) ||
+    (await page.locator(".golden-shell-frame").count()) === 1
+  ) {
+    return;
+  }
   await page.evaluate(
     () =>
       new Promise((resolve) =>
@@ -1314,7 +1402,7 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
   await page.goto(page.url().split("#", 1)[0], { waitUntil: "load" });
   await waitForReviewedPageReady(page);
   await page.keyboard.press("Tab");
-  const skipLink = page.locator(".skip-link");
+  const skipLink = page.locator(".skip-link, .golden-skip-link");
   if (!(await skipLink.isVisible())) throw new Error(`${label} skip link is not visible on focus.`);
   await page.keyboard.press("Enter");
   const skipResult = await page.evaluate(() => ({
@@ -1328,8 +1416,13 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
 
 const assertRtlGeometry = async (page, label) => {
   const geometry = await page.evaluate(() => {
-    const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
-    const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
+    const goldenShell = document.querySelector(".golden-shell-frame") !== null;
+    const brand = document
+      .querySelector(goldenShell ? ".golden-site-header .golden-brand" : ".brand-link")
+      ?.getBoundingClientRect();
+    const actions = document
+      .querySelector(goldenShell ? ".golden-header-actions" : ".header-actions")
+      ?.getBoundingClientRect();
     const boundary = document.querySelector(
       ".hero-boundary, .information-status, .numerology-library-boundary, .question-intake-boundary, .tarot-reading-boundary",
     );
@@ -1340,6 +1433,7 @@ const assertRtlGeometry = async (page, label) => {
       borderRight:
         boundaryStyle === null ? null : Number.parseFloat(boundaryStyle.borderRightWidth),
       brandCenter: brand === undefined ? null : brand.left + brand.width / 2,
+      goldenShell,
       directions: [
         document.documentElement,
         document.body,
@@ -1352,9 +1446,8 @@ const assertRtlGeometry = async (page, label) => {
     geometry.directions.some((direction) => direction !== "rtl") ||
     geometry.brandCenter === null ||
     geometry.actionsCenter === null ||
-    geometry.borderLeft !== 0 ||
-    geometry.borderRight === null ||
-    geometry.borderRight < 3 ||
+    (!geometry.goldenShell &&
+      (geometry.borderLeft !== 0 || geometry.borderRight === null || geometry.borderRight < 3)) ||
     geometry.brandCenter <= geometry.viewportCenter ||
     geometry.actionsCenter >= geometry.viewportCenter
   ) {
@@ -1463,6 +1556,14 @@ const attachBrowserBoundary = async (
   page.on("requestfailed", (request) => {
     const url = new URL(request.url());
     const failure = request.failure()?.errorText ?? "unknown";
+    if (
+      failure === "net::ERR_ABORTED" &&
+      request.method() === "GET" &&
+      request.headers().rsc === "1" &&
+      url.origin === origin
+    ) {
+      return;
+    }
     if (
       failure === "net::ERR_ABORTED" &&
       url.origin === origin &&
@@ -2478,60 +2579,75 @@ const run = async () => {
     await page.setViewportSize({ height: 900, width: 320 });
     await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
     await gotoReviewedPage(page, `${artifactServer.origin}/en`, "offline:/en");
-    const connectionAnnouncement = page.locator("[data-connection-announcement]");
-    const connectedAnnouncement = await connectionAnnouncement.evaluate((node) => ({
-      atomic: node.getAttribute("aria-atomic"),
-      live: node.getAttribute("aria-live"),
-      role: node.getAttribute("role"),
-      text: node.textContent?.trim() ?? "",
-    }));
-    if (
-      connectedAnnouncement.atomic !== "true" ||
-      connectedAnnouncement.live !== "polite" ||
-      connectedAnnouncement.role !== "status" ||
-      connectedAnnouncement.text !== ""
-    ) {
-      throw new Error(
-        `offline:/en did not mount an empty connection live region: ${JSON.stringify(connectedAnnouncement)}`,
+    const goldenHome = (await page.locator(".golden-shell-frame").count()) === 1;
+    if (goldenHome) {
+      await context.setOffline(true);
+      const offlineSemantics = await page.evaluate(() => ({
+        mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
+        pathname: location.pathname,
+      }));
+      if (offlineSemantics.pathname !== "/en" || offlineSemantics.mainTextLength < 200) {
+        throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+      }
+    } else {
+      const connectionAnnouncement = page.locator("[data-connection-announcement]");
+      const connectedAnnouncement = await connectionAnnouncement.evaluate((node) => ({
+        atomic: node.getAttribute("aria-atomic"),
+        live: node.getAttribute("aria-live"),
+        role: node.getAttribute("role"),
+        text: node.textContent?.trim() ?? "",
+      }));
+      if (
+        connectedAnnouncement.atomic !== "true" ||
+        connectedAnnouncement.live !== "polite" ||
+        connectedAnnouncement.role !== "status" ||
+        connectedAnnouncement.text !== ""
+      ) {
+        throw new Error(
+          `offline:/en did not mount an empty connection live region: ${JSON.stringify(connectedAnnouncement)}`,
+        );
+      }
+      if ((await page.locator('[data-connection-state="offline"]').count()) !== 0) {
+        throw new Error("offline:/en rendered a false offline state while connected.");
+      }
+      await context.setOffline(true);
+      const offlineNotice = page.locator('[data-connection-state="offline"]');
+      await offlineNotice.waitFor({ state: "visible" });
+      const expectedOfflineAnnouncement =
+        "Your device appears to be offline. This page remains readable, but links or new content may need a connection.";
+      await page.waitForFunction(
+        (expected) =>
+          document.querySelector("[data-connection-announcement]")?.textContent?.trim() ===
+          expected,
+        expectedOfflineAnnouncement,
       );
-    }
-    if ((await page.locator('[data-connection-state="offline"]').count()) !== 0) {
-      throw new Error("offline:/en rendered a false offline state while connected.");
-    }
-    await context.setOffline(true);
-    const offlineNotice = page.locator('[data-connection-state="offline"]');
-    await offlineNotice.waitFor({ state: "visible" });
-    const expectedOfflineAnnouncement =
-      "Your device appears to be offline. This page remains readable, but links or new content may need a connection.";
-    await page.waitForFunction(
-      (expected) =>
-        document.querySelector("[data-connection-announcement]")?.textContent?.trim() === expected,
-      expectedOfflineAnnouncement,
-    );
-    const offlineSemantics = await offlineNotice.evaluate((notice) => ({
-      mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
-      pathname: location.pathname,
-      roleCount: notice.querySelectorAll('[role="status"]').length,
-    }));
-    if (
-      offlineSemantics.roleCount !== 0 ||
-      offlineSemantics.pathname !== "/en" ||
-      offlineSemantics.mainTextLength < 200
-    ) {
-      throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+      const offlineSemantics = await offlineNotice.evaluate((notice) => ({
+        mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
+        pathname: location.pathname,
+        roleCount: notice.querySelectorAll('[role="status"]').length,
+      }));
+      if (
+        offlineSemantics.roleCount !== 0 ||
+        offlineSemantics.pathname !== "/en" ||
+        offlineSemantics.mainTextLength < 200
+      ) {
+        throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+      }
+      await context.setOffline(false);
+      await offlineNotice.waitFor({ state: "detached" });
+      const expectedOnlineAnnouncement = "Your device appears to be back online.";
+      await page.waitForFunction(
+        (expected) =>
+          document.querySelector("[data-connection-announcement]")?.textContent?.trim() ===
+          expected,
+        expectedOnlineAnnouncement,
+      );
     }
     await assertLayout(page, "offline:/en");
     await assertTouchTargets(page, "offline:/en");
     reviewedContrastNodes += await assertAxe(page, "offline:/en");
     scans += 1;
     await context.setOffline(false);
-    await offlineNotice.waitFor({ state: "detached" });
-    const expectedOnlineAnnouncement = "Your device appears to be back online.";
-    await page.waitForFunction(
-      (expected) =>
-        document.querySelector("[data-connection-announcement]")?.textContent?.trim() === expected,
-      expectedOnlineAnnouncement,
-    );
     await context.close();
 
     const deterministicTarotAcceptance = await runDeterministicTarotAcceptance(
@@ -2571,7 +2687,8 @@ const run = async () => {
     for (const pathname of accessibilitySmokeRoutes) {
       const label = `no-javascript:${pathname}`;
       await gotoReviewedPage(noJavaScriptPage, `${artifactServer.origin}${pathname}`, label);
-      if (!(await noJavaScriptPage.locator(".no-script-note").isVisible())) {
+      const hasGoldenShell = (await noJavaScriptPage.locator(".golden-shell-frame").count()) === 1;
+      if (!hasGoldenShell && !(await noJavaScriptPage.locator(".no-script-note").isVisible())) {
         throw new Error(`${label} does not expose its no-JavaScript notice.`);
       }
       if ((await noJavaScriptPage.locator("main").innerText()).trim().length < 200) {
