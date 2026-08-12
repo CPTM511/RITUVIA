@@ -119,6 +119,7 @@ describe("source configuration boundaries", () => {
       "packages/astrology-engine-native/scripts/verify-native.mjs",
       "packages/db/prisma.config.ts",
       "packages/db/prisma/seed.ts",
+      "packages/db/scripts/configure-production-stripe-live.mjs",
       "packages/db/scripts/configure-recovery-item-10-staging.mjs",
       "packages/db/scripts/configure-recovery-item-11-staging.mjs",
       "packages/db/scripts/configure-recovery-item-9-staging.mjs",
