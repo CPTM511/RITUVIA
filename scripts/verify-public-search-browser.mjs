@@ -19,6 +19,7 @@ const routes = Object.freeze([
   Object.freeze({
     classifications: ["product_guidance", "interpretation"],
     entityId: "rituvia-public-guidance-v1",
+    hasAnswerContext: false,
     pathname: "/en",
     structuredType: "WebSite",
   }),
@@ -123,6 +124,14 @@ const artifactServer = createServer(async (request, response) => {
       "image/svg+xml",
     );
   }
+  if (request.headers.rsc === "1") {
+    const routePath = requestUrl.pathname === "/" ? "index" : requestUrl.pathname.slice(1);
+    return respondWithFile(
+      response,
+      path.join(buildRoot, "server/app", `${routePath}.rsc`),
+      "text/x-component; charset=utf-8",
+    );
+  }
   if (routes.some(({ pathname: routePathname }) => routePathname === requestUrl.pathname)) {
     return respondWithFile(
       response,
@@ -211,35 +220,41 @@ try {
       true,
     );
     const answerContext = page.locator("[data-geo-answer-context]");
-    assert.equal(await answerContext.count(), 1);
-    assert.equal(await answerContext.getAttribute("data-geo-entity-id"), route.entityId);
-    assert.deepEqual(
-      await answerContext
-        .locator("[data-geo-classification]")
-        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-geo-classification"))),
-      route.classifications,
-    );
-    assert.equal(await answerContext.getByRole("heading", { level: 2 }).count(), 1);
-    assert.equal(await answerContext.getByRole("heading", { level: 3 }).count(), 1);
-    assert.equal((await answerContext.innerText()).includes("Source basis"), true);
-    assert.equal((await answerContext.innerText()).includes("Review authority"), true);
-    assert.equal((await answerContext.locator("li").count()) >= 1, true);
-    assert.deepEqual(
-      await answerContext.evaluate((element) => ({
-        ariaHiddenAncestor: element.closest('[aria-hidden="true"]') !== null,
-        display: getComputedStyle(element).display,
-        hidden: element.hasAttribute("hidden"),
-        textLength: element.innerText.trim().length,
-        visibility: getComputedStyle(element).visibility,
-      })),
-      {
-        ariaHiddenAncestor: false,
-        display: "grid",
-        hidden: false,
-        textLength: (await answerContext.innerText()).trim().length,
-        visibility: "visible",
-      },
-    );
+    if (route.hasAnswerContext === false) {
+      assert.equal(await answerContext.count(), 0);
+    } else {
+      assert.equal(await answerContext.count(), 1);
+      assert.equal(await answerContext.getAttribute("data-geo-entity-id"), route.entityId);
+      assert.deepEqual(
+        await answerContext
+          .locator("[data-geo-classification]")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => node.getAttribute("data-geo-classification")),
+          ),
+        route.classifications,
+      );
+      assert.equal(await answerContext.getByRole("heading", { level: 2 }).count(), 1);
+      assert.equal(await answerContext.getByRole("heading", { level: 3 }).count(), 1);
+      assert.equal((await answerContext.innerText()).includes("Source basis"), true);
+      assert.equal((await answerContext.innerText()).includes("Review authority"), true);
+      assert.equal((await answerContext.locator("li").count()) >= 1, true);
+      assert.deepEqual(
+        await answerContext.evaluate((element) => ({
+          ariaHiddenAncestor: element.closest('[aria-hidden="true"]') !== null,
+          display: getComputedStyle(element).display,
+          hidden: element.hasAttribute("hidden"),
+          textLength: element.innerText.trim().length,
+          visibility: getComputedStyle(element).visibility,
+        })),
+        {
+          ariaHiddenAncestor: false,
+          display: "grid",
+          hidden: false,
+          textLength: (await answerContext.innerText()).trim().length,
+          visibility: "visible",
+        },
+      );
+    }
     assert.equal(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
@@ -289,7 +304,10 @@ try {
   assert.deepEqual(JSON.parse(injectionPayload), maliciousValue);
 
   assert.deepEqual(unexpectedRequests, []);
-  assert.equal(accountSessionProbes, routes.length);
+  assert.equal(
+    accountSessionProbes,
+    routes.filter((route) => route.hasAnswerContext !== false).length,
+  );
   assert.deepEqual(consoleErrors, []);
   assert.deepEqual(pageErrors, []);
   await context.close();
@@ -317,9 +335,13 @@ try {
     assert.ok(response);
     assert.equal(response.status(), 200);
     const answerContext = noScriptPage.locator("[data-geo-answer-context]");
-    assert.equal(await answerContext.count(), 1);
-    assert.equal(await answerContext.getAttribute("data-geo-entity-id"), route.entityId);
-    assert.equal((await answerContext.innerText()).trim().length > 300, true);
+    if (route.hasAnswerContext === false) {
+      assert.equal(await answerContext.count(), 0);
+    } else {
+      assert.equal(await answerContext.count(), 1);
+      assert.equal(await answerContext.getAttribute("data-geo-entity-id"), route.entityId);
+      assert.equal((await answerContext.innerText()).trim().length > 300, true);
+    }
     assert.equal(
       await noScriptPage.evaluate(
         () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
