@@ -221,7 +221,7 @@ eaf791240c76ab472a1b62a3e1952b70eaaa70441cdeabf31741195b69c4ee9d  apps/web/app/a
 508179063ffbe165b8e0cf91c9ddd297a2387bc753e7a2a0cebc99c5ed55edbb  apps/web/app/api/v1/webhooks/payments/coinbase/route.ts
 12ab4d977e10aaa5f63e40a84ed81ceeb412c86c69871e98019ba30d9cbdd782  apps/web/app/api/v1/webhooks/payments/local/route.ts
 f7e746fcc84db2425f58e196a6bee8b52d46c2389bea2208ef530eaaffb542e7  apps/web/app/api/v1/webhooks/payments/stripe/route.ts
-ec6b11485368c5160594058ac3c19ddc185e94a6e0a68d71c3a2785fc2f29456  apps/web/app/golden-shell.css
+24daf242f849497e89400c173a8376219ce94edea2fad02b8d64b5b5915f842e  apps/web/app/golden-shell.css
 389e6576d8942ba04ab4a69ffcb07416350a6057ed02734b59661052db236124  apps/web/app/icon.svg
 717d79fb1df2cceb68377bc63205b1802e1357676bc6badbebd73d1a6a5bf49a  apps/web/app/styles.css
 28be2964aff9961a7a21c707fead5acca32c9aecf67447d34e26673287e3fb15  apps/web/config/client-provider.tsx
