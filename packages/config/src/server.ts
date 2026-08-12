@@ -628,6 +628,7 @@ const stripeProductCodes = Object.freeze([
   "plus_annual",
   "plus_monthly",
 ] as const);
+const stripeProductCodeSet = new Set<string>(stripeProductCodes);
 
 const parseStripePriceIds = (value: string): Readonly<Record<string, string>> => {
   try {
@@ -636,9 +637,10 @@ const parseStripePriceIds = (value: string): Readonly<Record<string, string>> =>
     const record = parsed as Record<string, unknown>;
     const keys = Object.keys(record).sort();
     if (
-      keys.join("\0") !== [...stripeProductCodes].sort().join("\0") ||
+      keys.length === 0 ||
       keys.some(
         (key) =>
+          !stripeProductCodeSet.has(key) ||
           typeof record[key] !== "string" ||
           !/^price_[A-Za-z0-9]{8,255}$/u.test(record[key] as string),
       )
