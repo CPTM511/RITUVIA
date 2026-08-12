@@ -664,9 +664,9 @@ a.golden-footer-link:hover {
 .golden-shell-frame[data-reduced-motion] *::before,
 .golden-shell-frame[data-reduced-motion] *::after {
   scroll-behavior: auto !important;
-  animation-duration: 1ms !important;
+  animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
-  transition-duration: 1ms !important;
+  transition-duration: 0.01ms !important;
 }
 
 @keyframes golden-spin {
@@ -680,9 +680,9 @@ a.golden-footer-link:hover {
   .golden-shell-frame *::before,
   .golden-shell-frame *::after {
     scroll-behavior: auto !important;
-    animation-duration: 1ms !important;
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -743,12 +743,30 @@ a.golden-footer-link:hover {
     min-block-size: 64px;
   }
 
+  .golden-brand {
+    min-inline-size: 0;
+  }
+
+  .golden-brand > span:last-child {
+    min-inline-size: 0;
+  }
+
+  .golden-brand-word {
+    overflow-wrap: anywhere;
+  }
+
+  .golden-header-actions {
+    flex: 0 0 auto;
+  }
+
   .golden-brand-sub,
   .golden-sign-in-disabled {
     display: none;
   }
 
   .golden-language-switch {
+    min-inline-size: 44px;
+    flex: 0 0 auto;
     padding-inline: 0.75rem;
   }
 
