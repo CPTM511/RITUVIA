@@ -200,7 +200,9 @@ export function RevisitExperience({
 
   useEffect(() => {
     if (message === null || phase !== "success") return;
-    requestAnimationFrame(() => statusRegion.current?.focus());
+    requestAnimationFrame(() => {
+      if (window.location.hash !== "#reminder-preferences") statusRegion.current?.focus();
+    });
   }, [message, phase]);
 
   useEffect(() => {
