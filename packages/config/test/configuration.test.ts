@@ -487,24 +487,35 @@ describe("server and client configuration boundary", () => {
     }
   });
 
-  it("requires explicit complete HTTPS brand configuration for production", () => {
+  it("requires public HTTPS brand configuration without blocking a free production launch", () => {
     const productionEnvironment = {
       APP_ENV: "production",
       BRAND_NAME: "Brand",
       BRAND_SHORT_NAME: "Brand",
-      BRAND_LEGAL_ENTITY: "Entity",
       BRAND_TAGLINE: "Tagline",
       BRAND_CANONICAL_ORIGIN: "https://example.com",
-      BRAND_SUPPORT_EMAIL: "support@example.com",
-      BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
       BRAND_SOCIAL_HANDLES: "{}",
       BRAND_ASSET_MANIFEST: "/brand/manifest.json",
     } as const;
 
-    expect(() => parseBuildConfiguration({ APP_ENV: "production" })).toThrowError(
-      ConfigurationError,
-    );
-    expect(parseBuildConfiguration(productionEnvironment).deploymentEnvironment).toBe("production");
+    try {
+      parseBuildConfiguration({ APP_ENV: "production" });
+      throw new Error("Expected production brand validation to fail.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigurationError);
+      expect(String(error)).toContain("BRAND_NAME:missing");
+      expect(String(error)).not.toContain("BRAND_LEGAL_ENTITY:missing");
+      expect(String(error)).not.toContain("BRAND_SUPPORT_EMAIL:missing");
+      expect(String(error)).not.toContain("BRAND_TRANSACTIONAL_SENDER:missing");
+    }
+    expect(parseBuildConfiguration(productionEnvironment)).toMatchObject({
+      deploymentEnvironment: "production",
+      brand: {
+        legalEntity: "",
+        supportEmail: "",
+        transactionalSender: "",
+      },
+    });
     expect(() =>
       parseBuildConfiguration({
         ...productionEnvironment,
@@ -617,22 +628,34 @@ describe("server and client configuration boundary", () => {
         STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
       }),
     ).toThrowError("STRIPE_SECRET_KEY:invalid");
-    expect(
+    const live = {
+      ...sandbox,
+      APP_ENV: "production",
+      BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+      BRAND_CANONICAL_ORIGIN: "https://example.com",
+      BRAND_LEGAL_ENTITY: "Entity",
+      BRAND_NAME: "Brand",
+      BRAND_SHORT_NAME: "Brand",
+      BRAND_SOCIAL_HANDLES: "{}",
+      BRAND_SUPPORT_EMAIL: "support@example.com",
+      BRAND_TAGLINE: "Tagline",
+      BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+    } as const;
+    expect(parseServerConfiguration(live).payment).toMatchObject({
+      mode: "live",
+      provider: "stripe",
+    });
+    expect(() =>
       parseServerConfiguration({
-        ...sandbox,
-        APP_ENV: "production",
-        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
-        BRAND_CANONICAL_ORIGIN: "https://example.com",
-        BRAND_LEGAL_ENTITY: "Entity",
-        BRAND_NAME: "Brand",
-        BRAND_SHORT_NAME: "Brand",
-        BRAND_SOCIAL_HANDLES: "{}",
-        BRAND_SUPPORT_EMAIL: "support@example.com",
-        BRAND_TAGLINE: "Tagline",
-        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
-        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
-      }).payment,
-    ).toMatchObject({ mode: "live", provider: "stripe" });
+        ...live,
+        BRAND_LEGAL_ENTITY: undefined,
+        BRAND_SUPPORT_EMAIL: undefined,
+        BRAND_TRANSACTIONAL_SENDER: undefined,
+      }),
+    ).toThrowError(
+      "BRAND_LEGAL_ENTITY:missing, BRAND_SUPPORT_EMAIL:missing, BRAND_TRANSACTIONAL_SENDER:missing",
+    );
     expect(() =>
       parseServerConfiguration({
         ...sandbox,
