@@ -1,10 +1,7 @@
 import { ActionLink } from "@rituvia/ui";
 
-import {
-  numerologyArticlePathname,
-  numerologyHubPathname,
-  type NumerologyGuideSlug,
-} from "../_i18n/numerology-public-routes";
+import { numerologyRouteId, type NumerologyGuideSlug } from "../_i18n/numerology-public-routes";
+import { numerologyPublicPathname } from "../_i18n/public-routes";
 import {
   localeNumerologyLibraryPath,
   localeNumerologyPath,
@@ -16,6 +13,8 @@ import {
   numerologyPublicationCatalog,
   type NumerologyPublicationGuideV1,
 } from "../../server/numerology-publication";
+import { GeoAnswerContext } from "./geo-answer-context";
+import { PublicStructuredData } from "./public-structured-data";
 import { PublicSiteFrame } from "./public-site-frame";
 
 type SharedProps = Readonly<{
@@ -35,15 +34,6 @@ const sourceLabel = (reference: string): string => {
   return `${source.title}, version ${source.version}`;
 };
 
-const StructuredData = ({ value }: Readonly<{ value: unknown }>) => (
-  <script
-    dangerouslySetInnerHTML={{
-      __html: JSON.stringify(value).replaceAll("<", "\\u003c"),
-    }}
-    type="application/ld+json"
-  />
-);
-
 export function NumerologyPublicationHub({
   brandName,
   brandTagline,
@@ -51,9 +41,7 @@ export function NumerologyPublicationHub({
   locale,
   messages,
 }: SharedProps) {
-  const { editorial, guides, hub, labels } = numerologyPublicationCatalog;
-  const canonicalPath = localeNumerologyLibraryPath(locale);
-  const canonicalUrl = new URL(canonicalPath, canonicalOrigin).toString();
+  const { guides, hub, labels, sources } = numerologyPublicationCatalog;
   return (
     <PublicSiteFrame
       brandName={brandName}
@@ -62,43 +50,12 @@ export function NumerologyPublicationHub({
       locale={locale}
       messages={messages}
     >
-      <StructuredData
-        value={{
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "CollectionPage",
-              dateModified: editorial.reviewedDate,
-              datePublished: editorial.effectiveDate,
-              description: hub.description,
-              hasPart: guides.map((guide) => ({
-                "@type": "Article",
-                headline: guide.title,
-                url: new URL(numerologyArticlePathname(guide.slug), canonicalOrigin).toString(),
-              })),
-              headline: hub.title,
-              inLanguage: "en",
-              url: canonicalUrl,
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                {
-                  "@type": "ListItem",
-                  item: new URL("/en", canonicalOrigin).toString(),
-                  name: brandName,
-                  position: 1,
-                },
-                {
-                  "@type": "ListItem",
-                  item: canonicalUrl,
-                  name: hub.title,
-                  position: 2,
-                },
-              ],
-            },
-          ],
-        }}
+      <PublicStructuredData
+        canonicalOrigin={canonicalOrigin}
+        description={hub.answer}
+        locale={locale}
+        routeId="numerology-hub"
+        title={hub.title}
       />
       <main className="numerology-library-main" id="main-content" tabIndex={-1}>
         <header className="shell numerology-library-hero">
@@ -107,6 +64,15 @@ export function NumerologyPublicationHub({
           <p className="numerology-library-answer">{hub.answer}</p>
           <p className="numerology-library-boundary">{hub.boundary}</p>
         </header>
+
+        <GeoAnswerContext
+          brandName={brandName}
+          locale={locale}
+          routeId="numerology-hub"
+          sourceLabels={sources.map(({ sourceId, version }) =>
+            sourceLabel(`${sourceId}@${version}`),
+          )}
+        />
 
         <section
           aria-labelledby="numerology-guide-list-heading"
@@ -117,7 +83,7 @@ export function NumerologyPublicationHub({
             {guides.map((guide) => (
               <article className="numerology-guide-card" key={guide.slug}>
                 <h3>
-                  <a href={numerologyArticlePathname(guide.slug)}>{guide.title}</a>
+                  <a href={numerologyPublicPathname(locale, guide.slug)}>{guide.title}</a>
                 </h3>
                 <p>{guide.description}</p>
                 <p className="numerology-guide-example">
@@ -126,14 +92,6 @@ export function NumerologyPublicationHub({
               </article>
             ))}
           </div>
-        </section>
-
-        <section
-          aria-labelledby="numerology-source-heading"
-          className="shell numerology-source-note"
-        >
-          <h2 id="numerology-source-heading">{labels.sourceTitle}</h2>
-          <p>{hub.sourceNote}</p>
         </section>
 
         <nav aria-label={labels.relatedGuidesTitle} className="shell numerology-library-actions">
@@ -158,10 +116,7 @@ export function NumerologyPublicationGuide({
   locale,
   messages,
 }: SharedProps & Readonly<{ guide: NumerologyPublicationGuideV1 }>) {
-  const { editorial, guides, hub, labels } = numerologyPublicationCatalog;
-  const canonicalPath = numerologyArticlePathname(guide.slug);
-  const canonicalUrl = new URL(canonicalPath, canonicalOrigin).toString();
-  const hubUrl = new URL(numerologyHubPathname, canonicalOrigin).toString();
+  const { guides, hub, labels } = numerologyPublicationCatalog;
   const related = guides.filter((candidate) => candidate.slug !== guide.slug);
   return (
     <PublicSiteFrame
@@ -171,47 +126,12 @@ export function NumerologyPublicationGuide({
       locale={locale}
       messages={messages}
     >
-      <StructuredData
-        value={{
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "Article",
-              author: { "@type": "Organization", name: brandName },
-              dateModified: editorial.reviewedDate,
-              datePublished: editorial.effectiveDate,
-              description: guide.description,
-              headline: guide.title,
-              inLanguage: "en",
-              isPartOf: { "@type": "CollectionPage", url: hubUrl },
-              publisher: { "@type": "Organization", name: brandName },
-              url: canonicalUrl,
-            },
-            {
-              "@type": "BreadcrumbList",
-              itemListElement: [
-                {
-                  "@type": "ListItem",
-                  item: new URL("/en", canonicalOrigin).toString(),
-                  name: brandName,
-                  position: 1,
-                },
-                {
-                  "@type": "ListItem",
-                  item: hubUrl,
-                  name: hub.title,
-                  position: 2,
-                },
-                {
-                  "@type": "ListItem",
-                  item: canonicalUrl,
-                  name: guide.title,
-                  position: 3,
-                },
-              ],
-            },
-          ],
-        }}
+      <PublicStructuredData
+        canonicalOrigin={canonicalOrigin}
+        description={guide.answer}
+        locale={locale}
+        routeId={numerologyRouteId(guide.slug)}
+        title={guide.title}
       />
       <main className="numerology-library-main" id="main-content" tabIndex={-1}>
         <article>
@@ -222,10 +142,17 @@ export function NumerologyPublicationGuide({
             <p className="numerology-library-boundary">{hub.boundary}</p>
           </header>
 
+          <GeoAnswerContext
+            brandName={brandName}
+            locale={locale}
+            routeId={numerologyRouteId(guide.slug)}
+            sourceLabels={guide.sourceRefs.map(sourceLabel)}
+          />
+
           <div className="shell numerology-guide-content">
             <section>
               <h2>{labels.formulaTitle}</h2>
-              <p>{guide.formula}</p>
+              <p dir="ltr">{guide.formula}</p>
             </section>
 
             <section>
@@ -233,15 +160,15 @@ export function NumerologyPublicationGuide({
               <dl className="numerology-example">
                 <div>
                   <dt>{labels.exampleInput}</dt>
-                  <dd>{guide.example.input}</dd>
+                  <dd dir="ltr">{guide.example.input}</dd>
                 </div>
                 <div>
                   <dt>{labels.calculation}</dt>
-                  <dd>{guide.example.calculation}</dd>
+                  <dd dir="ltr">{guide.example.calculation}</dd>
                 </div>
                 <div>
                   <dt>{labels.exampleResult}</dt>
-                  <dd>{guide.example.result}</dd>
+                  <dd dir="ltr">{guide.example.result}</dd>
                 </div>
               </dl>
             </section>
@@ -263,16 +190,6 @@ export function NumerologyPublicationGuide({
                 ))}
               </ul>
             </section>
-
-            <section className="numerology-source-note">
-              <h2>{labels.sourceTitle}</h2>
-              <ul>
-                {guide.sourceRefs.map((reference) => (
-                  <li key={reference}>{sourceLabel(reference)}</li>
-                ))}
-              </ul>
-              <p>{hub.sourceNote}</p>
-            </section>
           </div>
         </article>
 
@@ -281,7 +198,7 @@ export function NumerologyPublicationGuide({
           <ul>
             {related.map((candidate) => (
               <li key={candidate.slug}>
-                <a href={numerologyArticlePathname(candidate.slug)}>{candidate.title}</a>
+                <a href={numerologyPublicPathname(locale, candidate.slug)}>{candidate.title}</a>
               </li>
             ))}
           </ul>

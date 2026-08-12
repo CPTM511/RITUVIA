@@ -1,5 +1,6 @@
 "use client";
 
+import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import { ActionLink, Button, InlineAlert, type LocalActionHref } from "@rituvia/ui";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
@@ -15,6 +16,7 @@ import type {
   AstrologyConfidenceMessageCode,
   AstrologyMessages,
 } from "../_i18n/astrology-messages";
+import type { Locale } from "../_i18n/routing";
 import { requestAstrologyNatalView } from "./astrology-natal-transport";
 
 type ViewerPhase =
@@ -431,31 +433,30 @@ const AspectsTable = ({ facts, messages }: NatalWheelProps) =>
 
 type VerifiedResultProps = Readonly<{
   item: AstrologyNatalViewItem;
+  locale: Locale;
   messages: AstrologyMessages;
 }>;
 
-export const AstrologyNatalPresentation = ({ item, messages }: VerifiedResultProps) => {
+export const AstrologyNatalPresentation = ({ item, locale, messages }: VerifiedResultProps) => {
   const facts = item.facts;
   const code = confidenceCode(facts);
   const confidence = confidenceMessage(messages, code);
   const hasChart = facts.placements.length > 0;
-  const savedAt = new Intl.DateTimeFormat("en", {
+  const formatter = createLocaleFormatter({ locale, timeZone: "UTC" });
+  const savedAt = formatter.date(new Date(item.createdAt), {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
     month: "short",
-    timeZone: "UTC",
     timeZoneName: "short",
     year: "numeric",
-  }).format(new Date(item.createdAt));
+  });
   const approximationWindow =
     facts.approximationWindowMinutes === null
       ? null
-      : new Intl.NumberFormat("en", {
-          style: "unit",
-          unit: "minute",
+      : formatter.unit(facts.approximationWindowMinutes, "minute", {
           unitDisplay: "long",
-        }).format(facts.approximationWindowMinutes);
+        });
 
   return (
     <article className="astrology-result">
@@ -546,11 +547,12 @@ const failureState = (
 };
 
 type AstrologyNatalResultProps = Readonly<{
+  locale: Locale;
   messages: AstrologyMessages;
   signInHref: LocalActionHref;
 }>;
 
-export function AstrologyNatalResult({ messages, signInHref }: AstrologyNatalResultProps) {
+export function AstrologyNatalResult({ locale, messages, signInHref }: AstrologyNatalResultProps) {
   const [item, setItem] = useState<AstrologyNatalViewItem | null>(null);
   const [phase, setPhase] = useState<ViewerPhase>("loading");
   const abortController = useRef<AbortController | null>(null);
@@ -648,7 +650,7 @@ export function AstrologyNatalResult({ messages, signInHref }: AstrologyNatalRes
         </div>
       )}
       {phase === "result" && item !== null ? (
-        <AstrologyNatalPresentation item={item} messages={messages} />
+        <AstrologyNatalPresentation item={item} locale={locale} messages={messages} />
       ) : null}
     </section>
   );

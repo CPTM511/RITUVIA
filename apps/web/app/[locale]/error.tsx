@@ -1,6 +1,7 @@
 "use client";
 
 import { createUiControlId, type ErrorStateProps, type StatePatternAction } from "@rituvia/ui";
+import { usePathname } from "next/navigation";
 import { useEffect, useTransition } from "react";
 
 import {
@@ -9,8 +10,7 @@ import {
   useConnectionStatus,
 } from "../_components/connection-state";
 import { ResilientState } from "../_components/resilient-state";
-import { getStateMessages } from "../_i18n/state-messages";
-import { defaultLocale, localeHomePath } from "../_i18n/routing";
+import { getGoldenShellMessages, goldenShellHomePath } from "../_i18n/golden-shell-messages";
 
 type LocaleErrorProps = Readonly<{
   error: Error & Readonly<{ digest?: string }>;
@@ -20,7 +20,9 @@ type LocaleErrorProps = Readonly<{
 const errorTitleId = createUiControlId("route-error-title");
 
 export default function LocaleError({ reset }: LocaleErrorProps) {
-  const messages = getStateMessages(defaultLocale);
+  const pathname = usePathname();
+  const locale = pathname === "/zh-Hans" || pathname.startsWith("/zh-Hans/") ? "zh-Hans" : "en";
+  const messages = getGoldenShellMessages(locale).state;
   const isOnline = useConnectionStatus();
   const announcement = useConnectionAnnouncement(
     isOnline,
@@ -50,7 +52,7 @@ export default function LocaleError({ reset }: LocaleErrorProps) {
     message: content.message,
     primaryAction,
     secondaryAction: {
-      href: localeHomePath(defaultLocale),
+      href: goldenShellHomePath(locale),
       kind: "link",
       label: content.returnAction,
     },

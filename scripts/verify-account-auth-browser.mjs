@@ -12,6 +12,7 @@ const accountCookieName = "__Host-rituvia-account-session";
 const anonymousCookieName = "__Host-rituvia-anonymous-session";
 const authStateCookieName = "__Host-rituvia-auth-state";
 const opaqueTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
+const encryptedAuthStatePattern = /^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{64,1024}$/u;
 const emailSuffix = randomBytes(8).toString("hex");
 const accountEmail = `account-browser-${emailSuffix}@example.test`;
 const comparisonEmail = `comparison-browser-${emailSuffix}@example.test`;
@@ -141,6 +142,7 @@ try {
   const page = await context.newPage();
   page.setDefaultTimeout(7_500);
   const consoleErrors = [];
+  const httpErrorResponses = [];
   const pageErrors = [];
   const failedRequests = [];
   const externalRequests = [];
@@ -155,6 +157,11 @@ try {
     failedRequests.push(
       `${request.method()}:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? "unknown"}`,
     );
+  });
+  page.on("response", (response) => {
+    if (response.status() < 400) return;
+    const url = new URL(response.url());
+    httpErrorResponses.push(`${response.status()}:${response.request().method()}:${url.pathname}`);
   });
 
   await page.goto("/en/sign-in", { timeout: 30_000, waitUntil: "load" });
@@ -180,7 +187,7 @@ try {
   assert.equal(startResponse.status(), 202);
   const firstStartPayload = await startResponse.json();
   assertAcceptedShape(firstStartPayload);
-  await page.getByRole("link", { name: "Complete local sign-in" }).waitFor();
+  await page.getByRole("link", { name: "Complete sandbox sign-in" }).waitFor();
   assert.equal(
     await page.evaluate(() => document.activeElement?.classList.contains("sign-in-status")),
     true,
@@ -193,7 +200,8 @@ try {
   assert.equal(stateCookie.httpOnly, true);
   assert.equal(stateCookie.secure, true);
   assert.equal(stateCookie.sameSite, "Lax");
-  assert.equal(opaqueTokenPattern.test(stateCookie.value), true);
+  assert.equal(encryptedAuthStatePattern.test(stateCookie.value), true);
+  assert.equal(opaqueTokenPattern.test(stateCookie.value), false);
   const storage = await page.evaluate(() => ({
     local: Object.entries(localStorage),
     session: Object.entries(sessionStorage),
@@ -204,7 +212,7 @@ try {
 
   await Promise.all([
     page.waitForURL(`${origin}/en/account`, { timeout: 30_000 }),
-    page.getByRole("link", { name: "Complete local sign-in" }).click(),
+    page.getByRole("link", { name: "Complete sandbox sign-in" }).click(),
   ]);
   const accountMeResponse = await page.evaluate(async () => {
     const response = await fetch("/api/v1/me", {
@@ -259,7 +267,7 @@ try {
   const rotationResponse = await rotationResponsePromise;
   assert.equal(rotationResponse.status(), 202);
   assertAcceptedShape(await rotationResponse.json());
-  await page.getByRole("link", { name: "Complete local sign-in" }).click();
+  await page.getByRole("link", { name: "Complete sandbox sign-in" }).click();
   await page.waitForURL(`${origin}/en/account`);
   await page.getByRole("heading", { name: "Your reflection space" }).waitFor();
   const rotatedAccountCookie = (await context.cookies()).find(
@@ -406,6 +414,7 @@ try {
   assert.deepEqual(
     consoleErrors.filter((message) => message !== expectedUnauthorizedConsoleMessage),
     [],
+    `Unexpected HTTP errors: ${JSON.stringify(httpErrorResponses)}`,
   );
   assert.ok(
     consoleErrors.filter((message) => message === expectedUnauthorizedConsoleMessage).length <= 2,

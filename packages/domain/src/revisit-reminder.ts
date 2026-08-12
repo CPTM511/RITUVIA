@@ -1,8 +1,28 @@
 export const revisitReminderSchemaVersion = "revisit-reminder-preference.v1" as const;
 export const revisitReminderNoticeVersion = "rituvia.revisit-reminder-notice.v1" as const;
-export const revisitReminderTemplateVersion = "revisit-reminder.en.v1" as const;
 export const revisitReminderChannel = "email" as const;
 export const revisitReminderFrequency = "once" as const;
+export const revisitReminderTemplateBinding = Object.freeze({
+  fallbackUsed: false as const,
+  locale: "en" as const,
+  sourceChecksum: "f88307a199976dd59ca9209205b93a746db133636769216f073b7e3ec4fa2b0f" as const,
+  sourceVersion: "1.0.0" as const,
+  templateId: "revisit-reminder" as const,
+  templateVersion: "revisit-reminder.en.v1" as const,
+});
+
+export const isRegisteredRevisitReminderTemplateBinding = (
+  value: Readonly<{
+    locale: string;
+    sourceChecksum: string;
+    templateId: string;
+    templateVersion: string;
+  }>,
+): boolean =>
+  value.templateId === revisitReminderTemplateBinding.templateId &&
+  value.templateVersion === revisitReminderTemplateBinding.templateVersion &&
+  value.sourceChecksum === revisitReminderTemplateBinding.sourceChecksum &&
+  value.locale === revisitReminderTemplateBinding.locale;
 
 export const revisitReminderActions = Object.freeze(["subscribe", "unsubscribe"] as const);
 export type RevisitReminderAction = (typeof revisitReminderActions)[number];
@@ -25,17 +45,6 @@ export type RevisitReminderStateV1 = Readonly<{
   recordedAt: string;
   revisitId: string;
   schemaVersion: typeof revisitReminderSchemaVersion;
-}>;
-
-export type RevisitReminderMessageV1 = Readonly<{
-  actionLabel: string;
-  actionUrl: string;
-  bodyText: string;
-  locale: "en";
-  preferenceUrl: string;
-  previewText: string;
-  subject: string;
-  templateVersion: typeof revisitReminderTemplateVersion;
 }>;
 
 const hasExactKeys = (value: Record<string, unknown>, expected: readonly string[]): boolean => {
@@ -80,29 +89,6 @@ export const parseRevisitReminderMutationV1 = (value: unknown): RevisitReminderM
     schemaVersion: revisitReminderSchemaVersion,
   });
 };
-
-const parsePrivateRoute = (value: string): string => {
-  if (!/^\/en\/(?:account|revisit)(?:[/?#]|$)/u.test(value) || value.length > 500) {
-    throw new TypeError("Invalid Revisit reminder route.");
-  }
-  return value;
-};
-
-export const createRevisitReminderMessageV1 = (input: {
-  actionUrl: string;
-  preferenceUrl: string;
-}): RevisitReminderMessageV1 =>
-  Object.freeze({
-    actionLabel: "Open your private Revisit",
-    actionUrl: parsePrivateRoute(input.actionUrl),
-    bodyText:
-      "Your scheduled Revisit is ready when you are. Open your private space when you choose.",
-    locale: "en",
-    preferenceUrl: parsePrivateRoute(input.preferenceUrl),
-    previewText: "Your private Revisit is ready when you are.",
-    subject: "A quiet reminder from RITUVIA",
-    templateVersion: revisitReminderTemplateVersion,
-  });
 
 export const revisitReminderBackoffSeconds = (input: { attempt: number; seed: string }): number => {
   if (

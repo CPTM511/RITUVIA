@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { chmod, lstat, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { basename, dirname, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -69,7 +70,15 @@ const verifyRegularFile = async (filePath, expectedSha256) => {
 };
 
 const downloadOnce = async (path) => {
-  const url = `${manifest.source.repository}/raw/${manifest.source.commit}/${path}`;
+  const repository = new URL(manifest.source.repository);
+  if (repository.hostname !== "github.com") {
+    throw new Error("Pinned native source repository is invalid.");
+  }
+  const repositoryPath = repository.pathname.replace(/^\/+|\/+$/gu, "");
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(repositoryPath)) {
+    throw new Error("Pinned native source repository path is invalid.");
+  }
+  const url = `https://raw.githubusercontent.com/${repositoryPath}/${manifest.source.commit}/${path}`;
   return await new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(
       "curl",
@@ -171,7 +180,12 @@ const run = (command, args, options = {}) =>
   new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(command, args, {
       cwd: options.cwd ?? packageRoot,
-      env: { LANG: "C", LC_ALL: "C", PATH: process.env.PATH ?? "/usr/bin:/bin" },
+      env: {
+        LANG: "C",
+        LC_ALL: "C",
+        PATH: process.env.PATH ?? "/usr/bin:/bin",
+        TMPDIR: tmpdir(),
+      },
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
     });

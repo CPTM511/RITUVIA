@@ -62,6 +62,7 @@ const moduleDefinitions = Object.freeze([
   { kind: "package", name: "@rituvia/db", root: "packages/db" },
   { kind: "package", name: "@rituvia/ui", root: "packages/ui" },
   { kind: "package", name: "@rituvia/i18n", root: "packages/i18n" },
+  { kind: "package", name: "@rituvia/content", root: "packages/content" },
   { kind: "package", name: "@rituvia/divination", root: "packages/divination" },
   {
     kind: "package",
@@ -143,6 +144,7 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
   ["@rituvia/db", new Set(["@rituvia/domain", "@rituvia/security"])],
   ["@rituvia/ui", new Set(["@rituvia/i18n"])],
   ["@rituvia/i18n", new Set(["@rituvia/domain"])],
+  ["@rituvia/content", new Set(["@rituvia/i18n"])],
   ["@rituvia/divination", new Set(["@rituvia/domain"])],
   ["@rituvia/astrology-engine-native", new Set(["@rituvia/divination"])],
   [
@@ -174,14 +176,27 @@ const allowedInternalDependencies = new Map<string, ReadonlySet<string>>([
   ],
 ]);
 const allowedExternalRuntimeDependencies = new Map<string, ReadonlySet<string>>([
-  ["@rituvia/web", new Set(["@next/env", "next", "react", "react-dom", "server-only", "stripe"])],
+  [
+    "@rituvia/web",
+    new Set([
+      "@next/env",
+      "@vercel/oidc",
+      "next",
+      "react",
+      "react-dom",
+      "server-only",
+      "stripe",
+      "viem",
+    ]),
+  ],
   ["@rituvia/worker", new Set(["@next/env"])],
   ["@rituvia/admin", new Set()],
   ["@rituvia/config", new Set(["zod"])],
   ["@rituvia/domain", new Set()],
   ["@rituvia/db", new Set(["@prisma/adapter-pg", "@prisma/client", "pg"])],
   ["@rituvia/ui", new Set(["react", "react-dom"])],
-  ["@rituvia/i18n", new Set()],
+  ["@rituvia/i18n", new Set(["@formatjs/icu-messageformat-parser", "intl-messageformat"])],
+  ["@rituvia/content", new Set()],
   ["@rituvia/divination", new Set()],
   ["@rituvia/astrology-engine-native", new Set(["server-only"])],
   ["@rituvia/ai", new Set()],
@@ -236,6 +251,9 @@ const paymentProviderPackages = new Set([
 const reviewedCrossOwnerProviderAdapterFiles = new Map<string, ReadonlySet<string>>([
   ["stripe", new Set(["apps/web/server/payment-provider.ts"])],
 ]);
+const reviewedExternalRuntimeAdapterFiles = new Map<string, ReadonlySet<string>>([
+  ["viem", new Set(["apps/web/server/wallet-auth.ts"])],
+]);
 const reviewedAdapterManifestOwners = new Set(["apps/web|stripe"]);
 const reviewedWebDatabaseTestFiles = new Set([
   "apps/web/test/commerce-server.test.ts",
@@ -250,6 +268,7 @@ const reviewedRuntimeNodeBuiltinFiles = new Map<string, ReadonlySet<string>>([
       "packages/db/src/account-identity.ts",
       "packages/db/src/admin-security.ts",
       "packages/db/src/revisit-reminder.ts",
+      "packages/db/src/wallet-identity.ts",
     ]),
   ],
 ]);
@@ -461,6 +480,9 @@ const isReviewedCrossOwnerProviderAdapter = (filePath: string, dependency: strin
 const isReviewedAdapterManifestOwner = (moduleRoot: string, dependency: string): boolean =>
   reviewedAdapterManifestOwners.has(`${moduleRoot}|${dependency}`);
 
+const isReviewedExternalRuntimeAdapterFile = (filePath: string, dependency: string): boolean =>
+  reviewedExternalRuntimeAdapterFiles.get(dependency)?.has(filePath) ?? false;
+
 const isAllowedRuntimeNodeBuiltin = (
   moduleName: string,
   filePath: string,
@@ -581,11 +603,16 @@ const unwrapExpression = (expression: ts.Expression): ts.Expression => {
 
 const reviewedComputedDataAccesses = new Map<string, ReadonlySet<string>>([
   [
+    "apps/web/app/_components/site-shell.tsx",
+    new Set(["heroMetaIcons|index", "methodIcons|index"]),
+  ],
+  [
     "apps/web/app/_components/sanctuary-flow.tsx",
     new Set(["messages.intention.themes|selectedTheme"]),
   ],
   ["apps/web/server/payment-provider.ts", new Set(["input.priceIds|request.metadata.productCode"])],
   ["packages/config/src/server.ts", new Set(["record|key"])],
+  ["packages/i18n/src/locale.ts", new Set(["configuredFallbacks|requested"])],
   ["packages/db/src/account-identity.ts", new Set(["left|index", "right|index"])],
   ["packages/db/src/account-consent.ts", new Set(["left|index", "right|index"])],
   ["packages/db/src/revisit-reminder.ts", new Set(["left|index", "right|index"])],
@@ -732,6 +759,42 @@ const staticNextConfiguration = (sourceFile: ts.SourceFile): boolean => {
     if (name === "poweredByHeader") {
       const value = unwrapExpression(property.initializer);
       return value.kind === ts.SyntaxKind.FalseKeyword;
+    }
+    if (name === "outputFileTracingRoot") {
+      const value = unwrapExpression(property.initializer);
+      return ts.isStringLiteralLike(value) && value.text === "../..";
+    }
+    if (name === "outputFileTracingIncludes") {
+      const value = unwrapExpression(property.initializer);
+      if (!ts.isObjectLiteralExpression(value) || value.properties.length !== 1) return false;
+      const [route] = value.properties;
+      if (
+        !route ||
+        !ts.isPropertyAssignment(route) ||
+        ts.isComputedPropertyName(route.name) ||
+        !ts.isStringLiteralLike(route.name) ||
+        route.name.text !== "/api/recovery/item-8/astrology"
+      ) {
+        return false;
+      }
+      const includes = unwrapExpression(route.initializer);
+      if (!ts.isArrayLiteralExpression(includes)) return false;
+      const actualIncludes: string[] = [];
+      for (const element of includes.elements) {
+        const value = unwrapExpression(element);
+        if (!ts.isStringLiteralLike(value)) return false;
+        actualIncludes.push(value.text);
+      }
+      return (
+        actualIncludes.sort().join("\0") ===
+        [
+          "../../packages/astrology-engine-native/.native-cache/bin/rituvia-swisseph",
+          "../../packages/astrology-engine-native/.native-cache/build-metadata.json",
+          "../../packages/astrology-engine-native/.native-cache/ephe/*.se1",
+        ]
+          .sort()
+          .join("\0")
+      );
     }
     if (name === null || !allowedBooleanKeys.has(name)) return false;
     const value = unwrapExpression(property.initializer);
@@ -2114,6 +2177,13 @@ export const auditArchitecture = (
       }
       if (owner && sourceModule.root === owner && !isProviderAdapterFile(file.path, owner)) {
         add(findings, "provider-outside-adapter", location, dependency);
+      }
+      if (
+        isProductionFile(file.path) &&
+        reviewedExternalRuntimeAdapterFiles.has(dependency) &&
+        !isReviewedExternalRuntimeAdapterFile(file.path, dependency)
+      ) {
+        add(findings, "external-runtime-outside-adapter", location, dependency);
       }
       if (
         isRuntimeDependencyFile(file.path) &&

@@ -77,6 +77,15 @@ describe("birth profile uncertainty contract", () => {
     ).toBe(JSON.stringify(baseRequest));
   });
 
+  it("preserves a private CJK or Devanagari profile label in NFC", () => {
+    for (const label of ["𠮷野家の出生プロフィール", "अनन्या का जन्म प्रोफ़ाइल"]) {
+      expect(
+        parseBirthProfileWriteRequestV1({ ...baseRequest, label }, birthProfileCreateSchemaVersion)
+          .label,
+      ).toBe(label.normalize("NFC"));
+    }
+  });
+
   it("requires an explicit bounded uncertainty window for approximate time", () => {
     expect(
       parseBirthProfileWriteRequestV1(

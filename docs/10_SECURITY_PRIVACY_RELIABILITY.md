@@ -288,6 +288,8 @@ Finalize objectives before launch and align alerting/runbooks.
 
 ## 13. Backups and recovery
 
+- The canonical procedure and current implementation boundary are in
+  [PostgreSQL Backup and Recovery Runbook](22_BACKUP_RECOVERY.md).
 - Automated encrypted database backups and point-in-time recovery where available.
 - Object-store versioning/lifecycle where appropriate.
 - Separate backup access from production app credentials.
@@ -295,6 +297,13 @@ Finalize objectives before launch and align alerting/runbooks.
 - Quarterly initially, then regular restore tests with evidence.
 - Backup retention aligned with deletion/legal policy.
 - Infrastructure and configuration reproducible from code/documented provider state.
+
+The repository now automates a synthetic custom-format logical backup and empty isolated-database
+restore in local development and the protected PostgreSQL CI job. It compares migration, schema
+drift, rows, owner/RLS/policy, ACL, role, sentinel, runtime-denial, artifact-integrity, and cleanup
+evidence. This is not production backup/PITR evidence: provider-managed encryption, WAL/PITR,
+retention, separate access, provider-level isolation, and measured production RPO/RTO remain
+required before Gate H.
 
 The feature-flag version table uses forced row-level security and separate migrator, read-only
 runtime, and append-only control identities. Logical dumps run as runtime with row security and
@@ -397,3 +406,17 @@ No production launch with:
 - Missing admin MFA/audit.
 - Critical accessibility blockers in the core loop.
 - Unapproved country/payment/legal/model configuration.
+
+## 18. Local share-artifact privacy boundary
+
+RIT-115 does not screenshot, upload, persist, cache, or publish private result pages. Its one-card
+projection has an exact public-field allowlist and cannot receive the reading identifier, private
+question, interpretation, birth data, intention, journal text, account data, or arbitrary response
+object. Canonical URLs reject credentials, queries, fragments, and private result paths; SVG text
+is bounded, normalized, checked for control and bidi characters, and XML-escaped.
+
+Preview and download object URLs are local and revoked after replacement or closure. Native
+sharing is available only when the browser proves it can share the exact SVG file; there is no
+silent link-only fallback, provider request, public token, or analytics event. The CSP expands
+only `img-src` with `blob:` and retains the existing closed connect, script, object, frame, worker,
+media, and external-image boundaries.

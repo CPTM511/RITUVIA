@@ -1,12 +1,27 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import net from "node:net";
 
 import AxeBuilder from "@axe-core/playwright";
 import { chromium } from "playwright";
 
 const host = "127.0.0.1";
-const port = 4179;
+const findAvailablePort = () =>
+  new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", reject);
+    server.listen(0, host, () => {
+      const address = server.address();
+      if (address === null || typeof address === "string") {
+        server.close();
+        reject(new Error("Could not allocate a full-loop verification port."));
+        return;
+      }
+      server.close((error) => (error ? reject(error) : resolve(address.port)));
+    });
+  });
+const port = await findAvailablePort();
 const origin = `http://${host}:${port}`;
 const readingId = "11111111-1111-4111-8111-111111111111";
 const newerUnselectedReadingId = "66666666-6666-4666-8666-666666666666";
@@ -15,6 +30,8 @@ const ritualSessionId = "33333333-3333-4333-8333-333333333333";
 const journalEntryId = "44444444-4444-4444-8444-444444444444";
 const revisitId = "55555555-5555-4555-8555-555555555555";
 const csrfToken = "f".repeat(43);
+const serverReadyTimeoutMs = process.env.CI === "true" ? 60_000 : 30_000;
+const tarotIntegrityKey = Buffer.alloc(32, 81).toString("base64url");
 const anonymousSessionCookieName = "__Host-rituvia-anonymous-session";
 const anonymousSessionToken = "a".repeat(43);
 const privateQuestion = "What can I notice before I answer the private question canary?";
@@ -89,8 +106,9 @@ const reading = Object.freeze({
   themeCode: "open_reflection",
 });
 
-const waitForServer = async (server) => {
-  const deadline = Date.now() + 30_000;
+const waitForServer = async (server, readOutput) => {
+  const deadline = Date.now() + serverReadyTimeoutMs;
+  let lastProbe = "not-attempted";
   while (Date.now() < deadline) {
     if (server.exitCode !== null || server.signalCode !== null) {
       throw new Error(
@@ -98,14 +116,19 @@ const waitForServer = async (server) => {
       );
     }
     try {
-      const response = await fetch(`${origin}/en/intake`);
+      const response = await fetch(`${origin}/en/intake`, {
+        signal: AbortSignal.timeout(2_000),
+      });
+      lastProbe = `http-${response.status}`;
       if (response.ok) return;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    } catch (error) {
+      lastProbe = error instanceof Error ? `${error.name}:${error.message}` : "unknown-error";
     }
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
+  const output = readOutput().replaceAll(/\s+/gu, " ").trim().slice(-1_000) || "none";
   throw new Error(
-    `Full-loop browser server did not become ready: ${server.exitCode ?? server.signalCode ?? "running"}.`,
+    `Full-loop browser server did not become ready: ${server.exitCode ?? server.signalCode ?? "running"}; last probe: ${lastProbe}; output: ${output}.`,
   );
 };
 
@@ -178,6 +201,7 @@ const assertTouchTargets = async (page) => {
 };
 
 const activateWithKeyboard = async (locator) => {
+  await locator.click({ trial: true });
   await locator.focus();
   assert.equal(await locator.evaluate((element) => document.activeElement === element), true);
   await locator.press("Enter");
@@ -185,17 +209,27 @@ const activateWithKeyboard = async (locator) => {
 
 const server = spawn(process.execPath, ["start.mjs", "-H", host, "-p", String(port)], {
   cwd: `${process.cwd()}/apps/web`,
-  env: { ...process.env, BRAND_CANONICAL_ORIGIN: origin },
-  stdio: ["ignore", "ignore", "pipe"],
+  env: {
+    ...process.env,
+    BRAND_CANONICAL_ORIGIN: origin,
+    DATABASE_URL: "postgresql://127.0.0.1:1/rituvia_full_loop",
+    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.full-loop-browser.v1",
+    RITUVIA_TAROT_INTEGRITY_KEY_V1: tarotIntegrityKey,
+  },
+  stdio: ["ignore", "pipe", "pipe"],
 });
-let serverError = "";
+let serverOutput = "";
+server.stdout?.on("data", (chunk) => {
+  serverOutput += String(chunk);
+});
 server.stderr?.on("data", (chunk) => {
-  serverError += String(chunk);
+  serverOutput += String(chunk);
 });
 
-const browser = await chromium.launch({ headless: true });
+let browser = null;
 try {
-  await waitForServer(server);
+  await waitForServer(server, () => serverOutput);
+  browser = await chromium.launch({ headless: true });
   const operations = [];
   const allRequests = [];
   const unexpected = [];
@@ -843,9 +877,9 @@ try {
     )}\n`,
   );
 } catch (error) {
-  if (serverError !== "") process.stderr.write(serverError);
+  if (serverOutput !== "") process.stderr.write(serverOutput);
   throw error;
 } finally {
-  await browser.close();
+  if (browser !== null) await browser.close();
   await stopServer(server);
 }

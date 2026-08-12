@@ -20,6 +20,9 @@ export type NumerologyProfileValue = (typeof numerologyProfileValues)[number];
 export type NumerologyProfileSlug = (typeof numerologyProfileSlugs)[number];
 export type NumerologyArticleSlug = NumerologyGuideSlug;
 
+export type NumerologyPublicRouteId =
+  "numerology-hub" | `numerology-guide:${NumerologyArticleSlug}`;
+
 export const parseNumerologyArticleSlug = (
   value: string | null | undefined,
 ): NumerologyArticleSlug | null =>
@@ -34,3 +37,6 @@ export const indexableNumerologyPathnames = Object.freeze([
   numerologyHubPathname,
   ...numerologyArticleSlugs.map(numerologyArticlePathname),
 ]);
+
+export const numerologyRouteId = (slug: NumerologyArticleSlug): NumerologyPublicRouteId =>
+  `numerology-guide:${slug}`;

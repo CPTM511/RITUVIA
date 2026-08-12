@@ -27,21 +27,21 @@ Tokens are semantic and must support light/dark/system modes. Exact colors must 
 
 ```css
 :root {
-  --surface-canvas: #F6F1E8;
-  --surface-panel: #FFFDF8;
-  --surface-elevated: #FFFFFF;
-  --ink-primary: #201C27;
-  --ink-secondary: #625B6B;
-  --line-subtle: #DDD4C7;
-  --brand-deep: #352A4A;
-  --brand-main: #66507F;
-  --brand-soft: #E9DFF0;
-  --accent-gold: #A97732;
-  --accent-sage: #66745F;
-  --state-info: #315D79;
-  --state-warning: #8A5C22;
-  --state-danger: #8B3F47;
-  --focus-ring: #275E9E;
+  --surface-canvas: #f6f1e8;
+  --surface-panel: #fffdf8;
+  --surface-elevated: #ffffff;
+  --ink-primary: #201c27;
+  --ink-secondary: #625b6b;
+  --line-subtle: #ddd4c7;
+  --brand-deep: #352a4a;
+  --brand-main: #66507f;
+  --brand-soft: #e9dff0;
+  --accent-gold: #a97732;
+  --accent-sage: #66745f;
+  --state-info: #315d79;
+  --state-warning: #8a5c22;
+  --state-danger: #8b3f47;
+  --focus-ring: #275e9e;
 }
 ```
 
@@ -54,6 +54,12 @@ Do not treat these values as immutable. Preserve semantic token names and valida
 - Avoid font dependencies that break CJK, Arabic, or Devanagari; define locale-aware fallback stacks.
 - Use fluid type scales with minimum 16px body text.
 - Numerals in prices, charts, dates, and calculations must align and remain unambiguous.
+
+RIT-102 implements local-only fallback stacks for Japanese, Korean, Simplified Chinese,
+Traditional Chinese, and Devanagari. CJK uses strict line-breaking rules and normal word breaking;
+Devanagari retains shaping ligatures, normal letter spacing, and a script-safe line height.
+`word-break: break-all` is prohibited in production styles. These engineering defaults do not
+activate a locale or replace qualified typographic and linguistic review.
 
 ## 6. Spacing, shape, and motion
 

@@ -56,6 +56,7 @@ const completed = {
     revisits: 1,
     subjects: 1,
     verifications: 1,
+    wallets: 0,
   },
   id: "11111111-1111-4111-8111-111111111111",
   policyVersion: "privacy-deletion.local.v1",

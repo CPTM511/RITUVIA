@@ -19,6 +19,7 @@ export const normalizedPaymentEventTypes = Object.freeze([
   "payment_pending",
   "payment_succeeded",
   "payment_failed",
+  "payment_expired",
   "payment_refunded",
   "payment_disputed",
 ] as const);
@@ -56,6 +57,12 @@ export type NormalizedPaymentEventV1 = Readonly<{
   providerId: string;
   providerObjectId: string;
   providerPaymentIntentId: string | null;
+  providerInvoiceId?: string | null | undefined;
+  providerSubscriptionId?: string | null | undefined;
+  subscriptionCancelAtPeriodEnd?: boolean | null | undefined;
+  subscriptionPeriodEnd?: string | null | undefined;
+  subscriptionPeriodStart?: string | null | undefined;
+  subscriptionState?: "active" | "cancelled" | "past_due" | null | undefined;
   type: NormalizedPaymentEventType;
 }>;
 
@@ -83,22 +90,87 @@ const parseNullableResourceId = (value: unknown): string | null =>
   value === null ? null : parseResourceId(value);
 
 export const parseNormalizedPaymentEventV1 = (value: unknown): NormalizedPaymentEventV1 => {
+  const baseKeys = [
+    "amount",
+    "eventId",
+    "occurredAt",
+    "orderId",
+    "providerCheckoutSessionId",
+    "providerId",
+    "providerObjectId",
+    "providerPaymentIntentId",
+    "type",
+  ] as const;
+  const subscriptionKeys = [
+    "providerInvoiceId",
+    "providerSubscriptionId",
+    "subscriptionCancelAtPeriodEnd",
+    "subscriptionPeriodEnd",
+    "subscriptionPeriodStart",
+    "subscriptionState",
+  ] as const;
   if (
     !isRecord(value) ||
-    !exactKeys(value, [
-      "amount",
-      "eventId",
-      "occurredAt",
-      "orderId",
-      "providerCheckoutSessionId",
-      "providerId",
-      "providerObjectId",
-      "providerPaymentIntentId",
-      "type",
-    ]) ||
+    (!exactKeys(value, baseKeys) && !exactKeys(value, [...baseKeys, ...subscriptionKeys])) ||
     !isRecord(value.amount) ||
     !exactKeys(value.amount, ["amountMinor", "currencyCode"]) ||
     !normalizedPaymentEventTypes.includes(value.type as never)
+  ) {
+    throw new CommerceError("COMMERCE_INPUT_INVALID");
+  }
+
+  const hasSubscriptionContext = "providerSubscriptionId" in value;
+  const providerSubscriptionId = hasSubscriptionContext
+    ? parseNullableResourceId(value.providerSubscriptionId)
+    : undefined;
+  const providerInvoiceId = hasSubscriptionContext
+    ? parseNullableResourceId(value.providerInvoiceId)
+    : undefined;
+  const subscriptionPeriodStart = hasSubscriptionContext
+    ? value.subscriptionPeriodStart === null
+      ? null
+      : parseInstant(value.subscriptionPeriodStart)
+    : undefined;
+  const subscriptionPeriodEnd = hasSubscriptionContext
+    ? value.subscriptionPeriodEnd === null
+      ? null
+      : parseInstant(value.subscriptionPeriodEnd)
+    : undefined;
+  const subscriptionCancelAtPeriodEnd = hasSubscriptionContext
+    ? value.subscriptionCancelAtPeriodEnd === null
+      ? null
+      : typeof value.subscriptionCancelAtPeriodEnd === "boolean"
+        ? value.subscriptionCancelAtPeriodEnd
+        : (() => {
+            throw new CommerceError("COMMERCE_INPUT_INVALID");
+          })()
+    : undefined;
+  const subscriptionState = hasSubscriptionContext
+    ? value.subscriptionState === null ||
+      value.subscriptionState === "active" ||
+      value.subscriptionState === "cancelled" ||
+      value.subscriptionState === "past_due"
+      ? value.subscriptionState
+      : (() => {
+          throw new CommerceError("COMMERCE_INPUT_INVALID");
+        })()
+    : undefined;
+  if (
+    hasSubscriptionContext &&
+    ((providerSubscriptionId === null &&
+      [
+        providerInvoiceId,
+        subscriptionCancelAtPeriodEnd,
+        subscriptionPeriodEnd,
+        subscriptionPeriodStart,
+        subscriptionState,
+      ].some((entry) => entry !== null)) ||
+      (subscriptionPeriodStart === null) !== (subscriptionPeriodEnd === null) ||
+      (subscriptionPeriodStart !== null &&
+        subscriptionPeriodStart !== undefined &&
+        subscriptionPeriodEnd !== null &&
+        subscriptionPeriodEnd !== undefined &&
+        Date.parse(subscriptionPeriodEnd) <= Date.parse(subscriptionPeriodStart)))
   ) {
     throw new CommerceError("COMMERCE_INPUT_INVALID");
   }
@@ -112,6 +184,16 @@ export const parseNormalizedPaymentEventV1 = (value: unknown): NormalizedPayment
     providerId: parseIdentifier(value.providerId),
     providerObjectId: parseResourceId(value.providerObjectId),
     providerPaymentIntentId: parseNullableResourceId(value.providerPaymentIntentId),
+    ...(hasSubscriptionContext
+      ? {
+          providerInvoiceId,
+          providerSubscriptionId,
+          subscriptionCancelAtPeriodEnd,
+          subscriptionPeriodEnd,
+          subscriptionPeriodStart,
+          subscriptionState,
+        }
+      : {}),
     type: value.type as NormalizedPaymentEventType,
   });
 };
@@ -224,6 +306,12 @@ const transitionFor = (
     case "payment_failed":
       return ["pending_checkout", "checkout_created", "processing"].includes(state)
         ? { directive: "none", state: "payment_failed" }
+        : null;
+    case "payment_expired":
+      return ["pending_checkout", "checkout_created", "processing", "payment_failed"].includes(
+        state,
+      )
+        ? { directive: "none", state: "canceled" }
         : null;
     case "payment_refunded":
       return state === "refunded" ? null : { directive: "revoke", state: "refunded" };

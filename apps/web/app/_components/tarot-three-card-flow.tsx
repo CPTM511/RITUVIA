@@ -1,10 +1,13 @@
 "use client";
 
 import type { TarotThreeCardMessages } from "../_i18n/tarot-three-card-messages";
+import type { Locale } from "../_i18n/routing";
 import { TarotReadingFlow } from "./tarot-one-card-flow";
 import type { LocalActionHref } from "@rituvia/ui";
 
 type TarotThreeCardFlowProps = Readonly<{
+  enhancedInterpretationAvailable: boolean;
+  locale: Locale;
   messages: TarotThreeCardMessages;
   methodologyHref: LocalActionHref;
   sanctuaryHref: LocalActionHref;

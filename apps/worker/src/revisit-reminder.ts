@@ -1,12 +1,12 @@
+import { isRegisteredRevisitReminderTemplateBinding } from "@rituvia/domain";
 import {
-  createRevisitReminderMessageV1,
-  revisitReminderTemplateVersion,
-  type RevisitReminderMessageV1,
-} from "@rituvia/domain";
+  createRevisitReminderEmail,
+  type RevisitReminderEmailMessage,
+} from "@rituvia/i18n/lifecycle";
 
 export type RevisitReminderDeliveryRequest = Readonly<{
   idempotencyKey: string;
-  message: RevisitReminderMessageV1;
+  message: RevisitReminderEmailMessage;
   recipientIdentityId: string;
   subscriptionId: string;
 }>;
@@ -19,15 +19,31 @@ export type RevisitReminderDeliveryAdapter = Readonly<{
 }>;
 
 export type RevisitReminderJobStore = Readonly<{
-  authorizeDelivery(input: { leaseToken: string; subscriptionId: string }): Promise<boolean>;
+  authorizeDelivery(input: {
+    leaseToken: string;
+    subscriptionId: string;
+    templateFallbackUsed: boolean;
+    templateId: string;
+    templateLocale: string;
+    templateSourceChecksum: string;
+    templateVersion: string;
+  }): Promise<boolean>;
   claimDue(input: { leaseSeconds: number }): Promise<Readonly<{
     attempt: number;
     leaseToken: string;
     locale: "en";
     maxAttempts: 3;
+    quietHours: "none" | "saved";
     recipientIdentityId: string;
     revisitId: string;
+    scheduledLocalDate: string;
     subscriptionId: string;
+    templateFallbackUsed: boolean;
+    templateId: string;
+    templateLocale: string;
+    templateSourceChecksum: string;
+    templateVersion: string;
+    timeZone: string;
   }> | null>;
   completeDelivery(input: {
     leaseToken: string;
@@ -35,7 +51,12 @@ export type RevisitReminderJobStore = Readonly<{
     subscriptionId: string;
   }): Promise<boolean>;
   failDelivery(input: {
-    failureCode: "provider_disabled" | "provider_rejected" | "provider_unavailable" | "timeout";
+    failureCode:
+      | "provider_disabled"
+      | "provider_rejected"
+      | "provider_unavailable"
+      | "template_unavailable"
+      | "timeout";
     leaseToken: string;
     retryable: boolean;
     subscriptionId: string;
@@ -45,7 +66,9 @@ export type RevisitReminderJobStore = Readonly<{
 export type RevisitReminderWorkerEvent = Readonly<{
   attempt: number;
   event: "cancelled" | "dead_lettered" | "failed" | "retried" | "started" | "succeeded";
-  templateVersion: typeof revisitReminderTemplateVersion;
+  fallbackUsed: boolean;
+  locale: string;
+  templateVersion: string;
 }>;
 
 export class RevisitReminderDeliveryError extends Error {
@@ -75,6 +98,11 @@ const idempotencyKeyFor = (subscriptionId: string): string =>
 
 export const runOneRevisitReminderDelivery = async (input: {
   adapter: RevisitReminderDeliveryAdapter;
+  messageConfiguration: Readonly<{
+    brandName: string;
+    canonicalOrigin: string;
+    supportEmail: string;
+  }>;
   observe?: (event: RevisitReminderWorkerEvent) => void;
   signal?: AbortSignal;
   store: RevisitReminderJobStore;
@@ -88,11 +116,14 @@ export const runOneRevisitReminderDelivery = async (input: {
   }
   const job = await input.store.claimDue({ leaseSeconds: 60 });
   if (job === null) return "idle";
+  let message: RevisitReminderEmailMessage | undefined;
   const observe = (event: RevisitReminderWorkerEvent["event"]): void =>
     input.observe?.({
       attempt: job.attempt,
       event,
-      templateVersion: revisitReminderTemplateVersion,
+      fallbackUsed: message?.fallbackUsed ?? false,
+      locale: message?.locale ?? job.locale,
+      templateVersion: message?.templateVersion ?? job.templateVersion,
     });
   if (isAborted()) {
     await input.store.failDelivery({
@@ -108,10 +139,52 @@ export const runOneRevisitReminderDelivery = async (input: {
     !(await input.store.authorizeDelivery({
       leaseToken: job.leaseToken,
       subscriptionId: job.subscriptionId,
+      templateFallbackUsed: job.templateFallbackUsed,
+      templateId: job.templateId,
+      templateLocale: job.templateLocale,
+      templateSourceChecksum: job.templateSourceChecksum,
+      templateVersion: job.templateVersion,
     }))
   ) {
     observe("cancelled");
     return "stale";
+  }
+
+  try {
+    message = createRevisitReminderEmail({
+      actionPath: `/${job.locale}/revisit`,
+      brandName: input.messageConfiguration.brandName,
+      canonicalOrigin: input.messageConfiguration.canonicalOrigin,
+      locale: job.locale,
+      preferencePath: `/${job.locale}/revisit#reminder-preferences`,
+      quietHours: job.quietHours,
+      scheduledLocalDate: job.scheduledLocalDate,
+      supportEmail: input.messageConfiguration.supportEmail,
+      timeZone: job.timeZone,
+    });
+    if (
+      !isRegisteredRevisitReminderTemplateBinding({
+        locale: job.templateLocale,
+        sourceChecksum: job.templateSourceChecksum,
+        templateId: job.templateId,
+        templateVersion: job.templateVersion,
+      }) ||
+      job.templateVersion !== message.templateVersion ||
+      job.templateSourceChecksum !== message.sourceChecksum ||
+      job.templateLocale !== message.locale ||
+      job.templateFallbackUsed !== message.fallbackUsed
+    ) {
+      throw new TypeError("The claimed lifecycle template binding is stale.");
+    }
+  } catch {
+    const disposition = await input.store.failDelivery({
+      failureCode: "template_unavailable",
+      leaseToken: job.leaseToken,
+      retryable: false,
+      subscriptionId: job.subscriptionId,
+    });
+    observe(disposition === "dead_lettered" ? "dead_lettered" : "failed");
+    return disposition ?? "stale";
   }
 
   observe("started");
@@ -123,10 +196,7 @@ export const runOneRevisitReminderDelivery = async (input: {
     const delivered = await input.adapter.deliver(
       Object.freeze({
         idempotencyKey: idempotencyKeyFor(job.subscriptionId),
-        message: createRevisitReminderMessageV1({
-          actionUrl: "/en/revisit",
-          preferenceUrl: "/en/revisit?settings=reminders",
-        }),
+        message,
         recipientIdentityId: job.recipientIdentityId,
         subscriptionId: job.subscriptionId,
       }),

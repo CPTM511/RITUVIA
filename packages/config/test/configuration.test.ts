@@ -81,7 +81,12 @@ describe("server and client configuration boundary", () => {
     expect(serverEnvironmentVariables).toEqual([
       ...buildEnvironmentVariables,
       "DATABASE_URL",
+      "AI_GENERATION_DATABASE_URL",
+      "RITUVIA_AI_GENERATION_ROLE_PASSWORD",
+      "PAYMENT_WEBHOOK_DATABASE_URL",
+      "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
       "PRIVACY_DELETION_DATABASE_URL",
+      "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD",
       "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
@@ -94,6 +99,17 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_AUTH_START_IDENTIFIER_LIMIT",
       "RITUVIA_AUTH_START_WINDOW_SECONDS",
       "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
+      "RITUVIA_AI_DAILY_USER_LIMIT",
+      "RITUVIA_AI_GATEWAY_MODEL",
+      "RITUVIA_AI_MAX_COST_MICROS",
+      "RITUVIA_AI_MAX_OUTPUT_TOKENS",
+      "RITUVIA_AI_TIMEOUT_MS",
+      "RITUVIA_COINBASE_API_KEY_ID",
+      "RITUVIA_COINBASE_API_KEY_SECRET",
+      "RITUVIA_COINBASE_WEBHOOK_SECRET",
+      "RITUVIA_RECOVERY_IDENTITY_SANDBOX",
+      "RITUVIA_RECOVERY_ITEM_11_SANDBOX",
+      "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
       "RITUVIA_PAYMENT_PROVIDER",
       "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
@@ -107,6 +123,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_REFLECTION_POLICY_VERSION",
       "RITUVIA_REFLECTION_RETENTION_SECONDS",
       "RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS",
+      "RITUVIA_STRIPE_ACCOUNT_ID",
       "RITUVIA_STRIPE_PRICE_IDS",
       "RITUVIA_TAROT_INTEGRITY_KEY_V1",
       "STRIPE_SECRET_KEY",
@@ -296,6 +313,85 @@ describe("server and client configuration boundary", () => {
     ).toThrowError("RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS:invalid");
   });
 
+  it("enables the exact Item 9 identity sandbox only for local or staging", () => {
+    const identitySandbox = {
+      PRIVACY_DELETION_DATABASE_URL: "postgresql://privacy-delete:password@127.0.0.1:5432/app",
+      RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+      RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+      RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_KEY_V1: Buffer.alloc(32, 3).toString("base64url"),
+      RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+      RITUVIA_RECOVERY_IDENTITY_SANDBOX: "item-9",
+    } as const;
+    expect(
+      parseServerConfiguration({ APP_ENV: "local", ...identitySandbox }).recoveryIdentitySandbox,
+    ).toMatchObject({
+      allowedWalletChainIds: [84_532],
+      enabled: true,
+      walletChallengeTtlSeconds: 300,
+      walletRecentAuthenticationSeconds: 900,
+    });
+    expect(
+      parseServerConfiguration({ APP_ENV: "staging", ...identitySandbox }).recoveryIdentitySandbox,
+    ).toMatchObject({ enabled: true });
+    expect(() => parseServerConfiguration({ APP_ENV: "preview", ...identitySandbox })).toThrowError(
+      "RITUVIA_RECOVERY_IDENTITY_SANDBOX:invalid",
+    );
+  });
+
+  it("derives the exact deletion-role connection only in Item 9 staging", () => {
+    const rolePassword = Buffer.alloc(32, 4).toString("base64url");
+    const applicationUrl = new URL("postgresql://staging.invalid/rituvia?sslmode=require");
+    applicationUrl.username = "rituvia_app";
+    applicationUrl.password = "application-password";
+    const staging = parseServerConfiguration({
+      APP_ENV: "staging",
+      DATABASE_URL: applicationUrl.toString(),
+      RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+      RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+      RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: rolePassword,
+      RITUVIA_PRIVACY_EXPORT_KEY_V1: Buffer.alloc(32, 3).toString("base64url"),
+      RITUVIA_PRIVACY_EXPORT_RECENT_AUTH_SECONDS: "900",
+      RITUVIA_PRIVACY_EXPORT_REQUEST_WINDOW_SECONDS: "3600",
+      RITUVIA_PRIVACY_EXPORT_TTL_SECONDS: "900",
+      RITUVIA_RECOVERY_IDENTITY_SANDBOX: "item-9",
+    });
+    const deletionUrl = new URL(staging.privacyDeletionDatabaseUrl!);
+    expect(decodeURIComponent(deletionUrl.username)).toBe("rituvia_privacy_deletion");
+    expect(decodeURIComponent(deletionUrl.password)).toBe(rolePassword);
+    expect(deletionUrl.hostname).toBe("staging.invalid");
+    expect(deletionUrl.searchParams.get("sslmode")).toBe("require");
+
+    for (const environment of ["local", "preview", "production"] as const) {
+      expect(() =>
+        parseServerConfiguration({
+          APP_ENV: environment,
+          ...(environment === "production"
+            ? {
+                BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+                BRAND_CANONICAL_ORIGIN: "https://example.com",
+                BRAND_LEGAL_ENTITY: "Entity",
+                BRAND_NAME: "Brand",
+                BRAND_SHORT_NAME: "Brand",
+                BRAND_SOCIAL_HANDLES: "{}",
+                BRAND_SUPPORT_EMAIL: "support@example.com",
+                BRAND_TAGLINE: "Tagline",
+                BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+              }
+            : {}),
+          DATABASE_URL: applicationUrl.toString(),
+          RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD: rolePassword,
+          RITUVIA_RECOVERY_IDENTITY_SANDBOX: "item-9",
+        }),
+      ).toThrowError("RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD:invalid");
+    }
+  });
+
   it("keeps question intake safe-off and requires an owner reference for production", () => {
     expect(parseServerConfiguration({}).questionIntakeActivationReference).toBeUndefined();
     expect(
@@ -415,6 +511,218 @@ describe("server and client configuration boundary", () => {
         BRAND_CANONICAL_ORIGIN: "http://example.com",
       }),
     ).toThrowError("BRAND_CANONICAL_ORIGIN:invalid");
+  });
+
+  it("binds Stripe Test and Live credentials to the deployment environment", () => {
+    const databaseUrl = (username: string, password: string, database = "app") => {
+      const url = new URL(`postgresql://127.0.0.1:5432/${database}`);
+      url.username = username;
+      url.password = password;
+      url.searchParams.set("sslmode", "require");
+      return url.toString();
+    };
+    const priceIds = JSON.stringify({
+      pack_15: "price_pack15test",
+      pack_40: "price_pack40test",
+      pack_6: "price_pack06test",
+      plus_annual: "price_plusannual",
+      plus_monthly: "price_plusmonthly",
+    });
+    const sandbox = {
+      APP_ENV: "staging",
+      DATABASE_URL: databaseUrl("rituvia_app", "app-password"),
+      PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl("rituvia_payment_webhook", "webhook-password"),
+      RITUVIA_PAYMENT_PROVIDER: "stripe",
+      RITUVIA_STRIPE_ACCOUNT_ID: "acct_12345678",
+      RITUVIA_STRIPE_PRICE_IDS: priceIds,
+      STRIPE_SECRET_KEY: `sk_test_${"a".repeat(24)}`,
+      STRIPE_WEBHOOK_SECRET: `whsec_${"b".repeat(24)}`,
+    } as const;
+
+    expect(parseServerConfiguration(sandbox).payment).toMatchObject({
+      accountId: sandbox.RITUVIA_STRIPE_ACCOUNT_ID,
+      mode: "test",
+      provider: "stripe",
+      secretKey: sandbox.STRIPE_SECRET_KEY,
+    });
+    expect(
+      parseServerConfiguration({
+        ...sandbox,
+        RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      }).recoveryCommerceSandbox,
+    ).toEqual({ enabled: true });
+    const rolePassword = Buffer.alloc(32, 5).toString("base64url");
+    const derivedRoleConfiguration = parseServerConfiguration({
+      ...sandbox,
+      PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+      RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: rolePassword,
+      RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+    });
+    const derivedWebhookUrl = new URL(derivedRoleConfiguration.paymentWebhookDatabaseUrl!);
+    expect(decodeURIComponent(derivedWebhookUrl.username)).toBe("rituvia_payment_webhook");
+    expect(decodeURIComponent(derivedWebhookUrl.password)).toBe(rolePassword);
+    expect(derivedWebhookUrl.hostname).toBe("127.0.0.1");
+    expect(derivedWebhookUrl.searchParams.get("sslmode")).toBe("require");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+        RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: "app-password",
+        RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      }),
+    ).toThrowError("RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "local",
+        PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+        RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD: rolePassword,
+        RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      }),
+    ).toThrowError("RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: undefined,
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:missing");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: sandbox.DATABASE_URL,
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: sandbox.DATABASE_URL.replace(
+          "rituvia_app:app-password",
+          "%72ituvia_app:%61pp-password",
+        ),
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl(
+          "rituvia_payment_webhook",
+          "webhook-password",
+          "other",
+        ),
+      }),
+    ).toThrowError("PAYMENT_WEBHOOK_DATABASE_URL:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "production",
+        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+        BRAND_CANONICAL_ORIGIN: "https://example.com",
+        BRAND_LEGAL_ENTITY: "Entity",
+        BRAND_NAME: "Brand",
+        BRAND_SHORT_NAME: "Brand",
+        BRAND_SOCIAL_HANDLES: "{}",
+        BRAND_SUPPORT_EMAIL: "support@example.com",
+        BRAND_TAGLINE: "Tagline",
+        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      }).payment,
+    ).toMatchObject({ mode: "live", provider: "stripe" });
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        APP_ENV: "production",
+        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+        BRAND_CANONICAL_ORIGIN: "https://example.com",
+        BRAND_LEGAL_ENTITY: "Entity",
+        BRAND_NAME: "Brand",
+        BRAND_SHORT_NAME: "Brand",
+        BRAND_SOCIAL_HANDLES: "{}",
+        BRAND_SUPPORT_EMAIL: "support@example.com",
+        BRAND_TAGLINE: "Tagline",
+        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
+          mindful_incense: "price_legacytest",
+        }),
+      }),
+    ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
+  });
+
+  it("allows Item 11 only as a complete protected-staging sandbox", () => {
+    const databaseUrl = (username: string, password: string) => {
+      const url = new URL("postgresql://127.0.0.1:5432/app");
+      url.username = username;
+      url.password = password;
+      return url.toString();
+    };
+    const item11 = {
+      AI_GENERATION_DATABASE_URL: databaseUrl("rituvia_ai_generation", "ai-password"),
+      APP_ENV: "staging",
+      DATABASE_URL: databaseUrl("rituvia_app", "app-password"),
+      PAYMENT_WEBHOOK_DATABASE_URL: databaseUrl("rituvia_payment_webhook", "webhook-password"),
+      RITUVIA_AI_DAILY_USER_LIMIT: "3",
+      RITUVIA_AI_GATEWAY_MODEL: "openai/gpt-5.4-nano",
+      RITUVIA_AI_MAX_COST_MICROS: "25000",
+      RITUVIA_AI_MAX_OUTPUT_TOKENS: "384",
+      RITUVIA_AI_TIMEOUT_MS: "8000",
+      RITUVIA_COINBASE_API_KEY_ID: "11111111-1111-4111-8111-111111111111",
+      RITUVIA_COINBASE_API_KEY_SECRET: Buffer.alloc(64, 7).toString("base64"),
+      RITUVIA_COINBASE_WEBHOOK_SECRET: "sandbox_webhook_secret_123456",
+      RITUVIA_PAYMENT_PROVIDER: "stripe",
+      RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
+      RITUVIA_RECOVERY_ITEM_11_SANDBOX: "item-11",
+      RITUVIA_STRIPE_ACCOUNT_ID: "acct_12345678",
+      RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
+        pack_15: "price_pack15test",
+        pack_40: "price_pack40test",
+        pack_6: "price_pack06test",
+        plus_annual: "price_plusannual",
+        plus_monthly: "price_plusmonthly",
+      }),
+      STRIPE_SECRET_KEY: `sk_test_${"a".repeat(24)}`,
+      STRIPE_WEBHOOK_SECRET: `whsec_${"b".repeat(24)}`,
+    } as const;
+
+    expect(parseServerConfiguration(item11).recoveryItem11Sandbox).toMatchObject({
+      ai: {
+        dailyUserLimit: 3,
+        maxCostMicros: 25_000,
+        maxOutputTokens: 384,
+        model: "openai/gpt-5.4-nano",
+        timeoutMs: 8_000,
+      },
+      coinbase: { apiKeyId: item11.RITUVIA_COINBASE_API_KEY_ID },
+      enabled: true,
+    });
+    expect(() => parseServerConfiguration({ ...item11, APP_ENV: "preview" })).toThrowError(
+      "RITUVIA_RECOVERY_ITEM_11_SANDBOX:invalid",
+    );
+    expect(() =>
+      parseServerConfiguration({ ...item11, RITUVIA_COINBASE_WEBHOOK_SECRET: undefined }),
+    ).toThrowError("RITUVIA_COINBASE_WEBHOOK_SECRET:missing");
+    expect(
+      parseServerConfiguration({
+        ...item11,
+        RITUVIA_COINBASE_API_KEY_ID: "organizations/recovery/apiKeys/item11",
+        RITUVIA_COINBASE_API_KEY_SECRET: `-----BEGIN EC ${"PRIVATE KEY"}-----\n${"a".repeat(100)}\n-----END EC ${"PRIVATE KEY"}-----`,
+      }).recoveryItem11Sandbox,
+    ).toMatchObject({ enabled: true });
+    expect(() =>
+      parseServerConfiguration({
+        ...item11,
+        AI_GENERATION_DATABASE_URL: item11.DATABASE_URL,
+      }),
+    ).toThrowError("AI_GENERATION_DATABASE_URL:invalid");
   });
 
   it("revalidates serialized client input and rejects extra fields", () => {

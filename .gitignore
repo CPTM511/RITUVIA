@@ -8,6 +8,7 @@ node_modules/
 .pnpm-store/
 .next/
 .turbo/
+.vercel/
 coverage/
 dist/
 playwright-report/

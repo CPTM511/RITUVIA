@@ -1,6 +1,7 @@
 "use client";
 
 import { accountConsentNoticeVersionFor, type AccountConsentPurpose } from "@rituvia/domain";
+import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import {
   ActionLink,
   Button,
@@ -15,6 +16,7 @@ import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { AccountMessages } from "../_i18n/account-messages";
+import type { Locale } from "../_i18n/routing";
 import {
   parseAccountConsentControlResponse,
   parseAccountConsentControls,
@@ -25,6 +27,7 @@ import {
   type AccountSessionSummary,
 } from "./account-control";
 import { storeTarotReadingResumeId } from "./tarot-reading-resume-storage";
+import { WalletAuthControl } from "./wallet-auth-control";
 
 export const currentAccountEndpoint = "/api/v1/me";
 export const accountHistoryEndpoint = "/api/v1/me/history";
@@ -52,19 +55,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 
-const formatAccountInstant = (value: string, timeZone: string): string => {
+const formatAccountInstant = (locale: Locale, value: string, timeZone: string): string => {
   try {
-    return new Intl.DateTimeFormat("en", {
+    return createLocaleFormatter({ locale, timeZone }).date(new Date(value), {
       dateStyle: "medium",
       timeStyle: "short",
-      timeZone,
-    }).format(new Date(value));
+    });
   } catch {
-    return new Intl.DateTimeFormat("en", {
+    return createLocaleFormatter({ locale, timeZone: "UTC" }).date(new Date(value), {
       dateStyle: "medium",
       timeStyle: "short",
-      timeZone: "UTC",
-    }).format(new Date(value));
+    });
   }
 };
 
@@ -144,7 +145,7 @@ export const parseAccountSummary = (value: unknown): AccountSummary | null => {
     value.status !== "active" ||
     (typeof value.displayName !== "string" && value.displayName !== null) ||
     (typeof value.displayName === "string" &&
-      (value.displayName.length < 1 || value.displayName.length > 80)) ||
+      (value.displayName.length < 1 || Array.from(value.displayName).length > 80)) ||
     value.locale !== "en" ||
     typeof value.timeZone !== "string" ||
     value.timeZone.length < 1 ||
@@ -222,16 +223,20 @@ export function AccountNavigation({
 }
 
 type AccountExperienceProps = Readonly<{
+  locale: Locale;
   messages: AccountMessages["account"];
   oneCardHref: LocalActionHref;
+  privacyHref: LocalActionHref;
   sanctuaryHref: LocalActionHref;
   signInHref: LocalActionHref;
   threeCardHref: LocalActionHref;
 }>;
 
 export function AccountExperience({
+  locale,
   messages,
   oneCardHref,
+  privacyHref,
   sanctuaryHref,
   signInHref,
   threeCardHref,
@@ -264,6 +269,7 @@ export function AccountExperience({
   const [signingOut, setSigningOut] = useState(false);
   const [signingOutAll, setSigningOutAll] = useState(false);
   const [timeZone, setTimeZone] = useState("UTC");
+  const [walletCsrfToken, setWalletCsrfToken] = useState<string | null>(null);
   const csrfToken = useRef<string | null>(null);
   const statusRegion = useRef<HTMLElement | null>(null);
   const ageId = createUiControlId("account-age-confirmation");
@@ -283,6 +289,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -309,6 +316,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -348,6 +356,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -373,6 +382,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -388,6 +398,7 @@ export function AccountExperience({
       setDisplayName(parsed.displayName ?? "");
       setTimeZone(parsed.timeZone);
       csrfToken.current = issuedCsrfToken;
+      setWalletCsrfToken(issuedCsrfToken);
       setPhase("ready");
       setSessionActionStatus("idle");
       setConsentStatus("idle");
@@ -396,6 +407,7 @@ export function AccountExperience({
       void loadSessions();
     } catch {
       csrfToken.current = null;
+      setWalletCsrfToken(null);
       setAccount(null);
       setError(messages.error);
       setPhase("error");
@@ -449,6 +461,7 @@ export function AccountExperience({
       const parsed = parseAccountSummary((await response.json()) as unknown);
       if (parsed === null) throw new TypeError("invalid profile response");
       csrfToken.current = issuedCsrfToken;
+      setWalletCsrfToken(issuedCsrfToken);
       setAccount(parsed);
       setDisplayName(parsed.displayName ?? "");
       setTimeZone(parsed.timeZone);
@@ -554,6 +567,7 @@ export function AccountExperience({
         const parsed = parseAccountSummary((await response.json()) as unknown);
         if (parsed === null) throw new TypeError("invalid age response");
         csrfToken.current = issuedCsrfToken;
+        setWalletCsrfToken(issuedCsrfToken);
         setAccount(parsed);
       }
       setAgeChecked(false);
@@ -582,6 +596,7 @@ export function AccountExperience({
       });
       if (response.status === 401) {
         csrfToken.current = null;
+        setWalletCsrfToken(null);
         setAccount(null);
         setPhase("signed-out");
         return;
@@ -680,7 +695,6 @@ export function AccountExperience({
             description={messages.displayNameDescription}
             id={displayNameId}
             label={messages.displayNameLabel}
-            maxLength={80}
             onValueChange={(value) => {
               setDisplayName(value);
               setProfileStatus("idle");
@@ -739,6 +753,9 @@ export function AccountExperience({
               tone="quiet"
             />
           </div>
+          <ActionLink href={privacyHref} variant="secondary">
+            {messages.privacyAction}
+          </ActionLink>
           {error === null ? null : (
             <InlineAlert message={error} title={messages.errorTitle} tone="error" />
           )}
@@ -782,6 +799,11 @@ export function AccountExperience({
       </section>
 
       <aside className="account-control-stack" aria-label={messages.title}>
+        <WalletAuthControl
+          csrfToken={walletCsrfToken}
+          messages={messages.wallet}
+          mode="link_wallet"
+        />
         <section
           className="account-panel account-consent-panel"
           aria-labelledby="account-consent-title"
@@ -910,8 +932,8 @@ export function AccountExperience({
                       : null}
                     {accountHistoryStatusLabel(item.status, messages)}
                   </span>
-                  <time dateTime={item.occurredAt}>
-                    {formatAccountInstant(item.occurredAt, account.timeZone)}
+                  <time dateTime={item.occurredAt} dir="auto">
+                    {formatAccountInstant(locale, item.occurredAt, account.timeZone)}
                   </time>
                   {item.resourceType === "reading" ? (
                     <Button
@@ -985,24 +1007,24 @@ export function AccountExperience({
                       <div>
                         <dt>{messages.sessionCreated}</dt>
                         <dd>
-                          <time dateTime={session.createdAt}>
-                            {formatAccountInstant(session.createdAt, account.timeZone)}
+                          <time dateTime={session.createdAt} dir="auto">
+                            {formatAccountInstant(locale, session.createdAt, account.timeZone)}
                           </time>
                         </dd>
                       </div>
                       <div>
                         <dt>{messages.sessionLastActive}</dt>
                         <dd>
-                          <time dateTime={session.lastSeenAt}>
-                            {formatAccountInstant(session.lastSeenAt, account.timeZone)}
+                          <time dateTime={session.lastSeenAt} dir="auto">
+                            {formatAccountInstant(locale, session.lastSeenAt, account.timeZone)}
                           </time>
                         </dd>
                       </div>
                       <div>
                         <dt>{messages.sessionExpires}</dt>
                         <dd>
-                          <time dateTime={session.expiresAt}>
-                            {formatAccountInstant(session.expiresAt, account.timeZone)}
+                          <time dateTime={session.expiresAt} dir="auto">
+                            {formatAccountInstant(locale, session.expiresAt, account.timeZone)}
                           </time>
                         </dd>
                       </div>

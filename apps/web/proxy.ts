@@ -2,23 +2,35 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { classifyHttpMethod, startWebRequestObservability } from "./server/request-observability";
-import { loadPublicShellState } from "./server/public-shell-state";
 import { loadNumerologyAvailability } from "./server/numerology-state";
 import { loadQuestionIntakeAvailability } from "./server/question-intake-state";
+import {
+  inspectRecoveryStagingRuntime,
+  recoveryHealthPathname,
+  recoveryReadinessPathname,
+  recoveryStagingPathname,
+} from "./server/recovery-staging";
 import { loadTarotReadingAvailability } from "./server/tarot-reading-state";
 import { getWebRuntimeConfiguration } from "./config/server";
 import {
   isIndexablePublicPagePathname,
   isPublicDiscoveryPathname,
+  resolvePublicRouteRedirect,
   isPublicShellPathname,
 } from "./app/_i18n/public-routes";
-import { createRobotsText, createSitemapXml, type PublicShellState } from "./app/_i18n/seo";
+import { createRobotsText, createSitemapXml } from "./app/_i18n/seo";
+import { goldenShellHomePath } from "./app/_i18n/golden-shell-messages";
 import {
+  localeAccountBillingPath,
+  localeAccountOrdersPath,
   localeAccountPath,
+  localeAccountPrivacyPath,
   localeAstrologyPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeNumerologyPath,
+  localePlansPath,
+  localePublicPagePath,
   localeQuestionIntakePath,
   localeRevisitPath,
   localeSanctuaryPath,
@@ -40,11 +52,11 @@ const shellContentSecurityPolicy = [
   "base-uri 'none'",
   "connect-src 'self'",
   "default-src 'self'",
-  "font-src 'none'",
+  "font-src 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'",
-  "img-src 'self'",
+  "img-src 'self' blob:",
   "manifest-src 'none'",
   "media-src 'none'",
   "object-src 'none'",
@@ -74,8 +86,12 @@ const tarotReadingPagePathnames = Object.freeze([
 ]);
 const privateExperiencePagePathnames = Object.freeze([
   localeAccountPath("en"),
-  localeAstrologyPath("en"),
+  localeAccountPrivacyPath("en"),
   localeCheckoutReturnPath("en"),
+  localePlansPath("en"),
+  localeAccountBillingPath("en"),
+  localeAccountOrdersPath("en"),
+  localeAstrologyPath("en"),
   localeLocalCheckoutPath("en"),
   localeRevisitPath("en"),
   localeSanctuaryPath("en"),
@@ -87,6 +103,7 @@ const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/callback$/u, query: "auth_callback" },
   { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/wallet\/(?:challenge|verify)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/(?:catalog|entitlements|ritual-objects)$/u },
   { methods: ["GET"], pattern: /^\/api\/v1\/readings\/astrology\/natal$/u },
   { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/local\/complete$/u },
@@ -122,6 +139,8 @@ const reviewedMvpApiPatterns = Object.freeze([
   },
   { methods: ["GET"], pattern: /^\/api\/v1\/me\/sessions$/u },
   { methods: ["DELETE"], pattern: new RegExp(`^/api/v1/me/sessions/${uuidPathPart}$`, "u") },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/wallets$/u },
+  { methods: ["DELETE"], pattern: new RegExp(`^/api/v1/me/wallets/${uuidPathPart}$`, "u") },
   { methods: ["POST"], pattern: /^\/api\/v1\/orders$/u },
   { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
   { methods: ["POST"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}/checkout$`, "u") },
@@ -274,6 +293,138 @@ const hasReviewedFrameworkNavigationSignal = (request: NextRequest): boolean =>
   request.headers.has("next-router-state-tree") ||
   hasOnlyReviewedFrameworkQuery(request);
 
+const recoveryProtectedPagePathnames = Object.freeze([
+  goldenShellHomePath("en"),
+  goldenShellHomePath("zh-Hans"),
+  localeQuestionIntakePath("en"),
+  localeTarotOneCardPath("en"),
+  localeTarotThreeCardPath("en"),
+  localePublicPagePath("en", "methodology"),
+  localeSanctuaryPath("en"),
+  localeRevisitPath("en"),
+  localeNumerologyPath("en"),
+  localeAstrologyPath("en"),
+  localeSignInPath("en"),
+  localeAccountPath("en"),
+  localeAccountPrivacyPath("en"),
+  localeCheckoutReturnPath("en"),
+  localePlansPath("en"),
+  localeAccountBillingPath("en"),
+  localeAccountOrdersPath("en"),
+]);
+
+const recoveryProtectedApiPatterns = Object.freeze([
+  { methods: ["POST"], pattern: /^\/api\/v1\/anonymous\/session$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/intake\/evaluate$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/readings\/tarot$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/readings/${uuidPathPart}$`, "u") },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/readings/${uuidPathPart}/report$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/intentions$/u },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/intentions/${uuidPathPart}$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/ritual-sessions$/u },
+  {
+    methods: ["GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/ritual-sessions/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/ritual-sessions/${uuidPathPart}/complete$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/journal-entries$/u },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/journal-entries/${uuidPathPart}$`, "u"),
+  },
+  { methods: ["GET", "POST"], pattern: /^\/api\/v1\/revisits$/u },
+  {
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/revisits/${uuidPathPart}/complete$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/numerology\/calculate$/u },
+  { methods: ["POST"], pattern: /^\/api\/recovery\/item-8\/astrology$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/account-merge$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/auth\/local-preview$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/(?:logout|logout-all|start)$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/auth\/wallet\/(?:challenge|verify)$/u },
+  { methods: ["GET", "PATCH"], pattern: /^\/api\/v1\/me$/u },
+  { methods: ["GET", "POST"], pattern: /^\/api\/v1\/me\/consents$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/(?:history|readings)$/u, query: "account_history" },
+  { methods: ["GET"], pattern: /^\/api\/v1\/me\/(?:sessions|wallets)$/u },
+  {
+    methods: ["DELETE"],
+    pattern: new RegExp(`^/api/v1/me/(?:sessions|wallets)/${uuidPathPart}$`, "u"),
+  },
+  { methods: ["POST"], pattern: /^\/api\/v1\/privacy\/(?:deletions|export)$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}$`, "u") },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/privacy/exports/${uuidPathPart}/download$`, "u"),
+  },
+  { methods: ["GET"], pattern: /^\/api\/v1\/catalog$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/coinbase$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/checkout\/stripe$/u },
+  { methods: ["GET"], pattern: /^\/api\/v1\/commerce\/account$/u },
+  { methods: ["GET"], pattern: new RegExp(`^/api/v1/orders/${uuidPathPart}$`, "u") },
+  { methods: ["POST"], pattern: /^\/api\/v1\/recovery\/item-11\/interpretation$/u },
+  { methods: ["POST"], pattern: /^\/api\/v1\/webhooks\/payments\/(?:coinbase|stripe)$/u },
+] as const);
+
+const isRecoveryProtectedDocumentRequest = (request: NextRequest): boolean => {
+  const pathname = request.nextUrl.pathname;
+  const matched = recoveryProtectedPagePathnames.some(
+    (pagePathname) =>
+      pathname === pagePathname ||
+      pathname === `${pagePathname}.rsc` ||
+      pathname.startsWith(`${pagePathname}.segments/`),
+  );
+  if (!matched || !isSafeReadMethod(request.method)) return false;
+  const frameworkRepresentation = isFrameworkRepresentationRequest(request);
+  const reviewedQuery = matchesPrivateExperienceDocument(pathname)
+    ? hasReviewedPrivateDocumentQuery(request)
+    : request.nextUrl.search === "" || hasOnlyReviewedFrameworkQuery(request);
+  return (
+    reviewedQuery && (!frameworkRepresentation || hasReviewedFrameworkNavigationSignal(request))
+  );
+};
+
+const isRecoveryProtectedApiRequest = (request: NextRequest): boolean => {
+  if (isFrameworkRepresentationRequest(request)) return false;
+  for (const route of recoveryProtectedApiPatterns) {
+    if (
+      !route.pattern.test(request.nextUrl.pathname) ||
+      !(route.methods as readonly string[]).includes(request.method)
+    ) {
+      continue;
+    }
+    if ("query" in route && route.query === "account_history") {
+      return hasExactAccountHistoryQuery(request);
+    }
+    if (
+      /^\/api\/v1\/webhooks\/payments\/(?:coinbase|stripe)$/u.test(request.nextUrl.pathname) &&
+      request.nextUrl.search !== ""
+    ) {
+      const entries = [...request.nextUrl.searchParams.entries()];
+      return (
+        entries.length === 1 &&
+        entries[0]?.[0] === "x-vercel-protection-bypass" &&
+        /^[A-Za-z0-9_-]{32,256}$/u.test(entries[0][1])
+      );
+    }
+    return request.nextUrl.search === "";
+  }
+  return false;
+};
+
 const isQuestionIntakePagePathname = (pathname: string): boolean =>
   pathname === questionIntakePagePathname ||
   pathname === `${questionIntakePagePathname}.rsc` ||
@@ -292,15 +443,11 @@ const isTarotReadingPagePathname = (pathname: string): boolean =>
       pathname.startsWith(`${pagePathname}.segments/`),
   );
 
-const discoveryResponse = (
-  request: NextRequest,
-  publicShellState: PublicShellState,
-): NextResponse => {
+const discoveryResponse = (request: NextRequest): NextResponse => {
   const configuration = getWebRuntimeConfiguration();
   const input = {
     canonicalOrigin: configuration.brand.canonicalOrigin,
     deploymentEnvironment: configuration.deploymentEnvironment,
-    publicShellState,
   } as const;
   const isHead = request.method === "HEAD";
 
@@ -312,11 +459,59 @@ const discoveryResponse = (
     });
   }
 
-  const body = createSitemapXml(input);
+  const body = createSitemapXml(input, request.nextUrl.pathname);
   return new NextResponse(isHead || body === null ? null : body, {
     headers: { "content-type": "application/xml; charset=utf-8" },
     status: body === null ? 404 : 200,
   });
+};
+
+const recoveryStagingResponse = (
+  request: NextRequest,
+  downstreamHeaders: Headers,
+): NextResponse => {
+  const status = inspectRecoveryStagingRuntime();
+  const reviewedIconRequest =
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.pathname === "/icon.svg" &&
+    /^(?:|\?icon\.[A-Za-z0-9_-]{1,64}\.svg)$/u.test(request.nextUrl.search);
+  const exactReadRequest =
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.search === "" &&
+    (request.nextUrl.pathname === recoveryStagingPathname ||
+      request.nextUrl.pathname === recoveryHealthPathname ||
+      request.nextUrl.pathname === recoveryReadinessPathname);
+  const reviewedProductAssetRequest =
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.search === "" &&
+    request.nextUrl.pathname.startsWith("/images/");
+  const reviewedRecoveryRequest =
+    status.ready &&
+    (isRecoveryProtectedDocumentRequest(request) || isRecoveryProtectedApiRequest(request));
+  const response =
+    request.nextUrl.pathname === "/robots.txt" &&
+    isSafeReadMethod(request.method) &&
+    request.nextUrl.search === ""
+      ? discoveryResponse(request)
+      : exactReadRequest ||
+          reviewedIconRequest ||
+          reviewedProductAssetRequest ||
+          reviewedRecoveryRequest
+        ? NextResponse.next({ request: { headers: downstreamHeaders } })
+        : new NextResponse(null, { status: 404 });
+
+  response.headers.set("cache-control", "private, no-store, max-age=0");
+  response.headers.set("content-security-policy", shellContentSecurityPolicy);
+  response.headers.set(
+    "permissions-policy",
+    "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
+  );
+  response.headers.set("referrer-policy", "no-referrer");
+  response.headers.set("x-content-type-options", "nosniff");
+  response.headers.set("x-rituvia-environment", status.environment);
+  response.headers.set("x-rituvia-source-sha", status.sourceSha);
+  response.headers.set("x-robots-tag", noIndexDirective);
+  return response;
 };
 
 export const proxy = async (request: NextRequest): Promise<NextResponse> => {
@@ -329,10 +524,21 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   downstreamHeaders.set("traceparent", operation.toTraceHeaders().traceparent);
   const pathname = request.nextUrl.pathname;
   const configuration = getWebRuntimeConfiguration();
+  if (configuration.deploymentEnvironment === "staging") {
+    const response = recoveryStagingResponse(request, downstreamHeaders);
+    response.headers.set("x-request-id", operation.context.correlationId);
+    operation.end(
+      response.status === 200
+        ? { outcome: "success" }
+        : { outcome: "success", statusCode: response.status },
+    );
+    return response;
+  }
   const infrastructure =
     isSafeReadMethod(request.method) &&
     isUngatedInfrastructureRequest(pathname, configuration.deploymentEnvironment);
   const publicDocument = isPublicShellPathname(pathname);
+  const publicRedirect = resolvePublicRouteRedirect(pathname);
   const discovery = isPublicDiscoveryPathname(pathname);
   const frameworkRepresentation = isFrameworkRepresentationRequest(request);
   const anonymousSessionApi = pathname === anonymousSessionApiPathname;
@@ -390,20 +596,6 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     (unreviewedFrameworkRepresentation ||
       !isSafeReadMethod(request.method) ||
       (request.nextUrl.search !== "" && !hasOnlyReviewedFrameworkQuery(request)));
-  const shouldLoadShellState =
-    !invalidRequest &&
-    (publicDocument ||
-      reviewedAnonymousSessionRequest ||
-      reviewedNumerologyRequest ||
-      reviewedQuestionIntakeRequest ||
-      reviewedTarotReadingRequest ||
-      (reviewedMvpApi.reviewed && !reviewedMvpApi.webhook) ||
-      reviewedPrivateExperienceDocument ||
-      numerologyDocument ||
-      questionIntakeDocument ||
-      tarotReadingDocument ||
-      (discovery && configuration.deploymentEnvironment === "production"));
-  const shellState = shouldLoadShellState ? await loadPublicShellState() : null;
   const intakeAvailability =
     !invalidRequest && (questionIntakeDocument || reviewedQuestionIntakeRequest)
       ? loadQuestionIntakeAvailability()
@@ -419,6 +611,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const unsupported =
     !infrastructure &&
     !publicDocument &&
+    publicRedirect === null &&
     !discovery &&
     !anonymousSessionApi &&
     !numerologyCalculationApi &&
@@ -429,29 +622,33 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     !numerologyDocument &&
     !questionIntakeDocument &&
     !tarotReadingDocument;
-  const enabledDocument = publicDocument && shellState === "enabled";
-  const enabledNumerology = shellState === "enabled" && numerologyAvailability === "enabled";
-  const enabledQuestionIntake = shellState === "enabled" && intakeAvailability === "enabled";
-  const enabledTarotReading = shellState === "enabled" && tarotReadingAvailability === "enabled";
+  const enabledNumerology = numerologyAvailability === "enabled";
+  const enabledQuestionIntake = intakeAvailability === "enabled";
+  const enabledTarotReading = tarotReadingAvailability === "enabled";
   const response =
     invalidRequest || unsupported
       ? new NextResponse(null, { status: 404 })
-      : discovery
-        ? discoveryResponse(request, shellState ?? "disabled")
-        : infrastructure ||
-            enabledDocument ||
-            (numerologyDocument && enabledNumerology) ||
-            (reviewedNumerologyRequest && enabledNumerology) ||
-            (questionIntakeDocument && enabledQuestionIntake) ||
-            (tarotReadingDocument && enabledTarotReading) ||
-            (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
-            (reviewedTarotReadingRequest && enabledTarotReading) ||
-            reviewedMvpApi.webhook ||
-            (reviewedMvpApi.reviewed && shellState === "enabled") ||
-            (reviewedPrivateExperienceDocument && shellState === "enabled") ||
-            (reviewedAnonymousSessionRequest && shellState === "enabled")
-          ? NextResponse.next({ request: { headers: downstreamHeaders } })
-          : new NextResponse(null, { status: 404 });
+      : publicRedirect !== null
+        ? NextResponse.redirect(
+            new URL(publicRedirect.targetPathname, configuration.brand.canonicalOrigin),
+            308,
+          )
+        : discovery
+          ? discoveryResponse(request)
+          : infrastructure ||
+              publicDocument ||
+              (numerologyDocument && enabledNumerology) ||
+              (reviewedNumerologyRequest && enabledNumerology) ||
+              (questionIntakeDocument && enabledQuestionIntake) ||
+              (tarotReadingDocument && enabledTarotReading) ||
+              (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
+              (reviewedTarotReadingRequest && enabledTarotReading) ||
+              reviewedMvpApi.webhook ||
+              reviewedMvpApi.reviewed ||
+              reviewedPrivateExperienceDocument ||
+              reviewedAnonymousSessionRequest
+            ? NextResponse.next({ request: { headers: downstreamHeaders } })
+            : new NextResponse(null, { status: 404 });
   response.headers.set("content-security-policy", shellContentSecurityPolicy);
   response.headers.set(
     "permissions-policy",
@@ -462,7 +659,6 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   response.headers.set("x-content-type-options", "nosniff");
   const indexableRepresentation =
     configuration.deploymentEnvironment === "production" &&
-    shellState === "enabled" &&
     request.nextUrl.search === "" &&
     isSafeReadMethod(request.method) &&
     isIndexablePublicPagePathname(pathname) &&
@@ -482,22 +678,15 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     privateExperienceDocument
   ) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
-  } else if (discovery || response.status === 404) {
+  } else if (discovery || publicRedirect !== null || response.status === 404) {
     response.headers.set("cache-control", "no-store, max-age=0");
   } else if (frameworkRepresentation) {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   }
   operation.end(
-    shellState === "unavailable"
-      ? {
-          category: "dependency",
-          errorCode: "dependency_error",
-          outcome: "failure",
-          retryable: true,
-        }
-      : response.status === 200
-        ? { outcome: "success" }
-        : { outcome: "success", statusCode: response.status },
+    response.status === 200
+      ? { outcome: "success" }
+      : { outcome: "success", statusCode: response.status },
   );
   return response;
 };

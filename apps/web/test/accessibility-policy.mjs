@@ -1,3 +1,5 @@
+import { pseudoLocalizeText } from "@rituvia/i18n/testing";
+
 const publicRouteArtifacts = Object.freeze([
   Object.freeze({ artifact: "en", pathname: "/en" }),
   Object.freeze({ artifact: "en/methodology", pathname: "/en/methodology" }),
@@ -19,6 +21,23 @@ const publicRouteArtifacts = Object.freeze([
   Object.freeze({
     artifact: "en/numerology/master-numbers",
     pathname: "/en/numerology/master-numbers",
+  }),
+  Object.freeze({ artifact: "en/astrology", pathname: "/en/astrology" }),
+  Object.freeze({
+    artifact: "en/astrology/natal-chart-calculation",
+    pathname: "/en/astrology/natal-chart-calculation",
+  }),
+  Object.freeze({
+    artifact: "en/astrology/birth-time-uncertainty",
+    pathname: "/en/astrology/birth-time-uncertainty",
+  }),
+  Object.freeze({
+    artifact: "en/astrology/houses-and-major-aspects",
+    pathname: "/en/astrology/houses-and-major-aspects",
+  }),
+  Object.freeze({
+    artifact: "en/astrology/sources-and-methodology",
+    pathname: "/en/astrology/sources-and-methodology",
   }),
 ]);
 
@@ -43,6 +62,21 @@ export const privateAccessibilitySmokeRoutes = Object.freeze(
 export const accessibilitySmokeRoutes = Object.freeze(
   routeArtifacts.map(({ pathname }) => pathname),
 );
+
+export const auditPublicAccessibilitySmokeInventory = (reviewedRoutes) => {
+  if (!Array.isArray(reviewedRoutes) || reviewedRoutes.some((route) => typeof route !== "string")) {
+    return Object.freeze(["invalid-reviewed-public-route-inventory"]);
+  }
+  const reviewedRouteSet = new Set(reviewedRoutes);
+  return Object.freeze([
+    ...(new Set(publicAccessibilitySmokeRoutes).size === publicAccessibilitySmokeRoutes.length
+      ? []
+      : ["duplicate-public-accessibility-smoke-route"]),
+    ...publicAccessibilitySmokeRoutes
+      .filter((route) => !reviewedRouteSet.has(route))
+      .map((route) => `missing-public-accessibility-smoke-route:${route}`),
+  ]);
+};
 
 export const accessibilityAxeTags = Object.freeze([
   "wcag2a",
@@ -159,86 +193,7 @@ export const resolveAccessibilityArtifactRequest = (rawUrl) => {
   });
 };
 
-const accentCharacters = Object.freeze({
-  A: "Å",
-  B: "Ɓ",
-  C: "Ç",
-  D: "Ð",
-  E: "Ë",
-  F: "Ƒ",
-  G: "Ĝ",
-  H: "Ĥ",
-  I: "Ï",
-  J: "Ĵ",
-  K: "Ķ",
-  L: "Ŀ",
-  M: "Ṁ",
-  N: "Ñ",
-  O: "Ö",
-  P: "Þ",
-  Q: "Ǫ",
-  R: "Ŕ",
-  S: "Š",
-  T: "Ŧ",
-  U: "Ü",
-  V: "Ṽ",
-  W: "Ŵ",
-  X: "Ẍ",
-  Y: "Ÿ",
-  Z: "Ž",
-  a: "å",
-  b: "ƀ",
-  c: "ç",
-  d: "ð",
-  e: "ë",
-  f: "ƒ",
-  g: "ĝ",
-  h: "ĥ",
-  i: "ï",
-  j: "ĵ",
-  k: "ķ",
-  l: "ŀ",
-  m: "ṁ",
-  n: "ñ",
-  o: "ö",
-  p: "þ",
-  q: "ǫ",
-  r: "ŕ",
-  s: "š",
-  t: "ŧ",
-  u: "ü",
-  v: "ṽ",
-  w: "ŵ",
-  x: "ẍ",
-  y: "ÿ",
-  z: "ž",
-});
-
-export const pseudoLocalizeText = (value, direction = "ltr") => {
-  if (direction !== "ltr" && direction !== "rtl") {
-    throw new TypeError("Pseudolocale direction must be ltr or rtl.");
-  }
-  const match = /^(\s*)([\s\S]*?)(\s*)$/u.exec(value);
-  if (match === null) return value;
-  const [, leading, core, trailing] = match;
-  const letters = [...core].filter((character) => /[A-Za-z]/u.test(character)).length;
-  if (letters === 0) return value;
-  const accented = core
-    .split(/(\{[A-Za-z][A-Za-z0-9_]*\})/gu)
-    .map((part) =>
-      /^\{[A-Za-z][A-Za-z0-9_]*\}$/u.test(part)
-        ? part
-        : [...part].map((character) => accentCharacters[character] ?? character).join(""),
-    )
-    .join("");
-  const targetLength = Math.ceil([...core].length * 1.4);
-  const wrap = (padding) =>
-    direction === "rtl" ? `اختبار ${accented} ${padding} موسّع` : `［${accented} ${padding}］`;
-  let expansion = "·";
-  while ([...wrap(expansion)].length < targetLength) expansion += " ·";
-  const localized = wrap(expansion);
-  return `${leading}${localized}${trailing}`;
-};
+export { pseudoLocalizeText };
 
 const axeTargetKey = (target) => JSON.stringify(target);
 

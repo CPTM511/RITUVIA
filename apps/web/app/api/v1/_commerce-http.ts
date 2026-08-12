@@ -173,7 +173,9 @@ export const readCommerceJson = async (request: NextRequest): Promise<unknown> =
 };
 
 export const hasAcceptedWebhookMetadata = (request: NextRequest): boolean =>
-  request.headers.get("content-type") === "application/json" &&
+  /^application\/json(?:\s*;\s*charset\s*=\s*(?:"utf-8"|utf-8))?$/iu.test(
+    request.headers.get("content-type") ?? "",
+  ) &&
   request.headers.get("content-encoding") === null &&
   request.headers.get("transfer-encoding") === null &&
   validContentLength(request, webhookMaximumRawBodyBytes);

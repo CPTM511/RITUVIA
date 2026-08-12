@@ -254,7 +254,7 @@ try {
   await run(
     process.execPath,
     [prepareScript, ...forwarded, "--build-profile", "security", "--output-root", securityRoot],
-    { label: "security-build" },
+    { label: "security-build", timeoutMilliseconds: 60_000 },
   );
   const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
   if (
@@ -301,7 +301,7 @@ try {
         "-o",
         fuzzBinaryPath,
       ],
-      { label: "fuzzer-build" },
+      { label: "fuzzer-build", timeoutMilliseconds: 60_000 },
     );
     await chmod(fuzzBinaryPath, 0o500);
     await chmod(resolve(securityRoot, "bin"), 0o500);

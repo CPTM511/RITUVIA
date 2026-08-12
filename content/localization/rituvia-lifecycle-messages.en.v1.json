@@ -1,0 +1,138 @@
+{
+  "audience": "account",
+  "catalogId": "rituvia.lifecycle.messages",
+  "contentType": "lifecycle_messages",
+  "editorial": {
+    "approvalReference": "D-078",
+    "authorId": "product.codex",
+    "changeReason": "Create privacy-safe source templates for Revisit reminders and support receipts.",
+    "effectiveDate": "2026-07-27",
+    "reviewDueDate": "2027-07-27",
+    "reviewedDate": "2026-07-27",
+    "reviewerId": "localization.qa",
+    "status": "source_ready",
+    "supersedes": null
+  },
+  "locale": "en",
+  "messages": {
+    "email.revisit.actionLabel": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Action label for opening the private Revisit route.",
+      "maxLength": 80,
+      "message": "Open your private Revisit",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.revisit.body": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Privacy-safe Revisit reminder body with locale-aware date and explicit time-zone context.",
+      "maxLength": 640,
+      "message": "Your scheduled Revisit is ready when you are. The date you chose was {scheduledDate} in {timeZone}.{quietHours, select, saved { Delivery waited until outside your saved quiet hours.} none {} other {}} Open your private space when you choose.",
+      "placeholders": ["quietHours", "scheduledDate", "timeZone"],
+      "risk": "product"
+    },
+    "email.revisit.preferenceLabel": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Label for opening reminder settings without mutating preference through a GET request.",
+      "maxLength": 80,
+      "message": "Turn off this reminder",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.revisit.preview": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Lock-screen-safe Revisit reminder preview.",
+      "maxLength": 120,
+      "message": "Your private Revisit is ready when you are.",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.revisit.subject": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Lock-screen-safe Revisit reminder subject using configured brand text.",
+      "maxLength": 120,
+      "message": "A quiet reminder from {brand}",
+      "placeholders": ["brand"],
+      "risk": "product"
+    },
+    "email.shared.supportLabel": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Label for the configured support email link.",
+      "maxLength": 80,
+      "message": "Contact support",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.support.accountLabel": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Action label for opening the private account route after a support request.",
+      "maxLength": 80,
+      "message": "Open your account",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.support.body": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Support receipt body that limits sensitive information shared by email.",
+      "maxLength": 640,
+      "message": "We received your support request on {receivedDate} at {receivedTime} ({timeZone}). Share only the details needed to help with this request; do not send journal, prayer, birth-time, or private reading text by email.",
+      "placeholders": ["receivedDate", "receivedTime", "timeZone"],
+      "risk": "safety"
+    },
+    "email.support.preview": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Lock-screen-safe support receipt preview.",
+      "maxLength": 120,
+      "message": "Your support request was received.",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.support.replyLabel": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Label for replying through the configured support address.",
+      "maxLength": 80,
+      "message": "Email support",
+      "placeholders": [],
+      "risk": "product"
+    },
+    "email.support.subject": {
+      "allowedIdentical": false,
+      "allowedLinks": [],
+      "allowedTags": [],
+      "description": "Lock-screen-safe support receipt subject.",
+      "maxLength": 120,
+      "message": "We received your support request",
+      "placeholders": [],
+      "risk": "product"
+    }
+  },
+  "rights": {
+    "allowedUses": ["public_display", "commercial_use", "translation"],
+    "evidenceReference": "D-078",
+    "owner": "RITUVIA",
+    "status": "owned",
+    "territory": "worldwide"
+  },
+  "schemaVersion": "rituvia-message-source.v1",
+  "version": "1.0.0"
+}

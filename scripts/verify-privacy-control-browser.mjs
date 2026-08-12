@@ -149,7 +149,7 @@ try {
   await page.goto("/en/sign-in", { timeout: 30_000, waitUntil: "load" });
   await page.getByRole("textbox", { name: /Email address/u }).fill(accountEmail);
   await page.getByRole("button", { name: "Continue securely" }).click();
-  await page.getByRole("link", { name: "Complete local sign-in" }).click();
+  await page.getByRole("link", { name: "Complete sandbox sign-in" }).click();
   await page.waitForURL(`${origin}/en/account`, { timeout: 30_000 });
   await page.getByRole("heading", { name: "Your reflection space" }).waitFor();
 
@@ -205,7 +205,8 @@ try {
   assert.equal(downloadResponse.status, 200);
   assert.match(downloadResponse.headers["content-type"] ?? "", /application\/json/u);
   const exportPackage = JSON.parse(downloadResponse.body);
-  assert.equal(exportPackage.schemaVersion, "privacy-export-package.v1");
+  assert.equal(exportPackage.schemaVersion, "privacy-export-package.v2");
+  assert.equal(Array.isArray(exportPackage.machineReadable?.astrologyCalculations), true);
   assert.equal(JSON.stringify(exportPackage).includes(accountCookie.value), false);
   assert.equal(JSON.stringify(exportPackage).includes(csrfToken), false);
 

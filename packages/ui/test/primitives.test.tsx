@@ -230,6 +230,44 @@ describe("accessible UI primitives", () => {
     ).toThrow(TypeError);
   });
 
+  it("preserves representative CJK and Devanagari values and canonical native dates", () => {
+    const japaneseName = "髙橋はるか";
+    const hindiName = "अनन्या शर्मा";
+    const japanese = renderToStaticMarkup(
+      <TextField
+        autoComplete="name"
+        defaultValue={japaneseName}
+        id={createUiControlId("japanese-name")}
+        label="合成氏名"
+      />,
+    );
+    const devanagari = renderToStaticMarkup(
+      <TextField
+        autoComplete="name"
+        defaultValue={hindiName}
+        id={createUiControlId("hindi-name")}
+        label="कृत्रिम नाम"
+      />,
+    );
+    const date = renderToStaticMarkup(
+      <TextField
+        defaultValue="2026-07-27"
+        id={createUiControlId("locale-date")}
+        label="Synthetic date"
+        minimum="1900-01-01"
+        type="date"
+      />,
+    );
+
+    expect(japanese).toContain(japaneseName);
+    expect(japanese).toContain('autoComplete="name"');
+    expect(devanagari).toContain(hindiName);
+    expect(devanagari).not.toContain("maxLength");
+    expect(date).toContain('type="date"');
+    expect(date).toContain('value="2026-07-27"');
+    expect(date).toContain('min="1900-01-01"');
+  });
+
   it("rejects ambiguous or unwritable controlled field and choice state at runtime", () => {
     const ambiguousText = {
       defaultValue: "initial",
@@ -360,11 +398,13 @@ describe("accessible UI primitives", () => {
         />,
       ),
     ).toThrow(TypeError);
-    expect(
-      renderToStaticMarkup(
-        <Checkbox disabled id={fieldId} label="Some choices" mixed name={fieldName} />,
-      ),
-    ).toContain(" disabled=");
+    const staticMixed = renderToStaticMarkup(
+      <Checkbox disabled id={fieldId} label="Some choices" mixed name={fieldName} />,
+    );
+    expect(staticMixed).toContain('aria-checked="mixed"');
+    expect(staticMixed).toContain('aria-disabled="true"');
+    expect(staticMixed).toContain('role="checkbox"');
+    expect(staticMixed).not.toContain('type="checkbox"');
 
     const switchHtml = renderToStaticMarkup(
       <Switch defaultChecked id={fieldId} label="Use calm motion" name={fieldName} />,

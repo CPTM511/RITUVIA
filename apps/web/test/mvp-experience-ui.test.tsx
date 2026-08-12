@@ -26,6 +26,7 @@ import { getAccountMessages } from "../app/_i18n/account-messages";
 import { getCommerceMessages } from "../app/_i18n/commerce-messages";
 import {
   localeAccountPath,
+  localeAccountPrivacyPath,
   localeCheckoutReturnPath,
   localeLocalCheckoutPath,
   localeRevisitPath,
@@ -91,6 +92,9 @@ describe("MVP client boundaries", () => {
     };
 
     expect(parseAccountSummary(account)).toMatchObject({ adultAttested: false, id: uuid });
+    expect(parseAccountSummary({ ...account, displayName: "𠮷".repeat(80) })?.displayName).toBe(
+      "𠮷".repeat(80),
+    );
     expect(parseAccountSummary({ ...account, emailVerified: false })).toBeNull();
     expect(parseAccountSummary({ ...account, id: "not-an-account-id" })).toBeNull();
   });
@@ -230,8 +234,10 @@ describe("MVP server-rendered initial states", () => {
   it("renders private account and checkout verification loading states", () => {
     const accountHtml = renderToStaticMarkup(
       createElement(AccountExperience, {
+        locale: "en",
         messages: getAccountMessages("en").account,
         oneCardHref: localeTarotOneCardPath("en"),
+        privacyHref: localeAccountPrivacyPath("en"),
         sanctuaryHref: localeSanctuaryPath("en"),
         signInHref: localeSignInPath("en"),
         threeCardHref: localeTarotThreeCardPath("en"),
@@ -269,10 +275,11 @@ describe("MVP server-rendered initial states", () => {
     expect(html).not.toMatch(/<input\b/u);
   });
 
-  it("renders the sanctuary with a labelled formal image and degraded-safe catalog state", () => {
+  it("renders the sanctuary with a labelled image, degraded-safe catalog, and gated private form", () => {
     const html = renderToStaticMarkup(
       createElement(SanctuaryFlow, {
         accountHref: localeAccountPath("en"),
+        locale: "en",
         messages: getSanctuaryMessages("en"),
         readingHref: localeTarotOneCardPath("en"),
         revisitHref: localeRevisitPath("en"),
@@ -288,5 +295,13 @@ describe("MVP server-rendered initial states", () => {
     expect(html).toContain("Quiet incense");
     expect(html).toContain("Set an intention");
     expect(html).toContain("Private reflection");
+    expect(html).toContain('<form aria-busy="true">');
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Peace and clarity<\/button>/u);
+    expect(html).toMatch(/<button[^>]*aria-label="Continue with this intention"[^>]*disabled=""/u);
+    const revisitDateInput = html
+      .match(/<input[^>]*>/gu)
+      ?.find((input) => input.includes('type="date"'));
+    expect(revisitDateInput).toBeDefined();
+    expect(revisitDateInput).not.toContain("min=");
   });
 });

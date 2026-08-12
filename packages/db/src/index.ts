@@ -100,6 +100,13 @@ export {
   type PersistedInterpretationVerification,
 } from "./interpretation-generation-persistence.js";
 export {
+  assertRecoveryItem11AiGenerationRuntimeDatabasePrivileges,
+  createRecoveryItem11AiCreditPersistence,
+  RecoveryItem11AiCreditPersistenceError,
+  type RecoveryItem11AiCreditPersistence,
+  type RecoveryItem11AiCreditReservation,
+} from "./recovery-item-11-ai-credit-persistence.js";
+export {
   accountConsentErrorCodes,
   AccountConsentError,
   assertAccountConsentRuntimeDatabasePrivileges,
@@ -126,6 +133,17 @@ export {
   type AccountSessionSummary,
 } from "./account-identity.js";
 export {
+  createWalletIdentityService,
+  walletIdentityErrorCodes,
+  WalletIdentityError,
+  type WalletAuthChallengeResult,
+  type WalletAuthVerificationResult,
+  type WalletIdentityErrorCode,
+  type WalletIdentityPolicy,
+  type WalletIdentityService,
+  type WalletIdentitySummary,
+} from "./wallet-identity.js";
+export {
   commercePersistenceErrorCodes,
   CommercePersistenceError,
   createCommercePersistence,
@@ -139,6 +157,41 @@ export {
   type PreparedPaymentEvent,
   type ProcessedPaymentEvent,
 } from "./commerce-persistence.js";
+export {
+  createCommercialAccountPersistence,
+  type CommercialAccountOrder,
+  type CommercialAccountPersistence,
+  type CommercialAccountSnapshot,
+} from "./commercial-account-persistence.js";
+export {
+  commercialCheckoutPersistenceErrorCodes,
+  CommercialCheckoutPersistenceError,
+  createCommercialCheckoutPersistence,
+  type CommercialCheckoutPersistence,
+  type CommercialCheckoutPersistenceErrorCode,
+  type PersistedCommercialStripeCheckout,
+  type PreparedCommercialCoinbaseCheckout,
+  type PreparedCommercialCoinbaseCheckoutAttachment,
+  type PreparedCommercialCheckoutAttachment,
+  type PreparedCommercialStripeCheckout,
+} from "./commercial-checkout-persistence.js";
+export {
+  assertCommercialPaymentWebhookRuntimeDatabasePrivileges,
+  commercialPaymentEventPersistenceErrorCodes,
+  commercialVerifiedPaymentEventTypes,
+  CommercialPaymentEventPersistenceError,
+  createCommercialPaymentEventPersistence,
+  type CommercialPaymentEventPersistence,
+  type CommercialPaymentEventPersistenceErrorCode,
+  type CommercialPaymentEventReducer,
+  type CommercialPaymentStateOutboxClaim,
+  type CommercialPaymentTimelineRecord,
+  type CommercialVerifiedPaymentEventType,
+  type PreparedCommercialCoinbasePaymentEvent,
+  type PreparedCommercialPaymentEvent,
+  type ProcessedCommercialPaymentEvent,
+  type ReducedCommercialPaymentState,
+} from "./commercial-payment-event-persistence.js";
 export {
   assertReflectionRuntimeDatabasePrivileges,
   createReflectionPersistence,

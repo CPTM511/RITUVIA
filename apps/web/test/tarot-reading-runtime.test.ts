@@ -159,7 +159,7 @@ describe("tarot reading web runtime", () => {
     ).rejects.toMatchObject({ code: "unavailable" });
   });
 
-  it.each(["preview", "staging", "production"] as const)(
+  it.each(["preview", "production"] as const)(
     "keeps %s direct invocation fail-closed even after a local service was initialized",
     async (deploymentEnvironment) => {
       harness.configuration.deploymentEnvironment = deploymentEnvironment;
@@ -170,6 +170,16 @@ describe("tarot reading web runtime", () => {
       expect(harness.create).not.toHaveBeenCalled();
     },
   );
+
+  it("allows the protected staging runtime to reuse the approved service boundary", async () => {
+    harness.configuration.deploymentEnvironment = "staging";
+
+    await expect(createWebTarotReading(request, idempotencyKey, sessionToken)).resolves.toEqual({
+      kind: "created",
+      response: { readingId },
+    });
+    expect(harness.create).toHaveBeenCalledWith(request, idempotencyKey, sessionToken);
+  });
 
   it("fails closed when the database or integrity configuration is absent", async () => {
     harness.configuration.databaseUrl = undefined;

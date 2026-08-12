@@ -2,6 +2,7 @@ import type { QuestionIntakeThemeCode } from "@rituvia/domain";
 
 import type { TarotReadingMessages } from "./tarot-one-card-messages";
 import type { Locale } from "./routing";
+import { getCoreSourceMessage } from "./core-messages";
 import { getQuestionIntakeMessages } from "./question-intake-messages";
 
 export type TarotThreeCardMessages = TarotReadingMessages;
@@ -141,6 +142,8 @@ const englishTarotThreeCardMessages = {
       "Your previous fixed result remains available while a separate new reflection is unfinished.",
     positionBoundary:
       "Situation and Action are reflective lenses. Possibility is something to consider, not a prediction of what will happen.",
+    providerSafeOff:
+      "Provider AI is disabled in protected staging. The three reviewed card meanings above are the complete Item 7 interpretation.",
     reflectionTitle: "A question to reflect on",
     replayed: "This was the same verified result from an earlier matching attempt.",
     restored:
@@ -263,7 +266,7 @@ const englishTarotThreeCardMessages = {
       summary: "Report an issue with this reading",
       targetLabel: "Report target",
       targetInterpretation: "The displayed interpretation",
-      targetPosition: "Position: {position}",
+      targetPosition: getCoreSourceMessage("tarot.report.targetPosition"),
       targetReading: "The whole reading",
       unavailable:
         "The report service is temporarily unavailable. Nothing will retry automatically.",

@@ -278,6 +278,44 @@ describe("versioned country policy", () => {
     });
   });
 
+  it("accepts the exact Item 11 Coinbase sandbox approval only in staging", () => {
+    const staging = {
+      ...policy(),
+      approvalMode: "written" as const,
+      crypto: { assets: ["USDC"], enabled: true, providerRoute: "coinbase_usdc_base" },
+      environment: "staging" as const,
+      evidence: {
+        cryptoApprovalReference: "D-098:OWNER:item-11:coinbase-sandbox:2026-08-08",
+        fiatApprovalReference: "OWN-002:stripe-us",
+        legalReference: "D-098:protected-staging",
+        ownerReference: "D-098:OWNER:item-11",
+        providerReference: "coinbase-business:sandbox",
+      },
+      version: "staging.us.coinbase-sandbox.item11.v1",
+    };
+    expect(parseCountryPolicyVersionV1(staging).environment).toBe("staging");
+    expect(() => parseCountryPolicyVersionV1({ ...staging, environment: "production" })).toThrow(
+      "Country policy version is invalid.",
+    );
+  });
+
+  it("accepts the D-098 Stripe Test approval only in protected staging", () => {
+    const written = {
+      ...policy(),
+      approvalMode: "written" as const,
+      environment: "staging" as const,
+      evidence: {
+        ...policy().evidence,
+        fiatApprovalReference: "D-098:OWN-017:stripe-test:item-10",
+        legalReference: "D-098:protected-staging",
+        ownerReference: "D-098:item-10",
+        providerReference: "D-091:stripe-test-mode",
+      },
+    };
+    expect(parseCountryPolicyVersionV1(written).environment).toBe("staging");
+    expect(() => parseCountryPolicyVersionV1({ ...written, environment: "production" })).toThrow();
+  });
+
   it("strictly rejects unknown, duplicate, unsorted, and private input without echoing it", () => {
     expect(() =>
       parseCountryPolicyVersionV1({

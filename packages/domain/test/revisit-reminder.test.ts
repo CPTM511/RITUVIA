@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  createRevisitReminderMessageV1,
   parseRevisitReminderMutationV1,
   revisitReminderBackoffSeconds,
   revisitReminderChannel,
@@ -36,26 +35,6 @@ describe("Revisit reminder contract", () => {
     { ...request, extra: true },
   ])("rejects bundled, stale, or unsupported request %j", (value) => {
     expect(() => parseRevisitReminderMutationV1(value)).toThrow(TypeError);
-  });
-
-  it("builds only lock-screen-safe fixed copy and private routes", () => {
-    const message = createRevisitReminderMessageV1({
-      actionUrl: "/en/revisit",
-      preferenceUrl: "/en/revisit?settings=reminders",
-    });
-    expect(message).toMatchObject({
-      locale: "en",
-      subject: "A quiet reminder from RITUVIA",
-    });
-    expect(JSON.stringify(message)).not.toMatch(
-      /question|journal|relationship|intention|ritual|health|grief/iu,
-    );
-    expect(() =>
-      createRevisitReminderMessageV1({
-        actionUrl: "https://attacker.invalid",
-        preferenceUrl: "/en/revisit",
-      }),
-    ).toThrow(TypeError);
   });
 
   it("uses bounded deterministic exponential backoff with jitter", () => {

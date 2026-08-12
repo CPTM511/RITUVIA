@@ -110,6 +110,22 @@ export type {
 } from "./provider.js";
 
 export {
+  createVercelAiGatewayOpenAiStructuredGenerationProviderV1,
+  vercelAiGatewayOpenAiMaximumEstimatedCostMicros,
+  vercelAiGatewayOpenAiMaximumReportedTokenCount,
+  vercelAiGatewayOpenAiStructuredGenerationAdapterVersion,
+} from "./vercel-ai-gateway-openai.js";
+export type {
+  JsonValue,
+  ResolveGatewayEstimatedCostV1,
+  ResolveStructuredOutputSchemaV1,
+  VercelAiGatewayOpenAiResponseV1,
+  VercelAiGatewayOpenAiStructuredGenerationProviderOptionsV1,
+  VercelAiGatewayOpenAiTransportRequestV1,
+  VercelAiGatewayOpenAiTransportV1,
+} from "./vercel-ai-gateway-openai.js";
+
+export {
   TarotGenerationError,
   executePreparedTarotInterpretationGenerationV1,
   generateTarotInterpretationV1,
@@ -236,6 +252,59 @@ export type {
   PreparedNumerologyInterpretationV1,
   VerifyNumerologyInterpretationCandidateInputV1,
 } from "./numerology-interpretation.js";
+
+export {
+  AstrologyInterpretationError,
+  assembleAstrologyInterpretationPromptV1,
+  astrologyInterpretationCandidateSchemaVersion,
+  astrologyInterpretationContentSchemaVersion,
+  astrologyInterpretationErrorCodes,
+  astrologyInterpretationFallbackSchemaVersion,
+  astrologyInterpretationInputSchemaVersion,
+  astrologyInterpretationLimits,
+  astrologyInterpretationOutputSchemaVersion,
+  astrologyInterpretationPromptAssemblySchemaVersion,
+  astrologyInterpretationPromptMandatoryInstructions,
+  astrologyInterpretationPromptSchemaVersion,
+  astrologyInterpretationSafetyPolicyVersion,
+  astrologyInterpretationTradition,
+  astrologyInterpretationVerificationChecksVersion,
+  astrologyInterpretationVerificationSchemaVersion,
+  astrologySemanticReviewerSchemaVersion,
+  astrologySemanticReviewRequestSchemaVersion,
+  astrologySemanticReviewResultSchemaVersion,
+  isPendingAstrologyInterpretationCandidateV1,
+  isPreparedAstrologyInterpretationV1,
+  parseAstrologyInterpretationOutputForInputV1,
+  prepareAstrologyInterpretationCandidateV1,
+  prepareAstrologyInterpretationV1,
+  verifyAstrologyInterpretationCandidateV1,
+  verifyAstrologyNatalInterpretationFactsV1,
+} from "./astrology-interpretation.js";
+export type {
+  ApprovedAstrologyInterpretationContentV1,
+  ApprovedAstrologyInterpretationFallbackV1,
+  ApprovedAstrologyInterpretationPromptV1,
+  AstrologyInterpretationArtifactAuthorityVerifierV1,
+  AstrologyInterpretationArtifactV1,
+  AstrologyInterpretationAspectFactV1,
+  AstrologyInterpretationDigestProviderV1,
+  AstrologyInterpretationEntryOutputV1,
+  AstrologyInterpretationErrorCode,
+  AstrologyInterpretationFactRefV1,
+  AstrologyInterpretationOutputV1,
+  AstrologyInterpretationPlacementFactV1,
+  AstrologyInterpretationPromptAssemblyV1,
+  AstrologyInterpretationVerificationResultV1,
+  AstrologySemanticReviewerAuthorityVerifierV1,
+  AstrologySemanticReviewerRegistrationV1,
+  AstrologySemanticReviewerV1,
+  AstrologySemanticReviewRequestV1,
+  PendingAstrologyInterpretationCandidateV1,
+  PreparedAstrologyInterpretationV1,
+  PrepareAstrologyInterpretationInputV1,
+  VerifyAstrologyInterpretationCandidateInputV1,
+} from "./astrology-interpretation.js";
 export type {
   ApprovedTarotVerificationPolicyV1,
   ApprovedTarotVerificationReferenceV1,

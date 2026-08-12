@@ -68,6 +68,12 @@ activated by RIT-091.
 
 Cost savings may never allow wrong deterministic facts or weaker safety.
 
+RIT-038 records provider-estimated cost only when the existing runtime metadata marks it reported
+and valid. The daily brief separately reports cost coverage and never converts missing cost to
+zero. Cost coverage below 95% opens a human data-quality review. Because OWN-005 has not approved
+daily or model budgets, RIT-038 does not invent a monetary anomaly threshold, pause traffic, switch
+models, or raise/lower runtime cost limits. Budget enforcement remains RIT-127.
+
 ## 6. Infrastructure controls
 
 - Managed services with auto-scaling caps and budget alerts.

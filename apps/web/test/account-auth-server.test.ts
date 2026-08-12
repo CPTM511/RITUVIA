@@ -89,7 +89,7 @@ describe("account auth Web composition", () => {
     expect(result.localPreviewPath).toBe("/api/v1/auth/local-preview");
     expect(result).not.toHaveProperty("callbackUrl");
     expect(result).not.toHaveProperty("token");
-    expect(result.stateToken).toMatch(/^[A-Za-z0-9_-]{43}$/u);
+    expect(result.stateToken).toMatch(/^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{64,1024}$/u);
     expect(harness.createChallenge).toHaveBeenCalledOnce();
     expect(harness.createChallenge.mock.calls[0]?.[0]).toMatchObject({
       email: "demo@example.test",
@@ -183,7 +183,8 @@ describe("account auth Web composition", () => {
         },
         mergeStatus: null,
         returnTo: "/en/account",
-      });
+      })
+      .mockRejectedValueOnce(new harness.IdentityError("ACCOUNT_AUTH_REPLAYED"));
 
     await expect(
       authModule.completeWebLocalPreviewAuth({ stateToken: started.stateToken }),

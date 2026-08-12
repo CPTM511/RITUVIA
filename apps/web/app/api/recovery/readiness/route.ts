@@ -1,0 +1,45 @@
+import { NextResponse } from "next/server";
+
+import { inspectRecoveryStagingRuntime } from "../../../../server/recovery-staging";
+
+export const dynamic = "force-dynamic";
+
+export const GET = () => {
+  const status = inspectRecoveryStagingRuntime();
+  return NextResponse.json(
+    {
+      baselineSha: status.baselineSha,
+      controls: {
+        coinbaseSandbox: status.coinbaseSandbox,
+        commerceSandbox: status.commerceSandbox,
+        database: status.database,
+        indexing: status.indexing,
+        identitySandbox: status.identitySandbox,
+        nativeAstrology: status.nativeAstrology,
+        numerologyEngine: status.numerologyEngine,
+        objectStorage: status.objectStorage,
+        providerAi: status.providerAi,
+        productionProviders: status.productionProviders,
+        privacyControls: status.privacyControls,
+        tarotCatalog: status.tarotCatalog,
+        timeZoneRuntime: status.timeZoneRuntime,
+      },
+      environment: status.environment,
+      recoveryItem: status.recoveryItem,
+      recoveryManifest: status.recoveryManifest,
+      recoveryManifestSha256: status.recoveryManifestSha256,
+      sourceSha: status.sourceSha,
+      status: status.ready ? "ready" : "not-ready",
+    },
+    {
+      headers: {
+        "cache-control": "private, no-store, max-age=0",
+        "x-rituvia-environment": status.environment,
+        "x-rituvia-source-sha": status.sourceSha,
+      },
+      status: status.ready ? 200 : 503,
+    },
+  );
+};
+
+export const HEAD = GET;

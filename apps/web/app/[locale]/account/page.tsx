@@ -7,6 +7,7 @@ import { getAccountMessages } from "../../_i18n/account-messages";
 import { getMessages } from "../../_i18n/messages";
 import {
   localeSanctuaryPath,
+  localeAccountPrivacyPath,
   localeSignInPath,
   localeTarotOneCardPath,
   localeTarotThreeCardPath,
@@ -53,8 +54,10 @@ export default async function AccountPage({ params }: AccountPageProps) {
     >
       <main className="experience-main account-main" id="main-content" tabIndex={-1}>
         <AccountExperience
+          locale={locale}
           messages={getAccountMessages(locale).account}
           oneCardHref={localeTarotOneCardPath(locale)}
+          privacyHref={localeAccountPrivacyPath(locale)}
           sanctuaryHref={localeSanctuaryPath(locale)}
           signInHref={localeSignInPath(locale)}
           threeCardHref={localeTarotThreeCardPath(locale)}

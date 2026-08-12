@@ -62,6 +62,36 @@ describe("secret policy", () => {
     expect(scanSecretText(".npmrc", "//registry.npmjs.org/:_authToken=${NPM_TOKEN}")).toHaveLength(
       0,
     );
+    expect(
+      scanSecretText(
+        ".env.example",
+        ["RITUVIA_AI_GENERATION_ROLE_PASSWORD=", "PAYMENT_WEBHOOK_DATABASE_URL="].join("\n"),
+      ),
+    ).toHaveLength(0);
+    expect(
+      scanSecretText(
+        ".env.example",
+        ["RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD=", "PRIVACY_DELETION_DATABASE_URL="].join("\r\n"),
+      ),
+    ).toHaveLength(0);
+    expect(
+      scanSecretText(
+        ".npmrc",
+        ["//registry.npmjs.org/:_authToken = ", "npm-secret-canary"].join(""),
+      ),
+    ).toHaveLength(1);
+    expect(
+      scanSecretText(
+        ".npmrc",
+        ["//registry.npmjs.org/:_password\t=\t", "cGFzc3dvcmQxMjM="].join(""),
+      ),
+    ).toHaveLength(1);
+    expect(
+      scanSecretText(".npmrc", ["//registry.npmjs.org/:_authToken = ", "${NPM_TOKEN}"].join("")),
+    ).toHaveLength(0);
+    expect(
+      scanSecretText(".npmrc", ["//registry.npmjs.org/:_password=", "${NPM_PASSWORD}"].join("")),
+    ).toHaveLength(0);
     expect(scanSecretBuffer("fixtures/no-nul.png", Buffer.from("printable bytes"))).toEqual([
       {
         fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/),

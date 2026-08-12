@@ -2,6 +2,7 @@ import type { LocalActionHref } from "@rituvia/ui";
 import type { ReactNode } from "react";
 
 import type { SharedMessages } from "../_i18n/messages";
+import { formatCoreMessage } from "../_i18n/core-messages";
 import {
   localeHomePath,
   localeAccountPath,
@@ -15,6 +16,7 @@ import { AccountNavigation } from "./account-experience";
 import { ConnectionNotice } from "./connection-notice";
 
 type PublicSiteFrameProps = Readonly<{
+  accountNavigation?: boolean;
   brandName: string;
   brandTagline: string;
   children: ReactNode;
@@ -30,6 +32,7 @@ type NavigationLink = Readonly<{
 }>;
 
 export function PublicSiteFrame({
+  accountNavigation = true,
   brandName,
   brandTagline,
   children,
@@ -77,7 +80,9 @@ export function PublicSiteFrame({
       <header className="site-header">
         <div className="shell header-inner">
           <a
-            aria-label={messages.navigation.homeLabel.replace("{brand}", brandName)}
+            aria-label={formatCoreMessage(locale, "shell.navigation.homeLabel", {
+              brand: brandName,
+            })}
             className="brand-link"
             href={localeHomePath(locale)}
           >
@@ -118,13 +123,15 @@ export function PublicSiteFrame({
                 {messages.navigation.localeHint}
               </span>
             </div>
-            <AccountNavigation
-              accountHref={localeAccountPath(locale)}
-              accountLabel={messages.navigation.account}
-              loadingLabel={messages.navigation.account}
-              signInHref={localeSignInPath(locale)}
-              signInLabel={messages.navigation.signIn}
-            />
+            {accountNavigation ? (
+              <AccountNavigation
+                accountHref={localeAccountPath(locale)}
+                accountLabel={messages.navigation.account}
+                loadingLabel={messages.navigation.account}
+                signInHref={localeSignInPath(locale)}
+                signInLabel={messages.navigation.signIn}
+              />
+            ) : null}
           </div>
         </div>
       </header>

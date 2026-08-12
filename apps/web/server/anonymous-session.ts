@@ -3,6 +3,7 @@ import "server-only";
 import {
   AnonymousIdentityPersistenceError,
   createAnonymousIdentityService,
+  type AnonymousSessionContext,
   type AnonymousIdentityService,
   type EnsuredAnonymousSession,
 } from "@rituvia/db";
@@ -61,6 +62,16 @@ export const ensureWebAnonymousSession = async (input: {
         throw new WebAnonymousSessionError("conflict");
       }
     }
+    throw new WebAnonymousSessionError("unavailable");
+  }
+};
+
+export const resolveWebAnonymousSession = async (
+  token: string,
+): Promise<AnonymousSessionContext | null> => {
+  try {
+    return await loadAnonymousIdentityService().resolveSession(token);
+  } catch {
     throw new WebAnonymousSessionError("unavailable");
   }
 };

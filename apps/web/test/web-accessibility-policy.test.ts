@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   accessibilityAxeTags,
   accessibilitySmokeRoutes,
+  auditPublicAccessibilitySmokeInventory,
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
@@ -37,6 +38,11 @@ describe("Web accessibility smoke policy", () => {
       "/en/numerology/birthday-number",
       "/en/numerology/personal-year-number",
       "/en/numerology/master-numbers",
+      "/en/astrology",
+      "/en/astrology/natal-chart-calculation",
+      "/en/astrology/birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects",
+      "/en/astrology/sources-and-methodology",
     ]);
     expect(privateAccessibilitySmokeRoutes).toEqual([
       "/en/intake",
@@ -53,6 +59,11 @@ describe("Web accessibility smoke policy", () => {
       "/en/numerology/birthday-number",
       "/en/numerology/personal-year-number",
       "/en/numerology/master-numbers",
+      "/en/astrology",
+      "/en/astrology/natal-chart-calculation",
+      "/en/astrology/birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects",
+      "/en/astrology/sources-and-methodology",
       "/en/intake",
       "/en/tarot/one-card",
       "/en/tarot/three-card",
@@ -69,6 +80,21 @@ describe("Web accessibility smoke policy", () => {
     expect(Object.isFrozen(publicAccessibilitySmokeRoutes)).toBe(true);
     expect(Object.isFrozen(privateAccessibilitySmokeRoutes)).toBe(true);
     expect(Object.isFrozen(accessibilityAxeTags)).toBe(true);
+  });
+
+  it("keeps every smoke route inside the reviewed public build inventory", () => {
+    expect(
+      auditPublicAccessibilitySmokeInventory([
+        ...publicAccessibilitySmokeRoutes,
+        "/en/numerology/example",
+      ]),
+    ).toEqual([]);
+    expect(auditPublicAccessibilitySmokeInventory(publicAccessibilitySmokeRoutes.slice(1))).toEqual(
+      ["missing-public-accessibility-smoke-route:/en"],
+    );
+    expect(auditPublicAccessibilitySmokeInventory("not-an-inventory")).toEqual([
+      "invalid-reviewed-public-route-inventory",
+    ]);
   });
 
   it("maps only reviewed documents, the generated icon, and bounded static assets", () => {
@@ -141,11 +167,11 @@ describe("Web accessibility smoke policy", () => {
 
   it("produces stable expanded LTR and Arabic-assisted RTL pseudolocales", () => {
     expect(pseudoLocalizeText(" Home ")).toBe(" ［Ĥöṁë ·］ ");
-    expect(pseudoLocalizeText("Home", "rtl")).toBe("اختبار Ĥöṁë · موسّع");
+    expect(pseudoLocalizeText("Home", "ar-XB")).toBe("اختبار Ĥöṁë · موسّع");
     expect(pseudoLocalizeText("Welcome to {brand}")).toContain("{brand}");
     expect(pseudoLocalizeText(" 123 ")).toBe(" 123 ");
-    expect(() => pseudoLocalizeText("Home", "sideways" as "ltr")).toThrowError(
-      "Pseudolocale direction must be ltr or rtl.",
+    expect(() => pseudoLocalizeText("Home", "sideways" as "en-XA")).toThrowError(
+      "Pseudolocalization is restricted to en-XA and ar-XB test locales.",
     );
   });
 

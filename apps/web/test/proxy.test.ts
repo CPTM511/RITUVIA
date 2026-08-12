@@ -5,13 +5,9 @@ const harness = vi.hoisted(() => ({
   deploymentEnvironment: "local" as "local" | "preview" | "production" | "staging",
   end: vi.fn(),
   intakeAvailability: "disabled" as "disabled" | "enabled",
-  loadPublicShellState: vi.fn(),
   numerologyAvailability: "disabled" as "disabled" | "enabled",
+  recoveryReady: true,
   tarotReadingAvailability: "disabled" as "disabled" | "enabled",
-}));
-
-vi.mock("../server/public-shell-state", () => ({
-  loadPublicShellState: harness.loadPublicShellState,
 }));
 
 vi.mock("../server/question-intake-state", () => ({
@@ -44,6 +40,27 @@ vi.mock("../server/request-observability", () => ({
   }),
 }));
 
+vi.mock("../server/recovery-staging", () => ({
+  inspectRecoveryStagingRuntime: () => ({
+    baselineSha: "f79fee6713670fdc12b33dd3182569a942782636",
+    database: "connected",
+    environment: "staging",
+    indexing: "disabled",
+    nativeAstrology: "enabled",
+    numerologyEngine: "enabled",
+    objectStorage: "not-connected",
+    productionProviders: "disabled",
+    ready: harness.recoveryReady,
+    recoveryItem: 10,
+    sourceSha: "1111111111111111111111111111111111111111",
+    tarotCatalog: "enabled",
+    timeZoneRuntime: "pinned",
+  }),
+  recoveryHealthPathname: "/api/recovery/health",
+  recoveryReadinessPathname: "/api/recovery/readiness",
+  recoveryStagingPathname: "/recovery",
+}));
+
 import { proxy } from "../proxy";
 
 const request = (pathname: string, init?: ConstructorParameters<typeof NextRequest>[1]) =>
@@ -57,8 +74,8 @@ describe("public shell request and crawl gate", () => {
     harness.deploymentEnvironment = "local";
     harness.intakeAvailability = "disabled";
     harness.numerologyAvailability = "enabled";
+    harness.recoveryReady = true;
     harness.tarotReadingAvailability = "disabled";
-    harness.loadPublicShellState.mockResolvedValue("enabled");
   });
 
   it("allows an explicitly enabled canonical shell with restrictive response headers", async () => {
@@ -68,7 +85,7 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(response.headers.get("x-request-id")).toBe("req_11111111111111111111111111111111");
     expect(response.headers.get("content-security-policy")).toContain("connect-src 'self'");
-    expect(response.headers.get("content-security-policy")).toContain("font-src 'none'");
+    expect(response.headers.get("content-security-policy")).toContain("font-src 'self'");
     expect(response.headers.get("content-security-policy")).toContain("object-src 'none'");
     expect(response.headers.get("content-security-policy")).toContain("script-src-attr 'none'");
     expect(response.headers.get("content-security-policy")).toContain(
@@ -78,8 +95,175 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("referrer-policy")).toBe("no-referrer");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
     expect(harness.end).toHaveBeenCalledWith({ outcome: "success" });
+  });
+
+  it("keeps the recovery shell, diagnostics, and disallow-all robots in Item 9 staging", async () => {
+    harness.deploymentEnvironment = "staging";
+
+    for (const pathname of [
+      "/recovery",
+      "/api/recovery/health",
+      "/api/recovery/readiness",
+      "/icon.svg?icon.3h3gu-n5qsc0q.svg",
+    ]) {
+      const response = await proxy(request(pathname));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-rituvia-environment")).toBe("staging");
+      expect(response.headers.get("x-rituvia-source-sha")).toBe(
+        "1111111111111111111111111111111111111111",
+      );
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+
+    const robots = await proxy(request("/robots.txt"));
+    expect(robots.status).toBe(200);
+    expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n");
+    expect(robots.headers.get("x-robots-tag")).toBe(noIndex);
+  });
+
+  it.each([
+    ["GET", "/en"],
+    ["GET", "/zh-Hans"],
+    ["GET", "/en/intake"],
+    ["GET", "/en/tarot/one-card"],
+    ["GET", "/en/tarot/three-card"],
+    ["GET", "/en/methodology"],
+    ["GET", "/en/sanctuary"],
+    ["GET", "/en/revisit"],
+    ["GET", "/en/readings/numerology"],
+    ["GET", "/en/readings/astrology"],
+    ["POST", "/api/v1/anonymous/session"],
+    ["POST", "/api/v1/intake/evaluate"],
+    ["POST", "/api/v1/readings/tarot"],
+    ["GET", "/api/v1/readings/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/report"],
+    ["POST", "/api/v1/intentions"],
+    ["GET", "/api/v1/intentions/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/ritual-sessions"],
+    ["POST", "/api/v1/ritual-sessions/33333333-3333-4333-8333-333333333333/complete"],
+    ["POST", "/api/v1/journal-entries"],
+    ["GET", "/api/v1/journal-entries/33333333-3333-4333-8333-333333333333"],
+    ["GET", "/api/v1/revisits"],
+    ["POST", "/api/v1/revisits"],
+    ["POST", "/api/v1/revisits/33333333-3333-4333-8333-333333333333/complete"],
+    ["POST", "/api/v1/numerology/calculate"],
+    ["POST", "/api/recovery/item-8/astrology"],
+    ["GET", "/en/sign-in"],
+    ["GET", "/en/account"],
+    ["GET", "/en/account/privacy"],
+    ["GET", "/en/plans"],
+    ["GET", "/en/account/billing"],
+    ["GET", "/en/account/orders"],
+    ["GET", "/en/checkout/return"],
+    ["POST", "/api/v1/auth/start"],
+    ["POST", "/api/v1/auth/logout"],
+    ["POST", "/api/v1/auth/logout-all"],
+    ["POST", "/api/v1/auth/wallet/challenge"],
+    ["POST", "/api/v1/auth/wallet/verify"],
+    ["GET", "/api/v1/me"],
+    ["PATCH", "/api/v1/me"],
+    ["GET", "/api/v1/me/wallets"],
+    ["DELETE", "/api/v1/me/wallets/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/privacy/export"],
+    ["GET", "/api/v1/privacy/exports/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/privacy/exports/33333333-3333-4333-8333-333333333333/download"],
+    ["POST", "/api/v1/privacy/deletions"],
+    ["GET", "/api/v1/catalog"],
+    ["POST", "/api/v1/checkout/coinbase"],
+    ["POST", "/api/v1/checkout/stripe"],
+    ["GET", "/api/v1/commerce/account"],
+    ["GET", "/api/v1/orders/33333333-3333-4333-8333-333333333333"],
+    ["POST", "/api/v1/recovery/item-11/interpretation"],
+    ["POST", "/api/v1/webhooks/payments/coinbase"],
+    ["POST", "/api/v1/webhooks/payments/stripe"],
+  ])(
+    "allows only the bounded protected-recovery product requests through Item 11: %s %s",
+    async (method, pathname) => {
+      harness.deploymentEnvironment = "staging";
+
+      const response = await proxy(request(pathname, { method }));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-rituvia-environment")).toBe("staging");
+      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    },
+  );
+
+  it.each(["coinbase", "stripe"])(
+    "allows only the exact %s webhook protection-bypass query",
+    async (provider) => {
+      harness.deploymentEnvironment = "staging";
+      const valid = await proxy(
+        request(
+          `/api/v1/webhooks/payments/${provider}?x-vercel-protection-bypass=${"a".repeat(32)}`,
+          {
+            method: "POST",
+          },
+        ),
+      );
+      expect(valid.status).toBe(200);
+      expect(valid.headers.get("x-middleware-next")).toBe("1");
+
+      for (const pathname of [
+        `/api/v1/webhooks/payments/${provider}?x-vercel-protection-bypass=short`,
+        `/api/v1/webhooks/payments/${provider}?x-vercel-protection-bypass=${"a".repeat(32)}&extra=1`,
+        `/api/v1/webhooks/payments/${provider}?wrong=${"a".repeat(32)}`,
+      ]) {
+        expect((await proxy(request(pathname, { method: "POST" }))).status).toBe(404);
+      }
+    },
+  );
+
+  it("fails the protected product surface closed when staging readiness is incomplete", async () => {
+    harness.deploymentEnvironment = "staging";
+    harness.recoveryReady = false;
+
+    const product = await proxy(request("/zh-Hans"));
+    const readiness = await proxy(request("/api/recovery/readiness"));
+
+    expect(product.status).toBe(404);
+    expect(readiness.status).toBe(200);
+  });
+
+  it.each([
+    ["GET", "/"],
+    ["GET", "/en/privacy"],
+    ["GET", "/zh-Hans/intake"],
+    ["GET", "/api/v1/anonymous/session"],
+    ["GET", "/api/v1/entitlements"],
+    ["GET", "/api/v1/readings/astrology/natal"],
+    ["POST", "/api/v1/readings/astrology/natal"],
+    ["GET", "/en/astrology"],
+    ["GET", "/en/numerology"],
+    ["GET", "/zh-Hans/readings/astrology"],
+    ["GET", "/zh-Hans/readings/numerology"],
+    ["POST", "/api/v1/orders"],
+    ["POST", "/api/v1/readings/33333333-3333-4333-8333-333333333333/interpretation"],
+    ["GET", "/en/intake?question=private-canary"],
+    ["POST", "/api/v1/revisits/33333333-3333-4333-8333-333333333333/reminder"],
+    ["GET", "/sitemap.xml"],
+    ["GET", "/recovery?private=canary"],
+    ["POST", "/recovery"],
+    ["GET", "/api/recovery/health/"],
+    ["GET", "/api/v1/auth/wallet/challenge"],
+    ["POST", "/api/v1/auth/wallet/challenge?address=private-canary"],
+    ["POST", "/api/v1/me/wallets"],
+    ["DELETE", "/api/v1/me/wallets/not-a-uuid"],
+    ["GET", "/api/v1/privacy/deletions"],
+  ])("rejects every unreviewed staging surface: %s %s", async (method, pathname) => {
+    harness.deploymentEnvironment = "staging";
+
+    const response = await proxy(request(pathname, { method }));
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
+    expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
   });
 
   it.each([
@@ -98,7 +282,6 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
-    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
 
   it("allows only the exact saved astrology page and read API", async () => {
@@ -132,7 +315,6 @@ describe("public shell request and crawl gate", () => {
     expect(await response.text()).toBe("");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it("allows only the exact local authentication preview endpoint", async () => {
@@ -148,7 +330,6 @@ describe("public shell request and crawl gate", () => {
       expect(rejected.status).toBe(404);
       expect(await rejected.text()).toBe("");
     }
-    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
 
   it("allows only bounded account history and reading-list queries", async () => {
@@ -174,7 +355,6 @@ describe("public shell request and crawl gate", () => {
       expect(response.status).toBe(404);
       expect(await response.text()).toBe("");
     }
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(4);
   });
 
   it("allows only exact account consent read and mutation shapes", async () => {
@@ -230,6 +410,11 @@ describe("public shell request and crawl gate", () => {
     const numerologyCanonical = await proxy(
       request("/en/numerology/life-path-number", { headers: { accept: "text/html" } }),
     );
+    const astrologyReviewCandidate = await proxy(
+      request("/en/astrology/natal-chart-calculation", {
+        headers: { accept: "text/html" },
+      }),
+    );
     const profileDoorway = await proxy(
       request("/en/numerology/number-1", { headers: { accept: "text/html" } }),
     );
@@ -245,6 +430,8 @@ describe("public shell request and crawl gate", () => {
     expect(canonical.headers.get("x-robots-tag")).toBeNull();
     expect(numerologyCanonical.status).toBe(200);
     expect(numerologyCanonical.headers.get("x-robots-tag")).toBeNull();
+    expect(astrologyReviewCandidate.status).toBe(200);
+    expect(astrologyReviewCandidate.headers.get("x-robots-tag")).toBeNull();
     expect(profileDoorway.status).toBe(404);
     expect(profileDoorway.headers.get("x-robots-tag")).toBe(noIndex);
     expect(reviewedRsc.status).toBe(200);
@@ -270,32 +457,6 @@ describe("public shell request and crawl gate", () => {
     expect(spoofedRsc.headers.get("cache-control")).toBe("no-store, max-age=0");
   });
 
-  it.each(["disabled", "unavailable"] as const)(
-    "returns an empty noindex 404 when the shell is %s",
-    async (state) => {
-      harness.loadPublicShellState.mockResolvedValue(state);
-
-      const response = await proxy(request("/en"));
-
-      expect(response.status).toBe(404);
-      expect(await response.text()).toBe("");
-      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-      expect(response.headers.get("cache-control")).toBe("no-store, max-age=0");
-      expect(response.headers.get("content-security-policy")).toContain("default-src 'self'");
-      expect(response.headers.get("x-request-id")).toBe("req_11111111111111111111111111111111");
-      expect(harness.end).toHaveBeenCalledWith(
-        state === "unavailable"
-          ? {
-              category: "dependency",
-              errorCode: "dependency_error",
-              outcome: "failure",
-              retryable: true,
-            }
-          : { outcome: "success", statusCode: 404 },
-      );
-    },
-  );
-
   it("keeps numerology closed while its independent catalog activation is absent", async () => {
     harness.numerologyAvailability = "disabled";
 
@@ -306,7 +467,6 @@ describe("public shell request and crawl gate", () => {
     expect(api.status).toBe(404);
     expect(page.headers.get("cache-control")).toContain("no-store");
     expect(api.headers.get("cache-control")).toContain("no-store");
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
   });
 
   it("allows only the independently enabled private tarot create, owner read, report, and interpretation APIs", async () => {
@@ -327,7 +487,6 @@ describe("public shell request and crawl gate", () => {
       expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
       expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     }
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(5);
   });
 
   it.each([
@@ -368,7 +527,6 @@ describe("public shell request and crawl gate", () => {
     expect(await response.text()).toBe("");
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -409,7 +567,6 @@ describe("public shell request and crawl gate", () => {
       expect(await response.text()).toBe("");
       expect(response.headers.get("cache-control")).toContain("no-store");
     }
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it("keeps tarot APIs closed without a separately approved catalog activation", async () => {
@@ -434,7 +591,6 @@ describe("public shell request and crawl gate", () => {
     expect(report.status).toBe(404);
     expect(interpretationStart.status).toBe(404);
     expect(interpretationPoll.status).toBe(404);
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(5);
   });
 
   it.each(["one-card", "three-card"] as const)(
@@ -454,7 +610,6 @@ describe("public shell request and crawl gate", () => {
         expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
         expect(response.headers.get("x-robots-tag")).toBe(noIndex);
       }
-      expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
     },
   );
 
@@ -475,22 +630,6 @@ describe("public shell request and crawl gate", () => {
     expect(await response.text()).toBe("");
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["disabled", "one-card"],
-    ["disabled", "three-card"],
-    ["unavailable", "one-card"],
-    ["unavailable", "three-card"],
-  ] as const)("keeps the %s shell tarot %s page closed", async (state, mode) => {
-    harness.tarotReadingAvailability = "enabled";
-    harness.loadPublicShellState.mockResolvedValue(state);
-
-    const response = await proxy(request(`/en/tarot/${mode}`));
-
-    expect(response.status).toBe(404);
-    expect(response.headers.get("cache-control")).toContain("no-store");
   });
 
   it.each(["one-card", "three-card"] as const)(
@@ -500,7 +639,6 @@ describe("public shell request and crawl gate", () => {
 
       expect(response.status).toBe(404);
       expect(response.headers.get("cache-control")).toContain("no-store");
-      expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
     },
   );
 
@@ -517,7 +655,6 @@ describe("public shell request and crawl gate", () => {
       expect(response.headers.get("x-robots-tag")).toBe(noIndex);
       expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     }
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
   });
 
   it.each([
@@ -537,23 +674,7 @@ describe("public shell request and crawl gate", () => {
     expect(await response.text()).toBe("");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
-
-  it.each(["disabled", "unavailable"] as const)(
-    "keeps numerology closed when the public shell is %s",
-    async (state) => {
-      harness.loadPublicShellState.mockResolvedValue(state);
-
-      const page = await proxy(request("/en/readings/numerology"));
-      const api = await proxy(request("/api/v1/numerology/calculate", { method: "POST" }));
-
-      expect(page.status).toBe(404);
-      expect(api.status).toBe(404);
-      expect(page.headers.get("cache-control")).toContain("no-store");
-      expect(api.headers.get("cache-control")).toContain("no-store");
-    },
-  );
 
   it("allows only the independently enabled private intake page and API", async () => {
     harness.intakeAvailability = "enabled";
@@ -568,7 +689,6 @@ describe("public shell request and crawl gate", () => {
       expect(response.headers.get("x-robots-tag")).toBe(noIndex);
       expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     }
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
   });
 
   it.each([
@@ -589,24 +709,7 @@ describe("public shell request and crawl gate", () => {
     expect(await response.text()).toBe("");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
-
-  it.each(["disabled", "unavailable"] as const)(
-    "keeps intake closed when the public shell is %s",
-    async (state) => {
-      harness.intakeAvailability = "enabled";
-      harness.loadPublicShellState.mockResolvedValue(state);
-
-      const page = await proxy(request("/en/intake"));
-      const api = await proxy(request("/api/v1/intake/evaluate", { method: "POST" }));
-
-      expect(page.status).toBe(404);
-      expect(api.status).toBe(404);
-      expect(page.headers.get("cache-control")).toContain("no-store");
-      expect(api.headers.get("cache-control")).toContain("no-store");
-    },
-  );
 
   it("keeps intake closed while its independent activation is absent", async () => {
     const page = await proxy(request("/en/intake"));
@@ -614,37 +717,6 @@ describe("public shell request and crawl gate", () => {
 
     expect(page.status).toBe(404);
     expect(api.status).toBe(404);
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(2);
-  });
-
-  it.each([
-    "/",
-    "/index.rsc",
-    "/index.segments/_full.segment.rsc",
-    "/en",
-    "/en.rsc",
-    "/en.segments/_full.segment.rsc",
-    "/en/methodology",
-    "/en/methodology.rsc",
-    "/en/methodology.segments/_full.segment.rsc",
-    "/en/safety",
-    "/en/safety.rsc",
-    "/en/safety.segments/_full.segment.rsc",
-    "/en/privacy",
-    "/en/privacy.rsc",
-    "/en/privacy.segments/_full.segment.rsc",
-  ])("applies the same safe-off gate to shell representation %s", async (pathname) => {
-    harness.loadPublicShellState.mockResolvedValue("disabled");
-
-    const response = await proxy(request(pathname));
-
-    expect(response.status).toBe(404);
-    expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    if (pathname.endsWith(".rsc") && !pathname.includes(".segments/")) {
-      expect(harness.loadPublicShellState).not.toHaveBeenCalled();
-    } else {
-      expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
-    }
   });
 
   it.each([
@@ -669,13 +741,14 @@ describe("public shell request and crawl gate", () => {
     "/en/%2e%2e/privacy",
     "/robots.txt/",
     "/sitemap.xml/",
-  ])("rejects unsupported or private paths before the feature lookup: %s", async (pathname) => {
+    "/sitemaps/en-private.xml",
+    "/sitemaps/en-pages.xml/",
+  ])("rejects unsupported or private paths before downstream handling: %s", async (pathname) => {
     const response = await proxy(request(pathname));
 
     expect(response.status).toBe(404);
     expect(await response.text()).toBe("");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -684,6 +757,7 @@ describe("public shell request and crawl gate", () => {
     "/en?_rsc=private-canary",
     "/robots.txt?preview=private-canary",
     "/sitemap.xml?preview=private-canary",
+    "/sitemaps/en-pages.xml?preview=private-canary",
   ])("rejects query variants without evaluating or reflecting them: %s", async (pathname) => {
     const response = await proxy(request(pathname));
 
@@ -691,7 +765,6 @@ describe("public shell request and crawl gate", () => {
     expect(await response.text()).toBe("");
     expect(response.headers.get("location")).toBeNull();
     expect([...response.headers.values()].join(" ")).not.toContain("private-canary");
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it("allows only one bounded internal RSC query and never marks it indexable", async () => {
@@ -707,15 +780,13 @@ describe("public shell request and crawl gate", () => {
     expect(reviewed.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(extra.status).toBe(404);
     expect(extra.headers.get("location")).toBeNull();
-    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
 
-  it("rejects non-read methods before the feature lookup", async () => {
+  it("rejects non-read public methods before downstream handling", async () => {
     const response = await proxy(request("/en", { method: "POST" }));
 
     expect(response.status).toBe(404);
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
   });
 
   it("allows only the exact enabled anonymous-session POST as a private API handoff", async () => {
@@ -730,7 +801,6 @@ describe("public shell request and crawl gate", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-    expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
   });
 
   it.each([
@@ -748,27 +818,13 @@ describe("public shell request and crawl gate", () => {
       expect(await response.text()).toBe("");
       expect(response.headers.get("cache-control")).toContain("no-store");
       expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-      expect(harness.loadPublicShellState).not.toHaveBeenCalled();
-    },
-  );
-
-  it.each(["disabled", "unavailable"] as const)(
-    "keeps the anonymous-session endpoint private and closed while the shell is %s",
-    async (state) => {
-      harness.loadPublicShellState.mockResolvedValue(state);
-      const response = await proxy(request("/api/v1/anonymous/session", { method: "POST" }));
-
-      expect(response.status).toBe(404);
-      expect(await response.text()).toBe("");
-      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
-      expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-      expect(harness.loadPublicShellState).toHaveBeenCalledOnce();
     },
   );
 
   it("serves fail-closed non-production discovery without a database lookup", async () => {
     const robots = await proxy(request("/robots.txt"));
     const sitemap = await proxy(request("/sitemap.xml"));
+    const sitemapShard = await proxy(request("/sitemaps/en-pages.xml"));
 
     expect(robots.status).toBe(200);
     expect(robots.headers.get("content-type")).toBe("text/plain; charset=utf-8");
@@ -777,37 +833,36 @@ describe("public shell request and crawl gate", () => {
     expect(sitemap.status).toBe(404);
     expect(sitemap.headers.get("content-type")).toBe("application/xml; charset=utf-8");
     expect(await sitemap.text()).toBe("");
-    expect(harness.loadPublicShellState).not.toHaveBeenCalled();
+    expect(sitemapShard.status).toBe(404);
+    expect(await sitemapShard.text()).toBe("");
   });
 
-  it("publishes production discovery only while the shell is enabled", async () => {
+  it("publishes production discovery from the reviewed finite inventory", async () => {
     harness.deploymentEnvironment = "production";
 
     const robots = await proxy(request("/robots.txt"));
     const sitemap = await proxy(request("/sitemap.xml"));
+    const sitemapShard = await proxy(request("/sitemaps/en-pages.xml"));
 
     expect(robots.status).toBe(200);
     expect(await robots.text()).toContain("Allow: /en$");
     expect(await proxy(request("/robots.txt"))).toMatchObject({ status: 200 });
-    expect(await sitemap.text()).toContain("<loc>https://example.test/en</loc>");
-    expect(harness.loadPublicShellState).toHaveBeenCalledTimes(3);
-
-    harness.loadPublicShellState.mockResolvedValue("disabled");
-    const stoppedRobots = await proxy(request("/robots.txt"));
-    const stoppedSitemap = await proxy(request("/sitemap.xml"));
-    expect(await stoppedRobots.text()).toBe("User-agent: *\nDisallow: /\n");
-    expect(stoppedSitemap.status).toBe(404);
+    expect(await sitemap.text()).toContain("<loc>https://example.test/sitemaps/en-pages.xml</loc>");
+    expect(await sitemapShard.text()).toContain("<loc>https://example.test/en</loc>");
   });
 
   it("keeps HEAD discovery status and headers while suppressing bodies", async () => {
     const robots = await proxy(request("/robots.txt", { method: "HEAD" }));
     const sitemap = await proxy(request("/sitemap.xml", { method: "HEAD" }));
+    const sitemapShard = await proxy(request("/sitemaps/en-pages.xml", { method: "HEAD" }));
 
     expect(robots.status).toBe(200);
     expect(await robots.text()).toBe("");
     expect(robots.headers.get("content-type")).toBe("text/plain; charset=utf-8");
     expect(sitemap.status).toBe(404);
     expect(await sitemap.text()).toBe("");
+    expect(sitemapShard.status).toBe(404);
+    expect(await sitemapShard.text()).toBe("");
   });
 
   it("treats a production canonical HTML HEAD request as the same indexable resource", async () => {
@@ -823,14 +878,13 @@ describe("public shell request and crawl gate", () => {
   });
 
   it.each(["/icon.svg", "/_next/static/app.js"])(
-    "leaves reviewed infrastructure paths outside the activation query: %s",
+    "leaves reviewed infrastructure paths outside feature availability checks: %s",
     async (pathname) => {
       const response = await proxy(request(pathname));
 
       expect(response.status).toBe(200);
       expect(response.headers.get("x-middleware-next")).toBe("1");
       expect(response.headers.get("x-robots-tag")).toBe(noIndex);
-      expect(harness.loadPublicShellState).not.toHaveBeenCalled();
     },
   );
 

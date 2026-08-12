@@ -9,7 +9,7 @@ const harness = vi.hoisted(() => {
       this.code = code;
     }
   }
-  return { CommerceError, processWebhook: vi.fn() };
+  return { CommerceError, processStripeWebhook: vi.fn(), processWebhook: vi.fn() };
 });
 
 vi.mock("../config/server", () => ({
@@ -26,6 +26,12 @@ vi.mock("../server/commerce", () => ({
 vi.mock("../server/payment-provider", () => ({
   localHostedCheckoutProviderId: "local_hosted",
   stripeHostedCheckoutProviderId: "stripe",
+}));
+
+vi.mock("../server/stripe-webhook", () => ({
+  loadWebStripeWebhookApplicationService: () => ({
+    processWebhook: harness.processStripeWebhook,
+  }),
 }));
 
 import { POST as localWebhook } from "../app/api/v1/webhooks/payments/local/route";
@@ -51,6 +57,7 @@ describe("payment webhook HTTP boundary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     harness.processWebhook.mockResolvedValue({ disposition: "applied" });
+    harness.processStripeWebhook.mockResolvedValue({ disposition: "applied" });
   });
 
   it("forwards the exact local raw bytes and signature header without JSON normalization", async () => {
@@ -75,9 +82,73 @@ describe("payment webhook HTTP boundary", () => {
     );
 
     expect(response.status).toBe(204);
-    expect(harness.processWebhook).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: "stripe" }),
+    expect(harness.processStripeWebhook).toHaveBeenCalledOnce();
+    const input = harness.processStripeWebhook.mock.calls[0]?.[0];
+    expect(new TextDecoder().decode(input.rawBody)).toBe(rawBody);
+    expect(input.headers["stripe-signature"]).toContain("t=1784366400");
+    expect(harness.processWebhook).not.toHaveBeenCalled();
+  });
+
+  it("accepts Stripe UTF-8 JSON metadata and rejects other webhook media types", async () => {
+    const signature = `t=1784366400,v1=${"b".repeat(64)}`;
+    const accepted = await stripeWebhook(
+      request("stripe", '{"id":"evt_charset"}', {
+        "content-type": "application/json; charset=utf-8",
+        "stripe-signature": signature,
+      }),
     );
+
+    expect(accepted.status).toBe(204);
+    expect(harness.processStripeWebhook).toHaveBeenCalledOnce();
+
+    for (const contentType of [
+      "application/json; charset=iso-8859-1",
+      "application/json; charset=utf-8; profile=unexpected",
+      "text/json",
+    ]) {
+      vi.clearAllMocks();
+      const rejected = await stripeWebhook(
+        request("stripe", '{"id":"evt_media_rejected"}', {
+          "content-type": contentType,
+          "stripe-signature": signature,
+        }),
+      );
+      expect(rejected.status).toBe(400);
+      expect(harness.processStripeWebhook).not.toHaveBeenCalled();
+    }
+  });
+
+  it("accepts only the bounded Vercel automation bypass query needed by Stripe Test", async () => {
+    const signature = `t=1784366400,v1=${"b".repeat(64)}`;
+    const valid = await stripeWebhook(
+      new NextRequest(
+        `https://example.test/api/v1/webhooks/payments/stripe?x-vercel-protection-bypass=${"a".repeat(32)}`,
+        {
+          body: '{"id":"evt_protected"}',
+          headers: { "content-type": "application/json", "stripe-signature": signature },
+          method: "POST",
+        },
+      ),
+    );
+    expect(valid.status).toBe(204);
+    expect(harness.processStripeWebhook).toHaveBeenCalledOnce();
+
+    for (const query of [
+      "x-vercel-protection-bypass=short",
+      `x-vercel-protection-bypass=${"a".repeat(32)}&extra=1`,
+      `wrong=${"a".repeat(32)}`,
+    ]) {
+      vi.clearAllMocks();
+      const rejected = await stripeWebhook(
+        new NextRequest(`https://example.test/api/v1/webhooks/payments/stripe?${query}`, {
+          body: '{"id":"evt_rejected"}',
+          headers: { "content-type": "application/json", "stripe-signature": signature },
+          method: "POST",
+        }),
+      );
+      expect(rejected.status).toBe(400);
+      expect(harness.processStripeWebhook).not.toHaveBeenCalled();
+    }
   });
 
   it("rejects encoded, oversized, or malformed webhook bodies before verification", async () => {
@@ -104,5 +175,19 @@ describe("payment webhook HTTP boundary", () => {
     expect(response.status).toBe(400);
     expect(text).toContain("PAYMENT_WEBHOOK_INVALID");
     expect(text).not.toContain("canary");
+  });
+
+  it("keeps Stripe storage failures retryable without exposing details", async () => {
+    harness.processStripeWebhook.mockRejectedValueOnce(new harness.CommerceError("unavailable"));
+    const response = await stripeWebhook(
+      request("stripe", '{"private":"stripe-canary"}', {
+        "stripe-signature": `t=1784366400,v1=${"b".repeat(64)}`,
+      }),
+    );
+    const text = await response.text();
+
+    expect(response.status).toBe(503);
+    expect(text).toContain("COMMERCE_UNAVAILABLE");
+    expect(text).not.toContain("stripe-canary");
   });
 });

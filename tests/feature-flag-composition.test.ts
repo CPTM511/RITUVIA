@@ -21,7 +21,7 @@ const harness = vi.hoisted(() => {
           expiresAt: null,
           flagKey: "payments.fiat_checkout",
           localeTags: [],
-          registryVersion: 1,
+          registryVersion: 3,
           state: "on",
           version: 1,
         },
@@ -54,12 +54,12 @@ describe("Web feature-flag composition boundary", () => {
       expect(harness.assertFeatureFlagRuntimeDatabasePrivileges).toHaveBeenCalledWith(
         harness.database,
       );
-      expect(harness.readFeatureFlagVersions).toHaveBeenCalledWith(harness.database, 1);
+      expect(harness.readFeatureFlagVersions).toHaveBeenCalledWith(harness.database, 3);
       expect(harness.database.$disconnect).not.toHaveBeenCalled();
       expect(evaluator.evaluate("payments.fiat_checkout", { countryCode: "US" })).toMatchObject({
         enabled: true,
         reason: "enabled",
-        registryVersion: 1,
+        registryVersion: 3,
         version: 1,
       });
       expect(evaluator.evaluate("payments.fiat_checkout", { countryCode: "CA" })).toMatchObject({

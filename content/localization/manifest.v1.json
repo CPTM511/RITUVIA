@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": "content/localization/rituvia-core-ui.en.v1.json",
+      "sha256": "7f393180b7c0f17a0ebc6545bf2edd4a69bb4d09bd83a8b38b8d6568d7f39528"
+    },
+    {
+      "path": "content/localization/rituvia-core-ui.en.v1.runtime.json",
+      "sha256": "b36c16192210600a16e179fe8d8a1e52a2ffe75751db08a8248ec4e544c54dd5"
+    },
+    {
+      "path": "content/localization/rituvia-core-glossary.en.v1.json",
+      "sha256": "72e9097b739a85e593de15b16dd910dbfccd0d72b63bd73fe5eb7d1456409905"
+    },
+    {
+      "path": "content/localization/rituvia-lifecycle-messages.en.v1.json",
+      "sha256": "f88307a199976dd59ca9209205b93a746db133636769216f073b7e3ec4fa2b0f"
+    },
+    {
+      "path": "content/localization/rituvia-lifecycle-messages.en.v1.runtime.json",
+      "sha256": "65a3f8fa7f6970d175aef6554578c2a43e7076ac2bceb56af56257e98f7a3a5e"
+    }
+  ],
+  "schemaVersion": "rituvia-localization-manifest.v1"
+}

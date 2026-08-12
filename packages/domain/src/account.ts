@@ -166,8 +166,10 @@ const parseDisplayName = (value: unknown): string | null => {
   const normalized = value.trim().normalize("NFC");
   if (
     normalized.length < 1 ||
-    normalized.length > 80 ||
-    /[\u0000-\u001f\u007f]/u.test(normalized)
+    Array.from(normalized).length > 80 ||
+    /[\u0000-\u001f\u007f-\u009f\u061c\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u.test(
+      normalized,
+    )
   ) {
     invalid();
   }

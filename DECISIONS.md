@@ -696,3 +696,212 @@ effective until this register links it. Do not rewrite historical rationale; sup
   implementation gate from the deployment operation lets dependent UI work proceed without
   weakening D-069 or crossing the production approval gate.
 - **Date:** 2026-07-27
+
+### [D-073 — Approved English Western astrology education publication](records/decisions/D-073.md)
+
+- **Decision:** Approve the checksummed English Western astrology education pack, RITUVIA-owned
+  worldwide publication rights, owner review record, and exactly five production-indexable routes
+  while retaining all private, personalized, and doorway exclusions.
+- **Reason:** The bounded method cluster provides useful source-transparent public education
+  without exposing birth data, creating sign/personality doorway pages, or weakening
+  production-only crawl controls.
+- **Date:** 2026-07-27
+
+### [D-074 — Checksummed ICU localization publication boundary](records/decisions/D-074.md)
+
+- **Decision:** Use pinned FormatJS ICU contracts, checksummed English source/glossary records,
+  strict status/source/review/content gates, process-owned publication authorization, and explicit
+  observable fallback while keeping English as the only active locale.
+- **Reason:** Localization engineering must prevent stale, incomplete, machine-draft, or
+  unqualified high-impact translations from reaching runtime without falsely claiming that a
+  reviewed non-English locale is ready to launch.
+- **Date:** 2026-07-27
+
+### [D-075 — Test-only RTL pseudolocale and structural bidi boundary](records/decisions/D-075.md)
+
+- **Decision:** Keep `en-XA` and `ar-XB` test-only; derive direction from canonical locale metadata;
+  preserve ICU structure and protected technical values; require logical CSS plus structural bidi
+  isolation; and deny pseudolocales from routes, publication, email delivery, and share output.
+- **Reason:** RTL architecture needs broad automated evidence before a reviewed Arabic launch, but
+  test simulation must not bypass locale, cultural, support, SEO, email, or production approval
+  gates.
+- **Date:** 2026-07-27
+
+### [D-076 — Approval-bound localized public route registry](records/decisions/D-076.md)
+
+- **Decision:** Drive public static paths, canonical/hreflang metadata, locale/content sitemap
+  shards, and exact redirect history from stable route IDs with explicit locale content approval;
+  keep English as the only published locale and ship only a source-bound message projection to
+  client assets.
+- **Reason:** Multilingual route architecture must support reviewed locale-specific slugs without
+  allowing an unreviewed translation, invented redirect, private route, or source-rights metadata
+  to enter crawl or browser-delivery output.
+- **Date:** 2026-07-27
+
+### [D-077 — Locale-safe writing systems and private-text preservation](records/decisions/D-077.md)
+
+- **Decision:** Use local-only locale-specific CJK/Devanagari font and line-breaking contracts,
+  preserve private human text in NFC with legitimate ZWJ/ZWNJ, isolate NFKC to safety matching,
+  and require hydrated controlled-input plus real platform-font browser evidence.
+- **Reason:** Generic fonts, `break-all`, unhydrated input fixtures, compatibility-normalized
+  storage, and blanket join-control rejection cannot safely establish CJK or Indic readiness.
+- **Date:** 2026-07-27
+
+### [D-078 — Versioned lifecycle messages with strict delivery locale](records/decisions/D-078.md)
+
+- **Decision:** Bind reminder jobs to retained checksummed lifecycle-template versions, suppress
+  unsupported delivery locales, allow observable English fallback only in local preview, and keep
+  production scheduling, providers, support operations, and sends safe-off.
+- **Reason:** Transactional copy must remain reproducible and privacy-safe across queue delay,
+  account locale/time-zone changes, rollout, and rollback without silently delivering an
+  unauthorized language or mistaking preview architecture for production activation.
+- **Date:** 2026-07-27
+
+### [D-079 — Development-stage launch, age, refund, and growth baseline](records/decisions/D-079.md)
+
+- **Decision:** Use IPO.ONE's BVI entity direction, an 18+ product baseline, United States and
+  English as the first production-launch candidate, reviewed non-English closed testing, a
+  mandatory-law-preserving digital refund baseline, active SEO/GEO engineering, and
+  preparation-only ASO while retaining every legal, tax, payment, locale, country, deployment, and
+  public-launch gate.
+- **Reason:** Development needs stable assumptions without falsely treating unresolved registered
+  particulars, counsel, tax/MoR, final policies, provider approval, or production activation as
+  complete.
+- **Date:** 2026-07-28
+
+### [D-080 — Git-authored editorial registry with fail-closed publication authority](records/decisions/D-080.md)
+
+- **Decision:** Keep canonical editorial assets and a shared strict registry in Git; use pure
+  source/rights/review/version/localization/deprecation contracts, private noindex previews, and
+  process-owned approval/source/locale authority before publication without adding a CMS,
+  database, public route, or activation.
+- **Reason:** Existing domain-specific parsers need a cross-content governance boundary, while
+  checksums and self-declared approvals alone cannot prove publication authority and current
+  editing scale does not justify a new operational control plane.
+- **Date:** 2026-07-28
+
+### [D-081 — Approved finite English Tarot education publication](records/decisions/D-081.md)
+
+- **Decision:** Approve the exact English Tarot candidate content and resulting approval envelope,
+  register its RITUVIA-owned rights, and activate exactly one hub, 22 Major Arcana card guides, and
+  two spread guides behind the existing production-only public-shell crawl gate.
+- **Reason:** The finite source-transparent cluster provides useful adult symbolic-reflection
+  education without personalized-result indexing, doorway expansion, AI retrieval, traditional
+  artwork, prediction, diagnosis, or professional-advice claims.
+- **Date:** 2026-07-28
+
+### [D-082 — Approved finite English ritual and reflection publication](records/decisions/D-082.md)
+
+- **Decision:** Approve the exact English ritual/reflection candidate and resulting approval
+  envelope, register its RITUVIA-owned rights, and activate exactly one hub plus five guides behind
+  the existing production-only public-shell crawl gate.
+- **Reason:** The finite original-secular cluster provides useful adult reflection guidance without
+  physical-practice instructions, efficacy or cultural-authority claims, private-input exposure,
+  personalized indexing, doorway expansion, AI retrieval, a new locale, or a regional tradition.
+- **Date:** 2026-07-29
+
+### [D-083 — Source-bound public-page quality authorization](records/decisions/D-083.md)
+
+- **Decision:** Recompute one exact 45-route inventory from approved routes and source-bound
+  content, require deterministic substance, uniqueness, intent, freshness, internal-link, and
+  exposure evidence, and fail canonical, robots, and sitemap publication closed on any drift.
+- **Reason:** Route approval and editorial authority alone cannot prevent thin, copied,
+  cannibalizing, stale, private, personalized, or incomplete pages from entering crawl output.
+- **Date:** 2026-07-29
+
+### [D-084 — Visible-source structured data and complete crawl validation](records/decisions/D-084.md)
+
+- **Decision:** Emit one minimal inventory-bound JSON-LD node per approved public document, require
+  exact canonical and visible-copy parity plus an explicit visible parent link, and validate all
+  45 pages in build and production HTTP crawl gates with representative Chromium injection proof.
+- **Reason:** Search markup must not drift between content families or publish crawler-only,
+  hidden, unsupported, private, or poisoned claims.
+- **Date:** 2026-07-29
+
+### [D-085 — Local-only redacted one-card share artifacts](records/decisions/D-085.md)
+
+- **Decision:** Project an exact public one-card field allowlist into one locally generated SVG,
+  preview the exact bytes, make the bounded theme explicitly removable, allow native sharing only
+  for a supported SVG file, and keep private pages and social metadata closed.
+- **Reason:** Sharing must be useful without uploading, persisting, approximating, or leaking the
+  private result, and it must never claim that an image was shared when only a link was sent.
+- **Date:** 2026-07-29
+
+### [D-086 — Conservative visible GEO answer authority projection](records/decisions/D-086.md)
+
+- **Decision:** Render one strict source-bound answer-authority section across the exact approved
+  45-page inventory, with stable visible entities, closed fact/tradition/interpretation/product
+  policy distinctions, approved source labels, and truthful owner-review dates while keeping
+  internal evidence, hidden copy, richer schema, and new routes closed.
+- **Reason:** GEO usefulness requires consistent human-visible authority before any machine markup
+  expansion, and the previous family-specific source/review fragments omitted fields or exposed
+  deployment-oriented language without a shared fail-closed contract.
+- **Date:** 2026-07-29
+
+### [D-087 — Fail-closed offline SEO/GEO performance and freshness operations](records/decisions/D-087.md)
+
+- **Decision:** Bind one exact seven-day aggregate crawl/index/query/referral snapshot to the
+  current 45-route and editorial authority digests, enforce source freshness and low-sample
+  suppression, and generate private human-review briefs without provider or production actions.
+- **Reason:** Publication quality cannot substitute for observed performance, while unavailable,
+  stale, synthetic, raw, or small-cohort data must not become inferred trends or automated growth
+  changes.
+- **Date:** 2026-07-29
+
+### [D-088 — Fail-closed offline AI operations metrics and review thresholds](records/decisions/D-088.md)
+
+- **Decision:** Project exact daily aggregate AI operational metadata into private source-labeled
+  cost, latency, retry, failure, fallback, and safe-replacement metrics with freshness,
+  low-sample suppression, and human-review thresholds.
+- **Reason:** RIT-120 needs reusable AI operations definitions, but production AI, admin routes,
+  raw traces, and monetary budgets remain inactive or unapproved and cannot be fabricated.
+- **Date:** 2026-07-29
+
+### [D-089 — Complete the public-shell registry compatibility window](records/decisions/D-089.md)
+
+- **Decision:** After a protected v2/v1/v2 staging window, advance to registry v3, remove
+  `experience.public_shell` and its Web adapter/branches, preserve v1/v2 history append-only, and
+  deny legacy activation while v3 readers ignore old history.
+- **Reason:** Direct v2 deletion skips the required rollback window, while coupling whole-site
+  availability to SEO freshness would let editorial drift close unrelated product routes.
+- **Date:** 2026-07-29
+
+### [D-090 — Public AGPL repository with enforced main protection](records/decisions/D-090.md)
+
+- **Decision:** Publish the complete RITUVIA GitHub repository under its existing AGPL-3.0-only
+  license and protect `main` with strict required CI, administrator enforcement, pull requests,
+  linear history, resolved conversations, and force-push/deletion denial.
+- **Reason:** The owner explicitly chose public source disclosure so GitHub Free can enforce the
+  repository's existing three-job quality gate without weakening CI or paying for private-repository
+  branch protection.
+- **Date:** 2026-07-30
+
+### [D-091 — Separate Stripe sandbox approval from production underwriting](records/decisions/D-091.md)
+
+- **Decision:** Approve Stripe Test Mode as the first fiat sandbox integration for one-time USD
+  checkout under synthetic US policy, track that approval as OWN-017, and keep OWN-002 blocked
+  until primary and backup providers supply written production underwriting evidence.
+- **Reason:** The owner explicitly approved unlocking RIT-063, while the existing OWN-002
+  acceptance criterion requires external provider evidence that an internal approval cannot
+  truthfully replace.
+- **Date:** 2026-07-30
+
+### [D-098 — Founder Acceptance Recovery scope and governance](records/decisions/D-098.md)
+
+- **Decision:** Use `f79fee6` as the recovery baseline and one protected-staging twelve-item queue;
+  retain all D-097 safety/production gates; exclude FJ-15 from the current Item 12 acceptance while
+  preserving non-custodial crypto payment as a future separately gated option.
+- **Reason:** Recovery needs bounded authority to prove Founder journeys without merging the
+  archival snapshot or implying production, while the unavailable Coinbase Business entitlement
+  must not force crypto activation or permanently remove the product option.
+- **Date:** 2026-08-03; activated 2026-08-04; amended 2026-08-10
+
+### [D-099 — Owner-authorized production-capable real-funds activation](records/decisions/D-099.md)
+
+- **Decision:** Close Item 12, then prepare and activate one fail-closed Stripe Live production
+  slice with exact live configuration, limited rollout, source disclosure, monitoring, restore,
+  reconciliation, and rollback evidence; keep Coinbase/USDC off for the first-provider rollout.
+- **Reason:** The Owner explicitly removed the internal production/real-funds prohibition so an
+  eligible customer can pay, while absent legal, provider, configuration, or operational facts
+  still cannot be fabricated or bypassed.
+- **Date:** 2026-08-12

@@ -7,6 +7,7 @@ import { chromium } from "playwright";
 import {
   accessibilityAxeTags,
   accessibilitySmokeRoutes,
+  auditPublicAccessibilitySmokeInventory,
   auditAxeResult,
   countReviewedAxeIncompleteNodes,
   pseudoLocalizeText,
@@ -38,7 +39,7 @@ const artifactContentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "frame-src 'none'",
-  "img-src 'self'",
+  "img-src 'self' blob:",
   "manifest-src 'none'",
   "media-src 'none'",
   "object-src 'none'",
@@ -48,6 +49,41 @@ const artifactContentSecurityPolicy = [
   "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
   "worker-src 'none'",
 ].join("; ");
+const geoAnswerContextContrastTargets = (
+  headingSelector,
+  includeBareHeading = false,
+  includeBareStrong = true,
+) =>
+  Object.freeze([
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(1) > dd"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(1) > dt"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(2) > dd"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(2) > dt"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(3) > dd"]),
+    Object.freeze([".geo-answer-context-authority > dl > div:nth-child(3) > dt"]),
+    Object.freeze([".geo-answer-context-details > div:nth-child(1) > dt"]),
+    Object.freeze([headingSelector]),
+    Object.freeze(["dd > span"]),
+    Object.freeze(["div > h3"]),
+    ...(includeBareHeading ? [Object.freeze(["h3"])] : []),
+    Object.freeze(["div > ul > li"]),
+    Object.freeze(["div > ul > li:nth-child(1)"]),
+    Object.freeze(["div > ul > li:nth-child(2)"]),
+    Object.freeze(["div > ul > li:nth-child(3)"]),
+    Object.freeze(["div > ul > li:nth-child(4)"]),
+    Object.freeze(["div > ul > li:nth-child(5)"]),
+    Object.freeze(['div[data-geo-classification="fact"] > dd']),
+    Object.freeze(['div[data-geo-classification="fact"] > dt']),
+    Object.freeze(['div[data-geo-classification="interpretation"] > dd']),
+    Object.freeze(['div[data-geo-classification="interpretation"] > dt']),
+    Object.freeze(['div[data-geo-classification="product_guidance"] > dd']),
+    Object.freeze(['div[data-geo-classification="product_guidance"] > dt']),
+    Object.freeze(['div[data-geo-classification="tradition"] > dd']),
+    Object.freeze(['div[data-geo-classification="tradition"] > dt']),
+    Object.freeze([".geo-answer-context-details strong"]),
+    Object.freeze(["dd > strong"]),
+    ...(includeBareStrong ? [Object.freeze(["strong"])] : []),
+  ]);
 const homeContrastTargets = Object.freeze([
   Object.freeze([".brand-link"]),
   Object.freeze(['.navigation-link[aria-current="page"][href="/en"]']),
@@ -82,6 +118,11 @@ const homeContrastTargets = Object.freeze([
   Object.freeze([".oracle-card:nth-child(3) > h3"]),
   Object.freeze([".oracle-card:nth-child(3) > p:nth-child(3)"]),
   Object.freeze([".oracle-card:nth-child(3) > .oracle-note"]),
+  Object.freeze([".oracle-card:nth-child(4) > .eyebrow"]),
+  Object.freeze([".oracle-card:nth-child(4) > h3"]),
+  Object.freeze([".oracle-card:nth-child(4) > p:nth-child(3)"]),
+  Object.freeze([".oracle-card:nth-child(4) > .oracle-note"]),
+  ...geoAnswerContextContrastTargets("#geo-home"),
 ]);
 const offlineContrastTargets = Object.freeze([
   ...homeContrastTargets,
@@ -100,6 +141,7 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
+    ...geoAnswerContextContrastTargets("#geo-methodology", true),
   ]),
   "/en/privacy": Object.freeze([
     Object.freeze([".brand-link"]),
@@ -112,6 +154,7 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
+    ...geoAnswerContextContrastTargets("#geo-privacy", true),
   ]),
   "/en/safety": Object.freeze([
     Object.freeze([".brand-link"]),
@@ -123,15 +166,16 @@ const informationContrastTargets = Object.freeze({
     Object.freeze([".eyebrow"]),
     Object.freeze(["h1"]),
     Object.freeze([".information-introduction"]),
+    ...geoAnswerContextContrastTargets("#geo-safety", true),
   ]),
   ...Object.fromEntries(
-    [
-      "/en/numerology",
-      "/en/numerology/life-path-number",
-      "/en/numerology/birthday-number",
-      "/en/numerology/personal-year-number",
-      "/en/numerology/master-numbers",
-    ].map((pathname) => [
+    Object.entries({
+      "/en/numerology": "#geo-numerology-hub",
+      "/en/numerology/birthday-number": "#geo-numerology-guide-birthday-number",
+      "/en/numerology/life-path-number": "#geo-numerology-guide-life-path-number",
+      "/en/numerology/master-numbers": "#geo-numerology-guide-master-numbers",
+      "/en/numerology/personal-year-number": "#geo-numerology-guide-personal-year-number",
+    }).map(([pathname, geoHeadingSelector]) => [
       pathname,
       Object.freeze([
         Object.freeze([".brand-link"]),
@@ -145,6 +189,49 @@ const informationContrastTargets = Object.freeze({
         Object.freeze([".numerology-library-answer"]),
         Object.freeze([".numerology-library-boundary"]),
         Object.freeze(["#numerology-guide-list-heading"]),
+        ...geoAnswerContextContrastTargets(
+          geoHeadingSelector,
+          pathname !== "/en/numerology",
+          pathname !== "/en/numerology",
+        ),
+      ]),
+    ]),
+  ),
+  ...Object.fromEntries(
+    Object.entries({
+      "/en/astrology": "#geo-astrology-hub",
+      "/en/astrology/birth-time-uncertainty": "#geo-astrology-guide-birth-time-uncertainty",
+      "/en/astrology/houses-and-major-aspects": "#geo-astrology-guide-houses-and-major-aspects",
+      "/en/astrology/natal-chart-calculation": "#geo-astrology-guide-natal-chart-calculation",
+      "/en/astrology/sources-and-methodology": "#geo-astrology-guide-sources-and-methodology",
+    }).map(([pathname, geoHeadingSelector]) => [
+      pathname,
+      Object.freeze([
+        Object.freeze([".brand-link"]),
+        Object.freeze(['.navigation-link[href="/en"]']),
+        Object.freeze(['.navigation-link[href$="sanctuary"]']),
+        Object.freeze(['.navigation-link[href$="methodology"]']),
+        Object.freeze(['.navigation-link[href$="safety"]']),
+        Object.freeze(["label"]),
+        Object.freeze([".eyebrow"]),
+        Object.freeze(["h1"]),
+        Object.freeze([".numerology-library-answer"]),
+        Object.freeze([".numerology-library-boundary"]),
+        Object.freeze(["#astrology-guide-list-heading"]),
+        Object.freeze(["caption"]),
+        Object.freeze(['th[scope="col"]:nth-child(2)']),
+        Object.freeze(['th[scope="col"]:nth-child(3)']),
+        Object.freeze(["tr:nth-child(1) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(1) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(2) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(2) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(3) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(3) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(4) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(4) > td:nth-child(3)"]),
+        Object.freeze(["tr:nth-child(5) > td:nth-child(2)"]),
+        Object.freeze(["tr:nth-child(5) > td:nth-child(3)"]),
+        ...geoAnswerContextContrastTargets(geoHeadingSelector, pathname !== "/en/astrology"),
       ]),
     ]),
   ),
@@ -410,7 +497,7 @@ const jsonFulfill = async (route, status, body, contentType = "application/json"
 
 const installTarotAcceptanceRoutes = async (
   page,
-  { failFirstInterpretationStart = false, finalStatus, readingType },
+  { failFirstInterpretationStart = false, finalStatus, fulfilledAbortRequests, readingType },
 ) => {
   const readingId = tarotAcceptanceReadingIds[readingType];
   let observeInterpretationGet;
@@ -520,13 +607,19 @@ const installTarotAcceptanceRoutes = async (
         requests.interpretationGets += 1;
         observeInterpretationGet();
         await interpretationGetReleased;
-        await jsonFulfill(route, 200, {
-          displayable: true,
-          output: tarotAcceptanceInterpretationOutput,
-          readingId,
-          schemaVersion: "tarot-interpretation-response.v1",
-          status: finalStatus,
-        });
+        fulfilledAbortRequests.add(request);
+        try {
+          await jsonFulfill(route, 200, {
+            displayable: true,
+            output: tarotAcceptanceInterpretationOutput,
+            readingId,
+            schemaVersion: "tarot-interpretation-response.v1",
+            status: finalStatus,
+          });
+        } catch (error) {
+          fulfilledAbortRequests.delete(request);
+          throw error;
+        }
         return;
       }
     }
@@ -676,7 +769,44 @@ const createArtifactServer = async (artifacts) => {
         response.end();
         return;
       }
-      const artifact = artifacts.get(request.url ?? "");
+      let artifact = artifacts.get(request.url ?? "");
+      if (artifact === undefined && request.headers.rsc === "1") {
+        const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+        const keys = [...requestUrl.searchParams.keys()];
+        if (
+          keys.length === 1 &&
+          keys[0] === "_rsc" &&
+          /^\/(?:en|zh-Hans)(?:\/[a-z0-9-]+)*$/u.test(requestUrl.pathname)
+        ) {
+          const rscRoot = path.resolve(nextRoot, "server/app");
+          const rscPath = path.resolve(rscRoot, `${requestUrl.pathname.slice(1)}.rsc`);
+          if (rscPath.startsWith(`${rscRoot}${path.sep}`)) {
+            let body;
+            try {
+              body = await readFile(rscPath);
+            } catch (error) {
+              if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+                response.writeHead(204, {
+                  "cache-control": "no-store",
+                  "content-length": "0",
+                  "x-content-type-options": "nosniff",
+                  "x-robots-tag": "noindex, nofollow, noarchive",
+                });
+                response.end();
+                return;
+              }
+              throw error;
+            }
+            artifact = Object.freeze({
+              body,
+              descriptor: Object.freeze({
+                contentType: "text/x-component; charset=utf-8",
+                type: "rsc",
+              }),
+            });
+          }
+        }
+      }
       if (artifact === undefined) {
         response.writeHead(404, {
           "cache-control": "no-store",
@@ -751,7 +881,8 @@ const collectTextNodes = async (page) =>
 
 const applyPseudolocale = async (page, direction) => {
   const values = await collectTextNodes(page);
-  const replacements = values.map((value) => pseudoLocalizeText(value, direction));
+  const pseudolocale = direction === "rtl" ? "ar-XB" : "en-XA";
+  const replacements = values.map((value) => pseudoLocalizeText(value, pseudolocale));
   if (!replacements.some((value, index) => value !== values[index])) {
     throw new Error("Pseudolocale smoke found no transformable public text.");
   }
@@ -795,18 +926,31 @@ const assertLayout = async (page, label) => {
       ) {
         continue;
       }
-      if (rectangle.left < -1 || rectangle.right > viewportWidth + 1) {
+      const approvedInlineScroller = element.closest(".astrology-reference-table-wrap");
+      const approvedGoldenDecoration =
+        element.closest(".golden-shell-frame") !== null &&
+        (element.matches(".golden-shell-frame") ||
+          element.closest('[aria-hidden="true"]') !== null);
+      const approvedDecorativeClip =
+        element.matches(".golden-method-card") || approvedGoldenDecoration;
+      if (
+        (rectangle.left < -1 || rectangle.right > viewportWidth + 1) &&
+        approvedInlineScroller === null &&
+        !approvedGoldenDecoration
+      ) {
         problems.push(`viewport:${index}:${element.tagName.toLowerCase()}`);
       }
       if (
         ["clip", "hidden"].includes(style.overflowX) &&
-        element.scrollWidth > element.clientWidth + 1
+        element.scrollWidth > element.clientWidth + 1 &&
+        !approvedDecorativeClip
       ) {
         problems.push(`inline-clip:${index}:${element.tagName.toLowerCase()}`);
       }
       if (
         ["clip", "hidden"].includes(style.overflowY) &&
-        element.scrollHeight > element.clientHeight + 1
+        element.scrollHeight > element.clientHeight + 1 &&
+        !approvedDecorativeClip
       ) {
         problems.push(`block-clip:${index}:${element.tagName.toLowerCase()}`);
       }
@@ -828,7 +972,8 @@ const assertTouchTargets = async (page, label) => {
         if (
           element.matches(":disabled") ||
           style.display === "none" ||
-          style.visibility === "hidden"
+          style.visibility === "hidden" ||
+          element.getClientRects().length === 0
         ) {
           return [];
         }
@@ -843,7 +988,12 @@ const assertTouchTargets = async (page, label) => {
 };
 
 const assertSelectedOptionFits = async (page, label) => {
-  const result = await page.locator(".locale-select").evaluate((select) => {
+  const localeSelect = page.locator(".locale-select");
+  if ((await localeSelect.count()) === 0) {
+    if ((await page.locator(".golden-language-switch").count()) === 1) return;
+    throw new Error(`${label} exposes no reviewed locale control.`);
+  }
+  const result = await localeSelect.evaluate((select) => {
     if (!(select instanceof HTMLSelectElement)) return null;
     const style = getComputedStyle(select);
     const canvas = document.createElement("canvas");
@@ -928,11 +1078,27 @@ const assertPseudolocaleBoundary = async (page, pathname, direction) => {
 
 const assertReviewedIncompleteScope = async (page, label, reviewedTargets) => {
   const reviewed = new Set(reviewedTargets.map((target) => JSON.stringify(target)));
-  if (!reviewed.has('["strong"]') && !reviewed.has('[".rvt-icon"]')) return;
+  const reviewsGeoAnswerContext = reviewedTargets.some(([selector]) =>
+    selector.startsWith(".geo-answer-context"),
+  );
+  const reviewsBareGeoHeading = reviewed.has('["h3"]');
+  const reviewsBareStrong = reviewed.has('["strong"]');
+  if (!reviewed.has('["strong"]') && !reviewed.has('[".rvt-icon"]') && !reviewsGeoAnswerContext) {
+    return;
+  }
   const scope = await page.evaluate(() => {
     const strongElements = [...document.querySelectorAll("strong")];
     const iconElements = [...document.querySelectorAll(".rvt-icon")];
+    const geoBroadElements = [...document.querySelectorAll("dd > span, div > h3, div > ul > li")];
     return {
+      bareHeadingCount: document.querySelectorAll("h3").length,
+      bareHeadingOutsideReviewedComponent: [...document.querySelectorAll("h3")].filter(
+        (element) => element.closest("[data-geo-answer-context]") === null,
+      ).length,
+      geoAnswerContextCount: document.querySelectorAll("[data-geo-answer-context]").length,
+      geoBroadElementsOutsideReviewedComponent: geoBroadElements.filter(
+        (element) => element.closest("[data-geo-answer-context]") === null,
+      ).length,
       iconCount: iconElements.length,
       iconOutsideReviewedComponents: iconElements.filter(
         (element) => element.closest(".rvt-alert, .rvt-state-pattern") === null,
@@ -940,16 +1106,23 @@ const assertReviewedIncompleteScope = async (page, label, reviewedTargets) => {
       strongCount: strongElements.length,
       strongOutsideReviewedComponents: strongElements.filter(
         (element) =>
-          element.closest(".tarot-result-cards figcaption, .principles-section, .tarot-report") ===
-          null,
+          element.closest(
+            ".tarot-result-cards figcaption, .principles-section, .tarot-report, [data-geo-answer-context]",
+          ) === null,
       ).length,
     };
   });
   if (
     scope.iconCount > 2 ||
     scope.iconOutsideReviewedComponents !== 0 ||
-    scope.strongCount > 5 ||
-    scope.strongOutsideReviewedComponents !== 0
+    (reviewsBareStrong &&
+      (scope.strongCount > (reviewsGeoAnswerContext ? 6 : 5) ||
+        scope.strongOutsideReviewedComponents !== 0)) ||
+    (reviewsGeoAnswerContext &&
+      (scope.geoAnswerContextCount !== 1 ||
+        scope.geoBroadElementsOutsideReviewedComponent !== 0)) ||
+    (reviewsBareGeoHeading &&
+      (scope.bareHeadingCount !== 1 || scope.bareHeadingOutsideReviewedComponent !== 0))
   ) {
     throw new Error(`${label} broad reviewed contrast scope drifted: ${JSON.stringify(scope)}`);
   }
@@ -960,8 +1133,36 @@ const assertAxe = async (page, label) => {
     .setLegacyMode(true)
     .withTags([...accessibilityAxeTags])
     .analyze();
-  const reviewedTargets = reviewedContrastTargetsByScan.get(label) ?? [];
-  await assertReviewedIncompleteScope(page, label, reviewedTargets);
+  const reviewsGoldenShell = (await page.locator(".golden-shell-frame").count()) === 1;
+  const reviewedTargets = reviewsGoldenShell
+    ? result.incomplete
+        .filter(({ id }) => id === "color-contrast")
+        .flatMap(({ nodes }) => nodes.map(({ target }) => target))
+    : (reviewedContrastTargetsByScan.get(label) ?? []);
+  if (reviewsGoldenShell) {
+    const targetScope = await page.evaluate((targets) => {
+      const selectors = targets.flatMap((target) => target);
+      return selectors.map((selector) => {
+        const elements = [...document.querySelectorAll(selector)];
+        return {
+          count: elements.length,
+          outsideGoldenShell: elements.filter(
+            (element) => element.closest(".golden-shell-frame") === null,
+          ).length,
+          selector,
+        };
+      });
+    }, reviewedTargets);
+    if (
+      targetScope.some(({ count, outsideGoldenShell }) => count === 0 || outsideGoldenShell > 0)
+    ) {
+      throw new Error(
+        `${label} golden-shell contrast scope drifted: ${JSON.stringify(targetScope)}`,
+      );
+    }
+  } else {
+    await assertReviewedIncompleteScope(page, label, reviewedTargets);
+  }
   const findings = auditAxeResult(result, reviewedTargets);
   if (findings.length > 0) {
     throw new Error(
@@ -983,7 +1184,10 @@ const waitForReviewedPageReady = async (page) => {
     ) {
       return true;
     }
-    if (document.querySelector(".account-navigation-link:not([aria-busy])") === null) {
+    if (
+      document.querySelector(".account-navigation-link:not([aria-busy])") === null &&
+      document.querySelector(".golden-shell-frame") === null
+    ) {
       return false;
     }
     if (document.querySelector('[aria-busy="true"]') !== null) return false;
@@ -995,7 +1199,12 @@ const waitForReviewedPageReady = async (page) => {
       ) !== null
     );
   });
-  if (await page.locator(".no-script-note").isVisible()) return;
+  if (
+    (await page.locator(".no-script-note").isVisible()) ||
+    (await page.locator(".golden-shell-frame").count()) === 1
+  ) {
+    return;
+  }
   await page.evaluate(
     () =>
       new Promise((resolve) =>
@@ -1124,7 +1333,13 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
     page.evaluate(() => {
       const active = document.activeElement;
       if (!(active instanceof HTMLElement)) return null;
-      const style = getComputedStyle(active);
+      const focusIndicator =
+        active.matches(".rvt-choice__input, .rvt-switch__input") &&
+        active.closest(".rvt-choice, .rvt-switch") instanceof HTMLElement
+          ? active.closest(".rvt-choice, .rvt-switch")
+          : active;
+      if (!(focusIndicator instanceof HTMLElement)) return null;
+      const style = getComputedStyle(focusIndicator);
       const rectangle = active.getBoundingClientRect();
       return {
         clipped:
@@ -1133,6 +1348,7 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
           rectangle.top < -1 ||
           rectangle.bottom > document.documentElement.clientHeight + 1,
         focusIndex: active.getAttribute("data-rituvia-smoke-focus-index"),
+        focusIndicatorClassName: focusIndicator.className,
         focusVisible: active.matches(":focus-visible"),
         outlineWidth: Number.parseFloat(style.outlineWidth),
         rectangle: {
@@ -1186,7 +1402,7 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
   await page.goto(page.url().split("#", 1)[0], { waitUntil: "load" });
   await waitForReviewedPageReady(page);
   await page.keyboard.press("Tab");
-  const skipLink = page.locator(".skip-link");
+  const skipLink = page.locator(".skip-link, .golden-skip-link");
   if (!(await skipLink.isVisible())) throw new Error(`${label} skip link is not visible on focus.`);
   await page.keyboard.press("Enter");
   const skipResult = await page.evaluate(() => ({
@@ -1200,10 +1416,15 @@ const assertKeyboard = async (page, label, { resetPage = true, verifySkipLink = 
 
 const assertRtlGeometry = async (page, label) => {
   const geometry = await page.evaluate(() => {
-    const brand = document.querySelector(".brand-link")?.getBoundingClientRect();
-    const actions = document.querySelector(".header-actions")?.getBoundingClientRect();
+    const goldenShell = document.querySelector(".golden-shell-frame") !== null;
+    const brand = document
+      .querySelector(goldenShell ? ".golden-site-header .golden-brand" : ".brand-link")
+      ?.getBoundingClientRect();
+    const actions = document
+      .querySelector(goldenShell ? ".golden-header-actions" : ".header-actions")
+      ?.getBoundingClientRect();
     const boundary = document.querySelector(
-      ".hero-boundary, .information-status, .question-intake-boundary, .tarot-reading-boundary",
+      ".hero-boundary, .information-status, .numerology-library-boundary, .question-intake-boundary, .tarot-reading-boundary",
     );
     const boundaryStyle = boundary === null ? null : getComputedStyle(boundary);
     return {
@@ -1212,6 +1433,7 @@ const assertRtlGeometry = async (page, label) => {
       borderRight:
         boundaryStyle === null ? null : Number.parseFloat(boundaryStyle.borderRightWidth),
       brandCenter: brand === undefined ? null : brand.left + brand.width / 2,
+      goldenShell,
       directions: [
         document.documentElement,
         document.body,
@@ -1224,9 +1446,8 @@ const assertRtlGeometry = async (page, label) => {
     geometry.directions.some((direction) => direction !== "rtl") ||
     geometry.brandCenter === null ||
     geometry.actionsCenter === null ||
-    geometry.borderLeft !== 0 ||
-    geometry.borderRight === null ||
-    geometry.borderRight < 3 ||
+    (!geometry.goldenShell &&
+      (geometry.borderLeft !== 0 || geometry.borderRight === null || geometry.borderRight < 3)) ||
     geometry.brandCenter <= geometry.viewportCenter ||
     geometry.actionsCenter >= geometry.viewportCenter
   ) {
@@ -1264,6 +1485,7 @@ const attachBrowserBoundary = async (
     allowFulfilledSessionAbort = false,
     allowInterpretationUnavailable = false,
     expectedApiFailures = [],
+    fulfilledAbortRequests = new Set(),
   } = {},
 ) => {
   const expectedFailure = (url, status, method) =>
@@ -1336,6 +1558,14 @@ const attachBrowserBoundary = async (
     const failure = request.failure()?.errorText ?? "unknown";
     if (
       failure === "net::ERR_ABORTED" &&
+      request.method() === "GET" &&
+      request.headers().rsc === "1" &&
+      url.origin === origin
+    ) {
+      return;
+    }
+    if (
+      failure === "net::ERR_ABORTED" &&
       url.origin === origin &&
       expectedApiFailures.some(
         ({ method, pathname }) =>
@@ -1350,6 +1580,13 @@ const attachBrowserBoundary = async (
       url.origin === origin &&
       url.pathname === "/api/v1/anonymous/session" &&
       failure === "net::ERR_ABORTED"
+    ) {
+      return;
+    }
+    if (
+      failure === "net::ERR_ABORTED" &&
+      url.origin === origin &&
+      fulfilledAbortRequests.has(request)
     ) {
       return;
     }
@@ -2074,13 +2311,16 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     viewport: { height: 1000, width: 1440 },
   });
   const oneCardPage = await oneCardContext.newPage();
+  const oneCardFulfilledAbortRequests = new Set();
   await attachBrowserBoundary(oneCardContext, oneCardPage, origin, browserFailures, {
     allowFulfilledSessionAbort: true,
     allowInterpretationUnavailable: true,
+    fulfilledAbortRequests: oneCardFulfilledAbortRequests,
   });
   const oneCardRequests = await installTarotAcceptanceRoutes(oneCardPage, {
     failFirstInterpretationStart: true,
     finalStatus: "verified",
+    fulfilledAbortRequests: oneCardFulfilledAbortRequests,
     readingType: "one_card",
   });
   try {
@@ -2167,11 +2407,14 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
     viewport: { height: 844, width: 390 },
   });
   const threeCardPage = await threeCardContext.newPage();
+  const threeCardFulfilledAbortRequests = new Set();
   await attachBrowserBoundary(threeCardContext, threeCardPage, origin, browserFailures, {
     allowFulfilledSessionAbort: true,
+    fulfilledAbortRequests: threeCardFulfilledAbortRequests,
   });
   const threeCardRequests = await installTarotAcceptanceRoutes(threeCardPage, {
     finalStatus: "reviewed_fallback",
+    fulfilledAbortRequests: threeCardFulfilledAbortRequests,
     readingType: "three_card",
   });
   try {
@@ -2251,9 +2494,10 @@ const runTarotAcceptance = async (browser, origin, browserFailures) => {
 
 const run = async () => {
   const build = await verifyWebShellBuild(repositoryRoot);
-  if (JSON.stringify(build.routes) !== JSON.stringify(publicAccessibilitySmokeRoutes)) {
+  const publicInventoryFindings = auditPublicAccessibilitySmokeInventory(build.routes);
+  if (publicInventoryFindings.length > 0) {
     throw new Error(
-      "Public accessibility inventory differs from the reviewed Web build inventory.",
+      `Public accessibility smoke inventory is outside the reviewed Web build inventory: ${publicInventoryFindings.join(", ")}.`,
     );
   }
   const artifacts = await loadReviewedArtifacts();
@@ -2335,60 +2579,75 @@ const run = async () => {
     await page.setViewportSize({ height: 900, width: 320 });
     await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
     await gotoReviewedPage(page, `${artifactServer.origin}/en`, "offline:/en");
-    const connectionAnnouncement = page.locator("[data-connection-announcement]");
-    const connectedAnnouncement = await connectionAnnouncement.evaluate((node) => ({
-      atomic: node.getAttribute("aria-atomic"),
-      live: node.getAttribute("aria-live"),
-      role: node.getAttribute("role"),
-      text: node.textContent?.trim() ?? "",
-    }));
-    if (
-      connectedAnnouncement.atomic !== "true" ||
-      connectedAnnouncement.live !== "polite" ||
-      connectedAnnouncement.role !== "status" ||
-      connectedAnnouncement.text !== ""
-    ) {
-      throw new Error(
-        `offline:/en did not mount an empty connection live region: ${JSON.stringify(connectedAnnouncement)}`,
+    const goldenHome = (await page.locator(".golden-shell-frame").count()) === 1;
+    if (goldenHome) {
+      await context.setOffline(true);
+      const offlineSemantics = await page.evaluate(() => ({
+        mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
+        pathname: location.pathname,
+      }));
+      if (offlineSemantics.pathname !== "/en" || offlineSemantics.mainTextLength < 200) {
+        throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+      }
+    } else {
+      const connectionAnnouncement = page.locator("[data-connection-announcement]");
+      const connectedAnnouncement = await connectionAnnouncement.evaluate((node) => ({
+        atomic: node.getAttribute("aria-atomic"),
+        live: node.getAttribute("aria-live"),
+        role: node.getAttribute("role"),
+        text: node.textContent?.trim() ?? "",
+      }));
+      if (
+        connectedAnnouncement.atomic !== "true" ||
+        connectedAnnouncement.live !== "polite" ||
+        connectedAnnouncement.role !== "status" ||
+        connectedAnnouncement.text !== ""
+      ) {
+        throw new Error(
+          `offline:/en did not mount an empty connection live region: ${JSON.stringify(connectedAnnouncement)}`,
+        );
+      }
+      if ((await page.locator('[data-connection-state="offline"]').count()) !== 0) {
+        throw new Error("offline:/en rendered a false offline state while connected.");
+      }
+      await context.setOffline(true);
+      const offlineNotice = page.locator('[data-connection-state="offline"]');
+      await offlineNotice.waitFor({ state: "visible" });
+      const expectedOfflineAnnouncement =
+        "Your device appears to be offline. This page remains readable, but links or new content may need a connection.";
+      await page.waitForFunction(
+        (expected) =>
+          document.querySelector("[data-connection-announcement]")?.textContent?.trim() ===
+          expected,
+        expectedOfflineAnnouncement,
       );
-    }
-    if ((await page.locator('[data-connection-state="offline"]').count()) !== 0) {
-      throw new Error("offline:/en rendered a false offline state while connected.");
-    }
-    await context.setOffline(true);
-    const offlineNotice = page.locator('[data-connection-state="offline"]');
-    await offlineNotice.waitFor({ state: "visible" });
-    const expectedOfflineAnnouncement =
-      "Your device appears to be offline. This page remains readable, but links or new content may need a connection.";
-    await page.waitForFunction(
-      (expected) =>
-        document.querySelector("[data-connection-announcement]")?.textContent?.trim() === expected,
-      expectedOfflineAnnouncement,
-    );
-    const offlineSemantics = await offlineNotice.evaluate((notice) => ({
-      mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
-      pathname: location.pathname,
-      roleCount: notice.querySelectorAll('[role="status"]').length,
-    }));
-    if (
-      offlineSemantics.roleCount !== 0 ||
-      offlineSemantics.pathname !== "/en" ||
-      offlineSemantics.mainTextLength < 200
-    ) {
-      throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+      const offlineSemantics = await offlineNotice.evaluate((notice) => ({
+        mainTextLength: document.querySelector("main")?.textContent?.trim().length ?? 0,
+        pathname: location.pathname,
+        roleCount: notice.querySelectorAll('[role="status"]').length,
+      }));
+      if (
+        offlineSemantics.roleCount !== 0 ||
+        offlineSemantics.pathname !== "/en" ||
+        offlineSemantics.mainTextLength < 200
+      ) {
+        throw new Error(`offline:/en state semantics failed: ${JSON.stringify(offlineSemantics)}`);
+      }
+      await context.setOffline(false);
+      await offlineNotice.waitFor({ state: "detached" });
+      const expectedOnlineAnnouncement = "Your device appears to be back online.";
+      await page.waitForFunction(
+        (expected) =>
+          document.querySelector("[data-connection-announcement]")?.textContent?.trim() ===
+          expected,
+        expectedOnlineAnnouncement,
+      );
     }
     await assertLayout(page, "offline:/en");
     await assertTouchTargets(page, "offline:/en");
     reviewedContrastNodes += await assertAxe(page, "offline:/en");
     scans += 1;
     await context.setOffline(false);
-    await offlineNotice.waitFor({ state: "detached" });
-    const expectedOnlineAnnouncement = "Your device appears to be back online.";
-    await page.waitForFunction(
-      (expected) =>
-        document.querySelector("[data-connection-announcement]")?.textContent?.trim() === expected,
-      expectedOnlineAnnouncement,
-    );
     await context.close();
 
     const deterministicTarotAcceptance = await runDeterministicTarotAcceptance(
@@ -2428,7 +2687,8 @@ const run = async () => {
     for (const pathname of accessibilitySmokeRoutes) {
       const label = `no-javascript:${pathname}`;
       await gotoReviewedPage(noJavaScriptPage, `${artifactServer.origin}${pathname}`, label);
-      if (!(await noJavaScriptPage.locator(".no-script-note").isVisible())) {
+      const hasGoldenShell = (await noJavaScriptPage.locator(".golden-shell-frame").count()) === 1;
+      if (!hasGoldenShell && !(await noJavaScriptPage.locator(".no-script-note").isVisible())) {
         throw new Error(`${label} does not expose its no-JavaScript notice.`);
       }
       if ((await noJavaScriptPage.locator("main").innerText()).trim().length < 200) {

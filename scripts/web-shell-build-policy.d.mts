@@ -25,6 +25,10 @@ export function auditPublicSeoDocument(
   expectedPathname?: string,
   expectedCanonicalOrigin?: string,
   expectedRobots?: "index, follow" | "noindex, nofollow",
+  options?: Readonly<{
+    expectedOpenGraphType?: "article" | "website";
+    expectedStructuredDataType?: "Article" | "CollectionPage" | "WebPage" | "WebSite" | null;
+  }>,
 ): readonly string[];
 
 export function auditWebShellBuildArtifacts(
@@ -45,6 +49,7 @@ export function auditWebShellRouteArtifacts(
     expectedRobots?: "index, follow" | "noindex, nofollow";
     html: string;
     prerenderManifest: unknown;
+    requiresGeoAnswerContext?: boolean;
     routeMetadata: unknown;
     routesManifest: unknown;
   }>,

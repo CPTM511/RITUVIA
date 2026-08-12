@@ -58,8 +58,14 @@ describe("environment file contract", () => {
     const turbo = JSON.parse(await readFile(path.join(root, "turbo.json"), "utf8")) as {
       tasks: { build: { env: string[] } };
     };
+    const buildOrchestratorEnvironmentVariables = [
+      ...buildEnvironmentVariables,
+      "RITUVIA_BUILD_SOURCE_SHA",
+    ];
 
-    expect([...turbo.tasks.build.env].sort()).toEqual([...buildEnvironmentVariables].sort());
+    expect([...turbo.tasks.build.env].sort()).toEqual(
+      [...buildOrchestratorEnvironmentVariables].sort(),
+    );
     expect(turbo.tasks.build.env).not.toContain("DATABASE_URL");
   });
 });
@@ -101,12 +107,24 @@ describe("source configuration boundaries", () => {
 
     expect(environmentReaders.sort()).toEqual([
       "apps/web/config/server.ts",
+      "apps/web/instrumentation.ts",
       "apps/web/next.config.ts",
+      "apps/web/server/observability.ts",
+      "apps/web/server/recovery-staging.ts",
       "apps/web/start.mjs",
       "apps/worker/src/main.ts",
+      "packages/astrology-engine-native/scripts/prepare-native.mjs",
+      "packages/astrology-engine-native/scripts/verify-corresponding-source.mjs",
+      "packages/astrology-engine-native/scripts/verify-native-security.mjs",
+      "packages/astrology-engine-native/scripts/verify-native.mjs",
       "packages/db/prisma.config.ts",
       "packages/db/prisma/seed.ts",
+      "packages/db/scripts/configure-recovery-item-10-staging.mjs",
+      "packages/db/scripts/configure-recovery-item-11-staging.mjs",
+      "packages/db/scripts/configure-recovery-item-9-staging.mjs",
       "packages/db/scripts/local-postgres.mjs",
+      "packages/db/scripts/repair-recovery-item-11-country-policy.mjs",
+      "packages/db/scripts/verify-backup-recovery.ts",
       "packages/db/scripts/verify-ci-foundation.ts",
       "packages/db/scripts/verify-foundation.mjs",
     ]);

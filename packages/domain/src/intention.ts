@@ -83,7 +83,7 @@ const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 const utcInstantPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/u;
 const forbiddenPrivateText =
-  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
+  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
 const coerciveControlPatterns = Object.freeze([
   /\b(?:force|compel|control|manipulate)\s+(?:him|her|them|someone|my\s+(?:partner|ex|boss|friend|family))\b/iu,
   /\bmake\s+(?:him|her|them|someone|my\s+(?:partner|ex|boss|friend|family))\b/iu,
@@ -129,10 +129,10 @@ const invalidOutput = (): never => {
 
 const normalizePrivateText = (value: unknown, maximumLength: number, output = false): string => {
   if (typeof value !== "string") return output ? invalidOutput() : invalidInput();
-  const normalized = value.normalize("NFKC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+  const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
   if (
     normalized.length === 0 ||
-    normalized.length > maximumLength ||
+    Array.from(normalized).length > maximumLength ||
     forbiddenPrivateText.test(normalized)
   ) {
     return output ? invalidOutput() : invalidInput();
@@ -221,8 +221,9 @@ export const evaluateReflectionIntentionAgencyV1 = (
   intentionCode: ReflectionIntentionCode,
 ): ReflectionIntentionAgencyResult => {
   const intentionText = normalizePrivateText(value, reflectionIntentionTextMaximumLength);
-  if (incompleteTemplatePattern.test(intentionText)) return invalidInput();
-  return coerciveControlPatterns.some((pattern) => pattern.test(intentionText))
+  const policyText = intentionText.normalize("NFKC");
+  if (incompleteTemplatePattern.test(policyText)) return invalidInput();
+  return coerciveControlPatterns.some((pattern) => pattern.test(policyText))
     ? Object.freeze({
         kind: "reframe_required",
         suggestedIntentionText: reviewedReframeFor(intentionCode),

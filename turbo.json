@@ -13,9 +13,10 @@
         "BRAND_SOCIAL_HANDLES",
         "BRAND_SUPPORT_EMAIL",
         "BRAND_TAGLINE",
-        "BRAND_TRANSACTIONAL_SENDER"
+        "BRAND_TRANSACTIONAL_SENDER",
+        "RITUVIA_BUILD_SOURCE_SHA"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", "src/generated/prisma/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "dependsOn": ["^build"],

@@ -55,6 +55,29 @@
 | Decision | D-070 | Approved conservative Western astrology V1 calculation method | [decisions/D-070.md](./decisions/D-070.md) |
 | Decision | D-071 | Canonicalize the astrology kill-switch persistence key | [decisions/D-071.md](./decisions/D-071.md) |
 | Decision | D-072 | Separate astrology implementation completion from deployed-source publication | [decisions/D-072.md](./decisions/D-072.md) |
+| Decision | D-073 | Approved English Western astrology education publication | [decisions/D-073.md](./decisions/D-073.md) |
+| Decision | D-074 | Checksummed ICU localization publication boundary | [decisions/D-074.md](./decisions/D-074.md) |
+| Decision | D-075 | Test-only RTL pseudolocale and structural bidi boundary | [decisions/D-075.md](./decisions/D-075.md) |
+| Decision | D-076 | Approval-bound localized public route registry | [decisions/D-076.md](./decisions/D-076.md) |
+| Decision | D-077 | Locale-safe writing systems and private-text preservation | [decisions/D-077.md](./decisions/D-077.md) |
+| Decision | D-078 | Versioned lifecycle messages with strict delivery locale | [decisions/D-078.md](./decisions/D-078.md) |
+| Decision | D-079 | Development-stage launch, age, refund, and growth baseline | [decisions/D-079.md](./decisions/D-079.md) |
+| Decision | D-080 | Git-authored editorial registry with fail-closed publication authority | [decisions/D-080.md](./decisions/D-080.md) |
+| Decision | D-081 | Approved finite English Tarot education publication | [decisions/D-081.md](./decisions/D-081.md) |
+| Decision | D-082 | Approved finite English ritual and reflection publication | [decisions/D-082.md](./decisions/D-082.md) |
+| Decision | D-083 | Source-bound public-page quality authorization | [decisions/D-083.md](./decisions/D-083.md) |
+| Decision | D-084 | Visible-source structured data and complete crawl validation | [decisions/D-084.md](./decisions/D-084.md) |
+| Decision | D-085 | Local-only redacted one-card share artifacts | [decisions/D-085.md](./decisions/D-085.md) |
+| Decision | D-086 | Conservative visible GEO answer authority projection | [decisions/D-086.md](./decisions/D-086.md) |
+| Decision | D-087 | Fail-closed offline SEO/GEO performance and freshness operations | [decisions/D-087.md](./decisions/D-087.md) |
+| Decision | D-088 | Fail-closed offline AI operations metrics and review thresholds | [decisions/D-088.md](./decisions/D-088.md) |
+| Decision | D-089 | Complete the public-shell registry compatibility window | [decisions/D-089.md](./decisions/D-089.md) |
+| Decision | D-090 | Public AGPL repository with enforced main protection | [decisions/D-090.md](./decisions/D-090.md) |
+| Decision | D-091 | Separate Stripe sandbox approval from production underwriting | [decisions/D-091.md](./decisions/D-091.md) |
+| Decision | D-098 | Founder Acceptance Recovery scope and governance | [decisions/D-098.md](./decisions/D-098.md) |
+| Decision | D-099 | Owner-authorized production-capable real-funds activation | [decisions/D-099.md](./decisions/D-099.md) |
+| Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
+| Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
 | Task | RIT-010 | Accessible English Web shell and locale-prefixed routing | [tasks/RIT-010.md](./tasks/RIT-010.md) |
 | Task | RIT-011 | Semantic design tokens and accessible component primitives | [tasks/RIT-011.md](./tasks/RIT-011.md) |
@@ -62,6 +85,7 @@
 | Task | RIT-013 | SEO metadata, canonical, robots, and sitemap foundation | [tasks/RIT-013.md](./tasks/RIT-013.md) |
 | Task | RIT-014 | Accessibility and pseudolocale CI smoke | [tasks/RIT-014.md](./tasks/RIT-014.md) |
 | Task | RIT-015 | Resilient page-level state patterns | [tasks/RIT-015.md](./tasks/RIT-015.md) |
+| Task | RIT-016 | Retire and remove the public-shell rollout flag | [tasks/RIT-016.md](./tasks/RIT-016.md) |
 | Task | RIT-020 | Anonymous subject, session, and consent baseline | [tasks/RIT-020.md](./tasks/RIT-020.md) |
 | Task | RIT-021 | Safe question and theme intake | [tasks/RIT-021.md](./tasks/RIT-021.md) |
 | Task | RIT-022 | Versioned tarot deck, spread, and content schema | [tasks/RIT-022.md](./tasks/RIT-022.md) |
@@ -80,6 +104,7 @@
 | Task | RIT-035 | Tarot AI interpretation polling UX | [tasks/RIT-035.md](./tasks/RIT-035.md) |
 | Task | RIT-036 | Fixed AI regression and adversarial release evaluations | [tasks/RIT-036.md](./tasks/RIT-036.md) |
 | Task | RIT-037 | Exact-version interpretation reporting | [tasks/RIT-037.md](./tasks/RIT-037.md) |
+| Task | RIT-038 | Privacy-safe AI cost, latency, fallback, and safety operations | [tasks/RIT-038.md](./tasks/RIT-038.md) |
 | Task | RIT-040 | Intention domain and composer | [tasks/RIT-040.md](./tasks/RIT-040.md) |
 | Task | RIT-041 | Ritual template and object domain | [tasks/RIT-041.md](./tasks/RIT-041.md) |
 | Task | RIT-042 | Accessible free candle and incense Sanctuary | [tasks/RIT-042.md](./tasks/RIT-042.md) |
@@ -99,6 +124,8 @@
 | Task | RIT-060 | Versioned Country Policy Engine | [tasks/RIT-060.md](./tasks/RIT-060.md) |
 | Task | RIT-061 | Immutable Catalog, Product, and Price Registry | [tasks/RIT-061.md](./tasks/RIT-061.md) |
 | Task | RIT-062 | Commercial Transaction and Credits Foundation | [tasks/RIT-062.md](./tasks/RIT-062.md) |
+| Task | RIT-063 | First Fiat Hosted-Checkout Sandbox Adapter | [tasks/RIT-063.md](./tasks/RIT-063.md) |
+| Task | RIT-064 | Signed Payment Webhook Ingestion and Processing | [tasks/RIT-064.md](./tasks/RIT-064.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
@@ -109,6 +136,22 @@
 | Task | RIT-092 | Encrypted birth profile and uncertainty model | [tasks/RIT-092.md](./tasks/RIT-092.md) |
 | Task | RIT-093 | Astrology engine adapter and natal facts | [tasks/RIT-093.md](./tasks/RIT-093.md) |
 | Task | RIT-094 | Natal chart and textual table UI | [tasks/RIT-094.md](./tasks/RIT-094.md) |
+| Task | RIT-095 | Natal interpretation, fact verifier, and evaluations | [tasks/RIT-095.md](./tasks/RIT-095.md) |
+| Task | RIT-096 | Curated astrology education cluster | [tasks/RIT-096.md](./tasks/RIT-096.md) |
+| Task | RIT-100 | ICU i18n and content translation workflow | [tasks/RIT-100.md](./tasks/RIT-100.md) |
+| Task | RIT-101 | RTL architecture and Arabic pseudotranslation QA | [tasks/RIT-101.md](./tasks/RIT-101.md) |
+| Task | RIT-102 | CJK and Devanagari typography and input QA | [tasks/RIT-102.md](./tasks/RIT-102.md) |
+| Task | RIT-103 | Localized routes, slugs, hreflang, sitemaps, and redirects | [tasks/RIT-103.md](./tasks/RIT-103.md) |
+| Task | RIT-104 | Localize transactional email/reminder/support templates | [tasks/RIT-104.md](./tasks/RIT-104.md) |
+| Task | RIT-110 | Structured editorial content repository and publishing workflow | [tasks/RIT-110.md](./tasks/RIT-110.md) |
+| Task | RIT-111 | Tarot card library and spread guide cluster | [tasks/RIT-111.md](./tasks/RIT-111.md) |
+| Task | RIT-112 | Ritual and reflection guide cluster | [tasks/RIT-112.md](./tasks/RIT-112.md) |
+| Task | RIT-113 | Programmatic public-page inventory and quality gate | [tasks/RIT-113.md](./tasks/RIT-113.md) |
+| Task | RIT-114 | Structured data and complete public crawl validation | [tasks/RIT-114.md](./tasks/RIT-114.md) |
+| Task | RIT-115 | Redacted localized one-card share artifacts | [tasks/RIT-115.md](./tasks/RIT-115.md) |
+| Task | RIT-116 | Visible GEO answer, source, review, and entity authority | [tasks/RIT-116.md](./tasks/RIT-116.md) |
+| Task | RIT-117 | Offline SEO/GEO performance and freshness operations | [tasks/RIT-117.md](./tasks/RIT-117.md) |
+| Task | RIT-123 | Implement backups and isolated restore test | [tasks/RIT-123.md](./tasks/RIT-123.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
 | Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
 

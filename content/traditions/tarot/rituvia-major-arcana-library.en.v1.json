@@ -1,0 +1,206 @@
+{
+  "schemaVersion": "tarot-library-publication.v1",
+  "contentType": "tarot_library_publication",
+  "catalogId": "rituvia.tarot.major-arcana-library.en",
+  "version": "1.0.0",
+  "locale": "en",
+  "method": "tarot",
+  "title": "RITUVIA Major Arcana reflection library",
+  "audience": "adults",
+  "publicationStatus": "approved",
+  "riskClassification": "sensitive_symbolic_education",
+  "sourceCatalog": {
+    "catalogId": "rituvia.major-arcana-catalog",
+    "version": "1.0.0",
+    "sha256": "412c8605631c0f8953b3b5864ac7428507c157a13a0f981c02684615ea6e39db"
+  },
+  "editorial": {
+    "status": "approved",
+    "authorId": "product.codex",
+    "reviewerId": "owner",
+    "reviewerRole": "owner",
+    "requiredApprovalRole": "owner",
+    "reviewedDate": "2026-07-28",
+    "effectiveDate": "2026-07-28",
+    "reviewDueDate": "2027-07-28",
+    "approvalReference": "D-081",
+    "supersedes": null,
+    "changeReason": "Create a finite English educational projection of the approved RITUVIA Major Arcana catalog with explicit source, safety, and indexing boundaries."
+  },
+  "publicationPolicy": {
+    "publicPublicationAllowed": true,
+    "indexingAllowed": true,
+    "personalizedResultsIndexable": false,
+    "aiRetrievalAllowed": false,
+    "profileDoorwayRoutesAllowed": false,
+    "readingPath": "/en/tarot/one-card"
+  },
+  "hub": {
+    "eyebrow": "Tarot card library",
+    "title": "The Major Arcana as reflection, not prediction",
+    "description": "Explore 22 Major Arcana cards and two practical spreads through upright and reversed possibilities, grounded questions, small actions, and clear limits.",
+    "answer": "RITUVIA uses the Major Arcana as a set of symbolic prompts. Each page shows what a card might help you notice, what tension it may surface, and one small action you can accept, change, or ignore.",
+    "boundary": "A card cannot determine another person's mind, diagnose a condition, guarantee an outcome, or replace medical, legal, financial, or crisis support.",
+    "sourceNote": "Card identities follow the Rider-Waite-Smith Major Arcana ordering convention. The English reflection copy and abstract interface symbols are RITUVIA-original adaptations reviewed for adult symbolic self-reflection."
+  },
+  "labels": {
+    "cardListTitle": "Browse all 22 Major Arcana cards",
+    "spreadListTitle": "Choose a reflective spread",
+    "uprightTitle": "Upright reflection",
+    "reversedTitle": "Reversed reflection",
+    "themesTitle": "Themes to notice",
+    "possibilityTitle": "A constructive possibility",
+    "tensionTitle": "A tension to hold lightly",
+    "questionTitle": "Reflection question",
+    "actionTitle": "Small action",
+    "limitsTitle": "What this cannot determine",
+    "positionsTitle": "Spread positions",
+    "stepsTitle": "How to use this spread",
+    "sourceTitle": "Sources and review status",
+    "relatedTitle": "Continue exploring",
+    "cardEyebrow": "Major Arcana",
+    "spreadEyebrow": "Tarot spread guide",
+    "previousCard": "Previous Major Arcana",
+    "nextCard": "Next Major Arcana",
+    "reviewedDateTitle": "Reviewed date",
+    "reviewDueTitle": "Next review due",
+    "pendingReviewValue": "Pending owner review",
+    "aiAssistanceTitle": "AI assistance",
+    "aiAssistanceValue": "AI-assisted drafting is disclosed in the exact source catalog.",
+    "readingAction": "Try a private one-card reflection",
+    "safetyAction": "Read the safety approach",
+    "backToHub": "Back to the Tarot library"
+  },
+  "cardRoutes": [
+    { "cardId": "arcana-00-the-fool", "slug": "the-fool", "number": "0", "symbol": "✧" },
+    { "cardId": "arcana-01-the-magician", "slug": "the-magician", "number": "I", "symbol": "∞" },
+    {
+      "cardId": "arcana-02-the-high-priestess",
+      "slug": "the-high-priestess",
+      "number": "II",
+      "symbol": "☾"
+    },
+    { "cardId": "arcana-03-the-empress", "slug": "the-empress", "number": "III", "symbol": "✿" },
+    { "cardId": "arcana-04-the-emperor", "slug": "the-emperor", "number": "IV", "symbol": "▣" },
+    {
+      "cardId": "arcana-05-the-hierophant",
+      "slug": "the-hierophant",
+      "number": "V",
+      "symbol": "⌂"
+    },
+    { "cardId": "arcana-06-the-lovers", "slug": "the-lovers", "number": "VI", "symbol": "♡" },
+    { "cardId": "arcana-07-the-chariot", "slug": "the-chariot", "number": "VII", "symbol": "➶" },
+    { "cardId": "arcana-08-strength", "slug": "strength", "number": "VIII", "symbol": "♌" },
+    { "cardId": "arcana-09-the-hermit", "slug": "the-hermit", "number": "IX", "symbol": "✦" },
+    {
+      "cardId": "arcana-10-wheel-of-fortune",
+      "slug": "wheel-of-fortune",
+      "number": "X",
+      "symbol": "⊕"
+    },
+    { "cardId": "arcana-11-justice", "slug": "justice", "number": "XI", "symbol": "⚖" },
+    {
+      "cardId": "arcana-12-the-hanged-man",
+      "slug": "the-hanged-man",
+      "number": "XII",
+      "symbol": "⌛"
+    },
+    { "cardId": "arcana-13-death", "slug": "death", "number": "XIII", "symbol": "◇" },
+    { "cardId": "arcana-14-temperance", "slug": "temperance", "number": "XIV", "symbol": "≈" },
+    { "cardId": "arcana-15-the-devil", "slug": "the-devil", "number": "XV", "symbol": "⛓" },
+    { "cardId": "arcana-16-the-tower", "slug": "the-tower", "number": "XVI", "symbol": "ϟ" },
+    { "cardId": "arcana-17-the-star", "slug": "the-star", "number": "XVII", "symbol": "☆" },
+    { "cardId": "arcana-18-the-moon", "slug": "the-moon", "number": "XVIII", "symbol": "☽" },
+    { "cardId": "arcana-19-the-sun", "slug": "the-sun", "number": "XIX", "symbol": "☼" },
+    { "cardId": "arcana-20-judgement", "slug": "judgement", "number": "XX", "symbol": "♬" },
+    { "cardId": "arcana-21-the-world", "slug": "the-world", "number": "XXI", "symbol": "◎" }
+  ],
+  "spreadRoutes": [
+    {
+      "spreadId": "one-card-perspective",
+      "slug": "one-card-spread",
+      "title": "One-card spread for a grounded perspective",
+      "description": "Use one card as a bounded lens on a theme, then choose one reflection question and one reversible action.",
+      "answer": "A one-card spread is useful when you want one clear prompt rather than a prediction. Name the theme, notice the card's possibilities and tensions, then decide what fits your real circumstances.",
+      "steps": [
+        "Choose a theme you can influence, such as your own response, priorities, or next step.",
+        "Read both the constructive possibility and the tension without treating either as certainty.",
+        "Answer one reflection question in your own words.",
+        "Choose one small, reversible action or decide that no action is needed."
+      ],
+      "limitations": [
+        "It cannot reveal another person's private thoughts or intentions.",
+        "It cannot diagnose, predict, or guarantee an outcome.",
+        "Repeated redraws do not make an answer more true."
+      ],
+      "reflectionQuestions": [
+        "What feels useful here without assuming the card is objectively correct?",
+        "What remains within my control today?"
+      ]
+    },
+    {
+      "spreadId": "situation-action-possibility",
+      "slug": "situation-action-possibility-spread",
+      "title": "Situation, Action, Possibility three-card spread",
+      "description": "Use three ordered cards to examine the present situation, one action within your control, and a possibility that remains uncertain.",
+      "answer": "This spread separates observation, agency, and uncertainty. The first card frames what may deserve attention, the second supports a small action, and the third offers a possibility rather than a forecast.",
+      "steps": [
+        "Read the Situation card as a prompt about the present context, not hidden truth.",
+        "Read the Action card only for choices that remain within your control.",
+        "Read the Possibility card as one scenario to consider, never a promised result.",
+        "Compare the three lenses and write one grounded sentence you want to carry forward."
+      ],
+      "limitations": [
+        "The positions do not establish causes, facts, or another person's intentions.",
+        "The Possibility position is not a prediction.",
+        "No card overrides evidence, professional advice, consent, or personal safety."
+      ],
+      "reflectionQuestions": [
+        "Which position helps me separate evidence from assumption?",
+        "What is one proportionate action I can take without forcing an outcome?"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "sourceId": "rituvia.tarot.major-arcana-catalog",
+      "version": "1.0.0",
+      "sourceType": "approved_product_catalog",
+      "title": "RITUVIA 22-card Major Arcana reflections",
+      "creator": "RITUVIA owner-provided prototype and product editorial process",
+      "publisher": "RITUVIA",
+      "identifier": "content/traditions/tarot/rituvia-major-arcana.v1.json",
+      "claims": [
+        "Provides the exact approved 22-card identities, orientation content, reflection questions, small actions, and abstract interface symbols used by this library.",
+        "Uses Strength as VIII and Justice as XI within the declared Rider-Waite-Smith ordering convention.",
+        "Contains RITUVIA-original English reflective copy rather than reproduced historical deck artwork or copied guidebook text."
+      ],
+      "rights": {
+        "status": "owned",
+        "territory": "worldwide",
+        "allowedUses": ["public_display", "commercial_use"],
+        "evidenceReference": "D-044"
+      }
+    },
+    {
+      "sourceId": "rituvia.editorial.tarot-library",
+      "version": "1.0.0",
+      "sourceType": "original_editorial",
+      "title": "RITUVIA Tarot library editorial layer",
+      "creator": "RITUVIA product editorial",
+      "publisher": "RITUVIA",
+      "identifier": "content/traditions/tarot/rituvia-major-arcana-library.en.v1.json",
+      "claims": [
+        "Provides the answer-first hub, spread instructions, limitations, source notes, navigation labels, and indexing policy.",
+        "Keeps card interpretation as possibility and user-owned reflection rather than prediction or professional advice.",
+        "Allows only the finite approved card and spread route inventory declared in this artifact."
+      ],
+      "rights": {
+        "status": "owned",
+        "territory": "worldwide",
+        "allowedUses": ["public_display", "commercial_use", "seo_publication", "translation"],
+        "evidenceReference": "D-081"
+      }
+    }
+  ]
+}

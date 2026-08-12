@@ -255,13 +255,39 @@ await withLocalPostgresLease(async (lease) => {
         (await reminders.get({ revisitId, sessionToken: owner.sessionToken }))?.deliveryState,
         "pending",
       );
-      assert.equal(
-        await reminders.authorizeDelivery({
-          leaseToken: firstJob.leaseToken,
-          subscriptionId: firstJob.subscriptionId,
-        }),
-        true,
+      assert.equal(firstJob.locale, "en");
+      assert.equal(firstJob.templateLocale, "en");
+      assert.equal(firstJob.templateFallbackUsed, false);
+      assert.match(firstJob.templateSourceChecksum, /^[0-9a-f]{64}$/u);
+      assert.match(firstJob.scheduledLocalDate, /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/u);
+      assert.equal(firstJob.quietHours, "none");
+      const authorization = {
+        leaseToken: firstJob.leaseToken,
+        subscriptionId: firstJob.subscriptionId,
+        templateFallbackUsed: firstJob.templateFallbackUsed,
+        templateId: firstJob.templateId,
+        templateLocale: firstJob.templateLocale,
+        templateSourceChecksum: firstJob.templateSourceChecksum,
+        templateVersion: firstJob.templateVersion,
+      };
+      await migrator.query(
+        `UPDATE revisit
+            SET scheduled_local_date = CURRENT_DATE + 1,
+                time_zone = 'Pacific/Kiritimati',
+                updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1::uuid`,
+        [revisitId],
       );
+      assert.equal(await reminders.authorizeDelivery(authorization), false);
+      await migrator.query(
+        `UPDATE revisit
+            SET scheduled_local_date = CURRENT_DATE - 1,
+                time_zone = 'UTC',
+                updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1::uuid`,
+        [revisitId],
+      );
+      assert.equal(await reminders.authorizeDelivery(authorization), true);
       assert.equal(
         await reminders.completeDelivery({
           leaseToken: bearer(),

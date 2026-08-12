@@ -121,6 +121,15 @@ request, offline/RTL/320px/touch/axe/privacy behavior; the continuous anonymous 
 safe empty account state without console errors. The full unit matrix remains reserved for the
 next milestone/release trigger.
 
+RIT-104 extends that focused boundary with lifecycle source/runtime checksum and parity tests,
+strict safe-header/control/link validation, exact locale/date/time-zone/quiet-hours formatting,
+HTML/plain-text equivalence, delivery suppression, preview-only fallback telemetry, support-receipt
+preview, template-version rejection, and a real-PostgreSQL claim/authorization race where the
+Revisit date or time zone changes after claim. `test:lifecycle-message-preview` renders three
+messages in Chromium at 320 pixels, runs Axe, and denies external requests, storage writes, layout
+overflow, or locale activation. `test:revisit-browser` proves the GET-safe preference deep link
+focuses settings without changing consent.
+
 RIT-057 adds `test:identity-privacy-authorization`, which composes focused authentication, merge,
 account-control, export, deletion, admin-policy, observability, analytics, metadata, PostgreSQL
 recovery, and production-artifact browser gates without hiding their stage labels. Its
@@ -379,6 +388,25 @@ Manual/assisted release checks:
 - Screenshots for representative long German, Arabic, CJK, and Devanagari.
 - Glossary/forbidden term and translation-source version checks.
 
+RIT-102 adds a mutation-tested writing-system repository gate and a test-only hydrated Chromium
+harness. The harness loads production UI and Web CSS, verifies four CJK line-break profiles,
+actual platform-font glyph providers, Devanagari shaping, Japanese/Hindi controlled composition
+through rerenders, native ISO dates, 320px/400%-equivalent reflow, Axe, touch targets, and
+privacy-local requests/storage. Temporary screenshots are deleted after verification and do not
+update golden baselines. Native-device IME, WebKit/Firefox, assistive-technology, and qualified
+linguistic review remain release checks.
+
+RIT-103 adds mutation-style route-registry fixtures for localized slugs, reciprocal same-content
+alternates, explicit same-locale redirect history, approval evidence, missing default content,
+duplicate paths, sitemap index/shard partitioning, query/RSC/private exclusion, SSR document
+language/direction, and client-delivery isolation. Synthetic locale fixtures prove architecture
+only and cannot activate a locale.
+
+RIT-104 keeps synthetic non-English catalogs inside tests. They prove exact authorized rendering
+without creating a production catalog, route, email capability, support operation, or locale
+activation. The complete workspace suite remains deferred until a milestone integration,
+release-candidate, shared-runtime change, or focused-risk trigger under D-050.
+
 ## 10. Performance testing
 
 - Bundle budgets and route-level JavaScript.
@@ -461,3 +489,31 @@ A release candidate has a machine-readable evidence bundle:
 - Accessibility/performance report.
 - Backup/rollback readiness.
 - Known risks and owner acceptance.
+
+## 15. Public search representation gate
+
+For RIT-114, the optimized-build policy reads the complete 45-record public-page inventory and
+validates exact robots, canonical, hreflang, Open Graph, schema type, canonical entity, visible H1,
+visible description, and visible reviewed parent-link parity for every generated public document.
+The production configuration boundary requests the same 45 URLs rather than sampling only the
+four core pages.
+
+`pnpm test:public-search-browser` then exercises six representative routes at 320px in Chromium,
+covering all four allowed schema types and multiple content families. It rejects private-canary
+delivery, external or API requests, console/page errors, unsupported rich-result claims, and
+script-breaking JSON-LD input. This bounded browser matrix complements rather than repeats the
+complete static and HTTP crawl checks.
+
+## 16. Redacted share-card gate
+
+`pnpm test:tarot-share-browser` consumes the optimized production one-card document and exercises
+one synthetic completed reading at 320px. It checks that preview is explicit, the rendered preview
+is the exact 1200 by 630 SVG Blob, the bounded theme is present by default and removed everywhere
+by one control, and local download and supported native file sharing use exact matching bytes.
+
+Private canaries are placed in displayed question/action/invitation fields, the reading ID,
+cookie, and local storage. The gate rejects any canary in alt text, SVG, download, or share
+payload; canonical/Open Graph/Twitter output on the private page; an upload or external request;
+unexpected storage; unreleased object URLs; sub-44px controls; horizontal overflow; and blocking
+serious/critical Axe findings. Pure tests separately cover malformed URLs, unsafe text, XML
+escaping, production pseudolocale rejection, and serializer-only expanded LTR/RTL structure.

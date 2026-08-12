@@ -83,6 +83,8 @@ const loadProvider = (): AccountAuthProvider => {
       canonicalOrigin: configuration.brand.canonicalOrigin,
       challengeTtlSeconds: configuration.accountIdentityPolicy.challengeTtlSeconds,
       deploymentEnvironment: configuration.deploymentEnvironment,
+      encryptionKey: configuration.accountIdentityPolicy.emailEncryptionKey,
+      sandboxEnabled: configuration.recoveryIdentitySandbox?.enabled,
     });
     return authProvider;
   } catch {
@@ -139,12 +141,11 @@ export const startWebAccountAuth = async (input: {
       ...started,
       previousSessionToken: input.previousSessionToken,
     });
-    provider.stageLocalPreview(started);
     return Object.freeze({
       accepted: true,
       expiresAt: started.expiresAt,
       localPreviewPath: "/api/v1/auth/local-preview",
-      stateToken: started.state,
+      stateToken: provider.sealLocalPreview(started),
     });
   } catch (error) {
     return mapError(error);
@@ -172,7 +173,6 @@ export const completeWebLocalPreviewAuth = async (input: {
     state: started.state,
     token: started.token,
   });
-  provider.consumeLocalPreview(input.stateToken);
   return completed;
 };
 

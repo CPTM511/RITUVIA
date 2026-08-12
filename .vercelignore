@@ -1,0 +1,10 @@
+.env*
+.local/
+.playwright-cli/
+.release-cache/
+.vercel/
+**/.next/
+**/node_modules/
+packages/astrology-engine-native/.native-cache/
+*.log
+*.tsbuildinfo

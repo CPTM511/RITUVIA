@@ -7,11 +7,14 @@ import {
   type Locale,
   type PublicPageSlug,
 } from "../_i18n/routing";
+import { GeoAnswerContext } from "./geo-answer-context";
+import { PublicStructuredData } from "./public-structured-data";
 import { PublicSiteFrame } from "./public-site-frame";
 
 type PublicInformationPageProps = Readonly<{
   brandName: string;
   brandTagline: string;
+  canonicalOrigin: string;
   locale: Locale;
   messages: ShellMessages;
   page: PublicPageSlug;
@@ -31,6 +34,7 @@ const nextStepHref = (locale: Locale, page: PublicPageSlug) => {
 export function PublicInformationPage({
   brandName,
   brandTagline,
+  canonicalOrigin,
   locale,
   messages,
   page,
@@ -45,6 +49,13 @@ export function PublicInformationPage({
       locale={locale}
       messages={messages.shared}
     >
+      <PublicStructuredData
+        canonicalOrigin={canonicalOrigin}
+        description={content.introduction}
+        locale={locale}
+        routeId={page}
+        title={content.title}
+      />
       <main className="information-main" id="main-content" tabIndex={-1}>
         <header className="shell information-hero">
           <p className="eyebrow">{content.eyebrow}</p>
@@ -52,6 +63,8 @@ export function PublicInformationPage({
           <p className="information-introduction">{content.introduction}</p>
           <p className="information-status">{content.status}</p>
         </header>
+
+        <GeoAnswerContext brandName={brandName} locale={locale} routeId={page} />
 
         <div className="shell information-sections">
           {content.sections.map((section) => (

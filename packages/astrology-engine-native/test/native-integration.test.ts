@@ -28,6 +28,7 @@ const build =
     ? null
     : (JSON.parse(await readFile(metadataPath, "utf8")) as BuildRecord);
 const nativeDescribe = build === null ? describe.skip : describe;
+const productionNativeIt = build?.buildProfile === "production" ? it : it.skip;
 const method = Object.freeze({
   aspectPolicyVersion: "rituvia-major-aspects.v1" as const,
   catalogSha256: astrologyMethodCatalogSha256,
@@ -37,6 +38,37 @@ const method = Object.freeze({
 });
 
 nativeDescribe("Swiss Ephemeris native integration", () => {
+  productionNativeIt("attests and executes a relocatable packaged runtime root", async () => {
+    if (build === null || metadataPath === undefined) {
+      throw new Error("Production native build metadata is required.");
+    }
+    const adapter = await loadSwissEphemerisAdapterV1FromBuildMetadata({
+      buildMetadataPath: metadataPath,
+      maximumOutputBytes: 65_536,
+      timeoutMilliseconds: 3_000,
+      useBuildMetadataDirectoryAsRuntimeRoot: true,
+    });
+
+    await expect(
+      adapter.calculateNatal({
+        approximationWindowMinutes: 90,
+        houseSystem: "placidus",
+        inputSnapshotSha256: "9".repeat(64),
+        latitudeE6: 40_712_800,
+        longitudeE6: -74_006_000,
+        method,
+        profileRevision: 1,
+        schemaVersion: astrologyNatalRequestSchemaVersion,
+        timeCertainty: "approximate",
+        timeZoneProvenanceSha256: "8".repeat(64),
+        utcInstant: "2000-01-01T12:00:00.000Z",
+      }),
+    ).resolves.toMatchObject({
+      calculationStatus: "limited_approximate_time",
+      houses: null,
+    });
+  });
+
   it("matches the locked J2000 wrapper vector with explicit Swiss flags", async () => {
     if (build === null || metadataPath === undefined) {
       throw new Error("Native build metadata is required.");

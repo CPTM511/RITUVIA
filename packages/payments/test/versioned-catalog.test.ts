@@ -155,4 +155,46 @@ describe("versioned commercial catalog", () => {
       }),
     ).toThrow(CommerceError);
   });
+
+  it("selects the unique append-only supersession head and rejects forks or cycles", () => {
+    const successor = Object.freeze({
+      ...rituviaCatalog20260723Local,
+      supersedesVersion: rituviaCatalog20260723Local.version,
+      version: "local.catalog.2026-07-23.v2",
+    });
+    expect(
+      selectActiveCatalogVersionV1([rituviaCatalog20260723Local, successor], {
+        asOf: "2026-07-25T00:00:00.000Z",
+        environment: "local",
+      }),
+    ).toBe(successor);
+
+    const fork = Object.freeze({
+      ...successor,
+      version: "local.catalog.2026-07-23.v3",
+    });
+    expect(() =>
+      selectActiveCatalogVersionV1([rituviaCatalog20260723Local, successor, fork], {
+        asOf: "2026-07-25T00:00:00.000Z",
+        environment: "local",
+      }),
+    ).toThrow(CommerceError);
+
+    const cycleLeft = Object.freeze({
+      ...rituviaCatalog20260723Local,
+      supersedesVersion: "local.catalog.2026-07-23.cycle-right",
+      version: "local.catalog.2026-07-23.cycle-left",
+    });
+    const cycleRight = Object.freeze({
+      ...rituviaCatalog20260723Local,
+      supersedesVersion: cycleLeft.version,
+      version: "local.catalog.2026-07-23.cycle-right",
+    });
+    expect(() =>
+      selectActiveCatalogVersionV1([cycleLeft, cycleRight], {
+        asOf: "2026-07-25T00:00:00.000Z",
+        environment: "local",
+      }),
+    ).toThrow(CommerceError);
+  });
 });

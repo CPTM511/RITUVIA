@@ -24,11 +24,13 @@ export const accessibilitySmokeRoutes: readonly string[];
 export const privateAccessibilitySmokeRoutes: readonly string[];
 export const publicAccessibilitySmokeRoutes: readonly string[];
 
+export function auditPublicAccessibilitySmokeInventory(reviewedRoutes: unknown): readonly string[];
+
 export function resolveAccessibilityArtifactRequest(
   rawUrl: string,
 ): AccessibilityArtifactDescriptor | null;
 
-export function pseudoLocalizeText(value: string, direction?: "ltr" | "rtl"): string;
+export function pseudoLocalizeText(value: string, locale?: "en-XA" | "ar-XB"): string;
 
 export function auditAxeResult(
   result: AxeAuditResult,

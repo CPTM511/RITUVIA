@@ -19,11 +19,23 @@ const releaseCorrespondingSourceCommand =
   `pnpm test:release-corresponding-source -- --expected-revision "$GITHUB_SHA" ` +
   `--component-archive "$component_archive" --component-archive-sha256 "$component_sha256"`;
 const expectedRunCommands = Object.freeze({
-  database: Object.freeze(["pnpm install --frozen-lockfile", "pnpm test:ci-database"]),
+  database: Object.freeze([
+    "pnpm install --frozen-lockfile",
+    "pnpm test:ci-database",
+    "pnpm test:backup-recovery-database",
+  ]),
   quality: Object.freeze([
     "pnpm install --frozen-lockfile",
     "pnpm check:ci-contract",
     "pnpm check:architecture",
+    "pnpm check:environment-contract",
+    "pnpm check:ai-operations",
+    "pnpm check:localization",
+    "pnpm check:editorial-content",
+    "pnpm check:public-pages",
+    "pnpm check:search-operations",
+    "pnpm check:rtl",
+    "pnpm check:writing-systems",
     "pnpm check:records",
     "pnpm check:migrations",
     "pnpm check:generated",
@@ -35,6 +47,8 @@ const expectedRunCommands = Object.freeze({
     "pnpm test:configuration-boundary",
     "pnpm build",
     "pnpm exec playwright install --with-deps --only-shell chromium",
+    "pnpm test:public-search-browser",
+    "pnpm test:tarot-share-browser",
     "pnpm test:accessibility",
   ]),
   security: Object.freeze([
@@ -56,6 +70,7 @@ const expectedStepSignatures = Object.freeze({
     "uses:pnpm/action-setup",
     "run:pnpm install --frozen-lockfile",
     "run:pnpm test:ci-database",
+    "run:pnpm test:backup-recovery-database",
   ]),
   quality: Object.freeze([
     "uses:actions/checkout",
@@ -133,30 +148,60 @@ export const auditToolchainVersions = ({
 
 export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
   const expected = Object.freeze({
+    "check:ai-operations":
+      "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-ai-operations.ts",
     "check:architecture": "node --import tsx scripts/verify-architecture.ts",
+    "check:environment-contract": "node --import tsx scripts/verify-environment-contract.ts",
     "check:generated":
       "python3 -B scripts/sync_generated_evidence.py --check && python3 -B scripts/validate_instruction_pack.py",
+    "check:editorial-content":
+      "pnpm --filter @rituvia/i18n build && node --import tsx scripts/verify-editorial-content.ts",
+    "check:localization": "node scripts/verify-localization-workflow.mjs",
+    "check:public-pages": "node --import tsx scripts/verify-public-page-quality.ts",
+    "check:search-operations": "node --import tsx scripts/verify-search-operations.ts",
+    "check:rtl": "node --import tsx scripts/verify-rtl.ts",
+    "check:writing-systems": "node --import tsx scripts/verify-writing-systems.ts",
     "check:records":
       "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
     "check:evidence":
-      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
+      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:environment-contract && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
     test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
     "test:accessibility":
-      "node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-full-loop-browser.mjs",
+      "pnpm --filter @rituvia/i18n build && node scripts/verify-full-loop-browser.mjs && node scripts/verify-web-accessibility.mjs && node scripts/verify-intention-browser.mjs && node scripts/verify-ritual-browser.mjs && node scripts/verify-revisit-browser.mjs && node scripts/verify-writing-systems-browser.mjs",
     "test:ai-evals": "node --import tsx scripts/verify-ai-release-evals.ts",
     "test:astrology-native-corresponding-source":
       "pnpm --filter @rituvia/astrology-engine-native native:verify-corresponding-source",
     "test:astrology-native-sca": "pnpm --filter @rituvia/astrology-engine-native native:verify-sca",
     "test:astrology-native-security":
       "pnpm --filter @rituvia/astrology-engine-native native:verify-security",
+    "test:backup-recovery-database": "pnpm --filter @rituvia/db test:backup-recovery",
     "test:release-corresponding-source": "node scripts/verify-release-corresponding-source.mjs",
+    "test:public-search-browser": "node --import tsx scripts/verify-public-search-browser.mjs",
+    "test:tarot-share-browser": "node scripts/verify-tarot-share-browser.mjs",
   });
   if (!isRecord(scripts)) return [{ location: "package.json#scripts", rule: "ci-scripts" }];
   return Object.entries(expected).flatMap(([name, command]) =>
     scripts[name] === command
       ? []
       : [{ location: `package.json#scripts.${name}`, rule: "ci-script-command" }],
+  );
+};
+
+export const auditDatabaseCiScripts = (scripts: unknown): readonly WorkflowFinding[] => {
+  const expected = Object.freeze({
+    "test:backup-recovery":
+      "pnpm --filter @rituvia/domain build && pnpm generate && node --import tsx scripts/verify-backup-recovery.ts",
+    "test:ci":
+      "pnpm --filter @rituvia/domain build && pnpm --filter @rituvia/security build && pnpm generate && node --import tsx scripts/verify-ci-foundation.ts",
+  });
+  if (!isRecord(scripts)) {
+    return [{ location: "packages/db/package.json#scripts", rule: "ci-script-command" }];
+  }
+  return Object.entries(expected).flatMap(([name, command]) =>
+    scripts[name] === command
+      ? []
+      : [{ location: `packages/db/package.json#scripts.${name}`, rule: "ci-script-command" }],
   );
 };
 
@@ -256,7 +301,8 @@ const auditSteps = (
         add(findings, "untrusted-run-interpolation", location);
       }
       const expectedDatabaseEnvironment =
-        jobName === "database" && stepValue.run === "pnpm test:ci-database";
+        jobName === "database" &&
+        ["pnpm test:ci-database", "pnpm test:backup-recovery-database"].includes(stepValue.run);
       if (
         "env" in stepValue &&
         (!expectedDatabaseEnvironment ||

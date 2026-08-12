@@ -5,6 +5,8 @@ Run from the repository root:
 ```bash
 pnpm check:records
 pnpm check:generated
+pnpm check:public-pages
+pnpm check:environment-contract
 shasum -a 256 -c checksums.sha256
 ```
 
@@ -24,6 +26,8 @@ The fail-closed repository evidence commands are:
 ```bash
 pnpm check:ci-contract
 pnpm check:architecture
+pnpm check:environment-contract
+pnpm check:public-pages
 pnpm check:records
 pnpm check:migrations
 pnpm check:generated
@@ -33,6 +37,11 @@ pnpm scan:secrets
 
 The CI contract parses the active workflow with the exact locked YAML parser and enforces triggers,
 permissions, runners, immutable actions/service image, database isolation, and required commands.
+The environment contract gate verifies the four-environment authority matrix, isolation, downward
+data/secret-flow denial, indexing, migration/recovery, promotion, rollback, owner gates, current
+implementation claims, and every repository reference without contacting a provider or network.
+`pnpm test:backup-recovery-database` runs the guarded synthetic PostgreSQL custom-format backup,
+empty isolated restore, schema/data/privilege comparison, runtime denial, and cleanup rehearsal.
 The migration policy checks the complete migration directory against
 `packages/db/prisma/migration-manifest.json` and rejects checksum drift, unlisted files, missing
 files, transaction loss, and destructive SQL. The current-tree secret policy scans every tracked or
@@ -89,6 +98,23 @@ reduced motion. The gate validates exact structured-data types, index metadata, 
 no form/input surface, layout, touch targets, zero storage, a bounded request ledger, console/page
 errors, axe serious/critical findings, and the reviewed list of axe-incomplete contrast targets.
 
+`pnpm test:tarot-seo-browser` runs the focused RIT-111 production-artifact check after
+`pnpm --filter @rituvia/web build`. It serves the built Web app on loopback and checks one hub, one
+card, and one spread at a 320px viewport with dark mode and reduced motion. Route contracts
+separately prove all 25 pages; this browser gate verifies representative structured data,
+canonical index metadata, private-reading links, no form/input surface, layout, touch targets,
+zero storage, bounded requests, console/page errors, axe serious/critical findings, and exact
+25-route robots/sitemap containment without repeating the complete workspace suite.
+
+`pnpm test:ritual-reflection-seo-browser` runs the focused RIT-112 production-artifact check after
+`pnpm --filter @rituvia/web build`. It serves the built Web app on loopback and checks the hub, one
+virtual ritual, and one private-reflection guide at a 320px viewport with dark mode and reduced
+motion. Route contracts separately prove all six pages; this browser gate verifies representative
+structured data, canonical index metadata, private-Sanctuary links, no form/input surface, layout,
+touch targets, zero storage, bounded requests, console/page errors, Axe serious/critical findings,
+and crawl polarity. In a production-authorized runtime it also verifies exact six-route
+robots/sitemap containment; local, preview, and staging must remain noindex and disallow all.
+
 `scripts/web-shell-build-policy.mjs` runs from the workspace build verifier. It reads the generated
 English home HTML and its referenced local assets, rejects remote JavaScript/styles, CSS resource
 loading, and unexpected media elements, and enforces gzip budgets for HTML, CSS, and JavaScript plus
@@ -120,6 +146,20 @@ deletion, mobile keyboard/RTL/touch/axe behavior, and absence of private canarie
 storage, history, metadata, console, or analytics requests. `pnpm test:accessibility` composes this
 continuous gate after the detailed Tarot, intention, ritual, and Revisit verifiers.
 
+`scripts/verify-recovery-runtime-truth-browser.mjs` is the protected Recovery Item 4 browser gate.
+Unlike the legacy full-loop behavior verifier, it installs no request interception or fulfillment
+handler. Set `RITUVIA_RECOVERY_STAGING_URL` to a temporary Vercel-authenticated `/recovery` URL and
+run `pnpm test:recovery-runtime-truth-browser`; desktop and mobile Chromium must record exact
+`200`, `200`, and core-loop `404` responses with staging/source headers and server correlation IDs.
+The focused source guard fails if interception or fulfillment APIs enter this verifier.
+
+`scripts/verify-recovery-tarot-browser.mjs` is the protected Recovery Item 7 Tarot gate. It uses
+the real staging API with no interception or fulfillment, then verifies one-card and ordered
+three-card draws, refresh stability, idempotent replay, reviewed content, Provider safe-off,
+Sanctuary handoff, desktop/mobile layout, keyboard access, and axe results. Set
+`RITUVIA_RECOVERY_STAGING_URL` and optionally `RITUVIA_EXPECTED_SOURCE_SHA`, then run
+`pnpm test:recovery-tarot-browser`; artifacts are private local evidence and must not be committed.
+
 `scripts/verify-account-auth-browser.mjs` is the focused RIT-050/RIT-051 browser gate. It uses the
 real local PostgreSQL account boundary to verify uniform sign-in starts, constant local preview
 routing, host-only secure cookies, atomic anonymous merge, exact dropped-response replay,
@@ -146,6 +186,48 @@ number-suffixed conflict copies inside Next.js generated type directories when t
 match the canonical peer. A missing or different peer fails closed rather than deleting uncertain
 content.
 
+`scripts/verify-editorial-content.ts` validates the shared Git-authored editorial registry,
+resolves only bounded JSON artifacts below `content/`, rejects symlinks and out-of-root paths,
+pins the complete manifest checksum, recomputes exact artifact checksums, and requires
+process-owned English record/source authority fingerprints plus locale authority before issuing
+publication authorization. It rejects symlinks at the content root, parent, manifest, and artifact
+levels and advances review/rights expiry with the current UTC date. Preview remains private,
+no-store, and noindex. The verifier does not activate a route, sitemap, AI retrieval, locale,
+deployment, or public index.
+
+`pnpm check:public-pages` rebuilds the complete 45-route public inventory from the typed route
+registry, reviewed core copy, source-bound editorial artifacts, and exact internal-link graph. It
+rejects unknown/private/personalized/framework routes, missing authority, stale review, canonical
+or intent collisions, thin family shapes, exact or bounded near-duplicates, and template-only
+substitution. The checked-in compact inventory is the only quality evidence consumed by canonical,
+robots, and sitemap publication; any missing, stale, malformed, duplicated, or expired record
+fails the complete crawl inventory closed.
+
+`pnpm check:ai-operations` verifies the RIT-038 offline AI operations contract. It covers current,
+stale, synthetic, unavailable, low-sample, poisoned, and threshold-crossing aggregate fixtures for
+cost, token coverage, latency, retry, failure, reviewed fallback, and safe-replacement metrics.
+The verifier performs no database, provider, model, or network request.
+
+`pnpm report:ai-operations -- --as-of <ISO timestamp> --input <aggregate.json> --output-json
+<report.json> --output-markdown <brief.md>` reads one bounded, non-symlink daily aggregate and
+writes new mode-0600 files only. It binds the report to the input SHA-256 and never overwrites an
+existing path. The strict input excludes user/reading identifiers, questions, prompts, outputs,
+retrieved excerpts, detailed safety categories, and raw provider errors. Until production AI and
+an approved durable export exist, the truthful operational input is `unavailable`.
+
+`pnpm check:search-operations` verifies the RIT-117 offline SEO/GEO operations contract against
+the exact 45-route inventory. It covers unavailable, synthetic, stale, current, low-sample,
+private-field, source-authority, recommendation, and deterministic-rendering cases without making
+a provider or network request.
+
+`pnpm report:search-operations -- --as-of <ISO timestamp> --input <aggregate.json> --output-json
+<report.json> --output-markdown <brief.md> --repository-root <repository>` reads one bounded,
+non-symlink aggregate export and binds its SHA-256 to the current public-page inventory and
+editorial manifest digests. It writes new mode-0600 files only and never overwrites an existing
+path. Inputs accept no raw query, referrer URL, user identifier, private content, or arbitrary
+metadata; unavailable streams must use explicit zero placeholders. The report is an owner-review
+brief only and cannot publish content, request indexing, connect analytics, or change production.
+
 It discovers tracked and unignored app/package sources, rejects symlinks and oversized or malformed
 inputs, and audits manifests, TypeScript configuration, exports, source imports, browser/server
 closure taint, provider ownership, dependency direction, and cycles against one registered policy.
@@ -153,3 +235,10 @@ Mutation tests cover representative bypass forms, and the CI contract requires t
 as an explicit quality step.
 
 It does not replace current Codex CLI validation, legal/trademark review, provider underwriting, security testing, or product implementation tests. Re-run official Codex documentation/config checks whenever the CLI/action version changes.
+
+`pnpm test:public-search-browser` consumes the current optimized Web build and validates six
+representative public documents at 320px in real Chromium. It covers `WebSite`, `WebPage`,
+`CollectionPage`, and `Article`; exact canonical, language, visible-title, visible-description, and
+private-canary boundaries; local-only requests; and inert JSON-LD script-breaking input. Complete
+45-route coverage remains in the build policy and production configuration-boundary crawl, so the
+browser test stays focused.

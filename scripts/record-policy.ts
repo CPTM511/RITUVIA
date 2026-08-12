@@ -25,6 +25,7 @@ const recordControlOrBidi = /[\u0000-\u0008\u000b-\u001f\u007f\u202a-\u202e\u206
 const remoteOrEmbeddedContent = /!\[|<(?:!|\?|\/?[A-Za-z])/u;
 const plainPathPart = /^[A-Za-z0-9._-]+$/u;
 const nextDynamicPathPart = /^\[[A-Za-z0-9_-]+\]$/u;
+const nextRouteGroupPathPart = /^\([A-Za-z0-9_-]+\)$/u;
 const grandfatheredDone = new Set([
   "RIT-000",
   "RIT-001",
@@ -75,7 +76,11 @@ export const isSafeRepositoryPath = (value: unknown): value is string => {
   const parts = value.split("/");
   return parts.every(
     (part) =>
-      part !== "." && part !== ".." && (plainPathPart.test(part) || nextDynamicPathPart.test(part)),
+      part !== "." &&
+      part !== ".." &&
+      (plainPathPart.test(part) ||
+        nextDynamicPathPart.test(part) ||
+        nextRouteGroupPathPart.test(part)),
   );
 };
 

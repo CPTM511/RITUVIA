@@ -23,6 +23,8 @@ import {
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useTomorrowLocalDate } from "./browser-local-date";
+
 import type { RevisitMessages } from "../_i18n/revisit-messages";
 
 export const revisitIntentionStorageKey = "rituvia.revisit-intention.v1";
@@ -132,14 +134,6 @@ const parseReminderList = (value: unknown): ReminderListResponse | null => {
   });
 };
 
-const tomorrow = (): string => {
-  const value = new Date();
-  value.setDate(value.getDate() + 1);
-  return `${value.getFullYear().toString().padStart(4, "0")}-${(value.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}-${value.getDate().toString().padStart(2, "0")}`;
-};
-
 const initialTimeZone = (): string => {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -160,11 +154,16 @@ const statusLabel = (resource: RevisitResourceV1, messages: RevisitMessages): st
 };
 
 type RevisitExperienceProps = Readonly<{
+  coreLoopOnly?: boolean;
   messages: RevisitMessages;
   sanctuaryHref: LocalActionHref;
 }>;
 
-export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperienceProps) {
+export function RevisitExperience({
+  coreLoopOnly = false,
+  messages,
+  sanctuaryHref,
+}: RevisitExperienceProps) {
   const [completionId, setCompletionId] = useState<string | null>(null);
   const [customDate, setCustomDate] = useState("");
   const [intention, setIntention] = useState<Intention | null>(null);
@@ -185,11 +184,14 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
   const csrfToken = useRef<string | null>(null);
   const accountCsrfToken = useRef<string | null>(null);
   const operations = useRef(new Map<string, string>());
+  const reminderPreferencesRegion = useRef<HTMLElement | null>(null);
+  const reminderPreferencesRequested = useRef(false);
   const statusRegion = useRef<HTMLDivElement | null>(null);
   const customDateId = createUiControlId("revisit-custom-date");
   const quietHoursId = createUiControlId("revisit-quiet-hours");
   const reflectionId = createUiControlId("revisit-reflection");
   const timeZoneId = createUiControlId("revisit-time-zone");
+  const minimumCustomDate = useTomorrowLocalDate();
 
   useEffect(() => {
     if (completionId === null) return;
@@ -198,8 +200,38 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
 
   useEffect(() => {
     if (message === null || phase !== "success") return;
-    requestAnimationFrame(() => statusRegion.current?.focus());
+    requestAnimationFrame(() => {
+      if (window.location.hash !== "#reminder-preferences") statusRegion.current?.focus();
+    });
   }, [message, phase]);
+
+  useEffect(() => {
+    if (phase === "loading" || reminderPreferencesRequested.current) return;
+    let timer = 0;
+    const focusReminderPreferences = () => {
+      if (
+        reminderPreferencesRequested.current ||
+        window.location.hash !== "#reminder-preferences"
+      ) {
+        return;
+      }
+      timer = window.setTimeout(() => {
+        reminderPreferencesRequested.current = true;
+        const region = reminderPreferencesRegion.current;
+        const checkbox = region?.querySelector<HTMLInputElement>(
+          'input[type="checkbox"][id^="revisit-reminder-"]',
+        );
+        (checkbox ?? region)?.focus({ preventScroll: true });
+        region?.scrollIntoView({ block: "start" });
+      }, 0);
+    };
+    focusReminderPreferences();
+    window.addEventListener("hashchange", focusReminderPreferences);
+    return () => {
+      window.removeEventListener("hashchange", focusReminderPreferences);
+      window.clearTimeout(timer);
+    };
+  }, [phase, reminderAccountAvailable, reminders]);
 
   const idempotencyKey = (fingerprint: string): string => {
     const existing = operations.current.get(fingerprint);
@@ -227,11 +259,13 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
               headers: { accept: "application/json" },
             })
           : Promise.resolve(null),
-        fetch(revisitEndpoints.reminders, {
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: { accept: "application/json" },
-        }),
+        coreLoopOnly
+          ? Promise.resolve(null)
+          : fetch(revisitEndpoints.reminders, {
+              cache: "no-store",
+              credentials: "same-origin",
+              headers: { accept: "application/json" },
+            }),
       ]);
       const list = listResponse.ok ? parseList((await listResponse.json()) as unknown) : null;
       if (list === null) throw new TypeError("invalid revisit list");
@@ -241,7 +275,11 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
           : null;
       setRevisits(list.items);
       setIntention(selectedIntention);
-      if (reminderResponse.ok) {
+      if (coreLoopOnly) {
+        accountCsrfToken.current = null;
+        setReminderAccountAvailable(false);
+        setReminders([]);
+      } else if (reminderResponse?.ok === true) {
         const parsedReminders = parseReminderList((await reminderResponse.json()) as unknown);
         if (parsedReminders === null) throw new TypeError("invalid reminder list");
         accountCsrfToken.current = null;
@@ -256,7 +294,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
       setPhase(navigator.onLine ? "error" : "offline");
       setMessage(messages.errorDescription);
     }
-  }, [messages.errorDescription]);
+  }, [coreLoopOnly, messages.errorDescription]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -558,11 +596,15 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
           <dl className="revisit-original">
             <div>
               <dt>{messages.intentionLabel}</dt>
-              <dd>{intention.intentionText}</dd>
+              <dd>
+                <bdi dir="auto">{intention.intentionText}</bdi>
+              </dd>
             </div>
             <div>
               <dt>{messages.smallActionLabel}</dt>
-              <dd>{intention.smallAction}</dd>
+              <dd>
+                <bdi dir="auto">{intention.smallAction}</bdi>
+              </dd>
             </div>
           </dl>
           <form aria-busy={phase === "loading" || undefined} onSubmit={submitSchedule}>
@@ -591,9 +633,10 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
             {scheduleKind === "custom" ? (
               <TextField
                 description={messages.customDateDescription}
+                dir="ltr"
                 id={customDateId}
                 label={messages.customDate}
-                minimum={tomorrow()}
+                {...(minimumCustomDate === null ? {} : { minimum: minimumCustomDate })}
                 onValueChange={setCustomDate}
                 required
                 requiredLabel={messages.required}
@@ -621,6 +664,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
                 <label>
                   <span>{messages.quietHoursStart}</span>
                   <input
+                    dir="ltr"
                     onChange={(event) => setQuietHoursStart(event.currentTarget.value)}
                     required
                     type="time"
@@ -630,6 +674,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
                 <label>
                   <span>{messages.quietHoursEnd}</span>
                   <input
+                    dir="ltr"
                     onChange={(event) => setQuietHoursEnd(event.currentTarget.value)}
                     required
                     type="time"
@@ -660,7 +705,13 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
         </section>
       )}
 
-      <section aria-labelledby="revisit-list-title" className="revisit-list">
+      <section
+        aria-labelledby="revisit-list-title"
+        className="revisit-list"
+        id="reminder-preferences"
+        ref={reminderPreferencesRegion}
+        tabIndex={-1}
+      >
         <h2 id="revisit-list-title">{messages.title}</h2>
         {revisits.length === 0 ? <p>{messages.emptyDescription}</p> : null}
         {revisits.map((resource) => (
@@ -668,18 +719,24 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
             <header>
               <p className="eyebrow">{statusLabel(resource, messages)}</p>
               <h3>
-                <time dateTime={resource.scheduledLocalDate}>{resource.scheduledLocalDate}</time>
+                <time dateTime={resource.scheduledLocalDate} dir="ltr">
+                  {resource.scheduledLocalDate}
+                </time>
               </h3>
-              <p>{resource.timeZone}</p>
+              <p dir="ltr">{resource.timeZone}</p>
             </header>
             <dl className="revisit-original">
               <div>
                 <dt>{messages.intentionLabel}</dt>
-                <dd>{resource.intentionText}</dd>
+                <dd>
+                  <bdi dir="auto">{resource.intentionText}</bdi>
+                </dd>
               </div>
               <div>
                 <dt>{messages.smallActionLabel}</dt>
-                <dd>{resource.smallAction}</dd>
+                <dd>
+                  <bdi dir="auto">{resource.smallAction}</bdi>
+                </dd>
               </div>
             </dl>
             <p>{messages.reminderBoundary}</p>
@@ -687,7 +744,9 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
               <>
                 <p>{resource.isDue ? messages.due : messages.early}</p>
                 <div className="revisit-reminder-control">
-                  {reminderAccountAvailable === false ? (
+                  {coreLoopOnly ? (
+                    <p>{messages.noReminder}</p>
+                  ) : reminderAccountAvailable === false ? (
                     <p>{messages.reminderSignIn}</p>
                   ) : reminderAccountAvailable === null ? (
                     <p>{messages.reminderUnavailable}</p>
@@ -809,7 +868,9 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
             ) : (
               <>
                 {resource.completionReflection === null ? null : (
-                  <p className="revisit-completion-text">{resource.completionReflection}</p>
+                  <p className="revisit-completion-text">
+                    <bdi dir="auto">{resource.completionReflection}</bdi>
+                  </p>
                 )}
                 <div className="revisit-actions">
                   {resource.status === "completed" ? (

@@ -4,7 +4,8 @@ import { getPublicPageMessages, type ShellMessages } from "./messages";
 import type { QuestionIntakeMessages } from "./question-intake-messages";
 import type { TarotOneCardMessages } from "./tarot-one-card-messages";
 import type { TarotThreeCardMessages } from "./tarot-three-card-messages";
-import { localePublicPagePath, type Locale, type PublicPageId } from "./routing";
+import { createLocalizedPublicAlternates } from "./public-route-metadata";
+import type { Locale, PublicPageId } from "./routing";
 import type { DeploymentEnvironment } from "./seo";
 
 type PublicPageMetadataInput = Readonly<{
@@ -25,25 +26,20 @@ export const createPublicPageMetadata = ({
   page,
 }: PublicPageMetadataInput): Metadata => {
   const pageMessages = page === "home" ? messages.home : getPublicPageMessages(messages, page);
-  const canonical = new URL(localePublicPagePath(locale, page), canonicalOrigin).toString();
-  const indexable = deploymentEnvironment === "production";
+  const alternates = createLocalizedPublicAlternates(canonicalOrigin, locale, page);
+  const canonical = alternates?.canonical as string | undefined;
+  const indexable = deploymentEnvironment === "production" && alternates !== null;
 
   return {
     title: `${brandName} — ${pageMessages.metadata.title}`,
     description: pageMessages.metadata.description,
-    alternates: {
-      canonical,
-      languages: {
-        en: canonical,
-        "x-default": canonical,
-      },
-    },
+    ...(alternates === null ? {} : { alternates }),
     openGraph: {
       type: "website",
       siteName: brandName,
       title: `${brandName} — ${pageMessages.metadata.title}`,
       description: pageMessages.metadata.description,
-      url: canonical,
+      ...(canonical === undefined ? {} : { url: canonical }),
     },
     robots: {
       index: indexable,

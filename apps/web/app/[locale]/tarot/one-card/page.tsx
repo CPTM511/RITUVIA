@@ -9,6 +9,7 @@ import { getTarotOneCardMessages } from "../../../_i18n/tarot-one-card-messages"
 import {
   localePublicPagePath,
   localeSanctuaryPath,
+  localeTarotLibraryPath,
   parseLocale,
   supportedLocales,
   type Locale,
@@ -42,6 +43,7 @@ export default async function TarotOneCardPage({ params }: TarotOneCardPageProps
 
   return (
     <PublicSiteFrame
+      accountNavigation={configuration.deploymentEnvironment !== "staging"}
       brandName={configuration.client.brand.name}
       brandTagline={configuration.client.brand.tagline}
       currentPage={null}
@@ -57,9 +59,20 @@ export default async function TarotOneCardPage({ params }: TarotOneCardPageProps
           <p className="tarot-reading-privacy">{messages.page.privacy}</p>
         </header>
         <TarotOneCardFlow
+          enhancedInterpretationAvailable={configuration.deploymentEnvironment !== "staging"}
+          locale={locale}
           messages={messages}
           methodologyHref={localePublicPagePath(locale, "methodology")}
           sanctuaryHref={localeSanctuaryPath(locale)}
+          {...(configuration.deploymentEnvironment === "staging"
+            ? {}
+            : {
+                brandName: configuration.client.brand.name,
+                shareCanonicalUrl: new URL(
+                  localeTarotLibraryPath(locale),
+                  configuration.client.brand.canonicalOrigin,
+                ).toString(),
+              })}
         />
       </main>
     </PublicSiteFrame>

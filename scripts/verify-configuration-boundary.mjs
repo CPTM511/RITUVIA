@@ -5,12 +5,46 @@ import net from "node:net";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-import { verifyWebShellBuild } from "./web-shell-build-policy.mjs";
+import {
+  auditPublicSeoDocument,
+  publicStructuredDataTypeForContentShape,
+  verifyWebShellBuild,
+} from "./web-shell-build-policy.mjs";
 
 const repositoryRoot = process.cwd();
 const webRoot = path.join(repositoryRoot, "apps/web");
 const nextCli = path.join(webRoot, "node_modules/next/dist/bin/next");
 const turboCli = path.join(repositoryRoot, "node_modules/.bin/turbo");
+const publicInventory = JSON.parse(
+  await readFile(
+    path.join(repositoryRoot, "content/editorial/public-page-inventory.v1.json"),
+    "utf8",
+  ),
+);
+if (
+  publicInventory?.schemaVersion !== "rituvia-public-page-inventory.v1" ||
+  !Array.isArray(publicInventory.records) ||
+  publicInventory.records.length !== 45 ||
+  publicInventory.records.some(
+    (record) =>
+      record?.qualityStatus !== "passed" ||
+      typeof record.pathname !== "string" ||
+      typeof record.contentFamily !== "string" ||
+      typeof record.contentShape !== "string" ||
+      !(
+        record.structuredParentRouteId === null ||
+        typeof record.structuredParentRouteId === "string"
+      ),
+  )
+) {
+  throw new TypeError("The configuration boundary requires a passing public-page inventory.");
+}
+const crawlPaths = Object.freeze(publicInventory.records.map(({ pathname }) => pathname));
+const publicPaths = Object.freeze(
+  publicInventory.records
+    .filter(({ contentFamily }) => contentFamily === "pages")
+    .map(({ pathname }) => pathname),
+);
 const deliveryRoots = ["static", "server/app"];
 const knownEnvironmentVariables = [
   "APP_ENV",
@@ -24,7 +58,9 @@ const knownEnvironmentVariables = [
   "BRAND_SOCIAL_HANDLES",
   "BRAND_ASSET_MANIFEST",
   "DATABASE_URL",
+  "PAYMENT_WEBHOOK_DATABASE_URL",
   "PRIVACY_DELETION_DATABASE_URL",
+  "RITUVIA_PRIVACY_DELETION_ROLE_PASSWORD",
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
   "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
@@ -49,6 +85,7 @@ const knownEnvironmentVariables = [
   "RITUVIA_REFLECTION_POLICY_VERSION",
   "RITUVIA_REFLECTION_RETENTION_SECONDS",
   "RITUVIA_REFLECTION_REVISIT_DELAY_SECONDS",
+  "RITUVIA_STRIPE_ACCOUNT_ID",
   "RITUVIA_STRIPE_PRICE_IDS",
   "RITUVIA_TAROT_INTEGRITY_KEY_V1",
   "STRIPE_SECRET_KEY",
@@ -205,7 +242,7 @@ const assertDeliveryBoundary = async (nextRoot) => {
     "BRAND_TRANSACTIONAL_SENDER",
     "DATABASE_URL",
     "PRIVACY_DELETION_DATABASE_URL",
-    "RITUVIA",
+    "http://localhost:3000",
   ]) {
     if (await containsCanary(staticFiles, forbiddenClientLiteral)) {
       fail("A server-only or fallback configuration literal entered a client-static asset.");
@@ -390,16 +427,26 @@ try {
     path.join(repositoryRoot, "tsconfig.base.json"),
     path.join(temporaryRoot, "tsconfig.base.json"),
   );
+  const temporaryNextConfigPath = path.join(temporaryWebRoot, "next.config.ts");
+  const temporaryNextConfig = await readFile(temporaryNextConfigPath, "utf8");
+  const outputTracingRootMarker = 'outputFileTracingRoot: "../..",';
+  if (temporaryNextConfig.split(outputTracingRootMarker).length !== 2) {
+    fail("The isolated Web build could not identify its exact output tracing root.");
+  }
+  await writeFile(
+    temporaryNextConfigPath,
+    temporaryNextConfig.replace(
+      outputTracingRootMarker,
+      `outputFileTracingRoot: ${JSON.stringify(repositoryRoot)},`,
+    ),
+  );
   await symlink(path.join(webRoot, "node_modules"), path.join(temporaryWebRoot, "node_modules"));
   await writeFile(
     path.join(temporaryWebRoot, "server/feature-flags.ts"),
     `import "server-only";
 
 export const loadWebFeatureFlagEvaluator = async () => ({
-  evaluate: (_flagKey: string, _context: unknown) => {
-    if (process.env.RITUVIA_TEST_PUBLIC_SHELL === "error") throw new Error("unavailable");
-    return { enabled: process.env.RITUVIA_TEST_PUBLIC_SHELL === "on" };
-  },
+  evaluate: (_flagKey: string, _context: unknown) => ({ enabled: false }),
 });
 `,
   );
@@ -420,6 +467,12 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   },
   kind: "created",
   token: "${anonymousSessionTokenCanary}",
+});
+
+export const resolveWebAnonymousSession = async (_token: string) => ({
+  expiresAt: new Date(Date.now() + 3600000).toISOString(),
+  sessionId: "synthetic-session-id",
+  subjectId: "synthetic-subject-id",
 });
 `,
   );
@@ -454,24 +507,15 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
     {
       cwd: temporaryWebRoot,
-      env: { ...validEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "on" },
+      env: validEnvironment,
     },
   );
   const uppercaseCold = await fetchBuiltWeb(webProcess, port, "/EN", { redirect: "manual" });
   if (uppercaseCold.status !== 404) {
     fail(`Cold non-canonical locale request returned HTTP ${uppercaseCold.status}, expected 404.`);
   }
-  const publicPaths = ["/en", "/en/methodology", "/en/safety", "/en/privacy"];
-  const crawlPaths = [
-    ...publicPaths,
-    "/en/numerology",
-    "/en/numerology/life-path-number",
-    "/en/numerology/birthday-number",
-    "/en/numerology/personal-year-number",
-    "/en/numerology/master-numbers",
-  ];
   const publicPages = await Promise.all(
-    publicPaths.map((pathname) =>
+    crawlPaths.map((pathname) =>
       fetchBuiltWeb(webProcess, port, pathname, {
         headers: { accept: "text/html" },
         redirect: "manual",
@@ -481,13 +525,31 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   if (publicPages.some(({ status }) => status !== 200)) {
     fail(
       `Canonical public pages returned unexpected statuses: ${JSON.stringify(
-        publicPages.map(({ status }, index) => ({ pathname: publicPaths[index], status })),
+        publicPages.map(({ status }, index) => ({ pathname: crawlPaths[index], status })),
       )}.`,
     );
   }
   for (const publicPage of publicPages) assertHttpBoundary(publicPage, webProcess.getOutput());
   if (publicPages.some(({ xRobotsTag }) => xRobotsTag !== null)) {
     fail("A production canonical HTML response was incorrectly blocked from indexing.");
+  }
+  const searchFindings = publicPages.flatMap((publicPage, index) => {
+    const record = publicInventory.records[index];
+    if (record === undefined) return ["missing-inventory-record"];
+    return auditPublicSeoDocument(
+      publicPage.html,
+      record.pathname,
+      validEnvironment.BRAND_CANONICAL_ORIGIN,
+      "index, follow",
+      {
+        expectedOpenGraphType:
+          record.pathname.split("/").filter(Boolean).length === 3 ? "article" : "website",
+        expectedStructuredDataType: publicStructuredDataTypeForContentShape(record.contentShape),
+      },
+    ).map((finding) => `${record.pathname}:${finding}`);
+  });
+  if (searchFindings.length > 0) {
+    fail(`The production HTTP crawl contract failed: ${searchFindings.join(", ")}.`);
   }
   const intakePage = await fetchBuiltWeb(webProcess, port, "/en/intake", {
     headers: { accept: "text/html" },
@@ -641,6 +703,19 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   const sitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
     redirect: "manual",
   });
+  const sitemapPathnames = [
+    "/sitemaps/en-pages.xml",
+    "/sitemaps/en-numerology.xml",
+    "/sitemaps/en-astrology.xml",
+    "/sitemaps/en-tarot.xml",
+    "/sitemaps/en-rituals.xml",
+  ];
+  const sitemapDocuments = await Promise.all(
+    sitemapPathnames.map((pathname) =>
+      fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" }),
+    ),
+  );
+  const sitemapInventory = sitemapDocuments.map(({ html }) => html).join("\n");
   const expectedSitemapUrls = crawlPaths.map(
     (pathname) => `<loc>https://example.test${pathname}</loc>`,
   );
@@ -659,11 +734,22 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     !sitemap.contentType?.startsWith("application/xml") ||
     sitemap.xRobotsTag !== "noindex, nofollow, noarchive" ||
     sitemap.cacheControl !== "no-store, max-age=0" ||
-    !expectedSitemapUrls.every((url) => sitemap.html.includes(url)) ||
-    sitemap.html.match(/<loc>/gu)?.length !== expectedSitemapUrls.length ||
-    sitemap.html.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/gu)?.length !==
+    !sitemapPathnames.every((pathname) =>
+      sitemap.html.includes(`<loc>https://example.test${pathname}</loc>`),
+    ) ||
+    sitemap.html.match(/<loc>/gu)?.length !== sitemapPathnames.length ||
+    sitemapDocuments.some(
+      ({ cacheControl, contentType, status, xRobotsTag }) =>
+        status !== 200 ||
+        !contentType?.startsWith("application/xml") ||
+        xRobotsTag !== "noindex, nofollow, noarchive" ||
+        cacheControl !== "no-store, max-age=0",
+    ) ||
+    !expectedSitemapUrls.every((url) => sitemapInventory.includes(url)) ||
+    sitemapInventory.match(/<loc>/gu)?.length !== expectedSitemapUrls.length ||
+    sitemapInventory.match(/<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/gu)?.length !==
       expectedSitemapUrls.length ||
-    /(?:\.rsc|\.segments|\/account|\/journal|\/checkout|\/intake)/u.test(sitemap.html)
+    /(?:\.rsc|\.segments|\/account|\/journal|\/checkout|\/intake)/u.test(sitemapInventory)
   ) {
     fail("Production robots or sitemap violated the finite crawl inventory.");
   }
@@ -744,7 +830,7 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     rootRedirect.xRobotsTag !== "noindex, nofollow, noarchive" ||
     directRscResponses.some(
       ({ cacheControl, contentType, status, xRobotsTag }, index) =>
-        status !== (index === 1 ? 200 : 404) ||
+        status !== (index % 2 === 1 ? 200 : 404) ||
         !contentType?.startsWith("text/x-component") ||
         !isPrivateNoStore(cacheControl) ||
         (status === 200 && xRobotsTag !== "noindex, nofollow, noarchive") ||
@@ -876,7 +962,7 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
     {
       cwd: temporaryWebRoot,
-      env: { ...intakeDisabledEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "on" },
+      env: intakeDisabledEnvironment,
     },
   );
   const publicWithIntakeDisabled = await fetchBuiltWeb(webProcess, port, "/en", {
@@ -901,120 +987,6 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     !hasNoStore(disabledIntakeApi.cacheControl)
   ) {
     fail("The independent question-intake activation reference did not fail closed.");
-  }
-  await stopManagedProcess(webProcess);
-  webProcess = undefined;
-
-  webProcess = startManagedProcess(
-    process.execPath,
-    [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
-    {
-      cwd: temporaryWebRoot,
-      env: { ...validEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "off" },
-    },
-  );
-  const disabledRepresentations = await Promise.all(
-    [
-      "/",
-      "/index.rsc",
-      "/index.segments/_full.segment.rsc",
-      "/en",
-      "/en.rsc",
-      "/en.segments/_full.segment.rsc",
-      "/en/methodology",
-      "/en/methodology.rsc",
-      "/en/methodology.segments/_full.segment.rsc",
-      "/en/safety",
-      "/en/safety.rsc",
-      "/en/safety.segments/_full.segment.rsc",
-      "/en/privacy",
-      "/en/privacy.rsc",
-      "/en/privacy.segments/_full.segment.rsc",
-      "/en/intake",
-      "/en/intake.rsc",
-      "/en/intake.segments/_full.segment.rsc",
-      "/en/tarot/one-card",
-      "/en/tarot/one-card.rsc",
-      "/en/tarot/one-card.segments/_full.segment.rsc",
-      "/en/tarot/three-card",
-      "/en/tarot/three-card.rsc",
-      "/en/tarot/three-card.segments/_full.segment.rsc",
-    ].map((pathname) => fetchBuiltWeb(webProcess, port, pathname, { redirect: "manual" })),
-  );
-  if (
-    disabledRepresentations.some(
-      ({ contentSecurityPolicy, html, status, xRobotsTag }) =>
-        status !== 404 ||
-        html !== "" ||
-        !contentSecurityPolicy?.includes("default-src 'self'") ||
-        xRobotsTag !== "noindex, nofollow, noarchive",
-    )
-  ) {
-    fail("The public-shell activation gate exposed a disabled HTML or RSC representation.");
-  }
-  const disabledRobots = await fetchBuiltWeb(webProcess, port, "/robots.txt", {
-    redirect: "manual",
-  });
-  const disabledSitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
-    redirect: "manual",
-  });
-  const disabledAnonymousSession = await fetchBuiltWeb(
-    webProcess,
-    port,
-    "/api/v1/anonymous/session",
-    {
-      headers: {
-        "idempotency-key": "synthetic_disabled_request_key_1234",
-        origin: "https://example.test",
-      },
-      method: "POST",
-      redirect: "manual",
-    },
-  );
-  if (
-    disabledRobots.status !== 200 ||
-    disabledRobots.html !== "User-agent: *\nDisallow: /\n" ||
-    disabledRobots.xRobotsTag !== "noindex, nofollow, noarchive" ||
-    disabledSitemap.status !== 404 ||
-    disabledSitemap.html !== "" ||
-    disabledSitemap.xRobotsTag !== "noindex, nofollow, noarchive" ||
-    disabledAnonymousSession.status !== 404 ||
-    disabledAnonymousSession.html !== "" ||
-    disabledAnonymousSession.setCookie !== null ||
-    !hasNoStore(disabledAnonymousSession.cacheControl)
-  ) {
-    fail("The disabled public shell exposed a crawl inventory.");
-  }
-  await stopManagedProcess(webProcess);
-  webProcess = undefined;
-
-  webProcess = startManagedProcess(
-    process.execPath,
-    [path.join(temporaryWebRoot, "start.mjs"), "-H", "127.0.0.1", "-p", String(port)],
-    {
-      cwd: temporaryWebRoot,
-      env: { ...validEnvironment, RITUVIA_TEST_PUBLIC_SHELL: "error" },
-    },
-  );
-  const unavailablePage = await fetchBuiltWeb(webProcess, port, "/en", { redirect: "manual" });
-  const unavailableRobots = await fetchBuiltWeb(webProcess, port, "/robots.txt", {
-    redirect: "manual",
-  });
-  const unavailableSitemap = await fetchBuiltWeb(webProcess, port, "/sitemap.xml", {
-    redirect: "manual",
-  });
-  if (
-    unavailablePage.status !== 404 ||
-    unavailablePage.html !== "" ||
-    unavailablePage.xRobotsTag !== "noindex, nofollow, noarchive" ||
-    unavailableRobots.status !== 200 ||
-    unavailableRobots.html !== "User-agent: *\nDisallow: /\n" ||
-    unavailableRobots.xRobotsTag !== "noindex, nofollow, noarchive" ||
-    unavailableSitemap.status !== 404 ||
-    unavailableSitemap.html !== "" ||
-    unavailableSitemap.xRobotsTag !== "noindex, nofollow, noarchive"
-  ) {
-    fail("A feature dependency failure exposed a page or crawl inventory.");
   }
   await stopManagedProcess(webProcess);
   webProcess = undefined;

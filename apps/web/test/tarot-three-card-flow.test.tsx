@@ -12,6 +12,8 @@ describe("private three-card server render", () => {
     const messages = getTarotThreeCardMessages("en");
     const html = renderToStaticMarkup(
       createElement(TarotThreeCardFlow, {
+        enhancedInterpretationAvailable: false,
+        locale: "en",
         messages,
         methodologyHref: createLocalActionHref("/en/methodology"),
         sanctuaryHref: createLocalActionHref("/en/sanctuary"),
@@ -26,12 +28,17 @@ describe("private three-card server render", () => {
     expect(messages.page.introduction).toContain("Situation, Action, and Possibility");
     expect(messages.result.positionBoundary).toContain("not a prediction");
     expect(html).not.toMatch(/textarea|name="question|localStorage|sessionStorage/iu);
+    expect(html).not.toContain("Explore a deeper interpretation");
+    expect(messages.result.providerSafeOff).toContain(
+      "Provider AI is disabled in protected staging",
+    );
   });
 
   it("server-renders a closed categorical report control for the whole reading or fixed position", () => {
     const messages = getTarotThreeCardMessages("en");
     const html = renderToStaticMarkup(
       createElement(TarotReadingReport, {
+        locale: "en",
         messages: messages.result.report,
         positions: [
           { positionId: "situation", positionTitle: "Situation" },

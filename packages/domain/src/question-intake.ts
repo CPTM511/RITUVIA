@@ -134,15 +134,15 @@ export const parseQuestionIntakeThemeCode = (value: unknown): QuestionIntakeThem
 };
 
 const forbiddenQuestionCharacters =
-  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
+  /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2060\u2066-\u2069\ud800-\udfff\ufeff]/u;
 
 const normalizeQuestion = (value: unknown): string | undefined => {
   if (typeof value !== "string") {
     throw new QuestionIntakeError("INTAKE_INPUT_INVALID");
   }
-  const normalized = value.normalize("NFKC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
+  const normalized = value.normalize("NFC").replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
   if (
-    normalized.length > questionIntakeMaximumLength ||
+    Array.from(normalized).length > questionIntakeMaximumLength ||
     forbiddenQuestionCharacters.test(normalized)
   ) {
     throw new QuestionIntakeError("INTAKE_INPUT_INVALID");

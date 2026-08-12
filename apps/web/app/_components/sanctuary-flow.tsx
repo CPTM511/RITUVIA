@@ -12,15 +12,18 @@ import {
   type LocalActionHref,
 } from "@rituvia/ui";
 import { evaluateReflectionIntentionAgencyV1, parseRitualCatalogV1 } from "@rituvia/domain";
+import { createLocaleFormatter } from "@rituvia/i18n/locale";
 import Image from "next/image";
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type {
   SanctuaryFreeRitualItem,
   SanctuaryMessages,
   SanctuaryThemeCode,
 } from "../_i18n/sanctuary-messages";
+import type { Locale } from "../_i18n/routing";
+import { useTomorrowLocalDate } from "./browser-local-date";
 import {
   clearSanctuaryReadingHandoff,
   sanctuaryReadingHandoffStorageKey,
@@ -43,6 +46,12 @@ export const sanctuaryEndpoints = Object.freeze({
   orders: "/api/v1/orders",
   ritualObjects: "/api/v1/ritual-objects",
   ritualSessions: "/api/v1/ritual-sessions",
+});
+
+export const sanctuaryResumeStorageKeys = Object.freeze({
+  intention: "rituvia.sanctuary.resume.intention.v1",
+  journal: "rituvia.sanctuary.resume.journal.v1",
+  ritual: "rituvia.sanctuary.resume.ritual.v1",
 });
 
 type CatalogItem = Readonly<{
@@ -90,17 +99,40 @@ type IntentionLifecycleAction = "archive" | "complete" | "delete";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const codePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const csrfTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
+const subscribeToHydration = (): (() => void) => () => undefined;
+type ResumeStorage = Pick<Storage, "getItem" | "removeItem" | "setItem">;
+
+const readResumeId = (storage: ResumeStorage, key: string): string | null => {
+  try {
+    const value = storage.getItem(key);
+    return value !== null && uuidPattern.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+const rememberResumeId = (storage: ResumeStorage, key: string, value: string): void => {
+  try {
+    storage.setItem(key, value);
+  } catch {
+    return;
+  }
+};
+
+const forgetResumeId = (storage: ResumeStorage, key: string): void => {
+  try {
+    storage.removeItem(key);
+  } catch {
+    return;
+  }
+};
+
+const forgetDependentResumeIds = (storage: ResumeStorage): void => {
+  forgetResumeId(storage, sanctuaryResumeStorageKeys.ritual);
+  forgetResumeId(storage, sanctuaryResumeStorageKeys.journal);
+};
 const legacyFreeRitualObjectCode = (code: SanctuaryFreeRitualItem["code"]): "candle" | "incense" =>
   code === "free_candle" ? "candle" : "incense";
-
-const tomorrowLocalDate = (): string => {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -347,13 +379,13 @@ export const resolveLatestReadingId = async (
   );
 };
 
-const currencyLabel = (item: CatalogItem): string | null => {
+const currencyLabel = (item: CatalogItem, locale: Locale): string | null => {
   if (item.price === null) return null;
   try {
-    return new Intl.NumberFormat("en", {
-      currency: item.price.currency,
-      style: "currency",
-    }).format(item.price.amountMinor / 100);
+    return createLocaleFormatter({ locale, timeZone: "UTC" }).currency(
+      item.price.amountMinor / 100,
+      item.price.currency,
+    );
   } catch {
     return `${item.price.currency} ${(item.price.amountMinor / 100).toFixed(2)}`;
   }
@@ -383,6 +415,8 @@ const checkoutUrlFromResponse = (value: unknown): string | null => {
 
 type SanctuaryFlowProps = Readonly<{
   accountHref: LocalActionHref;
+  coreLoopOnly?: boolean;
+  locale: Locale;
   messages: SanctuaryMessages;
   readingHref: LocalActionHref;
   revisitHref: LocalActionHref;
@@ -392,12 +426,19 @@ type SanctuaryFlowProps = Readonly<{
 
 export function SanctuaryFlow({
   accountHref,
+  coreLoopOnly = false,
+  locale,
   messages,
   readingHref,
   revisitHref,
   sanctuaryHref,
   signInHref,
 }: SanctuaryFlowProps) {
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
   const [accountState, setAccountState] = useState<"loading" | "signed-in" | "signed-out">(
     "loading",
   );
@@ -445,7 +486,7 @@ export function SanctuaryFlow({
   const journalId = createUiControlId("sanctuary-journal");
   const ageId = createUiControlId("sanctuary-checkout-age");
   const sanctuarySignInHref = `${signInHref}?returnTo=${encodeURIComponent(sanctuaryHref)}`;
-  const minimumRevisitDate = tomorrowLocalDate();
+  const minimumRevisitDate = useTomorrowLocalDate();
   const idempotencyKeyFor = (fingerprint: string): string => {
     if (intentionOperation.current?.fingerprint === fingerprint) {
       return intentionOperation.current.key;
@@ -483,6 +524,11 @@ export function SanctuaryFlow({
         price: null,
       }),
     );
+    if (coreLoopOnly) {
+      setCatalog(freeItems);
+      setCatalogPhase("ready");
+      return;
+    }
     try {
       const [ritualObjectsResponse, catalogResponse, entitlementResponse] = await Promise.all([
         fetch(sanctuaryEndpoints.ritualObjects, {
@@ -525,12 +571,101 @@ export function SanctuaryFlow({
       setCatalogDegraded(true);
       setCatalogPhase("ready");
     }
-  }, [messages.ritual.freeItems]);
+  }, [coreLoopOnly, messages.ritual.freeItems]);
+
+  const loadSavedCoreLoop = useCallback(async (): Promise<void> => {
+    if (!coreLoopOnly) return;
+    const storage = window.sessionStorage;
+    const intentionId = readResumeId(storage, sanctuaryResumeStorageKeys.intention);
+    if (intentionId === null) return;
+    try {
+      const sessionResponse = await fetch(sanctuaryEndpoints.anonymousSession, {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "idempotency-key": crypto.randomUUID() },
+        method: "POST",
+      });
+      const issuedCsrfToken = sessionResponse.headers.get("x-csrf-token");
+      if (
+        sessionResponse.status !== 204 ||
+        issuedCsrfToken === null ||
+        !csrfTokenPattern.test(issuedCsrfToken)
+      ) {
+        throw new TypeError("session unavailable");
+      }
+      csrfToken.current = issuedCsrfToken;
+      const intentionResponse = await fetch(`${sanctuaryEndpoints.intentions}/${intentionId}`, {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { accept: "application/json" },
+      });
+      const restoredIntention = intentionResponse.ok
+        ? parseIntention((await intentionResponse.json()) as unknown)
+        : null;
+      if (restoredIntention === null) {
+        forgetResumeId(storage, sanctuaryResumeStorageKeys.intention);
+        forgetDependentResumeIds(storage);
+        return;
+      }
+      setIntention(restoredIntention);
+      setSelectedTheme(restoredIntention.intentionCode);
+      setIntentionText(restoredIntention.intentionText);
+      setSmallAction(restoredIntention.smallAction);
+      setRevisitDate(restoredIntention.revisitDate ?? "");
+      rememberResumeId(storage, revisitIntentionStorageKey, restoredIntention.id);
+
+      const ritualId = readResumeId(storage, sanctuaryResumeStorageKeys.ritual);
+      if (ritualId !== null) {
+        const ritualResponse = await fetch(`${sanctuaryEndpoints.ritualSessions}/${ritualId}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+          headers: { accept: "application/json" },
+        });
+        const restoredRitual = ritualResponse.ok
+          ? parseRitualSession((await ritualResponse.json()) as unknown)
+          : null;
+        if (restoredRitual === null) {
+          forgetDependentResumeIds(storage);
+        } else {
+          setRitualSession(restoredRitual);
+          const journalId = readResumeId(storage, sanctuaryResumeStorageKeys.journal);
+          if (journalId !== null) {
+            const journalResponse = await fetch(
+              `${sanctuaryEndpoints.journalEntries}/${journalId}`,
+              {
+                cache: "no-store",
+                credentials: "same-origin",
+                headers: { accept: "application/json" },
+              },
+            );
+            const restoredJournal = journalResponse.ok
+              ? parseJournalEntry((await journalResponse.json()) as unknown)
+              : null;
+            if (restoredJournal === null) {
+              forgetResumeId(storage, sanctuaryResumeStorageKeys.journal);
+            } else {
+              setJournalEntry(restoredJournal);
+              setJournalBody(restoredJournal.reflection);
+            }
+          }
+        }
+      }
+    } catch {
+      setIntentionPhase(navigator.onLine ? "error" : "offline");
+      setIntentionError(navigator.onLine ? messages.intention.error : messages.intention.offline);
+    }
+  }, [coreLoopOnly, messages.intention.error, messages.intention.offline]);
 
   useEffect(() => {
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
       void loadCatalog();
+      void loadSavedCoreLoop();
+      if (coreLoopOnly) {
+        setAccountAgeAttested(false);
+        setAccountState("signed-out");
+        return;
+      }
       void fetch("/api/v1/me", {
         cache: "no-store",
         credentials: "same-origin",
@@ -570,7 +705,7 @@ export function SanctuaryFlow({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [loadCatalog]);
+  }, [coreLoopOnly, loadCatalog, loadSavedCoreLoop]);
 
   useEffect(() => {
     if (journalPhase === "success") completionRegion.current?.focus();
@@ -700,6 +835,9 @@ export function SanctuaryFlow({
       csrfToken.current = refreshedCsrfToken;
       intentionOperation.current = null;
       clearSanctuaryReadingHandoff(window.sessionStorage);
+      rememberResumeId(window.sessionStorage, sanctuaryResumeStorageKeys.intention, parsed.id);
+      rememberResumeId(window.sessionStorage, revisitIntentionStorageKey, parsed.id);
+      if (!updating) forgetDependentResumeIds(window.sessionStorage);
       setIntention(parsed);
       setIntentionText(parsed.intentionText);
       setSmallAction(parsed.smallAction);
@@ -776,6 +914,9 @@ export function SanctuaryFlow({
       setPendingIntentionAction(null);
       if (action === "delete") {
         if (response.status !== 204) throw new TypeError("invalid delete response");
+        forgetResumeId(window.sessionStorage, sanctuaryResumeStorageKeys.intention);
+        forgetResumeId(window.sessionStorage, revisitIntentionStorageKey);
+        forgetDependentResumeIds(window.sessionStorage);
         setIntention(null);
         setSelectedTheme(null);
         setIntentionText("");
@@ -789,6 +930,7 @@ export function SanctuaryFlow({
         if (parsed === null) throw new TypeError("invalid intention mutation response");
         setIntention(parsed);
         if (action === "archive") {
+          forgetDependentResumeIds(window.sessionStorage);
           setActiveRitualItem(null);
           setRitualSession(null);
         }
@@ -843,6 +985,7 @@ export function SanctuaryFlow({
         throw new TypeError("csrf unavailable");
       }
       csrfToken.current = refreshedCsrfToken;
+      rememberResumeId(window.sessionStorage, sanctuaryResumeStorageKeys.ritual, session.id);
       setRitualSession(session);
       setRitualPhase("idle");
       setPendingItem(null);
@@ -1135,6 +1278,7 @@ export function SanctuaryFlow({
       }
       csrfToken.current = refreshedCsrfToken;
       journalOperation.current = null;
+      rememberResumeId(window.sessionStorage, sanctuaryResumeStorageKeys.journal, parsed.id);
       setJournalEntry(parsed);
       setJournalBody(parsed.reflection);
       setJournalPhase("success");
@@ -1177,6 +1321,7 @@ export function SanctuaryFlow({
         csrfToken.current = refreshedCsrfToken;
       }
       journalOperation.current = null;
+      forgetResumeId(window.sessionStorage, sanctuaryResumeStorageKeys.journal);
       setJournalEntry(null);
       setJournalBody("");
       setJournalPhase("idle");
@@ -1212,6 +1357,7 @@ export function SanctuaryFlow({
         initialMode={activeRitualMode}
         intentionLabel={intention.intentionText}
         item={activeFreeRitual}
+        locale={locale}
         messages={messages.ritual.experience}
         onDismiss={dismissRitualExperience}
         onMutate={mutateActiveRitual}
@@ -1275,7 +1421,10 @@ export function SanctuaryFlow({
             <h2 id="sanctuary-intention-title">{messages.intention.title}</h2>
             <p>{messages.intention.description}</p>
           </header>
-          <form aria-busy={intentionPhase === "loading" || undefined} onSubmit={createIntention}>
+          <form
+            aria-busy={!hydrated || intentionPhase === "loading" || undefined}
+            onSubmit={createIntention}
+          >
             <fieldset className="sanctuary-theme-fieldset">
               <legend>{messages.intention.themeLabel}</legend>
               <div className="sanctuary-theme-list">
@@ -1284,6 +1433,7 @@ export function SanctuaryFlow({
                     aria-pressed={selectedTheme === code}
                     className="sanctuary-theme-chip"
                     disabled={
+                      !hydrated ||
                       intentionPhase === "loading" ||
                       (intention !== null && intention.status !== "active")
                     }
@@ -1308,6 +1458,7 @@ export function SanctuaryFlow({
                   <button
                     className="sanctuary-theme-chip"
                     disabled={
+                      !hydrated ||
                       intentionPhase === "loading" ||
                       (intention !== null && intention.status !== "active")
                     }
@@ -1330,7 +1481,7 @@ export function SanctuaryFlow({
             </fieldset>
             <TextAreaField
               description={messages.intention.intentionTextDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               {...(intentionErrorField === "intention" && intentionError !== null
                 ? { error: intentionError }
                 : {})}
@@ -1352,7 +1503,7 @@ export function SanctuaryFlow({
             />
             <TextAreaField
               description={messages.intention.smallActionDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               {...(intentionErrorField === "smallAction" && intentionError !== null
                 ? { error: intentionError }
                 : {})}
@@ -1373,10 +1524,10 @@ export function SanctuaryFlow({
             />
             <TextField
               description={messages.intention.revisitDateDescription}
-              disabled={intention !== null && intention.status !== "active"}
+              disabled={!hydrated || (intention !== null && intention.status !== "active")}
               id={revisitDateId}
               label={messages.intention.revisitDateLabel}
-              minimum={minimumRevisitDate}
+              {...(minimumRevisitDate === null ? {} : { minimum: minimumRevisitDate })}
               onValueChange={(value) => {
                 setRevisitDate(value);
                 setIntentionSuccess(null);
@@ -1426,6 +1577,7 @@ export function SanctuaryFlow({
             ) : null}
             {intention === null || intention.status === "active" ? (
               <Button
+                disabled={!hydrated}
                 label={
                   intention === null ? messages.intention.create : messages.intention.saveChanges
                 }
@@ -1551,7 +1703,7 @@ export function SanctuaryFlow({
               ) : null}
               <div className="ritual-item-list">
                 {catalog.map((item) => {
-                  const price = currencyLabel(item);
+                  const price = currencyLabel(item, locale);
                   const accessLabel =
                     item.access === "free"
                       ? messages.ritual.free
@@ -1567,7 +1719,9 @@ export function SanctuaryFlow({
                         <span className="ritual-access-badge">{accessLabel}</span>
                         <h3>{item.name}</h3>
                         <p>{item.description}</p>
-                        <p className="ritual-price">{price ?? messages.ritual.free}</p>
+                        <p className="ritual-price">
+                          {price === null ? messages.ritual.free : <bdi dir="auto">{price}</bdi>}
+                        </p>
                         {item.access === "purchase" ? (
                           <p className="privacy-note">{messages.ritual.priceDisclosure}</p>
                         ) : null}
@@ -1622,7 +1776,9 @@ export function SanctuaryFlow({
             </header>
             <div className="checkout-order-summary">
               <strong>{pendingItem.name}</strong>
-              <span>{currencyLabel(pendingItem)}</span>
+              <span>
+                <bdi dir="auto">{currencyLabel(pendingItem, locale)}</bdi>
+              </span>
             </div>
             {accountState === "loading" ? (
               <div aria-busy="true" aria-live="polite" className="sanctuary-status">
@@ -1722,7 +1878,11 @@ export function SanctuaryFlow({
             <h2>{messages.completion.title}</h2>
             <p>{messages.completion.description}</p>
             <div className="sanctuary-completion-actions">
-              <ActionLink href={accountHref}>{messages.completion.accountAction}</ActionLink>
+              {coreLoopOnly ? (
+                <ActionLink href={revisitHref}>{messages.intention.revisitAction}</ActionLink>
+              ) : (
+                <ActionLink href={accountHref}>{messages.completion.accountAction}</ActionLink>
+              )}
               <ActionLink href={readingHref} variant="secondary">
                 {messages.completion.readingAction}
               </ActionLink>

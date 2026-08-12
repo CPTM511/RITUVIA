@@ -361,6 +361,7 @@ const decryptSnapshot = async (
     revisits,
     rituals: snapshot.rituals,
     sessions: snapshot.sessions,
+    wallets: snapshot.wallets,
   });
 };
 

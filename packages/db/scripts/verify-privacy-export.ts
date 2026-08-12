@@ -150,6 +150,20 @@ await withLocalPostgresLease(async (lease) => {
 
       await migrator.query(
         `
+          INSERT INTO wallet_identity (
+            user_id, chain_family, chain_id, address, linked_by_session_id,
+            verified_at, created_at
+          ) VALUES (
+            $1::uuid, 'eip155', 84532,
+            '0x1111111111111111111111111111111111111111', $2::uuid,
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+        `,
+        [originalOwner.userId, merged.context.sessionId],
+      );
+
+      await migrator.query(
+        `
           INSERT INTO birth_profile (
             id, user_id, time_certainty, schema_version,
             payload_ciphertext, payload_nonce, payload_tag,
@@ -196,7 +210,9 @@ await withLocalPostgresLease(async (lease) => {
         "rituals",
         "sessions",
         "snapshotAt",
+        "wallets",
       ]);
+      assert.equal((first.snapshot.wallets as unknown[]).length, 1);
       assert.equal((first.snapshot.astrologyCalculations as unknown[]).length, 0);
       assert.equal((first.snapshot.birthProfiles as unknown[]).length, 1);
       const snapshotText = JSON.stringify(first.snapshot);

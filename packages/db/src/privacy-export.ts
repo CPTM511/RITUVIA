@@ -64,6 +64,7 @@ export type PrivacyExportSnapshot = Readonly<{
   rituals: unknown;
   sessions: unknown;
   snapshotAt: string;
+  wallets: unknown;
 }>;
 
 export type PrivacyExportMetadata = Readonly<{
@@ -396,6 +397,20 @@ const readSnapshot = async (
           FROM account_session AS session
          WHERE session.user_id = ${userId}::uuid
       ), '[]'::jsonb) AS sessions,
+      COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'id', wallet.id,
+          'chainFamily', wallet.chain_family,
+          'chainId', wallet.chain_id::text,
+          'address', wallet.address,
+          'verifiedAt', wallet.verified_at,
+          'lastSignInAt', wallet.last_sign_in_at,
+          'revokedAt', wallet.revoked_at,
+          'createdAt', wallet.created_at
+        ) ORDER BY wallet.created_at, wallet.id)
+          FROM wallet_identity AS wallet
+         WHERE wallet.user_id = ${userId}::uuid
+      ), '[]'::jsonb) AS wallets,
       COALESCE((
         SELECT jsonb_agg(jsonb_build_object(
           'id', profile.id,
@@ -755,6 +770,11 @@ const readSnapshot = async (
               'channel', reminder.channel,
               'frequency', reminder.frequency,
               'locale', reminder.locale,
+              'templateId', reminder.template_id,
+              'templateVersion', reminder.template_version,
+              'templateSourceChecksum', reminder.template_source_checksum,
+              'templateLocale', reminder.template_locale,
+              'templateFallbackUsed', reminder.template_fallback_used,
               'preferenceState', reminder.preference_state,
               'deliveryState', reminder.delivery_state,
               'attemptCount', reminder.attempt_count,

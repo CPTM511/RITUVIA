@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import runtimeCatalog from "../../../content/localization/rituvia-core-ui.en.v1.runtime.json";
 import { getMessages } from "../app/_i18n/messages";
 import { getAccountMessages } from "../app/_i18n/account-messages";
 import { getCommerceMessages } from "../app/_i18n/commerce-messages";
+import { coreMessageCatalog, coreMessageKeys, formatCoreMessage } from "../app/_i18n/core-messages";
 import { getQuestionIntakeMessages } from "../app/_i18n/question-intake-messages";
 import { getNumerologyMessages } from "../app/_i18n/numerology-messages";
 import { getSanctuaryMessages } from "../app/_i18n/sanctuary-messages";
@@ -20,6 +22,41 @@ const collectStrings = (value: unknown): string[] => {
 };
 
 describe("English shell messages", () => {
+  it("formats the exact reviewed ICU source inventory without manual substitution", () => {
+    expect(Object.keys(coreMessageCatalog.messages).sort()).toEqual([...coreMessageKeys].sort());
+    expect(
+      Object.fromEntries(
+        Object.entries(coreMessageCatalog.messages).map(([key, value]) => [key, value.message]),
+      ),
+    ).toEqual(runtimeCatalog.messages);
+    expect(
+      formatCoreMessage("en", "shell.navigation.homeLabel", { brand: "Configured Brand" }),
+    ).toBe("Configured Brand home");
+    expect(formatCoreMessage("en", "ritual.stepProgress", { current: 2, total: 3 })).toBe(
+      "Step 2 of 3",
+    );
+    expect(formatCoreMessage("en", "tarot.report.targetPosition", { position: "Situation" })).toBe(
+      "Position: Situation",
+    );
+    expect(formatCoreMessage("en", "tarot.retryAfter", { unit: "minute", value: 1 })).toBe(
+      "1 minute",
+    );
+    expect(formatCoreMessage("en", "tarot.retryAfter", { unit: "minute", value: 2 })).toBe(
+      "2 minutes",
+    );
+    expect(
+      formatCoreMessage("en", "tarot.share.altText", {
+        brand: "RITUVIA",
+        cardTitle: "The Hermit",
+        orientation: "Upright",
+        theme: "Open reflection",
+        themeVisibility: "hidden",
+      }),
+    ).toBe(
+      "The Hermit, Upright. Reflection theme hidden. Privacy-safe RITUVIA share card. Symbolic reflection, not a prediction.",
+    );
+  });
+
   it("provides complete non-placeholder source copy", () => {
     const strings = collectStrings(getMessages("en"));
 

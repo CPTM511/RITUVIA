@@ -20,7 +20,12 @@ No field is personal, private, secret, payment, authentication, or content-right
 - The initial migration is an explicit transaction and expand-only: it adds one table and indexes atomically, performs no backfill, and does not change an existing read or write path.
 - Runtime rollback leaves the additive table unused. Production schema removal requires a later reviewed forward migration, current backup evidence, and owner approval; do not manually drop it.
 - Local and isolated test rollback may drop only their guarded database and then reapply committed migrations.
-- Standard PostgreSQL logical and physical backups include this table. RIT-003 verifies a custom-format logical dump can restore into a second isolated database; production backup automation, point-in-time recovery, RPO/RTO, and restore operations remain RIT-123.
+- Standard PostgreSQL logical and physical backups include this table. RIT-123 now automates a
+  synthetic custom-format logical dump into a second isolated local/CI database, verifies the
+  locked schema-drift fingerprint, migration/table/row/owner/RLS/policy/ACL/role state and runtime
+  denial, and removes its artifact and invocation-owned databases. Production encrypted backup,
+  point-in-time recovery, retention, provider-level isolation, and measured RPO/RTO remain
+  production Gate H controls in `docs/22_BACKUP_RECOVERY.md`.
 - Check constraints are committed SQL because the Prisma schema cannot express every PostgreSQL invariant. Integration tests must fail if they are removed or weakened.
 
 ## CI enforcement
@@ -40,6 +45,16 @@ receives only explicit feature-flag post-migration grants. This isolated CI path
 accept the local 55432 cluster URL and cannot accept a preview, staging, production, or arbitrary
 `DATABASE_URL`.
 
+Prisma cannot represent every committed PostgreSQL constraint, explicit foreign-key name, index,
+or SQL default used by RITUVIA. The CI job therefore compares Prisma's normalized
+`--from-config-datasource --to-schema --script` output against
+`prisma/schema-drift-baseline.json` instead of weakening those database invariants or asserting a
+false zero-drift state. The baseline is pinned to Prisma 7.8.0 and records the exact SHA-256, byte
+length, and line count of a clean migration. Any schema, migration, Prisma-version, normalization,
+or output change fails closed. Updating the baseline requires a fresh empty database, review of the
+complete SQL diff, migration-policy verification, and the replacement fingerprint in the same
+change; never copy a digest from an unreviewed or long-lived database.
+
 ## RIT-007 feature-flag registry classification
 
 `feature_flag_version` stores internal operational configuration only: a registry/key version,
@@ -50,10 +65,11 @@ identifiers, private text, secrets, legal copy, provider payloads, or arbitrary 
 The migration is expand-only and creates no enabled records. Forced RLS grants reads to a common
 reader capability and inserts to a common writer capability. Environment provisioning assigns the
 reader to runtime and control, but assigns the writer only to control; runtime is never an object
-owner. `off` rows are always appendable by control. `on` rows additionally require registry version
-1's exact key, gate-prefix reference, and scope shape. Control cannot update/delete/truncate or use
-DDL. Owner approval still governs whether a control credential may be used; the database checks
-structure and provenance fields, not the external approval record's truth.
+owner. `off` rows are always appendable by control. Legacy registry v1/v2 rows are restricted to
+`off`; registry v3 `on` rows additionally require an exact active key, gate-prefix reference, and
+scope shape. Control cannot update/delete/truncate or use DDL. Owner approval still governs whether
+a control credential may be used; the database checks structure and provenance fields, not the
+external approval record's truth.
 
 The Web composition adapter does not trust the URL or login name alone. Before every registry read,
 it queries PostgreSQL's live ownership, role, and privilege catalogs and fails closed unless the
@@ -65,9 +81,10 @@ authenticated `session_user` must equal `current_user`, so a
 high-privilege login cannot use connection startup options to preselect a safe-looking role.
 
 Uniqueness includes registry version, and readers filter their exact deployed registry, allowing
-v1/v2 history to coexist during rolling upgrade and rollback. A key remains a forced-off tombstone
-until its cleanup task is Done; only a later registry version removes it. Dropping the table or
-policies remains a destructive migration requiring backup evidence and owner approval.
+v1/v2/v3 history to coexist during rolling upgrade and rollback. Registry v3 removes the completed
+public-shell tombstone after the protected D-089 compatibility window; v1/v2 history remains
+append-only and ignored by v3 readers. Dropping the table or policies remains a destructive
+migration requiring backup evidence and owner approval.
 
 Logical dumps run through the runtime's exact table-read capability with explicit row security and
 INSERT-form data. Restore runs
@@ -341,10 +358,11 @@ evidence, privacy/legal review, and explicit owner approval.
 ## RIT-093 astrology feature-flag registration
 
 The additive migration adds one insert policy for the canonical `experience.astrology` key. It
-does not insert a flag version or enable any environment. An `on` version requires registry V1,
-`OWN-015:` approval evidence, and empty country/locale scopes. The existing safe-off policy permits
-a newer emergency `off` version without waiting for approval; the append-only table, hierarchical
-key constraint, and reader/writer least-privilege roles remain unchanged.
+does not insert a flag version or enable any environment. The key is carried forward in registry
+v3; an `on` version requires `OWN-015:` approval evidence and empty country/locale scopes. The
+safe-off policy permits a newer emergency `off` version without waiting for approval; the
+append-only table, hierarchical key constraint, and reader/writer least-privilege roles remain
+unchanged.
 
 Historical `astrology_enabled` text is a superseded semantic label under D-071, not a valid
 PostgreSQL key. The isolated drill applies all 28 migrations, rejects the historical key and

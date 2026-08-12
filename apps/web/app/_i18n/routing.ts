@@ -1,6 +1,12 @@
+import { getTextDirection as resolveTextDirection, type TextDirection } from "@rituvia/i18n/locale";
 import { createLocalActionHref, type LocalActionHref } from "@rituvia/ui";
 
-import { publicPagePathname, type PublicPageId, type PublicPageSlug } from "./public-routes";
+import {
+  publicPagePathname,
+  publicRouteRegistry,
+  type PublicPageId,
+  type PublicPageSlug,
+} from "./public-routes";
 
 export {
   indexablePublicPageIds,
@@ -10,6 +16,7 @@ export {
   isPublicDiscoveryPathname,
   isPublicShellPathname,
   parsePublicPageSlug,
+  publicRouteRegistry,
   publicDiscoveryPathnames,
   publicPageSlugs,
   type PublicPageId,
@@ -19,14 +26,12 @@ export {
 export const supportedLocales = Object.freeze(["en"] as const);
 
 export type Locale = (typeof supportedLocales)[number];
-export type TextDirection = "ltr" | "rtl";
+export type { TextDirection };
 
 export const defaultLocale: Locale = "en";
 
 export const shellSectionIds = Object.freeze(["practice", "principles", "trust"] as const);
 export type ShellSectionId = (typeof shellSectionIds)[number];
-
-const rtlLanguageSubtags = Object.freeze(["ar", "fa", "he", "ur"] as const);
 
 export const parseLocale = (value: string | null | undefined): Locale | null =>
   value === "en" ? value : null;
@@ -49,8 +54,29 @@ export const localeNumerologyPath = (locale: Locale): LocalActionHref =>
 export const localeAstrologyPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/readings/astrology`);
 
+export const localeAstrologyLibraryPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(
+    publicRouteRegistry.route("astrology-hub", locale)?.pathname ??
+      (() => {
+        throw new TypeError("The astrology library is not published for this locale.");
+      })(),
+  );
+
+export const localeTarotLibraryPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(
+    publicRouteRegistry.route("tarot-hub", locale)?.pathname ??
+      (() => {
+        throw new TypeError("The Tarot library is not published for this locale.");
+      })(),
+  );
+
 export const localeNumerologyLibraryPath = (locale: Locale): LocalActionHref =>
-  createLocalActionHref(`/${locale}/numerology`);
+  createLocalActionHref(
+    publicRouteRegistry.route("numerology-hub", locale)?.pathname ??
+      (() => {
+        throw new TypeError("The numerology library is not published for this locale.");
+      })(),
+  );
 
 export const localeSanctuaryPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/sanctuary`);
@@ -63,6 +89,18 @@ export const localeSignInPath = (locale: Locale): LocalActionHref =>
 
 export const localeAccountPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/account`);
+
+export const localeAccountPrivacyPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account/privacy`);
+
+export const localePlansPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/plans`);
+
+export const localeAccountBillingPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account/billing`);
+
+export const localeAccountOrdersPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/account/orders`);
 
 export const localeCheckoutReturnPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/checkout/return`);
@@ -78,7 +116,4 @@ export const localePublicPagePath = (
 export const localeSectionPath = (locale: Locale, section: ShellSectionId): LocalActionHref =>
   createLocalActionHref(`/${locale}#${section}`);
 
-export const getTextDirection = (locale: string): TextDirection => {
-  const primarySubtag = locale.toLowerCase().split("-", 1)[0];
-  return rtlLanguageSubtags.some((candidate) => candidate === primarySubtag) ? "rtl" : "ltr";
-};
+export const getTextDirection = (locale: string): TextDirection => resolveTextDirection(locale);

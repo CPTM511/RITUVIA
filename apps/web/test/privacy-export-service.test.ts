@@ -329,6 +329,18 @@ describe("privacy export package builder", () => {
       rituals: { current: [], legacy: [] },
       sessions: [],
       snapshotAt: "2026-07-25T00:00:00.000Z",
+      wallets: [
+        {
+          address: "0x1111111111111111111111111111111111111111",
+          chainFamily: "eip155",
+          chainId: "84532",
+          createdAt: "2026-07-25T00:00:00.000Z",
+          id: "99999999-9999-4999-8999-999999999999",
+          lastSignInAt: null,
+          revokedAt: null,
+          verifiedAt: "2026-07-25T00:00:00.000Z",
+        },
+      ],
     };
     const built = await buildPrivacyExportPackage({
       authKey,
@@ -348,6 +360,7 @@ describe("privacy export package builder", () => {
     expect(serialized).toContain(journalText);
     expect(serialized).toContain(revisitText);
     expect(serialized).toContain("Private birth profile canary");
+    expect(serialized).toContain("0x1111111111111111111111111111111111111111");
     expect(serialized).toContain("unavailable_unknown_time");
     expect(serialized).not.toContain(
       (snapshot.astrologyCalculations as Array<{ encryptedFacts: { ciphertext: string } }>)[0]!
@@ -411,6 +424,7 @@ describe("privacy export package builder", () => {
           rituals: { current: [], legacy: [] },
           sessions: [],
           snapshotAt: "2026-07-25T00:00:00.000Z",
+          wallets: [],
         },
       }),
     ).rejects.toThrow();
