@@ -19,6 +19,13 @@ legal seller/support/tax particulars, production catalog/policy records, verifie
 Resend key are configured and the exact source is deployed and smoke-tested. Coinbase and
 production AI remain outside the first rollout.
 
+The follow-up production catalog authorization migration and fail-closed
+`production:configure-stripe-live` command are prepared on the production-activation branch. The
+command accepts only one US/English/adult `pack_6` price at USD 5.99 and refuses to write until the
+live Stripe account, card capability, Product/Price, descriptor, support address, legal versions,
+tax treatment, review window, database identity, migrations, and least-privilege roles all attest.
+Purchases must remain disabled while it runs; this preparation is not a production activation.
+
 Founder Acceptance Recovery is active with recovery baseline
 `f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 11 are complete. FJ-16/FJ-17
 Provider AI acceptance passed. The Owner's 2026-08-10 amendment excludes FJ-15 hosted crypto

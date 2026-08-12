@@ -19,6 +19,7 @@
     "db:local:stop": "node scripts/local-postgres.mjs stop",
     "db:local:url": "node scripts/local-postgres.mjs url",
     "generate": "prisma generate",
+    "production:configure-stripe-live": "pnpm --filter @rituvia/domain build && node scripts/configure-production-stripe-live.mjs",
     "staging:configure-recovery-item-9": "node scripts/configure-recovery-item-9-staging.mjs",
     "staging:configure-recovery-item-10": "pnpm --filter @rituvia/domain build && node scripts/configure-recovery-item-10-staging.mjs",
     "staging:configure-recovery-item-11": "pnpm --filter @rituvia/domain build && node scripts/configure-recovery-item-11-staging.mjs",
