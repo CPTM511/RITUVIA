@@ -54,8 +54,8 @@ bbd521347828a4b2f6771dd76b158ac6743ace5e4843482783c38b1ed1c9766f  apps/web/app/(
 3c494421f89e2f91a2d4801158edd3320ea725cc5b6d9cb52c1aea888a71c625  apps/web/app/(root)/page.tsx
 53346c3ecbcc58366a0298198c5e76d911a9bd8026b4dc7794eaea63cd5dc0c0  apps/web/app/[locale]/[page]/[slug]/page.tsx
 ef229fb2f243436ff459abac4a0a84b165a6f11acb31f7b3275c4843f235ebea  apps/web/app/[locale]/[page]/page.tsx
-160266665a46a9e7a9cb19ea10fcf1bca4d4b93d0a70f21f4b443afb244c517e  apps/web/app/[locale]/account/billing/page.tsx
-1ea1551deed3a110ee3364687b206254ae1f3ca369f96c55412f6098b7830bf5  apps/web/app/[locale]/account/orders/page.tsx
+b70eb33d80b520e082ae2727ab2a720c8996c782656ef5ce81b4a86251cd26e8  apps/web/app/[locale]/account/billing/page.tsx
+1dce3141f6a3e92263b22c31961f53d7267cf1f05741a6866d4632656563d3d3  apps/web/app/[locale]/account/orders/page.tsx
 45d103a0ce64f1b17eff02ee8f84914a86526ea3c74b16bc8898267534c7e99f  apps/web/app/[locale]/account/page.tsx
 7543c3bbbed37f6c4b119548144c6178df00c9ac3ea258cf2f8667472395d708  apps/web/app/[locale]/account/privacy/page.tsx
 1b6a01faed4a1bd94495d4cd7a3a291f31d153ab76c59a6f5fa42b5f4489b1b9  apps/web/app/[locale]/checkout/local/page.tsx
@@ -64,7 +64,7 @@ ef229fb2f243436ff459abac4a0a84b165a6f11acb31f7b3275c4843f235ebea  apps/web/app/[
 50d1c4b21da63a2b1f8483486a325a71bbb7ef32a51b2708844ad9d2b709f4ea  apps/web/app/[locale]/intake/page.tsx
 2e8f11985eabaeb58dbd9c5970e3d0833eb4d6741acb58f3ad7b3b31cdf2095a  apps/web/app/[locale]/layout.tsx
 6b71719e1f301d152c51357491715e92f4f3850ef7192fc07f5ae734d0c15aac  apps/web/app/[locale]/page.tsx
-34262848898e7cd42d060a10a1c1eedcb3dda457274f1d89d227a60345063757  apps/web/app/[locale]/plans/page.tsx
+def29fed16960efa403bb2746e2e0532694095051844e0d183ba72e3d58b4ed5  apps/web/app/[locale]/plans/page.tsx
 882715bc23e1dbc291fe612c82d2b74afed9d0014fb1de23764d77113be856df  apps/web/app/[locale]/readings/astrology/page.tsx
 ed9530108e7ba5734574997503499bce47bc592ed9fdf6aacdcefbf19d0ddb3c  apps/web/app/[locale]/readings/numerology/page.tsx
 2f21df548e24c0e6bf731d2ae219c0eda8bbbf351456ef85009adb8bd37f9edd  apps/web/app/[locale]/revisit/page.tsx
@@ -96,7 +96,7 @@ b27331c3af96a030da041efbe3515644d9e710877a31e1a80215f98d0164cdfc  apps/web/app/_
 5d643e4a24b0e81e0cd3f298f6c7262653f0a4c3ae0ae16c0e122751bdcb2172  apps/web/app/_components/reading-sanctuary-handoff.ts
 f12fe10ec14b2b553e9d6e3fd965d5eaa013d65be2f58d19e43d72a679236115  apps/web/app/_components/recovery-astrology-calculator.tsx
 758744ad717db265dd492a3ec78937ce2c44e5c037ddeb26d42a7e45326de593  apps/web/app/_components/recovery-astrology-transport.ts
-0e1b6ded4de04c7897b457c33c614d9f20c6b5dca65ecad11c2c3ed83cf68e5a  apps/web/app/_components/recovery-commerce.tsx
+c9d81e5127b9def2a279a5a3ed6ce1718ea0ea08f3a16d7166150cec54ca163e  apps/web/app/_components/recovery-commerce.tsx
 d0ecec7c5be7bc587fa68de9b34e59872e3860420592faaaeaa2856e8712e62d  apps/web/app/_components/resilient-state.tsx
 512c2978f456491d45cb662c1c3a7b35fc62b793b72b8461999ec349485962e0  apps/web/app/_components/revisit-experience.tsx
 91639e04f166730c749ecaa66fd1eec1a5d6528ab40c32a6ab98607d4d68c287  apps/web/app/_components/ritual-reflection-publication.tsx
@@ -130,7 +130,7 @@ e732152e8736bf11ba044dfd6a73b9eec5815c280d0b5448133e708a34245555  apps/web/app/_
 6165d8dbb46debbfedbefdf24d8cf971deb1fe372386fa92a21f1db99017f0be  apps/web/app/_i18n/astrology-messages.ts
 a1b37f736b943087be293377ebf73ff6455faf09fcb73456dbbc640044877c42  apps/web/app/_i18n/astrology-public-metadata.ts
 39afc934184a44ed0583f5c76c695f61175f19a92f27ff3f91768f636e976d53  apps/web/app/_i18n/astrology-public-routes.ts
-0bcf87130dd3dd63176b47416dde8d482a0812f28ab862390e87c33e9c3d65b8  apps/web/app/_i18n/commerce-messages.ts
+69bcd0d813ae7cfaca3deed67bd9bb944addc99d760d1d8b6987f4d3f3daa196  apps/web/app/_i18n/commerce-messages.ts
 e7f388fe959ef7f037b8d78b25392c81f0388b31f798728ab80065285cee3df1  apps/web/app/_i18n/core-messages.ts
 afc6037844cfa9b02893f4764fe5a1aa53b7b0573e3b005ed34d1d2f974ca81d  apps/web/app/_i18n/golden-shell-messages.ts
 11d0f37c274aa7b3b86acd47cd81340a7658233c5beaa7127c72c5eb59e4f20c  apps/web/app/_i18n/localized-public-routes.ts
@@ -353,6 +353,7 @@ edfe74abb07ecfd869fc022f540de0f553a2433d33bc17b5b8fb64e96d60b7c4  apps/web/test/
 f212d8abeb781937e787ad2d7b125e457caa33d29c89fdfaae5478798bb61b1b  apps/web/test/private-content-crypto.test.ts
 50ffb25fb96da10b7c9a7c8e05ce056e8cb86b83f1d4b031b94d982a23df1621  apps/web/test/product-catalog-route.test.ts
 be9037cebf060e2387992f370f7e9ba6bf1aaadc4063919e983cbfce0fbf817c  apps/web/test/product-catalog-server.test.ts
+9d7ca2096f47cb2bd236851f00a4ea9af5ba7e7e41aae2750b6de1d37c87082e  apps/web/test/production-commerce-ui.test.ts
 95417ae8c408aef27666fdbb75b41df07494efb9beb22e1441d5ea5e48312e24  apps/web/test/proxy.test.ts
 3d15071783b09541eaea35b99484f1cc398fe955f00a512729030bceda5e51d0  apps/web/test/public-information-page.test.tsx
 4e0696c46f63fe7d2dad1c922c2945536e272c0df71d5916b7c6173219a49fd0  apps/web/test/public-page-inventory.test.ts

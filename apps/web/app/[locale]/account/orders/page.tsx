@@ -33,6 +33,8 @@ export default async function OrdersPage({
 }: Readonly<{ params: Promise<{ locale: string }> }>) {
   const locale = await resolveLocale(params);
   const configuration = getWebRuntimeConfiguration();
+  const commerceMessageMode =
+    configuration.deploymentEnvironment === "production" ? "live" : "test";
   return (
     <PublicSiteFrame
       brandName={configuration.client.brand.name}
@@ -43,7 +45,7 @@ export default async function OrdersPage({
     >
       <main className="experience-main" id="main-content" tabIndex={-1}>
         <RecoveryCommercialAccount
-          messages={getCommerceMessages(locale).recoveryCommerce}
+          messages={getCommerceMessages(locale, commerceMessageMode).recoveryCommerce}
           signInHref={localeSignInPath(locale)}
           view="orders"
         />
