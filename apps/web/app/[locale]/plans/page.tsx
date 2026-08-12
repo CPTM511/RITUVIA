@@ -33,6 +33,8 @@ export default async function PlansPage({
 }: Readonly<{ params: Promise<{ locale: string }> }>) {
   const locale = await resolveLocale(params);
   const configuration = getWebRuntimeConfiguration();
+  const commerceMessageMode =
+    configuration.deploymentEnvironment === "production" ? "live" : "test";
   return (
     <PublicSiteFrame
       brandName={configuration.client.brand.name}
@@ -43,7 +45,7 @@ export default async function PlansPage({
     >
       <main className="experience-main" id="main-content" tabIndex={-1}>
         <RecoveryPlans
-          messages={getCommerceMessages(locale).recoveryCommerce}
+          messages={getCommerceMessages(locale, commerceMessageMode).recoveryCommerce}
           signInHref={localeSignInPath(locale)}
         />
       </main>

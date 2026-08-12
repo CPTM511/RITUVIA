@@ -88,10 +88,10 @@ const isPositiveInteger = (value: unknown): value is number =>
 const isStringArray = (value: unknown): value is readonly string[] =>
   Array.isArray(value) && value.every(isString);
 
-const parseCatalog = (value: unknown): Catalog => {
+export const parseCommerceCatalog = (value: unknown): Catalog => {
   if (
     !isRecord(value) ||
-    value.environment !== "staging" ||
+    (value.environment !== "staging" && value.environment !== "production") ||
     !isString(value.version) ||
     !Array.isArray(value.prices) ||
     !Array.isArray(value.products) ||
@@ -120,7 +120,7 @@ const parseCatalog = (value: unknown): Catalog => {
         ),
     )
   ) {
-    throw new TypeError("Invalid protected-staging catalog response.");
+    throw new TypeError("Invalid commerce catalog response.");
   }
   return value as Catalog;
 };
@@ -242,7 +242,7 @@ export function RecoveryPlans({
     ])
       .then(async ([catalogResponse, accountResponse]) => {
         if (!catalogResponse.ok) throw new TypeError();
-        const nextCatalog = parseCatalog((await catalogResponse.json()) as unknown);
+        const nextCatalog = parseCommerceCatalog((await catalogResponse.json()) as unknown);
         const issued = accountResponse.headers.get("x-csrf-token");
         csrfToken.current = accountResponse.ok && issued !== null ? issued : null;
         setSignedIn(csrfToken.current !== null);

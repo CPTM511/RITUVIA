@@ -91,6 +91,8 @@ export type CommerceMessages = Readonly<{
   }>;
 }>;
 
+export type CommerceMessageMode = "live" | "test";
+
 const englishMessages = {
   recoveryCommerce: {
     accountRequired:
@@ -215,9 +217,30 @@ const englishMessages = {
   },
 } as const satisfies CommerceMessages;
 
-export const getCommerceMessages = (locale: Locale): CommerceMessages => {
+const liveEnglishMessages = {
+  ...englishMessages,
+  recoveryCommerce: {
+    ...englishMessages.recoveryCommerce,
+    accountRequired: "Sign in to purchase Credits or review your private billing records.",
+    checkout: "Continue to secure Stripe Checkout",
+    checkoutError: "Checkout could not be created. Nothing was charged or granted.",
+    checkoutPending: "Creating secure Checkout",
+    fulfillmentAwaiting: "Awaiting a verified Stripe payment event",
+    ordersEmpty: "No verified orders yet.",
+    plansIntroduction:
+      "Choose a Credit pack. Prices are confirmed by the server and Credits are granted only after a verified Stripe payment event.",
+    safetyNote:
+      "Card details are entered only on Stripe's hosted page. Credits are service entitlements, not cash, and payment does not imply a stronger spiritual effect.",
+    stagingEyebrow: "Secure payments",
+  },
+} as const satisfies CommerceMessages;
+
+export const getCommerceMessages = (
+  locale: Locale,
+  mode: CommerceMessageMode = "test",
+): CommerceMessages => {
   switch (locale) {
     case "en":
-      return englishMessages;
+      return mode === "live" ? liveEnglishMessages : englishMessages;
   }
 };
