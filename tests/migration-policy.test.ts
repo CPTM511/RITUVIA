@@ -119,6 +119,29 @@ describe("migration policy", () => {
     expect(auditMigrationFiles({ [migrationPath]: unsafeSql }, unsafeManifest)).not.toEqual([]);
   });
 
+  it("allows only the exact approved production subscription constraint replacement", () => {
+    const approvedPath = "migrations/202608120001_production_stripe_live/migration.sql";
+    const approvedSql =
+      '-- D-099 production Stripe live\nBEGIN;\nALTER TABLE "commercial_subscription_v2"\n    DROP CONSTRAINT "commercial_subscription_v2_identity_check";\nCOMMIT;\n';
+    const approvedManifest = {
+      files: { [approvedPath]: digest(approvedSql) },
+      policyVersion: 1,
+    } satisfies MigrationManifest;
+    expect(auditMigrationFiles({ [approvedPath]: approvedSql }, approvedManifest)).toEqual([]);
+
+    const differentConstraint = approvedSql.replace(
+      "commercial_subscription_v2_identity_check",
+      "commercial_subscription_v2_lifecycle_check",
+    );
+    const differentManifest = {
+      files: { [approvedPath]: digest(differentConstraint) },
+      policyVersion: 1,
+    } satisfies MigrationManifest;
+    expect(auditMigrationFiles({ [approvedPath]: differentConstraint }, differentManifest)).toEqual(
+      expect.arrayContaining([{ path: approvedPath, rule: "drop-constraint" }]),
+    );
+  });
+
   it("rejects malformed manifests", () => {
     expect(() => parseMigrationManifest({ policyVersion: 2, files: {} })).toThrow(
       /unsupported shape or version/,

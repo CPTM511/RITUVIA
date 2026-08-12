@@ -20,6 +20,7 @@ import { verifySchemaDriftBaseline } from "./schema-drift-baseline.js";
 
 const APP_ROLE = "rituvia_ci_app";
 const CONTROL_ROLE = "rituvia_ci_config_writer";
+const PAYMENT_WEBHOOK_ROLE = "rituvia_payment_webhook";
 const PRIVACY_DELETION_ROLE = "rituvia_privacy_deletion";
 const ADMIN_SERVICE_ROLE = "rituvia_admin_service";
 const MIGRATOR_ROLE = "rituvia_ci_migrator";
@@ -200,6 +201,7 @@ const provisionLeastPrivilegeRole = async (): Promise<void> => {
 
     verificationStage = "least-privilege role statement formatting";
     for (const roleName of [
+      PAYMENT_WEBHOOK_ROLE,
       FLAG_READER_ROLE,
       FLAG_WRITER_ROLE,
       COUNTRY_POLICY_READER_ROLE,

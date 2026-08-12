@@ -53,14 +53,28 @@ const forbiddenSql: ReadonlyArray<Readonly<{ id: string; pattern: RegExp }>> = O
   { id: "ownership-destruction", pattern: /\b(?:REASSIGN|DROP)\s+OWNED\b/i },
 ]);
 
+const exactApprovedSql: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  "migrations/202608120001_production_stripe_live/migration.sql": Object.freeze([
+    'ALTER TABLE "commercial_subscription_v2"\n    DROP CONSTRAINT "commercial_subscription_v2_identity_check";',
+  ]),
+});
+
 const checksum = (content: string): string => createHash("sha256").update(content).digest("hex");
 
-const policySql = (content: string): string =>
-  content
+const policySql = (content: string, filePath: string): string => {
+  let auditable = content;
+  for (const approvedStatement of exactApprovedSql[filePath] ?? []) {
+    const firstMatch = auditable.indexOf(approvedStatement);
+    if (firstMatch !== -1 && auditable.indexOf(approvedStatement, firstMatch + 1) === -1) {
+      auditable = `${auditable.slice(0, firstMatch)} ${auditable.slice(firstMatch + approvedStatement.length)}`;
+    }
+  }
+  return auditable
     .replace(/\$([A-Za-z_][A-Za-z0-9_]*)?\$[\s\S]*?\$\1\$/g, " ")
     .replace(/'(?:''|[^'])*'/g, "''")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/--[^\n]*/g, " ");
+};
 
 export const parseMigrationManifest = (value: unknown): MigrationManifest => {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -116,7 +130,7 @@ export const auditMigrationFiles = (
       findings.push({ path: filePath, rule: "checksum-mismatch" });
     }
     if (filePath.endsWith("/migration.sql")) {
-      const auditableSql = policySql(content);
+      const auditableSql = policySql(content, filePath);
       for (const rule of forbiddenSql) {
         if (rule.pattern.test(auditableSql)) findings.push({ path: filePath, rule: rule.id });
       }
