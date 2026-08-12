@@ -217,6 +217,7 @@ describe("Coinbase Business USDC/Base sandbox checkout application service", () 
       checkoutId,
       checkoutUrl,
       orderId,
+      providerEnvironment: "sandbox",
       recoveryScope,
       userId,
     });

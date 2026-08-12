@@ -324,7 +324,7 @@ efa9d98579e5bf1729f0d717616beff3faf46b989444b5785639b83b90f43286  apps/web/test/
 21bbcbcd7ec22cb580ec04d2c51093f93bb8cea36df84097495bdc5e3e6a7e1f  apps/web/test/auth-start-route.test.ts
 f762bc527068fb60f8c20ca4a6f2009b5a30fd344fbf0fd21e49035b93c36618  apps/web/test/birth-profile-service.test.ts
 eaecd6b69c03d8e16bb955eb61a0f66af3f59a511762353f030a69e687c2681a  apps/web/test/coinbase-checkout-route.test.ts
-5eeca9ecc3753467f2def344c2dc1ad621189f4734e2d7d8525d2881b2ceff7b  apps/web/test/coinbase-checkout-server.test.ts
+ae897fb1d20867587cebd0cc33665146f926e3d76b12839eca24a57f1569f6aa  apps/web/test/coinbase-checkout-server.test.ts
 2dacd9dac47b45b07362bf2e2a8d7bf73cd070ae58a8672da8e50c461279a763  apps/web/test/commerce-route.test.ts
 df2b80f62e640c2e7b7ad16fbb005c04dc7824ac06f83ea12292d2bc5bee7220  apps/web/test/commerce-server.test.ts
 5c98f41afb604f2892c2fe1446df75a5810512bbf5abee3eddedde0a4c4fd2ee  apps/web/test/commercial-account.test.ts
