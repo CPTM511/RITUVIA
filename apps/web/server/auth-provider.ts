@@ -7,6 +7,7 @@ import { normalizeAccountEmail, parseAuthProviderKey } from "@rituvia/domain";
 import { isReviewedReturnTo } from "../app/_contracts/reviewed-return-to";
 
 export const localPasswordlessProviderKey = parseAuthProviderKey("local.passwordless.v1");
+export const productionEmailMagicLinkProviderKey = parseAuthProviderKey("email.magic-link.v1");
 
 export const accountAuthProviderCapabilities = Object.freeze({
   emailMagicLink: "active",
@@ -32,7 +33,7 @@ export type LocalPasswordlessStart = Readonly<{
   challengeId: string;
   email: string;
   expiresAt: string;
-  providerKey: typeof localPasswordlessProviderKey;
+  providerKey: typeof localPasswordlessProviderKey | typeof productionEmailMagicLinkProviderKey;
   returnTo: string;
   state: string;
   token: string;
@@ -40,6 +41,7 @@ export type LocalPasswordlessStart = Readonly<{
 
 export type AccountAuthProvider = Readonly<{
   capabilities: typeof accountAuthProviderCapabilities;
+  delivery: "email" | "local_preview";
   issueSessionToken(): string;
   readLocalPreview(envelope: string): LocalPasswordlessStart | null;
   sealLocalPreview(started: LocalPasswordlessStart): string;
@@ -62,11 +64,16 @@ export const createAccountAuthProvider = (input: {
   deploymentEnvironment: "local" | "preview" | "production" | "staging";
   encryptionKey: Uint8Array;
   now?: (() => Date) | undefined;
+  productionEmailEnabled?: boolean | undefined;
   sandboxEnabled?: boolean | undefined;
 }): AccountAuthProvider => {
+  const localPreviewEnabled =
+    input.deploymentEnvironment === "local" ||
+    (input.deploymentEnvironment === "staging" && input.sandboxEnabled === true);
+  const productionEmailEnabled =
+    input.deploymentEnvironment === "production" && input.productionEmailEnabled === true;
   if (
-    (input.deploymentEnvironment !== "local" &&
-      !(input.deploymentEnvironment === "staging" && input.sandboxEnabled === true)) ||
+    (!localPreviewEnabled && !productionEmailEnabled) ||
     !Number.isSafeInteger(input.challengeTtlSeconds) ||
     input.challengeTtlSeconds < 60 ||
     input.challengeTtlSeconds > 3_600 ||
@@ -80,13 +87,16 @@ export const createAccountAuthProvider = (input: {
     throw new AccountAuthProviderUnavailableError();
   }
   const now = input.now ?? (() => new Date());
+  const delivery = productionEmailEnabled ? "email" : "local_preview";
   const previewEnvelopePattern = /^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{64,1024}$/u;
   const previewAdditionalData = Buffer.from("rituvia.auth-sandbox-preview.v1", "utf8");
 
   return Object.freeze({
     capabilities: accountAuthProviderCapabilities,
+    delivery,
     issueSessionToken: issueOpaqueToken,
     readLocalPreview(envelope) {
+      if (delivery !== "local_preview") return null;
       if (!previewEnvelopePattern.test(envelope)) return null;
       const [, encodedNonce, encodedSealed] = envelope.split(".");
       if (encodedNonce === undefined || encodedSealed === undefined) return null;
@@ -127,6 +137,7 @@ export const createAccountAuthProvider = (input: {
       }
     },
     sealLocalPreview(started) {
+      if (delivery !== "local_preview") throw new AccountAuthProviderUnavailableError();
       const nonce = randomBytes(12);
       const cipher = createCipheriv("aes-256-gcm", input.encryptionKey, nonce);
       cipher.setAAD(previewAdditionalData);
@@ -160,7 +171,8 @@ export const createAccountAuthProvider = (input: {
         challengeId,
         email,
         expiresAt,
-        providerKey: localPasswordlessProviderKey,
+        providerKey:
+          delivery === "email" ? productionEmailMagicLinkProviderKey : localPasswordlessProviderKey,
         returnTo: raw.returnTo,
         state,
         token,

@@ -8,6 +8,7 @@ const harness = vi.hoisted(() => {
       this.code = code;
     }
   }
+  class EmailError extends Error {}
   return {
     consumeChallenge: vi.fn(),
     createChallenge: vi.fn(),
@@ -15,11 +16,14 @@ const harness = vi.hoisted(() => {
     createService: vi.fn(),
     accountIdentityPolicyEnabled: true,
     deploymentEnvironment: "local" as "local" | "preview" | "production" | "staging",
+    emailDeliveryEnabled: false,
+    EmailError,
     IdentityError,
     mergeAnonymousSubject: vi.fn(),
     resolveSession: vi.fn(),
     revokeAllSessions: vi.fn(),
     revokeSession: vi.fn(),
+    sendEmail: vi.fn(),
   };
 });
 
@@ -27,6 +31,11 @@ vi.mock("@rituvia/db", () => ({
   AccountIdentityError: harness.IdentityError,
   createAccountIdentityService: harness.createService,
   createDatabaseClient: harness.createDatabase,
+}));
+
+vi.mock("../server/account-auth-email", () => ({
+  AccountAuthEmailUnavailableError: harness.EmailError,
+  createResendAccountAuthEmailSender: () => ({ send: harness.sendEmail }),
 }));
 
 vi.mock("../config/server", () => ({
@@ -44,8 +53,15 @@ vi.mock("../config/server", () => ({
         }
       : undefined;
     return {
+      accountEmailDelivery: harness.emailDeliveryEnabled
+        ? { apiKey: "redacted", provider: "resend" }
+        : undefined,
       accountIdentityPolicy,
-      brand: { canonicalOrigin: "https://example.test" },
+      brand: {
+        canonicalOrigin: "https://example.test",
+        name: "RITUVIA",
+        transactionalSender: "RITUVIA <access@example.test>",
+      },
       databaseUrl: "postgresql://app:private@127.0.0.1:5432/rituvia",
       deploymentEnvironment: harness.deploymentEnvironment,
     };
@@ -58,6 +74,7 @@ describe("account auth Web composition", () => {
     vi.resetModules();
     harness.accountIdentityPolicyEnabled = true;
     harness.deploymentEnvironment = "local";
+    harness.emailDeliveryEnabled = false;
     harness.createService.mockReturnValue({
       consumeChallenge: harness.consumeChallenge,
       createChallenge: harness.createChallenge,
@@ -197,18 +214,43 @@ describe("account auth Web composition", () => {
     ).rejects.toEqual(expect.objectContaining({ code: "invalid" }));
   });
 
-  it("does not touch storage for an absent account cookie and hard-fails production local auth", async () => {
+  it("does not touch storage for an absent cookie and sends production sign-in by email", async () => {
     let authModule = await import("../server/account-auth");
     await expect(authModule.resolveCurrentAccountSession(undefined)).resolves.toBeNull();
     expect(harness.resolveSession).not.toHaveBeenCalled();
 
     vi.resetModules();
     harness.deploymentEnvironment = "production";
+    harness.emailDeliveryEnabled = true;
     authModule = await import("../server/account-auth");
+    const started = await authModule.startWebAccountAuth({
+      email: "person@example.net",
+      returnTo: "/en/account",
+    });
+    expect(started.localPreviewPath).toBeUndefined();
+    expect(started.stateToken).toMatch(/^[A-Za-z0-9_-]{43}$/u);
+    expect(harness.createChallenge).toHaveBeenCalledOnce();
+    expect(harness.createChallenge.mock.calls[0]?.[0]).toMatchObject({
+      email: "person@example.net",
+      providerKey: "email.magic-link.v1",
+    });
+    expect(harness.sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        callbackUrl: expect.stringContaining("https://example.test/api/v1/auth/callback"),
+        email: "person@example.net",
+      }),
+    );
+  });
+
+  it("fails production sign-in closed when email delivery is not configured", async () => {
+    harness.deploymentEnvironment = "production";
+    const authModule = await import("../server/account-auth");
+
     await expect(
-      authModule.startWebAccountAuth({ email: "demo@example.test", returnTo: "/en/account" }),
+      authModule.startWebAccountAuth({ email: "person@example.net", returnTo: "/en/account" }),
     ).rejects.toEqual(expect.objectContaining({ code: "unavailable" }));
     expect(harness.createChallenge).not.toHaveBeenCalled();
+    expect(harness.sendEmail).not.toHaveBeenCalled();
   });
 
   it("keeps local auth safely off when account identity keys are not configured", async () => {

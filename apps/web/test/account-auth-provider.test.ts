@@ -52,7 +52,7 @@ describe("local passwordless account provider", () => {
     expect(provider.readLocalPreview(`${envelope}x`)).toBeNull();
   });
 
-  it.each(["preview", "staging", "production"] as const)(
+  it.each(["preview", "staging"] as const)(
     "hard-disables the local provider in %s",
     (deploymentEnvironment) => {
       expect(() =>
@@ -65,6 +65,25 @@ describe("local passwordless account provider", () => {
       ).toThrow(AccountAuthProviderUnavailableError);
     },
   );
+
+  it("enables production email delivery without exposing local preview material", () => {
+    const provider = createAccountAuthProvider({
+      canonicalOrigin: "https://example.com",
+      challengeTtlSeconds: 600,
+      deploymentEnvironment: "production",
+      encryptionKey,
+      productionEmailEnabled: true,
+    });
+    const started = provider.startEmailMagicLink({
+      email: "person@example.net",
+      returnTo: "/en/account",
+    });
+
+    expect(provider.delivery).toBe("email");
+    expect(started.providerKey).toBe("email.magic-link.v1");
+    expect(provider.readLocalPreview("invalid")).toBeNull();
+    expect(() => provider.sealLocalPreview(started)).toThrow(AccountAuthProviderUnavailableError);
+  });
 
   it("accepts normalized email without account enumeration but rejects unsafe input", () => {
     const provider = createAccountAuthProvider({

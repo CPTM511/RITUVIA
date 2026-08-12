@@ -85,6 +85,8 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
   "RITUVIA_PAYMENT_PROVIDER",
+  "RITUVIA_NEW_PURCHASES_ENABLED",
+  "RITUVIA_STRIPE_CHECKOUT_ENABLED",
   "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
   "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
   "RITUVIA_PRIVACY_EXPORT_KEY_V1",
@@ -99,6 +101,7 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_STRIPE_ACCOUNT_ID",
   "RITUVIA_STRIPE_PRICE_IDS",
   "RITUVIA_TAROT_INTEGRITY_KEY_V1",
+  "RESEND_API_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
 ] as const);
@@ -113,6 +116,7 @@ export type BuildConfiguration = Readonly<{
 }>;
 
 export type ServerConfiguration = Readonly<{
+  accountEmailDelivery: AccountEmailDeliveryConfiguration | undefined;
   accountIdentityPolicy: AccountIdentityPolicyConfiguration | undefined;
   aiGenerationDatabaseUrl: string | undefined;
   anonymousSessionPolicy: AnonymousSessionPolicyConfiguration | undefined;
@@ -153,6 +157,11 @@ export type AccountIdentityPolicyConfiguration = Readonly<{
   startWindowSeconds: number;
 }>;
 
+export type AccountEmailDeliveryConfiguration = Readonly<{
+  apiKey: string;
+  provider: "resend";
+}>;
+
 export type PrivateContentKeyringConfiguration = Readonly<{
   activeKeyVersion: "private-content.v1";
   digestKeyVersion: "private-content.v1";
@@ -185,7 +194,9 @@ export type PaymentConfiguration =
     }>
   | Readonly<{
       accountId: string;
+      checkoutEnabled: boolean;
       mode: "live" | "test";
+      newPurchasesEnabled: boolean;
       priceIds: Readonly<Record<string, string>>;
       provider: "stripe";
       secretKey: string;
@@ -374,7 +385,9 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: encodedSecretKeySchema.optional(),
   RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: encodedSecretKeySchema.optional(),
+  RITUVIA_NEW_PURCHASES_ENABLED: z.enum(["true", "false"]).optional(),
   RITUVIA_PAYMENT_PROVIDER: z.enum(["local", "stripe"]).optional(),
+  RITUVIA_STRIPE_CHECKOUT_ENABLED: z.enum(["true", "false"]).optional(),
   RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_PRIVACY_EXPORT_KEY_V1: encodedSecretKeySchema.optional(),
@@ -400,9 +413,13 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_STRIPE_PRICE_IDS: stripePriceIdsSchema.optional(),
   RITUVIA_TAROT_INTEGRITY_KEY_V1: encodedSecretKeySchema.optional(),
+  RESEND_API_KEY: z
+    .string()
+    .regex(/^re_[A-Za-z0-9_]{16,255}$/u)
+    .optional(),
   STRIPE_SECRET_KEY: z
     .string()
-    .regex(/^sk_(?:test|live)_[A-Za-z0-9_]{16,255}$/u)
+    .regex(/^(?:rk|sk)_(?:test|live)_[A-Za-z0-9_]{16,255}$/u)
     .optional(),
   STRIPE_WEBHOOK_SECRET: z
     .string()
@@ -495,6 +512,23 @@ const parseAccountIdentityPolicy = (
     startIdentifierLimit: parsed.RITUVIA_AUTH_START_IDENTIFIER_LIMIT ?? 5,
     startWindowSeconds: parsed.RITUVIA_AUTH_START_WINDOW_SECONDS ?? 900,
   });
+};
+
+const parseAccountEmailDelivery = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+  accountIdentityPolicy: AccountIdentityPolicyConfiguration | undefined,
+  transactionalSender: string,
+): AccountEmailDeliveryConfiguration | undefined => {
+  if (parsed.RESEND_API_KEY === undefined) return undefined;
+  if (
+    deploymentEnvironment !== "production" ||
+    accountIdentityPolicy === undefined ||
+    transactionalSender === ""
+  ) {
+    throw new ConfigurationError("server", [{ code: "invalid", key: "RESEND_API_KEY" }]);
+  }
+  return Object.freeze({ apiKey: parsed.RESEND_API_KEY, provider: "resend" as const });
 };
 
 const parseReflectionConfiguration = (
@@ -660,7 +694,9 @@ const parsePaymentConfiguration = (
   if (parsed.RITUVIA_PAYMENT_PROVIDER === undefined) {
     const strayConfiguration = [
       parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
+      parsed.RITUVIA_NEW_PURCHASES_ENABLED,
       parsed.RITUVIA_STRIPE_ACCOUNT_ID,
+      parsed.RITUVIA_STRIPE_CHECKOUT_ENABLED,
       parsed.RITUVIA_STRIPE_PRICE_IDS,
       parsed.STRIPE_SECRET_KEY,
       parsed.STRIPE_WEBHOOK_SECRET,
@@ -676,6 +712,8 @@ const parsePaymentConfiguration = (
     if (
       deploymentEnvironment !== "local" ||
       parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1 === undefined ||
+      parsed.RITUVIA_NEW_PURCHASES_ENABLED !== undefined ||
+      parsed.RITUVIA_STRIPE_CHECKOUT_ENABLED !== undefined ||
       parsed.RITUVIA_STRIPE_ACCOUNT_ID !== undefined ||
       parsed.RITUVIA_STRIPE_PRICE_IDS !== undefined ||
       parsed.STRIPE_SECRET_KEY !== undefined ||
@@ -695,11 +733,17 @@ const parsePaymentConfiguration = (
     });
   }
   const stripeMode = deploymentEnvironment === "production" ? "live" : "test";
-  const stripeSecretPrefix = stripeMode === "live" ? "sk_live_" : "sk_test_";
+  const recoveryStripeCheckoutEnabled =
+    deploymentEnvironment === "staging" && parsed.RITUVIA_RECOVERY_COMMERCE_SANDBOX === "item-10";
+  const validStripeSecretPrefixes =
+    stripeMode === "live" ? (["rk_live_"] as const) : (["rk_test_", "sk_test_"] as const);
+  const hasValidStripeSecretPrefix =
+    parsed.STRIPE_SECRET_KEY !== undefined &&
+    validStripeSecretPrefixes.some((prefix) => parsed.STRIPE_SECRET_KEY!.startsWith(prefix));
   if (
     parsed.RITUVIA_STRIPE_ACCOUNT_ID === undefined ||
     parsed.STRIPE_SECRET_KEY === undefined ||
-    !parsed.STRIPE_SECRET_KEY.startsWith(stripeSecretPrefix) ||
+    !hasValidStripeSecretPrefix ||
     parsed.STRIPE_WEBHOOK_SECRET === undefined ||
     parsed.RITUVIA_STRIPE_PRICE_IDS === undefined ||
     parsed.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1 !== undefined
@@ -707,7 +751,7 @@ const parsePaymentConfiguration = (
     throw new ConfigurationError("server", [
       ...(parsed.STRIPE_SECRET_KEY === undefined
         ? [{ code: "missing" as const, key: "STRIPE_SECRET_KEY" }]
-        : !parsed.STRIPE_SECRET_KEY.startsWith(stripeSecretPrefix)
+        : !hasValidStripeSecretPrefix
           ? [{ code: "invalid" as const, key: "STRIPE_SECRET_KEY" }]
           : []),
       ...(parsed.RITUVIA_STRIPE_ACCOUNT_ID === undefined
@@ -726,7 +770,15 @@ const parsePaymentConfiguration = (
   }
   return Object.freeze({
     accountId: parsed.RITUVIA_STRIPE_ACCOUNT_ID,
+    checkoutEnabled:
+      parsed.RITUVIA_STRIPE_CHECKOUT_ENABLED === undefined
+        ? recoveryStripeCheckoutEnabled
+        : parsed.RITUVIA_STRIPE_CHECKOUT_ENABLED === "true",
     mode: stripeMode,
+    newPurchasesEnabled:
+      parsed.RITUVIA_NEW_PURCHASES_ENABLED === undefined
+        ? recoveryStripeCheckoutEnabled
+        : parsed.RITUVIA_NEW_PURCHASES_ENABLED === "true",
     priceIds: parseStripePriceIds(parsed.RITUVIA_STRIPE_PRICE_IDS),
     provider: "stripe",
     secretKey: parsed.STRIPE_SECRET_KEY,
@@ -1241,7 +1293,13 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: normalizeEnvironmentValue(
       environment.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
     ),
+    RITUVIA_NEW_PURCHASES_ENABLED: normalizeEnvironmentValue(
+      environment.RITUVIA_NEW_PURCHASES_ENABLED,
+    ),
     RITUVIA_PAYMENT_PROVIDER: normalizeEnvironmentValue(environment.RITUVIA_PAYMENT_PROVIDER),
+    RITUVIA_STRIPE_CHECKOUT_ENABLED: normalizeEnvironmentValue(
+      environment.RITUVIA_STRIPE_CHECKOUT_ENABLED,
+    ),
     RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS,
     ),
@@ -1280,6 +1338,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_TAROT_INTEGRITY_KEY_V1: normalizeEnvironmentValue(
       environment.RITUVIA_TAROT_INTEGRITY_KEY_V1,
     ),
+    RESEND_API_KEY: normalizeEnvironmentValue(environment.RESEND_API_KEY),
     STRIPE_SECRET_KEY: normalizeEnvironmentValue(environment.STRIPE_SECRET_KEY),
     STRIPE_WEBHOOK_SECRET: normalizeEnvironmentValue(environment.STRIPE_WEBHOOK_SECRET),
   });
@@ -1297,6 +1356,12 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
 
   const reflection = parseReflectionConfiguration(server);
   const accountIdentityPolicy = parseAccountIdentityPolicy(server);
+  const accountEmailDelivery = parseAccountEmailDelivery(
+    server,
+    build.deploymentEnvironment,
+    accountIdentityPolicy,
+    build.brand.transactionalSender,
+  );
   const privacyExport = parsePrivacyExportConfiguration(server);
   const privacyDeletionDatabaseUrl = resolvePrivacyDeletionDatabaseUrl(
     server,
@@ -1364,6 +1429,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     ]);
   }
   return Object.freeze({
+    accountEmailDelivery,
     accountIdentityPolicy,
     aiGenerationDatabaseUrl,
     anonymousSessionPolicy: parseAnonymousSessionPolicy(server, build.deploymentEnvironment),

@@ -39,6 +39,13 @@ const boundedPathPattern = /^\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]{0,299}$/u;
 const sandboxCountryCode = "US";
 const sandboxCurrencyCode = "USD";
 const checkoutRequestSchemaVersion = "stripe-checkout-request.v1";
+const productionLaunchProduct = Object.freeze({
+  amountMinor: 599,
+  billingInterval: "one_time",
+  code: "pack_6",
+  creditsGranted: 6,
+  kind: "credit_pack",
+});
 
 type AccountGateway = Readonly<{
   getProfile(token: string): Promise<
@@ -64,9 +71,11 @@ export type StripeCheckoutApplicationDependencies = Readonly<{
     ): Promise<readonly CountryPolicyVersionV1[]>;
   }>;
   environment: CatalogEnvironment;
+  newPurchasesEnabled: boolean;
   paymentMode: "live" | "test";
   providerAccountFingerprint: string;
   paymentProvider: HostedCheckoutAdapter;
+  stripeCheckoutEnabled: boolean;
   persistence: Pick<
     CommercialCheckoutPersistence,
     "attachStripeCheckout" | "createOrReplayStripeCheckout"
@@ -198,6 +207,9 @@ export const createStripeCheckoutApplicationService = (
       sessionToken: string | undefined;
     }): Promise<WebStripeCheckout> {
       try {
+        if (!dependencies.newPurchasesEnabled || !dependencies.stripeCheckoutEnabled) {
+          throw new WebCommerceError("unavailable");
+        }
         if (input.sessionToken === undefined) throw new WebCommerceError("session_required");
         const request = parseRequest(input.request);
         const idempotencyKey = parseIdempotencyKey(input.idempotencyKey);
@@ -250,6 +262,20 @@ export const createStripeCheckoutApplicationService = (
         const localization = product.localizations.find(({ locale }) => locale === "en");
         if (prices.length !== 1 || price === undefined || localization === undefined) {
           throw new WebCommerceError("not_eligible");
+        }
+        if (
+          dependencies.environment === "production" &&
+          (catalog.products.filter(({ status }) => status === "active").length !== 1 ||
+            catalog.prices.filter(({ status }) => status === "active").length !== 1 ||
+            product.code !== productionLaunchProduct.code ||
+            product.kind !== productionLaunchProduct.kind ||
+            product.creditsGranted !== productionLaunchProduct.creditsGranted ||
+            product.creditsPerMonth !== null ||
+            product.subscriptionInterval !== null ||
+            price.amountMinor !== productionLaunchProduct.amountMinor ||
+            price.billingInterval !== productionLaunchProduct.billingInterval)
+        ) {
+          throw new WebCommerceError("unavailable");
         }
 
         const policyDecision = evaluateCountryPolicyVersion(
@@ -423,9 +449,11 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
         ).map((record) => parseCountryPolicyVersionV1(record.policyDocument)),
     },
     environment: configuration.deploymentEnvironment,
+    newPurchasesEnabled: configuration.payment.newPurchasesEnabled,
     paymentMode: configuration.payment.mode,
     providerAccountFingerprint: paymentProviders.accountFingerprint(stripeHostedCheckoutProviderId),
     paymentProvider,
+    stripeCheckoutEnabled: configuration.payment.checkoutEnabled,
     persistence: createCommercialCheckoutPersistence(loadWebDatabase()),
   });
   return service;

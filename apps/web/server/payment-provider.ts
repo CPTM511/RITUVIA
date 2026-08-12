@@ -489,9 +489,11 @@ export const createStripeGateway = (
   mapVerifiedEvent: (value: unknown) => NormalizedPaymentEventV1;
 }> => {
   const expectedLivemode = input.mode === "live";
-  const expectedSecretPrefix = expectedLivemode ? "sk_live_" : "sk_test_";
+  const expectedSecretPrefixes = expectedLivemode
+    ? (["rk_live_"] as const)
+    : (["rk_test_", "sk_test_"] as const);
   const expectedSessionPrefix = expectedLivemode ? "cs_live_" : "cs_test_";
-  if (!input.secretKey.startsWith(expectedSecretPrefix)) {
+  if (!expectedSecretPrefixes.some((prefix) => input.secretKey.startsWith(prefix))) {
     throw new WebPaymentProviderError("configuration");
   }
   let accountVerification: Promise<void> | undefined;
@@ -530,14 +532,23 @@ export const createStripeGateway = (
       }
       const session = await stripe.checkout.sessions.create(
         {
+          billing_address_collection: "required",
           cancel_url: request.cancelUrl,
           client_reference_id: request.clientReferenceId,
           line_items: [{ price: price.id, quantity: 1 }],
-          metadata: request.metadata,
+          metadata: { ...request.metadata, countryCode: request.countryCode },
           mode: request.mode,
           ...(request.mode === "payment"
-            ? { payment_intent_data: { metadata: request.metadata } }
-            : { subscription_data: { metadata: request.metadata } }),
+            ? {
+                payment_intent_data: {
+                  metadata: { ...request.metadata, countryCode: request.countryCode },
+                },
+              }
+            : {
+                subscription_data: {
+                  metadata: { ...request.metadata, countryCode: request.countryCode },
+                },
+              }),
           success_url: request.returnUrl,
         },
         { idempotencyKey: request.idempotencyKey },

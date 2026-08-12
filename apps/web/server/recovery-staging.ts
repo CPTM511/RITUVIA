@@ -40,10 +40,12 @@ const allowedRecoveryIdentityEnvironment = new Set([
 ]);
 const allowedRecoveryCommerceEnvironment = new Set([
   "PAYMENT_WEBHOOK_DATABASE_URL",
+  "RITUVIA_NEW_PURCHASES_ENABLED",
   "RITUVIA_PAYMENT_PROVIDER",
   "RITUVIA_PAYMENT_WEBHOOK_ROLE_PASSWORD",
   "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
   "RITUVIA_STRIPE_ACCOUNT_ID",
+  "RITUVIA_STRIPE_CHECKOUT_ENABLED",
   "RITUVIA_STRIPE_PRICE_IDS",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
@@ -86,7 +88,7 @@ export type RecoveryStagingRuntimeStatus = Readonly<{
 }>;
 
 const hasForbiddenServiceEnvironment = (environment: RawEnvironment): boolean =>
-  environment.STRIPE_SECRET_KEY?.startsWith("sk_live_") === true ||
+  /^(?:rk|sk)_live_/u.test(environment.STRIPE_SECRET_KEY ?? "") ||
   Object.entries(environment).some(
     ([key, value]) =>
       value !== undefined &&

@@ -12,12 +12,14 @@ const harness = vi.hoisted(() => {
   return {
     CommerceError,
     createCheckout: vi.fn(),
+    deploymentEnvironment: "local" as "local" | "production",
   };
 });
 
 vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({
     brand: { canonicalOrigin: "https://example.test" },
+    deploymentEnvironment: harness.deploymentEnvironment,
   }),
 }));
 
@@ -56,6 +58,7 @@ const requestHeaders = Object.freeze({
 describe("Stripe checkout HTTP contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    harness.deploymentEnvironment = "local";
     harness.createCheckout.mockResolvedValue({
       amountMinor: 599,
       checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_12345678",
@@ -139,5 +142,35 @@ describe("Stripe checkout HTTP contract", () => {
     expect(encoded.status).toBe(400);
     expect(missingCsrf.status).toBe(403);
     expect(harness.createCheckout).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows production checkout only with the Vercel US country signal", async () => {
+    harness.deploymentEnvironment = "production";
+    const missingCountry = await POST(
+      new NextRequest("https://example.test/api/v1/checkout/stripe", {
+        body: JSON.stringify(body),
+        headers: requestHeaders,
+        method: "POST",
+      }),
+    );
+    const ineligibleCountry = await POST(
+      new NextRequest("https://example.test/api/v1/checkout/stripe", {
+        body: JSON.stringify(body),
+        headers: { ...requestHeaders, "x-vercel-ip-country": "CA" },
+        method: "POST",
+      }),
+    );
+    const eligibleCountry = await POST(
+      new NextRequest("https://example.test/api/v1/checkout/stripe", {
+        body: JSON.stringify(body),
+        headers: { ...requestHeaders, "x-vercel-ip-country": "US" },
+        method: "POST",
+      }),
+    );
+
+    expect(missingCountry.status).toBe(403);
+    expect(ineligibleCountry.status).toBe(403);
+    expect(eligibleCountry.status).toBe(201);
+    expect(harness.createCheckout).toHaveBeenCalledOnce();
   });
 });

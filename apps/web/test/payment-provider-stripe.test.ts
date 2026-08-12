@@ -93,6 +93,16 @@ describe("Stripe verified event normalization", () => {
     expect(retrieveAccount).toHaveBeenCalledOnce();
     expect(retrievePrice).toHaveBeenCalledTimes(2);
     expect(createSession).toHaveBeenCalledTimes(2);
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        billing_address_collection: "required",
+        metadata: { countryCode: "US", orderId, productCode: "pack_6" },
+        payment_intent_data: {
+          metadata: { countryCode: "US", orderId, productCode: "pack_6" },
+        },
+      }),
+      { idempotencyKey: `stripe:${orderId}:1` },
+    );
 
     const mismatched = createStripeGateway(
       {
@@ -145,7 +155,7 @@ describe("Stripe verified event normalization", () => {
         accountId: "acct_12345678",
         mode: "live",
         priceIds: { pack_6: "price_pack06live" },
-        secretKey: `sk_live_${"a".repeat(24)}`,
+        secretKey: `rk_live_${"a".repeat(24)}`,
         webhookSecret: `whsec_${"b".repeat(24)}`,
       },
       stripe as never,
@@ -167,12 +177,22 @@ describe("Stripe verified event normalization", () => {
         unitAmountMinor: 599,
       }),
     ).resolves.toMatchObject({ id: "cs_live_12345678" });
+    expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        billing_address_collection: "required",
+        metadata: { countryCode: "US", orderId, productCode: "pack_6" },
+        payment_intent_data: {
+          metadata: { countryCode: "US", orderId, productCode: "pack_6" },
+        },
+      }),
+      { idempotencyKey: `stripe:${orderId}:1` },
+    );
     expect(() =>
       createStripeGateway({
         accountId: "acct_12345678",
         mode: "live",
         priceIds: { pack_6: "price_pack06live" },
-        secretKey: `sk_test_${"a".repeat(24)}`,
+        secretKey: `sk_live_${"a".repeat(24)}`,
         webhookSecret: `whsec_${"b".repeat(24)}`,
       }),
     ).toThrowError("The payment provider is unavailable.");

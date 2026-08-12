@@ -278,6 +278,41 @@ describe("versioned country policy", () => {
     });
   });
 
+  it("accepts the D-099 Stripe Live approval only for production fiat policy", () => {
+    expect(
+      parseCountryPolicyVersionV1({
+        ...policy(),
+        approvalMode: "written",
+        environment: "production",
+        evidence: {
+          cryptoApprovalReference: null,
+          fiatApprovalReference: "D-099:stripe-live:us:pack-6",
+          legalReference: "D-099:legal:us",
+          ownerReference: "D-099:owner:limited-production",
+          providerReference: "D-099:stripe-account:verified",
+        },
+        version: "production.us.d-099.v1",
+      }),
+    ).toMatchObject({
+      environment: "production",
+      evidence: { fiatApprovalReference: "D-099:stripe-live:us:pack-6" },
+    });
+    expect(() =>
+      parseCountryPolicyVersionV1({
+        ...policy(),
+        approvalMode: "written",
+        environment: "staging",
+        evidence: {
+          cryptoApprovalReference: null,
+          fiatApprovalReference: "D-099:stripe-live:us:pack-6",
+          legalReference: "D-099:legal:us",
+          ownerReference: "D-099:owner:limited-production",
+          providerReference: "D-099:stripe-account:verified",
+        },
+      }),
+    ).toThrow("Country policy version is invalid.");
+  });
+
   it("accepts the exact Item 11 Coinbase sandbox approval only in staging", () => {
     const staging = {
       ...policy(),
