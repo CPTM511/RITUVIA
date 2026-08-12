@@ -15,6 +15,9 @@ const csrfToken = "v".repeat(43);
 const privateIntention = "I intend to pause before I answer the private canary.";
 const privateAction = "Take three private canary breaths.";
 const privateReflection = "I took the action and learned from the private canary.";
+const updatedRevisitDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000)
+  .toISOString()
+  .slice(0, 10);
 const artifactDirectory = path.join(process.cwd(), "output/playwright/rit044");
 
 const waitForServer = async (server) => {
@@ -360,7 +363,7 @@ try {
 
   await page.locator(".revisit-card").getByRole("button", { name: "Save new date" }).click();
   await page.getByRole("radio", { name: "Choose a date" }).check();
-  await page.locator('input[type="date"]').fill("2026-08-10");
+  await page.locator('input[type="date"]').fill(updatedRevisitDate);
   await context.setOffline(true);
   await page
     .locator(".revisit-schedule form")
@@ -376,7 +379,7 @@ try {
     .locator(".revisit-schedule form")
     .getByRole("button", { name: "Save new date" })
     .click();
-  await page.getByText("2026-08-10", { exact: true }).waitFor();
+  await page.getByText(updatedRevisitDate, { exact: true }).waitFor();
   assert.equal(requests.length, 2);
 
   const revisitCard = page.locator(".revisit-card");
