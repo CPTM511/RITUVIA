@@ -32,6 +32,21 @@ export const buildEnvironmentVariables = Object.freeze([
   ...brandEnvironmentVariables,
 ] as const);
 
+const productionPublicBrandEnvironmentVariables = Object.freeze([
+  "BRAND_NAME",
+  "BRAND_SHORT_NAME",
+  "BRAND_TAGLINE",
+  "BRAND_CANONICAL_ORIGIN",
+  "BRAND_SOCIAL_HANDLES",
+  "BRAND_ASSET_MANIFEST",
+] as const);
+
+const productionCommerceBrandEnvironmentVariables = Object.freeze([
+  "BRAND_LEGAL_ENTITY",
+  "BRAND_SUPPORT_EMAIL",
+  "BRAND_TRANSACTIONAL_SENDER",
+] as const);
+
 const anonymousSessionEnvironmentVariables = Object.freeze([
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT",
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
@@ -1072,7 +1087,7 @@ const assertProductionBrandOverrides = (
   }
 
   const environmentValues = new Map(Object.entries(environment));
-  const missingKeys = brandEnvironmentVariables.filter(
+  const missingKeys = productionPublicBrandEnvironmentVariables.filter(
     (key) => normalizeEnvironmentValue(environmentValues.get(key)) === undefined,
   );
 
@@ -1086,6 +1101,28 @@ const assertProductionBrandOverrides = (
   const origin = normalizeEnvironmentValue(environment.BRAND_CANONICAL_ORIGIN);
   if (origin === undefined || new URL(origin).protocol !== "https:") {
     throw new ConfigurationError("brand", [{ code: "invalid", key: "BRAND_CANONICAL_ORIGIN" }]);
+  }
+};
+
+const assertProductionCommerceBrandOverrides = (
+  environment: RawEnvironment,
+  deploymentEnvironment: DeploymentEnvironment,
+  payment: PaymentConfiguration | undefined,
+) => {
+  if (deploymentEnvironment !== "production" || payment?.provider !== "stripe") {
+    return;
+  }
+
+  const environmentValues = new Map(Object.entries(environment));
+  const missingKeys = productionCommerceBrandEnvironmentVariables.filter(
+    (key) => normalizeEnvironmentValue(environmentValues.get(key)) === undefined,
+  );
+
+  if (missingKeys.length > 0) {
+    throw new ConfigurationError(
+      "brand",
+      missingKeys.map((key) => ({ code: "missing", key })),
+    );
   }
 };
 
@@ -1283,6 +1320,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
             ]);
           })();
   const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
+  assertProductionCommerceBrandOverrides(environment, build.deploymentEnvironment, payment);
   const recoveryItem11Sandbox = parseRecoveryItem11Sandbox(server, build.deploymentEnvironment);
   const paymentWebhookDatabaseUrl = resolvePaymentWebhookDatabaseUrl(
     server,
