@@ -646,6 +646,14 @@ describe("server and client configuration boundary", () => {
       mode: "live",
       provider: "stripe",
     });
+    expect(
+      parseServerConfiguration({
+        ...live,
+        RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({ pack_6: "price_pack06live" }),
+      }).payment,
+    ).toMatchObject({
+      priceIds: { pack_6: "price_pack06live" },
+    });
     expect(() =>
       parseServerConfiguration({
         ...live,
@@ -677,6 +685,12 @@ describe("server and client configuration boundary", () => {
         RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
           mindful_incense: "price_legacytest",
         }),
+      }),
+    ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
+    expect(() =>
+      parseServerConfiguration({
+        ...sandbox,
+        RITUVIA_STRIPE_PRICE_IDS: "{}",
       }),
     ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
   });
