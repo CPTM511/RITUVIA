@@ -1098,6 +1098,13 @@ legal seller/support/tax particulars, production catalog/policy records, verifie
 Resend key are configured and the exact source is deployed and smoke-tested. Coinbase and
 production AI remain outside the first rollout.
 
+The follow-up production catalog authorization migration and fail-closed
+`production:configure-stripe-live` command are prepared on the production-activation branch. The
+command accepts only one US/English/adult `pack_6` price at USD 5.99 and refuses to write until the
+live Stripe account, card capability, Product/Price, descriptor, support address, legal versions,
+tax treatment, review window, database identity, migrations, and least-privilege roles all attest.
+Purchases must remain disabled while it runs; this preparation is not a production activation.
+
 Founder Acceptance Recovery is active with recovery baseline
 `f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 11 are complete. FJ-16/FJ-17
 Provider AI acceptance passed. The Owner's 2026-08-10 amendment excludes FJ-15 hosted crypto
@@ -11177,6 +11184,31 @@ PostgreSQL key. The isolated drill applies all 28 migrations, rejects the histor
 invalid activation evidence, records off-to-on-to-emergency-off history, proves runtime/control
 least privilege, and restores the same latest-off state from a logical dump. Rollback stops the
 writer and appends a newer off version if necessary; immutable flag history is not deleted.
+
+## D-099 production catalog authorization
+
+The additive policy migration permits the exact `D-099:stripe-live:us:pack-6` owner evidence only
+for a production catalog. It does not insert or activate a catalog, widen staging, enable checkout,
+configure Vercel, or send a Stripe request. Local `local_test` behavior and prior written `OWN-*`
+evidence remain unchanged.
+
+`pnpm --filter @rituvia/db production:configure-stripe-live` is the only prepared first-launch
+writer. Before any database mutation it requires the exact `rituvia-production` Neon TLS target,
+production environment and confirmation values, purchases still disabled, non-placeholder legal,
+support, policy, tax, descriptor, and review facts, and a restricted `rk_live_` credential. It then
+attests the live Stripe account, US card-payments capability, support address, statement descriptor,
+the exact active one-time USD 5.99 `pack_6` Product/Price, and the enabled exact-origin webhook and
+event set whose metadata is bound to the configured signing-secret digest before deploying
+migrations and transactionally appending one English, US, 18+ production catalog and policy. Crypto
+and recurring payments remain off. Runtime and webhook roles are read-only or narrowly
+payment-scoped and are attested without printing secrets. A real signed delivery is still required
+after deployment before the two purchase switches may be enabled.
+
+Rollback leaves immutable catalog, policy, order, payment, and ledger evidence intact. Disable new
+purchases and Stripe checkout through their server-side switches, then append a later disabled or
+superseding catalog/policy under a separately reviewed decision. Do not delete or rewrite the first
+production records. The migration is safe for an empty registry and does not require a data
+rewrite; production execution still requires current PITR/restore evidence and an exact source SHA.
 
 ---
 
