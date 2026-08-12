@@ -112,6 +112,8 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_RECOVERY_COMMERCE_SANDBOX",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
       "RITUVIA_PAYMENT_PROVIDER",
+      "RITUVIA_NEW_PURCHASES_ENABLED",
+      "RITUVIA_STRIPE_CHECKOUT_ENABLED",
       "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
       "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
       "RITUVIA_PRIVACY_EXPORT_KEY_V1",
@@ -126,6 +128,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_STRIPE_ACCOUNT_ID",
       "RITUVIA_STRIPE_PRICE_IDS",
       "RITUVIA_TAROT_INTEGRITY_KEY_V1",
+      "RESEND_API_KEY",
       "STRIPE_SECRET_KEY",
       "STRIPE_WEBHOOK_SECRET",
     ]);
@@ -552,7 +555,9 @@ describe("server and client configuration boundary", () => {
 
     expect(parseServerConfiguration(sandbox).payment).toMatchObject({
       accountId: sandbox.RITUVIA_STRIPE_ACCOUNT_ID,
+      checkoutEnabled: false,
       mode: "test",
+      newPurchasesEnabled: false,
       provider: "stripe",
       secretKey: sandbox.STRIPE_SECRET_KEY,
     });
@@ -560,8 +565,11 @@ describe("server and client configuration boundary", () => {
       parseServerConfiguration({
         ...sandbox,
         RITUVIA_RECOVERY_COMMERCE_SANDBOX: "item-10",
-      }).recoveryCommerceSandbox,
-    ).toEqual({ enabled: true });
+      }),
+    ).toMatchObject({
+      payment: { checkoutEnabled: true, newPurchasesEnabled: true },
+      recoveryCommerceSandbox: { enabled: true },
+    });
     const rolePassword = Buffer.alloc(32, 5).toString("base64url");
     const derivedRoleConfiguration = parseServerConfiguration({
       ...sandbox,
@@ -640,12 +648,21 @@ describe("server and client configuration boundary", () => {
       BRAND_SUPPORT_EMAIL: "support@example.com",
       BRAND_TAGLINE: "Tagline",
       BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
-      STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      STRIPE_SECRET_KEY: `rk_live_${"a".repeat(24)}`,
     } as const;
     expect(parseServerConfiguration(live).payment).toMatchObject({
+      checkoutEnabled: false,
       mode: "live",
+      newPurchasesEnabled: false,
       provider: "stripe",
     });
+    expect(
+      parseServerConfiguration({
+        ...live,
+        RITUVIA_NEW_PURCHASES_ENABLED: "true",
+        RITUVIA_STRIPE_CHECKOUT_ENABLED: "true",
+      }).payment,
+    ).toMatchObject({ checkoutEnabled: true, newPurchasesEnabled: true });
     expect(
       parseServerConfiguration({
         ...live,
@@ -681,6 +698,12 @@ describe("server and client configuration boundary", () => {
     ).toThrowError("STRIPE_SECRET_KEY:invalid");
     expect(() =>
       parseServerConfiguration({
+        ...live,
+        STRIPE_SECRET_KEY: `sk_live_${"a".repeat(24)}`,
+      }),
+    ).toThrowError("STRIPE_SECRET_KEY:invalid");
+    expect(() =>
+      parseServerConfiguration({
         ...sandbox,
         RITUVIA_STRIPE_PRICE_IDS: JSON.stringify({
           mindful_incense: "price_legacytest",
@@ -693,6 +716,32 @@ describe("server and client configuration boundary", () => {
         RITUVIA_STRIPE_PRICE_IDS: "{}",
       }),
     ).toThrowError("RITUVIA_STRIPE_PRICE_IDS:invalid");
+  });
+
+  it("enables Resend delivery only for a configured production identity boundary", () => {
+    const identity = {
+      APP_ENV: "production",
+      BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+      BRAND_CANONICAL_ORIGIN: "https://example.com",
+      BRAND_NAME: "RITUVIA",
+      BRAND_SHORT_NAME: "RITUVIA",
+      BRAND_SOCIAL_HANDLES: "{}",
+      BRAND_TAGLINE: "Reflect with care",
+      BRAND_TRANSACTIONAL_SENDER: "RITUVIA <access@example.com>",
+      RESEND_API_KEY: `re_${"a".repeat(24)}`,
+      RITUVIA_AUTH_DATA_KEY_V1: Buffer.alloc(32, 1).toString("base64url"),
+      RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: Buffer.alloc(32, 2).toString("base64url"),
+    } as const;
+
+    expect(parseServerConfiguration(identity).accountEmailDelivery).toMatchObject({
+      provider: "resend",
+    });
+    expect(() => parseServerConfiguration({ ...identity, APP_ENV: "staging" })).toThrowError(
+      "RESEND_API_KEY:invalid",
+    );
+    expect(() =>
+      parseServerConfiguration({ ...identity, RITUVIA_AUTH_DATA_KEY_V1: undefined }),
+    ).toThrowError("RITUVIA_AUTH_DATA_KEY_V1:missing");
   });
 
   it("allows Item 11 only as a complete protected-staging sandbox", () => {

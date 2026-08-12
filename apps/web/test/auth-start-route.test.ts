@@ -69,6 +69,24 @@ describe("account auth start route", () => {
     });
   });
 
+  it("returns a uniform production acceptance without exposing a callback path", async () => {
+    harness.start.mockResolvedValue({
+      accepted: true,
+      expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      stateToken: "s".repeat(43),
+    });
+    const response = await POST(
+      request(JSON.stringify({ email: "person@example.net", returnTo: "/en/account" })),
+    );
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({
+      accepted: true,
+      expiresAt: expect.any(String),
+    });
+    expect(response.headers.get("set-cookie")).toContain("__Host-rituvia-auth-state=");
+  });
+
   it("returns a bounded rate-limit response without a preview or state cookie", async () => {
     harness.start.mockRejectedValue(new WebAccountAuthError("rate_limited", 42));
     const response = await POST(

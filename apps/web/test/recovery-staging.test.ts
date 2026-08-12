@@ -121,6 +121,12 @@ describe("Recovery Item 12 runtime identity", () => {
     ).toBe(false);
     expect(
       inspectRecoveryStagingRuntime({
+        RITUVIA_BUILD_SOURCE_SHA: sourceSha,
+        STRIPE_SECRET_KEY: "rk_live_private-canary",
+      }).ready,
+    ).toBe(false);
+    expect(
+      inspectRecoveryStagingRuntime({
         AI_GATEWAY_API_KEY: "static-key-canary",
         RITUVIA_BUILD_SOURCE_SHA: sourceSha,
       }).ready,

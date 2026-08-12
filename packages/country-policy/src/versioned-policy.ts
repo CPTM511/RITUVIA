@@ -453,6 +453,10 @@ export const parseCountryPolicyVersionV1 = (value: unknown): CountryPolicyVersio
       !(
         value.environment === "staging" &&
         evidence.fiatApprovalReference?.startsWith("D-098:OWN-017:stripe-test:")
+      ) &&
+      !(
+        value.environment === "production" &&
+        evidence.fiatApprovalReference?.startsWith("D-099:stripe-live:")
       ))
   ) {
     throw new TypeError("Country policy version is invalid.");

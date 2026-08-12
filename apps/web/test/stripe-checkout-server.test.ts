@@ -62,6 +62,21 @@ const policy = (refundPolicyVersion = "test:local:refund.v1") =>
     version: "local.us.stripe-sandbox.v1",
   });
 
+const productionPolicy = () =>
+  parseCountryPolicyVersionV1({
+    ...policy(),
+    approvalMode: "written",
+    environment: "production",
+    evidence: {
+      cryptoApprovalReference: null,
+      fiatApprovalReference: "D-099:stripe-live:us:pack-6",
+      legalReference: "D-099:legal:us",
+      ownerReference: "D-099:owner:limited-production",
+      providerReference: "D-099:stripe-account:verified",
+    },
+    version: "production.us.d-099.v1",
+  });
+
 const createdRecord = Object.freeze({
   amountMinor: 599 as number,
   checkoutExpiresAt: "2026-07-31T12:00:00.000Z",
@@ -84,10 +99,22 @@ const attachedRecord = Object.freeze({
 });
 
 const harness = (options?: {
+  catalog?: ReturnType<typeof parseCatalogVersionV1>;
+  countryPolicy?: ReturnType<typeof policy>;
+  environment?: "local" | "production";
+  newPurchasesEnabled?: boolean;
   policyRefundVersion?: string;
   replay?: boolean;
+  stripeCheckoutEnabled?: boolean;
   unattachedReplayAmount?: number;
 }) => {
+  const getProfile = vi.fn(async () => ({
+    ageAttested: true,
+    emailVerified: true,
+    id: userId,
+    status: "active" as const,
+  }));
+  const resolveSession = vi.fn(async () => ({ userId }));
   const createCheckout = vi.fn(async () => ({
     checkoutId: "cs_test_12345678",
     expiresAt,
@@ -120,30 +147,28 @@ const harness = (options?: {
   }));
   const service = createStripeCheckoutApplicationService({
     accounts: {
-      getProfile: async () => ({
-        ageAttested: true,
-        emailVerified: true,
-        id: userId,
-        status: "active",
-      }),
-      resolveSession: async () => ({ userId }),
+      getProfile,
+      resolveSession,
     },
     canonicalOrigin: "https://example.test",
     catalog: {
-      readActive: async () => parseCatalogVersionV1(rituviaCatalog20260723LocalData),
+      readActive: async () =>
+        options?.catalog ?? parseCatalogVersionV1(rituviaCatalog20260723LocalData),
     },
     clock: () => now,
     countryPolicies: {
-      read: async () => [policy(options?.policyRefundVersion)],
+      read: async () => [options?.countryPolicy ?? policy(options?.policyRefundVersion)],
     },
-    environment: "local",
-    paymentMode: "test",
+    environment: options?.environment ?? "local",
+    newPurchasesEnabled: options?.newPurchasesEnabled ?? true,
+    paymentMode: options?.environment === "production" ? "live" : "test",
     providerAccountFingerprint: "acct_12345678",
     paymentProvider: {
       createCheckout,
       providerId: "stripe",
       verifyWebhook: vi.fn(),
     },
+    stripeCheckoutEnabled: options?.stripeCheckoutEnabled ?? true,
     persistence: {
       attachStripeCheckout,
       createOrReplayStripeCheckout,
@@ -153,6 +178,8 @@ const harness = (options?: {
     attachStripeCheckout,
     createCheckout,
     createOrReplayStripeCheckout,
+    getProfile,
+    resolveSession,
     service,
   };
 };
@@ -272,5 +299,78 @@ describe("Stripe sandbox checkout application service", () => {
     ).rejects.toMatchObject({ code: "not_eligible" });
     expect(mismatchedPolicy.createOrReplayStripeCheckout).not.toHaveBeenCalled();
     expect(mismatchedPolicy.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { newPurchasesEnabled: false, stripeCheckoutEnabled: true },
+    { newPurchasesEnabled: true, stripeCheckoutEnabled: false },
+  ])(
+    "fails closed before account or provider use when a purchase kill switch is off: %#",
+    async (switches) => {
+      const test = harness(switches);
+
+      await expect(
+        test.service.createCheckout({
+          idempotencyKey: "abcdefghijklmnopqrstuv",
+          request,
+          sessionToken: "session-token",
+        }),
+      ).rejects.toMatchObject({ code: "unavailable" });
+      expect(test.resolveSession).not.toHaveBeenCalled();
+      expect(test.getProfile).not.toHaveBeenCalled();
+      expect(test.createOrReplayStripeCheckout).not.toHaveBeenCalled();
+      expect(test.createCheckout).not.toHaveBeenCalled();
+    },
+  );
+
+  it("permits only the exact one-time pack_6 catalog in production", async () => {
+    const localCatalog = parseCatalogVersionV1(rituviaCatalog20260723LocalData);
+    const productionCatalog = parseCatalogVersionV1({
+      ...localCatalog,
+      approvalMode: "written",
+      environment: "production",
+      evidence: {
+        ownerReference: "D-099:owner:limited-production",
+        sourceChecksumSha256: "a".repeat(64),
+        sourceReference: "D-099:catalog:pack-6",
+      },
+      prices: localCatalog.prices.filter(({ productCode }) => productCode === "pack_6"),
+      products: localCatalog.products.filter(({ code }) => code === "pack_6"),
+      version: "production.us.pack-6.v1",
+    });
+    const allowed = harness({
+      catalog: productionCatalog,
+      countryPolicy: productionPolicy(),
+      environment: "production",
+    });
+
+    await expect(
+      allowed.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request,
+        sessionToken: "session-token",
+      }),
+    ).resolves.toMatchObject({ productCode: "pack_6" });
+
+    const extraActiveProduct = harness({
+      catalog: parseCatalogVersionV1({
+        ...productionCatalog,
+        prices: localCatalog.prices.filter(({ productCode }) =>
+          ["pack_6", "plus_monthly"].includes(productCode),
+        ),
+        products: localCatalog.products.filter(({ code }) =>
+          ["pack_6", "plus_monthly"].includes(code),
+        ),
+      }),
+      countryPolicy: productionPolicy(),
+      environment: "production",
+    });
+    await expect(
+      extraActiveProduct.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request,
+        sessionToken: "session-token",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
   });
 });

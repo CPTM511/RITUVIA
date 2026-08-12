@@ -58,6 +58,12 @@ staging. Production secrets MUST NOT flow downward. Preview and staging credenti
 production authority. Private questions, journals, intentions, birth data, authentication material,
 payment payloads, or customer exports are never acceptable test fixtures.
 
+Production email sign-in uses a verified transactional sender and a server-only Resend API key.
+Production Stripe Checkout accepts only an environment-matched restricted `rk_live_` key. New
+sessions are additionally controlled by independent `RITUVIA_NEW_PURCHASES_ENABLED` and
+`RITUVIA_STRIPE_CHECKOUT_ENABLED` server switches, both defaulting off; signed webhooks for already
+issued sessions continue to reconcile when either switch is off.
+
 Cross-environment network access is denied by default. Preview and staging services may not connect
 to production databases, caches, buckets, queues, KMS keys, webhooks, provider projects, analytics
 destinations, or administrative endpoints.

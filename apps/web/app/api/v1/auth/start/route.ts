@@ -61,7 +61,9 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
       {
         accepted: started.accepted,
         expiresAt: started.expiresAt,
-        localPreviewPath: started.localPreviewPath,
+        ...(started.localPreviewPath === undefined
+          ? {}
+          : { localPreviewPath: started.localPreviewPath }),
       },
       { headers, status: 202 },
     );

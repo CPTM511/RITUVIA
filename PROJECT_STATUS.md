@@ -1,6 +1,23 @@
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-08-11
+**Last reconciled:** 2026-08-12
+
+On 2026-08-12 D-099 authorized a Stripe-first limited real-funds rollout once every factual
+production prerequisite is present. The current production-activation branch now supports a
+production Resend magic-link boundary, requires a restricted `rk_live_` Stripe runtime key,
+accepts D-099 production-only fiat evidence, and adds independent server-side checkout and new-
+purchase emergency switches. Production Checkout also requires Vercel's `x-vercel-ip-country`
+signal to equal the approved US launch country before creating a hosted session. Both switches
+default off in production and do not disable signed webhook reconciliation for already-issued
+sessions. The affected 97 tests, Config/Country Policy/
+Web type checks, architecture and environment contracts, secret scan, configuration-boundary
+build, and 14-package Web production build pass on Node 24.18.0 and pnpm 11.13.1.
+
+This is verified production-capable code, not a completed public launch. New purchases remain off
+until the exact Stripe live account and capabilities, restricted key, live Price, webhook endpoint,
+legal seller/support/tax particulars, production catalog/policy records, verified email domain and
+Resend key are configured and the exact source is deployed and smoke-tested. Coinbase and
+production AI remain outside the first rollout.
 
 Founder Acceptance Recovery is active with recovery baseline
 `f79fee6713670fdc12b33dd3182569a942782636`. Recovery Items 1 through 11 are complete. FJ-16/FJ-17
@@ -35,9 +52,10 @@ Staging host. Two exposed Vercel bypass tokens and two superseded Coinbase subsc
 revoked/deleted after replacement. Exactly one sealed Vercel bypass remains; Stripe and Neon
 Marketplace resources are disconnected, and temporary credentials and browser state were securely
 deleted. The accepted protected Staging remains the Item 11 application deployment; the Item 12
-candidate was not deployed. Production, DNS, real funds/assets, public release, live Stripe,
-Coinbase Business onboarding, unrestricted AI, and unrestricted public service remain separate
-Owner gates. Git automatic deployment remains disabled.
+candidate was not deployed. D-099 now authorizes production-capable Stripe implementation,
+deployment, public activation, and real-funds support, but none is factually activated until the
+external prerequisites and smoke evidence above pass. Coinbase Business onboarding and production
+AI remain separate future gates. Git automatic deployment remains disabled.
 
 RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
 and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
@@ -54,9 +72,10 @@ RIT-052 account history/settings/session management, RIT-053 encrypted privacy e
 selective/account deletion, RIT-056 admin roles/MFA/audit foundation, and RIT-057 integrated
 identity/privacy/authorization security closure are complete. RIT-060 immutable Country Policy
 Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
-transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
-still blocks production payment activation, but D-091 and OWN-017 approve the narrower Stripe Test
-Mode sandbox scope. RIT-063 completes that bounded checkout slice. RIT-064 now adds Test Mode
+transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002 is
+not closed by assertion: D-099 still requires provider-backed verification of the exact Stripe live
+account and capabilities. D-091 and OWN-017 retain the narrower Stripe Test Mode sandbox scope.
+RIT-063 completes that bounded checkout slice. RIT-064 now adds Test Mode
 raw-signature verification, stable Stripe-account-bound v2 attempts, immutable signed-event
 evidence, exact duplicate/conflict handling, deterministic out-of-order timeline replay,
 account/order/attempt mismatch isolation, composite foreign keys, and a transactional state-change

@@ -18,6 +18,10 @@ import {
   createAccountAuthProvider,
   type AccountAuthProvider,
 } from "./auth-provider";
+import {
+  AccountAuthEmailUnavailableError,
+  createResendAccountAuthEmailSender,
+} from "./account-auth-email";
 
 export const accountSessionCookieName = "__Host-rituvia-account-session";
 export const accountAuthStateCookieName = "__Host-rituvia-auth-state";
@@ -55,6 +59,7 @@ export class WebAccountAuthError extends Error {
 
 let identityService: AccountIdentityService | undefined;
 let authProvider: AccountAuthProvider | undefined;
+let authEmailSender: ReturnType<typeof createResendAccountAuthEmailSender> | undefined;
 
 export const loadWebAccountIdentityService = (): AccountIdentityService => {
   if (identityService !== undefined) return identityService;
@@ -84,12 +89,30 @@ const loadProvider = (): AccountAuthProvider => {
       challengeTtlSeconds: configuration.accountIdentityPolicy.challengeTtlSeconds,
       deploymentEnvironment: configuration.deploymentEnvironment,
       encryptionKey: configuration.accountIdentityPolicy.emailEncryptionKey,
+      productionEmailEnabled: configuration.accountEmailDelivery?.provider === "resend",
       sandboxEnabled: configuration.recoveryIdentitySandbox?.enabled,
     });
     return authProvider;
   } catch {
     throw new WebAccountAuthError("unavailable");
   }
+};
+
+const loadAuthEmailSender = (): ReturnType<typeof createResendAccountAuthEmailSender> => {
+  if (authEmailSender !== undefined) return authEmailSender;
+  const configuration = getWebRuntimeConfiguration();
+  if (
+    configuration.accountEmailDelivery?.provider !== "resend" ||
+    configuration.brand.transactionalSender === ""
+  ) {
+    throw new WebAccountAuthError("unavailable");
+  }
+  authEmailSender = createResendAccountAuthEmailSender({
+    apiKey: configuration.accountEmailDelivery.apiKey,
+    brandName: configuration.brand.name,
+    sender: configuration.brand.transactionalSender,
+  });
+  return authEmailSender;
 };
 
 const mapError = (error: unknown): never => {
@@ -99,6 +122,9 @@ const mapError = (error: unknown): never => {
   }
   if (error instanceof AccountAuthProviderInputError) {
     throw new WebAccountAuthError("invalid");
+  }
+  if (error instanceof AccountAuthEmailUnavailableError) {
+    throw new WebAccountAuthError("unavailable");
   }
   if (error instanceof AccountIdentityError) {
     if (
@@ -130,7 +156,7 @@ export const startWebAccountAuth = async (input: {
   Readonly<{
     accepted: true;
     expiresAt: string;
-    localPreviewPath: "/api/v1/auth/local-preview";
+    localPreviewPath?: "/api/v1/auth/local-preview" | undefined;
     stateToken: string;
   }>
 > => {
@@ -141,10 +167,18 @@ export const startWebAccountAuth = async (input: {
       ...started,
       previousSessionToken: input.previousSessionToken,
     });
+    if (provider.delivery === "email") {
+      await loadAuthEmailSender().send(started);
+      return Object.freeze({
+        accepted: true,
+        expiresAt: started.expiresAt,
+        stateToken: started.state,
+      });
+    }
     return Object.freeze({
       accepted: true,
       expiresAt: started.expiresAt,
-      localPreviewPath: "/api/v1/auth/local-preview",
+      localPreviewPath: "/api/v1/auth/local-preview" as const,
       stateToken: provider.sealLocalPreview(started),
     });
   } catch (error) {

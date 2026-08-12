@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { getWebRuntimeConfiguration } from "../../../../../config/server";
 import { accountSessionCookieName } from "../../../../../server/account-auth";
 import {
   hasValidSessionCsrfToken,
@@ -18,6 +19,15 @@ import {
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+const productionLaunchCountryCode = "US";
+
+const hasEligibleProductionCountry = (request: NextRequest): boolean => {
+  const configuration = getWebRuntimeConfiguration();
+  return (
+    configuration.deploymentEnvironment !== "production" ||
+    request.headers.get("x-vercel-ip-country") === productionLaunchCountryCode
+  );
+};
 
 const rejected = (status: 400 | 403 | 413): NextResponse =>
   NextResponse.json(
@@ -37,6 +47,7 @@ const rejected = (status: 400 | 403 | 413): NextResponse =>
 export const POST = async (request: NextRequest): Promise<NextResponse> => {
   if (!hasAcceptedCommerceOrigin(request)) return rejected(403);
   if (!hasAcceptedCommerceJsonMetadata(request)) return rejected(400);
+  if (!hasEligibleProductionCountry(request)) return rejected(403);
   const idempotencyKey = request.headers.get("idempotency-key");
   const sessionToken = request.cookies.get(accountSessionCookieName)?.value;
   if (
