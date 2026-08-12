@@ -38,6 +38,7 @@
     "migrations/202608060003_recovery_privacy_deletion_dependencies/migration.sql": "49b8aae44af5e124c6ce6e2f2b7959e6bb9a61e8b448160b8a89bcc8de673b16",
     "migrations/202608070001_recovery_item_10_commerce/migration.sql": "9121f53660a5d0a725e8819045aa70275c606506f20f2ac0d493c82c12770304",
     "migrations/202608120001_production_stripe_live/migration.sql": "3a3a85bf480a2d5b55efa5df062dd385eb6e5c21ac5dde57cb8c79bb04f3efbf",
+    "migrations/202608120002_production_catalog_authorization/migration.sql": "b6fcca30cf7c223ea3f38fe875d9ad8c29589d154762718f6565bad52f106a27",
     "migrations/migration_lock.toml": "99836963713b4f5b269ad49af0ed3d7b0b2e336115c2f92dc9ac683d139d0900"
   }
 }

@@ -226,6 +226,115 @@ await withLocalPostgresLease(async (lease) => {
         ["23514", "42501"],
       );
 
+      await control.query(`
+          INSERT INTO public.catalog_version (
+            schema_version, version, environment, status, approval_mode, default_locale,
+            supported_locales, effective_from, next_review_at, source_reference,
+            source_checksum_sha256, owner_reference, actor_id
+          ) VALUES (
+            'catalog-version.v1', 'production.us.pack-6.d099.v1', 'production',
+            'active', 'written', 'en', ARRAY['en'], '2026-08-12T00:00:00.000Z',
+            '2027-08-12T00:00:00.000Z',
+            'docs/codex/rituvia-production-2026-07-23/contracts/catalog.json', repeat('c', 64),
+            'D-099:stripe-live:us:pack-6', 'owner.production-activation'
+          )
+        `);
+      await control.query(`
+          INSERT INTO public.catalog_product (
+            catalog_version, code, version, kind, status, fulfillment_code, credits_granted,
+            credits_cost, credits_per_month, subscription_interval
+          ) VALUES (
+            'production.us.pack-6.d099.v1', 'pack_6', '2026-07-23', 'credit_pack', 'active',
+            'credits.pack_6', 6, NULL, NULL, NULL
+          )
+        `);
+      await control.query(`
+          INSERT INTO public.catalog_product_localization (
+            catalog_version, product_code, product_version, locale, title, description,
+            exact_contents
+          ) VALUES (
+            'production.us.pack-6.d099.v1', 'pack_6', '2026-07-23', 'en', '6 Credits',
+            'A one-time pack of non-transferable RITUVIA service entitlements.',
+            ARRAY[
+              '6 Credits', 'Added once after verified payment',
+              'Non-transferable digital service entitlements with no cash value'
+            ]
+          )
+        `);
+      await control.query(`
+          INSERT INTO public.catalog_price (
+            catalog_version, price_id, version, product_code, product_version, status,
+            currency_code, amount_minor, billing_interval, country_codes,
+            provider_eligibility, tax_category, refund_policy_version, effective_from
+          ) VALUES (
+            'production.us.pack-6.d099.v1', 'price.pack_6.usd.production.d099.v1',
+            'production.d099.v1', 'pack_6', '2026-07-23', 'active', 'USD', 599,
+            'one_time', ARRAY['US'], ARRAY['stripe'], 'digital_service',
+            'production.refund.v1', '2026-08-12T00:00:00.000Z'
+          )
+        `);
+      await expectPostgresError(
+        () =>
+          control.query(`
+              INSERT INTO public.catalog_product (
+                catalog_version, code, version, kind, status, fulfillment_code, credits_granted,
+                credits_cost, credits_per_month, subscription_interval
+              ) VALUES (
+                'production.us.pack-6.d099.v1', 'pack_15', '2026-07-23', 'credit_pack',
+                'active', 'credits.pack_15', 15, NULL, NULL, NULL
+              )
+            `),
+        ["23514"],
+      );
+      await expectPostgresError(
+        () =>
+          control.query(`
+              INSERT INTO public.catalog_price (
+                catalog_version, price_id, version, product_code, product_version, status,
+                currency_code, amount_minor, billing_interval, country_codes,
+                provider_eligibility, tax_category, refund_policy_version, effective_from
+              ) VALUES (
+                'production.us.pack-6.d099.v1', 'price.pack_6.usd.production.d099.wrong',
+                'production.d099.wrong', 'pack_6', '2026-07-23', 'active', 'USD', 699,
+                'one_time', ARRAY['US'], ARRAY['stripe'], 'digital_service',
+                'production.refund.v1', '2026-08-12T00:00:00.000Z'
+              )
+            `),
+        ["23514"],
+      );
+      await expectPostgresError(
+        () =>
+          control.query(`
+              INSERT INTO public.catalog_version (
+                schema_version, version, environment, status, approval_mode, default_locale,
+                supported_locales, effective_from, next_review_at, source_reference,
+                source_checksum_sha256, owner_reference, actor_id
+              ) VALUES (
+                'catalog-version.v1', 'staging.d099-forbidden.v1', 'staging', 'disabled',
+                'written', 'en', ARRAY['en'], '2026-08-12T00:00:00.000Z',
+                '2027-08-12T00:00:00.000Z', 'records/decisions/D-099.md', repeat('d', 64),
+                'D-099:stripe-live:us:pack-6', 'owner.production-activation'
+              )
+            `),
+        ["42501"],
+      );
+      await expectPostgresError(
+        () =>
+          control.query(`
+              INSERT INTO public.catalog_version (
+                schema_version, version, environment, status, approval_mode, default_locale,
+                supported_locales, effective_from, next_review_at, source_reference,
+                source_checksum_sha256, owner_reference, actor_id
+              ) VALUES (
+                'catalog-version.v1', 'production.d099-wrong-scope.v1', 'production', 'disabled',
+                'written', 'en', ARRAY['en'], '2026-08-12T00:00:00.000Z',
+                '2027-08-12T00:00:00.000Z', 'records/decisions/D-099.md', repeat('e', 64),
+                'D-099:stripe-live:plus-monthly', 'owner.production-activation'
+              )
+            `),
+        ["42501"],
+      );
+
       const restored = await lease.createTestDatabase();
       databases.push(restored);
       await verifyLogicalDumpRestore(lease.runtime, database, restored);
