@@ -1,80 +1,165 @@
-# RITUVIA Codex Build System
+# RITUVIA
 
-> Working brand: **RITUVIA**
->
-> Product category: a global platform for symbolic self-reflection, personal ritual, and a private digital sanctuary.
->
-> Core loop: **Question → Interpretation → Intention → Ritual → Journal → Revisit**.
+> A private, safety-led space for symbolic self-reflection, personal ritual, and meaningful return.
 
-This repository pack is the operating system for building RITUVIA with Codex as a one-person company. It is not merely a one-shot prompt. It combines product doctrine, architecture, safety rules, a sequenced roadmap, a live backlog, specialized Codex roles, command rules, review prompts, and operating cadences.
+[![CI](https://github.com/CPTM511/RITUVIA/actions/workflows/ci.yml/badge.svg)](https://github.com/CPTM511/RITUVIA/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Node.js 24.18.0](https://img.shields.io/badge/Node.js-24.18.0-339933?logo=nodedotjs&logoColor=white)](.node-version)
+[![pnpm 11.13.1](https://img.shields.io/badge/pnpm-11.13.1-F69220?logo=pnpm&logoColor=white)](package.json)
 
-The canonical source repository is
-[github.com/CPTM511/RITUVIA](https://github.com/CPTM511/RITUVIA). It is publicly available under
-GNU AGPLv3. Public source availability does not mean the product is deployed, publicly launched,
-approved for production payments/providers, or authorized to process customer data.
+RITUVIA turns a question or theme into a grounded reflection loop:
 
-## What Codex should build
+**Question or theme → safe intake → interpretation → intention → small action → free ritual → private reflection → revisit**
 
-An English-first, Web/PWA product for global users that offers:
+It is designed to help people pause, notice patterns, and choose their next small action. It does
+not predict objective outcomes, replace professional care, or sell spiritual certainty.
 
-1. Tarot, Western astrology, and numerology.
-2. A private digital sanctuary with free and paid virtual ritual objects.
-3. Intention setting, private journaling, reminders, and revisit loops.
-4. Direct purchases and subscriptions in fiat, plus third-party hosted cryptocurrency checkout where lawfully supported.
-5. Country-aware availability, pricing, disclaimers, payment routing, and data controls.
-6. AI-generated interpretations grounded in deterministic calculations and curated cultural content.
-7. SEO, generative-engine discoverability, localization, analytics, administration, support, and mostly automated operations.
+> [!IMPORTANT]
+> The repository contains production-capable code and an accepted protected-staging evidence line.
+> It is **not** a completed public production launch. New purchases remain off until every factual
+> D-099 Stripe-first prerequisite, deployment check, smoke test, recovery control, and release gate
+> passes. Coinbase/USDC and production AI remain outside the first-provider rollout.
 
-## Start here
+## Why RITUVIA exists
 
-1. Read `AGENTS.md`.
-2. Read `CODEX_MASTER_PROMPT.md` and submit it to Codex for the first implementation session.
-3. Treat `PROJECT_STATUS.md`, `BACKLOG.md`, `ROADMAP.md`, and `DECISIONS.md` as persistent operational memory.
-4. Read `ENGINEERING_BASELINE.md` for the observed repository state and exact M0 execution plan.
-5. Follow `CONTRIBUTING.md` and the typed durable-record policy in `records/README.md`.
-6. Use the documents under `docs/` as canonical specifications.
-7. Keep the legacy strategy and visual prototype under `reference/` as evidence and inspiration, not as production code.
-8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
-9. Use `docs/21_ENVIRONMENT_CONTRACT.md` as the canonical environment-isolation and deployment-gate contract; it does not claim that external infrastructure exists.
-10. Use `docs/22_BACKUP_RECOVERY.md` as the canonical PostgreSQL backup, isolated-restore, RPO/RTO, evidence, and production-gate runbook.
+Most symbolic tools stop at an answer. RITUVIA is built around what happens next: making the
+interpretation transparent, turning it into an intention, completing a calm ritual, recording a
+private reflection, and returning later to learn from lived experience.
 
-## Local development
+The product is guided by four commitments:
 
-The repository contract is Node.js `24.18.0` (see `.node-version`) and pnpm `11.13.1`. Corepack is not required; from the repository root, use npm's package runner to invoke the exact package-manager version:
+- **Autonomy over certainty.** Interpretations offer possibilities, context, limits, and reflective
+  questions—never guaranteed predictions.
+- **Private by default.** Journals, intentions, prayers, questions, and birth data are treated as
+  sensitive; analytics never receives their raw text.
+- **Deterministic facts, explainable AI.** Code calculates card draws and spiritual-system facts;
+  AI may explain only typed, verified, curated inputs and must pass safety checks.
+- **Free reflection remains real.** A meaningful anonymous reading and a free candle or incense
+  ritual must remain available without account creation or payment.
+
+## Product experience
+
+The retained English-first experience supports:
+
+- anonymous theme or question intake with calm high-stakes and crisis routing;
+- deterministic one-card and three-card tarot flows;
+- intention setting, one small real-world action, and an always-free virtual ritual;
+- encrypted private journaling and a revisit loop;
+- account, privacy export, and deletion foundations;
+- accessibility, offline/degraded, retry, mobile, reduced-motion, and RTL test states;
+- deterministic numerology and astrology foundations, typed AI interpretation, lifecycle
+  messaging, commerce, subscriptions, refunds, disputes, reconciliation, and Owner operations;
+- an accepted protected-staging recovery line with provider-backed acceptance evidence.
+
+Founder Acceptance Recovery Items 1–11 are recorded as complete. Item 12 remains the current
+mandatory recovery gate. D-099 authorizes preparation of the smallest Stripe-first production
+slice, but authorization is not activation: public launch, live purchases, Coinbase/USDC, and
+production AI remain closed until their exact factual gates pass.
+
+For the exact current capability and release truth, read [PROJECT_STATUS.md](PROJECT_STATUS.md).
+While the Founder Acceptance Recovery override is active, read
+[AGENTS.override.md](AGENTS.override.md) and
+[docs/recovery/RECOVERY_BACKLOG.md](docs/recovery/RECOVERY_BACKLOG.md) for the executable queue.
+
+## Architecture
+
+RITUVIA is a strict TypeScript modular monolith. Domain facts stay framework-independent; external
+providers sit behind adapters; asynchronous obligations run through a dedicated worker.
+
+```text
+apps/
+├── web/        Next.js App Router Web/PWA and server-owned HTTP boundaries
+└── worker/     Fulfillment, reconciliation, reminders, and operational jobs
+
+packages/
+├── domain/     Product invariants and framework-independent types
+├── divination/ Deterministic tarot logic and versioned facts
+├── ai/         Typed generation, safety verification, evals, and safe fallback
+├── db/         Prisma/PostgreSQL persistence, migrations, RLS, and recovery checks
+├── payments/   Provider-neutral payment and route-control contracts
+├── country-policy/ Versioned country, method, asset, age, and recurrence policy
+├── i18n/       BCP 47, pluralization, formatting, pseudolocale, and RTL foundations
+├── security/   Authorization and security primitives
+├── analytics/  Privacy-safe metrics, operational evidence, and cost guardrails
+├── observability/ Redacted operational and release evidence
+└── ui/         Accessible semantic tokens and reusable React primitives
+```
+
+Key engineering properties:
+
+- PostgreSQL is the system of record; migrations are immutable and manifest-checked.
+- Payments use hosted provider surfaces, signed webhooks, idempotency, an internal ledger, and
+  reconciliation. New purchases fail closed behind country, method, provider, and feature controls.
+- AI providers are disabled by default. Structured output, prompt/content versioning, pre/post
+  safety checks, regression evals, redacted traces, and rollback are mandatory.
+- The product is English-first, preserves reviewed bilingual golden-copy evidence, and is designed
+  for BCP 47 locales, text expansion, local formatting, CJK typography, and RTL.
+- CI enforces formatting, lint, strict types, architecture, evidence, migration policy, secret
+  scanning, tests, and production builds with synthetic data and no deployment credentials.
+
+See [docs/04_ARCHITECTURE.md](docs/04_ARCHITECTURE.md) for the full system design and
+[docs/codex/rituvia-production-2026-07-23/00_START_HERE.md](docs/codex/rituvia-production-2026-07-23/00_START_HERE.md)
+for the Owner-approved production source-of-truth pack.
+
+## Safety and trust model
+
+RITUVIA must never:
+
+- claim guaranteed reunion, wealth, healing, curse removal, or stronger spiritual efficacy for
+  higher payment;
+- make medical, legal, financial, fertility, death-timing, criminal-guilt, or other high-stakes
+  determinations;
+- intensify delusion, paranoia, supernatural persecution, dependency, or self-harm ideation;
+- expose private reflection content to analytics or log raw sensitive prompts by default;
+- become a stored-value wallet, cash-out system, transferable-token product, NFT, gambling
+  mechanic, loot box, or public prayer wall;
+- use fear, shame, false scarcity, countdown pressure, or streak punishment to drive conversion.
+
+Every production-affecting change is subordinate to the human approval gates in
+[AGENTS.md](AGENTS.md). The security model, privacy controls, threat boundaries, and recovery
+requirements live in [docs/10_SECURITY_PRIVACY_RELIABILITY.md](docs/10_SECURITY_PRIVACY_RELIABILITY.md).
+
+## Current release state
+
+| Surface | Repository evidence | External state |
+| --- | --- | --- |
+| Reflection experience | Anonymous core loop plus deterministic tarot, numerology, astrology, intention, ritual, journal, and revisit foundations | Public production launch not complete |
+| Protected staging | Accepted recovery deployment and provider-backed evidence are recorded | Item 12 remains the mandatory release gate |
+| Payments | Test-mode integrity plus production-capable, fail-closed Stripe-first configuration | New purchases remain off until every D-099 prerequisite and smoke check passes |
+| AI | Typed pipeline, safety/eval controls, and protected-staging provider acceptance | Production AI with private content remains outside the first rollout |
+| Localization | English-first product with reviewed bilingual evidence and BCP 47/RTL architecture | Additional locale launch remains governed |
+| Operations | Evidence, recovery, cost, incident, privacy, and rollback controls | Production launch truth must be re-attested at release time |
+
+**Public production launch: not complete. New purchases: off pending exact D-099 activation evidence.**
+
+This table is orientation, not mutable release authority. [PROJECT_STATUS.md](PROJECT_STATUS.md),
+[AGENTS.override.md](AGENTS.override.md), the recovery backlog, and linked task/decision records hold
+the current evidence.
+
+## Quick start
+
+### Prerequisites
+
+- Node.js `24.18.0`
+- pnpm `11.13.1` (invoked below through npm for exact versioning)
+- PostgreSQL 17 or 18 command-line tools for database-backed verification
+
+### Install and verify
 
 ```bash
+git clone https://github.com/CPTM511/RITUVIA.git
+cd RITUVIA
 npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
 npm exec --yes --package=pnpm@11.13.1 -- pnpm check
 ```
 
-The root quality gate first verifies the active CI contract, architecture, durable records, immutable migration manifest, generated evidence, and current-tree secret policy, then checks formatting, ESLint, strict TypeScript, non-empty Vitest tests, configuration-boundary integration, a real isolated PostgreSQL migration/seed/reset/restore suite, and production builds. The active MVP now also includes the `packages/country-policy` and `packages/payments` provider boundaries alongside the existing Web, Worker, configuration, database, domain, divination, i18n, observability, AI, and UI workspaces.
+`pnpm check` is the default root quality gate; release and risk-triggered work has a broader
+specialized matrix. During implementation, use the narrowest affected package and task-specific
+checks first, then close the slice with the applicable architecture,
+evidence, formatting, lint, type, test, build, accessibility, security, database, payment, or AI
+gates described in [AGENTS.md](AGENTS.md).
 
-### Continuous integration
-
-`.github/workflows/ci.yml` is active and contains separate quality, PostgreSQL integration, and
-security jobs. It uses only read access, GitHub-hosted Ubuntu 24.04 runners, immutable action SHAs, a
-digest-pinned PostgreSQL 17 service, synthetic data, and no repository secrets or deployment
-environment. See `.github/workflows/README.md` for the enforced workflow contract and owner-side
-required-check setup. Public `main` requires all three jobs, pull requests, linear history, resolved
-conversations, and administrator enforcement while denying force pushes and deletion. Codex
-workflow examples live outside the Actions workflow directory and remain inert.
-
-### Local environment configuration
-
-The repository root is the shared environment-file location for both Web and Worker processes. Start with the optional baseline file:
-
-```bash
-cp .env.example .env
-```
-
-Every example assignment is intentionally empty. Local development uses typed working-brand defaults when brand overrides are omitted. The database lifecycle commands derive the attested local URL themselves; application processes still receive `DATABASE_URL` explicitly through the process environment or an ignored environment file. Web and Worker both use the pinned `@next/env` loader against the repository root with the same development/production mode and standard Next.js file precedence. Process or secret-manager values take precedence, and every `.env` variant must remain uncommitted.
-
-The client receives only an explicit validated brand projection. `NEXT_PUBLIC_*` variables are rejected so a new public variable cannot silently enter a browser bundle. `APP_ENV=production` requires the complete validated brand projection, an HTTPS canonical origin, and every enabled provider secret; production secrets must be supplied by the environment or a secret manager rather than a file in Git.
-
-### Local commercial MVP
-
-Start the attested local PostgreSQL database, generate a private local-only configuration, and run
-the English MVP:
+### Run the local product
 
 ```bash
 npm exec --yes --package=pnpm@11.13.1 -- pnpm db:setup
@@ -82,138 +167,92 @@ npm exec --yes --package=pnpm@11.13.1 -- pnpm mvp:local:configure
 npm exec --yes --package=pnpm@11.13.1 -- pnpm --filter @rituvia/web exec next dev --hostname 127.0.0.1 --port 4175
 ```
 
-The repository-root `.env.local` is ignored, created with mode `0600`, and contains independent random local
-keys. The configurator refuses to replace it so encrypted local account and journal data are not
-silently orphaned. If port `55432` is occupied, set the same `RITUVIA_LOCAL_POSTGRES_PORT` value for
-the database and configuration commands. Private database-backed capabilities remain safe-off
-without the validated database; public information delivery no longer depends on a rollout flag.
+Open [http://127.0.0.1:4175/en](http://127.0.0.1:4175/en). The local configurator creates an
+ignored mode-`0600` `.env.local`, refuses to overwrite it, and keeps private/provider capabilities
+safe-off unless their validated local dependencies are present.
 
-Opening the local origin returns a permanent redirect to the only active, reviewed locale at `/en`.
-The finite public surface remains `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy`; the
-private noindex product routes add `/en/sanctuary`, `/en/sign-in`,
-`/en/account`, and exact checkout-return paths. The privacy route is a product-design overview, not
-a legal privacy policy. Unsupported or non-canonical locale/page segments return 404 rather than
-silently falling back or generating caches. Public information pages remain server rendered and
-readable without JavaScript; transactional product flows require JavaScript and expose explicit
-loading, retry, error, and offline states. Local, preview, and staging metadata is `noindex`; a
-production environment must provide the approved HTTPS canonical origin before it may emit
-indexable metadata. The configuration-boundary integration harness reproducibly verifies public
-delivery and independent private-feature safe-off behavior without documenting an activation
-bypass or ad hoc SQL. The local MVP
-implements anonymous readings, account sessions, age-gated hosted checkout, entitlements, intention
-and ritual completion, and encrypted private journaling; it does not claim that provider onboarding,
-legal terms, or a public deployment are approved.
-
-`/robots.txt` and `/sitemap.xml` are generated from the same typed four-page inventory. Local,
-preview, and staging robots disallow the entire site and publish no sitemap. Production publishes
-the four exact, end-anchored document allows, the build-audited `/_next/static/` and icon resources,
-and a four-URL sitemap only while the reviewed inventory is current. Missing or stale inventory
-returns disallow-all robots and no sitemap. Query, private, unsupported, bare/spoofed RSC, and
-unreviewed Next-internal requests fail closed. Served RSC responses are explicit `noindex` and
-`private, no-store`; Next-owned direct `*.rsc` errors are accepted only as `text/x-component` 404s
-that remain private, non-cacheable, and free of sensitive canaries. Structured data remains deferred
-to RIT-114 rather than being published before its visible-content and rich-result contract exists.
-
-The production build audits all four canonical pages and enforces compressed budgets for localized
-HTML, initial CSS/JavaScript, and the SVG icon while rejecting remote script/style/font/media
-resources. Browser QA remains required for every future behavior change; the public pages and local
-MVP loop are covered by responsive, keyboard/focus, reduced-motion, console, local-network, and
-end-to-end purchase/entitlement checks.
-
-After a fresh production build, run the committed accessibility/pseudolocale browser gate with the
-pinned Chromium headless shell:
+To stop the repository-owned local database:
 
 ```bash
-npm exec --yes --package=pnpm@11.13.1 -- pnpm exec playwright install --only-shell chromium
-npm exec --yes --package=pnpm@11.13.1 -- pnpm build
-npm exec --yes --package=pnpm@11.13.1 -- pnpm test:accessibility
-```
-
-The gate serves only audited build artifacts on loopback and covers all four English routes with
-blocking axe scans, complete forward/reverse keyboard focus, 44px targets, 40% test-only text
-expansion, desktop/mobile RTL scaffolding, dark/reduced-motion/no-JavaScript states, a persistent
-online/offline/online connection-state advisory announcement, and local-only requests. `en-XA` and `ar-XB` exist only as
-in-browser test transforms; they are not supported, published, canonical, crawlable, or added to
-the production locale catalog. CI performs the build immediately before this smoke and installs
-Linux browser dependencies with `--with-deps`.
-
-### Shared UI foundation
-
-`@rituvia/ui` provides the private semantic-token stylesheet and native-first React primitives used
-by Web and future applications. Import components from `@rituvia/ui` and import
-`@rituvia/ui/styles` once at the application root before application-specific CSS. The package owns
-focus, disabled/loading/invalid/selection state presentation, system/light/dark tokens, reduced
-motion, forced colors, logical-direction behavior, and closed local-action/control-value contracts;
-the consuming application still owns every localized label, route, validation rule, mutation, and
-idempotency boundary. See `packages/ui/README.md` for the exact catalog and review matrix.
-
-The same package provides presentation-only empty, error, offline, and provider-unavailable page
-patterns. Web owns their localized English copy, state classification, announcement/focus timing,
-and caller-controlled retry action. The public shell truthfully consumes empty, advisory offline,
-and route-error states; provider-unavailable remains a dependency-neutral synthetic pattern until a
-real adapter and typed safe classifier exist. This does not add PWA caching, synchronization,
-provider health, or an automatic retry capability.
-
-### Local PostgreSQL and Prisma
-
-The verified local database path requires PostgreSQL 17 or 18 command-line tools from one installation. This host uses Homebrew PostgreSQL 17.10. Standard Homebrew versioned locations are detected automatically; otherwise set `RITUVIA_POSTGRES_BIN` to the absolute directory containing all required PostgreSQL tools. Docker is not installed, so no container-reproducibility claim is made; RIT-004 owns the separate CI runtime.
-
-After the frozen install, create or reuse the repository-owned cluster, apply committed migrations, and load the deterministic synthetic seed:
-
-```bash
-APP_ENV=local npm exec --yes --package=pnpm@11.13.1 -- pnpm db:setup
-```
-
-The cluster lives under ignored `.local/postgres/`, generates random mode-0600 credentials, uses SCRAM authentication and data checksums, and binds only `127.0.0.1:55432`. The application role is not a superuser and cannot create roles or databases. Inspect its state or obtain the local application URL only while it is running:
-
-```bash
-npm exec --yes --package=pnpm@11.13.1 -- pnpm db:status
-npm exec --yes --package=pnpm@11.13.1 -- pnpm db:url
-```
-
-`db:url` prints only the path to an ignored mode-0600 URL file. Use `pnpm db:url -- --reveal` only when explicit terminal disclosure is necessary to supply a local application process; do not paste the URL into committed files, logs, tickets, or remote environments.
-
-Reset is local and destructive, requires `APP_ENV=local`, and accepts only the exact fixed development database after a live cluster/data-directory/system-identifier attestation:
-
-```bash
-APP_ENV=local npm exec --yes --package=pnpm@11.13.1 -- pnpm db:reset -- --confirm=reset:rituvia_local@127.0.0.1:55432
 npm exec --yes --package=pnpm@11.13.1 -- pnpm db:stop
 ```
 
-Do not use `prisma migrate reset`, `prisma db push`, a remote `DATABASE_URL`, or the local seed against preview, staging, or production. Migration compatibility, field classification, rollback, and recovery boundaries are recorded in `packages/db/MIGRATIONS.md`.
+> [!CAUTION]
+> Do not use `prisma migrate reset`, `prisma db push`, remote database URLs, or local seed/reset
+> commands against preview, staging, or production. See [packages/db/MIGRATIONS.md](packages/db/MIGRATIONS.md).
 
-## Canonical document map
+## Quality system
 
-| Concern                                  | Canonical file                            |
-| ---------------------------------------- | ----------------------------------------- |
-| Product mission and boundaries           | `docs/00_PROJECT_CHARTER.md`              |
-| Complete feature requirements            | `docs/01_PRODUCT_REQUIREMENTS.md`         |
-| User journeys and UX behavior            | `docs/02_USER_EXPERIENCE.md`              |
-| Visual system and component rules        | `docs/03_DESIGN_SYSTEM.md`                |
-| Software architecture                    | `docs/04_ARCHITECTURE.md`                 |
-| Data model and classification            | `docs/05_DATA_MODEL.md`                   |
-| AI interpretation and safety             | `docs/06_AI_INTERPRETATION_SAFETY.md`     |
-| Payments, country policy, and compliance | `docs/07_PAYMENTS_COMPLIANCE.md`          |
-| Localization, SEO, GEO, and growth       | `docs/08_I18N_SEO_GEO_GROWTH.md`          |
-| Metrics and experiments                  | `docs/09_ANALYTICS_EXPERIMENTS.md`        |
-| Security, privacy, and reliability       | `docs/10_SECURITY_PRIVACY_RELIABILITY.md` |
-| One-person autonomous operations         | `docs/11_AUTONOMOUS_OPERATIONS.md`        |
-| Content and cultural governance          | `docs/12_CONTENT_GOVERNANCE.md`           |
-| API and integration contracts            | `docs/13_API_CONTRACTS.md`                |
-| Test strategy                            | `docs/14_TEST_STRATEGY.md`                |
-| Launch and rollback                      | `docs/15_LAUNCH_RUNBOOK.md`               |
-| Cost controls                            | `docs/16_COST_GUARDRAILS.md`              |
-| Brand decision                           | `docs/17_BRAND_NAMING.md`                 |
-| Sources and verification                 | `docs/18_REFERENCES.md`                   |
-| Name-clearance execution worksheet       | `docs/19_NAME_CLEARANCE_WORKSHEET.md`     |
-| AI-native marketing and distribution     | `docs/20_AI_GROWTH_ENGINE.md`             |
+The active GitHub Actions workflow separates quality, PostgreSQL integration, and security jobs. It
+uses pinned actions, synthetic data, read-only repository permissions, and no deployment environment
+or repository secrets.
 
-## Current status
+Useful focused commands include:
 
-Current task state, dependencies, and executable-next selection live only in `BACKLOG.md`; current
-capabilities, blockers, environments, and quality totals live only in `PROJECT_STATUS.md`. This
-orientation file intentionally does not copy their mutable snapshot.
+```bash
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm check:architecture
+pnpm check:records
+pnpm check:migrations
+pnpm scan:secrets
+pnpm test:full-loop-browser
+pnpm test:accessibility
+```
 
-## Non-negotiable product principle
+Passing tests alone do not prove factual production readiness or provider activation. Release
+evidence must also cover privacy, accessibility, observability, recovery, security-negative
+behavior, human approval, and the applicable readiness gates.
 
-RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It must not claim to know objective future events, guarantee outcomes, exploit fear, induce dependency, replace professional medical/legal/financial care, or sell stronger spiritual efficacy to higher-paying users.
+## Documentation map
+
+| Start here when you need… | Canonical source |
+| --- | --- |
+| Product mission and boundaries | [Project charter](docs/00_PROJECT_CHARTER.md) |
+| Current capabilities, blockers, and release truth | [Project status](PROJECT_STATUS.md) |
+| Active recovery queue and dependencies | [Recovery backlog](docs/recovery/RECOVERY_BACKLOG.md) |
+| Legacy product queue | [Backlog](BACKLOG.md) |
+| Accepted Owner decisions | [Decisions](DECISIONS.md) and [durable records](records/README.md) |
+| Product journeys and interaction behavior | [User experience](docs/02_USER_EXPERIENCE.md) |
+| Architecture and data contracts | [Architecture](docs/04_ARCHITECTURE.md) and [data model](docs/05_DATA_MODEL.md) |
+| AI boundaries and eval requirements | [AI interpretation and safety](docs/06_AI_INTERPRETATION_SAFETY.md) |
+| Payment and country-policy boundaries | [Payments and compliance](docs/07_PAYMENTS_COMPLIANCE.md) |
+| Security, privacy, reliability, and recovery | [Security/privacy/reliability](docs/10_SECURITY_PRIVACY_RELIABILITY.md) and [backup/recovery](docs/22_BACKUP_RECOVERY.md) |
+| Environment isolation and deployment gates | [Environment contract](docs/21_ENVIRONMENT_CONTRACT.md) |
+| Test and release evidence | [Test strategy](docs/14_TEST_STRATEGY.md) and [launch runbook](docs/15_LAUNCH_RUNBOOK.md) |
+| Founder acceptance and release evidence | [Founder Acceptance Release](docs/recovery/FOUNDER_ACCEPTANCE_RELEASE.md) |
+| Current recovery sequence and gates | [Recovery backlog](docs/recovery/RECOVERY_BACKLOG.md) |
+
+The complete index is in [docs/README.md](docs/README.md).
+
+## Contributing
+
+RITUVIA is developed evidence-first. Before changing code:
+
+1. Read [AGENTS.md](AGENTS.md), [AGENTS.override.md](AGENTS.override.md),
+   [PROJECT_STATUS.md](PROJECT_STATUS.md), the active recovery backlog, and
+   [DECISIONS.md](DECISIONS.md).
+2. Follow the active recovery item; only when the override is retired, select the highest-priority
+   `Ready` product-backlog item whose dependencies are satisfied.
+3. Read the relevant specification and production-pack sections.
+4. Implement the smallest complete vertical slice and its failure/recovery states.
+5. Verify the affected behavior, review the diff across every safety dimension, and update durable
+   task, decision, status, and evidence records.
+
+Detailed workflow, branch, review, security, localization, migration, and definition-of-done rules
+are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+RITUVIA is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+Public source availability does not prove that the service is publicly launched or that every
+factual legal, provider, security, recovery, and operational prerequisite is satisfied.
+
+---
+
+RITUVIA may help people reflect, create meaning, and practice symbolic ritual. It must never claim
+to know objective future events, replace professional care, exploit fear, induce dependency, or
+sell certainty.
