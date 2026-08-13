@@ -349,8 +349,13 @@ const parseUuidV4 = (value: unknown): string => {
   return value;
 };
 
+const webCryptoBytes = (value: Uint8Array): Uint8Array<ArrayBuffer> =>
+  Uint8Array.from(value) as Uint8Array<ArrayBuffer>;
+
 const importProviderSubjectHmacKey = async (key: Uint8Array): Promise<webcrypto.CryptoKey> =>
-  webcrypto.subtle.importKey("raw", key, { hash: "SHA-256", name: "HMAC" }, false, ["sign"]);
+  webcrypto.subtle.importKey("raw", webCryptoBytes(key), { hash: "SHA-256", name: "HMAC" }, false, [
+    "sign",
+  ]);
 
 const keyedIdentifierDigest = async (
   scope: string,
@@ -384,7 +389,7 @@ const providerSubjectForEmail = async (
 };
 
 const importEmailKey = async (key: Uint8Array): Promise<webcrypto.CryptoKey> =>
-  webcrypto.subtle.importKey("raw", key, "AES-GCM", false, ["decrypt", "encrypt"]);
+  webcrypto.subtle.importKey("raw", webCryptoBytes(key), "AES-GCM", false, ["decrypt", "encrypt"]);
 
 const encryptEmail = async (
   email: string,
@@ -437,7 +442,7 @@ const decryptEmail = async (
     const plaintext = await webcrypto.subtle.decrypt(
       {
         additionalData: new TextEncoder().encode(scope),
-        iv: input.nonce,
+        iv: webCryptoBytes(input.nonce),
         name: "AES-GCM",
         tagLength: 128,
       },

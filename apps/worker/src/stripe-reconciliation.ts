@@ -76,8 +76,8 @@ export const createStripeReconciliationReader = (
   return Object.freeze({
     attestAccount,
     async readCheckout(checkoutId) {
-      await attestAccount();
       try {
+        await attestAccount();
         const path =
           `/v1/checkout/sessions/${encodeURIComponent(checkoutId)}` +
           "?expand[]=payment_intent.latest_charge.balance_transaction";

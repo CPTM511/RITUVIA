@@ -12,6 +12,12 @@ import {
 } from "@rituvia/domain";
 
 import type { Prisma, PrismaClient } from "./generated/prisma/client.js";
+import {
+  bindProtectedBetaInviteAdmission,
+  lockProtectedBetaInviteForAdmission,
+  ProtectedBetaInviteError,
+  type ProtectedBetaInvitePolicy,
+} from "./protected-beta-invite.js";
 
 const sessionTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 const idempotencyKeyPattern =
@@ -89,6 +95,7 @@ export type AnonymousIdentityService = Readonly<{
   allowsConsent(input: { noticeVersion: string; purpose: string; token: string }): Promise<boolean>;
   ensureSession(input: {
     idempotencyKey: string;
+    inviteToken?: string | undefined;
     token?: string | undefined;
   }): Promise<EnsuredAnonymousSession>;
   recordConsent(input: {
@@ -110,12 +117,23 @@ type IdentityPrivilegeAttestation = Readonly<{
   canDeleteIdentity: boolean;
   canInsertConsent: boolean;
   canInsertGate: boolean;
+  canInsertRateLimit: boolean;
+  canInsertInvite: boolean;
+  canInsertInviteCohort: boolean;
   canInsertSession: boolean;
   canInsertSubject: boolean;
   canReadIdentity: boolean;
+  canReadRateLimit: boolean;
+  canReadInvite: boolean;
+  canReadRestrictedInvite: boolean;
   canUpdateConsent: boolean;
   canUpdateGate: boolean;
   canUpdateRestrictedGate: boolean;
+  canUpdateRateLimit: boolean;
+  canUpdateRestrictedRateLimit: boolean;
+  canUpdateInviteConsumption: boolean;
+  canUpdateRestrictedInvite: boolean;
+  canUpdateInviteCohort: boolean;
   canUpdateRestrictedSession: boolean;
   canUpdateRestrictedSubject: boolean;
   canUpdateSessionLifecycle: boolean;
@@ -142,7 +160,10 @@ export const assertAnonymousIdentityRuntimeDatabasePrivileges = async (
                   'public.anonymous_subject'::regclass,
                   'public.anonymous_session'::regclass,
                   'public.consent_record'::regclass,
-                  'public.anonymous_session_issuance_gate'::regclass
+                  'public.anonymous_session_issuance_gate'::regclass,
+                  'public.anonymous_session_rate_limit'::regclass,
+                  'public.protected_beta_invite_cohort'::regclass,
+                  'public.protected_beta_invite'::regclass
                 ])
              ) AS table_owner_oids
     ), reachable_roles AS (
@@ -161,6 +182,22 @@ export const assertAnonymousIdentityRuntimeDatabasePrivileges = async (
              AND has_table_privilege(current_user, 'public.anonymous_session', 'SELECT')
              AND has_table_privilege(current_user, 'public.consent_record', 'SELECT')
              AND has_table_privilege(current_user, 'public.anonymous_session_issuance_gate', 'SELECT')) AS "canReadIdentity",
+           has_table_privilege(current_user, 'public.anonymous_session_rate_limit', 'SELECT') AS "canReadRateLimit",
+           (has_column_privilege(current_user, 'public.protected_beta_invite_cohort', 'policy_version', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite_cohort', 'cohort_limit', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite_cohort', 'issued_count', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'id', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'policy_version', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'token_hash', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'token_hash_version', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'expires_at', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'consumed_at', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'anonymous_session_id', 'SELECT')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'revoked_at', 'SELECT')) AS "canReadInvite",
+           (has_column_privilege(current_user, 'public.protected_beta_invite', 'creation_key_hash', 'SELECT')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'canonical_creation_hash', 'SELECT')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'revocation_key_hash', 'SELECT')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'canonical_revocation_hash', 'SELECT')) AS "canReadRestrictedInvite",
            has_table_privilege(current_user, 'public.anonymous_subject', 'INSERT') AS "canInsertSubject",
            has_column_privilege(current_user, 'public.anonymous_subject', 'last_seen_at', 'UPDATE') AS "canUpdateSubjectLastSeen",
            (has_column_privilege(current_user, 'public.anonymous_subject', 'expires_at', 'UPDATE')
@@ -186,10 +223,36 @@ export const assertAnonymousIdentityRuntimeDatabasePrivileges = async (
            (has_column_privilege(current_user, 'public.anonymous_session_issuance_gate', 'window_started_at', 'UPDATE')
              AND has_column_privilege(current_user, 'public.anonymous_session_issuance_gate', 'issued_count', 'UPDATE')) AS "canUpdateGate",
            has_column_privilege(current_user, 'public.anonymous_session_issuance_gate', 'id', 'UPDATE') AS "canUpdateRestrictedGate",
+           has_table_privilege(current_user, 'public.anonymous_session_rate_limit', 'INSERT') AS "canInsertRateLimit",
+           (has_column_privilege(current_user, 'public.anonymous_session_rate_limit', 'window_started_at', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.anonymous_session_rate_limit', 'request_count', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.anonymous_session_rate_limit', 'policy_version', 'UPDATE')) AS "canUpdateRateLimit",
+           (has_column_privilege(current_user, 'public.anonymous_session_rate_limit', 'anonymous_session_id', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.anonymous_session_rate_limit', 'scope', 'UPDATE')) AS "canUpdateRestrictedRateLimit",
+           has_table_privilege(current_user, 'public.protected_beta_invite_cohort', 'INSERT') AS "canInsertInviteCohort",
+           (has_table_privilege(current_user, 'public.protected_beta_invite_cohort', 'UPDATE')
+             OR has_any_column_privilege(current_user, 'public.protected_beta_invite_cohort', 'UPDATE')) AS "canUpdateInviteCohort",
+           has_table_privilege(current_user, 'public.protected_beta_invite', 'INSERT') AS "canInsertInvite",
+           (has_column_privilege(current_user, 'public.protected_beta_invite', 'consumed_at', 'UPDATE')
+             AND has_column_privilege(current_user, 'public.protected_beta_invite', 'anonymous_session_id', 'UPDATE')) AS "canUpdateInviteConsumption",
+           (has_column_privilege(current_user, 'public.protected_beta_invite', 'token_hash', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'token_hash_version', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'policy_version', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'seat_number', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'creation_key_hash', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'canonical_creation_hash', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'created_at', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'expires_at', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'revoked_at', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'revocation_key_hash', 'UPDATE')
+             OR has_column_privilege(current_user, 'public.protected_beta_invite', 'canonical_revocation_hash', 'UPDATE')) AS "canUpdateRestrictedInvite",
            (has_table_privilege(current_user, 'public.anonymous_subject', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
              OR has_table_privilege(current_user, 'public.anonymous_session', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
              OR has_table_privilege(current_user, 'public.consent_record', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
-             OR has_table_privilege(current_user, 'public.anonymous_session_issuance_gate', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')) AS "canDeleteIdentity",
+             OR has_table_privilege(current_user, 'public.anonymous_session_issuance_gate', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+             OR has_table_privilege(current_user, 'public.anonymous_session_rate_limit', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+             OR has_table_privilege(current_user, 'public.protected_beta_invite_cohort', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+             OR has_table_privilege(current_user, 'public.protected_beta_invite', 'DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')) AS "canDeleteIdentity",
            (SELECT rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls
               FROM pg_roles WHERE rolname = current_user) AS "privilegedRole",
            EXISTS (
@@ -220,12 +283,23 @@ export const assertAnonymousIdentityRuntimeDatabasePrivileges = async (
     row.canDeleteIdentity ||
     !row.canInsertConsent ||
     !row.canInsertGate ||
+    !row.canInsertRateLimit ||
+    row.canInsertInvite ||
+    row.canInsertInviteCohort ||
     !row.canInsertSession ||
     !row.canInsertSubject ||
     !row.canReadIdentity ||
+    !row.canReadRateLimit ||
+    !row.canReadInvite ||
+    row.canReadRestrictedInvite ||
     row.canUpdateConsent ||
     !row.canUpdateGate ||
     row.canUpdateRestrictedGate ||
+    !row.canUpdateRateLimit ||
+    row.canUpdateRestrictedRateLimit ||
+    !row.canUpdateInviteConsumption ||
+    row.canUpdateRestrictedInvite ||
+    row.canUpdateInviteCohort ||
     row.canUpdateRestrictedSession ||
     row.canUpdateRestrictedSubject ||
     !row.canUpdateSessionLifecycle ||
@@ -270,6 +344,13 @@ const newToken = (): Readonly<{ bytes: Uint8Array; token: string }> => {
   return Object.freeze({ bytes, token });
 };
 
+const protectedBetaSessionToken = async (
+  inviteToken: string,
+): Promise<Readonly<{ bytes: Uint8Array; token: string }>> => {
+  const bytes = await sha256(`rituvia.protected-beta.session-token.v1:${inviteToken}`);
+  return Object.freeze({ bytes, token: Buffer.from(bytes).toString("base64url") });
+};
+
 const sha256 = async (value: Uint8Array | string): Promise<Uint8Array<ArrayBuffer>> => {
   const source = typeof value === "string" ? new TextEncoder().encode(value) : value;
   const bytes = Uint8Array.from(source) as Uint8Array<ArrayBuffer>;
@@ -304,6 +385,7 @@ type ActiveSessionRow = Readonly<{
 const resolveActiveSession = async (
   database: PrismaClient | Prisma.TransactionClient,
   token: string,
+  requiredInvitePolicyVersion?: string | undefined,
 ): Promise<AnonymousSessionContext | null> => {
   const bytes = tokenBytes(token);
   if (bytes === null) return null;
@@ -320,6 +402,17 @@ const resolveActiveSession = async (
          AND session.revoked_at IS NULL
          AND session.expires_at > CURRENT_TIMESTAMP
          AND subject.expires_at > CURRENT_TIMESTAMP
+         AND (
+           ${requiredInvitePolicyVersion ?? null}::text IS NULL
+           OR EXISTS (
+             SELECT 1
+               FROM protected_beta_invite AS invite
+              WHERE invite.anonymous_session_id = session.id
+                AND invite.policy_version = ${requiredInvitePolicyVersion ?? null}::text
+                AND invite.consumed_at IS NOT NULL
+                AND invite.revoked_at IS NULL
+           )
+         )
        FOR UPDATE OF session, subject
     ), touched_subject AS (
       UPDATE anonymous_subject AS subject
@@ -434,17 +527,28 @@ const persistedConsent = (record: {
 };
 
 const isUniqueConflict = (error: unknown): boolean =>
-  typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  (error.code === "P2002" ||
+    error.code === "23505" ||
+    (error.code === "P2010" &&
+      "message" in error &&
+      typeof error.message === "string" &&
+      error.message.includes("Code: `23505`")));
 
 export const createAnonymousIdentityService = (
   database: PrismaClient,
   rawPolicy: AnonymousSessionPolicy,
+  protectedBetaInvitePolicy?: ProtectedBetaInvitePolicy | undefined,
 ): AnonymousIdentityService => {
   const policy = validatePolicy(rawPolicy);
 
   const resolveSession = async (token: string): Promise<AnonymousSessionContext | null> => {
     await assertAnonymousIdentityRuntimeDatabasePrivileges(database);
-    return database.$transaction((transaction) => resolveActiveSession(transaction, token));
+    return database.$transaction((transaction) =>
+      resolveActiveSession(transaction, token, protectedBetaInvitePolicy?.policyVersion),
+    );
   };
 
   const revokeSession = async (token: string): Promise<boolean> => {
@@ -472,20 +576,34 @@ export const createAnonymousIdentityService = (
 
   const ensureSession: AnonymousIdentityService["ensureSession"] = async ({
     idempotencyKey: rawIdempotencyKey,
+    inviteToken,
     token,
   }) => {
     const idempotencyKey = parseIdempotencyKey(rawIdempotencyKey);
     await assertAnonymousIdentityRuntimeDatabasePrivileges(database);
     if (token !== undefined) {
       const active = await database.$transaction((transaction) =>
-        resolveActiveSession(transaction, token),
+        resolveActiveSession(transaction, token, protectedBetaInvitePolicy?.policyVersion),
       );
       if (active !== null) return Object.freeze({ context: active, kind: "resumed" });
     }
 
+    const protectedSessionMaterial =
+      protectedBetaInvitePolicy === undefined || inviteToken === undefined
+        ? undefined
+        : await protectedBetaSessionToken(inviteToken);
+
+    const canonicalInput =
+      protectedBetaInvitePolicy === undefined
+        ? issuanceCanonicalInput
+        : JSON.stringify({
+            inviteTokenEvidence: Buffer.from(await sha256(inviteToken ?? "")).toString("hex"),
+            policyVersion: protectedBetaInvitePolicy.policyVersion,
+            schemaVersion: "rituvia.anonymous-session.protected-beta.v1",
+          });
     const [issuanceKeyHash, canonicalRequestHash] = await Promise.all([
       sha256(idempotencyKey),
-      sha256(issuanceCanonicalInput),
+      sha256(canonicalInput),
     ]);
     const replay = await database.anonymousSession.findUnique({
       select: { canonicalRequestHash: true },
@@ -495,14 +613,38 @@ export const createAnonymousIdentityService = (
       if (!bytesEqual(replay.canonicalRequestHash, canonicalRequestHash)) {
         throw new AnonymousIdentityPersistenceError("ANONYMOUS_SESSION_IDEMPOTENCY_CONFLICT");
       }
+      if (protectedSessionMaterial !== undefined) {
+        const recovered = await database.$transaction((transaction) =>
+          resolveActiveSession(
+            transaction,
+            protectedSessionMaterial.token,
+            protectedBetaInvitePolicy?.policyVersion,
+          ),
+        );
+        if (recovered !== null) {
+          return Object.freeze({
+            context: recovered,
+            kind: "created",
+            token: protectedSessionMaterial.token,
+          });
+        }
+      }
       throw new AnonymousIdentityPersistenceError("ANONYMOUS_SESSION_REPLAY_REQUIRES_COOKIE");
     }
 
     for (let attempt = 0; attempt < maximumTokenAttempts; attempt += 1) {
-      const material = newToken();
+      const material = protectedSessionMaterial ?? newToken();
       const tokenHash = await sha256(material.bytes);
       try {
         const created = await database.$transaction(async (transaction) => {
+          const lockedInvite =
+            protectedBetaInvitePolicy === undefined
+              ? undefined
+              : await lockProtectedBetaInviteForAdmission(
+                  transaction,
+                  protectedBetaInvitePolicy,
+                  inviteToken,
+                );
           const observedAt = await consumeIssuanceCapacity(transaction, policy);
           const expiresAt = new Date(observedAt.getTime() + policy.ttlSeconds * 1_000);
           const subject = await transaction.anonymousSubject.create({
@@ -527,6 +669,9 @@ export const createAnonymousIdentityService = (
             },
             select: { expiresAt: true, id: true },
           });
+          if (lockedInvite !== undefined) {
+            await bindProtectedBetaInviteAdmission(transaction, lockedInvite.inviteId, session.id);
+          }
           return context({
             expiresAt: session.expiresAt,
             sessionId: session.id,
@@ -535,7 +680,12 @@ export const createAnonymousIdentityService = (
         });
         return Object.freeze({ context: created, kind: "created", token: material.token });
       } catch (error) {
-        if (error instanceof AnonymousIdentityPersistenceError) throw error;
+        if (
+          error instanceof AnonymousIdentityPersistenceError ||
+          error instanceof ProtectedBetaInviteError
+        ) {
+          throw error;
+        }
         if (isUniqueConflict(error)) {
           const existing = await database.anonymousSession.findUnique({
             select: { canonicalRequestHash: true },
@@ -544,6 +694,22 @@ export const createAnonymousIdentityService = (
           if (existing !== null) {
             if (!bytesEqual(existing.canonicalRequestHash, canonicalRequestHash)) {
               throw new AnonymousIdentityPersistenceError("ANONYMOUS_SESSION_IDEMPOTENCY_CONFLICT");
+            }
+            if (protectedSessionMaterial !== undefined) {
+              const recovered = await database.$transaction((transaction) =>
+                resolveActiveSession(
+                  transaction,
+                  protectedSessionMaterial.token,
+                  protectedBetaInvitePolicy?.policyVersion,
+                ),
+              );
+              if (recovered !== null) {
+                return Object.freeze({
+                  context: recovered,
+                  kind: "created",
+                  token: protectedSessionMaterial.token,
+                });
+              }
             }
             throw new AnonymousIdentityPersistenceError("ANONYMOUS_SESSION_REPLAY_REQUIRES_COOKIE");
           }
@@ -681,7 +847,11 @@ export const createAnonymousIdentityService = (
     const noticeVersion = parseConsentNoticeVersion(input.noticeVersion);
     await assertAnonymousIdentityRuntimeDatabasePrivileges(database);
     return database.$transaction(async (transaction) => {
-      const active = await resolveActiveSession(transaction, input.token);
+      const active = await resolveActiveSession(
+        transaction,
+        input.token,
+        protectedBetaInvitePolicy?.policyVersion,
+      );
       if (active === null) return false;
       const databaseTimes = await transaction.$queryRaw<Array<{ observedAt: Date }>>`
         SELECT CURRENT_TIMESTAMP AS "observedAt"

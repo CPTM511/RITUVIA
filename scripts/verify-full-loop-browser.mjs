@@ -35,6 +35,14 @@ const tarotIntegrityKey = Buffer.alloc(32, 81).toString("base64url");
 const anonymousSessionCookieName = "__Host-rituvia-anonymous-session";
 const anonymousSessionToken = "a".repeat(43);
 const privateQuestion = "What can I notice before I answer the private question canary?";
+const privateBlockedQuestion = "Can this medical diagnosis guarantee my future?";
+const privateCrisisQuestion = "I am in immediate danger and may hurt myself.";
+const privateReframedQuestion = "Will my partner definitely come back to me?";
+const privateOfflineQuestion = "What can I notice in this offline moment?";
+const privateUnavailableQuestion = "What can I notice while this service recovers?";
+const privateRateLimitedQuestion = "What can I notice while question checks pause?";
+const relationshipSuggestion =
+  "What boundaries or actions are within my control in this relationship?";
 const privateIntention = "I intend to pause before answering the private intention canary.";
 const privateAction = "Take three quiet private-action-canary breaths.";
 const privateJournal = "I noticed a calmer private-journal-canary response.";
@@ -42,6 +50,12 @@ const privateRevisitReflection =
   "I took the action and noticed the private-revisit-canary pause helped.";
 const privateCanaries = [
   privateQuestion,
+  privateBlockedQuestion,
+  privateCrisisQuestion,
+  privateReframedQuestion,
+  privateOfflineQuestion,
+  privateUnavailableQuestion,
+  privateRateLimitedQuestion,
   privateIntention,
   privateAction,
   privateJournal,
@@ -213,7 +227,12 @@ const server = spawn(process.execPath, ["start.mjs", "-H", host, "-p", String(po
     ...process.env,
     BRAND_CANONICAL_ORIGIN: origin,
     DATABASE_URL: "postgresql://127.0.0.1:1/rituvia_full_loop",
+    RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "test.full-loop-browser.v1",
+    RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+    RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
     RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.full-loop-browser.v1",
+    RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+    RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
     RITUVIA_TAROT_INTEGRITY_KEY_V1: tarotIntegrityKey,
   },
   stdio: ["ignore", "pipe", "pipe"],
@@ -235,6 +254,7 @@ try {
   const unexpected = [];
   const visitedUrls = [];
   let intentionAttempts = 0;
+  let intakeUnavailableAttempts = 0;
   let intentionOperationKey = null;
   let ritualCompletionAttempts = 0;
   let ritualCompletionKey = null;
@@ -339,17 +359,65 @@ try {
 
     if (key === "POST:/api/v1/intake/evaluate") {
       const body = request.postDataJSON();
-      operations.push({ key, themeCode: body.themeCode });
-      assert.equal(body.question, privateQuestion);
       assert.equal(body.schemaVersion, "1");
-      return json(200, {
-        canContinue: true,
+      const response = {
         locale: "en",
         policyVersion: "question-intake.en.v1",
         schemaVersion: "1",
+        themeCode: body.themeCode,
+      };
+      if (body.question === privateUnavailableQuestion) {
+        intakeUnavailableAttempts += 1;
+        if (intakeUnavailableAttempts === 1) {
+          operations.push({ key, state: "unavailable" });
+          return json(503, { code: "INTAKE_UNAVAILABLE" });
+        }
+      }
+      if (body.question === privateRateLimitedQuestion) {
+        operations.push({ key, state: "rate_limited" });
+        return json(429, { code: "INTAKE_RATE_LIMITED" }, { "retry-after": "31" });
+      }
+      if (body.question === privateBlockedQuestion) {
+        operations.push({ key, state: "blocked" });
+        return json(200, {
+          ...response,
+          canContinue: false,
+          state: "blocked",
+          suggestedQuestionCode: "professional_preparation",
+        });
+      }
+      if (body.question === privateCrisisQuestion) {
+        operations.push({ key, state: "crisis" });
+        return json(200, {
+          ...response,
+          canContinue: false,
+          state: "crisis",
+          suggestedQuestionCode: null,
+        });
+      }
+      if (body.question === privateReframedQuestion) {
+        operations.push({ key, state: "reframed" });
+        return json(200, {
+          ...response,
+          canContinue: false,
+          state: "reframed",
+          suggestedQuestionCode: "relationship_agency",
+        });
+      }
+      assert.ok(
+        [
+          privateQuestion,
+          privateOfflineQuestion,
+          privateUnavailableQuestion,
+          relationshipSuggestion,
+        ].includes(body.question),
+      );
+      operations.push({ key, state: "allowed" });
+      return json(200, {
+        ...response,
+        canContinue: true,
         state: "allowed",
         suggestedQuestionCode: null,
-        themeCode: body.themeCode,
       });
     }
     if (key === "GET:/api/v1/me") return json(200, { ageAttested: false });
@@ -620,35 +688,145 @@ try {
       request.failure()?.errorText === "net::ERR_ABORTED" &&
       ((request.method() === "GET" && url.pathname === "/api/v1/entitlements") ||
         (request.method() === "POST" && url.pathname === "/api/v1/intentions"));
+    const expectedIntakeUnavailableAbort =
+      request.failure()?.errorText === "net::ERR_ABORTED" &&
+      request.method() === "POST" &&
+      url.pathname === "/api/v1/intake/evaluate" &&
+      request.postData()?.includes(privateUnavailableQuestion) === true;
+    const expectedIntakeRateLimitedAbort =
+      request.failure()?.errorText === "net::ERR_ABORTED" &&
+      request.method() === "POST" &&
+      url.pathname === "/api/v1/intake/evaluate" &&
+      request.postData()?.includes(privateRateLimitedQuestion) === true;
     if (
       url.origin === origin &&
       !ignoredAbort &&
       !simulatedLostResponse &&
-      !expectedNavigationAbort
+      !expectedNavigationAbort &&
+      !expectedIntakeUnavailableAbort &&
+      !expectedIntakeRateLimitedAbort
     ) {
       failedLocalRequests.push(
         `${request.method()}:${url.pathname}:${request.failure()?.errorText ?? "unknown"}`,
       );
     }
   });
+  const activateIntakeRequest = async (locator) => {
+    const requestFinishedPromise = page.waitForEvent("requestfinished", {
+      predicate: (request) =>
+        request.method() === "POST" &&
+        new URL(request.url()).pathname === "/api/v1/intake/evaluate",
+    });
+    await activateWithKeyboard(locator);
+    await requestFinishedPromise;
+  };
 
-  await page.goto("/en/intake", { timeout: 30_000, waitUntil: "load" });
+  await page.goto("/en", { timeout: 30_000, waitUntil: "load" });
+  assert.equal(await page.locator('a[href="/en/tarot/one-card"]').count(), 0);
+  await activateWithKeyboard(page.getByRole("link", { name: "Begin a free reading" }));
   await page.getByRole("heading", { name: "What would you like to reflect on?" }).waitFor();
   await page.getByLabel("Open reflection").check();
-  await page.getByLabel("Optional question").fill(privateQuestion);
+
+  await page.getByLabel("Optional question").fill(privateBlockedQuestion);
+  await activateIntakeRequest(page.getByRole("button", { name: "Review my question" }));
+  await page.locator('[aria-label="This question is outside symbolic reflection"]').waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Continue to a private one-card reflection" }).count(),
+    0,
+  );
+  assert.equal(await page.getByLabel("Optional question").inputValue(), "");
+  await activateWithKeyboard(page.getByRole("button", { name: "Use the safer question" }));
+  await page.waitForFunction(() => document.activeElement?.id === "question-intake-question");
+
+  await page.getByLabel("Optional question").fill(privateCrisisQuestion);
+  await activateIntakeRequest(page.getByRole("button", { name: "Review my question" }));
+  await page.locator('[aria-label="Pause this reflection and get immediate support"]').waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Continue to a private one-card reflection" }).count(),
+    0,
+  );
+  assert.equal(await page.getByLabel("Optional question").inputValue(), "");
+
+  await page.getByLabel("Optional question").fill(privateReframedQuestion);
+  await activateIntakeRequest(page.getByRole("button", { name: "Review my question" }));
+  await page.locator('[aria-label="A gentler question keeps the choice with you"]').waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Continue to a private one-card reflection" }).count(),
+    0,
+  );
+  await activateWithKeyboard(page.getByRole("button", { name: "Use the suggested question" }));
+  await page.waitForFunction(() => document.activeElement?.id === "question-intake-question");
+  assert.equal(await page.getByLabel("Optional question").inputValue(), relationshipSuggestion);
+  await activateIntakeRequest(page.getByRole("button", { name: "Review my question" }));
+  await page.locator('[aria-label="Ready for a bounded reflection"]').waitFor();
+  await activateWithKeyboard(page.getByRole("button", { name: "Review another question" }));
+  await page.waitForFunction(() => document.activeElement?.id === "question-intake-theme-option-1");
+
+  await page.getByLabel("Open reflection").check();
+  await page.getByLabel("Optional question").fill(privateOfflineQuestion);
+  const intakeRequestsBeforeOffline = operations.filter(
+    ({ key }) => key === "POST:/api/v1/intake/evaluate",
+  ).length;
+  await context.setOffline(true);
+  await page.waitForFunction(() => !navigator.onLine);
   await activateWithKeyboard(page.getByRole("button", { name: "Review my question" }));
+  await page.locator('[aria-label="You appear to be offline"]').waitFor();
+  assert.equal(
+    operations.filter(({ key }) => key === "POST:/api/v1/intake/evaluate").length,
+    intakeRequestsBeforeOffline,
+  );
+  await context.setOffline(false);
+  await page.waitForFunction(() => navigator.onLine);
+  await activateIntakeRequest(page.getByRole("button", { name: "Check connection and try again" }));
+  await page.locator('[aria-label="Ready for a bounded reflection"]').waitFor();
+  await activateWithKeyboard(page.getByRole("button", { name: "Review another question" }));
+
+  await page.getByLabel("Open reflection").check();
+  await page.getByLabel("Optional question").fill(privateUnavailableQuestion);
+  await activateWithKeyboard(page.getByRole("button", { name: "Review my question" }));
+  await page.locator('[aria-label="The question check is unavailable"]').waitFor();
+  await activateIntakeRequest(page.getByRole("button", { name: "Try again" }));
+  await page.locator('[aria-label="Ready for a bounded reflection"]').waitFor();
+  await activateWithKeyboard(page.getByRole("button", { name: "Review another question" }));
+
+  await page.getByLabel("Open reflection").check();
+  await page.getByLabel("Optional question").fill(privateRateLimitedQuestion);
+  const rateLimitedResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/intake/evaluate" &&
+      response.status() === 429,
+  );
+  await activateWithKeyboard(page.getByRole("button", { name: "Review my question" }));
+  const rateLimitedResponse = await rateLimitedResponsePromise;
+  assert.equal(rateLimitedResponse.headers()["retry-after"], "31");
+  await page.locator('[aria-label="Question checks are temporarily limited"]').waitFor();
+  assert.equal(await page.getByRole("button", { name: "Try again" }).count(), 0);
+  assert.equal(await page.getByLabel("Optional question").inputValue(), privateRateLimitedQuestion);
+
+  await page.getByLabel("Optional question").fill(privateQuestion);
+  await activateIntakeRequest(page.getByRole("button", { name: "Review my question" }));
   await page.waitForTimeout(250);
-  assert.equal(operations.filter(({ key }) => key === "POST:/api/v1/intake/evaluate").length, 1);
+  assert.equal(operations.filter(({ key }) => key === "POST:/api/v1/intake/evaluate").length, 9);
   await page.locator('[aria-label="Ready for a bounded reflection"]').waitFor();
   const axeIncomplete = [await assertAxe(page)];
   await assertLayout(page);
   await assertTouchTargets(page);
   await activateWithKeyboard(
-    page.getByRole("link", { name: "Continue to a private one-card reflection" }),
+    page.getByRole("button", { name: "Continue to a private one-card reflection" }),
   );
 
   await page.getByRole("heading", { name: "A single perspective for this moment" }).waitFor();
-  await page.getByLabel("Open reflection").check();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('input[name="tarot-theme-code"][value="open_reflection"]')?.checked ===
+      true,
+  );
+  assert.equal(await page.getByLabel("Open reflection").isChecked(), true);
+  assert.equal(
+    await page.evaluate(() => sessionStorage.getItem("rituvia.question-intake-theme.v1")),
+    null,
+  );
   await activateWithKeyboard(page.getByRole("button", { name: "Draw one card" }));
   await page.getByRole("heading", { name: "Your card is ready" }).waitFor();
   await activateWithKeyboard(page.getByRole("button", { name: "Reveal my card" }));
@@ -821,6 +999,7 @@ try {
     (pathname, index) => index === 0 || visitedPaths[index - 1] !== pathname,
   );
   assert.deepEqual(orderedPaths, [
+    "/en",
     "/en/intake",
     "/en/tarot/one-card",
     "/en/sanctuary",
@@ -848,6 +1027,8 @@ try {
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(consoleErrors.toSorted(), [
     "Failed to load resource: net::ERR_FAILED",
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
     "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
   ]);
 

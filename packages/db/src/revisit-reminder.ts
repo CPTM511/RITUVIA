@@ -141,11 +141,14 @@ type PrivilegeRow = Readonly<{
   isSuperuser: boolean;
 }>;
 
+const webCryptoBytes = (value: Uint8Array): Uint8Array<ArrayBuffer> =>
+  Uint8Array.from(value) as Uint8Array<ArrayBuffer>;
+
 const sha256 = async (value: string | Uint8Array): Promise<Uint8Array<ArrayBuffer>> =>
   new Uint8Array(
     await webcrypto.subtle.digest(
       "SHA-256",
-      typeof value === "string" ? new TextEncoder().encode(value) : value,
+      typeof value === "string" ? new TextEncoder().encode(value) : webCryptoBytes(value),
     ),
   ) as Uint8Array<ArrayBuffer>;
 

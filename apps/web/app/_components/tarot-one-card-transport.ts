@@ -112,7 +112,10 @@ export const executeTarotReadingOperation = async (
     signal: input.signal,
   });
   if (session.status !== 204) {
-    return fail(session.status === 429 ? "unavailable" : failureForStatus(session.status));
+    return fail(
+      failureForStatus(session.status),
+      session.status === 429 ? parseRetryAfterSeconds(session) : undefined,
+    );
   }
   input.onSessionReady();
 

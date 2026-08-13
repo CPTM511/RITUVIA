@@ -94,6 +94,8 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const codePattern = /^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u;
 const csrfTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 const subscribeToHydration = (): (() => void) => () => undefined;
+
+class ProtectedBetaMutationRateLimitError extends Error {}
 const legacyFreeRitualObjectCode = (code: SanctuaryFreeRitualItem["code"]): "candle" | "incense" =>
   code === "free_candle" ? "candle" : "incense";
 
@@ -430,6 +432,7 @@ export function SanctuaryFlow({
   const [placedItems, setPlacedItems] = useState<readonly CatalogItem[]>([]);
   const [ritualError, setRitualError] = useState<string | null>(null);
   const [ritualPhase, setRitualPhase] = useState<OperationPhase>("idle");
+  const [mutationRateLimited, setMutationRateLimited] = useState(false);
   const [ritualSession, setRitualSession] = useState<RitualSession | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<SanctuaryThemeCode | null>(null);
   const [smallAction, setSmallAction] = useState("");
@@ -584,6 +587,7 @@ export function SanctuaryFlow({
 
   const createIntention = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
+    if (mutationRateLimited) return;
     if (selectedTheme === null) {
       setIntentionError(messages.intention.required);
       setIntentionErrorField(null);
@@ -637,6 +641,7 @@ export function SanctuaryFlow({
           headers: { "idempotency-key": crypto.randomUUID() },
           method: "POST",
         });
+        if (sessionResponse.status === 429) throw new ProtectedBetaMutationRateLimitError();
         if (sessionResponse.status !== 204) throw new TypeError("session unavailable");
         const issuedCsrfToken = sessionResponse.headers.get("x-csrf-token");
         if (issuedCsrfToken === null || !csrfTokenPattern.test(issuedCsrfToken)) {
@@ -692,6 +697,7 @@ export function SanctuaryFlow({
         },
         method,
       });
+      if (response.status === 429) throw new ProtectedBetaMutationRateLimitError();
       if (!response.ok) throw new TypeError("intention unavailable");
       const refreshedCsrfToken = response.headers.get("x-csrf-token");
       if (refreshedCsrfToken === null || !csrfTokenPattern.test(refreshedCsrfToken)) {
@@ -708,7 +714,14 @@ export function SanctuaryFlow({
       setRevisitDate(parsed.revisitDate ?? "");
       setIntentionSuccess(updating ? messages.intention.updated : messages.intention.created);
       setIntentionPhase("success");
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setMutationRateLimited(true);
+        setIntentionPhase("error");
+        setIntentionError(messages.page.rateLimited);
+        setIntentionErrorField(null);
+        return;
+      }
       setIntentionPhase(navigator.onLine ? "error" : "offline");
       setIntentionError(navigator.onLine ? messages.intention.error : messages.intention.offline);
       setIntentionErrorField(null);
@@ -716,6 +729,7 @@ export function SanctuaryFlow({
   };
 
   const mutateIntentionLifecycle = async (action: IntentionLifecycleAction): Promise<void> => {
+    if (mutationRateLimited) return;
     if (intention === null || !navigator.onLine) {
       setIntentionPhase(navigator.onLine ? "error" : "offline");
       setIntentionError(navigator.onLine ? messages.intention.error : messages.intention.offline);
@@ -766,6 +780,7 @@ export function SanctuaryFlow({
               },
               method: "PATCH",
             });
+      if (response.status === 429) throw new ProtectedBetaMutationRateLimitError();
       if (!response.ok) throw new TypeError("intention mutation unavailable");
       const refreshedCsrfToken = response.headers.get("x-csrf-token");
       if (refreshedCsrfToken !== null) {
@@ -799,14 +814,25 @@ export function SanctuaryFlow({
         );
       }
       setIntentionPhase("success");
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setMutationRateLimited(true);
+        setPendingIntentionAction(null);
+        setIntentionPhase("error");
+        setIntentionError(messages.page.rateLimited);
+        setIntentionErrorField(null);
+        return;
+      }
       setIntentionPhase(navigator.onLine ? "error" : "offline");
       setIntentionError(navigator.onLine ? messages.intention.error : messages.intention.offline);
       setIntentionErrorField(null);
     }
   };
 
-  const startRitualExperience = async (item: CatalogItem): Promise<RitualCompletionResult> => {
+  const startRitualExperience = async (
+    item: CatalogItem,
+  ): Promise<RitualCompletionResult | "rate_limited"> => {
+    if (mutationRateLimited) return "rate_limited";
     if (intention === null || intention.status !== "active") {
       return "error";
     }
@@ -835,6 +861,7 @@ export function SanctuaryFlow({
         },
         method: "POST",
       });
+      if (startResponse.status === 429) throw new ProtectedBetaMutationRateLimitError();
       if (!startResponse.ok) throw new TypeError("ritual unavailable");
       const session = parseRitualSession((await startResponse.json()) as unknown);
       if (session === null || session.itemCode !== item.code || session.status !== "active") {
@@ -850,7 +877,12 @@ export function SanctuaryFlow({
       setPendingItem(null);
       ritualOperation.current = null;
       return "success";
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setMutationRateLimited(true);
+        setRitualPhase("error");
+        return "rate_limited";
+      }
       const result = navigator.onLine ? "error" : "offline";
       setRitualPhase(result);
       return result;
@@ -862,6 +894,7 @@ export function SanctuaryFlow({
     currentStepCode: RitualStepCode,
     elapsedSeconds: number,
   ): Promise<RitualCompletionResult> => {
+    if (mutationRateLimited) return "error";
     if (ritualSession === null || !navigator.onLine) {
       setRitualPhase(navigator.onLine ? "error" : "offline");
       return navigator.onLine ? "error" : "offline";
@@ -893,6 +926,7 @@ export function SanctuaryFlow({
         },
         method: action === "complete" ? "POST" : "PATCH",
       });
+      if (response.status === 429) throw new ProtectedBetaMutationRateLimitError();
       if (!response.ok) throw new TypeError("ritual mutation unavailable");
       const session = parseRitualSession((await response.json()) as unknown);
       if (session === null || session.id !== ritualSession.id) {
@@ -915,7 +949,14 @@ export function SanctuaryFlow({
         );
       }
       return "success";
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setMutationRateLimited(true);
+        setActiveRitualItem(null);
+        setRitualPhase("error");
+        setRitualError(messages.page.rateLimited);
+        return "error";
+      }
       const result = navigator.onLine ? "error" : "offline";
       setRitualPhase(result);
       return result;
@@ -949,7 +990,11 @@ export function SanctuaryFlow({
         setActiveRitualItem(item);
       } else {
         setRitualError(
-          result === "offline" ? messages.ritual.offline : messages.ritual.completionError,
+          result === "offline"
+            ? messages.ritual.offline
+            : result === "rate_limited"
+              ? messages.page.rateLimited
+              : messages.ritual.completionError,
         );
       }
       return;
@@ -1076,6 +1121,7 @@ export function SanctuaryFlow({
 
   const saveJournal = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
+    if (mutationRateLimited) return;
     if (intention === null || ritualSession === null) {
       setJournalError(messages.journal.prerequisite);
       return;
@@ -1126,6 +1172,7 @@ export function SanctuaryFlow({
         },
         method,
       });
+      if (response.status === 429) throw new ProtectedBetaMutationRateLimitError();
       if (!response.ok) throw new TypeError("journal unavailable");
       const parsed = parseJournalEntry((await response.json()) as unknown);
       if (parsed === null) {
@@ -1140,13 +1187,20 @@ export function SanctuaryFlow({
       setJournalEntry(parsed);
       setJournalBody(parsed.reflection);
       setJournalPhase("success");
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setMutationRateLimited(true);
+        setJournalPhase("error");
+        setJournalError(messages.page.rateLimited);
+        return;
+      }
       setJournalPhase(navigator.onLine ? "error" : "offline");
       setJournalError(navigator.onLine ? messages.journal.error : messages.journal.offline);
     }
   };
 
   const deleteJournal = async (): Promise<void> => {
+    if (mutationRateLimited) return;
     if (journalEntry === null || !navigator.onLine) {
       setJournalPhase(navigator.onLine ? "error" : "offline");
       setJournalError(navigator.onLine ? messages.journal.error : messages.journal.offline);
@@ -1170,6 +1224,7 @@ export function SanctuaryFlow({
         },
         method: "DELETE",
       });
+      if (response.status === 429) throw new ProtectedBetaMutationRateLimitError();
       if (response.status !== 204) throw new TypeError("journal delete unavailable");
       const refreshedCsrfToken = response.headers.get("x-csrf-token");
       if (refreshedCsrfToken !== null) {
@@ -1183,7 +1238,13 @@ export function SanctuaryFlow({
       setJournalBody("");
       setJournalPhase("idle");
       requestAnimationFrame(() => document.getElementById(journalId)?.focus());
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setMutationRateLimited(true);
+        setJournalPhase("error");
+        setJournalError(messages.page.rateLimited);
+        return;
+      }
       setJournalPhase(navigator.onLine ? "error" : "offline");
       setJournalError(navigator.onLine ? messages.journal.error : messages.journal.offline);
     }
@@ -1272,6 +1333,14 @@ export function SanctuaryFlow({
       </section>
 
       <div className="sanctuary-workspace">
+        {mutationRateLimited ? (
+          <InlineAlert
+            live="assertive"
+            message={messages.page.rateLimited}
+            title={messages.page.title}
+            tone="warning"
+          />
+        ) : null}
         <section className="sanctuary-panel" aria-labelledby="sanctuary-intention-title">
           <header>
             <p className="eyebrow">{messages.page.eyebrow}</p>
@@ -1434,7 +1503,7 @@ export function SanctuaryFlow({
             ) : null}
             {intention === null || intention.status === "active" ? (
               <Button
-                disabled={!hydrated}
+                disabled={!hydrated || mutationRateLimited}
                 label={
                   intention === null ? messages.intention.create : messages.intention.saveChanges
                 }
@@ -1463,7 +1532,7 @@ export function SanctuaryFlow({
                 </a>
                 {intention.status === "active" ? (
                   <Button
-                    disabled={intentionPhase === "loading"}
+                    disabled={mutationRateLimited || intentionPhase === "loading"}
                     label={messages.intention.complete}
                     onPress={() => setPendingIntentionAction("complete")}
                     tone="secondary"
@@ -1471,14 +1540,14 @@ export function SanctuaryFlow({
                 ) : null}
                 {intention.status === "active" || intention.status === "completed" ? (
                   <Button
-                    disabled={intentionPhase === "loading"}
+                    disabled={mutationRateLimited || intentionPhase === "loading"}
                     label={messages.intention.archive}
                     onPress={() => setPendingIntentionAction("archive")}
                     tone="secondary"
                   />
                 ) : null}
                 <Button
-                  disabled={intentionPhase === "loading"}
+                  disabled={mutationRateLimited || intentionPhase === "loading"}
                   label={messages.intention.delete}
                   onPress={() => setPendingIntentionAction("delete")}
                   tone="danger"
@@ -1584,7 +1653,7 @@ export function SanctuaryFlow({
                         ) : null}
                       </div>
                       <Button
-                        disabled={disabled || ritualPhase === "loading"}
+                        disabled={disabled || mutationRateLimited || ritualPhase === "loading"}
                         label={
                           disabled
                             ? messages.ritual.unavailable
@@ -1713,6 +1782,7 @@ export function SanctuaryFlow({
               value={journalBody}
             />
             <Button
+              disabled={mutationRateLimited}
               label={journalEntry === null ? messages.journal.save : messages.journal.saveChanges}
               {...(journalPhase === "loading"
                 ? { loading: true, loadingLabel: messages.journal.saving }
@@ -1721,6 +1791,7 @@ export function SanctuaryFlow({
             />
             {journalEntry === null ? null : (
               <Button
+                disabled={mutationRateLimited}
                 label={messages.journal.delete}
                 onPress={() => void deleteJournal()}
                 tone="quiet"

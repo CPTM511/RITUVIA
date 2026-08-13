@@ -8,18 +8,18 @@ The goal is high automation with accountable intervention—not a falsely “hum
 
 ## 2. Virtual organization
 
-| Role | Codex configuration | Primary outputs |
-|---|---|---|
-| Product lead | `product` | PRD interpretation, priority, acceptance criteria, UX risks |
-| Architect | `architect` | Boundaries, ADRs, migration/scaling review |
-| Frontend/accessibility | `frontend` | UI implementation review, performance, a11y, RTL |
-| Backend/data | `backend` | APIs, domain, database, jobs, correctness |
-| AI safety | `ai_safety` | prompts, schemas, evals, red-team, cultural/safety boundaries |
-| Payments/risk | `payments_risk` | order/ledger/provider/webhook/country review |
-| Growth/SEO | `growth_seo` | content architecture, SEO/GEO, ethical lifecycle |
-| Localization | `localization` | locale/RTL/translation/cultural QA |
-| QA/security | `qa_security` | independent test, threat, release blocker review |
-| Operations | `operations` | monitoring, runbooks, cost, incident/reconciliation review |
+| Role                   | Codex configuration | Primary outputs                                               |
+| ---------------------- | ------------------- | ------------------------------------------------------------- |
+| Product lead           | `product`           | PRD interpretation, priority, acceptance criteria, UX risks   |
+| Architect              | `architect`         | Boundaries, ADRs, migration/scaling review                    |
+| Frontend/accessibility | `frontend`          | UI implementation review, performance, a11y, RTL              |
+| Backend/data           | `backend`           | APIs, domain, database, jobs, correctness                     |
+| AI safety              | `ai_safety`         | prompts, schemas, evals, red-team, cultural/safety boundaries |
+| Payments/risk          | `payments_risk`     | order/ledger/provider/webhook/country review                  |
+| Growth/SEO             | `growth_seo`        | content architecture, SEO/GEO, ethical lifecycle              |
+| Localization           | `localization`      | locale/RTL/translation/cultural QA                            |
+| QA/security            | `qa_security`       | independent test, threat, release blocker review              |
+| Operations             | `operations`        | monitoring, runbooks, cost, incident/reconciliation review    |
 
 The main Codex session is the orchestrator and primary writer. Subagents should mostly inspect and report. Parallel writes are limited to disjoint files with an explicit merge plan.
 
@@ -141,24 +141,30 @@ Automation may:
 
 Owner approval is required for legal/privacy/safety escalation, account suspension, fraud accusation, high-value refund, chargeback response, or any response using sensitive private evidence. Never expose journal/prayer content to support by default.
 
+RIT-074 may automatically project a current fulfilled payment dispute into one immutable,
+metadata-only support work item. That projector is independent from payment ingestion/fulfillment,
+sends nothing, calls no provider, and exposes no mutable triage/resolve action. Projection presence
+cannot be treated as a chargeback outcome, refund, Credit repair, fraud finding, or customer
+communication.
+
 ## 10. Approval matrix
 
-| Action | Automation | Codex preparation | Owner approval/execution |
-|---|---:|---:|---:|
-| Code implementation in branch | Yes | Yes | Merge policy |
-| Tests/docs/PR creation | Yes | Yes | Optional review except protected areas |
-| Production deploy | No | Yes | Yes |
-| Price/tax/refund/legal change | No | Yes | Yes |
-| New country/language paid launch | No | Yes | Yes |
-| Low-risk content draft | Yes | Yes | Publication policy |
-| Cultural/safety/legal content publish | No | Yes | Yes/qualified reviewer |
-| Provider sandbox integration | Yes | Yes | Credential/setup approval |
-| Provider production activation | No | Yes | Yes |
-| Low-value refund within approved policy | Optional later | Yes | Policy-defined |
-| Material refund/dispute | No | Yes | Yes |
-| Security containment kill switch | Preapproved narrow automation | Yes | Immediate notification |
-| Destructive migration/data action | No | Yes | Yes |
-| Marketing spend/mass outbound | No | Yes | Yes |
+| Action                                  |                    Automation | Codex preparation |               Owner approval/execution |
+| --------------------------------------- | ----------------------------: | ----------------: | -------------------------------------: |
+| Code implementation in branch           |                           Yes |               Yes |                           Merge policy |
+| Tests/docs/PR creation                  |                           Yes |               Yes | Optional review except protected areas |
+| Production deploy                       |                            No |               Yes |                                    Yes |
+| Price/tax/refund/legal change           |                            No |               Yes |                                    Yes |
+| New country/language paid launch        |                            No |               Yes |                                    Yes |
+| Low-risk content draft                  |                           Yes |               Yes |                     Publication policy |
+| Cultural/safety/legal content publish   |                            No |               Yes |                 Yes/qualified reviewer |
+| Provider sandbox integration            |                           Yes |               Yes |              Credential/setup approval |
+| Provider production activation          |                            No |               Yes |                                    Yes |
+| Low-value refund within approved policy |                Optional later |               Yes |                         Policy-defined |
+| Material refund/dispute                 |                            No |               Yes |                                    Yes |
+| Security containment kill switch        | Preapproved narrow automation |               Yes |                 Immediate notification |
+| Destructive migration/data action       |                            No |               Yes |                                    Yes |
+| Marketing spend/mass outbound           |                            No |               Yes |                                    Yes |
 
 ## 11. Production change process
 
@@ -210,7 +216,21 @@ The owner should have one daily surface showing:
 
 This is an operations dashboard, not a replacement for detailed source systems.
 
-RIT-038 provides the private, source-labeled AI operations input for this future surface through
-`pnpm report:ai-operations`. RIT-117 provides the equivalent SEO/GEO brief. RIT-120 may compose
-those contracts only after its remaining dependencies are complete; it must not bypass the
-safe-off admin boundary or present unavailable sources as zero.
+RIT-038 provides the private, source-labeled AI operations input through
+`pnpm report:ai-operations`. RIT-117 provides the equivalent SEO/GEO brief. RIT-120 now composes the
+daily release overview through `pnpm report:owner-operations`: exactly eight sections label source,
+environment, freshness, data quality, evidence, approval, runbook, and known gaps. It is a private
+mode-0600 offline artifact with no Web/Admin button or HTTP route. It does not bypass the safe-off
+admin boundary, replace detailed source systems, present unavailable sources as zero, or authorize
+deployment. RIT-126 now prepares three paused Codex Desktop reviews: daily maintenance at 08:30,
+Monday product review at 09:30, and first-of-month risk audit at 10:30 in `Asia/Shanghai`.
+
+The cards use the Git-indexed schedule manifest, shared scheduled read-only runner, existing review
+prompts, and bounded task-result schema. Codex project cron currently executes against the saved
+local project rather than a hard read-only worktree, so every run checks `git status --porcelain`
+and stops unavailable when the checkout is dirty. On a clean checkout it remains prompt-enforced
+read-only, uses only tracked/already-available aggregate evidence, and cannot write project state,
+create PRs, satisfy an Owner gate, access production/private content, contact providers/users, or
+execute deployment. OWN-020 must choose activation/local-execution/model-use posture before any
+**Run now** or scheduled call. Review the cards through Codex Desktop **Automations**; the exact
+workflow and rollback are in `docs/runbooks/RIT-126_CODEX_AUTOMATIONS.md`.

@@ -46,6 +46,10 @@ vi.mock("../server/account-auth", () => ({
 vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({ brand: { canonicalOrigin: "https://example.test" } }),
 }));
+vi.mock("../server/protected-beta-abuse", () => ({
+  admitWebProtectedBetaRequest: vi.fn(async () => undefined),
+  ProtectedBetaAdmissionError: class ProtectedBetaAdmissionError extends Error {},
+}));
 vi.mock("../server/reflection-loop", () => ({
   createWebRitualSession: harness.create,
   getWebRitualSession: harness.get,

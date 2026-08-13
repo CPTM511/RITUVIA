@@ -19,6 +19,7 @@ import {
 import {
   CommerceError,
   createMoney,
+  evaluatePaymentRouteControl,
   type CatalogEnvironment,
   type CatalogVersionV1,
 } from "@rituvia/payments";
@@ -33,6 +34,10 @@ import {
   stripeHostedCheckoutProviderId,
   WebPaymentProviderError,
 } from "./payment-provider";
+import {
+  webPaymentActivationControlReader,
+  type WebPaymentActivationControlReader,
+} from "./payment-route-controls";
 import { loadWebProductCatalogApplicationService } from "./product-catalog";
 
 const idempotencyKeyPattern =
@@ -59,7 +64,6 @@ export type StripeCheckoutApplicationDependencies = Readonly<{
   accounts: AccountGateway;
   canonicalOrigin: string;
   catalog: Readonly<{ readActive(): Promise<CatalogVersionV1> }>;
-  clock(): string;
   countryPolicies: Readonly<{
     read(
       countryCode: string,
@@ -67,6 +71,7 @@ export type StripeCheckoutApplicationDependencies = Readonly<{
     ): Promise<readonly CountryPolicyVersionV1[]>;
   }>;
   environment: CatalogEnvironment;
+  paymentControls: WebPaymentActivationControlReader;
   providerAccountFingerprint: string;
   paymentProvider: Pick<
     StripeHostedCheckoutAdapter,
@@ -212,7 +217,6 @@ export const createStripeCheckoutApplicationService = (
         if (input.sessionToken === undefined) throw new WebCommerceError("session_required");
         const request = parseRequest(input.request);
         const idempotencyKey = parseIdempotencyKey(input.idempotencyKey);
-        const now = requireInstant(dependencies.clock());
         const session = await dependencies.accounts.resolveSession(input.sessionToken);
         if (session === null) {
           throw new WebCommerceError("session_required");
@@ -224,10 +228,15 @@ export const createStripeCheckoutApplicationService = (
         if (!profile.emailVerified || !profile.ageAttested) {
           throw new WebCommerceError("not_eligible");
         }
-        const [catalog, policyVersions] = await Promise.all([
+        const [catalog, policyVersions, activation] = await Promise.all([
           dependencies.catalog.readActive(),
           dependencies.countryPolicies.read(sandboxCountryCode, dependencies.environment),
+          dependencies.paymentControls.read({
+            countryCode: sandboxCountryCode,
+            kind: "fiat",
+          }),
         ]);
+        const now = requireInstant(activation.countryActivation.evaluation.evaluatedAt);
 
         const product = catalog.products.find(
           (candidate) =>
@@ -296,6 +305,29 @@ export const createStripeCheckoutApplicationService = (
           },
           policyVersions,
         );
+        const routeControl = evaluatePaymentRouteControl({
+          activation,
+          fallbackProviderIds: [],
+          policyDecision,
+          route: {
+            countryCode: sandboxCountryCode,
+            currencyCode: sandboxCurrencyCode,
+            evaluatedAt: now,
+            kind: "fiat",
+            method: "card",
+            providerId: stripeHostedCheckoutProviderId,
+            recurring,
+          },
+        });
+        if (!routeControl.allowed) {
+          const operationalFailure = [
+            "checkout_disabled",
+            "fallback_forbidden",
+            "invalid_input",
+            "policy_mismatch",
+          ].includes(routeControl.reason);
+          throw new WebCommerceError(operationalFailure ? "unavailable" : "not_eligible");
+        }
         if (!policyDecision.allowed) throw new WebCommerceError("not_eligible");
         const policy = policyVersions.find(
           ({ version }) => version === policyDecision.snapshot.policyVersion,
@@ -465,7 +497,6 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
     },
     canonicalOrigin: configuration.brand.canonicalOrigin,
     catalog: loadWebProductCatalogApplicationService(),
-    clock: () => new Date().toISOString(),
     countryPolicies: {
       read: async (countryCode, environment) =>
         (
@@ -476,6 +507,7 @@ export const loadWebStripeCheckoutApplicationService = (): StripeCheckoutApplica
         ).map((record) => parseCountryPolicyVersionV1(record.policyDocument)),
     },
     environment: configuration.deploymentEnvironment,
+    paymentControls: webPaymentActivationControlReader,
     providerAccountFingerprint: paymentProviders.accountFingerprint(stripeHostedCheckoutProviderId),
     paymentProvider,
     persistence: createCommercialCheckoutPersistence(loadWebDatabase()),

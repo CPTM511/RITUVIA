@@ -4,6 +4,7 @@ import path from "node:path";
 
 import {
   auditAutomationPromptContracts,
+  auditAutomationScheduleContract,
   auditRecordSet,
   auditTaskResult,
   auditTaskResultSchema,
@@ -87,6 +88,13 @@ const findings = [
     ) as unknown,
   ),
   ...auditAutomationPromptContracts(promptFiles),
+  ...auditAutomationScheduleContract(
+    JSON.parse(
+      await readFile(path.join(root, "automation/rituvia-recurring-reviews.json"), "utf8"),
+    ) as unknown,
+    repositoryPaths,
+    await readFile(path.join(root, "automation/scheduled-read-only-runner.md"), "utf8"),
+  ),
 ];
 
 if (findings.length > 0) {

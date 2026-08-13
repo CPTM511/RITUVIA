@@ -54,9 +54,12 @@ A separate `apps/admin` is optional. Prefer a protected route group in `apps/web
 
 `@rituvia/analytics` currently implements strict core-loop event contracts, bounded synthetic test
 storage, deterministic funnel/WMRS projections, and a fail-closed offline SEO/GEO operations
-projection over aggregate exports and reviewed public-content authority. Web composition supplies
-purpose-scoped identity and consent checks; production collection, persistence, browser ingestion,
-vendors, provider APIs, and network export remain safe-off.
+projection over aggregate exports and reviewed public-content authority. It also implements the
+`owner-operations.v1` private offline summary over exactly eight source envelopes; missing, stale,
+future, or synthetic evidence is forced to `unknown`, and the release panel never grants deployment
+authority. Web composition supplies purpose-scoped identity and consent checks; production
+collection, persistence, browser ingestion, admin routes, vendors, provider APIs, and network
+export remain safe-off.
 
 ## 4. System context
 
@@ -122,7 +125,7 @@ Location and historical time-zone resolution use a separate provider-neutral V1 
 intended production gazetteer is a self-hosted GeoNames export with an immutable snapshot version
 and SHA-256 digest; no request-time public geocoder dependency is allowed. `@rituvia/divination`
 owns strict search/result and local-time resolution facts only. `apps/web/server` owns the pinned
-Node `24.18.0` / ICU `78.3` / tzdata `2026b` runtime, timeout cancellation, and bounded private
+Node `26.5.1` / ICU `78.3` / tzdata `2026b` runtime, timeout cancellation, and bounded private
 process cache capped at 64 entries and 15 minutes. Cache keys are HMAC-only and partitioned by
 provider, adapter, and data versions. Resolution rereads the opaque location ID, never trusts
 client coordinates/zone data, never caches birth time, and returns explicit fold/gap states without
@@ -327,6 +330,12 @@ rows must match an exact active key, required owner-gate prefix, and scope shape
 update/delete/truncate history or change DDL, and no migration creates an enabled row. There is
 deliberately no activation endpoint: granting control credentials and recording the referenced
 owner approval remain operational approval actions.
+
+Payment purchase composition consumes the registry only through the server-owned Web loader. One
+pure payments contract joins country activation, fiat/crypto checkout activation, and the exact
+Country Policy route; it accepts no fallback provider and runs before new purchase persistence,
+provider invocation, subscription reservation, or existing Checkout URL disclosure. Settlement
+consumers remain separate so safe-off does not strand existing obligations.
 
 Registry upgrades are rolling-safe. Storage uniqueness is `(registryVersion, flagKey, version)`,
 and each deployed reader queries only its exact registry version, so v1, v2, and v3 histories can

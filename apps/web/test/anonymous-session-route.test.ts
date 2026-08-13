@@ -5,21 +5,29 @@ import { deriveSessionCsrfToken } from "../server/session-csrf";
 
 const harness = vi.hoisted(() => {
   class SessionError extends Error {
-    readonly code: "conflict" | "rate_limited" | "unavailable";
+    readonly code: "admission_required" | "conflict" | "rate_limited" | "unavailable";
     readonly retryAfterSeconds: number | undefined;
 
-    constructor(code: "conflict" | "rate_limited" | "unavailable", retryAfterSeconds?: number) {
+    constructor(
+      code: "admission_required" | "conflict" | "rate_limited" | "unavailable",
+      retryAfterSeconds?: number,
+    ) {
       super("synthetic session error");
       this.code = code;
       this.retryAfterSeconds = retryAfterSeconds;
     }
   }
-  return { ensure: vi.fn(), SessionError };
+  return {
+    configuration: { protectedBetaInvitePolicy: undefined as unknown },
+    ensure: vi.fn(),
+    SessionError,
+  };
 });
 
 vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({
     brand: { canonicalOrigin: "https://example.test" },
+    protectedBetaInvitePolicy: harness.configuration.protectedBetaInvitePolicy,
   }),
 }));
 
@@ -49,6 +57,7 @@ const request = (input?: { cookie?: string; headers?: Record<string, string> }):
 describe("anonymous session route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    harness.configuration.protectedBetaInvitePolicy = undefined;
   });
 
   it("sets the raw token only in an exact private __Host cookie after creation", async () => {
@@ -105,6 +114,99 @@ describe("anonymous session route", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(response.headers.get("x-csrf-token")).toBe(deriveSessionCsrfToken(token));
     expect(harness.ensure).toHaveBeenCalledWith({ idempotencyKey, token });
+  });
+
+  it("accepts one bounded invite body only when protected-Beta admission is configured", async () => {
+    harness.configuration.protectedBetaInvitePolicy = {
+      cohortLimit: 25,
+      policyVersion: "test.protected-beta.v1",
+    };
+    const expiresAt = new Date(Date.now() + 3_600_000).toISOString();
+    const inviteToken = "d".repeat(43);
+    harness.ensure.mockResolvedValue({
+      context: { expiresAt, sessionId: "internal-session-id", subjectId: "internal-subject-id" },
+      kind: "created",
+      token: "e".repeat(43),
+    });
+    const response = await POST(
+      new NextRequest("https://example.test/api/v1/anonymous/session", {
+        body: JSON.stringify({ inviteToken, schemaVersion: "protected-beta-admission.v1" }),
+        headers: {
+          "content-type": "application/json",
+          "idempotency-key": idempotencyKey,
+          origin: "https://example.test",
+          "sec-fetch-site": "same-origin",
+          "x-rituvia-correlation-id": "req_11111111111111111111111111111111",
+        },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(harness.ensure).toHaveBeenCalledWith({
+      idempotencyKey,
+      inviteToken,
+      token: undefined,
+    });
+    expect(await response.text()).not.toContain(inviteToken);
+  });
+
+  it("collapses malformed and unavailable invitations without reflection", async () => {
+    harness.configuration.protectedBetaInvitePolicy = {
+      cohortLimit: 25,
+      policyVersion: "test.protected-beta.v1",
+    };
+    const privateCanary = "private invalid invite canary";
+    const response = await POST(
+      new NextRequest("https://example.test/api/v1/anonymous/session", {
+        body: JSON.stringify({
+          inviteToken: privateCanary,
+          schemaVersion: "protected-beta-admission.v1",
+        }),
+        headers: {
+          "content-type": "application/json",
+          "idempotency-key": idempotencyKey,
+          origin: "https://example.test",
+          "sec-fetch-site": "same-origin",
+        },
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.text()).not.toContain(privateCanary);
+    expect(harness.ensure).not.toHaveBeenCalled();
+  });
+
+  it("stops reading an oversized HTTP/2-style invite body before persistence", async () => {
+    harness.configuration.protectedBetaInvitePolicy = {
+      cohortLimit: 25,
+      policyVersion: "test.protected-beta.v1",
+    };
+    const oversizedCanary = `private-${"x".repeat(300)}`;
+    const response = await POST(
+      new NextRequest("https://example.test/api/v1/anonymous/session", {
+        body: new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(oversizedCanary));
+            controller.close();
+          },
+        }),
+        headers: {
+          "content-type": "application/json",
+          "idempotency-key": idempotencyKey,
+          origin: "https://example.test",
+          "sec-fetch-site": "same-origin",
+        },
+        method: "POST",
+      }),
+    );
+    const text = await response.text();
+
+    expect(response.status).toBe(403);
+    expect(text).toContain("BETA_ADMISSION_REQUIRED");
+    expect(text).not.toContain(oversizedCanary);
+    expect(harness.ensure).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -174,6 +276,15 @@ describe("anonymous session route", () => {
     expect(body).toMatchObject({ code: "ANONYMOUS_SESSION_RATE_LIMITED", status: 429 });
   });
 
+  it("never reflects an invalid internal retry interval", async () => {
+    harness.ensure.mockRejectedValue(new harness.SessionError("rate_limited", 99_999));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBeNull();
+  });
+
   it("does not reissue a bearer token for an idempotency replay without its cookie", async () => {
     harness.ensure.mockRejectedValue(new harness.SessionError("conflict"));
 
@@ -182,6 +293,17 @@ describe("anonymous session route", () => {
 
     expect(response.status).toBe(409);
     expect(text).toContain("ANONYMOUS_SESSION_CONFLICT");
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("does not distinguish missing, invalid, used, expired, or revoked admission", async () => {
+    harness.ensure.mockRejectedValue(new harness.SessionError("admission_required"));
+
+    const response = await POST(request());
+    const text = await response.text();
+
+    expect(response.status).toBe(403);
+    expect(text).toContain("BETA_ADMISSION_REQUIRED");
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 

@@ -94,6 +94,13 @@ so enabling one route cannot authorize the other. A disabled successor is the ki
 is another immutable successor. Only a synthetic local policy is seeded. Staging and production
 remain empty and therefore deny paid authorization until separately approved policy publication.
 
+D-110 adds the application composition: every new purchase must also pass the exact country-scoped
+country and fiat/crypto checkout flags at the same server-owned instant. The route is bound to the
+exact provider and method, every fallback list is rejected, and safe-off is checked before local
+persistence, provider use, subscription reservation, or Checkout URL replay. Signed settlement,
+refund, dispute, fulfillment, entitlement, and reconciliation for existing obligations remain
+processable.
+
 ## 5. Order model
 
 Internal order is created before provider checkout and is authoritative for:
@@ -188,6 +195,16 @@ Daily reconciliation compares internal paid orders, provider payments, refunds, 
 - Revoke or adjust entitlements consistently with published terms.
 - Preserve legally required order/ledger records while deleting unnecessary sensitive content.
 - Prepare evidence from order/product/consent/delivery facts, never from invasive journal/prayer content.
+- The immutable matched payment event is the dispute fact; do not duplicate it in a second mutable
+  record or place dispute state on a payment attempt.
+- Project a support work item only after the applied signed dispute, matching outbox, current
+  order, and same-version Credit Pack fulfillment are complete. Projection retries independently
+  and cannot roll back payment ingestion, Credit hold, or shortfall evidence.
+- Ignored-out-of-order, mismatched, unfulfilled, stale, subscription, or already-refunded dispute
+  observations remain timeline evidence and do not open a current support work item.
+- Projection presence or absence is not a provider win/loss, refund, Credit restoration, customer
+  response, legal position, or a mutable operator case state. Those actions remain separately
+  authorized.
 
 ## 11. Tax and invoicing
 

@@ -1,4 +1,8 @@
 export const anonymousSessionApiMessages = Object.freeze({
+  admissionRequired: Object.freeze({
+    detail: "Use a current protected-Beta invitation or ask the Beta contact for a replacement.",
+    title: "Protected-Beta admission is required",
+  }),
   conflict: Object.freeze({
     detail: "Retry from the browser that holds the original private session cookie.",
     title: "This session request cannot be replayed",
@@ -29,6 +33,14 @@ export const questionIntakeApiMessages = Object.freeze({
   invalidRequest: Object.freeze({
     detail: "Send one same-origin JSON request from this site.",
     title: "The question intake request was not accepted",
+  }),
+  rateLimited: Object.freeze({
+    detail: "Pause before submitting another private question check.",
+    title: "Question checks are temporarily limited",
+  }),
+  sessionRequired: Object.freeze({
+    detail: "Start or resume a private anonymous session before checking a question.",
+    title: "A private session is required",
   }),
   tooLarge: Object.freeze({
     detail: "Shorten the question and try again.",
@@ -95,6 +107,10 @@ export const tarotReadingReportApiMessages = Object.freeze({
   invalidRequest: Object.freeze({
     detail: "Send one same-origin JSON request from this site.",
     title: "The reading report was not accepted",
+  }),
+  rateLimited: Object.freeze({
+    detail: "Pause before recording another private reading report.",
+    title: "Reading reports are temporarily limited",
   }),
   tooLarge: Object.freeze({
     detail: "Send only the report category, target, and schema version.",

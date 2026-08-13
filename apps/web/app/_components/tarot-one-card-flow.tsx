@@ -53,6 +53,7 @@ import {
 } from "./tarot-reading-resume-storage";
 import { TarotShareCard } from "./tarot-share-card";
 import { storeSanctuaryReadingHandoff } from "./reading-sanctuary-handoff";
+import { takeQuestionIntakeThemeHandoff } from "./question-intake-theme-handoff";
 
 const TarotInterpretationPanel = lazy(async () => {
   const interpretationPanel = await import("./tarot-interpretation-panel");
@@ -260,18 +261,33 @@ export function TarotReadingFlow(props: TarotReadingFlowProps) {
 
   useEffect(() => {
     if (!hydrated || resumeInitialized.current) return;
-    resumeInitialized.current = true;
-    const storage = getSessionResumeStorage();
-    const readingId =
-      storage === null
-        ? null
-        : readTarotReadingResumeId(storage, readingType, {
-            openerPresent: window.opener !== null,
-          });
-    setResumeChecked(true);
-    if (readingId === null) return;
-    dispatch({ readingId, type: "restore_begin" });
-    void restoreReading(readingId);
+    const initializationFrame = requestAnimationFrame(() => {
+      if (resumeInitialized.current) return;
+      resumeInitialized.current = true;
+      const storage = getSessionResumeStorage();
+      const intakeTheme =
+        storage === null || readingType !== "one_card"
+          ? null
+          : takeQuestionIntakeThemeHandoff(storage, {
+              openerPresent: window.opener !== null,
+            });
+      setResumeChecked(true);
+      if (storage !== null && intakeTheme !== null) {
+        clearTarotReadingResumeId(storage, readingType);
+        dispatch({ themeCode: intakeTheme, type: "select_theme" });
+        return;
+      }
+      const readingId =
+        storage === null
+          ? null
+          : readTarotReadingResumeId(storage, readingType, {
+              openerPresent: window.opener !== null,
+            });
+      if (readingId === null) return;
+      dispatch({ readingId, type: "restore_begin" });
+      void restoreReading(readingId);
+    });
+    return () => cancelAnimationFrame(initializationFrame);
   }, [hydrated, readingType, restoreReading]);
 
   const changeTheme = (value: string): void => {

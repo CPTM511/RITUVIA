@@ -5,7 +5,7 @@ import {
 } from "@rituvia/domain";
 
 export type TarotReadingReportFailure =
-  "conflict" | "error" | "not_found" | "offline" | "unavailable";
+  "conflict" | "error" | "not_found" | "offline" | "rate_limited" | "unavailable";
 
 export type TarotReadingReportOperation = Readonly<{
   category: TarotReadingReportCategory;
@@ -36,6 +36,8 @@ const failureForStatus = (status: number): TarotReadingReportFailure => {
       return "not_found";
     case 409:
       return "conflict";
+    case 429:
+      return "rate_limited";
     case 503:
       return "unavailable";
     default:
@@ -70,7 +72,11 @@ export const executeTarotReadingReport = async (
     method: "POST",
     signal: input.signal,
   });
-  if (response.status !== 204) return fail(failureForStatus(response.status));
+  if (response.status !== 204) {
+    const failure = failureForStatus(response.status);
+    await response.text().catch(() => "");
+    return fail(failure);
+  }
   if (response.headers.get("content-type") !== null) return fail("error");
   const body = await response.text();
   if (body !== "") return fail("error");

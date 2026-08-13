@@ -30,6 +30,9 @@ const expectedRunCommands = Object.freeze({
     "pnpm check:architecture",
     "pnpm check:environment-contract",
     "pnpm check:ai-operations",
+    "pnpm check:cost-guardrails",
+    "pnpm check:owner-operations",
+    "pnpm check:staging-gate-h",
     "pnpm check:localization",
     "pnpm check:editorial-content",
     "pnpm check:public-pages",
@@ -127,19 +130,22 @@ export const auditToolchainVersions = ({
   nodeVersion,
   packageManager,
   pnpmEngine,
+  runtimeNodeVersion,
   workspaceNodeVersion,
 }: Readonly<{
   nodeEngine: unknown;
   nodeVersion: unknown;
   packageManager: unknown;
   pnpmEngine: unknown;
+  runtimeNodeVersion: unknown;
   workspaceNodeVersion: unknown;
 }>): readonly WorkflowFinding[] => {
-  const exactNode = "24.18.0";
+  const exactNode = "26.5.1";
   const exactPnpm = "11.13.1";
   return nodeVersion === exactNode &&
     workspaceNodeVersion === exactNode &&
-    nodeEngine === `>=${exactNode} <25` &&
+    runtimeNodeVersion === exactNode &&
+    nodeEngine === exactNode &&
     packageManager === `pnpm@${exactPnpm}` &&
     pnpmEngine === exactPnpm
     ? []
@@ -150,6 +156,12 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
   const expected = Object.freeze({
     "check:ai-operations":
       "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-ai-operations.ts",
+    "check:cost-guardrails":
+      "pnpm exec vitest run packages/analytics/test/cost-guardrails.test.ts tests/cost-guardrail-report.test.ts",
+    "check:owner-operations":
+      "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-owner-operations.ts",
+    "check:staging-gate-h":
+      "pnpm --filter @rituvia/observability build && node --import tsx scripts/verify-staging-gate-h-evidence.ts",
     "check:architecture": "node --import tsx scripts/verify-architecture.ts",
     "check:environment-contract": "node --import tsx scripts/verify-environment-contract.ts",
     "check:generated":
@@ -164,7 +176,7 @@ export const auditCiScripts = (scripts: unknown): readonly WorkflowFinding[] => 
     "check:records":
       "python3 -B scripts/build_record_index.py --check && node --import tsx scripts/verify-records.ts",
     "check:evidence":
-      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:environment-contract && pnpm check:ai-operations && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
+      "pnpm check:ci-contract && pnpm check:architecture && pnpm check:environment-contract && pnpm check:ai-operations && pnpm check:cost-guardrails && pnpm check:owner-operations && pnpm check:staging-gate-h && pnpm check:localization && pnpm check:editorial-content && pnpm check:public-pages && pnpm check:search-operations && pnpm check:rtl && pnpm check:writing-systems && pnpm check:records && pnpm check:migrations && pnpm check:generated && pnpm scan:secrets",
     lint: "eslint eslint.config.mjs prettier.config.mjs vitest.config.ts scripts tests apps packages --max-warnings=0",
     test: "pnpm test:unit && pnpm test:ai-evals && pnpm test:configuration-boundary && pnpm test:database-foundation",
     "test:accessibility":

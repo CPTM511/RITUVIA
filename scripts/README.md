@@ -201,6 +201,28 @@ existing path. The strict input excludes user/reading identifiers, questions, pr
 retrieved excerpts, detailed safety categories, and raw provider errors. Until production AI and
 an approved durable export exist, the truthful operational input is `unavailable`.
 
+`pnpm check:cost-guardrails` verifies the D-105 fixed-registry safe-off cost simulation and private
+report files. `pnpm report:cost-guardrails -- --as-of <ISO timestamp> --input <aggregate.json>
+--output-json <report.json> --output-markdown <brief.md>` writes new digest-bound mode-0600 files
+only. The v1 report never authorizes spend or executes degradation; D-106-approved Option A remains
+safe-off, while exact Option B and durable atomic runtime evidence are required for RIT-127.
+
+`pnpm test:incident-game-day` runs the RIT-128 manual repository-local failure matrix across fixed
+security, containment, AI, payment, notification, database kill-switch/restore, CI-contract,
+architecture, and secret checks. It uses synthetic fixtures and isolated PostgreSQL only; it is not
+a live-provider, standing-staging, external paging/DAST/pentest, deployment, or Gate H command.
+
+`pnpm check:staging-gate-h` verifies the RIT-129 provider-free eight-control evidence contract and
+the current blocked/incomplete projection. `pnpm report:staging-gate-h -- <arguments>` verifies
+bounded non-symlink evidence/digests and writes new mode-0600 reports. It cannot accept Gate H
+completion or authorize provider, secret, DNS, deployment, or launch actions.
+
+`pnpm check:records` validates the RIT-126 recurring-review manifest and shared scheduled read-only
+runner in addition to the durable-record graph. It fixes three paused Asia/Shanghai schedules,
+local-execution truth, failed-run-only notifications, model/reasoning, tracked runner/prompt/schema
+bindings, dirty-checkout stop, and no production/private/network authority. This verifies repository
+intent; operators still compare the external Codex Desktop cards with the manifest.
+
 `pnpm check:search-operations` verifies the RIT-117 offline SEO/GEO operations contract against
 the exact 45-route inventory. It covers unavailable, synthetic, stale, current, low-sample,
 private-field, source-authority, recommendation, and deterministic-rendering cases without making

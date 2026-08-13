@@ -214,6 +214,7 @@ type PrivilegeRow = Readonly<{
   canReadJournal: boolean;
   canReadPaymentEvent: boolean;
   canReadPrivateJournal: boolean;
+  hasExactPaymentEventSelectColumns: boolean;
   canUpdateFulfillment: boolean;
   privilegedRole: boolean;
   roleName: string;
@@ -318,6 +319,22 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
           OR has_any_column_privilege(
             current_user, 'public.commercial_payment_event_v2', 'SELECT'
           ) AS "canReadPaymentEvent",
+        NOT EXISTS (
+          SELECT 1
+          FROM pg_attribute AS attribute
+          WHERE attribute.attrelid = 'public.commercial_payment_event_v2'::regclass
+            AND attribute.attnum > 0
+            AND NOT attribute.attisdropped
+            AND has_column_privilege(
+              current_user, attribute.attrelid, attribute.attname, 'SELECT'
+            ) IS DISTINCT FROM (
+              attribute.attname = ANY(ARRAY[
+                'id', 'event_type', 'evidence_source', 'validation_state',
+                'processing_state', 'processing_disposition', 'order_id',
+                'payment_attempt_id'
+              ])
+            )
+        ) AS "hasExactPaymentEventSelectColumns",
         has_table_privilege(current_user, 'public.journal_entry', 'SELECT')
           OR has_any_column_privilege(current_user, 'public.journal_entry', 'SELECT')
           AS "canReadJournal",
@@ -359,7 +376,7 @@ export const assertCommercialFulfillmentRuntimeDatabasePrivileges = async (
       !privilege.canInsertFulfillment ||
       !privilege.canReadRefundRequest ||
       !privilege.canConfirmRefundRequest ||
-      privilege.canReadPaymentEvent ||
+      (privilege.canReadPaymentEvent && !privilege.hasExactPaymentEventSelectColumns) ||
       privilege.canReadJournal ||
       privilege.canReadPrivateJournal ||
       !privilege.canUpdateFulfillment ||

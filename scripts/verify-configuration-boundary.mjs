@@ -66,6 +66,11 @@ const knownEnvironmentVariables = [
   "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
   "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
   "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+  "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION",
+  "RITUVIA_PROTECTED_BETA_MUTATION_LIMIT",
+  "RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS",
+  "RITUVIA_QUESTION_INTAKE_RATE_LIMIT",
+  "RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS",
   "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
   "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
   "RITUVIA_AUTH_DATA_KEY_V1",
@@ -74,6 +79,7 @@ const knownEnvironmentVariables = [
   "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
+  "RITUVIA_OPERATION_MODE",
   "RITUVIA_PAYMENT_PROVIDER",
   "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
   "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
@@ -461,21 +467,40 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
 });
 `,
   );
+  await writeFile(
+    path.join(temporaryWebRoot, "server/protected-beta-abuse.ts"),
+    `import "server-only";
+
+export class ProtectedBetaAdmissionError extends Error {
+  readonly code: "rate_limited" | "session_required" | "unavailable" = "unavailable";
+  readonly retryAfterSeconds: number | undefined = undefined;
+}
+
+export const admitWebProtectedBetaRequest = async (_token: string, _kind: string) => undefined;
+`,
+  );
 
   const validEnvironment = createEnvironment({
     APP_ENV: "production",
     BRAND_ASSET_MANIFEST: "/brand/manifest.json",
     BRAND_CANONICAL_ORIGIN: "https://example.test",
     BRAND_LEGAL_ENTITY: "Synthetic Test Entity",
+    BRAND_NAME: "Synthetic Test Brand",
     BRAND_SHORT_NAME: "Synthetic",
     BRAND_SOCIAL_HANDLES: "{}",
     BRAND_SUPPORT_EMAIL: "support@example.test",
-    BRAND_TAGLINE: "Synthetic test tagline",
+    BRAND_TAGLINE: publicCanary,
     RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "100",
     RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
     RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.synthetic-session-policy.v1",
     RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "3600",
-    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "own-009.synthetic-question-intake.v1",
+    RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "own-019.synthetic-protected-beta.v1",
+    RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+    RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
+    RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+    RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
+    RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "own-009.question-intake.en.v1",
+    RITUVIA_OPERATION_MODE: "normal",
   });
   await assertSuccessfulCommand(
     process.execPath,
@@ -570,6 +595,24 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   ) {
     fail("The production tarot page did not fail closed without an approved catalog.");
   }
+  const intakeAnonymousSession = await fetchBuiltWeb(
+    webProcess,
+    port,
+    "/api/v1/anonymous/session",
+    {
+      headers: {
+        "idempotency-key": "synthetic_intake_session_key_1234",
+        origin: "https://example.test",
+        "sec-fetch-site": "same-origin",
+      },
+      method: "POST",
+      redirect: "manual",
+    },
+  );
+  const intakeSessionCookie = intakeAnonymousSession.setCookie?.split(";", 1)[0];
+  if (intakeAnonymousSession.status !== 204 || intakeSessionCookie === undefined) {
+    fail("The production intake prerequisite session was unavailable.");
+  }
   const intakeEvaluation = await fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate", {
     body: JSON.stringify({
       locale: "en",
@@ -579,6 +622,7 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     }),
     headers: {
       "content-type": "application/json",
+      cookie: intakeSessionCookie,
       origin: "https://example.test",
       "sec-fetch-site": "same-origin",
     },
@@ -594,7 +638,9 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
     intakeEvaluation.html.includes("riskCategories") ||
     webProcess.getOutput().includes(privateQuestionCanary)
   ) {
-    fail("The production intake API exposed private text or internal policy categories.");
+    fail(
+      `The production intake API violated its bounded response contract: status=${intakeEvaluation.status}; privateNoStore=${isPrivateNoStore(intakeEvaluation.cacheControl)}; noIndex=${intakeEvaluation.xRobotsTag === "noindex, nofollow, noarchive"}; reframed=${intakeEvaluation.html.includes('"state":"reframed"')}; privateText=${intakeEvaluation.html.includes(privateQuestionCanary)}; internalCategories=${intakeEvaluation.html.includes("riskCategories")}; processLeak=${webProcess.getOutput().includes(privateQuestionCanary)}.`,
+    );
   }
   const rejectedIntakeRequests = await Promise.all([
     fetchBuiltWeb(webProcess, port, "/api/v1/intake/evaluate", {
@@ -964,6 +1010,9 @@ export const ensureWebAnonymousSession = async (_input: unknown) => ({
   });
   if (
     publicWithIntakeDisabled.status !== 200 ||
+    !publicWithIntakeDisabled.html.includes('href="/en/intake"') ||
+    !publicWithIntakeDisabled.html.includes("Begin a free reading") ||
+    publicWithIntakeDisabled.html.includes('href="/en/tarot/one-card"') ||
     disabledIntakePage.status !== 404 ||
     disabledIntakePage.html !== "" ||
     disabledIntakeApi.status !== 404 ||

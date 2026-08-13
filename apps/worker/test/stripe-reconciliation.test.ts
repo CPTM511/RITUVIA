@@ -77,4 +77,23 @@ describe("Stripe reconciliation reader", () => {
       ).readCheckout("cs_test_missing"),
     ).resolves.toEqual({ availability: "missing" });
   });
+
+  it("contains account transport failure inside reconciliation and retries attestation", async () => {
+    const request = vi
+      .fn<StripeReconciliationRequest>()
+      .mockRejectedValueOnce(new Error("private Stripe transport details"))
+      .mockResolvedValueOnce({ body: { id: "acct_test" }, status: 200 })
+      .mockResolvedValueOnce({ body: { error: { code: "resource_missing" } }, status: 404 });
+    const reader = createStripeReconciliationReader(
+      { accountId: "acct_test", secretKey: "sk_test_unused" },
+      request,
+    );
+    await expect(reader.readCheckout("cs_test_missing")).resolves.toEqual({
+      availability: "unavailable",
+    });
+    await expect(reader.readCheckout("cs_test_missing")).resolves.toEqual({
+      availability: "missing",
+    });
+    expect(request).toHaveBeenCalledTimes(3);
+  });
 });

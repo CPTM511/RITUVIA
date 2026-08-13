@@ -22,6 +22,38 @@ const userId = "11111111-1111-4111-8111-111111111111";
 const sessionToken = "s".repeat(43);
 const canonicalOrigin = "http://127.0.0.1:4175";
 
+const paymentActivation = (
+  countryCode: string,
+  evaluatedAt: string,
+  countryEnabled: boolean,
+  checkoutEnabled: boolean,
+) => ({
+  checkoutActivation: {
+    countryCode,
+    evaluation: {
+      enabled: checkoutEnabled,
+      evaluatedAt,
+      flagKey: "payments.fiat_checkout" as const,
+      reason: checkoutEnabled ? ("enabled" as const) : ("configured-off" as const),
+      registryVersion: 3,
+      source: "version" as const,
+      version: 1,
+    },
+  },
+  countryActivation: {
+    countryCode,
+    evaluation: {
+      enabled: countryEnabled,
+      evaluatedAt,
+      flagKey: "market.country_activation" as const,
+      reason: countryEnabled ? ("enabled" as const) : ("configured-off" as const),
+      registryVersion: 3,
+      source: "version" as const,
+      version: 1,
+    },
+  },
+});
+
 const uuidFactory = () => {
   let sequence = 1;
   return () => `00000000-0000-4000-8000-${String(sequence++).padStart(12, "0")}`;
@@ -30,10 +62,15 @@ const uuidFactory = () => {
 const createHarness = (
   input: {
     ageAttested?: boolean;
+    checkoutEnabled?: boolean;
+    countryEnabled?: boolean;
+    paymentControlFailure?: boolean;
     policyVersions?: typeof webCommerceLocalPolicyVersions;
   } = {},
 ) => {
   let now = "2026-07-18T12:00:00.000Z";
+  let checkoutEnabled = input.checkoutEnabled ?? true;
+  let countryEnabled = input.countryEnabled ?? true;
   let order: PersistedCommerceOrder | null = null;
   let entitlement: PersistedEntitlement | null = null;
   let orderIdempotencyHash: string | null = null;
@@ -140,6 +177,12 @@ const createHarness = (
     },
     environment: "local",
     idFactory: uuidFactory(),
+    paymentControls: {
+      read: async ({ countryCode }) => {
+        if (input.paymentControlFailure === true) throw new Error("synthetic control read failure");
+        return paymentActivation(countryCode, now, countryEnabled, checkoutEnabled);
+      },
+    },
     paymentProviders: registry,
     persistence,
     providerId: localHostedCheckoutProviderId,
@@ -155,6 +198,10 @@ const createHarness = (
     persistence,
     registry,
     service,
+    setPaymentControls(input: { checkoutEnabled: boolean; countryEnabled: boolean }) {
+      checkoutEnabled = input.checkoutEnabled;
+      countryEnabled = input.countryEnabled;
+    },
     setNow(value: string) {
       now = value;
     },
@@ -217,6 +264,66 @@ describe("commerce application service", () => {
       }),
     ).rejects.toMatchObject({ code: "not_eligible" });
     expect(harness.persistence.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("keeps new orders and existing Checkout URLs safe-off before provider use", async () => {
+    const countryOff = createHarness({ countryEnabled: false });
+    await expect(
+      countryOff.service.createOrder({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { productCode: "mindful_incense" },
+        sessionToken,
+      }),
+    ).rejects.toMatchObject({ code: "not_eligible" });
+    expect(countryOff.persistence.createOrder).not.toHaveBeenCalled();
+    expect(countryOff.createCheckout).not.toHaveBeenCalled();
+
+    const checkoutInitiallyOff = createHarness({ checkoutEnabled: false });
+    await expect(
+      checkoutInitiallyOff.service.createOrder({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { productCode: "mindful_incense" },
+        sessionToken,
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(checkoutInitiallyOff.persistence.createOrder).not.toHaveBeenCalled();
+    expect(checkoutInitiallyOff.createCheckout).not.toHaveBeenCalled();
+
+    const checkoutOff = createHarness();
+    const created = await checkoutOff.service.createOrder({
+      idempotencyKey: "abcdefghijklmnopqrstuv",
+      request: { productCode: "moonlit_lotus" },
+      sessionToken,
+    });
+    const attached = await checkoutOff.service.startCheckout({
+      idempotencyKey: "zyxwvutsrqponmlkjihgfe",
+      orderId: created.order.orderId,
+      sessionToken,
+    });
+    expect(attached.url).toContain("/en/checkout/local?checkout_id=");
+    checkoutOff.setPaymentControls({ checkoutEnabled: false, countryEnabled: true });
+    await expect(
+      checkoutOff.service.startCheckout({
+        idempotencyKey: "1234567890123456789012",
+        orderId: created.order.orderId,
+        sessionToken,
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(checkoutOff.createCheckout).toHaveBeenCalledOnce();
+    expect(checkoutOff.persistence.attachCheckout).toHaveBeenCalledOnce();
+  });
+
+  it("maps payment-control read failure to a redacted unavailable result", async () => {
+    const harness = createHarness({ paymentControlFailure: true });
+    await expect(
+      harness.service.createOrder({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { productCode: "mindful_incense" },
+        sessionToken,
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(harness.persistence.createOrder).not.toHaveBeenCalled();
+    expect(harness.createCheckout).not.toHaveBeenCalled();
   });
 
   it("reuses one active hosted checkout instead of creating another provider session", async () => {

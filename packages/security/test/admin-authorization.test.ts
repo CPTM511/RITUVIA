@@ -32,11 +32,16 @@ describe("admin authorization policy", () => {
 
   it("keeps every non-owner role least-privileged", () => {
     expect(adminRoleAllows("content_editor", "admin.content.manage")).toBe(true);
+    expect(adminRoleAllows("content_editor", "admin.content_report.review")).toBe(true);
     expect(adminRoleAllows("content_editor", "admin.refund.review")).toBe(false);
     expect(adminRoleAllows("support_refund_reviewer", "admin.refund.review")).toBe(true);
+    expect(adminRoleAllows("support_refund_reviewer", "admin.support.review")).toBe(true);
+    expect(adminRoleAllows("support_refund_reviewer", "admin.privacy.review")).toBe(true);
+    expect(adminRoleAllows("support_refund_reviewer", "admin.safety.review")).toBe(false);
     expect(adminRoleAllows("support_refund_reviewer", "admin.refund.execute")).toBe(false);
     expect(adminRoleAllows("support_refund_reviewer", "admin.content.manage")).toBe(false);
     expect(adminRoleAllows("risk_safety_reviewer", "admin.safety.review")).toBe(true);
+    expect(adminRoleAllows("risk_safety_reviewer", "admin.support.review")).toBe(false);
     expect(adminRoleAllows("risk_safety_reviewer", "admin.audit.read")).toBe(false);
     expect(adminRoleAllows("analyst_read_only", "admin.analytics.read")).toBe(true);
     expect(adminRoleAllows("analyst_read_only", "admin.role.assign")).toBe(false);
@@ -46,6 +51,11 @@ describe("admin authorization policy", () => {
     expect(adminSafeDiffFields["admin.role.assign"]).toEqual(["expires_at", "role"]);
     expect(adminSafeDiffFields["admin.role.revoke"]).toEqual(["expires_at", "role"]);
     expect(adminSafeDiffFields["admin.refund.execute"]).toEqual(["amount_minor", "currency_code"]);
+    expect(adminSafeDiffFields["admin.safety.review"]).toEqual([
+      "assigned_role",
+      "priority",
+      "state",
+    ]);
     expect(JSON.stringify(adminSafeDiffFields)).not.toMatch(
       /email|journal|prayer|prompt|secret|token|wallet/u,
     );

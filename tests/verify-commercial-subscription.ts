@@ -19,7 +19,6 @@ const digest = (value: string): Uint8Array<ArrayBuffer> =>
 
 await withLocalPostgresLease(async (lease) => {
   const databases: Array<Awaited<ReturnType<typeof lease.createTestDatabase>>> = [];
-  let primaryError: unknown;
   try {
     const database = await lease.createTestDatabase();
     databases.push(database);
@@ -330,14 +329,8 @@ await withLocalPostgresLease(async (lease) => {
         webhook.$disconnect(),
       ]);
     }
-  } catch (error) {
-    primaryError = error;
-    throw error;
   } finally {
     await Promise.all(databases.map((database) => database.drop()));
-    await stopLeaseOwnedRuntime(
-      lease,
-      primaryError === undefined ? undefined : { preserveOnFailure: true },
-    );
+    await stopLeaseOwnedRuntime(lease);
   }
 });

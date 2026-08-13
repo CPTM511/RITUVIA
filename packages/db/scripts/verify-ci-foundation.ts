@@ -313,7 +313,7 @@ const grantRuntimePrivileges = async (): Promise<void> => {
       `GRANT INSERT ON TABLE catalog_version, catalog_product, catalog_product_localization, catalog_price TO ${CATALOG_WRITER_ROLE}`,
     );
     await admin.query(
-      `GRANT SELECT ON TABLE anonymous_subject, anonymous_session, consent_record, anonymous_session_issuance_gate TO ${IDENTITY_READER_ROLE}`,
+      `GRANT SELECT ON TABLE anonymous_subject, anonymous_session, consent_record, anonymous_session_issuance_gate, anonymous_session_rate_limit TO ${IDENTITY_READER_ROLE}`,
     );
     await admin.query(`GRANT INSERT ON TABLE anonymous_subject TO ${IDENTITY_WRITER_ROLE}`);
     await admin.query(
@@ -329,6 +329,12 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     );
     await admin.query(
       `GRANT UPDATE (window_started_at, issued_count) ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE anonymous_session_rate_limit TO ${IDENTITY_WRITER_ROLE}`,
+    );
+    await admin.query(
+      `GRANT UPDATE (window_started_at, request_count, policy_version) ON TABLE anonymous_session_rate_limit TO ${IDENTITY_WRITER_ROLE}`,
     );
     await admin.query(
       `GRANT SELECT ON TABLE reading, tarot_draw, reading_report TO ${READING_READER_ROLE}`,
@@ -488,6 +494,31 @@ const grantRuntimePrivileges = async (): Promise<void> => {
     );
     await admin.query(
       `REVOKE SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, commercial_payment_event_v2, commercial_fulfillment_v2, credit_ledger_entry, credit_restriction_entry, commercial_refund_request_v1, commercial_reconciliation_case_v1, commercial_subscription_v1, commercial_subscription_event_v1, commercial_subscription_review_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT SELECT ON TABLE operational_case_v1, operational_case_event_v1, operational_case_audit_event_v1 TO ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT ON TABLE operational_case_event_v1, operational_case_audit_event_v1 TO ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE operational_case_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE UPDATE, DELETE, TRUNCATE ON TABLE operational_case_event_v1, operational_case_audit_event_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE SELECT ON TABLE reading_report, privacy_export, privacy_deletion_request, commercial_refund_request_v1, private_journal_entry FROM ${ADMIN_SERVICE_ROLE}`,
+    );
+    await admin.query(`GRANT SELECT ON TABLE support_ticket_v1 TO ${APP_ROLE}`);
+    await admin.query(
+      `GRANT INSERT (anonymous_subject_id, category, affected_area, schema_version, policy_version, idempotency_key_hash, canonical_request_hash, expires_at) ON TABLE support_ticket_v1 TO ${APP_ROLE}`,
+    );
+    await admin.query(
+      `GRANT INSERT (queue_kind, source_kind, source_id, support_ticket_id, reading_report_id, privacy_export_id, privacy_deletion_request_id, commercial_refund_request_id, category_code, priority, policy_version, draft_template_code, draft_template_version, draft_locale, opened_at, first_response_due_at, resolution_due_at, expires_at) ON TABLE operational_case_v1 TO ${APP_ROLE}, ${READING_WRITER_ROLE}, ${PRIVACY_DELETION_ROLE}`,
+    );
+    await admin.query(
+      `REVOKE SELECT, UPDATE, DELETE, TRUNCATE ON TABLE operational_case_v1 FROM ${APP_ROLE}, ${READING_WRITER_ROLE}, ${PRIVACY_DELETION_ROLE}`,
     );
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,

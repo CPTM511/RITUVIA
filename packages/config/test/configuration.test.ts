@@ -91,6 +91,13 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
       "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
       "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
+      "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION",
+      "RITUVIA_PROTECTED_BETA_MUTATION_LIMIT",
+      "RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS",
+      "RITUVIA_QUESTION_INTAKE_RATE_LIMIT",
+      "RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS",
+      "RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT",
+      "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION",
       "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
       "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
       "RITUVIA_AUTH_DATA_KEY_V1",
@@ -99,6 +106,7 @@ describe("server and client configuration boundary", () => {
       "RITUVIA_AUTH_START_WINDOW_SECONDS",
       "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
       "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
+      "RITUVIA_OPERATION_MODE",
       "RITUVIA_PAYMENT_PROVIDER",
       "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
       "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
@@ -138,6 +146,7 @@ describe("server and client configuration boundary", () => {
     });
 
     expect(configuration.deploymentEnvironment).toBe("staging");
+    expect(configuration.operationMode).toBe("normal");
     expect(configuration.brand.transactionalSender).toBe(serverOnlyCanary);
     expect(Object.keys(configuration.client)).toEqual(["brand"]);
     expect(Object.keys(configuration.client.brand)).toEqual([
@@ -157,6 +166,15 @@ describe("server and client configuration boundary", () => {
     expect(Object.isFrozen(configuration)).toBe(true);
     expect(Object.isFrozen(configuration.client)).toBe(true);
     expect(Object.isFrozen(configuration.client.brand.socialHandles)).toBe(true);
+  });
+
+  it("accepts only the fixed global operation modes", () => {
+    expect(parseServerConfiguration({ RITUVIA_OPERATION_MODE: "read_only" }).operationMode).toBe(
+      "read_only",
+    );
+    expect(() => parseServerConfiguration({ RITUVIA_OPERATION_MODE: "maintenance" })).toThrowError(
+      "RITUVIA_OPERATION_MODE:invalid",
+    );
   });
 
   it("keeps native astrology safe-off and accepts only an absolute metadata JSON path", () => {
@@ -199,6 +217,73 @@ describe("server and client configuration boundary", () => {
       ttlSeconds: 86_400,
     });
     expect(Object.isFrozen(configuration.anonymousSessionPolicy)).toBe(true);
+  });
+
+  it("keeps protected Beta admission safe-off until both bounded scopes are configured", () => {
+    expect(parseServerConfiguration({}).protectedBetaAbusePolicy).toBeUndefined();
+    expect(() =>
+      parseServerConfiguration({ RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12" }),
+    ).toThrowError(
+      "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION:missing, RITUVIA_PROTECTED_BETA_MUTATION_LIMIT:missing, RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS:missing, RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS:missing",
+    );
+
+    const policy = parseServerConfiguration({
+      RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "test.protected-beta.v1",
+      RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+      RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
+      RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+      RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
+    }).protectedBetaAbusePolicy;
+    expect(policy).toEqual({
+      protectedBetaMutation: {
+        limit: 120,
+        policyVersion: "test.protected-beta.v1",
+        scope: "protected_beta_mutation",
+        windowSeconds: 86_400,
+      },
+      questionIntake: {
+        limit: 12,
+        policyVersion: "test.protected-beta.v1",
+        scope: "question_intake",
+        windowSeconds: 60,
+      },
+    });
+    expect(Object.isFrozen(policy?.protectedBetaMutation)).toBe(true);
+    expect(Object.isFrozen(policy?.questionIntake)).toBe(true);
+  });
+
+  it("requires one exact 25-seat invite policy and its anonymous/abuse dependencies", () => {
+    expect(parseServerConfiguration({}).protectedBetaInvitePolicy).toBeUndefined();
+    expect(() =>
+      parseServerConfiguration({
+        RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: "25",
+      }),
+    ).toThrowError("RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION:missing");
+
+    const base = {
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "30",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
+      RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "test.anonymous-session.v1",
+      RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400",
+      RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "test.protected-beta.v1",
+      RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+      RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
+      RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: "test.protected-beta.v1",
+      RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+      RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
+    } as const;
+    expect(() =>
+      parseServerConfiguration({
+        ...base,
+        RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: "24",
+      }),
+    ).toThrowError("RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT:invalid");
+    expect(
+      parseServerConfiguration({
+        ...base,
+        RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: "25",
+      }).protectedBetaInvitePolicy,
+    ).toEqual({ cohortLimit: 25, policyVersion: "test.protected-beta.v1" });
   });
 
   it("keeps account auth safe-off and validates bounded database rate controls", () => {
@@ -327,12 +412,25 @@ describe("server and client configuration boundary", () => {
         RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "test.question-intake.v1",
       }),
     ).toThrowError("RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE:invalid");
+    for (const nearMiss of [
+      "own-009.question-intake.en.v1.extra",
+      "own-009.question-intake.en-v1",
+      "own-009.synthetic-question-intake.v1",
+      "own-010.question-intake.en.v1",
+    ]) {
+      expect(() =>
+        parseServerConfiguration({
+          ...production,
+          RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: nearMiss,
+        }),
+      ).toThrowError("RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE:invalid");
+    }
     expect(
       parseServerConfiguration({
         ...production,
-        RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "own-009.question-intake.v1",
+        RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE: "own-009.question-intake.en.v1",
       }).questionIntakeActivationReference,
-    ).toBe("own-009.question-intake.v1");
+    ).toBe("own-009.question-intake.en.v1");
   });
 
   it("requires an owner-decision policy reference in production and rejects unsafe bounds", () => {
@@ -347,7 +445,7 @@ describe("server and client configuration boundary", () => {
       BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
       BRAND_SOCIAL_HANDLES: "{}",
       BRAND_ASSET_MANIFEST: "/brand/manifest.json",
-      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "100",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "30",
       RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
       RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400",
     } as const;
@@ -361,6 +459,13 @@ describe("server and client configuration boundary", () => {
       parseServerConfiguration({
         ...base,
         RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.anonymous-session.v1",
+        RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "own-019.protected-beta-abuse.v1",
+        RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: "25",
+        RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: "own-019.protected-beta-abuse.v1",
+        RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+        RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
+        RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+        RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
       }).anonymousSessionPolicy,
     ).toMatchObject({ policyVersion: "own-004.anonymous-session.v1", ttlSeconds: 86_400 });
     expect(() =>
@@ -371,6 +476,92 @@ describe("server and client configuration boundary", () => {
       }),
     ).toThrowError("RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT:invalid");
   });
+
+  it("requires the protected-Beta abuse owner reference in production", () => {
+    const policy = {
+      APP_ENV: "production",
+      BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+      BRAND_CANONICAL_ORIGIN: "https://example.com",
+      BRAND_LEGAL_ENTITY: "Entity",
+      BRAND_NAME: "Brand",
+      BRAND_SHORT_NAME: "Brand",
+      BRAND_SOCIAL_HANDLES: "{}",
+      BRAND_SUPPORT_EMAIL: "support@example.com",
+      BRAND_TAGLINE: "Tagline",
+      BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "30",
+      RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
+      RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.anonymous-session.v1",
+      RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400",
+      RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: "25",
+      RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+      RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
+      RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+      RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
+    } as const;
+    expect(() =>
+      parseServerConfiguration({
+        ...policy,
+        RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "test.protected-beta.v1",
+        RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: "test.protected-beta.v1",
+      }),
+    ).toThrowError("RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION:invalid");
+    expect(
+      parseServerConfiguration({
+        ...policy,
+        RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "own-019.protected-beta-abuse.v1",
+        RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: "own-019.protected-beta-abuse.v1",
+      }).protectedBetaAbusePolicy?.questionIntake.limit,
+    ).toBe(12);
+  });
+
+  it.each(["staging", "production"] as const)(
+    "requires the exact protected-Beta profile for anonymous issuance in %s",
+    (deploymentEnvironment) => {
+      const profile = {
+        APP_ENV: deploymentEnvironment,
+        BRAND_ASSET_MANIFEST: "/brand/manifest.json",
+        BRAND_CANONICAL_ORIGIN: "https://example.com",
+        BRAND_LEGAL_ENTITY: "Entity",
+        BRAND_NAME: "Brand",
+        BRAND_SHORT_NAME: "Brand",
+        BRAND_SOCIAL_HANDLES: "{}",
+        BRAND_SUPPORT_EMAIL: "support@example.com",
+        BRAND_TAGLINE: "Tagline",
+        BRAND_TRANSACTIONAL_SENDER: "Brand <support@example.com>",
+        RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "30",
+        RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS: "60",
+        RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION: "own-004.anonymous-session.v1",
+        RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: "86400",
+        RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: "own-019.protected-beta-abuse.v1",
+        RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: "25",
+        RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: "own-019.protected-beta-abuse.v1",
+        RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "120",
+        RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: "86400",
+        RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "12",
+        RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: "60",
+      } as const;
+      expect(parseServerConfiguration(profile).protectedBetaInvitePolicy).toEqual({
+        cohortLimit: 25,
+        policyVersion: "own-019.protected-beta-abuse.v1",
+      });
+      expect(() =>
+        parseServerConfiguration({ ...profile, RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT: "31" }),
+      ).toThrowError("RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT:invalid");
+      expect(() =>
+        parseServerConfiguration({ ...profile, RITUVIA_QUESTION_INTAKE_RATE_LIMIT: "13" }),
+      ).toThrowError("RITUVIA_QUESTION_INTAKE_RATE_LIMIT:invalid");
+      expect(() =>
+        parseServerConfiguration({ ...profile, RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: "121" }),
+      ).toThrowError("RITUVIA_PROTECTED_BETA_MUTATION_LIMIT:invalid");
+      expect(() =>
+        parseServerConfiguration({
+          ...profile,
+          RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: undefined,
+        }),
+      ).toThrowError("RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION:missing");
+    },
+  );
 
   it("rejects public environment variables because the client uses a server projection", () => {
     expect(() =>

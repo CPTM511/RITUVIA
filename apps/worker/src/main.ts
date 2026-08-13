@@ -1,6 +1,7 @@
 import nextEnvironment from "@next/env";
 import { parseWorkerConfiguration } from "@rituvia/config/server";
 import {
+  createCommercialDisputeSupportPersistence,
   createCommercialFulfillmentPersistence,
   createCommercialPaymentEventPersistence,
   createCommercialReconciliationPersistence,
@@ -13,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { createWorkerRuntime } from "./runtime.js";
 import { createWorkerObservability } from "./observability.js";
 import { runCommercialPaymentFulfillmentLoop } from "./payment-fulfillment.js";
+import { runCommercialDisputeSupportProjectionLoop } from "./payment-dispute-support.js";
 import { runSubscriptionFulfillmentLoop } from "./subscription-fulfillment.js";
 import { runCommercialPaymentReconciliationLoop } from "./payment-reconciliation.js";
 import { createStripeReconciliationReader } from "./stripe-reconciliation.js";
@@ -62,7 +64,6 @@ process.once("SIGTERM", requestTermination);
 lifecycle.event({ name: "service.ready" });
 
 try {
-  await stripeReconciliation?.attestAccount();
   await Promise.all([
     runtime.start(controller.signal),
     ...(database === undefined
@@ -78,12 +79,16 @@ try {
               });
               if (disposition === "cancelled") {
                 operation.end({ outcome: "cancelled" });
-              } else if (disposition === "dead_lettered" || disposition === "retried") {
+              } else if (
+                disposition === "dead_lettered" ||
+                disposition === "persistence_unavailable" ||
+                disposition === "retried"
+              ) {
                 operation.end({
                   category: "dependency",
                   errorCode: "dependency_error",
                   outcome: "failure",
-                  retryable: disposition === "retried",
+                  retryable: disposition === "persistence_unavailable" || disposition === "retried",
                 });
               } else {
                 operation.end({ outcome: "success" });
@@ -93,7 +98,55 @@ try {
             signal: controller.signal,
             store: createCommercialFulfillmentPersistence(database),
           }),
+          runCommercialDisputeSupportProjectionLoop({
+            observe: ({ disposition }) => {
+              if (disposition === "idle") return;
+              const operation = lifecycle.child({
+                dependency: "payment",
+                kind: "dependency",
+                operation: "dependency.request",
+              });
+              if (disposition === "cancelled") {
+                operation.end({ outcome: "cancelled" });
+              } else if (disposition === "persistence_unavailable") {
+                operation.end({
+                  category: "dependency",
+                  errorCode: "dependency_error",
+                  outcome: "failure",
+                  retryable: true,
+                });
+              } else {
+                operation.end({ outcome: "success" });
+              }
+            },
+            signal: controller.signal,
+            store: createCommercialDisputeSupportPersistence(database),
+          }),
           runSubscriptionFulfillmentLoop({
+            observe: ({ disposition }) => {
+              if (disposition === "idle") return;
+              const operation = lifecycle.child({
+                dependency: "payment",
+                kind: "dependency",
+                operation: "dependency.request",
+              });
+              if (disposition === "cancelled") {
+                operation.end({ outcome: "cancelled" });
+              } else if (
+                disposition === "dead_lettered" ||
+                disposition === "persistence_unavailable" ||
+                disposition === "retried"
+              ) {
+                operation.end({
+                  category: "dependency",
+                  errorCode: "dependency_error",
+                  outcome: "failure",
+                  retryable: disposition === "persistence_unavailable" || disposition === "retried",
+                });
+              } else {
+                operation.end({ outcome: "success" });
+              }
+            },
             signal: controller.signal,
             store: createCommercialSubscriptionPersistence(database),
           }),
@@ -118,7 +171,7 @@ try {
                         category: "dependency",
                         errorCode: "dependency_error",
                         outcome: "failure",
-                        retryable: false,
+                        retryable: disposition === "unavailable",
                       });
                     }
                   },

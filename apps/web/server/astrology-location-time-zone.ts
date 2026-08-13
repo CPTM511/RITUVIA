@@ -20,7 +20,7 @@ export const webAstrologyLocationMaximumTimeoutMilliseconds = 10_000;
 export const webAstrologyLocationMinimumCacheSecretLength = 32;
 export const webAstrologyTimeZoneRuntimePin = Object.freeze({
   icuVersion: "78.3",
-  runtimeVersion: "24.18.0",
+  runtimeVersion: "26.5.1",
   timeZoneDataVersion: "2026b",
 });
 

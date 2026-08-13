@@ -5,8 +5,8 @@ import type { ShellMessages } from "../_i18n/messages";
 import {
   localeNumerologyPath,
   localePublicPagePath,
+  localeQuestionIntakePath,
   localeSanctuaryPath,
-  localeTarotOneCardPath,
   localeTarotThreeCardPath,
   type Locale,
 } from "../_i18n/routing";
@@ -59,7 +59,7 @@ export function SiteShell({
             <p className="hero-introduction">{content.hero.introduction}</p>
             <p className="hero-boundary">{content.hero.boundary}</p>
             <div className="hero-actions">
-              <ActionLink href={localeTarotOneCardPath(locale)}>
+              <ActionLink href={localeQuestionIntakePath(locale)}>
                 {content.hero.primaryAction}
               </ActionLink>
               <ActionLink href={localeSanctuaryPath(locale)} variant="secondary">
@@ -106,7 +106,7 @@ export function SiteShell({
               <h3>{content.oracle.oneCard.title}</h3>
               <p>{content.oracle.oneCard.description}</p>
               <p className="oracle-note">{content.oracle.oneCard.note}</p>
-              <ActionLink href={localeTarotOneCardPath(locale)}>
+              <ActionLink href={localeQuestionIntakePath(locale)}>
                 {content.oracle.oneCard.action}
               </ActionLink>
             </article>

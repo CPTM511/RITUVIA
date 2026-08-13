@@ -58,6 +58,8 @@ const failureMessage = (
       return messages.notFound;
     case "offline":
       return messages.offline;
+    case "rate_limited":
+      return messages.rateLimited;
     case "unavailable":
       return messages.unavailable;
   }
@@ -93,7 +95,7 @@ export function TarotReadingReport({
 
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-    if (inFlight.current || status === "success") return;
+    if (inFlight.current || status === "rate_limited" || status === "success") return;
     if (category === "") {
       setValidationError(messages.selectCategory);
       return;
@@ -157,6 +159,7 @@ export function TarotReadingReport({
     status === "error" ||
     status === "not_found" ||
     status === "offline" ||
+    status === "rate_limited" ||
     status === "unavailable"
       ? status
       : null;
@@ -178,7 +181,9 @@ export function TarotReadingReport({
             <select
               className="rvt-field__control rvt-field__control--select"
               aria-invalid={validationError === messages.selectCategory || undefined}
-              disabled={status === "submitting" || status === "success"}
+              disabled={
+                status === "rate_limited" || status === "submitting" || status === "success"
+              }
               onChange={(event) => {
                 const value = event.target.value;
                 setCategory(
@@ -204,7 +209,9 @@ export function TarotReadingReport({
               <select
                 className="rvt-field__control rvt-field__control--select"
                 aria-invalid={validationError === messages.selectTarget || undefined}
-                disabled={status === "submitting" || status === "success"}
+                disabled={
+                  status === "rate_limited" || status === "submitting" || status === "success"
+                }
                 onChange={(event) => {
                   setTarget(event.target.value);
                   resetOperation();
@@ -249,10 +256,10 @@ export function TarotReadingReport({
                 : messages.interpretationSummary
             }
             live={failure === "conflict" || failure === "not_found" ? "assertive" : "polite"}
-            tone="error"
+            tone={failure === "rate_limited" ? "warning" : "error"}
           />
         )}
-        {status === "success" || status === "not_found" ? null : (
+        {status === "rate_limited" || status === "success" || status === "not_found" ? null : (
           <div className="tarot-actions">
             {failure === "conflict" ? null : (
               <Button

@@ -39,6 +39,19 @@ const anonymousSessionEnvironmentVariables = Object.freeze([
   "RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS",
 ] as const);
 
+const protectedBetaAbuseEnvironmentVariables = Object.freeze([
+  "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION",
+  "RITUVIA_PROTECTED_BETA_MUTATION_LIMIT",
+  "RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS",
+  "RITUVIA_QUESTION_INTAKE_RATE_LIMIT",
+  "RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS",
+] as const);
+
+const protectedBetaInviteEnvironmentVariables = Object.freeze([
+  "RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT",
+  "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION",
+] as const);
+
 export const serverEnvironmentVariables = Object.freeze([
   ...buildEnvironmentVariables,
   "DATABASE_URL",
@@ -48,6 +61,8 @@ export const serverEnvironmentVariables = Object.freeze([
   "PRIVACY_DELETION_DATABASE_URL",
   "RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH",
   ...anonymousSessionEnvironmentVariables,
+  ...protectedBetaAbuseEnvironmentVariables,
+  ...protectedBetaInviteEnvironmentVariables,
   "RITUVIA_ACCOUNT_SESSION_TTL_SECONDS",
   "RITUVIA_AUTH_CHALLENGE_TTL_SECONDS",
   "RITUVIA_AUTH_DATA_KEY_V1",
@@ -56,6 +71,7 @@ export const serverEnvironmentVariables = Object.freeze([
   "RITUVIA_AUTH_START_WINDOW_SECONDS",
   "RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1",
   "RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1",
+  "RITUVIA_OPERATION_MODE",
   "RITUVIA_PAYMENT_PROVIDER",
   "RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS",
   "RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS",
@@ -76,6 +92,7 @@ export const serverEnvironmentVariables = Object.freeze([
 ] as const);
 
 export type DeploymentEnvironment = "local" | "preview" | "production" | "staging";
+export type OperationMode = "normal" | "read_only";
 export type RawEnvironment = Readonly<Record<string, string | undefined>>;
 
 export type BuildConfiguration = Readonly<{
@@ -92,6 +109,7 @@ export type ServerConfiguration = Readonly<{
   client: ClientConfiguration;
   databaseUrl: string | undefined;
   deploymentEnvironment: DeploymentEnvironment;
+  operationMode: OperationMode;
   payment: PaymentConfiguration | undefined;
   paymentFulfillmentDatabaseUrl: string | undefined;
   paymentReconciliationDatabaseUrl: string | undefined;
@@ -100,6 +118,8 @@ export type ServerConfiguration = Readonly<{
   privacyDeletionPolicy: PrivacyDeletionPolicyConfiguration | undefined;
   privacyDeletionDatabaseUrl: string | undefined;
   privacyExport: PrivacyExportConfiguration | undefined;
+  protectedBetaAbusePolicy: ProtectedBetaAbusePolicyConfiguration | undefined;
+  protectedBetaInvitePolicy: ProtectedBetaInvitePolicyConfiguration | undefined;
   questionIntakeActivationReference: string | undefined;
   reflectionPolicy: ReflectionPolicyConfiguration | undefined;
   tarotReadingIntegrityKeyring: TarotReadingIntegrityKeyringConfiguration | undefined;
@@ -110,6 +130,26 @@ export type AnonymousSessionPolicyConfiguration = Readonly<{
   issuanceWindowSeconds: number;
   policyVersion: string;
   ttlSeconds: number;
+}>;
+
+export type ProtectedBetaAbusePolicyConfiguration = Readonly<{
+  protectedBetaMutation: Readonly<{
+    limit: number;
+    policyVersion: string;
+    scope: "protected_beta_mutation";
+    windowSeconds: number;
+  }>;
+  questionIntake: Readonly<{
+    limit: number;
+    policyVersion: string;
+    scope: "question_intake";
+    windowSeconds: number;
+  }>;
+}>;
+
+export type ProtectedBetaInvitePolicyConfiguration = Readonly<{
+  cohortLimit: 25;
+  policyVersion: string;
 }>;
 
 export type AccountIdentityPolicyConfiguration = Readonly<{
@@ -262,6 +302,46 @@ const serverEnvironmentSchema = z.object({
     .transform(Number)
     .pipe(z.number().int().min(1).max(34_560_000))
     .optional(),
+  RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: z
+    .string()
+    .regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u)
+    .max(100)
+    .optional(),
+  RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: z
+    .string()
+    .regex(/^[1-9][0-9]?$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(25))
+    .optional(),
+  RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: z
+    .string()
+    .regex(/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/u)
+    .max(100)
+    .optional(),
+  RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: z
+    .string()
+    .regex(/^[1-9][0-9]{0,5}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100_000))
+    .optional(),
+  RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: z
+    .string()
+    .regex(/^[1-9][0-9]{0,5}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(86_400))
+    .optional(),
+  RITUVIA_QUESTION_INTAKE_RATE_LIMIT: z
+    .string()
+    .regex(/^[1-9][0-9]{0,4}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(10_000))
+    .optional(),
+  RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: z
+    .string()
+    .regex(/^[1-9][0-9]{0,4}$/u)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(86_400))
+    .optional(),
   RITUVIA_AUTH_CHALLENGE_TTL_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_AUTH_DATA_KEY_V1: encodedSecretKeySchema.optional(),
   RITUVIA_AUTH_START_GLOBAL_LIMIT: z
@@ -284,6 +364,7 @@ const serverEnvironmentSchema = z.object({
     .optional(),
   RITUVIA_AUTH_SUBJECT_HMAC_KEY_V1: encodedSecretKeySchema.optional(),
   RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: encodedSecretKeySchema.optional(),
+  RITUVIA_OPERATION_MODE: z.enum(["normal", "read_only"]).default("normal"),
   RITUVIA_PAYMENT_PROVIDER: z.enum(["local", "stripe"]).optional(),
   RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: positiveSecondsSchema.optional(),
   RITUVIA_PRIVACY_DELETION_REQUEST_WINDOW_SECONDS: positiveSecondsSchema.optional(),
@@ -367,6 +448,114 @@ const parseAnonymousSessionPolicy = (
     issuanceWindowSeconds: values.RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS!,
     policyVersion,
     ttlSeconds: values.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS!,
+  });
+};
+
+const parseProtectedBetaAbusePolicy = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): ProtectedBetaAbusePolicyConfiguration | undefined => {
+  const values = {
+    RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: parsed.RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION,
+    RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: parsed.RITUVIA_PROTECTED_BETA_MUTATION_LIMIT,
+    RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS:
+      parsed.RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS,
+    RITUVIA_QUESTION_INTAKE_RATE_LIMIT: parsed.RITUVIA_QUESTION_INTAKE_RATE_LIMIT,
+    RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: parsed.RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS,
+  } as const;
+  const present = Object.values(values).filter((value) => value !== undefined).length;
+  if (present === 0) return undefined;
+  if (present !== protectedBetaAbuseEnvironmentVariables.length) {
+    const missing = [
+      ...(values.RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION === undefined
+        ? ["RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION"]
+        : []),
+      ...(values.RITUVIA_PROTECTED_BETA_MUTATION_LIMIT === undefined
+        ? ["RITUVIA_PROTECTED_BETA_MUTATION_LIMIT"]
+        : []),
+      ...(values.RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS === undefined
+        ? ["RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS"]
+        : []),
+      ...(values.RITUVIA_QUESTION_INTAKE_RATE_LIMIT === undefined
+        ? ["RITUVIA_QUESTION_INTAKE_RATE_LIMIT"]
+        : []),
+      ...(values.RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS === undefined
+        ? ["RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS"]
+        : []),
+    ];
+    throw new ConfigurationError(
+      "server",
+      missing.map((key) => ({ code: "missing", key })),
+    );
+  }
+  const policyVersion = values.RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION;
+  if (
+    policyVersion === undefined ||
+    (deploymentEnvironment === "production" && !policyVersion.startsWith("own-019."))
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "invalid", key: "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION" },
+    ]);
+  }
+  return Object.freeze({
+    protectedBetaMutation: Object.freeze({
+      limit: values.RITUVIA_PROTECTED_BETA_MUTATION_LIMIT!,
+      policyVersion,
+      scope: "protected_beta_mutation" as const,
+      windowSeconds: values.RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS!,
+    }),
+    questionIntake: Object.freeze({
+      limit: values.RITUVIA_QUESTION_INTAKE_RATE_LIMIT!,
+      policyVersion,
+      scope: "question_intake" as const,
+      windowSeconds: values.RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS!,
+    }),
+  });
+};
+
+const parseProtectedBetaInvitePolicy = (
+  parsed: z.infer<typeof serverEnvironmentSchema>,
+  deploymentEnvironment: DeploymentEnvironment,
+): ProtectedBetaInvitePolicyConfiguration | undefined => {
+  const values = {
+    RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: parsed.RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT,
+    RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION:
+      parsed.RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION,
+  } as const;
+  const present = Object.values(values).filter((value) => value !== undefined).length;
+  if (present === 0) return undefined;
+  if (present !== protectedBetaInviteEnvironmentVariables.length) {
+    throw new ConfigurationError(
+      "server",
+      [
+        ...(values.RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT === undefined
+          ? ["RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT"]
+          : []),
+        ...(values.RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION === undefined
+          ? ["RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION"]
+          : []),
+      ].map((key) => ({ code: "missing" as const, key })),
+    );
+  }
+  const policyVersion = values.RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION;
+  if (
+    policyVersion === undefined ||
+    values.RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT !== 25 ||
+    (deploymentEnvironment === "production" && policyVersion !== "own-019.protected-beta-abuse.v1")
+  ) {
+    throw new ConfigurationError("server", [
+      {
+        code: "invalid",
+        key:
+          values.RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT !== 25
+            ? "RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT"
+            : "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION",
+      },
+    ]);
+  }
+  return Object.freeze({
+    cohortLimit: values.RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT,
+    policyVersion,
   });
 };
 
@@ -892,6 +1081,27 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_ANONYMOUS_SESSION_TTL_SECONDS,
     ),
+    RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION: normalizeEnvironmentValue(
+      environment.RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION,
+    ),
+    RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT: normalizeEnvironmentValue(
+      environment.RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT,
+    ),
+    RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION: normalizeEnvironmentValue(
+      environment.RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION,
+    ),
+    RITUVIA_PROTECTED_BETA_MUTATION_LIMIT: normalizeEnvironmentValue(
+      environment.RITUVIA_PROTECTED_BETA_MUTATION_LIMIT,
+    ),
+    RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS,
+    ),
+    RITUVIA_QUESTION_INTAKE_RATE_LIMIT: normalizeEnvironmentValue(
+      environment.RITUVIA_QUESTION_INTAKE_RATE_LIMIT,
+    ),
+    RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS: normalizeEnvironmentValue(
+      environment.RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS,
+    ),
     RITUVIA_AUTH_CHALLENGE_TTL_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_AUTH_CHALLENGE_TTL_SECONDS,
     ),
@@ -911,6 +1121,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1: normalizeEnvironmentValue(
       environment.RITUVIA_LOCAL_CHECKOUT_SIGNING_SECRET_V1,
     ),
+    RITUVIA_OPERATION_MODE: normalizeEnvironmentValue(environment.RITUVIA_OPERATION_MODE),
     RITUVIA_PAYMENT_PROVIDER: normalizeEnvironmentValue(environment.RITUVIA_PAYMENT_PROVIDER),
     RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS: normalizeEnvironmentValue(
       environment.RITUVIA_PRIVACY_DELETION_RECENT_AUTH_SECONDS,
@@ -958,7 +1169,7 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   if (
     build.deploymentEnvironment === "production" &&
     questionIntakeActivationReference !== undefined &&
-    !questionIntakeActivationReference.startsWith("own-009.")
+    questionIntakeActivationReference !== "own-009.question-intake.en.v1"
   ) {
     throw new ConfigurationError("server", [
       { code: "invalid", key: "RITUVIA_QUESTION_INTAKE_ACTIVATION_REFERENCE" },
@@ -967,6 +1178,92 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
 
   const reflection = parseReflectionConfiguration(server);
   const accountIdentityPolicy = parseAccountIdentityPolicy(server);
+  const anonymousSessionPolicy = parseAnonymousSessionPolicy(server, build.deploymentEnvironment);
+  const protectedBetaAbusePolicy = parseProtectedBetaAbusePolicy(
+    server,
+    build.deploymentEnvironment,
+  );
+  const protectedBetaInvitePolicy = parseProtectedBetaInvitePolicy(
+    server,
+    build.deploymentEnvironment,
+  );
+  const protectedDeployment =
+    build.deploymentEnvironment === "staging" || build.deploymentEnvironment === "production";
+  if (
+    protectedBetaInvitePolicy !== undefined &&
+    (anonymousSessionPolicy === undefined ||
+      protectedBetaAbusePolicy === undefined ||
+      protectedBetaInvitePolicy.policyVersion !==
+        protectedBetaAbusePolicy.questionIntake.policyVersion)
+  ) {
+    throw new ConfigurationError("server", [
+      {
+        code: anonymousSessionPolicy === undefined ? "missing" : "invalid",
+        key:
+          anonymousSessionPolicy === undefined
+            ? "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION"
+            : "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION",
+      },
+    ]);
+  }
+  if (
+    protectedDeployment &&
+    protectedBetaAbusePolicy !== undefined &&
+    protectedBetaInvitePolicy === undefined
+  ) {
+    throw new ConfigurationError("server", [
+      { code: "missing", key: "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION" },
+    ]);
+  }
+  if (protectedDeployment && anonymousSessionPolicy !== undefined) {
+    if (protectedBetaAbusePolicy === undefined) {
+      throw new ConfigurationError("server", [
+        { code: "missing", key: "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION" },
+      ]);
+    }
+    if (protectedBetaInvitePolicy === undefined) {
+      throw new ConfigurationError("server", [
+        { code: "missing", key: "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION" },
+      ]);
+    }
+    const exactProfile = [
+      [
+        "RITUVIA_ANONYMOUS_SESSION_POLICY_VERSION",
+        anonymousSessionPolicy.policyVersion === "own-004.anonymous-session.v1",
+      ],
+      ["RITUVIA_ANONYMOUS_SESSION_ISSUANCE_LIMIT", anonymousSessionPolicy.issuanceLimit === 30],
+      [
+        "RITUVIA_ANONYMOUS_SESSION_ISSUANCE_WINDOW_SECONDS",
+        anonymousSessionPolicy.issuanceWindowSeconds === 60,
+      ],
+      [
+        "RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION",
+        protectedBetaAbusePolicy.questionIntake.policyVersion === "own-019.protected-beta-abuse.v1",
+      ],
+      ["RITUVIA_QUESTION_INTAKE_RATE_LIMIT", protectedBetaAbusePolicy.questionIntake.limit === 12],
+      [
+        "RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS",
+        protectedBetaAbusePolicy.questionIntake.windowSeconds === 60,
+      ],
+      [
+        "RITUVIA_PROTECTED_BETA_MUTATION_LIMIT",
+        protectedBetaAbusePolicy.protectedBetaMutation.limit === 120,
+      ],
+      [
+        "RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS",
+        protectedBetaAbusePolicy.protectedBetaMutation.windowSeconds === 86_400,
+      ],
+      [
+        "RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION",
+        protectedBetaInvitePolicy.policyVersion === "own-019.protected-beta-abuse.v1",
+      ],
+      ["RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT", protectedBetaInvitePolicy.cohortLimit === 25],
+    ] as const;
+    const drifted = exactProfile.find(([, matches]) => !matches);
+    if (drifted !== undefined) {
+      throw new ConfigurationError("server", [{ code: "invalid", key: drifted[0] }]);
+    }
+  }
   const privacyExport = parsePrivacyExportConfiguration(server);
   const payment = parsePaymentConfiguration(server, build.deploymentEnvironment);
   assertPaymentDatabaseBoundaries(
@@ -993,12 +1290,13 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
   }
   return Object.freeze({
     accountIdentityPolicy,
-    anonymousSessionPolicy: parseAnonymousSessionPolicy(server, build.deploymentEnvironment),
+    anonymousSessionPolicy,
     astrologyNativeBuildMetadataPath: server.RITUVIA_ASTROLOGY_NATIVE_BUILD_METADATA_PATH,
     brand: build.brand,
     client: build.client,
     databaseUrl: server.DATABASE_URL,
     deploymentEnvironment: build.deploymentEnvironment,
+    operationMode: server.RITUVIA_OPERATION_MODE,
     payment,
     paymentFulfillmentDatabaseUrl: server.PAYMENT_FULFILLMENT_DATABASE_URL,
     paymentReconciliationDatabaseUrl: server.PAYMENT_RECONCILIATION_DATABASE_URL,
@@ -1007,6 +1305,8 @@ export const parseServerConfiguration = (environment: RawEnvironment): ServerCon
     privacyDeletionPolicy: parsePrivacyDeletionPolicy(server),
     privacyDeletionDatabaseUrl: server.PRIVACY_DELETION_DATABASE_URL,
     privacyExport,
+    protectedBetaAbusePolicy,
+    protectedBetaInvitePolicy,
     questionIntakeActivationReference,
     reflectionPolicy: reflection.policy,
     tarotReadingIntegrityKeyring: parseTarotReadingIntegrityKeyring(

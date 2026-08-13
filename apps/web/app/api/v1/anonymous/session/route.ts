@@ -24,6 +24,7 @@ type ProblemCode =
   | "ANONYMOUS_SESSION_CONFLICT"
   | "ANONYMOUS_SESSION_RATE_LIMITED"
   | "ANONYMOUS_SESSION_UNAVAILABLE"
+  | "BETA_ADMISSION_REQUIRED"
   | "IDEMPOTENCY_KEY_INVALID"
   | "REQUEST_BODY_INVALID"
   | "REQUEST_ORIGIN_REJECTED";
@@ -60,13 +61,18 @@ const problem = (
   );
   response.headers.set("cache-control", privateNoStore);
   response.headers.set("x-robots-tag", noIndex);
-  if (input.retryAfterSeconds !== undefined) {
+  if (
+    input.retryAfterSeconds !== undefined &&
+    Number.isSafeInteger(input.retryAfterSeconds) &&
+    input.retryAfterSeconds >= 1 &&
+    input.retryAfterSeconds <= 3_600
+  ) {
     response.headers.set("retry-after", String(input.retryAfterSeconds));
   }
   return response;
 };
 
-const acceptsRequest = (request: NextRequest): boolean => {
+const acceptsRequest = (request: NextRequest, inviteBodyAllowed: boolean): boolean => {
   const configuration = getWebRuntimeConfiguration();
   const origin = request.headers.get("origin");
   const fetchSite = request.headers.get("sec-fetch-site");
@@ -75,9 +81,66 @@ const acceptsRequest = (request: NextRequest): boolean => {
     origin === configuration.brand.canonicalOrigin &&
     (fetchSite === null || fetchSite === "same-origin") &&
     request.headers.get("transfer-encoding") === null &&
-    (contentLength === null || contentLength === "0") &&
-    request.headers.get("content-type") === null
+    (inviteBodyAllowed
+      ? request.headers.get("content-type")?.split(";", 1)[0] === "application/json" &&
+        (contentLength === null ||
+          (/^[1-9][0-9]{0,2}$/u.test(contentLength) && Number(contentLength) <= 256))
+      : (contentLength === null || contentLength === "0") &&
+        request.headers.get("content-type") === null)
   );
+};
+
+const readInviteToken = async (request: NextRequest): Promise<string | undefined> => {
+  if (request.body === null) return undefined;
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      length += chunk.value.byteLength;
+      if (length > 256) {
+        await reader.cancel();
+        return undefined;
+      }
+      chunks.push(chunk.value);
+    }
+  } catch {
+    return undefined;
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return undefined;
+  }
+  try {
+    const value = JSON.parse(text) as unknown;
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      Object.keys(value).length !== 2 ||
+      !("inviteToken" in value) ||
+      !("schemaVersion" in value) ||
+      value.schemaVersion !== "protected-beta-admission.v1" ||
+      typeof value.inviteToken !== "string" ||
+      !/^[A-Za-z0-9_-]{43}$/u.test(value.inviteToken)
+    ) {
+      return undefined;
+    }
+    return value.inviteToken;
+  } catch {
+    return undefined;
+  }
 };
 
 const requestHasBody = async (request: NextRequest): Promise<boolean> => {
@@ -99,18 +162,30 @@ const requestHasBody = async (request: NextRequest): Promise<boolean> => {
 };
 
 export const POST = async (request: NextRequest): Promise<NextResponse> => {
-  if (!acceptsRequest(request)) {
+  const configuration = getWebRuntimeConfiguration();
+  const inviteBodyAllowed =
+    configuration.protectedBetaInvitePolicy !== undefined &&
+    request.headers.get("content-type")?.split(";", 1)[0] === "application/json";
+  if (!acceptsRequest(request, inviteBodyAllowed)) {
     return problem(request, {
       code: "REQUEST_ORIGIN_REJECTED",
       ...anonymousSessionApiMessages.invalidRequest,
       status: 403,
     });
   }
-  if (await requestHasBody(request)) {
+  if (!inviteBodyAllowed && (await requestHasBody(request))) {
     return problem(request, {
       code: "REQUEST_BODY_INVALID",
       ...anonymousSessionApiMessages.invalidRequest,
       status: 400,
+    });
+  }
+  const inviteToken = inviteBodyAllowed ? await readInviteToken(request) : undefined;
+  if (inviteBodyAllowed && inviteToken === undefined) {
+    return problem(request, {
+      code: "BETA_ADMISSION_REQUIRED",
+      ...anonymousSessionApiMessages.admissionRequired,
+      status: 403,
     });
   }
   const idempotencyKey = request.headers.get("idempotency-key");
@@ -126,6 +201,7 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     const existingToken = request.cookies.get(anonymousSessionCookieName)?.value;
     const ensured = await ensureWebAnonymousSession({
       idempotencyKey,
+      ...(inviteToken === undefined ? {} : { inviteToken }),
       token: existingToken,
     });
     const csrfSessionToken = ensured.kind === "created" ? ensured.token : existingToken;
@@ -152,6 +228,13 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
     return response;
   } catch (error) {
     if (error instanceof WebAnonymousSessionError) {
+      if (error.code === "admission_required") {
+        return problem(request, {
+          code: "BETA_ADMISSION_REQUIRED",
+          ...anonymousSessionApiMessages.admissionRequired,
+          status: 403,
+        });
+      }
       if (error.code === "rate_limited") {
         return problem(request, {
           code: "ANONYMOUS_SESSION_RATE_LIMITED",

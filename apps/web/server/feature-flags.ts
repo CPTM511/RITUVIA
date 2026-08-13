@@ -13,9 +13,13 @@ export const loadWebFeatureFlagEvaluator = async (): Promise<FeatureFlagEvaluato
   const database = loadWebDatabase();
   await assertFeatureFlagRuntimeDatabasePrivileges(database);
   const records = await readFeatureFlagVersions(database, featureFlagRegistryVersion);
+  const evaluatedAt = new Date().toISOString();
 
-  return createFeatureFlagEvaluator({
-    records,
-    registryVersion: featureFlagRegistryVersion,
-  });
+  return createFeatureFlagEvaluator(
+    {
+      records,
+      registryVersion: featureFlagRegistryVersion,
+    },
+    () => evaluatedAt,
+  );
 };

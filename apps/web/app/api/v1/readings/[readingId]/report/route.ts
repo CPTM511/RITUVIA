@@ -9,6 +9,10 @@ import {
 import { TarotReadingApplicationError } from "../../../../../../server/tarot-reading";
 import { reportWebTarotReading } from "../../../../../../server/tarot-reading-runtime";
 import {
+  admitWebProtectedBetaRequest,
+  ProtectedBetaAdmissionError,
+} from "../../../../../../server/protected-beta-abuse";
+import {
   applyPrivateHeaders,
   classifyJsonRequest,
   hasAcceptedPostOrigin,
@@ -79,10 +83,23 @@ export const POST = async (request: NextRequest, context: Context): Promise<Next
   if (sessionToken === undefined) return notFound(request, instance);
 
   try {
+    await admitWebProtectedBetaRequest(sessionToken, "protected_beta_mutation");
     const body = await readBoundedJson(request);
     await reportWebTarotReading(readingId, body, idempotencyKey, sessionToken);
     return applyPrivateHeaders(new NextResponse(null, { status: 204 }));
   } catch (error) {
+    if (error instanceof ProtectedBetaAdmissionError) {
+      if (error.code === "rate_limited") {
+        return problem(request, {
+          code: "TAROT_READING_REPORT_RATE_LIMITED",
+          ...tarotReadingReportApiMessages.rateLimited,
+          instance,
+          retryAfterSeconds: error.retryAfterSeconds,
+          status: 429,
+        });
+      }
+      if (error.code === "session_required") return notFound(request, instance);
+    }
     if (error instanceof TarotReadingBodyTooLargeError) {
       return problem(request, {
         code: "TAROT_READING_REPORT_BODY_TOO_LARGE",

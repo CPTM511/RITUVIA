@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 import { Prisma, type PrismaClient } from "./generated/prisma/client.js";
+import { enqueueOperationalCase } from "./operational-cases.js";
 
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const fingerprintPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
@@ -543,6 +544,10 @@ const prepareRefund = async (
   if (requests.length !== 1 || requestId === undefined) {
     throw new CommercialRefundPersistenceError("COMMERCIAL_REFUND_UNAVAILABLE");
   }
+  await enqueueOperationalCase(database, {
+    sourceId: requestId,
+    sourceKind: "commercial_refund_request",
+  });
 
   const holdCanonicalHash = digest(
     JSON.stringify({

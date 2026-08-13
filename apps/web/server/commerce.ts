@@ -23,6 +23,7 @@ import {
   createMoney,
   createOrderV1,
   createProductPriceV1,
+  evaluatePaymentRouteControl,
   normalizedPaymentEventTypes,
   type DigitalProductV1,
   type NormalizedPaymentEventV1,
@@ -42,6 +43,10 @@ import {
   type WebPaymentProviderId,
   type WebPaymentProviderRegistry,
 } from "./payment-provider";
+import {
+  webPaymentActivationControlReader,
+  type WebPaymentActivationControlReader,
+} from "./payment-route-controls";
 
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const idempotencyKeyPattern =
@@ -198,6 +203,7 @@ export type CommerceApplicationDependencies = Readonly<{
   }>;
   environment: CountryPolicyVersionV1["environment"];
   idFactory: () => string;
+  paymentControls: WebPaymentActivationControlReader;
   paymentProviders: WebPaymentProviderRegistry;
   persistence: CommercePersistence;
   providerId: WebPaymentProviderId | null;
@@ -508,13 +514,25 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
 
   const evaluatePolicy = async (
     definition: CatalogDefinition,
-    asOf: string,
     providerId: WebPaymentProviderId,
-  ): Promise<CountryPolicySnapshotV2> => {
-    const versions = await dependencies.countryPolicies.read(
-      localCountryCode,
-      dependencies.environment,
-    );
+  ): Promise<Readonly<{ evaluatedAt: string; policy: CountryPolicySnapshotV2 }>> => {
+    const [versions, activation] = await Promise.all([
+      dependencies.countryPolicies.read(localCountryCode, dependencies.environment),
+      dependencies.paymentControls.read({
+        countryCode: localCountryCode,
+        kind: "fiat",
+      }),
+    ]);
+    const asOf = activation.countryActivation.evaluation.evaluatedAt;
+    const route = Object.freeze({
+      countryCode: localCountryCode,
+      currencyCode: definition.price.money.currencyCode,
+      evaluatedAt: asOf,
+      kind: "fiat" as const,
+      method: "card" as const,
+      providerId,
+      recurring: false,
+    });
     const decision = evaluateCountryPolicyVersion(
       {
         ageAttested: true,
@@ -539,8 +557,23 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
       },
       versions,
     );
+    const routeControl = evaluatePaymentRouteControl({
+      activation,
+      fallbackProviderIds: [],
+      policyDecision: decision,
+      route,
+    });
+    if (!routeControl.allowed) {
+      const operationalFailure = [
+        "checkout_disabled",
+        "fallback_forbidden",
+        "invalid_input",
+        "policy_mismatch",
+      ].includes(routeControl.reason);
+      throw new WebCommerceError(operationalFailure ? "unavailable" : "not_eligible");
+    }
     if (!decision.allowed) throw new WebCommerceError("not_eligible");
-    return decision.snapshot;
+    return Object.freeze({ evaluatedAt: asOf, policy: decision.snapshot });
   };
 
   const getOwnedOrder = async (
@@ -698,13 +731,13 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
         const idempotencyKey = requireCommerceIdempotencyKey(input.idempotencyKey);
         const definition = findCatalogDefinition(input.request.productCode);
         const account = await requirePurchasingAccount(input.sessionToken);
-        const asOf = requireInstant(dependencies.clock());
         const providerId = dependencies.providerId;
         if (providerId === null) throw new WebCommerceError("unavailable");
-        const policy = await evaluatePolicy(definition, asOf, providerId);
+        const authorization = await evaluatePolicy(definition, providerId);
+        const policy = authorization.policy;
         const domainOrder = createOrderV1({
           accountId: account.userId,
-          asOf,
+          asOf: authorization.evaluatedAt,
           countryPolicy: {
             countryCode: policy.selectedCountryCode,
             evaluatedAt: policy.evaluatedAt,
@@ -748,7 +781,7 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
         });
         return Object.freeze({ kind: persisted.kind, order: publicOrder(persisted.order) });
       } catch (error) {
-        return mapError(error, "input_invalid");
+        return mapError(error, "unavailable");
       }
     },
 
@@ -784,7 +817,11 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
       try {
         let order = await dependencies.persistence.getOrder(account.userId, orderId);
         if (order === null) throw new WebCommerceError("not_found");
-        const now = requireInstant(dependencies.clock());
+        const definition = findCatalogDefinition(order.productCode);
+        const providerId = dependencies.providerId;
+        if (providerId === null) throw new WebCommerceError("unavailable");
+        const authorization = await evaluatePolicy(definition, providerId);
+        const now = authorization.evaluatedAt;
         const activeCheckout =
           order.checkoutUrl !== null &&
           order.checkoutExpiresAt !== null &&
@@ -800,10 +837,6 @@ export const createCommerceApplicationService = (dependencies: CommerceApplicati
         ) {
           throw new WebCommerceError("conflict");
         }
-        const definition = findCatalogDefinition(order.productCode);
-        const providerId = dependencies.providerId;
-        if (providerId === null) throw new WebCommerceError("unavailable");
-        await evaluatePolicy(definition, now, providerId);
         const provider = dependencies.paymentProviders.get(providerId);
         const returnUrl = new URL("/en/checkout/return", dependencies.canonicalOrigin);
         returnUrl.searchParams.set("order_id", order.orderId);
@@ -891,6 +924,7 @@ export const loadWebCommerceApplicationService = (): CommerceApplicationService 
     },
     environment: configuration.deploymentEnvironment,
     idFactory: randomUUID,
+    paymentControls: webPaymentActivationControlReader,
     paymentProviders: loadWebPaymentProviderRegistry(),
     persistence: createCommercePersistence(loadWebDatabase()),
     providerId:

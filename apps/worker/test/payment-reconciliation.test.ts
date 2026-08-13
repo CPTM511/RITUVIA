@@ -8,7 +8,10 @@ import type {
   CommercialReconciliationPersistence,
 } from "@rituvia/db";
 
-import { runOneCommercialPaymentReconciliation } from "../src/payment-reconciliation.js";
+import {
+  runCommercialPaymentReconciliationLoop,
+  runOneCommercialPaymentReconciliation,
+} from "../src/payment-reconciliation.js";
 import type { CommercialPaymentProviderReader } from "../src/stripe-reconciliation.js";
 
 const candidate: CommercialReconciliationCandidate = Object.freeze({
@@ -214,5 +217,30 @@ describe("commercial payment reconciliation worker", () => {
         }),
       }),
     ).resolves.toBe("duplicate");
+  });
+
+  it("contains a database outage and resumes without stopping unrelated loops", async () => {
+    const controller = new AbortController();
+    const events: string[] = [];
+    const persistence = store({
+      listCandidates: vi
+        .fn<CommercialReconciliationPersistence["listCandidates"]>()
+        .mockRejectedValueOnce(new Error("private database details"))
+        .mockImplementationOnce(async () => {
+          controller.abort();
+          return { candidates: [], truncated: false };
+        }),
+    });
+    await runCommercialPaymentReconciliationLoop({
+      failureDelayMilliseconds: 1,
+      observe: ({ disposition }) => events.push(disposition),
+      paymentEvents: paymentEvents(),
+      providerAccountFingerprint: "acct_test",
+      reader: reader(matchingProvider),
+      signal: controller.signal,
+      store: persistence,
+    });
+    expect(persistence.listCandidates).toHaveBeenCalledTimes(2);
+    expect(events).toEqual(["unavailable", "clean"]);
   });
 });

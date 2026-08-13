@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "time_zone": "Asia/Shanghai",
+  "project_path": ".",
+  "automations": [
+    {
+      "id": "rituvia-daily-maintenance",
+      "name": "RITUVIA daily maintenance",
+      "status": "PAUSED",
+      "kind": "cron",
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high",
+      "cadence": "daily",
+      "day": null,
+      "local_time": "08:30",
+      "runner_path": "automation/scheduled-read-only-runner.md",
+      "prompt_path": "automation/prompts/daily-maintenance.md",
+      "result_schema": "automation/schemas/task-result.schema.json",
+      "execution_environment": "local",
+      "destination": "local",
+      "notification_policy": "failed_runs_only",
+      "access": "prompt_enforced_read_only"
+    },
+    {
+      "id": "rituvia-weekly-product-review",
+      "name": "RITUVIA weekly product review",
+      "status": "PAUSED",
+      "kind": "cron",
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high",
+      "cadence": "weekly",
+      "day": "monday",
+      "local_time": "09:30",
+      "runner_path": "automation/scheduled-read-only-runner.md",
+      "prompt_path": "automation/prompts/weekly-product-review.md",
+      "result_schema": "automation/schemas/task-result.schema.json",
+      "execution_environment": "local",
+      "destination": "local",
+      "notification_policy": "failed_runs_only",
+      "access": "prompt_enforced_read_only"
+    },
+    {
+      "id": "rituvia-monthly-risk-audit",
+      "name": "RITUVIA monthly risk audit",
+      "status": "PAUSED",
+      "kind": "cron",
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high",
+      "cadence": "monthly",
+      "day": "1",
+      "local_time": "10:30",
+      "runner_path": "automation/scheduled-read-only-runner.md",
+      "prompt_path": "automation/prompts/monthly-risk-audit.md",
+      "result_schema": "automation/schemas/task-result.schema.json",
+      "execution_environment": "local",
+      "destination": "local",
+      "notification_policy": "failed_runs_only",
+      "access": "prompt_enforced_read_only"
+    }
+  ]
+}

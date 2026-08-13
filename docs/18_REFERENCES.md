@@ -88,10 +88,11 @@ pending. The Professional contract and price links remain historical comparison 
 - OpenStreetMap Foundation public Nominatim usage policy:
   https://operations.osmfoundation.org/policies/nominatim/
 - Node.js `process.versions` runtime/ICU/tzdata provenance:
-  https://nodejs.org/download/release/v24.11.0/docs/api/process.html
+  https://nodejs.org/download/release/v26.5.1/docs/api/process.html
 
-D-067 selects a self-hosted GeoNames export as the intended production source and pins the
-historical resolver to Node `24.18.0`, ICU `78.3`, and tzdata `2026b`. No production GeoNames
+D-067 selects a self-hosted GeoNames export as the intended production source and originally
+pinned the historical resolver to Node `24.18.0`; D-096 supersedes only that runtime pin with Node
+`26.5.1`, ICU `78.3`, and tzdata `2026b`. No production GeoNames
 snapshot is imported: exact snapshot date, file inventory, SHA-256 digest, attribution placement,
 update/rollback procedure, search-index limits, and operations evidence remain required.
 

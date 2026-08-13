@@ -52,7 +52,7 @@ const birthPayload = parseBirthProfilePayloadV1({
     historicalConfidence: "tzdb_rule_match",
     icuVersion: "78.3",
     runtimeId: "node_intl",
-    runtimeVersion: "24.18.0",
+    runtimeVersion: "26.5.1",
     timeZoneDataVersion: "2026b",
   },
   schemaVersion: "birth-profile.v1",

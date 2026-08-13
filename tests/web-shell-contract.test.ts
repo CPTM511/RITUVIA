@@ -55,14 +55,17 @@ describe("Web shell repository contract", () => {
 
   it("keeps private question text out of browser persistence, URLs, analytics, and logs", () => {
     const form = read("apps/web/app/_components/question-intake-form.tsx");
+    const handoff = read("apps/web/app/_components/question-intake-theme-handoff.ts");
     const route = read("apps/web/app/api/v1/intake/evaluate/route.ts");
-    const source = `${form}\n${route}`;
+    const source = `${form}\n${handoff}\n${route}`;
 
     expect(form).toContain('method="post"');
     expect(form).toContain('cache: "no-store"');
-    expect(form).not.toMatch(
-      /\b(?:localStorage|sessionStorage|indexedDB|history\.|URLSearchParams)\b/u,
-    );
+    expect(form).not.toMatch(/\b(?:localStorage|indexedDB|history\.|URLSearchParams)\b/u);
+    expect(form).toContain("storeQuestionIntakeThemeHandoff(storage, outcome.themeCode)");
+    expect(form).not.toContain("storeQuestionIntakeThemeHandoff(storage, question)");
+    expect(handoff).toContain("storage.setItem(questionIntakeThemeHandoffStorageKey, parsed)");
+    expect(handoff.match(/storage\.setItem\(/gu)).toHaveLength(1);
     expect(source).not.toMatch(/\b(?:console\.|analytics|captureException|recording)\b/iu);
     expect(route).not.toContain("riskCategories");
   });

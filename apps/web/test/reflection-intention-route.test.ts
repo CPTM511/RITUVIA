@@ -5,6 +5,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveSessionCsrfToken } from "../server/session-csrf";
 
 const harness = vi.hoisted(() => {
+  class AdmissionError extends Error {
+    readonly code: "rate_limited" | "session_required" | "unavailable";
+    readonly retryAfterSeconds: number | undefined;
+
+    constructor(
+      code: "rate_limited" | "session_required" | "unavailable",
+      retryAfterSeconds?: number,
+    ) {
+      super("synthetic admission error");
+      this.code = code;
+      this.retryAfterSeconds = retryAfterSeconds;
+    }
+  }
   class ApplicationError extends Error {
     readonly code: "conflict" | "daily_limit" | "not_found" | "session_required" | "unavailable";
     readonly retryAfterSeconds: number | undefined;
@@ -19,12 +32,19 @@ const harness = vi.hoisted(() => {
     }
   }
   return {
+    admit: vi.fn(),
+    AdmissionError,
     ApplicationError,
     create: vi.fn(),
     get: vi.fn(),
     mutate: vi.fn(),
   };
 });
+
+vi.mock("../server/protected-beta-abuse", () => ({
+  admitWebProtectedBetaRequest: harness.admit,
+  ProtectedBetaAdmissionError: harness.AdmissionError,
+}));
 
 vi.mock("../server/account-auth", () => ({
   accountSessionCookieName: "__Host-rituvia-account-session",
@@ -171,6 +191,18 @@ describe("reflection intention API", () => {
     expect(responseBody).toEqual(resource);
     expect(JSON.stringify(responseBody)).not.toMatch(/anonymousSubjectId|idempotency|canonical/iu);
     expect(harness.create).toHaveBeenCalledWith(body, idempotencyKey, token);
+  });
+
+  it("returns one bounded cooldown before reading or creating reflection content", async () => {
+    harness.admit.mockRejectedValueOnce(new harness.AdmissionError("rate_limited", 29));
+    const response = await POST(post(JSON.stringify({ ...body, smallAction: "private-canary" })));
+    const text = await response.text();
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("29");
+    expect(text).toContain("REFLECTION_RATE_LIMITED");
+    expect(text).not.toContain("private-canary");
+    expect(harness.create).not.toHaveBeenCalled();
   });
 
   it("returns the same private representation with 200 for an idempotent replay", async () => {

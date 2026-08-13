@@ -2,7 +2,17 @@ import { parseTarotReadingCreateRequestV1, parseTarotReadingReportRequest } from
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const harness = vi.hoisted(() => ({ create: vi.fn(), get: vi.fn(), report: vi.fn() }));
+const harness = vi.hoisted(() => ({
+  admit: vi.fn(),
+  create: vi.fn(),
+  get: vi.fn(),
+  report: vi.fn(),
+}));
+
+vi.mock("../server/protected-beta-abuse", () => ({
+  admitWebProtectedBetaRequest: harness.admit,
+  ProtectedBetaAdmissionError: class ProtectedBetaAdmissionError extends Error {},
+}));
 
 vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({
@@ -134,6 +144,7 @@ describe("tarot reading API routes", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(response.headers.get("content-type")).toBeNull();
+    expect(harness.admit).toHaveBeenCalledWith(token, "protected_beta_mutation");
     expect(harness.report).toHaveBeenCalledWith(readingId, reportBody, idempotencyKey, token);
   });
 

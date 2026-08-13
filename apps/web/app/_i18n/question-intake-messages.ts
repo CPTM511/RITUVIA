@@ -31,6 +31,7 @@ export type QuestionIntakeMessages = Readonly<{
     crisis: Readonly<{ message: string; title: string }>;
     error: Readonly<{ message: string; retry: string; title: string }>;
     offline: Readonly<{ message: string; retry: string; title: string }>;
+    rateLimited: Readonly<{ message: string; title: string }>;
     reframed: Readonly<{ message: string; title: string; useSuggestion: string }>;
     unavailable: Readonly<{ message: string; retry: string; title: string }>;
   }>;
@@ -113,6 +114,11 @@ const englishQuestionIntakeMessages = {
         "Reconnect before sending this question. Your draft remains only in this page and will not be sent automatically.",
       retry: "Check connection and try again",
       title: "You appear to be offline",
+    },
+    rateLimited: {
+      message:
+        "Pause before sending another question. Your draft remains only in this page, and nothing will retry automatically.",
+      title: "Question checks are temporarily limited",
     },
     reframed: {
       message:

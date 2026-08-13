@@ -287,7 +287,11 @@ For each provider adapter:
 - Invalid signature/replay.
 - Amount/currency/product mismatch.
 - Partial/full refund.
-- Dispute and chargeback win/loss.
+- Applied dispute hold and consumed/reserved shortfall.
+- Current fulfilled dispute support projection, duplicate replay, projection outage recovery, and
+  refund-before-projection exclusion.
+- Chargeback win/loss only after a provider outcome contract is separately implemented and
+  approved; do not infer it from support projection presence.
 - Subscription start/renew/fail/grace/cancel/change.
 - Provider timeout and reconciliation recovery.
 - Entitlement grant/revoke exactly once.
@@ -517,3 +521,65 @@ payload; canonical/Open Graph/Twitter output on the private page; an upload or e
 unexpected storage; unreleased object URLs; sub-44px controls; horizontal overflow; and blocking
 serious/critical Axe findings. Pure tests separately cover malformed URLs, unsafe text, XML
 escaping, production pseudolocale rejection, and serializer-only expanded LTR/RTL structure.
+
+## 17. Owner operations dashboard gate
+
+`pnpm check:owner-operations` builds the observability dependency and verifies all eight canonical
+sections, fixed source/freshness semantics, missing/stale/future/synthetic `unknown` suppression,
+release-gate consistency, private-field rejection, deterministic rendering, and the explicit
+D-104-approved OWN-019, D-106-approved OWN-005 Option A, RIT-127 Blocked, completed local RIT-128,
+and planned RIT-130 path.
+
+Focused Vitest coverage also proves exact-order parsing, accessor non-execution, unavailable-source
+null requirements, no false Gate H completion, digest binding, mode-0600 JSON/Markdown, no overwrite,
+symlink rejection, and removal of partial outputs. Because RIT-120 adds no HTTP/UI route, browser,
+keyboard, focus, no-store/noindex, and read-audit testing remains a mandatory prerequisite for any
+later protected admin route rather than being falsely claimed by the offline artifact.
+
+## 18. Cost guardrail safe-off gate
+
+`pnpm check:cost-guardrails` verifies fixed provider/feature registries, exact daily windows,
+proposed allocation reconciliation, partial/stale/synthetic/unavailable/unbudgeted cost, simulated
+warning/exhaustion actions, essential alert-only protection, denied spend authority, private-field
+and accessor rejection, deterministic rendering, digest binding, mode-0600 output, no overwrite,
+symlink rejection, and partial-output cleanup.
+
+The gate explicitly does not claim approved monetary limits, atomic runtime admission, provider
+ingestion, alert delivery, or RIT-127 completion. D-106-approved Option A preserves safe-off; exact
+Option B and future durable reserve/commit/release/reconcile evidence remain required.
+
+## 19. Incident and provider failure game-day gate
+
+`pnpm test:incident-game-day` composes the existing security, abuse, proxy containment, SLO, AI
+provider/runtime, payment/reconciliation, reminder-provider, Stripe sandbox webhook, dynamic
+kill-switch, isolated backup/restore, CI-contract, architecture, and secret checks into one manual
+repository-local exercise. The fixed matrix is documented in
+`docs/runbooks/RIT-128_INCIDENT_GAME_DAY.md`.
+
+The gate must finish with zero open repository-scope Critical/High findings, no private content in
+evidence, no provider or paid call, deterministic payment/webhook outcomes, restored safe-off
+control state, exact snapshot recovery, and a full-workspace closure pass. It does not represent
+standing staging, external pager/status delivery, provider-managed PITR/restore, live-provider kill
+switches, hosted DAST, an independent penetration test, customer communication, or Gate H.
+
+## 20. Recurring Codex automation gate
+
+`pnpm check:records` also validates `automation/rituvia-recurring-reviews.json` against exactly three
+RIT-126 schedules. The contract fixes the IDs, Asia/Shanghai cadence, model/reasoning, paused state,
+local execution truth, failed-run-only notifications, shared runner, existing review prompts, and
+bounded result schema.
+
+`tests/record-policy.test.ts` mutates execution environment, notification policy, tracked
+references, and the no-production runner clause. Every mutation must fail. This repository gate
+does not prove future Codex app state; operators compare the three automation cards to the manifest
+and pause them on drift or unexpected write/external behavior.
+
+## 21. Payment route-control gate
+
+- Independently test country and fiat/crypto checkout safe-off; never toggle them only as one unit.
+- Reject forged activation provenance, scope/time/registry drift, provider or method substitution,
+  crypto recurrence, and every non-empty fallback-provider list.
+- Prove denial occurs before order/subscription persistence, provider use, and attached Checkout URL
+  replay while existing webhook/refund/dispute/fulfillment/reconciliation paths stay unchanged.
+- Map eligibility denials to calm 403 responses and control-plane/configuration failures to redacted
+  503 responses.

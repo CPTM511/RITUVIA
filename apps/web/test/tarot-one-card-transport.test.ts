@@ -84,6 +84,20 @@ describe("one-card browser transport", () => {
     await expect(execute(fetcher)).rejects.toMatchObject({ failure });
   });
 
+  it("preserves a bounded session cooldown without sending a reading request", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, { headers: { "retry-after": "31" }, status: 429 }),
+      ) as unknown as typeof fetch;
+
+    await expect(execute(fetcher)).rejects.toMatchObject({
+      failure: "limit_reached",
+      retryAfterSeconds: 31,
+    });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it.each([
     ["1", 1],
     ["604800", 604_800],

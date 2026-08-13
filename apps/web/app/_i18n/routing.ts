@@ -42,6 +42,9 @@ export const localeHomePath = (locale: Locale): LocalActionHref =>
 export const localeQuestionIntakePath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/intake`);
 
+export const localeProtectedBetaPath = (locale: Locale): LocalActionHref =>
+  createLocalActionHref(`/${locale}/beta`);
+
 export const localeTarotOneCardPath = (locale: Locale): LocalActionHref =>
   createLocalActionHref(`/${locale}/tarot/one-card`);
 

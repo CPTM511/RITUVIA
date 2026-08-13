@@ -103,6 +103,8 @@ try {
   let resource = null;
   let reminder = null;
   let reminderPreferenceMutations = 0;
+  let rateLimitedMutationRequests = 0;
+  let rateLimitedMutationResponses = 1;
   let scheduleFailures = 0;
   const context = await browser.newContext({
     baseURL: origin,
@@ -169,6 +171,15 @@ try {
       });
     }
     if (key === "POST:/api/v1/revisits") {
+      if (rateLimitedMutationResponses > 0) {
+        rateLimitedMutationResponses -= 1;
+        rateLimitedMutationRequests += 1;
+        return json(
+          429,
+          { code: "rate_limited", message: "Temporarily unavailable." },
+          { "retry-after": "31" },
+        );
+      }
       const body = request.postDataJSON();
       requests.push({ body, key });
       assert.equal(request.headers()["x-csrf-token"], csrfToken);
@@ -315,7 +326,11 @@ try {
     ) {
       return;
     }
-    if (url.origin === origin) failedLocalRequests.push(url.pathname);
+    if (url.origin === origin) {
+      failedLocalRequests.push(
+        `${request.method()}:${url.pathname}:${request.failure()?.errorText ?? "unknown"}`,
+      );
+    }
   });
 
   await page.goto("/en/revisit", { timeout: 30_000, waitUntil: "load" });
@@ -324,6 +339,38 @@ try {
     await page.evaluate(() => sessionStorage.getItem("rituvia.revisit-intention.v1")),
     intentionId,
   );
+  await page.getByLabel("In seven days").check();
+  await page.getByLabel("Time zone").fill("America/New_York");
+  await page.getByLabel("Store quiet hours").check();
+  const rateLimitedResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/revisits" &&
+      response.status() === 429,
+  );
+  await page.getByRole("button", { name: "Schedule this Revisit" }).click();
+  const rateLimitedResponse = await rateLimitedResponsePromise;
+  assert.equal(rateLimitedResponse.headers()["retry-after"], "31");
+  await page.getByText("Private changes are temporarily limited.", { exact: false }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Schedule this Revisit" }).isDisabled(),
+    true,
+  );
+  assert.equal(await page.getByRole("button", { name: "Retry" }).count(), 0);
+  assert.equal(await page.getByLabel("In seven days").isChecked(), true);
+  assert.equal(await page.getByLabel("Time zone").inputValue(), "America/New_York");
+  assert.equal(await page.getByLabel("Store quiet hours").isChecked(), true);
+  assert.equal(
+    await page.evaluate(() => sessionStorage.getItem("rituvia.revisit-intention.v1")),
+    intentionId,
+  );
+  await page.getByLabel("Time zone").press("Enter");
+  await page.waitForTimeout(100);
+  assert.equal(rateLimitedMutationRequests, 1);
+  assert.equal(requests.length, 0);
+
+  await page.reload({ timeout: 30_000, waitUntil: "load" });
+  await page.getByRole("heading", { name: "Schedule this Revisit" }).waitFor();
   await page.getByLabel("In seven days").check();
   await page.getByLabel("Time zone").fill("America/New_York");
   await page.getByLabel("Store quiet hours").check();
@@ -458,7 +505,9 @@ try {
   assert.deepEqual(unexpected, []);
   assert.deepEqual(failedLocalRequests, []);
   assert.deepEqual(pageErrors, []);
-  assert.deepEqual(consoleErrors, []);
+  assert.deepEqual(consoleErrors, [
+    "Failed to load resource: the server responded with a status of 429 (Too Many Requests)",
+  ]);
 
   process.stdout.write(
     `${JSON.stringify(
@@ -472,6 +521,8 @@ try {
         offlineScheduleRequests: 0,
         offlineStateAssertions: scheduleFailures,
         privateStorageMetadataConsoleLeaks: 0,
+        rateLimitedImmediateRetries: 0,
+        rateLimitedMutationRequests,
         redactedSupportingScreenshots: 1,
         reminderDeliveryRequests: 0,
         reminderPreferenceMutations,

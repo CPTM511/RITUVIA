@@ -140,4 +140,22 @@ describe("Stripe checkout HTTP contract", () => {
     expect(missingCsrf.status).toBe(403);
     expect(harness.createCheckout).toHaveBeenCalledTimes(1);
   });
+
+  it("returns a redacted 503 when the payment-control plane is unavailable", async () => {
+    harness.createCheckout.mockRejectedValueOnce(new harness.CommerceError("unavailable"));
+    const response = await POST(
+      new NextRequest("https://example.test/api/v1/checkout/stripe", {
+        body: JSON.stringify(body),
+        headers: requestHeaders,
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      code: "COMMERCE_UNAVAILABLE",
+      schemaVersion: 1,
+      status: 503,
+    });
+  });
 });

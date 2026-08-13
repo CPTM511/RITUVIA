@@ -74,6 +74,20 @@ zero. Cost coverage below 95% opens a human data-quality review. Because OWN-005
 daily or model budgets, RIT-038 does not invent a monetary anomaly threshold, pause traffic, switch
 models, or raise/lower runtime cost limits. Budget enforcement remains RIT-127.
 
+RIT-120 surfaces unavailable production cost as `unknown` rather than a compliant zero-cost state.
+D-105 adds `cost-guardrail.v1` only as a fixed-registry private safe-off simulation: proposed
+provider/feature lines reconcile exactly, missing/unbudgeted cost remains explicit, essential
+controls are alert-only, arbitrary labels are rejected, every non-essential spend authorization is
+denied, and no action executes. D-106 approves OWN-005 Option A exactly, preserving this safe-off
+posture for the protected free Beta. Option A explicitly leaves RIT-127 Blocked until exact Option B
+policy bytes plus durable atomic reserve/commit/release/reconcile and fixed alert-delivery evidence
+exist. It may not activate a paid vendor, raise spend, change a production model, or weaken
+safety/privacy to satisfy a budget.
+
+The exact Owner decision and remaining Option B table are in
+`docs/reports/RITUVIA_OWN_005_COST_BUDGET_DECISION_REQUEST_2026-08-02.md`. Production paid-provider
+budgets and runtime enforcement remain unavailable.
+
 ## 6. Infrastructure controls
 
 - Managed services with auto-scaling caps and budget alerts.

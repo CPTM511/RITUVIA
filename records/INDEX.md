@@ -77,6 +77,24 @@
 | Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
 | Decision | D-093 | Hold unused Credits before a Stripe sandbox refund | [decisions/D-093.md](./decisions/D-093.md) |
 | Decision | D-094 | Separate commerce command acceptance from provider execution | [decisions/D-094.md](./decisions/D-094.md) |
+| Decision | D-095 | Converge the current stage on the reflection core loop | [decisions/D-095.md](./decisions/D-095.md) |
+| Decision | D-096 | Pin the repository and deterministic runtime to Node.js 26.5.1 | [decisions/D-096.md](./decisions/D-096.md) |
+| Decision | D-097 | Approve the free English beta profile, intake-first entry, and direct-sale model | [decisions/D-097.md](./decisions/D-097.md) |
+| Decision | D-098 | Accept the retained core loop and resume protected-beta security preparation | [decisions/D-098.md](./decisions/D-098.md) |
+| Decision | D-099 | Suppress one exact historical Gitleaks schema-version false positive | [decisions/D-099.md](./decisions/D-099.md) |
+| Decision | D-100 | Use one privacy-minimal anonymous-session request budget for protected Beta | [decisions/D-100.md](./decisions/D-100.md) |
+| Decision | D-101 | Use fixed privacy-safe Beta SLOs and one global read-only containment mode | [decisions/D-101.md](./decisions/D-101.md) |
+| Decision | D-102 | Use one source-bound metadata-only operational case kernel | [decisions/D-102.md](./decisions/D-102.md) |
+| Decision | D-103 | Use a private offline owner operations dashboard before an admin route | [decisions/D-103.md](./decisions/D-103.md) |
+| Decision | D-104 | Approve the exact protected-Beta abuse and ingress profile | [decisions/D-104.md](./decisions/D-104.md) |
+| Decision | D-105 | Use fail-closed private cost guardrails before budget activation | [decisions/D-105.md](./decisions/D-105.md) |
+| Decision | D-106 | Preserve a zero-paid-provider protected-Beta cost posture | [decisions/D-106.md](./decisions/D-106.md) |
+| Decision | D-107 | Bind recurring reviews to local prompt-enforced read-only Codex automations | [decisions/D-107.md](./decisions/D-107.md) |
+| Decision | D-108 | Keep recurring Codex reviews paused under OWN-020 Option A | [decisions/D-108.md](./decisions/D-108.md) |
+| Decision | D-109 | Derive Gate H evidence state from eight digest-bound controls | [decisions/D-109.md](./decisions/D-109.md) |
+| Decision | D-110 | Compose exact payment route controls and forbid provider fallback | [decisions/D-110.md](./decisions/D-110.md) |
+| Decision | D-111 | Derive dispute support records from matched commerce facts only | [decisions/D-111.md](./decisions/D-111.md) |
+| Decision | D-112 | Require one database-atomic invite before protected-Beta session issuance | [decisions/D-112.md](./decisions/D-112.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -134,6 +152,8 @@
 | Task | RIT-069 | Full Payment Integrity Matrix and M6 Product Checkpoint | [tasks/RIT-069.md](./tasks/RIT-069.md) |
 | Task | RIT-070 | Subscription Lifecycle and Entitlements | [tasks/RIT-070.md](./tasks/RIT-070.md) |
 | Task | RIT-073 | Commerce Admin and Immutable Event Timeline | [tasks/RIT-073.md](./tasks/RIT-073.md) |
+| Task | RIT-074 | Dispute/chargeback records and support workflow | [tasks/RIT-074.md](./tasks/RIT-074.md) |
+| Task | RIT-075 | Payment/provider kill switches and no-fallback contract | [tasks/RIT-075.md](./tasks/RIT-075.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
@@ -159,8 +179,26 @@
 | Task | RIT-115 | Redacted localized one-card share artifacts | [tasks/RIT-115.md](./tasks/RIT-115.md) |
 | Task | RIT-116 | Visible GEO answer, source, review, and entity authority | [tasks/RIT-116.md](./tasks/RIT-116.md) |
 | Task | RIT-117 | Offline SEO/GEO performance and freshness operations | [tasks/RIT-117.md](./tasks/RIT-117.md) |
+| Task | RIT-120 | Complete owner/admin operational dashboard | [tasks/RIT-120.md](./tasks/RIT-120.md) |
+| Task | RIT-121 | Finalize threat model and remediate launch findings | [tasks/RIT-121.md](./tasks/RIT-121.md) |
+| Task | RIT-122 | Implement rate limits, bot defense, abuse and denial-of-wallet controls | [tasks/RIT-122.md](./tasks/RIT-122.md) |
 | Task | RIT-123 | Implement backups and isolated restore test | [tasks/RIT-123.md](./tasks/RIT-123.md) |
+| Task | RIT-124 | Implement SLOs, alerts, runbooks, and status controls | [tasks/RIT-124.md](./tasks/RIT-124.md) |
+| Task | RIT-125 | Implement support, privacy, safety, and content report queues | [tasks/RIT-125.md](./tasks/RIT-125.md) |
+| Task | RIT-126 | Implement daily, weekly, and monthly Codex automation | [tasks/RIT-126.md](./tasks/RIT-126.md) |
+| Task | RIT-127 | Cost budgets, allocation, and anomaly controls | [tasks/RIT-127.md](./tasks/RIT-127.md) |
+| Task | RIT-128 | Incident tabletop and dependency/provider failure game day | [tasks/RIT-128.md](./tasks/RIT-128.md) |
+| Task | RIT-129 | Provider-free staging and Gate H evidence contract | [tasks/RIT-129.md](./tasks/RIT-129.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
 | Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
+| Task | RIT-161 | Core-loop product convergence | [tasks/RIT-161.md](./tasks/RIT-161.md) |
+| Task | RIT-162 | Simplify the core-loop implementation and retire approved dead code | [tasks/RIT-162.md](./tasks/RIT-162.md) |
+| Task | RIT-163 | Upgrade the pinned Node.js toolchain to 26.5.1 | [tasks/RIT-163.md](./tasks/RIT-163.md) |
+| Task | RIT-164 | Reconcile the restored-schema drift baseline and backup recovery gate | [tasks/RIT-164.md](./tasks/RIT-164.md) |
+| Task | RIT-165 | Publish the pre-launch execution plan and exact product user manual | [tasks/RIT-165.md](./tasks/RIT-165.md) |
+| Task | RIT-166 | Route the primary free-reading entry through approved safety intake | [tasks/RIT-166.md](./tasks/RIT-166.md) |
+| Task | RIT-167 | Run the Owner core-loop acceptance walkthrough and record findings | [tasks/RIT-167.md](./tasks/RIT-167.md) |
+| Task | RIT-168 | Protected-Beta invite admission and revocation contract | [tasks/RIT-168.md](./tasks/RIT-168.md) |
+| Task | RIT-169 | Standing-staging deployment preflight and secretless IaC | [tasks/RIT-169.md](./tasks/RIT-169.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.

@@ -117,7 +117,9 @@ describe("tarot reading report transport", () => {
     });
 
     const request = fetcher.mock.calls[0]?.[1];
-    expect(request?.headers).toMatchObject({ "idempotency-key": operation.idempotencyKey });
+    expect(request?.headers).toMatchObject({
+      "idempotency-key": operation.idempotencyKey,
+    });
     expect(operation.idempotencyKey).not.toBe(readingId);
     expect(String(request?.body)).not.toContain(operation.idempotencyKey);
   });
@@ -125,6 +127,7 @@ describe("tarot reading report transport", () => {
   it.each([
     [404, "not_found"],
     [409, "conflict"],
+    [429, "rate_limited"],
     [503, "unavailable"],
     [500, "error"],
   ] as const)("maps status %s to %s", async (status, failure) => {
@@ -136,6 +139,23 @@ describe("tarot reading report transport", () => {
     });
 
     await expect(pending).rejects.toEqual(new TarotReadingReportTransportError(failure));
+  });
+
+  it("drains a bounded rate-limit response before exposing the closed failure", async () => {
+    const result = response(429, JSON.stringify({ detail: "PRIVATE_REPORT_CANARY", status: 429 }), {
+      "content-type": "application/problem+json",
+      "retry-after": "31",
+    });
+
+    await expect(
+      executeTarotReadingReport({
+        fetcher: vi.fn<typeof fetch>().mockResolvedValue(result),
+        operation,
+        readingId,
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toEqual(new TarotReadingReportTransportError("rate_limited"));
+    expect(result.bodyUsed).toBe(true);
   });
 
   it.each([

@@ -96,6 +96,10 @@ export const createDisabledRevisitReminderAdapter = (): RevisitReminderDeliveryA
 const idempotencyKeyFor = (subscriptionId: string): string =>
   `rituvia.revisit-reminder.delivery.v1:${subscriptionId}`;
 
+class RevisitReminderDeadlineError extends Error {}
+
+class RevisitReminderCancellationError extends Error {}
+
 export const runOneRevisitReminderDelivery = async (input: {
   adapter: RevisitReminderDeliveryAdapter;
   messageConfiguration: Readonly<{
@@ -189,11 +193,26 @@ export const runOneRevisitReminderDelivery = async (input: {
 
   observe("started");
   const controller = new AbortController();
-  const cancel = (): void => controller.abort();
+  let rejectCancellation: ((error: RevisitReminderCancellationError) => void) | undefined;
+  const cancellation = new Promise<never>((_resolve, reject) => {
+    rejectCancellation = reject;
+  });
+  const cancel = (): void => {
+    controller.abort();
+    rejectCancellation?.(new RevisitReminderCancellationError());
+  };
   input.signal?.addEventListener("abort", cancel, { once: true });
-  const timeout = setTimeout(cancel, timeoutMs);
+  if (input.signal?.aborted) cancel();
+  let rejectDeadline: ((error: RevisitReminderDeadlineError) => void) | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    rejectDeadline = reject;
+  });
+  const timeout = setTimeout(() => {
+    controller.abort();
+    rejectDeadline?.(new RevisitReminderDeadlineError());
+  }, timeoutMs);
   try {
-    const delivered = await input.adapter.deliver(
+    const delivery = input.adapter.deliver(
       Object.freeze({
         idempotencyKey: idempotencyKeyFor(job.subscriptionId),
         message,
@@ -202,6 +221,8 @@ export const runOneRevisitReminderDelivery = async (input: {
       }),
       controller.signal,
     );
+    void delivery.catch(() => undefined);
+    const delivered = await Promise.race([delivery, deadline, cancellation]);
     const committed = await input.store.completeDelivery({
       leaseToken: job.leaseToken,
       providerMessageReference: delivered.providerMessageReference,
@@ -214,10 +235,20 @@ export const runOneRevisitReminderDelivery = async (input: {
     observe("succeeded");
     return "delivered";
   } catch (error) {
+    if (error instanceof RevisitReminderCancellationError) {
+      await input.store.failDelivery({
+        failureCode: "provider_unavailable",
+        leaseToken: job.leaseToken,
+        retryable: true,
+        subscriptionId: job.subscriptionId,
+      });
+      observe("cancelled");
+      return "cancelled";
+    }
     const failure =
       error instanceof RevisitReminderDeliveryError
         ? Object.freeze({ code: error.code, retryable: error.retryable })
-        : controller.signal.aborted
+        : error instanceof RevisitReminderDeadlineError
           ? Object.freeze({ code: "timeout" as const, retryable: true })
           : Object.freeze({ code: "provider_unavailable" as const, retryable: true });
     const disposition = await input.store.failDelivery({
@@ -232,6 +263,8 @@ export const runOneRevisitReminderDelivery = async (input: {
     return disposition ?? "stale";
   } finally {
     clearTimeout(timeout);
+    rejectCancellation = undefined;
+    rejectDeadline = undefined;
     input.signal?.removeEventListener("abort", cancel);
   }
 };

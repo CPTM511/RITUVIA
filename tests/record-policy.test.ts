@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 import {
   auditAutomationPromptContracts,
+  auditAutomationScheduleContract,
   auditRecordSet,
   auditTaskResult,
   auditTaskResultSchema,
@@ -829,5 +830,60 @@ describe("automation prompt contract", () => {
         ),
       }).map((finding) => finding.rule),
     ).toContain("prompt-contract:record_refs.task");
+  });
+});
+
+describe("recurring automation schedule contract", () => {
+  const manifest = JSON.parse(
+    readFileSync(new URL("../automation/rituvia-recurring-reviews.json", import.meta.url), "utf8"),
+  ) as Record<string, unknown>;
+  const runnerSource = readFileSync(
+    new URL("../automation/scheduled-read-only-runner.md", import.meta.url),
+    "utf8",
+  );
+  const repositoryPaths = new Set([
+    "automation/scheduled-read-only-runner.md",
+    "automation/prompts/daily-maintenance.md",
+    "automation/prompts/weekly-product-review.md",
+    "automation/prompts/monthly-risk-audit.md",
+    "automation/schemas/task-result.schema.json",
+  ]);
+
+  it("accepts the exact paused prompt-enforced read-only schedules", () => {
+    expect(auditAutomationScheduleContract(manifest, repositoryPaths, runnerSource)).toEqual([]);
+  });
+
+  it("rejects execution-environment and notification-policy drift", () => {
+    const candidate = structuredClone(manifest);
+    const automations = candidate.automations as Record<string, unknown>[];
+    automations[0]!.execution_environment = "worktree";
+    automations[1]!.notification_policy = "always";
+    expect(auditAutomationScheduleContract(candidate, repositoryPaths, runnerSource)).toEqual([
+      {
+        location: "automation/rituvia-recurring-reviews.json.automations[0]",
+        rule: "schedule-contract",
+      },
+      {
+        location: "automation/rituvia-recurring-reviews.json.automations[1]",
+        rule: "schedule-contract",
+      },
+    ]);
+  });
+
+  it("rejects missing tracked prompt or result-schema references", () => {
+    expect(auditAutomationScheduleContract(manifest, new Set(), runnerSource)).toHaveLength(9);
+  });
+
+  it("rejects removal of the no-production runner boundary", () => {
+    expect(
+      auditAutomationScheduleContract(
+        manifest,
+        repositoryPaths,
+        runnerSource.replaceAll("production", "hosted"),
+      ),
+    ).toContainEqual({
+      location: "automation/rituvia-recurring-reviews.json",
+      rule: "runner-contract:production",
+    });
   });
 });

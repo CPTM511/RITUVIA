@@ -7,6 +7,7 @@ import {
 } from "../packages/payments/src/index.js";
 import {
   createCommercialCheckoutPersistence,
+  createCommercialDisputeSupportPersistence,
   createCommercialFulfillmentPersistence,
   createCommercialPaymentEventPersistence,
   type PreparedCommercialPaymentEvent,
@@ -52,6 +53,7 @@ await withLocalPostgresLease(async (lease) => {
       const checkout = createCommercialCheckoutPersistence(application);
       const events = createCommercialPaymentEventPersistence(paymentWebhook);
       const fulfillment = createCommercialFulfillmentPersistence(fulfillmentDatabase);
+      const disputeSupport = createCommercialDisputeSupportPersistence(fulfillmentDatabase);
       let sequence = 0;
       let clock = Date.parse("2026-07-30T13:00:00.000Z");
 
@@ -509,6 +511,44 @@ await withLocalPostgresLease(async (lease) => {
       assert.equal(reservedShortfall.creditsHeld, 4);
       assert.equal(reservedShortfall.shortfallAmount, 2);
 
+      assert.equal(
+        (
+          await migrator.query(
+            "SELECT count(*)::int AS count FROM commercial_dispute_support_projection_v1",
+          )
+        ).rows[0]?.count,
+        0,
+      );
+      assert.equal(await disputeSupport.projectNextDisputeSupportCase(), "projected");
+      assert.equal(await disputeSupport.projectNextDisputeSupportCase(), "projected");
+      assert.equal(await disputeSupport.projectNextDisputeSupportCase(), "projected");
+      assert.equal(await disputeSupport.projectNextDisputeSupportCase(), null);
+      const projectionVerifier = createLocalPostgresClient(database.adminDatabaseUrl);
+      await projectionVerifier.connect();
+      try {
+        assert.deepEqual(
+          (
+            await projectionVerifier.query(
+              `SELECT queue_kind, category_code, priority, draft_template_code,
+                      first_response_due_at = opened_at + INTERVAL '4 hours' AS first_due,
+                      resolution_due_at = opened_at + INTERVAL '24 hours' AS resolution_due
+                 FROM commercial_dispute_support_projection_v1
+                ORDER BY opened_at, id`,
+            )
+          ).rows,
+          Array.from({ length: 3 }, () => ({
+            category_code: "payment_dispute",
+            draft_template_code: "support_dispute_ack",
+            first_due: true,
+            priority: "high",
+            queue_kind: "support",
+            resolution_due: true,
+          })),
+        );
+      } finally {
+        await projectionVerifier.end();
+      }
+
       const counts = (
         await migrator.query<{
           fulfillments: number;
@@ -586,7 +626,12 @@ await withLocalPostgresLease(async (lease) => {
           webhookSql.query("SELECT count(*) FROM credit_ledger_entry"),
         );
         await expectPostgresError(() =>
-          fulfillmentSql.query("SELECT count(*) FROM commercial_payment_event_v2"),
+          fulfillmentSql.query("SELECT provider_object_id FROM commercial_payment_event_v2"),
+        );
+        await expectPostgresError(() =>
+          fulfillmentSql.query(
+            "SELECT category_code FROM commercial_dispute_support_projection_v1",
+          ),
         );
         await expectPostgresError(() =>
           fulfillmentSql.query("SELECT count(*) FROM private_journal_entry"),
@@ -594,6 +639,48 @@ await withLocalPostgresLease(async (lease) => {
       } finally {
         await webhookSql.end();
         await fulfillmentSql.end();
+      }
+
+      await migrator.query(
+        `REVOKE SELECT (
+           id, event_type, evidence_source, validation_state, processing_state,
+           processing_disposition, order_id, payment_attempt_id
+         ) ON TABLE commercial_payment_event_v2 FROM rituvia_payment_fulfillment`,
+      );
+      await migrator.query(
+        `REVOKE SELECT (commercial_payment_event_id)
+           ON TABLE commercial_dispute_support_projection_v1
+           FROM rituvia_payment_fulfillment`,
+      );
+      await migrator.query(
+        `REVOKE INSERT (
+           commercial_payment_event_id, queue_kind, category_code, priority, policy_version,
+           draft_template_code, draft_template_version, draft_locale, opened_at,
+           first_response_due_at, resolution_due_at
+         ) ON TABLE commercial_dispute_support_projection_v1
+           FROM rituvia_payment_fulfillment`,
+      );
+      const fulfillmentWithoutSupport = createDatabaseClient(
+        database.paymentFulfillmentDatabaseUrl,
+      );
+      try {
+        assert.equal(
+          (
+            await createCommercialFulfillmentPersistence(
+              fulfillmentWithoutSupport,
+            ).restorePurchases(userId)
+          ).credits.total,
+          0,
+        );
+        await assert.rejects(
+          createCommercialDisputeSupportPersistence(
+            fulfillmentWithoutSupport,
+          ).projectNextDisputeSupportCase(),
+          (error: unknown) =>
+            (error as { name?: unknown }).name === "CommercialDisputeSupportPersistenceError",
+        );
+      } finally {
+        await fulfillmentWithoutSupport.$disconnect();
       }
     } finally {
       await application.$disconnect();
@@ -621,5 +708,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 console.log(
-  "Verified exactly-once Credit grants, owner-scoped purchase status, dispute holds, refund conversion, shortfall review, private restoration, and fulfillment least privilege.",
+  "Verified exactly-once Credit grants, owner-scoped purchase status, dispute holds, asynchronous current-dispute support projection and failure isolation, refund conversion, shortfall review, private restoration, and fulfillment least privilege.",
 );

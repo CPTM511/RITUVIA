@@ -20,6 +20,7 @@ import {
   localeLocalCheckoutPath,
   localeNumerologyPath,
   localePlansPath,
+  localeProtectedBetaPath,
   localeQuestionIntakePath,
   localeRevisitPath,
   localeSanctuaryPath,
@@ -79,6 +80,7 @@ const privateExperiencePagePathnames = Object.freeze([
   localeCheckoutReturnPath("en"),
   localeLocalCheckoutPath("en"),
   localePlansPath("en"),
+  localeProtectedBetaPath("en"),
   localeRevisitPath("en"),
   localeSanctuaryPath("en"),
   localeSignInPath("en"),
@@ -100,8 +102,16 @@ const reviewedMvpApiPatterns = Object.freeze([
   { methods: ["POST"], pattern: /^\/api\/v1\/(?:intentions|journal-entries|ritual-sessions)$/u },
   { methods: ["GET", "POST"], pattern: /^\/api\/v1\/revisits$/u },
   {
-    methods: ["GET"],
-    pattern: new RegExp(`^/api/v1/(?:journal-entries|ritual-sessions)/${uuidPathPart}$`, "u"),
+    methods: ["DELETE", "GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/journal-entries/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["GET", "PATCH"],
+    pattern: new RegExp(`^/api/v1/ritual-sessions/${uuidPathPart}$`, "u"),
+  },
+  {
+    methods: ["POST"],
+    pattern: new RegExp(`^/api/v1/ritual-sessions/${uuidPathPart}/complete$`, "u"),
   },
   {
     methods: ["DELETE", "GET", "PATCH"],
@@ -149,6 +159,12 @@ const reviewedMvpApiPatterns = Object.freeze([
 ] as const);
 
 const isSafeReadMethod = (method: string): boolean => method === "GET" || method === "HEAD";
+
+const isReadOnlySafetyMutation = (request: NextRequest): boolean =>
+  (request.method === "POST" &&
+    /^\/api\/v1\/auth\/(?:logout|logout-all)$/u.test(request.nextUrl.pathname)) ||
+  (request.method === "DELETE" &&
+    new RegExp(`^/api/v1/me/sessions/${uuidPathPart}$`, "u").test(request.nextUrl.pathname));
 
 const hasExactAuthCallbackQuery = (request: NextRequest): boolean => {
   const entries = [...request.nextUrl.searchParams.entries()];
@@ -423,30 +439,43 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
   const enabledNumerology = numerologyAvailability === "enabled";
   const enabledQuestionIntake = intakeAvailability === "enabled";
   const enabledTarotReading = tarotReadingAvailability === "enabled";
+  const readOnlyBlocked =
+    configuration.operationMode === "read_only" &&
+    !isSafeReadMethod(request.method) &&
+    !reviewedMvpApi.webhook &&
+    !isReadOnlySafetyMutation(request);
   const response =
     invalidRequest || unsupported
       ? new NextResponse(null, { status: 404 })
-      : publicRedirect !== null
-        ? NextResponse.redirect(
-            new URL(publicRedirect.targetPathname, configuration.brand.canonicalOrigin),
-            308,
+      : readOnlyBlocked
+        ? NextResponse.json(
+            { code: "SERVICE_READ_ONLY", status: 503 },
+            {
+              headers: { "retry-after": "300" },
+              status: 503,
+            },
           )
-        : discovery
-          ? discoveryResponse(request)
-          : infrastructure ||
-              publicDocument ||
-              (numerologyDocument && enabledNumerology) ||
-              (reviewedNumerologyRequest && enabledNumerology) ||
-              (questionIntakeDocument && enabledQuestionIntake) ||
-              (tarotReadingDocument && enabledTarotReading) ||
-              (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
-              (reviewedTarotReadingRequest && enabledTarotReading) ||
-              reviewedMvpApi.webhook ||
-              reviewedMvpApi.reviewed ||
-              reviewedPrivateExperienceDocument ||
-              reviewedAnonymousSessionRequest
-            ? NextResponse.next({ request: { headers: downstreamHeaders } })
-            : new NextResponse(null, { status: 404 });
+        : publicRedirect !== null
+          ? NextResponse.redirect(
+              new URL(publicRedirect.targetPathname, configuration.brand.canonicalOrigin),
+              308,
+            )
+          : discovery
+            ? discoveryResponse(request)
+            : infrastructure ||
+                publicDocument ||
+                (numerologyDocument && enabledNumerology) ||
+                (reviewedNumerologyRequest && enabledNumerology) ||
+                (questionIntakeDocument && enabledQuestionIntake) ||
+                (tarotReadingDocument && enabledTarotReading) ||
+                (reviewedQuestionIntakeRequest && enabledQuestionIntake) ||
+                (reviewedTarotReadingRequest && enabledTarotReading) ||
+                reviewedMvpApi.webhook ||
+                reviewedMvpApi.reviewed ||
+                reviewedPrivateExperienceDocument ||
+                reviewedAnonymousSessionRequest
+              ? NextResponse.next({ request: { headers: downstreamHeaders } })
+              : new NextResponse(null, { status: 404 });
   response.headers.set("content-security-policy", shellContentSecurityPolicy);
   response.headers.set(
     "permissions-policy",
@@ -482,9 +511,16 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
     response.headers.set("cache-control", "private, no-store, max-age=0");
   }
   operation.end(
-    response.status === 200
-      ? { outcome: "success" }
-      : { outcome: "success", statusCode: response.status },
+    response.status >= 500
+      ? {
+          category: "configuration",
+          errorCode: "configuration_error",
+          outcome: "failure",
+          retryable: true,
+        }
+      : response.status === 200
+        ? { outcome: "success" }
+        : { outcome: "success", statusCode: response.status },
   );
   return response;
 };

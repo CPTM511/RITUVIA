@@ -17,7 +17,6 @@ SOURCE_FILES = [
     ".gitattributes",
     "README.md",
     "MANIFEST.md",
-    "QA_REPORT.md",
     "OWNER_OPERATING_GUIDE_ZH.md",
     "CODEX_MASTER_PROMPT.md",
     "AGENTS.md",
@@ -54,6 +53,10 @@ SOURCE_FILES = [
         "ENVIRONMENT_CONTRACT",
         "BACKUP_RECOVERY",
     ])],
+    "docs/24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md",
+    "docs/25_PRODUCT_ENGINEERING_RUNBOOK.md",
+    "docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md",
+    "docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md",
     "docs/README.md",
     "apps/admin/AGENTS.md",
     "apps/web/AGENTS.md",
@@ -114,6 +117,11 @@ SOURCE_FILES = [
     "reference/README.md",
 ]
 
+LINKED_FILES = [
+    "QA_REPORT.md",
+    "docs/23_PRODUCT_FUNCTIONS_AND_USER_GUIDE_ZH.md",
+]
+
 LANGUAGES = {
     ".gitignore": "gitignore",
     ".json": "json",
@@ -134,7 +142,7 @@ def snapshot_date() -> str:
 
 
 def render_manual() -> str:
-    for item in SOURCE_FILES:
+    for item in [*SOURCE_FILES, *LINKED_FILES]:
         require_regular_repository_file(ROOT, ROOT / item)
 
     lines = [
@@ -160,6 +168,10 @@ def render_manual() -> str:
         "## Included files",
         "",
         *[f"- `{path}`" for path in SOURCE_FILES],
+        "",
+        "## Linked canonical files not duplicated here",
+        "",
+        *[f"- `{path}`" for path in LINKED_FILES],
     ]
 
     for rel in SOURCE_FILES:

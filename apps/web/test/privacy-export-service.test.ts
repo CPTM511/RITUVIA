@@ -39,7 +39,13 @@ const encryptEmail = async (email: string, keyBytes: Uint8Array) => {
   const providerSubject = "local.synthetic";
   const keyVersion = "auth-data.v1";
   const nonce = new Uint8Array(12).fill(6);
-  const key = await webcrypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const key = await webcrypto.subtle.importKey(
+    "raw",
+    Uint8Array.from(keyBytes) as Uint8Array<ArrayBuffer>,
+    "AES-GCM",
+    false,
+    ["encrypt"],
+  );
   const sealed = new Uint8Array(
     await webcrypto.subtle.encrypt(
       {
@@ -122,7 +128,7 @@ describe("privacy export package builder", () => {
         historicalConfidence: "tzdb_rule_match",
         icuVersion: "78.3",
         runtimeId: "node_intl",
-        runtimeVersion: "24.18.0",
+        runtimeVersion: "26.5.1",
         timeZoneDataVersion: "2026b",
       },
       schemaVersion: "birth-profile.v1",

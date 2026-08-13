@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "./generated/prisma/client.js";
+import { enqueueOperationalCase } from "./operational-cases.js";
 
 const opaqueTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
 const idempotencyKeyPattern =
@@ -436,6 +437,10 @@ export const createPrivacyDeletionPersistence = (
         if (inserted.length !== 1 || requestedAt === undefined) {
           throw new PrivacyDeletionError("PRIVACY_DELETION_UNAVAILABLE");
         }
+        await enqueueOperationalCase(transaction, {
+          sourceId: requestId,
+          sourceKind: "privacy_deletion_request",
+        });
 
         const subjectCount = await countRows(
           transaction,

@@ -275,11 +275,15 @@ export const loadWebFeatureFlagEvaluator = async (): Promise<FeatureFlagEvaluato
   const database = loadWebDatabase();
   await assertFeatureFlagRuntimeDatabasePrivileges(database);
   const records = await readFeatureFlagVersions(database, featureFlagRegistryVersion);
+  const evaluatedAt = new Date().toISOString();
 
-  return createFeatureFlagEvaluator({
-    records,
-    registryVersion: featureFlagRegistryVersion,
-  });
+  return createFeatureFlagEvaluator(
+    {
+      records,
+      registryVersion: featureFlagRegistryVersion,
+    },
+    () => evaluatedAt,
+  );
 };
 `;
 export const expectedWebDatabaseCompositionSource = `import "server-only";
@@ -1909,7 +1913,6 @@ export const auditArchitecture = (
     if (
       parsed.trustedJobContinuation &&
       isRuntimeDependencyFile(file.path) &&
-      file.path !== "apps/worker/src/job-observability.ts" &&
       file.path !== "packages/observability/src/contracts.ts" &&
       file.path !== "packages/observability/src/runtime.ts" &&
       file.path !== "packages/observability/src/worker.ts"
@@ -2021,10 +2024,7 @@ export const auditArchitecture = (
       const dependency = packageNameFromSpecifier(specifier);
       const targetModule = moduleByName.get(dependency);
       if (targetModule) {
-        if (
-          specifier === "@rituvia/observability/worker" &&
-          file.path !== "apps/worker/src/job-observability.ts"
-        ) {
+        if (specifier === "@rituvia/observability/worker") {
           add(findings, "worker-observability-capability-import", location, specifier);
         }
         if (

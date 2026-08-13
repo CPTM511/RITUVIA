@@ -254,6 +254,8 @@ const englishTarotThreeCardMessages = {
       interpretationSummary: "Report an issue with this interpretation",
       notFound: "This reading is no longer available to report in the current private session.",
       offline: "Reconnect before sending this report. Nothing will retry automatically.",
+      rateLimited:
+        "Reports are temporarily limited. This page will not retry or offer another report until you return later.",
       retry: "Try the same report again",
       selectCategory: "Choose a category",
       selectTarget: "Choose what the report concerns",

@@ -60,6 +60,7 @@ export type SanctuaryMessages = Readonly<{
     introduction: string;
     boundary: string;
     privacy: string;
+    rateLimited: string;
   }>;
   intention: Readonly<{
     title: string;
@@ -187,6 +188,8 @@ const englishMessages = {
       "Ritual objects change the visual experience, not the likelihood of any real-world outcome.",
     privacy:
       "Your intention and journal entry remain private. They are never used as public content or advertising data.",
+    rateLimited:
+      "Private changes are temporarily limited. Nothing will retry automatically; reload this page later before making another change.",
   },
   intention: {
     title: "Set an intention",

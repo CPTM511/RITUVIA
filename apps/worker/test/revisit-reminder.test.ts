@@ -148,17 +148,13 @@ describe("Revisit reminder worker", () => {
     );
   });
 
-  it("times out a hanging provider and schedules bounded retry", async () => {
+  it("hard-times out a provider that ignores cancellation and schedules bounded retry", async () => {
     const jobStore = store();
     await expect(
       runOneRevisitReminderDelivery({
         adapter: {
-          deliver(_request, signal) {
-            return new Promise((_resolve, reject) => {
-              signal.addEventListener("abort", () => reject(new Error("private provider error")), {
-                once: true,
-              });
-            });
+          deliver() {
+            return new Promise(() => undefined);
           },
         },
         messageConfiguration,
@@ -168,6 +164,26 @@ describe("Revisit reminder worker", () => {
     ).resolves.toBe("retry_wait");
     expect(jobStore.failDelivery).toHaveBeenCalledWith(
       expect.objectContaining({ failureCode: "timeout", retryable: true }),
+    );
+  });
+
+  it("hard-cancels an uncooperative provider during shutdown", async () => {
+    const controller = new AbortController();
+    const jobStore = store();
+    const completion = runOneRevisitReminderDelivery({
+      adapter: {
+        deliver() {
+          controller.abort();
+          return new Promise(() => undefined);
+        },
+      },
+      messageConfiguration,
+      signal: controller.signal,
+      store: jobStore,
+    });
+    await expect(completion).resolves.toBe("cancelled");
+    expect(jobStore.failDelivery).toHaveBeenCalledWith(
+      expect.objectContaining({ failureCode: "provider_unavailable", retryable: true }),
     );
   });
 

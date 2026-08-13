@@ -167,11 +167,14 @@ const parseExpiry = (value: string | undefined): Date | null => {
 
 const sha256 = (value: string | Uint8Array): Uint8Array =>
   createHash("sha256").update(value).digest();
+export const hashAdminSecurityValue = (value: string | Uint8Array): Uint8Array => sha256(value);
 const sessionTokenDigest = (value: string): Uint8Array =>
   sha256(Buffer.from(parseSessionToken(value), "base64url"));
 
 const bytesEqual = (left: Uint8Array, right: Uint8Array): boolean =>
   left.byteLength === right.byteLength && timingSafeEqual(Buffer.from(left), Buffer.from(right));
+export const adminSecurityDigestsEqual = (left: Uint8Array, right: Uint8Array): boolean =>
+  bytesEqual(left, right);
 
 const activeRoleDigest = (roles: readonly ActiveRole[]): Uint8Array =>
   sha256(
@@ -251,36 +254,105 @@ const hasPasskeyMfa = async (
   return rows.length === 1 && rows[0]?.present === true;
 };
 
-const authorizeOwner = async (
+const authorizeRole = async (
   transaction: AdminTransactionClient,
   session: AuthorizedAdminSession,
   policy: AdminSecurityPolicy,
   action: AdminAction,
-): Promise<Readonly<{ error: AdminSecurityErrorCode; role: AdminRole | null }> | null> => {
-  const owner = (await findActiveRoles(transaction, session.userId)).find(
-    ({ role }) => role === "owner",
+): Promise<
+  | Readonly<{ authorized: false; error: AdminSecurityErrorCode; role: AdminRole | null }>
+  | Readonly<{ authorized: true; role: AdminRole }>
+> => {
+  const activeRoles = await findActiveRoles(transaction, session.userId);
+  const role = adminRoles.find(
+    (candidate) =>
+      activeRoles.some((assignment) => assignment.role === candidate) &&
+      adminRoleAllows(candidate, action),
   );
-  if (owner === undefined || !adminRoleAllows(owner.role, action)) {
-    return Object.freeze({ error: "ADMIN_FORBIDDEN", role: null });
+  if (role === undefined) {
+    return Object.freeze({ authorized: false, error: "ADMIN_FORBIDDEN", role: null });
   }
   const clocks = await transaction.$queryRaw<Array<{ now: Date }>>`
     SELECT CURRENT_TIMESTAMP AS now
   `;
   const now = clocks[0]?.now;
   if (now === undefined) {
-    return Object.freeze({ error: "ADMIN_SECURITY_UNAVAILABLE", role: null });
+    return Object.freeze({
+      authorized: false,
+      error: "ADMIN_SECURITY_UNAVAILABLE",
+      role: null,
+    });
   }
   if (
     session.authenticatedAt === null ||
     session.authenticatedAt.valueOf() > now.valueOf() ||
     session.authenticatedAt.valueOf() < now.valueOf() - policy.recentAuthenticationSeconds * 1_000
   ) {
-    return Object.freeze({ error: "ADMIN_RECENT_AUTH_REQUIRED", role: owner.role });
+    return Object.freeze({ authorized: false, error: "ADMIN_RECENT_AUTH_REQUIRED", role });
   }
   if (!(await hasPasskeyMfa(transaction, session, policy))) {
-    return Object.freeze({ error: "ADMIN_MFA_REQUIRED", role: owner.role });
+    return Object.freeze({ authorized: false, error: "ADMIN_MFA_REQUIRED", role });
   }
-  return null;
+  return Object.freeze({ authorized: true, role });
+};
+
+const authorizeOwner = async (
+  transaction: AdminTransactionClient,
+  session: AuthorizedAdminSession,
+  policy: AdminSecurityPolicy,
+  action: AdminAction,
+): Promise<Readonly<{ error: AdminSecurityErrorCode; role: AdminRole | null }> | null> => {
+  const authorization = await authorizeRole(transaction, session, policy, action);
+  return authorization.authorized
+    ? null
+    : Object.freeze({ error: authorization.error, role: authorization.role });
+};
+
+export type AdminAuthorizationResult =
+  | Readonly<{
+      authorized: false;
+      error: AdminSecurityErrorCode;
+      role: AdminRole | null;
+      session: AuthorizedAdminSession | null;
+    }>
+  | Readonly<{
+      authorized: true;
+      role: AdminRole;
+      session: AuthorizedAdminSession;
+    }>;
+
+export const authorizeAdminOperation = async (
+  transaction: AdminTransactionClient,
+  input: {
+    action: AdminAction;
+    policy: AdminSecurityPolicy;
+    sessionToken: string;
+  },
+): Promise<AdminAuthorizationResult> => {
+  const tokenHash = sessionTokenDigest(input.sessionToken);
+  const session = await findSession(transaction, tokenHash);
+  if (session === null) {
+    return Object.freeze({
+      authorized: false,
+      error: "ADMIN_SESSION_UNAVAILABLE",
+      role: null,
+      session: null,
+    });
+  }
+  const authorization = await authorizeRole(
+    transaction,
+    session,
+    validatePolicy(input.policy),
+    input.action,
+  );
+  return authorization.authorized
+    ? Object.freeze({ authorized: true, role: authorization.role, session })
+    : Object.freeze({
+        authorized: false,
+        error: authorization.error,
+        role: authorization.role,
+        session,
+      });
 };
 
 export type AdminOwnerAuthorizationResult =

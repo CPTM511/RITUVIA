@@ -39,6 +39,8 @@ export type RevisitMessages = Readonly<{
   quietHoursEnd: string;
   quietHoursLabel: string;
   quietHoursStart: string;
+  rateLimited: string;
+  rateLimitTitle: string;
   reflectionDescription: string;
   reflectionLabel: string;
   reflectionPlaceholder: string;
@@ -110,6 +112,9 @@ const englishMessages = {
   quietHoursEnd: "Quiet hours end",
   quietHoursLabel: "Store quiet hours",
   quietHoursStart: "Quiet hours start",
+  rateLimited:
+    "Private changes are temporarily limited. Nothing will retry automatically, and write actions stay paused on this page. Return later and reload when you are ready.",
+  rateLimitTitle: "Pause before another private change",
   reflectionDescription:
     "Describe actions, changes, or new understanding. This is not evidence that a prediction came true.",
   reflectionLabel: "What happened, and what do you understand now?",

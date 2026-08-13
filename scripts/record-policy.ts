@@ -657,6 +657,120 @@ export const auditAutomationPromptContracts = (
   return Object.freeze(findings);
 };
 
+export const auditAutomationScheduleContract = (
+  value: unknown,
+  repositoryPaths: ReadonlySet<string>,
+  runnerSource: string,
+): readonly RecordPolicyFinding[] => {
+  const findings: RecordPolicyFinding[] = [];
+  const location = "automation/rituvia-recurring-reviews.json";
+  const expected = [
+    [
+      "rituvia-daily-maintenance",
+      "RITUVIA daily maintenance",
+      "daily",
+      null,
+      "08:30",
+      "daily-maintenance.md",
+    ],
+    [
+      "rituvia-weekly-product-review",
+      "RITUVIA weekly product review",
+      "weekly",
+      "monday",
+      "09:30",
+      "weekly-product-review.md",
+    ],
+    [
+      "rituvia-monthly-risk-audit",
+      "RITUVIA monthly risk audit",
+      "monthly",
+      "1",
+      "10:30",
+      "monthly-risk-audit.md",
+    ],
+  ] as const;
+  const topKeys = ["automations", "project_path", "schema_version", "time_zone"];
+  if (
+    !isObject(value) ||
+    JSON.stringify(Object.keys(value).sort()) !== JSON.stringify(topKeys) ||
+    value.schema_version !== 1 ||
+    value.time_zone !== "Asia/Shanghai" ||
+    value.project_path !== "." ||
+    !Array.isArray(value.automations) ||
+    value.automations.length !== expected.length
+  ) {
+    add(findings, location, "schedule-contract");
+    return Object.freeze(findings);
+  }
+
+  const entryKeys = [
+    "access",
+    "cadence",
+    "day",
+    "destination",
+    "execution_environment",
+    "id",
+    "kind",
+    "local_time",
+    "model",
+    "name",
+    "notification_policy",
+    "prompt_path",
+    "reasoning_effort",
+    "result_schema",
+    "runner_path",
+    "status",
+  ];
+  for (const [index, entry] of value.automations.entries()) {
+    const [id, name, cadence, day, localTime, promptName] = expected[index]!;
+    const promptPath = `automation/prompts/${promptName}`;
+    if (
+      !isObject(entry) ||
+      JSON.stringify(Object.keys(entry).sort()) !== JSON.stringify(entryKeys) ||
+      entry.id !== id ||
+      entry.name !== name ||
+      entry.status !== "PAUSED" ||
+      entry.kind !== "cron" ||
+      entry.model !== "gpt-5.6-terra" ||
+      entry.reasoning_effort !== "high" ||
+      entry.cadence !== cadence ||
+      entry.day !== day ||
+      entry.local_time !== localTime ||
+      entry.runner_path !== "automation/scheduled-read-only-runner.md" ||
+      entry.prompt_path !== promptPath ||
+      entry.result_schema !== "automation/schemas/task-result.schema.json" ||
+      entry.execution_environment !== "local" ||
+      entry.destination !== "local" ||
+      entry.notification_policy !== "failed_runs_only" ||
+      entry.access !== "prompt_enforced_read_only"
+    ) {
+      add(findings, `${location}.automations[${index}]`, "schedule-contract");
+      continue;
+    }
+    for (const referencedPath of [entry.runner_path, promptPath, entry.result_schema]) {
+      if (!repositoryPaths.has(referencedPath)) {
+        add(findings, `${location}.automations[${index}]`, "schedule-reference");
+      }
+    }
+  }
+  for (const token of [
+    "git status --porcelain",
+    "Do not modify",
+    "BACKLOG.md",
+    "DECISIONS.md",
+    "owner gate",
+    "production",
+    "private product content",
+    "paid APIs",
+    "network",
+    "automation/schemas/task-result.schema.json",
+  ]) {
+    if (!runnerSource.includes(token)) add(findings, location, `runner-contract:${token}`);
+  }
+  return Object.freeze(findings);
+};
+
 export const auditRecordSet = (
   files: Readonly<Record<string, string>>,
   backlogSource: string,

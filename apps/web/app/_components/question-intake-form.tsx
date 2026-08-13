@@ -11,7 +11,6 @@ import {
   type QuestionIntakeThemeCode,
 } from "@rituvia/domain";
 import {
-  ActionLink,
   Button,
   createUiControlId,
   createUiControlName,
@@ -26,15 +25,30 @@ import type { FormEvent } from "react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import type { QuestionIntakeMessages } from "../_i18n/question-intake-messages";
+import {
+  storeQuestionIntakeThemeHandoff,
+  type QuestionIntakeThemeHandoffStorage,
+} from "./question-intake-theme-handoff";
 
 export const questionIntakeEndpoint = "/api/v1/intake/evaluate";
+export const questionIntakeSessionEndpoint = "/api/v1/anonymous/session";
 
-type RequestPhase = "error" | "idle" | "loading" | "offline" | "result" | "unavailable";
+type RequestPhase =
+  "error" | "idle" | "loading" | "offline" | "rate_limited" | "result" | "unavailable";
 
 const themeGroupId = createUiControlId("question-intake-theme");
 const themeGroupName = createUiControlName("theme-code");
 const questionFieldId = createUiControlId("question-intake-question");
 const subscribeToHydration = (): (() => void) => () => undefined;
+
+const getSessionHandoffStorage = (): QuestionIntakeThemeHandoffStorage | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+};
 
 const outcomeTone = (state: QuestionIntakeResponse["state"]): AlertTone => {
   switch (state) {
@@ -200,6 +214,18 @@ export function QuestionIntakeForm({ messages, readingHref }: QuestionIntakeForm
     setPhase("loading");
 
     try {
+      const session = await fetch(questionIntakeSessionEndpoint, {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "idempotency-key": crypto.randomUUID() },
+        method: "POST",
+        signal: controller.signal,
+      });
+      if (sequence !== requestSequence.current) return;
+      if (session.status !== 204) {
+        setPhase(session.status === 429 ? "rate_limited" : "unavailable");
+        return;
+      }
       const response = await fetch(questionIntakeEndpoint, {
         body: JSON.stringify({
           locale: "en",
@@ -215,7 +241,13 @@ export function QuestionIntakeForm({ messages, readingHref }: QuestionIntakeForm
       });
       if (sequence !== requestSequence.current) return;
       if (!response.ok) {
-        setPhase(response.status === 503 ? "unavailable" : "error");
+        setPhase(
+          response.status === 429
+            ? "rate_limited"
+            : response.status === 503
+              ? "unavailable"
+              : "error",
+        );
         return;
       }
       const parsed = parseQuestionIntakeResponse((await response.json()) as unknown);
@@ -266,6 +298,12 @@ export function QuestionIntakeForm({ messages, readingHref }: QuestionIntakeForm
     if (outcome?.suggestedQuestionCode !== null && outcome?.suggestedQuestionCode !== undefined) {
       applySuggestion(outcome.suggestedQuestionCode);
     }
+  };
+  const continueToReading = (): void => {
+    if (outcome?.state !== "allowed") return;
+    const storage = getSessionHandoffStorage();
+    if (storage !== null) storeQuestionIntakeThemeHandoff(storage, outcome.themeCode);
+    window.location.replace(readingHref);
   };
 
   return (
@@ -341,6 +379,21 @@ export function QuestionIntakeForm({ messages, readingHref }: QuestionIntakeForm
         </section>
       )}
 
+      {phase === "rate_limited" ? (
+        <section
+          aria-label={messages.outcomes.rateLimited.title}
+          className="question-intake-result"
+          ref={responseRegion}
+          tabIndex={-1}
+        >
+          <InlineAlert
+            message={messages.outcomes.rateLimited.message}
+            title={messages.outcomes.rateLimited.title}
+            tone="warning"
+          />
+        </section>
+      ) : null}
+
       {phase === "result" && outcome !== null && outcomeMessages !== null ? (
         <section
           aria-label={outcomeMessages.title}
@@ -358,7 +411,7 @@ export function QuestionIntakeForm({ messages, readingHref }: QuestionIntakeForm
             <Button label={useSuggestionLabel} onPress={adoptSuggestion} tone="secondary" />
           ) : outcome.state === "allowed" ? (
             <div className="question-intake-actions">
-              <ActionLink href={readingHref}>{messages.outcomes.allowed.continue}</ActionLink>
+              <Button label={messages.outcomes.allowed.continue} onPress={continueToReading} />
               <Button label={messages.outcomes.allowed.reset} onPress={reset} tone="secondary" />
             </div>
           ) : null}

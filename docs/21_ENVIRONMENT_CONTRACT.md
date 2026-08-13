@@ -20,6 +20,9 @@ a `verified rehearsal` of one isolated loopback staging compatibility window, no
 standing staging service. The public GitHub repository in D-090 is source hosting, not product
 hosting, production deployment, DNS, indexing activation, or public product launch.
 
+RIT-129 adds a provider-neutral evidence contract, not an environment. Its fixed candidate,
+D-104, and eight-control projection remains incomplete without real staging/external evidence.
+
 ## 2. Environment matrix
 
 | Environment | `APP_ENV` | Current status | Purpose | Data | Access and network | Lifetime | Promotion source |
@@ -137,6 +140,20 @@ after isolated resources and audit/rollback controls exist. Production deploymen
 Environment variables do not grant product authority by themselves. Country policy, feature flags,
 provider approval, content/locale approval, and owner gates remain server-authoritative and
 fail-closed.
+
+When `APP_ENV=staging` or `APP_ENV=production` composes the protected anonymous-session policy, the
+configuration boundary requires the exact D-104 set together or refuses startup:
+
+- `RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT=25`;
+- `RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION=own-019.protected-beta-invite.v1`;
+- `RITUVIA_ANONYMOUS_SESSION_RATE_LIMIT_POLICY_VERSION=own-019.protected-beta-abuse.v1`;
+- intake limit `12` per `60` seconds and mutation limit `120` per `86400` seconds; and
+- the D-104/D-097 anonymous-session expiry and issuance-capacity references already defined by the
+  typed configuration contract.
+
+An environment variable cannot enlarge the cohort or substitute a near-match policy. Local and CI
+may deliberately omit the invite policy for isolated compatibility tests; that state is not
+protected-Beta staging evidence.
 
 ## 8. Evidence and current implementation state
 

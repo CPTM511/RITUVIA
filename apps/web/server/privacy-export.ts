@@ -72,13 +72,13 @@ const nullableText = (value: unknown): string | null => {
   return text(value);
 };
 
-const decodeBase64 = (value: unknown): Uint8Array => {
+const decodeBase64 = (value: unknown): Uint8Array<ArrayBuffer> => {
   const encoded = text(value);
   const bytes = Buffer.from(encoded, "base64");
   if (bytes.byteLength === 0 || bytes.toString("base64") !== encoded) {
     throw new WebPrivacyExportError("unavailable");
   }
-  return Uint8Array.from(bytes);
+  return Uint8Array.from(bytes) as Uint8Array<ArrayBuffer>;
 };
 
 const encryptedContent = (value: unknown): EncryptedPrivateContent => {
@@ -109,9 +109,13 @@ const decryptVerifiedEmail = async (
   sealed.set(ciphertext);
   sealed.set(tag, ciphertext.byteLength);
   try {
-    const key = await webcrypto.subtle.importKey("raw", input.authKey, "AES-GCM", false, [
-      "decrypt",
-    ]);
+    const key = await webcrypto.subtle.importKey(
+      "raw",
+      Uint8Array.from(input.authKey) as Uint8Array<ArrayBuffer>,
+      "AES-GCM",
+      false,
+      ["decrypt"],
+    );
     const plaintext = await webcrypto.subtle.decrypt(
       {
         additionalData: new TextEncoder().encode(

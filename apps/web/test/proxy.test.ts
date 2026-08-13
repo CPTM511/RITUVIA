@@ -6,6 +6,7 @@ const harness = vi.hoisted(() => ({
   end: vi.fn(),
   intakeAvailability: "disabled" as "disabled" | "enabled",
   numerologyAvailability: "disabled" as "disabled" | "enabled",
+  operationMode: "normal" as "normal" | "read_only",
   tarotReadingAvailability: "disabled" as "disabled" | "enabled",
 }));
 
@@ -25,6 +26,7 @@ vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({
     brand: { canonicalOrigin: "https://example.test" },
     deploymentEnvironment: harness.deploymentEnvironment,
+    operationMode: harness.operationMode,
   }),
 }));
 
@@ -52,6 +54,7 @@ describe("public shell request and crawl gate", () => {
     harness.deploymentEnvironment = "local";
     harness.intakeAvailability = "disabled";
     harness.numerologyAvailability = "enabled";
+    harness.operationMode = "normal";
     harness.tarotReadingAvailability = "disabled";
   });
 
@@ -77,6 +80,7 @@ describe("public shell request and crawl gate", () => {
 
   it.each([
     "/en/account",
+    "/en/beta",
     "/en/readings/astrology",
     "/en/sanctuary",
     "/en/sanctuary?checkout=canceled&order_id=33333333-3333-4333-8333-333333333333",
@@ -104,6 +108,62 @@ describe("public shell request and crawl gate", () => {
     expect(create.status).toBe(200);
     expect(status.status).toBe(200);
     expect(rejected.status).toBe(404);
+  });
+
+  it("contains reviewed mutations in read-only mode without dropping safety callbacks", async () => {
+    harness.operationMode = "read_only";
+    const sessionId = "33333333-3333-4333-8333-333333333333";
+
+    const read = await proxy(request("/api/v1/catalog"));
+    const blocked = await proxy(request("/api/v1/orders", { method: "POST" }));
+    const webhook = await proxy(request("/api/v1/webhooks/payments/stripe", { method: "POST" }));
+    const logout = await proxy(request("/api/v1/auth/logout", { method: "POST" }));
+    const revoke = await proxy(request(`/api/v1/me/sessions/${sessionId}`, { method: "DELETE" }));
+    const unreviewed = await proxy(request("/api/v1/private-canary", { method: "POST" }));
+
+    expect(read.status).toBe(200);
+    expect(blocked.status).toBe(503);
+    expect(blocked.headers.get("retry-after")).toBe("300");
+    expect(blocked.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    expect(blocked.headers.get("x-request-id")).toBe("req_11111111111111111111111111111111");
+    expect(await blocked.json()).toEqual({ code: "SERVICE_READ_ONLY", status: 503 });
+    for (const response of [webhook, logout, revoke]) {
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+    }
+    expect(unreviewed.status).toBe(404);
+    expect(await unreviewed.text()).toBe("");
+    expect(harness.end).toHaveBeenCalledWith({
+      category: "configuration",
+      errorCode: "configuration_error",
+      outcome: "failure",
+      retryable: true,
+    });
+  });
+
+  it("allows only the exact private reflection lifecycle methods", async () => {
+    const resourceId = "33333333-3333-4333-8333-333333333333";
+    for (const [method, pathname] of [
+      ["DELETE", `/api/v1/journal-entries/${resourceId}`],
+      ["PATCH", `/api/v1/journal-entries/${resourceId}`],
+      ["PATCH", `/api/v1/ritual-sessions/${resourceId}`],
+      ["POST", `/api/v1/ritual-sessions/${resourceId}/complete`],
+    ] as const) {
+      const response = await proxy(request(pathname, { method }));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("cache-control")).toBe("private, no-store, max-age=0");
+    }
+    for (const [method, pathname] of [
+      ["POST", `/api/v1/journal-entries/${resourceId}`],
+      ["DELETE", `/api/v1/ritual-sessions/${resourceId}`],
+      ["PATCH", `/api/v1/ritual-sessions/${resourceId}/complete`],
+      ["POST", `/api/v1/ritual-sessions/${resourceId}/complete?private=canary`],
+    ] as const) {
+      const response = await proxy(request(pathname, { method }));
+      expect(response.status).toBe(404);
+      expect(await response.text()).toBe("");
+    }
   });
 
   it("allows only the exact saved astrology page and read API", async () => {

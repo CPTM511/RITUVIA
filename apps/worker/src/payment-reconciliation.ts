@@ -16,7 +16,7 @@ import type { CommercialPaymentProviderReader } from "./stripe-reconciliation.js
 export type CommercialPaymentReconciliationWorkerEvent = Readonly<{
   candidates: number;
   cases: number;
-  disposition: "cases_found" | "clean" | "duplicate" | "truncated";
+  disposition: "cases_found" | "clean" | "duplicate" | "truncated" | "unavailable";
 }>;
 
 const digest = (value: string): Uint8Array<ArrayBuffer> =>
@@ -180,6 +180,7 @@ const delayUntilNextSlot = (signal: AbortSignal, now: number): Promise<void> =>
   });
 
 export const runCommercialPaymentReconciliationLoop = async (input: {
+  failureDelayMilliseconds?: number;
   observe?: (event: CommercialPaymentReconciliationWorkerEvent) => void;
   paymentEvents: Pick<CommercialPaymentEventPersistence, "processStripeSandboxEvent">;
   providerAccountFingerprint: string;
@@ -187,8 +188,33 @@ export const runCommercialPaymentReconciliationLoop = async (input: {
   signal: AbortSignal;
   store: CommercialReconciliationPersistence;
 }): Promise<void> => {
+  const failureDelayMilliseconds = input.failureDelayMilliseconds ?? 60_000;
+  if (
+    !Number.isSafeInteger(failureDelayMilliseconds) ||
+    failureDelayMilliseconds < 1 ||
+    failureDelayMilliseconds > 300_000
+  ) {
+    throw new TypeError("Commercial reconciliation failure delay is invalid.");
+  }
   while (!input.signal.aborted) {
-    await runOneCommercialPaymentReconciliation(input);
-    await delayUntilNextSlot(input.signal, Date.now());
+    try {
+      await runOneCommercialPaymentReconciliation(input);
+      await delayUntilNextSlot(input.signal, Date.now());
+    } catch {
+      input.observe?.({ candidates: 0, cases: 0, disposition: "unavailable" });
+      await new Promise<void>((resolve) => {
+        if (input.signal.aborted) {
+          resolve();
+          return;
+        }
+        const finish = (): void => {
+          clearTimeout(timeout);
+          input.signal.removeEventListener("abort", finish);
+          resolve();
+        };
+        const timeout = setTimeout(finish, failureDelayMilliseconds);
+        input.signal.addEventListener("abort", finish, { once: true });
+      });
+    }
   }
 };

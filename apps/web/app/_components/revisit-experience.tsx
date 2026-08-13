@@ -44,7 +44,7 @@ type Intention = Readonly<{
   status: "active" | "completed";
 }>;
 
-type Phase = "error" | "idle" | "loading" | "offline" | "success";
+type Phase = "error" | "idle" | "loading" | "offline" | "rate_limited" | "success";
 type RevisitListResponse = Readonly<{ items: readonly RevisitResourceV1[] }>;
 type ReminderListResponse = Readonly<{
   accountAvailable: boolean;
@@ -54,6 +54,19 @@ type ReminderListResponse = Readonly<{
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const csrfPattern = /^[A-Za-z0-9_-]{43}$/u;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/u;
+
+class ProtectedBetaMutationRateLimitError extends Error {
+  public constructor() {
+    super("The protected Beta mutation budget is exhausted.");
+    this.name = "ProtectedBetaMutationRateLimitError";
+  }
+}
+
+const throwIfRateLimited = async (response: Response): Promise<void> => {
+  if (response.status !== 429) return;
+  await response.text().catch(() => "");
+  throw new ProtectedBetaMutationRateLimitError();
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -187,6 +200,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
   const reflectionId = createUiControlId("revisit-reflection");
   const timeZoneId = createUiControlId("revisit-time-zone");
   const minimumCustomDate = useTomorrowLocalDate();
+  const mutationRateLimited = phase === "rate_limited";
 
   useEffect(() => {
     if (completionId === null) return;
@@ -296,6 +310,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
       headers: { "idempotency-key": crypto.randomUUID() },
       method: "POST",
     });
+    await throwIfRateLimited(response);
     const token = response.headers.get("x-csrf-token");
     if (!response.ok || token === null || !csrfPattern.test(token)) {
       throw new TypeError("csrf unavailable");
@@ -379,6 +394,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
 
   const submitSchedule = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
+    if (mutationRateLimited) return;
     if (
       intention === null ||
       (scheduleKind === "custom" && !datePattern.test(customDate)) ||
@@ -437,6 +453,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
         },
         method,
       });
+      await throwIfRateLimited(response);
       if (!response.ok) throw new TypeError("schedule unavailable");
       const resource = parseRevisitResourceV1((await response.json()) as unknown);
       const refreshedCsrf = response.headers.get("x-csrf-token");
@@ -452,7 +469,12 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
       window.sessionStorage.removeItem(revisitIntentionStorageKey);
       setPhase("success");
       setMessage(messages.scheduled);
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setPhase("rate_limited");
+        setMessage(messages.rateLimited);
+        return;
+      }
       setPhase(navigator.onLine ? "error" : "offline");
       setMessage(messages.errorDescription);
     }
@@ -462,6 +484,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
     resource: RevisitResourceV1,
     action: "archive" | "complete" | "delete",
   ): Promise<void> => {
+    if (mutationRateLimited) return;
     if (!navigator.onLine) {
       setPhase("offline");
       setMessage(messages.errorDescription);
@@ -510,6 +533,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
         },
         method,
       });
+      await throwIfRateLimited(response);
       if (!response.ok) throw new TypeError("mutation unavailable");
       const refreshedCsrf = response.headers.get("x-csrf-token");
       if (refreshedCsrf !== null && csrfPattern.test(refreshedCsrf)) {
@@ -528,13 +552,19 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
       setReflection("");
       setOutcomeTags([]);
       setPhase("success");
-    } catch {
+    } catch (error) {
+      if (error instanceof ProtectedBetaMutationRateLimitError) {
+        setPhase("rate_limited");
+        setMessage(messages.rateLimited);
+        return;
+      }
       setPhase(navigator.onLine ? "error" : "offline");
       setMessage(messages.errorDescription);
     }
   };
 
   const beginReschedule = (resource: RevisitResourceV1): void => {
+    if (mutationRateLimited) return;
     setRescheduleId(resource.id);
     setScheduleKind(resource.scheduleKind);
     setCustomDate(resource.scheduleKind === "custom" ? resource.scheduledLocalDate : "");
@@ -560,8 +590,20 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
           <InlineAlert
             live={phase === "error" || phase === "offline" ? "assertive" : "polite"}
             message={message}
-            title={phase === "error" || phase === "offline" ? messages.errorTitle : messages.title}
-            tone={phase === "error" || phase === "offline" ? "error" : "success"}
+            title={
+              phase === "rate_limited"
+                ? messages.rateLimitTitle
+                : phase === "error" || phase === "offline"
+                  ? messages.errorTitle
+                  : messages.title
+            }
+            tone={
+              phase === "rate_limited"
+                ? "warning"
+                : phase === "error" || phase === "offline"
+                  ? "error"
+                  : "success"
+            }
           />
         </div>
       )}
@@ -674,6 +716,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
             <p>{messages.noReminder}</p>
             <div className="revisit-actions">
               <Button
+                disabled={mutationRateLimited}
                 label={rescheduleId === null ? messages.saveSchedule : messages.reschedule}
                 {...(phase === "loading"
                   ? { loading: true, loadingLabel: messages.scheduling }
@@ -813,6 +856,7 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
                     </fieldset>
                     <div className="revisit-actions">
                       <Button
+                        disabled={mutationRateLimited}
                         label={messages.complete}
                         {...(phase === "loading"
                           ? { loading: true, loadingLabel: messages.completing }
@@ -829,20 +873,24 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
                 ) : (
                   <div className="revisit-actions">
                     <Button
+                      disabled={mutationRateLimited}
                       label={messages.complete}
                       onPress={() => setCompletionId(resource.id)}
                     />
                     <Button
+                      disabled={mutationRateLimited}
                       label={messages.reschedule}
                       onPress={() => beginReschedule(resource)}
                       tone="secondary"
                     />
                     <Button
+                      disabled={mutationRateLimited}
                       label={messages.archive}
                       onPress={() => void mutate(resource, "archive")}
                       tone="quiet"
                     />
                     <Button
+                      disabled={mutationRateLimited}
                       label={messages.delete}
                       onPress={() => void mutate(resource, "delete")}
                       tone="danger"
@@ -860,12 +908,14 @@ export function RevisitExperience({ messages, sanctuaryHref }: RevisitExperience
                 <div className="revisit-actions">
                   {resource.status === "completed" ? (
                     <Button
+                      disabled={mutationRateLimited}
                       label={messages.archive}
                       onPress={() => void mutate(resource, "archive")}
                       tone="quiet"
                     />
                   ) : null}
                   <Button
+                    disabled={mutationRateLimited}
                     label={messages.delete}
                     onPress={() => void mutate(resource, "delete")}
                     tone="danger"

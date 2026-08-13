@@ -5,7 +5,10 @@ import {
   type CommercialSubscriptionPersistence,
 } from "@rituvia/db";
 
-import { runOneSubscriptionFulfillment } from "../src/subscription-fulfillment.js";
+import {
+  runOneSubscriptionFulfillment,
+  runSubscriptionFulfillmentLoop,
+} from "../src/subscription-fulfillment.js";
 
 const store = (
   overrides: Partial<CommercialSubscriptionPersistence> = {},
@@ -112,5 +115,33 @@ describe("subscription fulfillment worker", () => {
       }),
     ).resolves.toBe("cancelled");
     expect(persistence.claimNextAllocation).not.toHaveBeenCalled();
+  });
+
+  it("contains a database outage and resumes without stopping unrelated loops", async () => {
+    const controller = new AbortController();
+    const events: string[] = [];
+    const persistence = store({
+      processNextSubscriptionEvent: vi
+        .fn<CommercialSubscriptionPersistence["processNextSubscriptionEvent"]>()
+        .mockRejectedValueOnce(new Error("private database details"))
+        .mockImplementationOnce(async () => {
+          controller.abort();
+          return {
+            allocationsScheduled: 0,
+            disposition: "applied",
+            refundDisposition: "not_applicable",
+            state: "active",
+            subscriptionId: "44444444-4444-4444-8444-444444444444",
+          };
+        }),
+    });
+    await runSubscriptionFulfillmentLoop({
+      failureDelayMilliseconds: 1,
+      observe: ({ disposition }) => events.push(disposition),
+      signal: controller.signal,
+      store: persistence,
+    });
+    expect(persistence.processNextSubscriptionEvent).toHaveBeenCalledTimes(2);
+    expect(events).toEqual(["persistence_unavailable", "event_processed"]);
   });
 });

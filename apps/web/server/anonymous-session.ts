@@ -5,12 +5,14 @@ import {
   createAnonymousIdentityService,
   type AnonymousIdentityService,
   type EnsuredAnonymousSession,
+  ProtectedBetaInviteError,
 } from "@rituvia/db";
 
 import { getWebRuntimeConfiguration } from "../config/server";
 import { loadWebDatabase } from "./database";
 
-export type WebAnonymousSessionErrorCode = "conflict" | "rate_limited" | "unavailable";
+export type WebAnonymousSessionErrorCode =
+  "admission_required" | "conflict" | "rate_limited" | "unavailable";
 
 export class WebAnonymousSessionError extends Error {
   readonly code: WebAnonymousSessionErrorCode;
@@ -38,18 +40,26 @@ const loadAnonymousIdentityService = (): AnonymousIdentityService => {
   anonymousIdentityService = createAnonymousIdentityService(
     loadWebDatabase(),
     configuration.anonymousSessionPolicy,
+    configuration.protectedBetaInvitePolicy,
   );
   return anonymousIdentityService;
 };
 
 export const ensureWebAnonymousSession = async (input: {
   idempotencyKey: string;
+  inviteToken?: string | undefined;
   token?: string | undefined;
 }): Promise<EnsuredAnonymousSession> => {
   try {
     return await loadAnonymousIdentityService().ensureSession(input);
   } catch (error) {
     if (error instanceof WebAnonymousSessionError) throw error;
+    if (
+      error instanceof ProtectedBetaInviteError &&
+      error.code === "PROTECTED_BETA_ADMISSION_REQUIRED"
+    ) {
+      throw new WebAnonymousSessionError("admission_required");
+    }
     if (error instanceof AnonymousIdentityPersistenceError) {
       if (error.code === "ANONYMOUS_SESSION_RATE_LIMITED") {
         throw new WebAnonymousSessionError("rate_limited", error.retryAfterSeconds);

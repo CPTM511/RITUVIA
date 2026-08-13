@@ -5,7 +5,11 @@ import { isDeepStrictEqual } from "node:util";
 
 import nextEnvironment from "@next/env";
 
-import { auditWebShellBuildArtifacts, verifyWebShellBuild } from "./web-shell-build-policy.mjs";
+import {
+  auditWebShellBuildArtifacts,
+  verifyWebShellBuild,
+  webShellBuildBudgets,
+} from "./web-shell-build-policy.mjs";
 
 const { loadEnvConfig } = nextEnvironment;
 loadEnvConfig(process.cwd(), false);
@@ -114,6 +118,8 @@ const requiredArtifacts = [
   "packages/analytics/dist/contracts.js",
   "packages/analytics/dist/ai-operations.d.ts",
   "packages/analytics/dist/ai-operations.js",
+  "packages/analytics/dist/cost-guardrails.d.ts",
+  "packages/analytics/dist/cost-guardrails.js",
   "packages/analytics/dist/index.d.ts",
   "packages/analytics/dist/index.js",
   "packages/analytics/dist/ledger.d.ts",
@@ -137,6 +143,10 @@ const requiredArtifacts = [
 await Promise.all(requiredArtifacts.map((artifact) => access(artifact)));
 const webShellBuild = await verifyWebShellBuild(process.cwd());
 const icon = await readFile("apps/web/.next/server/app/icon.svg.body");
+const privatePageBuildBudgets = Object.freeze({
+  ...webShellBuildBudgets,
+  htmlGzipBytes: 8_448,
+});
 const auditPrivatePage = async (artifact, expectedPathname) => {
   const html = await readFile(artifact, "utf8");
   const references = [
@@ -153,7 +163,13 @@ const auditPrivatePage = async (artifact, expectedPathname) => {
     ),
   );
   return {
-    audit: auditWebShellBuildArtifacts({ assets, expectedPathname, html, icon }),
+    audit: auditWebShellBuildArtifacts({
+      assets,
+      budgets: privatePageBuildBudgets,
+      expectedPathname,
+      html,
+      icon,
+    }),
     html,
   };
 };
@@ -401,11 +417,14 @@ if (
   typeof analyticsModule.projectCoreLoopMetrics !== "function" ||
   typeof analyticsModule.projectAiOperationsReport !== "function" ||
   typeof analyticsModule.renderAiOperationsMarkdown !== "function" ||
+  typeof analyticsModule.projectCostGuardrailReport !== "function" ||
+  typeof analyticsModule.renderCostGuardrailMarkdown !== "function" ||
   typeof analyticsModule.projectSearchOperationsReport !== "function" ||
   typeof analyticsModule.renderSearchOperationsMarkdown !== "function" ||
   analyticsModule.coreLoopEventSchemaVersion !== "core-loop-event.v1" ||
   analyticsModule.wmrsDefinitionVersion !== "wmrs.consent-anonymous.v1" ||
   analyticsModule.aiOperationsPolicyVersion !== "ai-operations.v1" ||
+  analyticsModule.costGuardrailPolicyVersion !== "cost-guardrail.v1" ||
   analyticsModule.searchOperationsPolicyVersion !== "seo-geo-operations.v1"
 ) {
   throw new TypeError("The analytics build omitted its privacy-safe operational contracts.");

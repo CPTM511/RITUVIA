@@ -8,6 +8,10 @@ import {
   assertAnonymousIdentityRuntimeDatabasePrivileges,
   createAnonymousIdentityService,
 } from "../src/anonymous-identity.js";
+import {
+  AnonymousSessionRateLimitError,
+  consumeAnonymousSessionRateLimit,
+} from "../src/anonymous-session-rate-limit.js";
 import { createDatabaseClient } from "../src/client.js";
 import {
   ensureRuntimeDatabasePrivileges,
@@ -22,6 +26,18 @@ const policy = Object.freeze({
   issuanceWindowSeconds: 60,
   policyVersion: "test.anonymous-session.v1",
   ttlSeconds: 86_400,
+});
+
+const intakeRatePolicy = Object.freeze({
+  limit: 2,
+  policyVersion: "test.protected-beta-abuse.v1",
+  scope: "question_intake" as const,
+  windowSeconds: 3_600,
+});
+
+const mutationRatePolicy = Object.freeze({
+  ...intakeRatePolicy,
+  scope: "protected_beta_mutation" as const,
 });
 
 const idempotencyKey = (): string => randomBytes(24).toString("base64url");
@@ -74,9 +90,16 @@ const readIdentityProjection = async (connectionString: string) => {
         SELECT id, window_started_at AS "windowStartedAt", issued_count AS "issuedCount"
           FROM anonymous_session_issuance_gate ORDER BY id
       `);
+    const rateLimits = await client.query(`
+        SELECT anonymous_session_id::text AS "anonymousSessionId", scope,
+               window_started_at AS "windowStartedAt", request_count AS "requestCount",
+               policy_version AS "policyVersion"
+          FROM anonymous_session_rate_limit ORDER BY anonymous_session_id, scope
+      `);
     return {
       consents: consents.rows,
       issuanceGate: issuanceGate.rows,
+      rateLimits: rateLimits.rows,
       sessions: sessions.rows,
       subjects: subjects.rows,
     };
@@ -110,6 +133,62 @@ await withLocalPostgresLease(async (lease) => {
       assert.match(first.context.subjectId, /^[0-9a-f-]{36}$/);
       assert.match(first.context.sessionId, /^[0-9a-f-]{36}$/);
 
+      const budgetSession = await identity.ensureSession({ idempotencyKey: idempotencyKey() });
+      if (budgetSession.kind !== "created") {
+        assert.fail("Rate-limit verification requires a newly created session.");
+      }
+      const concurrentAdmissions = await Promise.allSettled(
+        Array.from({ length: 8 }, () =>
+          consumeAnonymousSessionRateLimit(runtime, mutationRatePolicy, budgetSession.token),
+        ),
+      );
+      assert.equal(
+        concurrentAdmissions.filter(({ status }) => status === "fulfilled").length,
+        mutationRatePolicy.limit,
+      );
+      for (const rejected of concurrentAdmissions.filter(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      )) {
+        assert.ok(rejected.reason instanceof AnonymousSessionRateLimitError);
+        assert.equal(rejected.reason.code, "rate_limited");
+        const retryAfterSeconds = rejected.reason.retryAfterSeconds;
+        assert.equal(typeof retryAfterSeconds, "number");
+        assert.ok(retryAfterSeconds !== undefined && retryAfterSeconds >= 1);
+        assert.ok(
+          retryAfterSeconds !== undefined && retryAfterSeconds <= mutationRatePolicy.windowSeconds,
+        );
+      }
+      await consumeAnonymousSessionRateLimit(runtime, intakeRatePolicy, budgetSession.token);
+      await assert.rejects(
+        consumeAnonymousSessionRateLimit(runtime, intakeRatePolicy, "invalid-token"),
+        (error: unknown) =>
+          error instanceof AnonymousSessionRateLimitError && error.code === "session_unavailable",
+      );
+      const persistedRateLimits = await migrator.query<{
+        policyVersion: string;
+        requestCount: number;
+        scope: string;
+      }>(
+        `SELECT scope, request_count AS "requestCount", policy_version AS "policyVersion"
+           FROM anonymous_session_rate_limit
+          WHERE anonymous_session_id = $1::uuid
+          ORDER BY scope`,
+        [budgetSession.context.sessionId],
+      );
+      assert.deepEqual(persistedRateLimits.rows, [
+        {
+          policyVersion: mutationRatePolicy.policyVersion,
+          requestCount: mutationRatePolicy.limit,
+          scope: "protected_beta_mutation",
+        },
+        {
+          policyVersion: intakeRatePolicy.policyVersion,
+          requestCount: 1,
+          scope: "question_intake",
+        },
+      ]);
+      assert.equal(JSON.stringify(persistedRateLimits.rows).includes(budgetSession.token), false);
+
       const persisted = await migrator.query<{
         canonicalRequestBytes: number;
         consents: number;
@@ -139,8 +218,8 @@ await withLocalPostgresLease(async (lease) => {
         consents: 0,
         expiryPolicyVersion: policy.policyVersion,
         issuanceKeyBytes: 32,
-        sessions: 1,
-        subjects: 1,
+        sessions: 2,
+        subjects: 2,
         tokenHashHex: createHash("sha256")
           .update(Buffer.from(first.token, "base64url"))
           .digest("hex"),
@@ -376,6 +455,10 @@ await withLocalPostgresLease(async (lease) => {
         );
         await expectPostgresError(() => runtimeClient.query("DELETE FROM consent_record"), "42501");
         await expectPostgresError(() => runtimeClient.query("TRUNCATE anonymous_session"), "42501");
+        await expectPostgresError(
+          () => runtimeClient.query("DELETE FROM anonymous_session_rate_limit"),
+          "42501",
+        );
       } finally {
         await runtimeClient.end();
       }
@@ -488,6 +571,15 @@ await withLocalPostgresLease(async (lease) => {
           true,
         );
         assert.equal(await restoredIdentity.resolveSession(first.token), null);
+        await assert.rejects(
+          consumeAnonymousSessionRateLimit(
+            restoredRuntime,
+            mutationRatePolicy,
+            budgetSession.token,
+          ),
+          (error: unknown) =>
+            error instanceof AnonymousSessionRateLimitError && error.code === "rate_limited",
+        );
         assert.equal(
           await restoredIdentity.allowsConsent({
             noticeVersion: "test.analytics-notice.v1",
@@ -545,5 +637,5 @@ await withLocalPostgresLease(async (lease) => {
 });
 
 process.stdout.write(
-  "Verified anonymous session token hashing, expiry/revocation, consent fail-closed history, idempotency races, issuance capacity, least privilege, and logical restore.\n",
+  "Verified anonymous session token hashing, expiry/revocation, consent fail-closed history, idempotency races, issuance and protected-Beta admission capacity, least privilege, and logical restore.\n",
 );

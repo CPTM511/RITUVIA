@@ -1,13 +1,29 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const harness = vi.hoisted(() => ({ failEvaluation: false }));
+const harness = vi.hoisted(() => {
+  class AdmissionError extends Error {
+    readonly code: "rate_limited" | "session_required" | "unavailable";
+    readonly retryAfterSeconds: number | undefined;
+
+    constructor(
+      code: "rate_limited" | "session_required" | "unavailable",
+      retryAfterSeconds?: number,
+    ) {
+      super("synthetic admission error");
+      this.code = code;
+      this.retryAfterSeconds = retryAfterSeconds;
+    }
+  }
+  return { admit: vi.fn(), AdmissionError, evaluationCalls: 0, failEvaluation: false };
+});
 
 vi.mock("@rituvia/domain", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@rituvia/domain")>();
   return {
     ...actual,
     evaluateQuestionIntake: (input: unknown) => {
+      harness.evaluationCalls += 1;
       if (harness.failEvaluation) throw new Error("private-internal-canary");
       return actual.evaluateQuestionIntake(input);
     },
@@ -18,6 +34,11 @@ vi.mock("../config/server", () => ({
   getWebRuntimeConfiguration: () => ({
     brand: { canonicalOrigin: "https://example.test" },
   }),
+}));
+
+vi.mock("../server/protected-beta-abuse", () => ({
+  admitWebProtectedBetaRequest: harness.admit,
+  ProtectedBetaAdmissionError: harness.AdmissionError,
 }));
 
 import {
@@ -34,6 +55,7 @@ const makeRequest = (
     body,
     headers: {
       "content-type": "application/json",
+      cookie: `__Host-rituvia-anonymous-session=${"a".repeat(43)}`,
       origin: "https://example.test",
       "sec-fetch-site": "same-origin",
       "x-rituvia-correlation-id": "req_11111111111111111111111111111111",
@@ -52,7 +74,28 @@ const input = (question?: string) =>
 
 describe("question intake route", () => {
   beforeEach(() => {
+    harness.admit.mockReset();
+    harness.admit.mockResolvedValue(undefined);
+    harness.evaluationCalls = 0;
     harness.failEvaluation = false;
+  });
+
+  it("requires admission before reading or evaluating a private question", async () => {
+    const missing = await POST(makeRequest(input("private-canary"), { cookie: "" }));
+    expect(missing.status).toBe(401);
+    expect(await missing.text()).not.toContain("private-canary");
+
+    harness.admit.mockRejectedValueOnce(new harness.AdmissionError("rate_limited", 17));
+    const limited = await POST(makeRequest(input("private-canary")));
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("retry-after")).toBe("17");
+    expect(await limited.text()).not.toContain("private-canary");
+    expect(harness.evaluationCalls).toBe(0);
+
+    harness.admit.mockRejectedValueOnce(new harness.AdmissionError("unavailable"));
+    const unavailable = await POST(makeRequest(input("private-canary")));
+    expect(unavailable.status).toBe(503);
+    expect(harness.evaluationCalls).toBe(0);
   });
 
   it.each([

@@ -914,9 +914,11 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       );
     }
     const identityTables = await admin.query(
-      "SELECT to_regclass('public.anonymous_subject') IS NOT NULL AS present",
+      `SELECT to_regclass('public.anonymous_subject') IS NOT NULL AS "identityPresent",
+              to_regclass('public.anonymous_session_rate_limit') IS NOT NULL AS "rateLimitPresent",
+              to_regclass('public.protected_beta_invite') IS NOT NULL AS "invitePresent"`,
     );
-    if (identityTables.rows[0]?.present === true) {
+    if (identityTables.rows[0]?.identityPresent === true) {
       await admin.query(
         `GRANT SELECT ON TABLE anonymous_subject, anonymous_session, consent_record, anonymous_session_issuance_gate TO ${IDENTITY_READER_ROLE}`,
       );
@@ -935,6 +937,43 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
       await admin.query(
         `GRANT UPDATE (window_started_at, issued_count) ON TABLE anonymous_session_issuance_gate TO ${IDENTITY_WRITER_ROLE}`,
       );
+      if (identityTables.rows[0]?.rateLimitPresent === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE anonymous_session_rate_limit TO ${IDENTITY_READER_ROLE}`,
+        );
+        await admin.query(
+          `GRANT INSERT ON TABLE anonymous_session_rate_limit TO ${IDENTITY_WRITER_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (window_started_at, request_count, policy_version) ON TABLE anonymous_session_rate_limit TO ${IDENTITY_WRITER_ROLE}`,
+        );
+      }
+      if (identityTables.rows[0]?.invitePresent === true) {
+        await admin.query(
+          `GRANT SELECT (policy_version, cohort_limit, issued_count) ON TABLE protected_beta_invite_cohort TO ${IDENTITY_READER_ROLE}`,
+        );
+        await admin.query(
+          `GRANT SELECT (id, policy_version, token_hash, token_hash_version, expires_at, consumed_at, anonymous_session_id, revoked_at) ON TABLE protected_beta_invite TO ${IDENTITY_READER_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (consumed_at, anonymous_session_id) ON TABLE protected_beta_invite TO ${IDENTITY_WRITER_ROLE}`,
+        );
+        await admin.query(
+          `GRANT SELECT (policy_version, cohort_limit, issued_count), INSERT ON TABLE protected_beta_invite_cohort TO ${CONTROL_ROLE}`,
+        );
+        await admin.query(
+          `GRANT SELECT (id, policy_version, seat_number, creation_key_hash, canonical_creation_hash, expires_at, anonymous_session_id, revoked_at, revocation_key_hash, canonical_revocation_hash), INSERT ON TABLE protected_beta_invite TO ${CONTROL_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (issued_count) ON TABLE protected_beta_invite_cohort TO ${CONTROL_ROLE}`,
+        );
+        await admin.query(
+          `GRANT UPDATE (revoked_at, revocation_key_hash, canonical_revocation_hash) ON TABLE protected_beta_invite TO ${CONTROL_ROLE}`,
+        );
+        await admin.query(
+          `GRANT SELECT (id, expires_at, revoked_at), UPDATE (revoked_at) ON TABLE anonymous_session TO ${CONTROL_ROLE}`,
+        );
+      }
     }
     const readingTables = await admin.query(
       "SELECT to_regclass('public.reading') IS NOT NULL AS present",
@@ -1420,6 +1459,58 @@ export const ensureRuntimeDatabasePrivileges = async (runtime, databaseName) => 
           `REVOKE SELECT ON TABLE commercial_order_v2, commercial_order_item_v2, commercial_payment_attempt_v2, commercial_payment_event_v2, commercial_fulfillment_v2, credit_ledger_entry, credit_restriction_entry, commercial_refund_request_v1, commercial_reconciliation_case_v1, commercial_subscription_v1, commercial_subscription_event_v1, commercial_subscription_review_v1 FROM ${ADMIN_SERVICE_ROLE}`,
         );
       }
+      const operationalCaseTables = await admin.query(
+        "SELECT to_regclass('public.operational_case_v1') IS NOT NULL AS present",
+      );
+      if (operationalCaseTables.rows[0]?.present === true) {
+        await admin.query(
+          `GRANT SELECT ON TABLE operational_case_v1, operational_case_event_v1, operational_case_audit_event_v1 TO ${ADMIN_SERVICE_ROLE}`,
+        );
+        await admin.query(
+          `GRANT INSERT ON TABLE operational_case_event_v1, operational_case_audit_event_v1 TO ${ADMIN_SERVICE_ROLE}`,
+        );
+        await admin.query(
+          `REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE operational_case_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+        );
+        await admin.query(
+          `REVOKE UPDATE, DELETE, TRUNCATE ON TABLE operational_case_event_v1, operational_case_audit_event_v1 FROM ${ADMIN_SERVICE_ROLE}`,
+        );
+        await admin.query(
+          `REVOKE SELECT ON TABLE reading_report, privacy_export, privacy_deletion_request, commercial_refund_request_v1, private_journal_entry FROM ${ADMIN_SERVICE_ROLE}`,
+        );
+      }
+    }
+    const operationalCaseIntakeTables = await admin.query(
+      "SELECT to_regclass('public.operational_case_v1') IS NOT NULL AS present",
+    );
+    if (operationalCaseIntakeTables.rows[0]?.present === true) {
+      await admin.query(`GRANT SELECT ON TABLE support_ticket_v1 TO ${APP_ROLE}`);
+      await admin.query(
+        `GRANT INSERT (anonymous_subject_id, category, affected_area, schema_version, policy_version, idempotency_key_hash, canonical_request_hash, expires_at) ON TABLE support_ticket_v1 TO ${APP_ROLE}`,
+      );
+      await admin.query(
+        `GRANT INSERT (queue_kind, source_kind, source_id, support_ticket_id, reading_report_id, privacy_export_id, privacy_deletion_request_id, commercial_refund_request_id, category_code, priority, policy_version, draft_template_code, draft_template_version, draft_locale, opened_at, first_response_due_at, resolution_due_at, expires_at) ON TABLE operational_case_v1 TO ${APP_ROLE}, ${READING_WRITER_ROLE}, ${PRIVACY_DELETION_ROLE}`,
+      );
+      await admin.query(
+        `REVOKE SELECT, UPDATE, DELETE, TRUNCATE ON TABLE operational_case_v1 FROM ${APP_ROLE}, ${READING_WRITER_ROLE}, ${PRIVACY_DELETION_ROLE}`,
+      );
+    }
+    const disputeSupportProjection = await admin.query(
+      "SELECT to_regclass('public.commercial_dispute_support_projection_v1') IS NOT NULL AS present",
+    );
+    if (disputeSupportProjection.rows[0]?.present === true) {
+      await admin.query(
+        `GRANT SELECT (id, event_type, evidence_source, validation_state, processing_state, processing_disposition, order_id, payment_attempt_id) ON TABLE commercial_payment_event_v2 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+      );
+      await admin.query(
+        `GRANT SELECT (commercial_payment_event_id) ON TABLE commercial_dispute_support_projection_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+      );
+      await admin.query(
+        `GRANT INSERT (commercial_payment_event_id, queue_kind, category_code, priority, policy_version, draft_template_code, draft_template_version, draft_locale, opened_at, first_response_due_at, resolution_due_at) ON TABLE commercial_dispute_support_projection_v1 TO ${PAYMENT_FULFILLMENT_ROLE}`,
+      );
+      await admin.query(
+        `REVOKE UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON TABLE commercial_dispute_support_projection_v1 FROM ${PAYMENT_FULFILLMENT_ROLE}`,
+      );
     }
     await admin.query(
       `ALTER DEFAULT PRIVILEGES FOR ROLE ${MIGRATOR_ROLE} IN SCHEMA public REVOKE ALL ON TABLES FROM PUBLIC`,

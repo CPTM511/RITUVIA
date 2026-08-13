@@ -40,3 +40,18 @@ so task state, dependency readiness, exact record paths, and tracked evidence so
 - Before every production release: release prompt plus owner checklist.
 
 Never schedule autonomous production deployment until the owner has explicitly designed a narrow, reversible, monitored approval policy and documented it in `DECISIONS.md`.
+
+## Prepared RITUVIA review schedules
+
+| Automation | Local schedule (`Asia/Shanghai`) | Prompt |
+| --- | --- | --- |
+| `rituvia-daily-maintenance` | Daily at 08:30 | `automation/prompts/daily-maintenance.md` |
+| `rituvia-weekly-product-review` | Monday at 09:30 | `automation/prompts/weekly-product-review.md` |
+| `rituvia-monthly-risk-audit` | Day 1 at 10:30 | `automation/prompts/monthly-risk-audit.md` |
+
+The three cards are paused pending OWN-020. The exact contract is
+`automation/rituvia-recurring-reviews.json`. If activated, every card first applies
+`automation/scheduled-read-only-runner.md`, uses failed-run-only notifications, and stops when the
+local checkout is dirty. Codex project cron currently uses local execution, so this is
+prompt-enforced read-only rather than a hard read-only sandbox. Review the cards in Codex Desktop
+**Automations**; see `docs/runbooks/RIT-126_CODEX_AUTOMATIONS.md`.

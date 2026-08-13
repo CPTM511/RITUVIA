@@ -8,6 +8,11 @@ import { NextResponse } from "next/server";
 
 import { questionIntakeApiMessages } from "../../../../_i18n/api-messages";
 import { getWebRuntimeConfiguration } from "../../../../../config/server";
+import {
+  admitWebProtectedBetaRequest,
+  ProtectedBetaAdmissionError,
+} from "../../../../../server/protected-beta-abuse";
+import { anonymousSessionCookieName } from "../../anonymous/session/route";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,7 +27,9 @@ const noIndex = "noindex, nofollow, noarchive";
 type ProblemCode =
   | "INTAKE_BODY_INVALID"
   | "INTAKE_BODY_TOO_LARGE"
+  | "INTAKE_RATE_LIMITED"
   | "INTAKE_REQUEST_REJECTED"
+  | "INTAKE_SESSION_REQUIRED"
   | "INTAKE_UNAVAILABLE";
 
 const applyPrivateHeaders = (response: NextResponse): NextResponse => {
@@ -43,6 +50,7 @@ const problem = (
   input: Readonly<{
     code: ProblemCode;
     detail: string;
+    retryAfterSeconds?: number | undefined;
     status: number;
     title: string;
   }>,
@@ -64,6 +72,18 @@ const problem = (
       { status: input.status },
     ),
   );
+
+const withRetryAfter = (response: NextResponse, retryAfterSeconds: number | undefined) => {
+  if (
+    retryAfterSeconds !== undefined &&
+    Number.isSafeInteger(retryAfterSeconds) &&
+    retryAfterSeconds >= 1 &&
+    retryAfterSeconds <= 86_400
+  ) {
+    response.headers.set("retry-after", String(retryAfterSeconds));
+  }
+  return response;
+};
 
 const hasAcceptedOrigin = (request: NextRequest): boolean => {
   const origin = request.headers.get("origin");
@@ -146,6 +166,43 @@ export const POST = async (request: NextRequest): Promise<NextResponse> => {
       code: "INTAKE_BODY_INVALID",
       ...questionIntakeApiMessages.invalidBody,
       status: 400,
+    });
+  }
+
+  const sessionToken = request.cookies.get(anonymousSessionCookieName)?.value;
+  if (sessionToken === undefined) {
+    return problem(request, {
+      code: "INTAKE_SESSION_REQUIRED",
+      ...questionIntakeApiMessages.sessionRequired,
+      status: 401,
+    });
+  }
+  try {
+    await admitWebProtectedBetaRequest(sessionToken, "question_intake");
+  } catch (error) {
+    if (error instanceof ProtectedBetaAdmissionError) {
+      if (error.code === "rate_limited") {
+        return withRetryAfter(
+          problem(request, {
+            code: "INTAKE_RATE_LIMITED",
+            ...questionIntakeApiMessages.rateLimited,
+            status: 429,
+          }),
+          error.retryAfterSeconds,
+        );
+      }
+      if (error.code === "session_required") {
+        return problem(request, {
+          code: "INTAKE_SESSION_REQUIRED",
+          ...questionIntakeApiMessages.sessionRequired,
+          status: 401,
+        });
+      }
+    }
+    return problem(request, {
+      code: "INTAKE_UNAVAILABLE",
+      ...questionIntakeApiMessages.unavailable,
+      status: 503,
     });
   }
 

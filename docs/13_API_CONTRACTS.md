@@ -43,15 +43,23 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 ### Session/account
 
 - `POST /api/v1/anonymous/session`
-  - Exact same-origin POST with no query, body, content type, or alternate framework
-    representation; requires a high-entropy `Idempotency-Key`.
+  - Exact same-origin POST with no query and a high-entropy `Idempotency-Key`. When protected-Beta
+    invite policy is disabled or a currently bound protected session is resumed, the request has
+    no body/content type. Before first protected-Beta issuance it instead requires bounded JSON
+    containing exactly `inviteToken` and
+    `schemaVersion: protected-beta-admission.v1`; no alternate representation is accepted.
   - Returns `204` and creates or resumes only through the host-only
     `__Host-rituvia-anonymous-session` cookie. It never returns subject/session IDs or token
     material in a body.
   - A created cookie is `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, has no `Domain`, and uses
     the database-authoritative absolute expiry. Resume does not rotate or extend it.
-  - Disabled/unconfigured storage fails closed; rejected, conflicting, capacity-limited, and
-    unavailable requests use bounded no-store/noindex responses and never leak persistence detail.
+  - Under `own-019.protected-beta-invite.v1`, a valid unexpired/unconsumed/unrevoked invite is
+    consumed and bound in the same PostgreSQL transaction that creates the subject/session. A
+    pre-policy active cookie is not admission authority. Exact retry can recover a dropped response;
+    changed replay and concurrent double use fail closed.
+  - Missing, invalid, used, expired, or revoked admission returns generic no-store/noindex `403`
+    `BETA_ADMISSION_REQUIRED`. Disabled/unconfigured storage, conflicts, capacity limits, and
+    unavailable requests use bounded responses and never expose cohort, token, or persistence state.
 - `POST /api/v1/auth/start`
   - Exact same-origin JSON with only normalized `email` and reviewed local `returnTo`.
   - Returns the same `202` shape for every valid existing or unknown email:
@@ -124,7 +132,15 @@ training, marketing, and service-notification delivery remain separate safe-off 
 ### Safe intake
 
 - `POST /api/v1/intake/evaluate`
-  - Returns allowed, reframed, blocked, or crisis flow; never emits raw text to analytics.
+  - The browser first creates or resumes the required anonymous session through
+    `POST /api/v1/anonymous/session`; this is invisible and adds no user-facing button.
+  - Exact same-origin metadata and the active anonymous cookie are required before the server reads
+    the bounded private JSON body.
+  - A database-atomic session budget is consumed before evaluation. Excess returns `429` with a
+    bounded `Retry-After`; missing policy/storage/privilege authority returns `503`; invalid or
+    expired session returns `401`.
+  - Returns allowed, reframed, blocked, or crisis flow; never persists the question or emits raw
+    text to analytics, logs, metadata, URLs, or rate-limit records.
 
 ### Tarot
 
@@ -168,6 +184,16 @@ telemetry, no raw-query retention, and no shared cache.
 - `PATCH /api/v1/ritual-sessions/{id}`
 - `POST /api/v1/ritual-sessions/{id}/complete`
 - `POST /api/v1/journal-entries`
+- `PATCH /api/v1/journal-entries/{id}`
+- `DELETE /api/v1/journal-entries/{id}`
+
+Anonymous reflection creates and mutations, including intention, ritual, journal, Revisit, and
+reading-report writes, share one database-atomic `protected_beta_mutation` request budget after
+session/CSRF admission and before private-body parsing. A `429` response includes bounded
+`Retry-After`; clients must not retry automatically. Domain idempotency and revision checks still
+prevent duplicate or stale state. The request budget counts transport attempts, including exact
+idempotent replay, while existing endpoint-specific quotas retain their own replay rules.
+
 - `GET /api/v1/journal-entries/{id}`
 - `PATCH /api/v1/journal-entries/{id}`
 - `DELETE /api/v1/journal-entries/{id}`
@@ -420,3 +446,40 @@ Return user-safe retry information. Do not rely on client enforcement.
 - Stored JSON schemas have readers/migrations.
 - Job consumers handle current and supported prior versions.
 - Provider event adapters are fixture-tested against real documented payload versions.
+
+## 13. RIT-125 internal operational case contract
+
+RIT-125 intentionally adds no public or admin HTTP route. `createOperationalCaseService` is an
+internal server-only contract for the later RIT-120 dashboard integration:
+
+- `list({ queue, reasonCode, sessionToken, ticketReference })` returns at most the configured bounded
+  active cases in stable priority/due/opened/ID order;
+- `transition({ action, caseId, idempotencyKey, queue, reasonCode, sessionToken,
+  ticketReference })` accepts only `triage`, `escalate`, or `resolve` and returns the projected case;
+- every call performs role, recent-auth, same-session passkey, reason, ticket, database privilege,
+  and audit checks;
+- exact transition replay returns the current projected case; changed content with the same key is
+  a conflict; invalid state and cross-queue access fail closed;
+- responses contain category/state/priority/SLA/draft metadata only and never include source/private
+  content; every draft is explicitly not sent.
+
+Ordinary reading-report buttons continue to use their existing API. Privacy APIs and refund sources
+enqueue in the same source transaction. A categorical support-ticket table exists, but there is no
+ordinary Support button or support-ticket HTTP endpoint yet. Any future route must add the standard
+origin, CSRF/session, body, idempotency, rate-limit, private-cache, and proxy allowlist controls
+without broadening database privileges.
+
+## 14. RIT-120 private owner operations contract
+
+RIT-120 intentionally adds no public or admin HTTP route. `owner-operations-snapshot.v1` is one
+bounded regular JSON manifest containing `capturedAt`, environment, release state, and exactly eight
+ordered section envelopes. Each section accepts only a fixed ID/detail code, categorical state, and
+closed source metadata: kind, observed-through time, optional window, approval reference, and safe
+repository evidence path.
+
+`projectOwnerOperationsReport` validates exact own enumerable data without invoking accessors,
+rejects private/extra fields and unsafe paths, applies fixed section freshness, forces
+unavailable/stale/future/synthetic sources to `unknown`, and derives release-evidence state without
+deployment authority. `generateOwnerOperationsDashboardFiles` reads at most 1 MiB from one regular
+non-symlink input and creates exclusive no-follow mode-0600 JSON and Markdown bound to the exact
+input SHA-256 digest. It performs no network, provider, database, support, or deployment action.

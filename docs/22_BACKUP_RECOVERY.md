@@ -85,6 +85,11 @@ metadata, hashes, counts, durations, source revision/state, and cleanup results.
 connection URL, database name, password, secret, SQL, table row, private content, or customer
 identifier.
 
+The current reviewed non-empty Prisma drift fingerprint and its complete object-level rationale are
+recorded in `docs/reports/RITUVIA_RIT_164_SCHEMA_DRIFT_REVIEW_2026-07-31.md`. A future fingerprint
+change remains a failure until its SQL receives the same migration/object review; the report is not
+permission to accept a hash without inspecting the diff.
+
 This custom-format logical drill proves repository recovery behavior. It does not prove physical
 backup, WAL archiving, PITR, geographic isolation, provider retention, KMS recovery, or a production
 RPO/RTO.
@@ -134,6 +139,9 @@ Each provider-level rehearsal must record:
   observability results;
 - every participant and owner approval;
 - cleanup/revocation result, findings, remediation owner, and next due date.
+
+RIT-129 accepts only a clean-revision, digest-bound protected-staging
+`provider_restore_attestation`; local logical restore remains contextual only.
 
 Run the provider-level isolated restore before beta, before production launch, after a material
 database/provider/recovery-policy change, after a recovery incident, and at least quarterly until

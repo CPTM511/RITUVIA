@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "./generated/prisma/client.js";
+import { enqueueOperationalCase } from "./operational-cases.js";
 
 const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const opaqueTokenPattern = /^[A-Za-z0-9_-]{43}$/u;
@@ -1011,6 +1012,9 @@ export const assertPrivacyExportRuntimeDatabasePrivileges = async (
       exportInsert: boolean;
       exportSelect: boolean;
       exportUpdate: boolean;
+      operationalCaseInsert: boolean;
+      operationalCaseMutate: boolean;
+      operationalCaseSelect: boolean;
     }>
   >`
     SELECT
@@ -1029,7 +1033,13 @@ export const assertPrivacyExportRuntimeDatabasePrivileges = async (
       has_table_privilege(current_user, 'privacy_export_audit', 'SELECT') AS "auditSelect",
       has_table_privilege(current_user, 'privacy_export_audit', 'INSERT') AS "auditInsert",
       has_table_privilege(current_user, 'privacy_export_audit', 'UPDATE') AS "auditUpdate",
-      has_table_privilege(current_user, 'privacy_export_audit', 'DELETE') AS "auditDelete"
+      has_table_privilege(current_user, 'privacy_export_audit', 'DELETE') AS "auditDelete",
+      has_any_column_privilege(current_user, 'operational_case_v1', 'INSERT')
+        AS "operationalCaseInsert",
+      has_table_privilege(current_user, 'operational_case_v1', 'SELECT')
+        AS "operationalCaseSelect",
+      has_table_privilege(current_user, 'operational_case_v1', 'UPDATE,DELETE,TRUNCATE')
+        AS "operationalCaseMutate"
   `;
   const row = rows[0];
   if (
@@ -1046,7 +1056,10 @@ export const assertPrivacyExportRuntimeDatabasePrivileges = async (
     !row.auditSelect ||
     !row.auditInsert ||
     row.auditUpdate ||
-    row.auditDelete
+    row.auditDelete ||
+    !row.operationalCaseInsert ||
+    row.operationalCaseSelect ||
+    row.operationalCaseMutate
   ) {
     throw new PrivacyExportError("PRIVACY_EXPORT_UNAVAILABLE");
   }
@@ -1141,6 +1154,10 @@ export const createPrivacyExportPersistence = (
         if (inserted.length !== 1 || created === undefined) {
           throw new PrivacyExportError("PRIVACY_EXPORT_UNAVAILABLE");
         }
+        await enqueueOperationalCase(transaction, {
+          sourceId: created.id,
+          sourceKind: "privacy_export",
+        });
         await transaction.$executeRaw`
           INSERT INTO privacy_export_audit (
             user_id, export_id, actor_session_id, action, metadata, created_at

@@ -17,6 +17,10 @@ export type SubscriptionFulfillmentDisposition =
   | "skipped"
   | "stale";
 
+export type SubscriptionFulfillmentWorkerEvent = Readonly<{
+  disposition: SubscriptionFulfillmentDisposition | "persistence_unavailable";
+}>;
+
 const digest = (value: Uint8Array): Uint8Array<ArrayBuffer> =>
   new Uint8Array(createHash("sha256").update(value).digest());
 
@@ -107,13 +111,29 @@ const delay = (signal: AbortSignal, milliseconds: number): Promise<void> =>
   });
 
 export const runSubscriptionFulfillmentLoop = async (input: {
+  failureDelayMilliseconds?: number;
+  observe?: (event: SubscriptionFulfillmentWorkerEvent) => void;
   signal: AbortSignal;
   store: CommercialSubscriptionPersistence;
 }): Promise<void> => {
+  const failureDelayMilliseconds = input.failureDelayMilliseconds ?? 1_000;
+  if (
+    !Number.isSafeInteger(failureDelayMilliseconds) ||
+    failureDelayMilliseconds < 1 ||
+    failureDelayMilliseconds > 60_000
+  ) {
+    throw new TypeError("Subscription fulfillment failure delay is invalid.");
+  }
   while (!input.signal.aborted) {
-    const disposition = await runOneSubscriptionFulfillment(input);
-    if (disposition === "idle" || disposition === "retried") {
-      await delay(input.signal, disposition === "idle" ? 1_000 : 250);
+    try {
+      const disposition = await runOneSubscriptionFulfillment(input);
+      input.observe?.({ disposition });
+      if (disposition === "idle" || disposition === "retried") {
+        await delay(input.signal, disposition === "idle" ? 1_000 : 250);
+      }
+    } catch {
+      input.observe?.({ disposition: "persistence_unavailable" });
+      await delay(input.signal, failureDelayMilliseconds);
     }
   }
 };

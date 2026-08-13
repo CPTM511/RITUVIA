@@ -14,11 +14,13 @@ export {
   adminRoles,
   adminSecurityErrorCodes,
   AdminSecurityError,
+  authorizeAdminOperation,
   authorizeAdminOwnerOperation,
   assertAdminSecurityRuntimeDatabasePrivileges,
   createAdminSecurityService,
   runAdminSecurityTransaction,
   verifyAdminAuditEventHash,
+  type AdminAuthorizationResult,
   type AdminAuditInput,
   type AdminOwnerAuthorizationResult,
   type AdminRole,
@@ -30,6 +32,29 @@ export {
   type AuditedAdminAction,
   type AuthorizedAdminSession,
 } from "./admin-security.js";
+export {
+  operationalCaseActions,
+  operationalCaseErrorCodes,
+  operationalCaseQueues,
+  OperationalCaseError,
+  assertOperationalCaseRuntimeDatabasePrivileges,
+  createOperationalCaseService,
+  enqueueOperationalCase,
+  renderOperationalCaseDraft,
+  verifyOperationalCaseAuditEventHash,
+  type OperationalCaseAction,
+  type OperationalCaseDraft,
+  type OperationalCaseDraftTemplate,
+  type OperationalCaseErrorCode,
+  type OperationalCaseItem,
+  type OperationalCasePolicy,
+  type OperationalCasePriority,
+  type OperationalCaseQueue,
+  type OperationalCaseService,
+  type OperationalCaseSource,
+  type OperationalCaseSlaState,
+  type OperationalCaseState,
+} from "./operational-cases.js";
 export {
   CommerceAdminError,
   assertCommerceAdminRuntimeDatabasePrivileges,
@@ -56,6 +81,24 @@ export {
   type AnonymousSessionPolicy,
   type EnsuredAnonymousSession,
 } from "./anonymous-identity.js";
+export {
+  anonymousSessionRateLimitScopes,
+  AnonymousSessionRateLimitError,
+  consumeAnonymousSessionRateLimit,
+  type AnonymousSessionRateLimitPolicy,
+  type AnonymousSessionRateLimitScope,
+} from "./anonymous-session-rate-limit.js";
+export {
+  assertProtectedBetaInviteControlDatabasePrivileges,
+  createProtectedBetaInviteControlService,
+  ProtectedBetaInviteError,
+  protectedBetaInviteErrorCodes,
+  type CreatedProtectedBetaInvite,
+  type ProtectedBetaInviteControlService,
+  type ProtectedBetaInviteErrorCode,
+  type ProtectedBetaInvitePolicy,
+  type RevokedProtectedBetaInvite,
+} from "./protected-beta-invite.js";
 export {
   assertFeatureFlagRuntimeDatabasePrivileges,
   readFeatureFlagVersions,
@@ -201,6 +244,11 @@ export {
   type CommercialPurchaseRestoration,
   type CommercialPurchaseStatus,
 } from "./commercial-fulfillment-persistence.js";
+export {
+  CommercialDisputeSupportPersistenceError,
+  createCommercialDisputeSupportPersistence,
+  type CommercialDisputeSupportPersistence,
+} from "./commercial-dispute-support.js";
 export {
   commercialSubscriptionEventTypes,
   commercialSubscriptionPersistenceErrorCodes,

@@ -68,7 +68,7 @@ describe("web astrology location and historical time-zone boundary", () => {
   it("exposes exact Node, ICU, and tzdata versions with reproducible DST behavior", async () => {
     expect(webAstrologyTimeZoneRuntimePin).toEqual({
       icuVersion: "78.3",
-      runtimeVersion: "24.18.0",
+      runtimeVersion: "26.5.1",
       timeZoneDataVersion: "2026b",
     });
     const runtime = loadWebNodeIntlTimeZoneRuntimeV1();

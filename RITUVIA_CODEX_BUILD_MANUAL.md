@@ -1,6 +1,6 @@
 # RITUVIA — Complete Codex Build Manual
 
-> Compiled repository snapshot generated 2026-07-31. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
+> Compiled repository snapshot generated 2026-08-03. The individual files in the repository are canonical; this single file is a convenient reading and handoff artifact.
 
 ## Product definition
 
@@ -23,7 +23,6 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `.gitattributes`
 - `README.md`
 - `MANIFEST.md`
-- `QA_REPORT.md`
 - `OWNER_OPERATING_GUIDE_ZH.md`
 - `CODEX_MASTER_PROMPT.md`
 - `AGENTS.md`
@@ -58,6 +57,10 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `docs/20_AI_GROWTH_ENGINE.md`
 - `docs/21_ENVIRONMENT_CONTRACT.md`
 - `docs/22_BACKUP_RECOVERY.md`
+- `docs/24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md`
+- `docs/25_PRODUCT_ENGINEERING_RUNBOOK.md`
+- `docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md`
+- `docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md`
 - `docs/README.md`
 - `apps/admin/AGENTS.md`
 - `apps/web/AGENTS.md`
@@ -116,6 +119,11 @@ Working brand status: **preferred candidate, not legally cleared**. See `docs/17
 - `scripts/sync_generated_evidence.py`
 - `scripts/validate_instruction_pack.py`
 - `reference/README.md`
+
+## Linked canonical files not duplicated here
+
+- `QA_REPORT.md`
+- `docs/23_PRODUCT_FUNCTIONS_AND_USER_GUIDE_ZH.md`
 
 ---
 
@@ -199,10 +207,12 @@ An English-first, Web/PWA product for global users that offers:
 8. Use `automation/prompts/continue-next-task.md` for subsequent runs and the `.github/codex/workflow-examples/*.yml` files only after security review and an intentional move into `.github/workflows`.
 9. Use `docs/21_ENVIRONMENT_CONTRACT.md` as the canonical environment-isolation and deployment-gate contract; it does not claim that external infrastructure exists.
 10. Use `docs/22_BACKUP_RECOVERY.md` as the canonical PostgreSQL backup, isolated-restore, RPO/RTO, evidence, and production-gate runbook.
+11. Use `docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md` for the evidence-gated path from the current state to protected beta and Owner production go/no-go.
+12. Use `docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md` for exact routes, visible control locations, workflows, implementation truth, privacy, and recovery behavior.
 
 ## Local development
 
-The repository contract is Node.js `24.18.0` (see `.node-version`) and pnpm `11.13.1`. Corepack is not required; from the repository root, use npm's package runner to invoke the exact package-manager version:
+The repository contract is Node.js `26.5.1` (see `.node-version`) and pnpm `11.13.1`. Corepack is not required; from the repository root, use npm's package runner to invoke the exact package-manager version:
 
 ```bash
 npm exec --yes --package=pnpm@11.13.1 -- pnpm install --frozen-lockfile
@@ -514,91 +524,6 @@ RITUVIA may help users reflect, create meaning, and perform symbolic rituals. It
 - `reference/lumora_interactive_prototype.html`
 
 `LUMORA` is historical only. Current working brand is `RITUVIA`, pending formal legal/domain/linguistic clearance.
-
----
-
-# File: `QA_REPORT.md`
-
-# RITUVIA Codex Build System — QA Report
-
-**Validated:** 2026-07-17
-
-**Result:** PASS for the imported instruction pack, repository consistency, and locally executable RIT-001 through RIT-015. The owner approved the exact RIT-012 safety/privacy-design copy and current local completion/browser work; hosted RIT-004 evidence, production deployment, public-shell activation, canonical-domain changes, and actual indexing remain separately gated.
-
-## Checks passed
-
-- All 85 files from the source ZIP were inventoried and read or mechanically compared in full before baseline changes. Before mutation, all 84 archive checksum entries passed.
-- All required root, specification, Codex, automation, template, generated-evidence, and retained-reference files exist. Project TOML and JSON parse; repository YAML parses with the host Ruby parser and pnpm accepts the workspace policy.
-- Backlog contains 128 unique items: 120 product/engineering tasks and eight owner gates. Dependencies are valid and acyclic; `RIT-000` through `RIT-003`, `RIT-005` through `RIT-007`, and `RIT-009` through `RIT-015` are Done; `RIT-004` is blocked only by `OWN-008`; RIT-008 remains Planned behind it; and RIT-020 is the sole Ready item.
-- Ten custom Codex agents contain the required metadata and instructions. Root and nested `AGENTS.md` files remain below the configured 65,536-byte instruction limit.
-- Thirty-five representative command-policy cases cover push, force push, destructive Git, recursive deletion, Prisma migration/reset commands, infrastructure changes, production deploys, remote repository mutation, and publishing.
-- Local Markdown links resolve inside the package. Historical `LUMORA` text remains confined to retained references and documented migration/baseline contexts. Both retained HTML artifacts pass integrity-size checks and remain non-canonical references.
-- `RITUVIA_CODEX_BUILD_MANUAL.md` is deterministically generated from 95 current text sources; `checksums.sha256` covers all 283 intended Git-indexed inputs except itself, without missing, extra, duplicate, or mismatched entries in a clean copy.
-- Node.js 24.18.0, pnpm 11.13.1, and direct JavaScript dependencies are exact. The frozen lockfile passes peer, engine, release-age, exotic-subdependency, and install-script allowlist policies; a clean temporary copy installs with `--frozen-lockfile` without changing the lockfile or leaving ignored build scripts.
-- Root CI/toolchain, architecture, record, generated-evidence, migration-history, current-tree secret, formatting, ESLint, strict TypeScript, Vitest, configuration-boundary, real PostgreSQL integration, accessibility/pseudolocale browser, and build gates pass across seven workspaces. Four hundred seventy-nine unit/contract tests run in 41 files; the build verifier checks 31 emitted artifacts, imports built ESM exports, verifies UI stylesheet parity and all four public pages, and proves that raw sink, trust-ambiguous continuation, and raw feature-flag construction APIs are absent from general exports.
-- The durable record workflow enforces four typed grammars, canonical task/decision authority, reciprocal task dossier and decision graph links, contextual task-result semantics, privacy-safe Markdown, Git-index-only regular-file checksums, and staged exact-order synchronization. CI and mutation tests reject stale, dangling, duplicated, unsafe, unreviewed, or locally untracked evidence.
-- The fail-closed architecture gate audits 97 active source files across seven modules, including manifests, strict TypeScript inheritance, package exports, runtime roots, AST/JSDoc dependency edges, exact internal/external/Node allowlists, provider ownership, browser/server transitive taint, dynamic loading, descriptor reflection, structured-console shape, raw process output, Worker capability imports, exact feature-flag composition, static case-sensitive Next proxy-normalization configuration, and file/module cycles. UI-specific mutation tests reject network/resource hosts and attributes, storage/runtime capabilities, direct JSX-runtime factories, polymorphic hosts, unsafe HTML/style/spreads, and unreviewed adapters. CI invokes the exact architecture command as an independent mandatory step.
-- The zero-dependency server-only observability package emits only fixed bounded JSON-line events with service/environment/release/level/correlation/trace fields. Web Crypto creates nonzero server-authoritative IDs; W3C trace validation rejects malformed, uppercase, unsupported, and zero identifiers; spans rotate across JSON-persisted Web → Worker → provider protocol steps; and neither baggage nor tracestate propagates.
-- Adversarial telemetry tests prove that unknown private fields, prompts, journal/prayer/birth text, authorization, URLs, raw `Error`, stack/cause, getters, `toJSON`, coercion hooks, revoked/wide proxies, cycles, symbols, `BigInt`, functions, control characters, oversized UTF-8 records, invalid metadata/carriers, duplicate span end, clock reversal, and failing writers cannot leak canaries or alter application flow.
-- The typed feature-flag registry is immutable, version-qualified, bounded, server-authoritative, and literal safe-off. Tests cover unknown keys/fields, non-canonical scope, missing approval, scheduled activation, immediate emergency off, expiry/removal, retired tombstones, cleanup-task integrity, and rolling v1/v2 coexistence plus rollback isolation.
-- Raw snapshot/evaluator construction is exported only from the exact capability subpath and consumed by one complete-source-pinned, zero-argument Web adapter. The adapter owns runtime configuration and client lifecycle, performs a live PostgreSQL catalog/privilege attestation before reading, and rejects owner, DDL, mutation, superuser/bypass-RLS, missing-SELECT, caller-injected, and ambiguous persistence contexts.
-- A real built-Web request returns a restrictive content-security policy and companion browser-security headers, creates a fresh `x-request-id`, overrides client correlation/trace/baggage state, passes server-generated context downstream, and emits a correlated `http.proxy_handoff` record without server-only canaries. Cold production-server checks prove `/EN` is rejected before it can damage `/en`, `/` redirects only when enabled, unsupported paths are finite 404s, real RSC requests work when enabled, and every shell HTML/RSC representation is an empty 404 when the safe-off flag is disabled or unavailable. Dependency failure emits only fixed non-sensitive failure fields. The span still measures proxy handoff rather than downstream duration.
-- One typed four-page inventory now drives production document indexing, exact end-anchored robots allows, reviewed local render assets, and a deterministic sitemap without fabricated `lastmod`. The isolated production matrix validates canonical-origin and robots polarity, enabled/disabled/unavailable discovery state, private/query/unknown Next-internal rejection, bounded internal `_rsc`, spoofed/bare RSC 404s, reviewed RSC `noindex` plus `private, no-store`, direct Next-owned RSC private non-cacheable 404s, and absence of sensitive response/log canaries. Local/preview/staging remain disallow-all with no sitemap; JSON-LD is rejected until RIT-114.
-- The reviewed English Web surface emits meaningful semantic server HTML with typed copy and configured branding at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` routes. Each page has exact `en` plus x-default canonical metadata, non-production `noindex`, one H1, skip link, primary/footer navigation, native locale control, explicit privacy/safety/free-path boundaries, and no unfinished account, reading, payment, ritual, or legal-policy claim. Unsupported, trailing-slash, or non-canonical locale/page paths cannot silently fall back or generate caches.
-- `@rituvia/ui` now provides semantic color/type/spacing/radius/elevation/motion/control tokens and closed native-first action, field, selection, alert, spinner, and skeleton primitives. Tests cover safe local targets, strict public identifiers/enums, runtime-bounded text-control attributes, unsafe input-type exclusion, Server Component-safe static output, caller-owned client callbacks, controlled/default exclusivity, loading/disabled/error/required/mixed/live semantics, contrast, light/dark/system cascade, forced colors, reduced motion, RTL and text direction, 44px sizing, long German/Arabic/Japanese/Devanagari fixtures, and narrow effective-width reflow.
-- Retained RIT-010 real-browser evidence covers desktop and 320px views, keyboard skip/focus transfer, 44px targets, no-JavaScript readability, 200%-equivalent reflow, a 120-character configured brand, RTL-assisted layout, dark/reduced-motion/forced-color foundations, zero console warnings/errors, and ten local-only requests. Fresh RIT-011 Codex Browser evidence covers its accessibility tree, native pointer/form interactions and states, 44px controls, 1,280px and 320px/400%-equivalent reflow without clipping or overflow, light/dark/system themes, root RTL plus nested LTR icon/switch overrides, zero console warnings/errors, and local-only resources. The owner-authorized RIT-011 Playwright pass completes twelve-stop Tab and reverse Shift+Tab order with 3px focus outlines, disabled-control skipping, Enter/Space/radio-arrow/select-typeahead behavior, active reduced motion with 0.01ms single-iteration animation and transition collapse, and active forced colors with CanvasText boundaries plus distinguishable Highlight/HighlightText focus and selected states. RIT-012 Playwright checks cover all four content pages and accessibility/theme states. RIT-013 Playwright checks cover four unique 200 pages with exact canonical/Open Graph/en/x-default metadata, local meta/header noindex, zero JSON-LD, robots disallow-all, absent sitemap, private/query/bare-spoof RSC 404s, reviewed RSC cache/index headers, 320px no-overflow reflow, 44px targets, visible 3px skip-link focus, no-JavaScript readability, zero console messages, and 81 same-origin requests.
-- RIT-014 production-artifact Playwright/axe checks cover all four public routes with 16 blocking WCAG/best-practice scans, exact selector review for 143 gradient-background contrast incompletes plus independent worst-case token contrast math, complete forward/reverse Tab order, 3px unclipped focus, skip-link transfer, 44px targets, native locale-option fit, 40% text expansion, desktop/mobile RTL mirroring, dark/reduced-motion/no-JavaScript states, and local-only requests. Test-only `en-XA`/`ar-XB` markers never become public routes, links, canonical metadata, or supported locales.
-- RIT-015 adds closed, localized empty/error/offline/provider-unavailable presentation contracts, a truthful public-shell empty consumer, a dynamic advisory connection consumer, and a raw-error-isolated route boundary without changing the safe-off empty 404. Fresh Playwright/axe covers four routes with 17 scans and 156 exact token-reviewed gradient/background contrast incompletes, a persistent online/offline/online advisory announcement, and all prior RIT-014 states. A runtime component test executes the actual route boundary's focus, reset, loading, offline, and raw-error contracts. CLI Playwright confirms all four synthetic variants at 320px, RTL, and dark mode with no overflow, sub-44px enabled target, remote request, or console error; the provider variant is explicitly not a provider integration or E2E claim.
-- The Web build policy enforces maximum output of 6,055 B gzip HTML, 5,284 B gzip CSS, 214,217 B gzip JavaScript, and 356 B raw icon across all four public pages. The reviewed 6 KiB CSS ceiling leaves 860 B headroom. Mutation tests reject remote, ambiguous, duplicated, inline-style, executable-attribute, comment/raw-text-confused, entity-obfuscated, escaped, image-set, side-channel, SVG/media, non-canonical preload/icon, unbudgeted local, traversal-capable static paths before file access, poisoned canonical origin, wrong production robots polarity, premature structured data, case-insensitive routing, dynamic fallback, and trailing-slash bypass variants.
-- `.env.example` exactly matches the typed server inventory. Production source limits environment reads to reviewed adapters, rejects all `NEXT_PUBLIC_*` variables, excludes secrets from client artifacts and HTTP, and proves sanitized nonzero Web/Worker startup failure plus a real `server-only` negative build.
-- The repository-owned PostgreSQL 17 runtime is bound to `127.0.0.1:55432`, uses random mode-0600 SCRAM credentials, data checksums, exact managed HBA/configuration files, an attested cluster fingerprint, and separate non-superuser migrator, read-only runtime, and append-only feature-control roles. Lifecycle operations are directory-lock serialized, including a two-contender stale-lock recovery test.
-- Prisma 7.8 generation and `migrate deploy` pass against isolated real databases. The suite proves clean/idempotent migrations and seed, database constraints, forced RLS, exact approved activation, runtime DDL/TRUNCATE denial, control update/delete denial, registry coexistence, transaction rollback, concurrent uniqueness, guarded isolated reset, and a row-security-aware non-empty custom-format dump/restore with exact row comparison and post-restore privilege attestation.
-- `db:setup`, the exact-confirmation local development reset, default non-disclosing `db:url`, and `db:stop` pass. No production, preview, staging, remote, or arbitrary ambient database URL is accepted by these lifecycle commands.
-- One active GitHub Actions workflow has exact read-only triggers, immutable actions, GitHub-hosted runners, ordered non-skippable steps, synchronized Node/pnpm versions, a pinned single-browser install followed by the accessibility smoke in the existing Quality job, and no secrets, artifacts, write permissions, or deployment environment. Codex examples live outside the workflow directory.
-- A fresh PostgreSQL 17 CI-shaped run proves run-derived exact target guards, checksums, private service addressing, separated non-superuser roles, deterministic client generation, idempotent migration deployment and seed, exact migration inventory/status/drift, feature-flag activation/append-only constraints, registry coexistence, runtime DDL denial, and rollback. Historical migration bytes are compared with the trusted event baseline and dangerous SQL is rejected.
-- Current-tree secret policy, repository-independent Gitleaks configuration, full-history scan wiring, and high-severity dependency audit are fail-closed. The current audit has zero critical/high findings after exact Next.js, Sharp, PostCSS, and fast-uri patches; one moderate Prisma-tooling `@hono/node-server` Windows `serve-static` advisory remains outside the product runtime.
-
-## Validation commands
-
-```bash
-pnpm check:records
-pnpm check:generated
-python3 -B scripts/sync_generated_evidence.py --check
-shasum -a 256 -c checksums.sha256
-codex execpolicy check --pretty --rules .codex/rules/default.rules -- <command...>
-pnpm install --frozen-lockfile
-pnpm ignored-builds
-pnpm check
-pnpm test:configuration-boundary
-pnpm test:database-foundation
-pnpm exec playwright install --only-shell chromium
-pnpm build
-pnpm test:accessibility
-pnpm check:ci-contract
-pnpm check:architecture
-pnpm check:migrations
-pnpm scan:secrets
-pnpm audit --audit-level=high
-APP_ENV=local pnpm db:setup
-APP_ENV=local pnpm db:reset -- --confirm=reset:rituvia_local@127.0.0.1:55432
-pnpm db:stop
-```
-
-## Limitations
-
-- This validates the specification package and locally implemented RIT-001 through RIT-015 code. The owner approved the exact RIT-012 safety/privacy-design copy and current local completion/browser work; this still does not validate an implemented reading/account/payment/AI/provider flow, PWA cache/synchronization, legal text, a second locale, current screen-reader/Firefox/WebKit/manual WCAG coverage, hosted infrastructure, production deployment, public-shell activation, canonical-domain changes, actual indexing, Search Console, or a production database.
-- The Web proxy handoff is a real local HTTP boundary, but no route wrapper yet measures final downstream status/duration. The Worker continuation subpath and serialized carrier are protocol evidence behind a sealed persistence adapter type; no database outbox, queue, deployed consumer, telemetry vendor, metrics, alerting, sampling, or retention system exists yet.
-- The feature-flag control plane has database-level append-only enforcement but no production credential grant, approval-record service, admin endpoint/UI, cache/invalidation policy, or operator emergency workflow. No public-shell activation record was created by RIT-010: without an explicit valid record and attested read-only runtime database, the shell deliberately returns 404.
-- Docker and Podman are absent on the verified host. A native fresh PostgreSQL 17 instance reproduced the CI target contract, but the digest-pinned service image and bridge networking still require the first hosted Actions run.
-- The repository YAML parser and actionlint wiring are portable in CI. A JSON Schema meta-validator remains unavailable locally; an exact schema fingerprint plus contextual semantic validation locks the critical task-result contract.
-- A durable record status or linked decision does not itself grant approval. Owner gates, qualified review, production actions, and external system evidence remain separately authoritative.
-- Command rules are exact positional prefixes and supplement, rather than replace, the owner-approval boundaries in `AGENTS.md`. Reordered flags, aliases, and opaque wrappers still require human review.
-- Codex GitHub workflow examples remain intentionally inactive outside `.github/workflows`. The active CI workflow is contract-tested, but remote required-check enforcement and workflow-change protection require owner configuration.
-- `RITUVIA` has only a preliminary exact-name web screen; this report does not establish legal clearance, domain availability, or right to use. Payment, crypto, tax, country, astrology-license, content-rights, vendor, and production decisions remain owner- or qualified-reviewer-gated.
-
-## Acceptance result
-
-The repository now has a reproducible strict TypeScript monorepo, a typed server-authoritative configuration boundary, attested local and CI-shaped PostgreSQL/Prisma paths, a fail-closed module architecture contract, a privacy-safe local observability and propagation baseline, a versioned safe-off feature-flag registry with separated activation identities, a machine-checked durable record workflow, four accessible locale-prefixed English public pages, closed resilient state patterns with truthful first-shell consumers, a finite environment-safe crawl inventory, and active portable quality, dependency, secret, migration, accessibility/pseudolocale/offline browser, and build gates. RIT-011 through RIT-015 are Done; RIT-020 is Ready; RIT-008 remains Planned behind blocked RIT-004. RIT-004 remains Blocked until the owner provides or approves the GitHub remote, protects all three CI jobs and workflow changes, and obtains one passing hosted run. Production deployment, shell activation, canonical-domain/DNS changes, actual indexing, and Search Console remain gated by later milestones and explicit owner decisions.
 
 ---
 
@@ -1078,1487 +1003,167 @@ existing human approval gates.
 
 # RITUVIA Project Status
 
-**Last reconciled:** 2026-07-31
+**Last reconciled:** 2026-08-03
 
-RIT-004 and OWN-008 are complete through D-091. The AGPL repository is public, `main` is protected,
-and hosted run `30509381762` passes all three mandatory jobs. RIT-008 and RIT-123 are complete.
-RIT-063 through RIT-070 and RIT-073 are complete. The Stripe Test subscription slice now covers recurring
-Checkout, verified lifecycle ingestion, Plus entitlements, monthly Credit allocation, cancellation,
-invoice-scoped refund reversal, durable review, and a safe-off owner commerce administration
-kernel with an immutable event timeline. RIT-074 is the sole Ready task.
+## Current product truth
 
-## Product checkpoint: M6 payment integrity
+RITUVIA's retained product is one anonymous-first reflection loop: Question/Theme → safe Intake →
+Interpretation → Intention → Small Action → always-free Ritual → Private Reflection → Revisit.
+English is the only launch language. The nearest approved external milestone is an invite-only,
+adult, protected, free closed Beta with at most 25 participants under D-097 and D-104.
 
-Checkpoint revision `f1633b6` closes the bounded one-time Stripe Test Mode Credit-pack payment
-slice. It does not activate Stripe Live or declare the complete paid product launch-ready.
+The Owner accepted the current core-loop walkthrough under RIT-167 without a prioritized product
+discrepancy. The homepage's free-reading controls now pass through safety intake under RIT-166.
+Paid product expansion remains frozen: production must sell clearly named reports, subscriptions,
+or digital experiences directly and must not require Credit preload. Existing Credit-pack,
+subscription, local-checkout, and Stripe Test Mode code is historical integrity/replay evidence,
+not an approved production offer.
 
-- The tracked repository contains 1,112 files and 31,493,492 bytes; 690 TypeScript/JavaScript/CSS/
-  SQL source files contain 198,130 lines and 7,155,963 bytes.
-- The production Web build is 21,056 KiB. Static assets are 1,256 KiB and static chunks are
-  1,240 KiB. The verified maximum gzip payloads are 8,170 B HTML, 12,232 B CSS, and 219,813 B JS.
-- `node_modules` is an 874,556 KiB renewable local dependency cache and `.turbo` is 8,292 KiB;
-  neither is a shipped browser payload.
-- The one-time payment slice now covers server pricing, hosted checkout, signed Test Mode
-  webhooks, pending/failure/expiry, exact duplicate and replay handling, deterministic out-of-order
-  reduction, verified fulfillment, owner restoration, full-unused-pack refund, dispute holds,
-  reconciliation, and privacy export.
-- The milestone workspace run passes 2,241 unit tests with five skips, 96 fixed AI evaluation
-  cases, configuration boundaries, the database foundation, all 16 package typechecks, and a
-  production build. The payment matrix separately passes 18 payment files plus nine isolated
-  PostgreSQL gates against all 36 migrations.
-- Technical paid-launch work remains: customer commerce UI (`RIT-072`), dispute/support workflow
-  (`RIT-074`),
-  payment kill switches (`RIT-075`), launch threat/abuse/operations gates (`RIT-121`-`RIT-128`),
-  beta remediation, and staging/launch rehearsal. External provider, entity, tax, country, budget,
-  and owner production approval remain separate blockers.
+The detailed route, workflow, state, recovery, and Button guide is
+[docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md](docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md). The
+evidence-gated path to launch is
+[docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md](docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md).
 
-**Stage:** RIT-159 Phase 0 production-pack reconciliation, RIT-037 exact-version interpretation
-reporting, RIT-028 deterministic Tarot browser acceptance, RIT-040 private intention domain and
-composer, RIT-041 ritual template/object domain, RIT-042 accessible free Sanctuary, and RIT-043
-transactional ritual lifecycle/private journal, and RIT-044 private Revisit lifecycle are
-complete. RIT-046 privacy-safe core-loop analytics and RIT-047 continuous anonymous full-loop
-browser acceptance are complete. RIT-050 secure account-session hardening is complete over the
-existing local-only account foundation, RIT-051 idempotent anonymous-to-account merge is complete,
-RIT-052 account history/settings/session management, RIT-053 encrypted privacy export, RIT-054
-selective/account deletion, RIT-056 admin roles/MFA/audit foundation, and RIT-057 integrated
-identity/privacy/authorization security closure are complete. RIT-060 immutable Country Policy
-Engine, RIT-061 immutable catalog/product/price registry, and RIT-062 provider-neutral commercial
-transaction/Credits foundation and RIT-055 account-owned consent controls are complete. OWN-002
-still blocks production payment activation, but D-091 and OWN-017 approve the narrower Stripe Test
-Mode sandbox scope. RIT-063 completes that bounded checkout slice. RIT-064 now adds Test Mode
-raw-signature verification, stable Stripe-account-bound v2 attempts, immutable signed-event
-evidence, exact duplicate/conflict handling, deterministic out-of-order timeline replay,
-account/order/attempt mismatch isolation, composite foreign keys, and a transactional state-change
-outbox with monotonic order versions and final-lease dead lettering. The route uses a dedicated
-database role whose DSN is bound to the application database but uses distinct credentials; the
-runtime attests that exact least-privilege role and rejects Credit or entitlement access. Node
-startup proves the configured account against the current Stripe Test Mode key before Stripe
-webhooks become available, while checkout repeats the same cached proof defensively. RIT-065 now
-consumes the outbox through a separate exact-role DSN, grants purchased packs exactly once, holds
-only unspent source Credits on dispute, converts holds and available value on refund, and records
-consumed/reserved shortfalls for review without a negative balance. Authenticated Credit
-restoration is owner-scoped and excludes held Credits from spendable total. RIT-066 adds the
-noindex Credit-pack detail page, safe hosted-checkout retry, and owner-scoped fulfillment status.
-RIT-067 adds bounded daily Stripe Test reconciliation and append-only discrepancy cases. RIT-068
-adds the full-unused-pack Stripe Test refund path. RIT-069 closes the one-time Stripe Test payment
-integrity matrix. RIT-070 closes the recurring Stripe Test subscription lifecycle, RIT-073 closes
-the safe-off commerce administration kernel, and RIT-074 is the sole Ready task. RIT-045
-consented transactional Revisit
-reminders are complete. OWN-011
-option A is approved through D-064, and RIT-080 is complete with an engine-ready English
-date-numerology catalog, source records, worked vectors, exact Life Path/Birthday/Personal Year
-rules, explicit target year, 11/22/33 preservation, and name/locale exclusions. RIT-081 is complete
-with a pure version-bound engine, strict ASCII ISO date and four-digit target-year request,
-manual proleptic-Gregorian validation, immutable visible formula evidence, exact OWN-011 approval
-pinning, all approved vectors, 11/22/33 and century/leap/zero boundaries, unsupported-script
-rejection, serialized-facts recomputation, hostile-object rejection, all 146,097 valid dates in a
-complete 400-year Gregorian parser cycle, and a 2,923-date full-calculation traversal. RIT-082 is
-complete as an anonymous English calculator at `/en/readings/numerology`, with an independently
-gated approved catalog, same-origin bounded private API, explicit target year, visible formula and
-version evidence, no name input or persistence, and focused mobile/keyboard/offline/axe browser
-acceptance. OWN-012 is approved through D-065. RIT-083 is complete with a safe-off English package
-boundary, fixed synthetic evaluation gate, and checksummed approved thirty-six-entry corpus:
-exact RIT-081 facts are recomputed and minimized, every reachable calculation/result pair is
-required, artifact integrity and authority are independent, digits and number words cannot appear
-in model prose, candidates are single-use and digest-bound, deterministic safety runs before an
-independent strict semantic reviewer, and trust failure produces no output. The exact
-`year_reflection`/`deep_reading.year_reflection` six-Credit mapping is approved only as optional
-verified context and remains safe-off. RIT-084 is complete with `/en/numerology` plus four
-substantive static method guides, exact production-only index allowlists, canonical/hreflang,
-Open Graph, JSON-LD, sitemap timestamps, source/review notes, deterministic examples, and focused
-mobile accessibility browser evidence. All twelve number profiles remain non-indexed source
-records rather than doorway pages. Production AI, Credits consumption, deployment, DNS, and public
-launch remain inactive. OWN-003, OWN-013, and RIT-090 are complete through D-069: Swiss Ephemeris
-`2.10.03` and the separate `v2.10.3final` source/data snapshot now use the owner-approved
-whole-project `AGPL-3.0-only` path with exact deployed Corresponding Source. D-069 supersedes the
-planned CHF 700 Professional License purchase without rewriting historical Selection V1.
-Selection V2, the root license/notice, exact 23-file source/data manifest, registered server-only
-native package, checksum-attested offline C bridge, hardened compiler/flags, native SBOM,
-byte-reproducible macOS arm64 build, `SEFLG_SWIEPH` rejection policy, and J2000 wrapper fixtures now
-exist. The local security profile now passes macOS UBSan, 151 deterministic mutation/boundary
-cases, manifest/SBOM/license closure, and sanitized native integration tests. D-070 now approves
-OWN-015 Option A: tropical zodiac, eleven bodies including True Node,
-exact-time Placidus houses, fixed major-aspect orbs, strict approximate/unknown-time suppression,
-and no polar/house fallback or partial facts. RIT-093 is Done under D-072 with the approved checksummed
-method catalog, strict facts parser, official upstream `setest` regression corpus, default-off
-`experience.astrology` kill switch, owner/profile-revision-bound server service, and encrypted
-append-only PostgreSQL persistence. Privacy export is intentionally versioned
-`privacy-export-package.v2` to include verified decrypted natal calculations, while privacy
-deletion cryptographically shreds retained calculation payloads. The server runtime now composes
-live flag evaluation, encrypted persistence, a production-only metadata loader, checksum-attested
-native execution, and the pure adapter while proving disabled-before-native ordering. RIT-094 now
-adds a query-free, owner-scoped read-only latest-result API and private English natal-facts viewer
-without adding birth-profile input, location search, calculation mutation, production migration,
-deployment, public source endpoint, or activation. An
-isolated 28-migration PostgreSQL drill passes default off, approved on,
-emergency off, historical-key rejection, append-only/least-privilege enforcement, and logical
-restore. The root production build now passes all 16 packages, 121 workspace artifact/runtime
-checks, 45 public pages, five private experience pages, and the final production-artifact policy.
-The largest modern JavaScript delivery is 219,789 bytes gzip under the unchanged 232-KiB budget;
-legacy `nomodule` compatibility code remains independently asset-validated rather than being
-misclassified as modern first-load JavaScript. RIT-091 is complete
-through D-067, OWN-014 is complete through D-068, and RIT-092 is complete with encrypted
-session-authorized birth profiles, exact/approximate/unknown-time semantics, full replay
-provenance, privacy export, and cryptographic deletion evidence. OWN-015 is complete. A live bounded
-OSV commit query now returns zero vulnerability records for the pinned Swiss Ephemeris commit, and
-the CI contract locks that fail-closed query. An ignored 120-file native-component Corresponding
-Source archive now includes patched-dependency/test/source-dependency closure, suppresses host
-xattrs, verifies its complete extracted inventory, replaces curl with a rejecting shim, reproduces
-the baseline engine metadata from archived source/data, and supports a frozen-lockfile install in
-a fresh Linux environment. Exact-clean revision
-`1fded12559b4e2986a317f2a6fee4008a2c22b8a` produced a 120-file component archive with SHA-256
-`2040f941a674fe45c80ed317139e99bb24f1bb955ad2909399bfd6c82bc80a7c`. The
-normal and sanitizer-native gates now additionally compare forty locked geocentric vectors for ten
-celestial bodies against independently maintained MIT Astronomy Engine `2.1.19`. The maximum
-observed differences remain below `0.02°` angular and `0.001` relative-distance limits; True Node
-and Placidus houses are explicitly excluded from this independent claim. An ephemeral Ubuntu
-24.04.4 arm64 environment now passes Linux ASan+UBSan, 151 deterministic mutation cases, 5,000
-libFuzzer runs, and sanitized integration from that archive. A root complete release-source gate
-now requires an exact clean Git revision and clean checksum-attested component archive; rejects
-unexpected ignored inputs, symlinks/submodules, case collisions, unresolved Git LFS pointers,
-environment redirection, component/source drift, unsafe archive entries, and output replacement;
-archives all tracked source plus pinned native source/data; independently verifies the extracted
-inventory; and repeats the offline native rebuild. Eight focused tests pass, the CI contract locks
-the Linux rehearsal, and the clean implementation revision produced a 914-file complete archive
-with SHA-256 `68cc39041511e1de29fa9355efc512d065c32612e88d396d6dbfe9aebafb4ae6`.
-D-072 closes RIT-093 without claiming a deployment: RIT-142 must repeat the gate for the exact
-deployment SHA, upload and re-download the archive, verify its digest, expose a prominent public
-source link, and bind that link to the deployed revision before RIT-143 owner go/no-go. RIT-094 is
-Done with a table-authoritative presentation-only SVG, strict client response parser, exact,
-approximate, unknown, empty, offline, unauthorized, and unavailable states, and no raw birth input
-surface. `experience.astrology` remains disabled. The
-repository remains
-a local production-capable foundation, not a public production service. The new golden UI,
-bilingual route inventory, wallet/SIWE, Credits
-provider-backed Credit fulfillment, subscriptions, Coinbase checkout, provider-backed Deep Readings, production privacy
-delivery/retention operations, outbox/reconciliation, and operational beta gates are not
-implemented or activated. The pinned
-production-artifact accessibility and full PostgreSQL foundation suites passed in the owner's
-unrestricted shell before the later numerology/dynamic-home changes. The configuration-boundary
-rerun now passes typed configuration, isolated production compilation, and the current nine-page
-sitemap inventory, then stops on legacy direct-RSC expectations for the dynamic `/en` route. The
-owner-approved obsolete source duplicate has been removed, and Web type checking now safely
-removes only byte-identical number-suffixed copies from Next.js generated type directories.
+## Current engineering state
 
-RIT-091 adds a pure strict location/historical-time-zone V1 contract and server-only Web runtime
-composition. Search is normalized and bounded; no dedicated query echo or raw-query HMAC cache key
-exists. Provider facts carry exact adapter/provider/data versions, source/license/attribution, and
-snapshot SHA-256. Resolution rereads the opaque location ID and stores local input, coordinates,
-IANA zone, UTC instant, offset, confidence, and exact Node `24.18.0` / ICU `78.3` / tzdata `2026b`
-provenance. New York fold/gap, Kathmandu non-hour offset, Samoa skipped date, pre-1970 confidence,
-zero/multiple result, hostile provider, failure, timeout, single-flight, TTL, and privacy fixtures
-pass. A self-hosted GeoNames snapshot is the intended production source, but no real dataset,
-external request, route, UI, retained birth data, deployment, or public activation is added.
+- Modular TypeScript monorepo with Next.js App Router Web/PWA, Worker, shared domain packages,
+  PostgreSQL/Prisma, strict architecture boundaries, generated evidence, and pinned Node.js 26.5.1
+  plus pnpm 11.13.1.
+- The local production artifact completes the six-stage anonymous core loop with no account or
+  payment requirement, including private journal and Revisit lifecycle, accessibility checks, and
+  safety intake states.
+- Account/session, privacy export/deletion, catalog/order/ledger/entitlement, Stripe Test Mode,
+  refund, reconciliation, subscription, commerce-admin, astrology, AI-safe-off, localization,
+  content, backup/restore, support-case, SLO, cost-report, incident, and Owner-dashboard foundations
+  exist at the repository-local evidence levels recorded by their task/decision records.
+- RIT-162 removed only two dependency-proven dead artifacts. Active checkout, replay, privacy,
+  migrations, Stripe, birth-profile, and reminder paths remain because they have callers or durable
+  obligations.
+- RIT-129 provides a provider-free eight-control staging/Gate H evidence contract. Its current
+  derived result remains blocked/incomplete; it did not create standing staging or activate any
+  provider.
+- RIT-168 now requires an exact D-104 invite before protected-Beta anonymous-session issuance,
+  atomically caps issuance at 25 seats, revokes bound sessions, rejects pre-policy cookies, emits
+  raw invites only to private operator files, and provides the private `/en/beta` entry with calm
+  recovery. It did not issue a real invitation, create staging, or deploy.
 
-RIT-092 adds one account-owned encrypted birth-profile payload whose AAD binds the active account
-and profile ID. PostgreSQL stores only coarse certainty, versions, keyed digests, revision,
-timestamps, and ciphertext; original date/time, approximation window, place, coordinates, IANA
-zone, UTC, fold, provider/data/license digest, and Node/ICU/tzdata provenance remain encrypted.
-Unknown time never invokes resolution or fabricates a UTC instant. Database transactions derive
-the owner from the active account session, enforce owner predicates and optimistic revisions, and
-keep an idempotency operation ledger. Individual and account privacy deletion overwrite profile
-ciphertext, while privacy export decrypts active profiles and verifies their keyed payload digest.
-All three isolated PostgreSQL birth-profile gates pass with 26 migrations. RIT-093 adds the
-twenty-seventh migration for encrypted append-only natal calculations, exact profile-snapshot
-binding, privacy export V2, and crypto-shred deletion. No real GeoNames snapshot, UI, external
-provider call, production migration, deployment, or public activation is added. Native
-security/release evidence and release-safe runtime composition remain open.
+Capability detail and Keep/Freeze/Delete state live in
+[docs/24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md](docs/24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md), not in this
+status file.
 
-RIT-050 provides a closed production-replaceable authentication-provider capability boundary,
-uniform `202` magic-link starts, a constant local-only preview route with `HttpOnly` state,
-privacy-minimal database-atomic global and bounded keyed identifier-bucket rate controls,
-short-lived one-time hashed challenges, same-account previous-session rotation, fixed-expiry
-host-only secure account cookies, session-bound CSRF, durable logout/revoke failure behavior, and
-passkey-ready credential constraints. Focused provider/service/route/proxy tests, all 15
-PostgreSQL migrations with concurrency/privilege/restore evidence, a 115-artifact production
-build, and the dedicated real-browser authentication gate pass. Production email, OAuth, WebAuthn
-ceremony, wallet identity, deployment, and public launch remain inactive.
+## RIT-075 payment safety closure
 
-RIT-051 preserves immutable anonymous ownership through one append-only account link instead of
-copying private rows. Authentication completion now consumes the challenge, creates the
-account/session, links optional anonymous history, and revokes anonymous sessions in one
-transaction. Explicit post-login merge binds both source sessions and the exact keyed request,
-derives one recoverable successor session, rotates CSRF/cookies, and returns that same successor
-for concurrent or dropped-response retries. Composite PostgreSQL foreign keys, hash-only evidence,
-runtime update/delete denial, focused 65-test coverage, an isolated 16-migration merge gate, the
-115-artifact build, and the real-browser merge/retry flow pass. Reflection mutations no longer
-perform hidden credential rotation.
+D-110 now composes the exact country-scoped `market.country_activation` flag, the exact
+`payments.fiat_checkout` or `payments.crypto_checkout` flag, and one Country Policy decision at the
+same server-owned instant. Authorization is exact for country, currency/asset, provider, method,
+payment kind, recurrence, registry/flag versions, and policy version.
 
-RIT-052 adds one responsive private account surface for strict profile preferences, bounded
-account-linked reflection history, and timestamp-only active-session controls. History is a
-read-time projection over currently retained linked readings, intentions, legacy/v2 rituals,
-legacy/v2 journals, and Revisits; it accepts no client owner identifier and returns no private
-prose. Exact linked readings can be restored through account authorization using UUID-only
-tab-scoped handoff. Profile changes retain optimistic conflict protection. Targeted revocation
-cannot revoke the current session or cross accounts, and all logout actions report success only
-after durable storage. Focused parser/route/service/proxy/UI and cross-resource IDOR tests, the
-isolated PostgreSQL account-control gate, affected package builds, and the 320px
-keyboard/accessibility/privacy Chromium gate pass without repeating the unrelated full unit
-matrix. No migration, retention change, device fingerprinting, export/deletion, production
-provider, deployment, or golden screenshot update is introduced.
+The contract rejects every non-empty fallback-provider list and any malformed, forged, expired,
+out-of-scope, time/version-drifted, or mismatched control. It runs before new order persistence,
+subscription reservation, provider use, or disclosure of an already attached Checkout URL.
+Operational checkout/control failures return a redacted unavailable result; eligibility denials
+remain calm and non-sensitive.
 
-RIT-055 adds independent exact-version `optional_product_analytics`, `ai_personalization`, and
-`model_improvement` account controls backed by one append-only per-purpose sequence rather than
-profile booleans or linked anonymous grants. Exact replay, same-key conflict, account serialization,
-bounded fail-closed evaluation, cross-account denial, and select/insert-only runtime privileges are
-enforced in PostgreSQL. The private account UI reports success only after commit, and every AI
-selected-excerpt gate rereads current account state so a withdrawal is visible across sessions
-immediately. Privacy exports now distinguish account and anonymous consent evidence. Focused
-domain/Web tests, all 24 migrations, the isolated consent database gate, and the account-control
-mobile/accessibility browser gate pass. Production analytics, provider private-content AI,
-real-user model improvement, marketing, notification delivery, final legal text, deployment, and
-launch remain safe-off owner gates.
+The new-purchase gate deliberately does not block signed webhooks, refunds, disputes, fulfillment,
+entitlement restoration, subscription events, or reconciliation for existing obligations. The
+repository cannot revoke a provider URL copied before safe-off. No provider, credential, pricing,
+paid UI, migration, deployment, DNS, network call, production payment, or launch was activated.
+Operator and user boundaries are in
+[docs/runbooks/RIT-075_PAYMENT_PROVIDER_CONTROLS.md](docs/runbooks/RIT-075_PAYMENT_PROVIDER_CONTROLS.md).
 
-RIT-045 adds one account-owned, once-only English email reminder preference without changing the
-RIT-044 Revisit v1 contract. A strict private API records committed subscribe/unsubscribe state and
-append-only idempotency evidence; anonymous discovery returns an explicit safe empty state. The
-database-backed queue claims one due row with `SKIP LOCKED`, rereads account, ownership, Revisit,
-time-zone, quiet-hours, locale, contract-version, and lease authority immediately before delivery,
-then completes once or applies bounded retry/dead-letter handling. Jobs contain identifiers and
-versions only, and fixed lock-screen-safe copy excludes question, intention, ritual, journal,
-relationship, and health details. Privacy export includes reminder state/history; privacy deletion
-cancels pending or leased work atomically. Focused 177-test coverage, all 25 migrations, isolated
-reminder/export/deletion PostgreSQL gates, affected builds, architecture, Revisit and continuous
-core-loop Chromium, and the 39-scan accessibility boundary pass. The only configured provider is
-hard safe-off; production email provider/domain, reviewed legal copy, other locales, operations
-alerts, deployment, and public sending remain owner-gated.
+## RIT-074 dispute support closure
 
-RIT-053 adds recent-authenticated, same-origin/session-CSRF account export request, metadata, and
-download routes. One consistent allowlisted snapshot covers all currently retained implemented
-account-linked categories, decrypts private fields only inside the authorized Web builder, and
-emits matching JSON and Markdown. A dedicated AES-256-GCM key binds account/export/schema/key/
-creation/expiry, while immutable request, one-per-request artifact, and private-content-free audit
-rows keep lifecycle evidence append-only under runtime select/insert-only privileges. Existing
-sessions with no authentication instant must reauthenticate; merge rotation preserves the
-original instant. Focused 48-test coverage, the isolated 17-migration PostgreSQL gate, migration/
-architecture/CI/secret checks, and affected DB/Web production builds pass. Production worker/
-object storage, KMS activation, final retention/legal text, deployment, and public launch remain
-owner-gated.
+D-111 keeps the existing immutable, matched `commercial_payment_event_v2` row as the sole dispute
+fact. An independent Worker now projects only an applied signed dispute with completed outbox,
+current disputed order, and same-version Credit Pack fulfillment into one high-priority, immutable
+metadata-only support work item. Ignored, mismatched, stale, unfulfilled, subscription, and
+already-refunded observations do not create a current work item.
 
-RIT-054 adds strict recent-authenticated selective-private-content and account deletion. It
-serializes by account, binds replay to exact scope/idempotency/session evidence, revokes linked
-anonymous authority, privacy-marks every account-subject link, replaces implemented encrypted
-private prose and fallback interpretation output with non-decryptable tombstones, destroys export
-artifacts, and prevents stale export completion. Account scope also suppresses future provider
-identity recreation, tombstones authentication/profile data, revokes all sessions/passkeys, and
-retains only explicit pseudonymous consent/commerce/security/privacy evidence. A dedicated
-`rituvia_privacy_deletion` database login and RLS policies keep destructive privileges out of the
-ordinary application/interpretation role. Focused 50-test unit evidence, isolated PostgreSQL
-deletion/export gates, configuration isolation, migration, architecture, CI, secret, lint, type,
-and affected DB/Web production builds pass; the full identity/privacy matrix remains reserved for
-RIT-057.
+Projection failure is contained and retried independently, so it cannot roll back payment
+ingestion, order state, fulfillment, Credit hold, or review shortfall. The runtime role receives
+only exact event/projection columns and cannot read provider-object/amount/payload details or
+private journals, or mutate the work item. It is deliberately not a second mutable case state
+machine and has no RIT-125 triage/resolve path. There is no user/admin/provider Button, customer
+message, chargeback response, production migration, deployment, or provider activation. Exact
+workflow and recovery boundaries are in
+[docs/runbooks/RIT-074_DISPUTE_SUPPORT.md](docs/runbooks/RIT-074_DISPUTE_SUPPORT.md).
 
-RIT-056 adds a dependency-free, finite, default-deny admin role/action policy and an isolated
-database authorization kernel. Owner-only role grants/revocations require an active recent account
-session, same-user/session/auth-identity live passkey assertion, and exact typed confirmation.
-Grants, revocations, and successful or denied privileged attempts are append-only. Audit rows store
-only controlled identifiers, changed-field names, and before/after digests in a serialized
-predecessor hash chain; audit failure rolls back the role mutation. A dedicated
-`rituvia_admin_service` login cannot issue MFA assertions, mutate audit evidence, or read private
-journals. Focused 11-test policy/config evidence and the isolated 19-migration PostgreSQL
-grant/revoke/rollback/privilege/restore gate pass. Production WebAuthn ceremony, admin routes/UI,
-role enrollment, support private-content grants, audit retention, deployment, and launch remain
-safe-off owner gates.
+## Release state
 
-RIT-057 composes authentication, anonymous merge, account controls, encrypted export,
-crypto-shredding deletion, admin authorization, metadata, analytics, redaction, PostgreSQL
-recovery, and production-artifact browser behavior into one independently runnable security gate.
-The Web proxy now admits privacy routes by exact method/path, export metadata rejects cross-site
-reads, and the deletion login is bound by a transaction-local request-token hash plus
-security-barrier view and RLS to one account. Direct cross-user deletion-role reads and mutations
-are denied. Focused `472/472` tests, specialized database/browser gates, the one-time `1644/1644`
-workspace unit suite, 34-case AI eval, all 20 migrations with restore, 115-artifact production
-build, complete accessibility matrix, and high-severity dependency audit pass. PostCSS and
-brace-expansion advisories are fixed through pinned overrides plus one reviewed minimatch
-compatibility patch; two moderate advisories remain outside this task's critical/high threshold.
-Admin production activation still requires a database-bound privileged procedure or equivalent
-database-enforced step-up, approved WebAuthn/enrollment, and an owner-approved credential.
+**Protected closed Beta: NO-GO. Public or paid production: NO-GO.**
 
-RIT-060 replaces the Web-only per-product payment tuple as the authorization source with one strict
-`country-policy-version.v1` contract covering service status, age, modalities, products,
-subscriptions, fiat/crypto capabilities, disclosures/legal versions, tax/refund configuration,
-data/locale/support/marketing constraints, approval evidence, effective windows, and mandatory
-review. Billing, declared, and reliable-geolocation conflicts fail closed; locale or weak
-geolocation cannot authorize paid service. Fiat and crypto require independent owner references.
-PostgreSQL stores immutable policy documents under dedicated reader/writer capabilities; disabled
-and rollback behavior append one successor chain. Commerce loads and strictly parses the registry
-and records the exact version on orders. The only seed is synthetic local policy; preview, staging,
-and production remain empty and paid behavior therefore stays safe-off. Focused 114-test commerce,
-policy, feature-flag, payment, and persistence coverage, the isolated 21-migration policy
-PostgreSQL/seed/privilege/restore gate, configuration/architecture/migration/CI/secret/record
-checks, and Country Policy/DB/Web builds pass. Per D-050, RIT-069 consumed the milestone complete
-workspace matrix; the next complete local matrix remains reserved for a release candidate or a
-new cross-cutting risk trigger.
+The free Beta profile and repository-local invite enforcement are approved and implemented, but
+release still requires exact RIT-127 runtime cost authority, standing isolated staging, actual
+invite execution, provider-level backup/restore, external monitoring
+and security evidence, support/recovery operation, RIT-130 release evidence, complete Gate H, and
+an explicit Owner deployment decision.
 
-RIT-061 adds one strict `catalog-version.v1` contract over the owner-approved 2026-07-23 product
-set: 21 Credit packs, Plus plans, Deep Readings, permanent/free objects, and consumable rituals,
-with exact English/Simplified Chinese contents and five positive integer USD prices only for packs
-and Plus. The four obsolete direct-USD ritual-object prices no longer feed the public catalog;
-their signed local checkout remains quarantined as a historical replay/test fixture. Four
-immutable PostgreSQL registries store source evidence, products, localizations, and price scope
-under dedicated append/read capabilities. Only the synthetic local/CI catalog is seeded;
-preview/staging/production remain empty. The Web catalog endpoint performs live privilege
-attestation, strict parsing, exact active-version selection, and finite `503` failure, while the
-current Sanctuary keeps its tested free candle/incense fallback until RIT-066. Focused 67-test
-commercial/Web evidence, isolated 22-migration catalog and Country Policy database gates,
-configuration/architecture/migration/CI/secret/lint/type checks, and Domain/Payments/DB/Web
-production builds pass without repeating the complete workspace matrix.
+Paid production additionally requires approved entity/brand/domain, legal/privacy/consent text,
+first country, tax/MoR posture, payment underwriting, exact direct-sale SKU/price/entitlement/refund
+language, budget, production provider configuration, full staging/rollback rehearsal, and Owner
+go/no-go. Stripe Live, crypto, production AI with private content, public indexing, deployment, and
+DNS remain disabled or absent.
 
-RIT-062 leaves the quarantined direct-object USD fixture untouched and adds a provider-neutral v2
-transaction foundation. Canonical order states own refund/dispute projection, while payment
-attempts terminate at succeeded/failed/expired/cancelled. Exact-request idempotency covers orders,
-attempts, reservations, ledger operations, and entitlements. Positive-integer append-only Credit
-facts record grant/reserve/release/consume/reverse/expire evidence; hard-expiry reservations and
-exact allocations consume subscription, promotional, then purchased sources, while a nonnegative
-projection remains rebuildable. Plus and permanent-object entitlements require different
-authoritative sources. Focused state/property tests and an isolated 23-migration PostgreSQL gate
-prove 20-way concurrency accepts exactly six reservations against six Credits, invalid
-state/provider/source rows fail, ordinary runtime cannot update/delete ledger evidence, and
-logical restore passes. No provider checkout, webhook, automatic fulfillment, subscription,
-refund, reconciliation, production migration, deployment, or public launch is activated.
+## Owner gates and blockers
 
-RIT-046 adds a strict nine-event `@rituvia/analytics` contract, bounded synthetic event ledger,
-purpose-scoped keyed pseudonyms, deterministic funnel/late-event projection, and WMRS v1 as
-distinct consented anonymous subjects with at least one qualifying reading-rooted session in a
-rolling seven-day UTC window. Reading and linked reflection application services create only
-non-replayed server-authoritative safe event intents. Exact optional-product-analytics consent is
-required by the tested Web adapter; runtime composition remains a hard no-op because legal notice,
-retention/deletion, browser viewed-event ingestion, durable storage/export, bot filtering, account
-merge, vendor, and production activation are not approved.
+| Gate    | Current truth                                                                                                                                      |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OWN-001 | Brand/domain clearance remains open.                                                                                                               |
+| OWN-002 | Production payment underwriting remains open; Stripe Test evidence is not approval.                                                                |
+| OWN-004 | Entity, first country, legal-market, and tax posture remain open.                                                                                  |
+| OWN-005 | Option A safe-off is approved; exact Option B budgets plus durable atomic enforcement and alert delivery remain missing, so RIT-127 stays Blocked. |
+| OWN-006 | Crypto is excluded from the approved first Beta and needs separate future approval.                                                                |
+| OWN-018 | Exact direct-sale products, pricing, entitlement, refund, and customer language remain blocked pending legal/provider review.                      |
+| OWN-019 | Exact protected-Beta abuse/ingress profile is approved under D-104; deployment is not.                                                             |
+| OWN-020 | Three recurring Codex review cards remain paused under D-108 Option A.                                                                             |
 
-RIT-037 is deliberately limited to a non-spending owner-scoped categorical report bound to one
-exact displayable result through the existing reading report boundary. It does not add history,
-lineage, or a generation/regeneration route. Paid Deep Reading creation, version history, and
-regeneration remain deferred until a separate server-authoritative Credits
-ledger/reservation/projection task is accepted.
+All production actions listed in root `AGENTS.md` remain human approval gates.
 
-RIT-037 reuses the existing report route: the browser interpretation operation UUID drives a strict
-v2 request, the database resolves it to one exact owner/reading-scoped displayable interpretation,
-and only immutable categorical evidence is persisted. Verified, safe-replacement, fallback,
-hidden-target, idempotency, race, least-privilege, constraint, restore, configuration, build, and
-Chromium gates pass. Dynamic validation also corrected a nullable CHECK weakness and a native
-`fetch` receiver defect before closure.
+## Verification state
 
-RIT-028 closes the M2 browser-evidence gap with six deterministic production-artifact scenarios
-covering exact one-card and ordered three-card results, zero-request reveal, whole-reading and
-canonical-position categorical reports, offline recovery, same-key service retry, calm rate-limit
-stop, UUID-only refresh resume, stale private-result clearing, desktop/mobile reflow, keyboard,
-RTL, reduced motion, touch targets, axe, storage, and same-origin network boundaries. Supporting
-screenshots use only reviewed synthetic fixtures and do not alter owner-gated golden baselines.
-Dynamic validation corrected the resume transport's native `fetch` receiver and added a visible
-focus ring for semantic `summary` controls.
-
-RIT-040 adds a strict backward-compatible private intention contract with user-authored intention
-text and one small action, deterministic non-echoing coercive-control reframing, optional revisit
-date and time zone with reminders fixed off, owner/resource-bound authenticated encryption, and
-optimistic edit/complete/archive/soft-delete lifecycle behavior. The current production artifact
-passes the complete composer flow at 320px, dark mode, reduced motion, RTL, and offline recovery;
-archive prevents a new ritual, deletion immediately hides the resource, and private prose never
-enters browser storage, URLs, request digests, logs, analytics, or public metadata.
-
-RIT-042 adds equally prominent free candle and incense experiences sourced from the canonical
-ritual catalog. One ordered state model drives standard 2D and accessible linear modes with audio
-absent, reduced-motion-safe static presentation, explicit exit and completion, focus
-entry/restoration, and a complete no-JavaScript fallback.
-
-RIT-043 replaces the temporary final-only write with a server-authoritative owner-scoped lifecycle.
-The start transaction snapshots the exact approved catalog item, template, publication, and access
-rule; permits anonymous/account free starts; checks active permanent entitlements; and locks and
-consumes at most one matching pass atomically. Active, paused, completed, and abandoned states use
-revisioned idempotent mutations, while visible Sanctuary exit durably pauses. Completed sessions
-can create, edit, read, and soft-delete an encrypted owner/resource-bound private journal entry.
-Historical v1 replay remains unchanged. Pass issuance/reversal/refund, production KMS activation,
-deployment, and production payment/catalog activation remain separate tasks or owner gates.
-
-RIT-044 adds one owner-scoped private Revisit per intention with next-day, seven-day, or custom
-future local-calendar scheduling, separately stored IANA time zone, inert optional quiet hours,
-and reminders fixed off. It snapshots the exact original intention/action under authenticated
-encryption, permits early/on-time/late factual completion under independently versioned
-ciphertext, and supports revisioned reschedule, archive, and terminal soft deletion through an
-append-only idempotency ledger. Parent deletion hides the child immediately. The current production
-artifact passes offline recovery, 320px, RTL, reduced motion, touch, axe, request, console,
-storage/metadata privacy, and redacted screenshot evidence without enabling delivery or analytics.
-
-**Release:** Phase 0 audit baseline over the local commercial MVP; no public production deployment.
-By unweighted engineering-task count, 78 of 107 tasks through the closed-English-beta milestone are
-Done (73%), and 78 of 113 tasks through limited paid launch are Done (69%). The remaining work is
-risk-heavier than the completed count: payment underwriting/integrity, production operations,
-threat/abuse controls, closed-beta evidence, legal/tax/brand/budget approvals, and launch rehearsal.
-
-**Working brand:** RITUVIA, pending formal trademark/domain/language clearance.
-
-## What exists
-
-- Market and product strategy.
-- Interactive concept prototype.
-- Product charter and full PRD.
-- UX/design doctrine.
-- Technical architecture and data model.
-- AI, payment, safety, security, localization, SEO/GEO, analytics, and operations specifications.
-- Sequenced roadmap and executable backlog.
-- Codex root/nested instructions, specialized roles, command rules, automation prompts, and review templates.
-- Verified import baseline, deterministic compiled-manual generation, and whole-package checksum validation.
-- Contribution policy plus typed task, decision, incident, and experiment records with a generated compact index, Git-index-only checksums, contextual task-result validation, and active CI record/generated-evidence gates.
-- Private pnpm/Turborepo TypeScript workspace pinned to Node.js 24.18.0 and pnpm 11.13.1 with a frozen lockfile and strict dependency-build allowlist.
-- A completed responsive English local MVP vertical slice: anonymous deterministic reading;
-  account sign-in/sign-out; an exact persisted 18+ attestation before paid order creation;
-  intention and small-action capture; free candle/incense and entitlement-gated owned ritual
-  objects; encrypted private journal entries with revisit; a server-authoritative catalog; a
-  Stripe hosted-checkout provider adapter plus an HMAC-signed local checkout simulator; and
-  verified webhook, ledger, and entitlement fulfillment. This is local capability, not production
-  payment approval or activation.
-- A versioned local 22-card Major Arcana catalog derived from the owner-provided Lumora prototype,
-  with 44 reviewed upright/reversed reflective entries, full ten-theme coverage, Strength VIII,
-  Justice XI, and an exact-version registry that keeps the superseded Threshold/Mirror/Lantern
-  catalog available only for historical replay.
-- Accessible Next.js App Router public surface at exact `/en`, `/en/methodology`, `/en/safety`, and `/en/privacy` canonical routes with typed English messages, configured branding, semantic landmarks, keyboard skip/focus, responsive and long-text reflow, light/dark/reduced-motion/forced-color behavior, direction-aware CSS, local icon, and server-rendered no-JavaScript content.
-- Private `@rituvia/ui` package with semantic color/type/spacing/radius/elevation/motion/control tokens; closed local-action and control-value contracts; native-first action, field, selection, alert, spinner, skeleton, and presentation-only empty/error/offline/provider-unavailable patterns; system/light/dark, reduced-motion, forced-color, RTL, long-content, and narrow-reflow fixtures; and byte-for-byte built stylesheet verification.
-- Case-sensitive finite locale/page routing, explicit root redirect, per-page `en`/x-default
-  canonical metadata, and non-production `noindex`; registry v3 removes the completed public-shell
-  rollout key and Web adapter after a protected compatibility window. Crawl failure boundaries
-  remain driven by production environment and reviewed inventory freshness.
-- One typed four-page crawl inventory drives unique canonical/Open Graph metadata, production-only index polarity, exact end-anchored robots document allows, reviewed render-asset access, and a deterministic sitemap without fabricated `lastmod`; non-production, disabled, unavailable, private, query, spoofed/bare RSC, and unreviewed internal paths remain noindex, private/non-cacheable 404, disallow-all, or absent as appropriate.
-- Fail-closed Web build policy for all four canonical route artifacts, bounded compressed HTML/CSS/JavaScript/icon output, and HTML/CSS fetch surfaces including remote, ambiguous, duplicated, escaped, entity-obfuscated, and unbudgeted resources.
-- A production-artifact Chromium/axe gate for all four public routes plus the private intake,
-  one-card, and three-card routes with exact WCAG 2.0/2.1/2.2 AA and best-practice tags, complete
-  forward/reverse keyboard order, native radio behavior, 44px targets, 40% text expansion,
-  test-only LTR/RTL pseudolocales, dark/reduced-motion/no-JavaScript states, mobile/desktop reflow,
-  a persistent online/offline/online advisory announcement, and same-origin-only requests. Real
-  interpretation acceptance additionally covers explicit start, failure/manual retry, held
-  processing, verified output, offline zero-start/reconnect, reviewed fallback, exact v2
-  categorical reports for both durable displayable outcomes, screenshots, and exact request
-  ledgers; gradient/background contrast incompletes are compensated by token-level contrast tests.
-- Cancellable Worker runtime and framework-independent domain package boundary.
-- Shared typed configuration package with validated build/server/client separation, root environment loading, fail-closed Web/Worker startup, and configurable working-brand projection.
-- Repository-owned PostgreSQL 17 local runtime with random SCRAM credentials, loopback-only networking, data checksums, cluster attestation, least-privilege application role, and guarded setup/reset/stop commands.
-- Prisma 7.8 database adapter boundary, expand-only initial migration, database-enforced seed-provenance invariants, deterministic synthetic seed, and documented migration/recovery policy.
-- Expand-only anonymous identity persistence with fixed-expiry subjects/sessions, SHA-256-only bearer-token storage, request-digest idempotency, append-only per-purpose consent and withdrawal history, a privacy-minimal database-atomic global issuance gate, restrictive foreign keys, exact runtime column privileges, and non-empty logical restore evidence.
-- Exact same-origin `POST /api/v1/anonymous/session` with empty request/body response, safe Problem Details, server-side safe-off routing, high-entropy idempotency, and a host-only Secure/HttpOnly/SameSite=Strict fixed-expiry cookie; missing policy/database configuration refuses issuance.
-- Deterministic English question-intake policy with ten fixed reflection themes, strict normalized input, ordered crisis/blocked/reframed/allowed classification, agency-preserving suggestions, and a public result DTO that excludes raw questions and internal risk categories.
-- Separately gated private `/en/intake` and exact same-origin `POST /api/v1/intake/evaluate` surfaces with noindex/no-store isolation, in-memory-only optional text, explicit safer-question choice, cancellation and offline/error states, crisis stop behavior, and no intake persistence or analytics emitter. Production configuration accepts only an OWN-009-qualified activation reference.
-- Pure `@rituvia/divination` contracts for strict immutable V1 tarot catalogs, sources, rights, decks, cards, spreads, orientation content, translation/editorial evidence, exact version references, tradition consistency, and explicit dated structural publication eligibility. The Git-authored three-card/six-content English fixture is original, internal-validation-only, art-free, non-publishable, non-indexable, and unavailable to AI retrieval.
-- Pure versioned deterministic tarot draw contracts with canonical without-replacement partial Fisher–Yates selection, bounded unbiased uint8 sampling, exact orientation rules, immutable public facts separated from internal audit data, fixed compatibility vectors, and safe replay/projection that require a caller-injected execution verifier.
-- Strict theme-only tarot reading creation with a server-selected exact catalog, operating-system CSPRNG, domain-separated HMAC execution binding, server-derived digests, owner-scoped transactional idempotency and limits, immutable `reading`/`tarot_draw` persistence, historical replay, and verified public-fact projection.
-- Exact no-store/noindex `POST /api/v1/readings/tarot` and owner-scoped `GET /api/v1/readings/{uuid}` contracts with bounded input, safe Problem Details, indistinguishable unknown/cross-owner reads, verified V2 reviewed-content presentation, an approved local-only Major Arcana runtime, and a separately hard-gated production runtime.
-- Private noindex/no-store `/en/tarot/one-card` with ten theme-only choices, separate session/reading idempotency, explicit reveal without redraw, strict fact/presentation parsing, reviewed limitation/question/action output, complete calm failure states, and no automatic or activated AI, raw-question, analytics, account, payment, share, or result-text storage surface.
-- Private noindex/no-store `/en/tarot/three-card` with the same theme-only privacy boundary and calm state machine, one fixed server-authoritative draw, exact unique Situation/Action/Possibility order, strict fact/presentation parsing, explicit reveal without redraw, reviewed per-position limitations/questions/actions, and no automatic or activated AI, raw-question, analytics, account, payment, share, or result-text storage surface.
-- One application/database-matched tarot quota authority with a three-per-hour local acceptance
-  baseline, database-clock atomic enforcement, replay-before-quota behavior, bounded `Retry-After`,
-  no immediate limit retry, explicit new-reflection transitions, and previous-result preservation.
-- Exact owner-bound `POST /api/v1/readings/{uuid}/report` plus private categorical report controls
-  with six approved categories, backward-compatible whole/position targets, and a strict v2 exact
-  interpretation-operation target resolved only to a durable verified, safe-replacement, or
-  authorized fallback result. Independent idempotency, empty `204` create/replay,
-  indistinguishable private `404`, changed-reuse `409`, no free text, no analytics, no
-  reading-quota use, inherited expiry, append-only persistence, immutable composite target
-  constraints, and exact least-privilege runtime access are enforced.
-- Strict backward-compatible private intention v2 creation plus owner-scoped PATCH/DELETE
-  resources with normalized user-owned text, a small real-world action, deterministic
-  coercive-control reframing, optional revisit date/time zone, explicit no-reminder state,
-  independent resource-bound ciphertexts, optimistic revision conflicts, idempotent replay,
-  active/completed/archived/soft-deleted lifecycle enforcement, and exact least-privilege runtime
-  columns. The Sanctuary composer exposes reviewed templates, privacy/reminder disclosures,
-  agency-safe replacement, edit/complete/archive/delete confirmations, offline/error states, and
-  ritual prevention after archive/delete.
-- A source-governed `ritual-catalog.v1` defines eight immutable accessible templates and 11
-  canonical items: always-free candle/incense, four permanent objects, and five consumable
-  rituals. Strict contracts fix symbolic-only/no-guarantee semantics, closed presentation
-  enhancements, exact publication/template/access references, and explicit mappings for all six
-  historical `reflection-ritual.v1` codes. `GET /api/v1/ritual-objects` exposes only the validated
-  read-only catalog with no price, Credit, payment, ownership, or efficacy authority; historical
-  session creation remains unchanged pending the transactional persistence slice.
-- The private Sanctuary renders the canonical free candle and incense through a focused inline
-  stage with equivalent standard 2D and accessible linear controls, audio off, pausable
-  nonessential motion, reduced-motion defaulting, Escape/focus restoration, durable
-  start/pause/resume/completion, offline same-step retry, responsive RTL-safe layout, and reviewed
-  static fallback.
-- Additive owner-scoped `ritual_session_v2`, `ritual_pass`, and `private_journal_entry` persistence
-  keeps historical v1 rows immutable while enforcing exact catalog/access provenance, one open
-  session per owner/intention, transactional pass consumption, optimistic lifecycle revisions,
-  encrypted journal create/update/read/soft-delete, exact least privileges, and non-empty logical
-  restore evidence. No pass issuance, refund/reversal, production KMS, or production activation is
-  included.
-- Tab-scoped one-card and three-card result resume using only per-type strict UUID V4 values,
-  owner-scoped no-store GET, explicit no-redraw reveal, definitive stale-ID clearing, transient
-  manual recovery, storage-denied degradation, previous-result preservation, and database-clock
-  reading-expiry enforcement; no result/question text or analytics payload enters browser storage.
-- Pure provider-neutral `@rituvia/ai` contracts for Tarot V1 public deterministic facts, exact
-  versioned prompt/content/safety provenance, allowed-only generation eligibility, canonical
-  bounded reflective output, normalized provider results/failures/usage, provisional streaming,
-  and privacy-safe operational metadata; strict parsers and synthetic fixtures reject private draw
-  audit, question/journal/identity/payment data, unsafe literals, hostile text, and schema drift.
-- Pure published-only Tarot retrieval and prompt assembly with independent injected SHA-256 and
-  server-owned allowlist authorization, exact catalog/deck/spread/card/orientation/position/reading
-  type/locale/tradition/theme binding, bounded selected excerpts, checksummed mandatory safety and
-  tone instructions, system-versus-JSON-data separation, runtime-issued trust artifacts, and
-  immutable provenance ready for later persistence; no permissive catalog, prompt, provider, or
-  network default exists.
-- Pure English/Tarot pre-generation safety with canonical intake re-evaluation, malformed-Unicode
-  rejection, exact externally authorized classifier evidence, non-downgradable
-  crisis/blocked/reframed/allowed routing, transient question and risk data, zero unsafe
-  continuation, independent safety-policy authority, and opaque authorization bound to the exact
-  request, modality, reading type, locale, theme, intake/safety policies, and approval reference;
-  no classifier, provider, network, credential, API, UI, or production policy is activated.
-- Provider-neutral structured generation orchestration that accepts only exact runtime-issued
-  input, prompt, authorization, provider/model registration, and fallback authority; constructs one
-  immutable bounded request; enforces strict normalized-result and output validation, monotonic
-  host deadlines, cancellation and consumed late settlement, at most one allowlisted retry,
-  deterministic authorized fallback, and closed privacy-safe operational metadata. Provider prose
-  remains an in-memory non-displayable candidate until post-generation verification succeeds, and
-  no provider, SDK, key, network adapter, paid inference, API, UI, or production activation is
-  included.
-- Pure provider-neutral post-generation verification that accepts only exact runtime-issued,
-  single-use candidates and exact generation context; checks all displayable text leaves for
-  deterministic fact/source/orientation drift and fixed safety/dependency/injection categories;
-  requires an independently authorized bounded semantic verdict; and returns only a recursively
-  immutable verified result, exact authorized safe replacement, or no-output trust failure.
-- Owner-scoped interpretation persistence with canonical request and idempotency hashes, inherited
-  reading expiry, database-clock leases with a 30-second execution buffer, exact replay/conflict
-  behavior, fallback-only reclaim, secret claim material, lease-version compare-and-set fencing,
-  immutable terminal rows, durable no-output `failed` states for trust/configuration failures,
-  forced RLS, and exact least-privilege runtime columns. A one-to-one append-only verification child
-  is inserted atomically with parent finalization; keyed-HMAC replay validation and pending-output
-  non-disclosure fail closed, and a historical pending row without a child remains non-displayable
-  with no recovery API.
-- Exact private owner-bound `POST/GET /api/v1/readings/{uuid}/interpretation` with explicit
-  UUID-idempotent start, side-effect-free status polling, strict 128 KiB four-arm response,
-  final-only redacted projection, and indistinguishable private failures. The shared lazy-loaded
-  one-/three-card panel provides an explicit CTA, cancellation, foreground-only eight-poll bound,
-  stale-response rejection, same-operation manual retry, localized accessible states, verified-AI
-  versus reviewed-fallback labels, and the exact safety boundary; production composition remains
-  hard safe-off with no provider/model/reviewer/key/network/paid-inference capability.
-- Strict English/Tarot V1 release-evaluation contracts with a 34-case ordered synthetic suite,
-  exact-byte SHA-256 baseline binding, compiled zero-tolerance thresholds, complete
-  pre-generation risk and deterministic post-generation check coverage, safe controls that block
-  all-fallback behavior, and privacy-minimal categorical evidence. The explicit Quality gate runs
-  the production pre-generation, generation/fallback, and verification boundaries with zero
-  provider, reviewer, network, secret, or paid-call capability.
-- One active least-privilege GitHub Actions workflow with immutable action references, an ephemeral
-  digest-pinned PostgreSQL 17 service, dependency/current-tree/history secret scans, a fixed AI
-  release-evaluation step, and separate quality/database/security jobs.
-- Repository-enforced CI structure/toolchain contract, historical migration immutability/destructive-SQL policy, idempotent generated-client check, and fail-closed secret scanning.
-- Central fail-closed architecture policy for registered modules, manifests, TypeScript inheritance, public exports, runtime roots, internal/external/Node dependency allowlists, browser/server closure taint, adapter ownership, dynamic loading, and source/module cycles.
-- Zero-dependency server-only observability package with fixed structured events, bounded JSON-line output, server-generated correlation IDs, strict W3C trace context, default redaction, Web proxy handoff tracing, Worker lifecycle tracing, and a serialization-safe internal job-carrier protocol.
-- Immutable versioned feature-flag metadata and evaluator with literal safe-off defaults, approval/scope/lifecycle enforcement, emergency-off precedence, rolling registry-version isolation, and dedicated cleanup tasks.
-- Exact zero-argument Web feature-flag composition with internal database sourcing, live read-only-role attestation, forced-RLS append-only control plane, separated migrator/runtime/control identities, and non-empty logical restore evidence.
-- Root formatting, ESLint, TypeScript, Vitest, real local and CI-shaped PostgreSQL integration,
-  dependency audit, and production-build gates with behavioral, HTTP, shell/private-browser, and
-  artifact verification.
-
-## What does not exist yet
-
-- A production-available reading, account, payment, legal, or ritual flow. RIT-158 is deliberately
-  local-only: its signed checkout simulator cannot charge money, and the Stripe adapter has no live
-  key, provider account/session, underwriting approval, or production activation.
-- An approved production anonymous-session retention duration, legal consent notice,
-  consent/privacy-control UI, per-client abuse strategy, anonymous export/deletion workflow, or
-  complete production private-resource authorization surface; the current session policy is
-  required configuration and safe-off when absent.
-- A country-specific crisis-resource program, an approved real classifier, intake persistence, or
-  question-bearing analytics; the owner-approved English lexical baseline and the RIT-032 safety
-  contract remain safe-off. The local anonymous intake can continue to Tarot without transferring
-  the private question.
-- A production-approved payment-provider route, real provider-unavailable classifier, offline
-  cache/synchronization layer, or generic partial/degraded network state machine. The local Stripe
-  adapter and signed simulator are implementation evidence only; the connection notice remains a
-  `navigator.onLine` advisory.
-- Production infrastructure.
-- Production metrics, alerts, retention/sampling policy, vendor exporters, durable analytics
-  storage/outbox, viewed-event ingestion, or a real persisted queue consumer; the RIT-046 analytics
-  package and Web adapter are synthetic safe-off evidence. RIT-045 has one narrow PostgreSQL-backed
-  Revisit reminder queue and sealed safe-off adapter, but no production provider, generic queue
-  runtime, scheduler process, delivery metrics/alerts, or deployed asynchronous service.
-- Approved legal entity, legal terms, privacy notices, or tax configuration.
-- Formal trademark clearance or secured canonical domain.
-- Payment-provider written underwriting approval.
-- Public-release AGPL compatibility review, clean complete Corresponding Source for the exact
-  deployed revision, release-revision CI evidence, and a deployed source-code link. The live
-  zero-record OSV commit query, forty-vector independent comparison, observed ephemeral Linux
-  sanitizer/fuzzer pass, and local native-component offline archive/rebuild rehearsal do not
-  activate production or satisfy the complete public release offer.
-- A production content corpus, a real rights-cleared tarot deck or artwork set, an authorized publishing/import workflow, and expert-reviewed localized traditions; the synthetic RIT-022 fixture is contract evidence only.
-- An approved production tarot catalog, production-composed/activated interpretation runtime, AI
-  provider/model/reviewer activation, production intention/ritual/journal activation, report
-  triage/admin workflow, or separate creation-versus-history operational kill switches; the
-  synthetic RIT-022 fixture remains publication-ineligible and cannot activate the production
-  RIT-024/RIT-027 runtime.
-- Production credentials or vendor accounts.
-- A production AI provider/model candidate evaluation, representative human output review,
-  latency/cost comparison, canary evidence, or approved model rollback rehearsal; RIT-036 is local
-  synthetic safe-off evidence only and does not activate or approve a provider, model, reviewer,
-  prompt, content corpus, safety policy, or another locale.
-- Manual assistive-technology coverage with current screen readers, Firefox/WebKit coverage, and real 200%/400% browser zoom remain release-level work; Chromium/axe does not substitute for those checks.
-
-## Current blockers and owner decisions
-
-| ID      | Decision needed                                | Blocks                                | Owner action                                                                                  |
-| ------- | ---------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------- |
-| OWN-001 | Formal brand/domain clearance                  | Public branding and trademark filing  | Commission trademark and linguistic search; secure domains/accounts                           |
-| OWN-002 | Payment underwriting path                      | Production checkout                   | Obtain written pre-approval from primary and backup providers                                 |
-| OWN-004 | Launch legal markets and entity                | Public launch                         | Select entity, tax setup, legal counsel, and first launch countries                           |
-| OWN-005 | Initial operating budget                       | Paid vendors and traffic              | Set monthly infrastructure, AI, payment-loss, and marketing limits                            |
-| OWN-006 | Crypto checkout decision and provider approval | Production crypto checkout            | Decide whether to pilot; obtain legal/provider approval and define supported countries/assets |
-| OWN-007 | Regional-tradition expert/content approval     | Any regional spiritual tradition pack | Select named tradition, qualified reviewers, sources, rights, language, and boundaries        |
-
-These owner decisions do not block independent local engineering foundation work.
-
-## Current verification status
-
-- `pnpm test:configuration-boundary` passes typed environment parsing, fail-closed startup,
-  server-only imports, client-delivery secret isolation, isolated production compilation, and the
-  current nine-page sitemap inventory; its final finite-route phase remains red on legacy direct
-  RSC expectations for dynamic `/en`.
-- `pnpm test:accessibility` passes four public and three private routes with 39 shared axe scans,
-  460 reviewed contrast nodes, six deterministic Tarot scenarios, two Tarot screenshots, and three
-  free-ritual axe scans plus one supporting candle screenshot,
-  forward/reverse keyboard focus, expanded text, desktop/mobile RTL, connectivity, create/reveal,
-  retry/limit/resume/report, interpretation, both free rituals and modes, pause/exit/completion,
-  stable-key offline/error retry, 44px targets, theme, no-JavaScript, storage, and local-request
-  checks.
-- `pnpm test:database-foundation` passes local PostgreSQL attestation, all MVP migrations, seed,
-  least privilege, RLS, constraints, transaction/race/reset/restore behavior, anonymous identity,
-  tarot reporting, interpretation claim/replay/fencing/fallback behavior, and intention
-  ownership/encryption/idempotency/concurrency/lifecycle/negative-constraint behavior.
-- Codex reran all three environment-dependent commands in the unrestricted local environment after
-  the prior approval infrastructure blocker was removed. They use loopback-only test services and
-  do not access production, deploy, or call paid providers.
-- GitHub Actions run `30492438707` passes `Quality`, `PostgreSQL integration`, and `Security scans`
-  together on private PR `1`; the hosted quality requirement is satisfied without weakening or
-  skipping any required job.
-- The focused RIT-093 supply-chain run queried the exact Swiss Ephemeris commit through OSV and
-  received zero vulnerability records. Its 120-file native-component Corresponding Source archive
-  passed cross-platform extraction, complete inventory verification, rejecting-curl enforcement,
-  an offline metadata-identical rebuild, and a frozen-lockfile install. No full workspace suite
-  was repeated.
-- The focused native double-build and macOS UBSan gates now include forty fixed Astronomy Engine
-  vectors for ten bodies across 1801, 1888, 2000, and 2050. All pass the fixed `0.02°` angular and
-  `0.001` relative-distance limits alongside the existing five native integration cases and 151
-  mutation/boundary cases.
-- The same archived component passed Ubuntu 24.04.4 arm64 ASan+UBSan, all 151 deterministic
-  mutation/boundary cases, 5,000 libFuzzer runs, and both sanitized native integration files under
-  Node 24.18.0, pnpm 11.13.1, and Clang 18.1.3.
-- The complete release-source boundary passes eight focused synthetic Git/archive cases plus the
-  locked CI contract. Clean revision `1fded12559b4e2986a317f2a6fee4008a2c22b8a` produced and
-  independently verified the 914-file complete archive with SHA-256
-  `68cc39041511e1de29fa9355efc512d065c32612e88d396d6dbfe9aebafb4ae6`; no upload, deployment, or
-  public-source claim is made.
-- The obsolete owner-untracked `apps/web/server/tarot-reading-state 2.ts` safe-off stub was removed
-  after comparison proved that the canonical implementation fully supersedes it. The two
-  D-030-excluded QA report copies remain untouched.
+- RIT-074's isolated PostgreSQL fulfillment gate applies all 42 migrations and proves three
+  current one-to-one dispute support projections, refund-before-projection exclusion, fixed local SLA/template,
+  existing Credit hold/refund/shortfall behavior, exact role/RLS boundaries, and private-journal
+  denial. Three Worker tests prove projected, idle, and contained/retried persistence-failure paths.
+- `@rituvia/db` and `@rituvia/worker` type checks/builds, repository lint, 43-file immutable
+  migration policy, and the 587-source-file architecture policy pass under Node.js 26.5.1 and pnpm
+  11.13.1. Operational-case and commerce-admin PostgreSQL regressions also pass under the final
+  additive migration.
+- RIT-075 focused verification passes 112 tests across architecture policy, feature flags, the pure
+  route-control contract, legacy commerce, Stripe checkout, replay/subscription boundaries, HTTP
+  mapping, and the zero-argument Web feature-flag composition.
+- `@rituvia/payments` and `@rituvia/web` type checks pass under the pinned Node.js 26.5.1/pnpm
+  11.13.1 toolchain.
+- Workspace lint and the 584-source-file architecture policy pass. The payments package rebuilds,
+  and the Web production build compiles and generates all 61 routes.
+- Independent payments-risk review findings for forged activation provenance, independent flags,
+  old Checkout URL replay, control-reader failure, subscription safe-off, and 403/503 separation
+  were resolved.
+- The prior RIT-129 milestone closure passed the complete pinned workspace check and 61-page Web
+  build. That earlier result is not substituted for the affected RIT-075 closure gates.
+- Generated evidence is synchronized across 196 durable records, index, compiled manual, and
+  checksums; the manual remains below the 1 MiB policy limit and secret policy passes 1,228
+  tracked/unignored files. No test result authorizes deployment or provider activation.
+- RIT-168 focused verification passes 199 unit/route/proxy tests, all 43 migrations with invite
+  concurrency/privilege/restore and private operator-output checks, affected type checks and Web
+  production build, and a real browser/Axe/mobile/privacy gate for `/en/beta` and its exact
+  `Enter protected Beta` Button.
 
 ## Queue authority
 
-`BACKLOG.md` alone determines the executable next task from priority, status, dependencies, and
-owner gates. This dated capability snapshot intentionally does not copy a task ID; blocked context
-remains above and task history stays in Git and durable records.
-
-## Current quality state
-
-On 2026-07-24, the production-pack ZIP, golden prototype, machine-readable contracts, 18
-screenshots, and manifest verifier retain their declared integrity checks. The current tree passes
-CI structure, the architecture policy, durable-record validation, 15 immutable migration
-policy files, generated evidence, instruction validation, exact-static-asset secret policy,
-formatting, lint, 12-package type checking, 1,587 unit/contract tests in 115 files, and 145 fixed AI
-release assertions. With `BRAND_CANONICAL_ORIGIN=http://127.0.0.1:4175`, all 12 production build
-tasks pass and the verifier checks 103 artifacts/exports, four public pages, and five private
-experience pages. Production-artifact accessibility and the full PostgreSQL foundation suite passed
-in the unrestricted local environment; historical RIT-158 runs remain separately identified rather
-than substituted for this evidence. The 2026-07-26 configuration-boundary rerun reaches the
-finite-route phase but does not pass the legacy direct-RSC assertions after `/en` became dynamic.
-No new full workspace, full accessibility matrix, or full PostgreSQL foundation run is claimed for
-RIT-093 or RIT-094.
-
-RIT-094 passes Web production build and affected type checking, 181 focused route/contract/proxy/UI
-tests, and a dedicated production-artifact Chromium gate. The browser evidence covers a 320px
-viewport at 400% root zoom, keyboard focus, forced colors, reduced motion, pseudodirectional RTL
-with LTR chart geometry, exact/approximate/unknown/empty/offline/unauthorized/unavailable states,
-zero critical or serious Axe violations, zero browser-storage entries, zero private API query
-parameters, and no document-level horizontal overflow. The browser's Axe run reports only its
-allowed color-contrast incomplete classification; no color-contrast violation is claimed as
-passing through suppression.
-
-RIT-095 is complete with a provider-neutral safe-off natal interpretation boundary. It strictly
-reparses RIT-093 facts, independently recomputes persisted aspects from authoritative longitudes,
-stops unavailable states before artifact/model work, exposes only minimized placement/aspect
-references and bounded provenance, preserves approximate-time suppression, and forbids model
-degree, house, deterministic-label, fixed-personality, certainty, professional-advice, dependency,
-paid-efficacy, persecution, self-harm, and injection drift. Exact content/prompt/fallback integrity
-and authority, digest/input/single-use binding, deterministic replacement, and independent
-semantic review are enforced. The fixed synthetic gate passes all 30 cases through 35 assertions
-with zero external requests and zero paid calls. No production content, provider/model, live
-reviewer, API, persistence, Credits, natal prose UI, activation, deployment, or public behavior is
-introduced.
-
-RIT-096 and OWN-016 are complete through D-073. The approved English publication at
-`/en/astrology` plus four method guides binds D-067 through D-070, the pinned Swiss Ephemeris
-technical reference, explicit source rights, exact body/house/aspect/uncertainty tables, owner
-review dated 2026-07-27, and worldwide RITUVIA rights for public display, commercial use, SEO
-publication, and translation. The pre-approval review bytes retain SHA-256
-`6c142722f993590981552eae6aac653ffc038156497e5eb43e49ebc8ed51e90b`; the approved publication file
-has SHA-256 `a27ca9b9a6fa6881353ff49c9acce0992bce094d3a53353013efaa2978a16504`.
-Only the five exact routes enter the production index, robots, and sitemap inventories. Local,
-preview, staging, RSC, private natal, sign/personality, and personalized routes remain
-non-indexable. The pages contain no birth input, personalized output, prediction claim, FAQ/review
-schema, or private API request. Production deployment, DNS,
-public launch, and actual crawl activation remain separate owner gates. Five focused files pass
-185 publication, metadata, routing, SEO, and proxy tests; the Node 24.18.0 production build
-statically generates all five routes, and the 320px Chromium gate passes five Axe scans with zero
-serious/critical violations, zero unexpected API requests, zero console/page errors, exact
-production robots/sitemap admission, and 81 explicitly reviewed color-contrast incomplete nodes.
-
-RIT-100 and RIT-101 are complete through D-075. `@rituvia/i18n` provides strict BCP 47 and IANA
-time-zone parsing, exact ICU arguments, nested plural/select formatting, explicit locale
-formatters, finite fallback telemetry, fail-closed translation publication, locale-derived text
-direction, and test-only `en-XA`/`ar-XB` ICU pseudolocalization. Checksummed English source and
-glossary records carry rights, context, risk, placeholder, markup, link, editorial, and reviewer
-metadata. Publication blocks missing/unexpected keys, stale source drift, unsafe expansion,
-glossary or forbidden-term violations, identical untranslated content, and insufficient review;
-runtime admits only an exact process-authorized approved catalog.
-
-Current shell, account, Sanctuary, Revisit, Tarot, commerce, numerology, and astrology surfaces use
-explicit locale formatting and structural bidi isolation without activating another locale. The
-RTL gate rejects physical directional CSS, invisible bidi controls, production pseudolocale
-imports, and reviewed contract loss. Production-artifact Chromium passes 79 Axe scans over
-fourteen public and three private routes with expanded text, desktop/mobile RTL, keyboard, touch,
-dark, reduced-motion, no-JavaScript, offline advisory, and local-only request checks. Dedicated
-numerology, Revisit, and astrology flows pass 320px RTL; astrology keeps the wheel LTR at 400% zoom
-under forced colors. Actual Arabic routes, reviewed content, email, share cards, support, and
-launch remain unimplemented and gated.
-
-RIT-103 is complete through D-076. One stable-ID, approval-bound route matrix now drives all
-fourteen approved English static paths, generic localized segment pages, SSR document
-language/direction, canonical and reciprocal hreflang metadata, robots, substantive revisions,
-and a production sitemap index with exact English pages/numerology/astrology shards. The redirect
-engine permits only explicit queryless same-locale stale slugs targeting a current reviewed route;
-Git history contains no superseded production public slug, so the production history is
-intentionally empty rather than populated with invented aliases. Synthetic `es-419` tests prove
-localized segment and redirect behavior without entering runtime.
-
-The RIT-100 client boundary is also reconciled: browser bundles consume a checksummed source-bound
-message-only projection and no longer include source rights, reviewer, server configuration, or
-fallback-brand literals. Focused route/SEO tests, Web/i18n type checks, production build and shell
-artifact policy, the real HTTP configuration boundary, and the fourteen-public/three-private
-production-artifact accessibility run pass. English remains the only supported/published locale;
-RIT-105 remains blocked on OWN-004.
-
-RIT-102 is complete through D-077. The UI now has local-only Japanese, Korean, Simplified Chinese,
-Traditional Chinese, and Devanagari UI/display fallback stacks, strict CJK line breaking, normal
-grapheme-safe wrapping, script-appropriate shaping/line height, and no production `break-all`.
-Private human text is preserved in NFC, permits legitimate ZWJ/ZWNJ, retains supplementary CJK
-characters, and still rejects zero-width space, bidi overrides/isolates, unsafe controls, and
-isolated surrogates. NFKC is limited to safety-classification copies rather than stored text.
-
-The test-only writing-system harness loads both UI and Web CSS and hydrates a real controlled React
-field. Chromium at 320 CSS pixels verifies four CJK punctuation/line-break profiles, five actual
-platform-font providers without LastResort/tofu, measurable Devanagari shaping, Japanese and Hindi
-composition across forced rerenders, canonical ISO dates, Axe, touch targets, and zero external
-request, storage, console, page, or locale-activation failure. English remains the only runtime
-and published locale.
-
-RIT-104 is complete through D-078. A separate checksummed English lifecycle-message catalog now
-renders a once-only Revisit reminder and support-receipt preview as semantic HTML plus equivalent
-plain text. Reminder queue rows persist exact template ID, version, source checksum, resolved
-locale, and fallback state; the Worker validates the retained registry entry after send-time
-authorization rechecks the current date, time zone, due threshold, and quiet hours. Unknown
-templates and unsupported delivery locales fail before provider use. Explicit fallback exists
-only in local preview and emits one non-identifying event.
-
-The GET-safe reminder preference deep link focuses settings without mutating consent. Focused
-i18n, Domain, Worker, Web, migration, real-PostgreSQL, architecture, localization, Chromium
-preview, and Revisit-browser evidence passes without running the complete 1,674-test matrix under
-D-050. Production runtime remains safe-off before queue claims: no scheduler, email provider,
-support mailbox, legal unsubscribe text, actual send, non-English message catalog, deployment, or
-public launch is activated. At RIT-104 closure no backlog item was Ready; RIT-105 remains blocked
-on OWN-004 and gates RIT-106.
-
-RIT-047 adds one production-artifact Chromium context that navigates in the same tab from safe
-intake through deterministic Tarot, exact-reading intention handoff, free reduced-motion ritual,
-private journal, and Revisit completion/deletion. It proves mobile keyboard and focus behavior,
-RTL reflow, touch targets, zero serious/critical Axe findings, stable-key manual recovery, no
-automatic mutation retries, no account or payment request, and continuous private-canary isolation
-across URL/history, storage, metadata, console, screenshots, and request boundaries.
-
-RIT-158 passes the production-artifact Playwright flow from anonymous reading through intention,
-free ritual, encrypted journal, account merge, fresh account, 18+ attestation, four exact prices,
-signed local hosted checkout, entitlement, owned paid ritual, revisit, mobile layouts, and sign-out.
-All 11 steps pass with zero serious/critical Axe findings, page errors, unexpected console errors,
-unexpected HTTP/request failures, or desktop/mobile horizontal overflow.
-
-The corrective Playwright run also passes a direct Sanctuary visit with no saved reading through
-standalone intention, free candle, private journal, and completion. A fresh active-catalog draw
-revealed `The Star`; the accepted set contains exactly the 22 Major Arcana identities. Both current
-screens have zero serious/critical Axe findings, page errors, unexpected console errors, and
-unexpected HTTP failures; four signed-out `401` responses from `/api/v1/me` and
-`/api/v1/entitlements` were expected and classified.
-
-The pinned Node.js 24 runtime passes formatting, lint with zero warnings, strict type checking
-across all 12 workspace tasks, the prior milestone's 1,587 unit/contract tests in 115 files, 145
-fixed AI release assertions, the architecture gate, all 17 immutable migration-policy files, the
-tracked/unignored secret scan, and all 12 production build tasks. RIT-050 adds a current focused
-213-test authentication/proxy result, while RIT-051 adds 65 focused tests and the isolated
-16-migration merge gate instead of repeating the complete unit suite. The prior full PostgreSQL 17
-matrix verifies MVP schema, least privileges, RLS, constraints, concurrency, guarded reset,
-privacy canaries, and non-empty logical dump/restore without touching unrelated PostgreSQL
-instances.
-
-The build verifier checks 115 artifacts and narrowed exports, including exact UI stylesheet parity,
-all four canonical pages, all five private experience pages, the intake/reading APIs, the
-anonymous-session and account-authentication routes, identity and
-question-intake domain/database exports, the divination parser, safe-off fixture assessment,
-deterministic draw/replay/verified projection vector, the reading service/API/persistence boundary,
-the compiled AI Tarot input/output fixture, provider/version exports, published-content retrieval,
-prompt artifacts, placeholder rejection, pre-generation crisis zero-continuation, exact allowed
-authorization binding, non-exported authorization issuers, provider-neutral generation and
-authorized-fallback exports, the compiled safe/unsafe post-generation verification gate, and
-atomic interpretation claim/finalization/verification persistence, the private interpretation route,
-and the icon. Maximum Web output is 7,705 B gzip HTML, 8,931 B gzip CSS, 230,675 B gzip JavaScript,
-and 356 B raw icon. The narrowed exports now also include the compiled strict ritual domain,
-Git-authored catalog parse, and read-only ritual-object route.
-Mutation tests reject remote, ambiguous, escaped, entity-obfuscated, unbudgeted, non-canonical, or
-traversal-capable build resources before file access, plus poisoned canonical/robots/route behavior.
-The architecture verifier audits 330 source files across 12 active modules and keeps module,
-runtime, browser/server, provider, UI-host, storage, unsafe-HTML/style, and adapter boundaries closed.
-
-RIT-024 focused evidence covers 147 domain, cryptographic, service, proxy, and HTTP tests. RIT-025
-adds the first strict V2 one-card consumer. RIT-026 generalizes the flow and adds exact three-card
-position-title/order/uniqueness parsing, real service create/replay projection, browser-state,
-transport, proxy, metadata, build, and accessibility coverage. RIT-027 adds exact limit-policy
-matching, explicit new-reflection and previous-result state, controlled empty radio behavior,
-bounded wait handling, and owner-bound append-only categorical reports. Real
-PostgreSQL integration proves clean/idempotent migration, exact owner/session authorization,
-same-key replay and conflict, key rotation, winner-before-entropy concurrent creation, atomic
-limits, immutable execution, least privilege, and non-empty logical restore. Independent review
-found no remaining P0/P1 after the canonical GET route and catalog checksum/approval provenance were
-included in the complete execution binding. The synthetic fixture remains intentionally ineligible
-for publication and retrieval, and runtime composition remains hard unavailable rather than
-silently substituting test content.
-
-RIT-029 adds per-type UUID-only tab storage, hydration-safe one-shot owner retrieval, strict
-response/ID/type binding, explicit restored reveal, definitive-clear versus transient-retain
-recovery, and individual reading-expiry enforcement. Focused coverage passes 285 tests in 10 files.
-Playwright production-artifact acceptance restores the same one-card and three-card results after
-refresh, proves reveal produces no API request, clears a stale ID on private `404`, preserves exact
-three-card order, rejects opener-cloned storage without an owner GET, and has no horizontal
-overflow at 320px. A fresh database-script rerun remains
-bounded by the unrelated `IPO.ONE` process occupying fixed port 55432; it was not stopped or
-modified, and no RITUVIA assertion failed.
-
-RIT-030 activates only the pure AI contract boundary: public Tarot facts and exact provenance enter
-a strict input schema; canonical reflective output, normalized provider results, provisional
-streaming, and operational metadata remain bounded and provider-neutral. Sixteen focused tests in
-two files cover valid one-/three-card fixtures, every supported tone/time horizon, private and
-internal-audit rejection, opaque allowed-only generation authorization, JSON-only input without
-getter/proxy execution, exact fact/source/ritual binding, schema/provenance drift, hostile text,
-unsafe claims, fake providers, categorical failures, and metadata isolation. No provider SDK,
-network call, secret, raw question, production model/content, persistence, UI, or activation is
-introduced. The database suite was not rerun because the unrelated `IPO.ONE` PostgreSQL process
-still owns the repository-fixed port 55432; it was inspected only and not stopped or modified.
-
-RIT-031 adds a second fail-closed trust boundary before generation: checksums prove exact canonical
-bytes, separate server-owned authority callbacks prove allowlist approval, and only selected
-published content with valid review, rights, locale, tradition, theme, draw, and spread evidence can
-enter a runtime-issued prompt artifact. Every substantive system/tone instruction is inside the
-approved prompt checksum; facts and excerpts stay in bounded JSON data, and exact content,
-source/rights, deterministic-engine, prompt, schema, retrieval, assembly, and safety provenance is
-serializable without retaining private questions or internal draw audit. The canonical placeholder
-remains a negative fixture. No provider request, model call, persistence, production content,
-network, credential, API, UI, or activation is introduced; RIT-033 must wire the approved mappings,
-accept only the branded artifact, and persist its provenance.
-
-RIT-032 adds the pre-generation trust boundary: every bounded raw intake is parsed and re-evaluated
-server-side, lone-surrogate Unicode is rejected before classification, every non-empty non-crisis
-question requires exact authorized classifier evidence, and routes can only stay equal or become
-more restrictive. Questions and risk categories remain transient; non-allowed and invalid cases
-cannot invoke continuation or mint authorization. Allowed continuation separately requires exact
-safety-policy authority and receives an opaque authorization bound to the complete request and
-intake/safety policy identity. Sixty-five focused safety tests plus independent reviews cover route
-precedence, nuanced categories, uncertainty, confusables, authority/result failures, policy drift,
-forgery/reuse, immutability, and privacy canaries with no remaining P0/P1. No real classifier,
-provider/model, network, credential, API/UI, crisis-resource change, or activation is introduced.
-
-RIT-033 composes the full safe-off generation boundary: exact runtime-issued artifacts are checked
-before a durable claim and before any provider capability can execute; the provider-neutral request,
-strict result/fact/source validation, monotonic timeout/cancellation, single bounded retry,
-authorized deterministic fallback, and redacted fixed metadata fail closed. Idempotent replay and
-in-progress responses execute zero provider work, reclaimed work is fallback-only, configuration,
-invalid-request, and unknown failures become durable no-output terminal rows, and a provider
-candidate remains transient and non-displayable until RIT-034 verifies or replaces it. Focused
-AI/Web coverage passes 34 tests; the isolated real-PostgreSQL matrix proves the claim, fencing,
-retention, privilege, and restore properties described above. No real provider/model, provider SDK,
-API key, network call, paid inference, production prompt/content/template activation, API/UI,
-payment, deployment, or public launch is added.
-
-RIT-034 closes the post-generation boundary while remaining safe-off: exact runtime-issued
-single-use candidates and context undergo deterministic whole-output fact, source, orientation,
-safety, dependency, and injection checks before an independent bounded reviewer can approve.
-Uncertainty uses only the already-authorized exact safe replacement; trust failure produces no
-output. Atomic parent finalization and append-only verification persistence expose only a durable
-verified/replacement child, authenticate replay with a keyed HMAC, hide pending provider prose, and
-leave historical childless pending rows non-displayable. Focused coverage passes 149 AI assertions
-and 27 Web-composition tests, with the PostgreSQL and full repository evidence described above. No
-production provider, reviewer, model, SDK, key, network request, paid inference, API/UI, payment,
-deployment, or public launch is added.
-
-RIT-035 adds only the private durable-delivery boundary: an explicit owner-bound idempotent POST
-starts or resumes work, a separate GET can only observe state, and the browser accepts no
-provisional prose. A strict redacted DTO exposes processing/failed or durable verified/reviewed-
-fallback output; the shared client panel enforces one in-flight request, abortable foreground
-polling, an eight-poll ceiling, stale-response denial, cancellation, and same-operation manual
-retry. Focused coverage passes 233 assertions and the full repository/build/accessibility gates
-described above pass. Runtime adapters remain hard unavailable, so no provider, reviewer, model,
-SDK, key, network request, paid inference, catalog/content/safety activation, payment, deployment,
-or public launch is added.
-
-RIT-036 adds the explicit local release decision above the RIT-032 through RIT-034 production
-boundaries. Exact suite bytes bind a metadata-only baseline; code-fixed thresholds require
-100% applicable fact/schema/source/fallback and safe-control outcomes with zero critical failures,
-missing/unexpected cases, unsafe continuations, privacy leaks, network calls, or paid calls. The
-dedicated executor binds 34 cases to 145 passing assertions in six files before generating
-in-memory observations, and the CI-contract suite prevents removal, replacement, or reordering.
-The runtime remains hard safe-off: no provider, reviewer, model, SDK,
-key, network, paid inference, production content/safety activation, database, UI, payment,
-deployment, or public launch is added or approved.
-
-The production Web matrix proves restrictive browser headers, server correlation, independent route/intake safe-off behavior,
-exact canonical/robots/sitemap polarity, private/query/internal/RSC rejection, and sensitive-canary
-isolation. RIT-010 through RIT-013 browser evidence retains semantic, content, SEO, no-JavaScript,
-mobile, and same-origin coverage. Fresh production-artifact acceptance passes all four public routes
-plus the private intake, one-card, and three-card pages with 39 blocking Axe scans, exact
-selector-level review for 459 gradient/background `color-contrast` incomplete nodes plus independent
-token contrast tests, complete forward/reverse focus, skip-link transfer, 44px targets, 40%
-expansion, desktop/mobile RTL, dark/reduced-motion/no-JS states, a persistent
-online/offline/online advisory announcement, six exact deterministic create/reveal/retry/limit/
-resume/report scenarios, exact interpretation retry/polling/verified/fallback/offline scenarios,
-two supporting screenshots, and local-only requests. CLI Playwright also verifies all four
-synthetic state variants at 320px, RTL, and dark mode with zero console errors.
-
-The real local and CI-shaped PostgreSQL 17 suites prove clean/idempotent migrations and synthetic
-seed, separated least-privilege roles, forced RLS, exact activation and append-only constraints,
-guarded reset, non-empty dump/restore, transaction/race behavior, migration drift checks, and DDL
-denial. The RIT-020 path additionally proves no plaintext token storage/logging, fixed
-expiry/runtime revocation, bounded full-ledger consent validation and withdrawal, eight-way
-idempotency races, privacy-minimal global capacity, injected privilege-drift denial, exact identity
-column privileges, and exact restored-history behavior and attestation. Repository architecture,
-CI/toolchain, historical migration, current-tree/full-history secret,
-actionlint and dependency gates pass. The current dependency audit reports zero critical/high and
-two moderate advisories in Prisma's transitive tooling path: `@hono/node-server` Windows
-`serve-static` traversal and a Valibot issue-path flattening failure. RITUVIA does not expose the
-Hono adapter as a product runtime or static-file server, and neither advisory is introduced by
-the i18n dependencies.
-Independent
-accessibility, architecture, localization, and security review found no remaining local-slice P0/P1;
-the intentionally global issuance gate and required pre-gate catalog attestation remain explicit
-production-abuse/load P2 release risks and are not accepted as complete production admission
-controls. Feature-flag and anonymous-identity access now share one bounded database pool per Web
-process instead of either path creating one per request.
-Playwright CLI against the local production artifact verifies 204 create/resume, redacted exact
-cookie attributes, empty/no-store/noindex responses, query rejection, public navigation, 320px
-reflow, and skip-link focus; its temporary local shell activation was appended safe-off afterward
-and the token-bearing network trace was removed.
-RIT-021 Playwright CLI evidence additionally verifies native theme selection, required-theme focus,
-mismatched-origin rejection, the same-origin theme-only allowed flow, and private page semantics
-against an isolated production build whose feature-flag reader is replaced only by a deterministic
-test adapter. Reframed, blocked, crisis, offline/degraded, edit/stale-response, 320px, RTL, dark,
-no-JavaScript, noindex/no-store, and raw-question non-retention behavior are covered by the
-component, domain, API, production HTTP, and Chromium/axe gates rather than overstated as CLI flows.
-RIT-027 Playwright CLI evidence verifies one-card create then presentation-only reveal, exact
-category/position report submission with no free text, independent report idempotency, empty `204`
-success, explicit manual retry, explicit new reflection, a truly cleared theme choice, old-result
-preservation through a limit state, and no immediate limit retry. At 320px the one-card and
-three-card results have no horizontal overflow; the latter exposes exactly three ordered cards and
-all three canonical report positions. The success responses exist only in isolated browser routes;
-the same latest production server returns an empty 404 without interception.
-Production migration/deployment, canonical-domain/DNS changes, actual indexing, and Search Console
-remain separate owner gates. `origin` now points to the private
-`https://github.com/CPTM511/RITUVIA` repository, and committed `main` revision
-`2ff7a1c6106f4e78e34dfe283680701860ecd9cf` produced the first hosted three-job Actions run
-`30466750711`. The run truthfully failed: the historical revision used a non-existent actionlint
-Linux asset name, did not build `@rituvia/security` before the PostgreSQL verifier, and predates the
-current migration manifest. Private PR `1` then ran the cumulative source in hosted run
-`30468813822` and exposed three additional clean-checkout assumptions: observability was not built
-before the analytics verifier, the Prisma client was not generated before the database verifier,
-and default Gitleaks classified 11 historical test constants as generic API keys. The current
-worktree fixes all six root causes with self-contained commands and an exact 11-fingerprint
-historical ignore list; focused CI-contract, fixed-tool, generated-client, and internal dependency
-build checks pass locally. Hosted run `30469853925` subsequently scanned all 40 commits with
-Gitleaks and found no leaks. It exposed one further clean-runner i18n build prerequisite and a
-10-second native sanitizer compile bound that was too short for the hosted runner; both are fixed
-with an explicit i18n build and 60-second bounded compiler stages. A cached-source native security
-rerun also identified and fixed the sanitized compiler environment's missing trusted temporary
-directory, then passed 151 mutation cases and the 23-component supply-chain validation. That run's
-PostgreSQL job never reached database verification because repeated npm registry timeouts aborted
-dependency installation, which remains external transient evidence rather than a database result.
-Hosted run `30470928541` then passed the complete Security job, including native sanitizer,
-SCA/CVE, and Corresponding Source checks. Quality reached the formatting gate and found two
-existing format drifts, now corrected with a full repository format check. PostgreSQL generated the
-pinned Prisma client and built security before revealing the remaining missing domain build output;
-the self-contained database command now builds domain, security, and Prisma in dependency order.
-Hosted run `30471374114` passed Security again. Quality then reached root TypeScript and exposed
-three clean-runner type-boundary defects, now corrected with a root JSX setting, unshadowed browser
-global, and complete build-policy declaration. PostgreSQL reached schema comparison after all
-prerequisites and migrations; because Prisma cannot represent the committed custom SQL constraints,
-explicit names, indexes, and defaults, the CI verifier now checks the complete normalized diff
-against a strict Prisma-7.8.0 fingerprint. A fresh throwaway database and the existing local
-migrated database produced the same 17,666-byte, 356-line SHA-256 fingerprint. Focused baseline
-tests, affected lint/format, and all 16 package plus root typechecks pass; any schema, output,
-normalization, or Prisma-version change fails closed.
-Hosted run `30473143747` passed the complete Security job for a third consecutive current revision.
-PostgreSQL accepted the strict drift baseline and reached migrated-database invariants before one
-post-migration assertion failed under the prior generic stage label. Quality passed format, lint,
-and typecheck, then ran 1,963 tests: 1,955 passed, five skipped, three configuration-contract
-assertions failed, and 21 files could not import clean-checkout Config/Security build outputs. The
-current worktree fixes the whole Quality set with exact source aliases, current native-script
-environment-reader inventory, configuration-backed publication identity, and new planned
-`RIT-160` astrology flag cleanup. The database verifier now identifies each non-sensitive
-post-migration invariant stage without exposing credentials or data. Twenty-eight representative
-tests, the complete 16-package plus root typecheck, and the milestone integration unit matrix of
-2,144 passing tests across 183 files pass locally.
-Hosted run `30474266506` passed Security again. Quality then passed format, lint, typecheck,
-architecture/evidence checks, 1,963 hosted unit/contract tests, fixed AI evaluations, and the
-configuration boundary before failing only because the artifact policy charged a validated legacy
-`nomodule` compatibility chunk against the modern JavaScript budget. PostgreSQL reached the new
-granular `tarot runtime privilege attestation` stage and revealed broader CI-only
-`reading_report` insert privileges than production permits. The current worktree now grants the
-exact 16 report columns, passes the same privilege attestation on a one-time loopback PostgreSQL
-role, and locks that least-privilege shape in the CI contract. The artifact policy still validates
-all referenced scripts but measures only modern-delivery scripts against the unchanged budget.
-One hundred three focused CI/database/build-policy tests and the complete production build pass locally;
-the resulting maximum modern JavaScript gzip size is 219,789 bytes.
-Hosted run `30475576351` passed Security and confirmed the modern-budget fix by reaching the
-accessibility stage. PostgreSQL passed the corrected Tarot privilege attestation, then exposed an
-outdated policy-inventory assertion that omitted four current privacy-deletion policies. Quality
-exposed a separate outdated exact-equality assumption between the complete 45-page reviewed build
-inventory and its intentionally representative 14-route accessibility smoke subset. The database
-verifier now attests the exact current nine-policy interpretation inventory, matched by a read-only
-query against the one-time loopback migrated database. Accessibility now enforces smoke inventory
-inclusion instead of equality and confines the GEO answer-context's Axe-incomplete contrast
-selectors to its bounded component; the underlying text tokens remain independently proven at
-4.5:1 or better against all reviewed gradients. The complete non-restricted accessibility command
-passes 14 public and three private routes, 79 primary Axe scans, deterministic Tarot acceptance,
-and the intention, ritual, Revisit, full-loop, and writing-system browser gates without
-critical/serious violations, layout failures, private leaks, unexpected requests, or console/page
-errors.
-Hosted run `30477604316` passed Security again. Quality passed evidence, formatting, and linting,
-then failed at Web typecheck because the new runtime accessibility-inventory audit lacked its
-matching `.d.mts` declaration. PostgreSQL passed the current interpretation-policy inventory and
-reached feature-flag append-only behavior, where the old fixed July 17 fixture timestamp violated
-`effective_at >= created_at` before the intended RLS assertion. The declaration is now complete;
-Web and root TypeScript checks pass. Feature-flag fixtures now derive bounded future timestamps
-from the PostgreSQL service clock so policy tests cannot be preempted by runner-date drift. A
-transactional one-time loopback check accepts the intended legacy safe-off row and rolls it back,
-and 68 focused accessibility/contrast/CI/database tests pass.
-Hosted run `30478476010` then passed PostgreSQL integration and Security in the same current
-revision. Quality passed evidence, format, lint, typecheck, the hosted unit/contract matrix, fixed
-AI evaluations, configuration boundary, and production build before reverse keyboard traversal
-read the browser-native one-pixel outline of a transparent radio input instead of the designed
-three-pixel focus ring rendered on its `.rvt-choice` parent. Keyboard acceptance now evaluates the
-actual visible choice/switch parent focus indicator while preserving active-control order,
-visibility, clipping, and `:focus-visible` checks. Twenty-seven focused accessibility tests and the
-complete non-restricted accessibility/browser command pass after the correction.
-
-D-090 records the owner's explicit public-source decision. GitHub now reports the AGPL repository
-as public and protects `main` with strict, up-to-date `Quality`, `PostgreSQL integration`, and
-`Security scans`; administrator enforcement; pull requests; linear history; resolved
-conversations; and force-push/deletion denial. Hosted run `30494018585` passes all three jobs
-together on the protected candidate tree. Public repository visibility is source disclosure, not a
-production deployment, DNS change, indexing activation, or public product launch.
-
-D-079 records the owner-approved development baseline: IPO.ONE's BVI entity direction, an 18+
-product, United States and English as the first production-launch candidate, reviewed closed
-testing for `es-419`, `pt-BR`, and `fr`, later Mexico/Brazil candidates, deferred France/EU launch,
-a mandatory-law-preserving digital refund direction, active SEO/GEO engineering, and
-preparation-only ASO. `OWN-004` and `RIT-105` remain blocked on exact entity particulars,
-qualified legal review, final policy text, and tax/MoR evidence; no country, locale, policy,
-payment, deployment, indexing, or native-app distribution is activated.
-
-RIT-110 is Done with a Git-authored shared editorial registry and pure `@rituvia/content`
-publication boundary. Two existing approved English numerology and Western natal education assets
-bind exact checksums to stable identity, source/claim evidence, rights, review, version, risk,
-locale, and lifecycle metadata. Private preview is exact-digest, private/no-store, and noindex;
-publication additionally requires process-owned record/source authority fingerprints and locale
-authority. The forward-only status graph, exact translation source binding, reciprocal acyclic
-deprecation, canonical-path ownership, symlink/path denial, 108 focused tests, package build,
-architecture, CI, record, formatting, lint, lockfile, and secret gates pass without a CMS,
-database, public route, content-text change, locale/index activation, provider, deployment, or
-public launch.
-
-RIT-111 is Done through D-081: one Tarot library hub, 22 Major Arcana
-card pages, and two spread guides bind the exact approved local source catalog and resulting
-approval envelope. The shared editorial registry and active localized route registry now contain
-exactly those 25 English educational routes, with production-only canonical metadata, robots, and
-the English Tarot sitemap. Strict parsing, answer-first semantic components, source/rights
-separation, structured data, bounded internal links, mobile/forced-colors styles, and focused
-contract tests preserve no AI retrieval, personalized-result indexing, doorway expansion, new
-locale, deployment, DNS change, or public launch. The production Next.js build, 39-route public
-shell policy, 272 focused tests, strict typecheck, ESLint, shared editorial authority,
-architecture, secret scan, and representative 320 px Chromium/Axe gate pass without increasing
-asset budgets.
-
-RIT-112 is Done through D-082. One ritual/reflection hub and five distinct English guides bind the
-D-047 original-secular virtual ritual catalog and preserve the free virtual candle/incense flow,
-user agency, private-by-default reflection, and voluntary revisit timing. The exact approved
-artifact SHA-256 is
-`f551a42c2e55847736539ff57a0a3fd46a987dfd388235412a8c7790c23409bf`; no reviewed body copy or
-route slug changed during approval promotion. The shared editorial registry, localized public
-route registry, production-only canonical metadata, robots allowlist, and English rituals sitemap
-now contain exactly those six routes while physical fire/smoke, efficacy, cultural authority,
-personalization, private input, AI retrieval, doorway expansion, another locale, and regional
-traditions remain denied. The 60-page production Web build, 200 focused contract tests,
-four-record/nine-source/nine-claim editorial authority, architecture, non-restricted production
-configuration boundary, and representative 320 px Chromium/Axe gate pass; the browser gate found
-and closed one 44 px touch-target issue. No deployment, DNS change, public launch, actual indexing,
-AI activation, new locale, or regional tradition is approved. RIT-113 is now the sole In Progress
-item.
-
-RIT-113 is Done through D-083. One deterministic source-bound inventory now covers exactly 45
-approved English pages across core, numerology, astrology, Tarot, and ritual/reflection families.
-Every record binds stable route, locale, family, shape, intent, canonical, authority, source-set
-digest, review freshness, content digest, substantive structure, internal links, and nearest-page
-similarity. Exact and bounded near duplication, short-page containment, template substitution,
-thin content, same-intent cannibalization, canonical collision, stale authority, missing links,
-and private, personalized, query, framework, unknown, or unapproved exposure fail offline without
-an external provider.
-
-Canonical/hreflang metadata, robots, sitemap, configuration-boundary crawl checks, and the public
-build policy consume the same complete inventory. A single missing, extra, malformed, expired, or
-failing record omits canonical alternates, forces noindex, disallows all crawling, and suppresses
-sitemap output rather than publishing a partial set. The quality verifier, 168 focused tests,
-strict content/Web typechecks, focused lint/format, CI contract, architecture, records, generated
-evidence, secret scan, 60-page optimized Next build, 45-route public artifact policy, and
-non-restricted production configuration boundary pass. The full workspace verifier still reports
-the separately existing private three-card JavaScript aggregate above its fixed budget; RIT-113
-does not modify that private client slice or weaken the budget. No route, locale, country,
-deployment, DNS, actual indexing, or public launch is added or approved.
-
-RIT-114 is Done through D-084. Every one of the 45 approved English public pages now emits one
-minimal source-authorized JSON-LD graph: one `WebSite`, three `WebPage`, four `CollectionPage`, and
-37 `Article` documents. Exact canonical identity, English language, visible H1 and description,
-and explicit inventory-authorized parent hierarchy are enforced. Parent links must be visible;
-template, hidden, `aria-hidden`, script, and style content cannot satisfy search evidence.
-Breadcrumbs, author, publisher, date, FAQ, HowTo, Product, Offer, rating, and review claims remain
-denied without separate visible authority.
-
-The optimized Next.js build generates 60 pages and the build policy validates all 45 public
-artifacts within fixed budgets. The non-restricted production configuration boundary requests and
-audits the complete 45-page HTTP crawl surface. Twelve focused test files pass 125 tests, strict
-content/Web typechecks, focused lint/format, CI contract, architecture, and the six-page Chromium
-schema/injection gate pass. The browser uses the immutable production static artifacts, permits
-only the existing one-per-page local account-session probe with synthetic 401 isolation, excludes
-private canaries, and makes no external request. No deployment, DNS, Search Console, actual
-indexing, another locale, or public launch was added by RIT-114.
-
-RIT-115 is Done through D-085. The private English one-card result now offers an explicit local
-share-card preview only after reveal. One exact allowlisted `tarot-share-card.v1` projection drives
-the displayed 1200 by 630 SVG, local download, and capability-checked native SVG file share. The
-bounded selected theme is included by default and one control removes it from localized alt text,
-artifact bytes, download, and share payload. Private question, reading ID, interpretation, birth
-data, intention, journal, account data, uploads, persistence, tokens, and analytics never enter
-the share component.
-
-The governed core UI catalog is version 1.1.0 and adds the English ICU accessible-description
-contract. Production projection rejects test pseudolocales; serializer-only `en-XA` and `ar-XB`
-fixtures prove expanded LTR and RTL geometry without activating a route or locale. The private
-result remains noindex with no canonical, Open Graph, or Twitter metadata, while the artifact uses
-only the public `/en/tarot` canonical. Focused unit/localization checks, Web typecheck/build, and
-the dedicated non-restricted 320px Chromium gate pass across exact Blob/download/share bytes,
-private canaries, CSP, network, storage, object-URL revocation, touch targets, and Axe. No
-deployment, DNS, country, locale, public share hosting, provider, or public launch is added or
-approved.
-
-RIT-116 is Done through D-086. Every exact 45-route English public inventory record now renders
-one server-side, human-visible answer-authority section with one of five stable entity identities,
-closed fact/method, tradition, interpretation, and product-policy classifications, approved
-source titles and versions, and truthful owner-review dates. Internal paths, hashes, locators,
-reviewer identities, fake expertise, hidden copy, private input, unsafe markup, unknown
-classifications, duplicate authority, and expired review state fail closed.
-
-The checksummed English GEO record participates in every route's source and visible-content
-digest without owning a canonical URL or adding richer structured-data claims. Existing minimal
-JSON-LD remains unchanged. Eleven focused test files pass 100 tests; focused lint, formatting, Web
-typecheck, architecture, editorial, 45-page quality, optimized build, fixed asset budgets,
-non-restricted configuration boundary, and seven-shape Chromium/Axe/no-JavaScript/mobile/network
-checks pass. No route, locale, tradition, analytics provider, deployment, DNS, Search Console
-action, actual indexing, or public launch is added or approved. RIT-117 is the sole Ready item.
-
-RIT-117 is Done through D-087. One fail-closed `seo-geo-operations.v1` pipeline consumes only
-bounded offline aggregate crawl, index, query, and consented-referral evidence for the exact
-current 45-route inventory. It binds the input, public-page inventory, and five-record/ten-source
-editorial authority with actual SHA-256 digests; reports source kind, approval, freshness, window,
-denominators, route/content/source/rights review state, and explicit included,
-other-or-unknown, excluded, and useful-action referral buckets; and writes new private mode-0600
-JSON and Markdown only.
-
-Stale, unavailable, and synthetic sources yield null performance values and blocked decision use.
-Route query/referral detail is suppressed below 20 observations, 20–199 remains diagnostic, and
-performance review prompts require at least 200. Crawl, index, snippet, referral-alignment, and
-content-review recommendations are bounded human-review prompts and cannot connect a provider,
-publish or rewrite content, request indexing, expand routes, activate a locale, or change
-production. Sixteen focused analytics/CLI tests, 30 CI-contract tests, strict analytics typecheck,
-focused lint/format, architecture, 137-record policy, dedicated offline operations verification,
-analysis-package build/export checks, and the 60-page Web production build pass. The complete
-workspace build verifier still reports the separately existing private three-card JavaScript
-aggregate above its fixed budget; RIT-117 does not modify or weaken that private client slice.
-No analytics provider, tracking runtime, database, user data, deployment, DNS, indexing action,
-locale, or public launch is added or approved. RIT-120 remains Planned until every dependency is
-complete.
-
-RIT-038 is Done through D-088. One fail-closed `ai-operations.v1` projection consumes only bounded
-offline daily aggregates and exposes source kind, approval, freshness, exact window, minimum
-sample, model/provider/prompt/schema/safety/content versions, cost and token coverage, estimated
-cost, latency, retries, failures, reviewed fallbacks, completion, and safe replacements. Unknown
-or private fields, accessors, malformed aggregates, duplicate groups, stale evidence, synthetic
-fixtures, unavailable sources, low samples, symlinks, oversized inputs, and existing output paths
-fail closed or yield explicit null values rather than invented performance.
-
-Review thresholds create human prompts only and cannot change providers, models, prompts, safety
-policy, budgets, admin surfaces, or production. Forty-two focused tests, strict analytics
-typecheck, focused lint/format, architecture, CI contract, 139-record policy, dedicated offline
-verification, and analytics package build/export checks pass. No production reader, provider
-call, raw trace, private prose, database change, admin route, deployment, or budget enforcement
-is added. Monetary limits remain blocked by OWN-005. RIT-120 remains Planned behind the payment
-chain that now begins with Ready task RIT-063; production payment activation remains blocked by
-OWN-002.
-
-RIT-016 is Done through D-089. An isolated, loopback-only protected staging environment used
-PostgreSQL 17, production Web builds, random Basic authentication, private/no-store responses, and
-disallow-all robots. Registry v2 completed forward, database-unavailable, v1 rollback, and v2
-roll-forward probes; registry v3 then completed forward, v2 rollback, and v3 roll-forward probes.
-No public hosting project, production environment, DNS, indexing action, customer data, or public
-launch was used.
-
-Registry v3 removes `experience.public_shell`, its server adapter, delivery branches, and obsolete
-synthetic publication matrices. Web delivery now follows the completed rollout directly while SEO
-inventory freshness independently controls crawl publication. PostgreSQL retains immutable v1/v2
-history for audit and rollback, permits legacy versions to append only `off`, rejects the removed
-key in v3, and allows only exact current v3 keys with their existing owner gates and scopes.
-
-Two hundred five focused registry, composition, Web, and migration tests, strict Config and Web
-typechecks, focused lint/format, migration policy, three production staging builds, the
-31-migration PostgreSQL foundation with repeat migration/seed/reset/restore, the non-restricted
-configuration boundary, architecture policy across 516 source files, record policy across 141
-durable records, and all diff whitespace checks pass. The full workspace matrix is intentionally
-not rerun. RIT-004 and OWN-008 are Done through D-090.
-
-RIT-008 is Done. The canonical four-environment contract distinguishes implemented local
-controls, the verified loopback staging rehearsal, and controls required before any preview,
-standing staging, or production use. It requires isolated data stores, caches, object storage,
-keys, providers, analytics, and email authority; forbids downward production secrets or private
-production content; locks non-production indexing off; and binds promotion to exact revision,
-immutable build/source evidence, required CI, environment-specific configuration, smoke/security
-evidence, rollback readiness, and owner approval.
-
-The focused contract verifier covers ten control sections and ten repository references. Seven
-focused Vitest files pass 91 environment, CI, configuration, SEO, inventory, and secret-boundary
-tests; formatting, lint, typecheck, architecture, CI-contract, and secret-scan gates pass. No
-hosting project, cloud service, production secret, customer data, deployment, DNS, indexing,
-provider activation, migration, or public product launch was added. RIT-123 subsequently completed
-the repository-level backup and restore rehearsal.
-
-RIT-123 is Done. One fail-closed `rituvia.backup-recovery.v1` rehearsal now creates a PostgreSQL
-custom-format logical backup from an exact synthetic local or GitHub Actions source, restores it
-into a distinct invocation-owned empty database, reapplies the local runtime grants or restores
-the exact CI ACL, deploys migrations idempotently, and compares migration, table, row, ownership,
-row-security, constraint, index, policy, privilege, role, and synthetic-sentinel state. The
-runtime role can read the restored sentinel but cannot create or delete data.
-
-The temporary artifact is generated only under an ignored mode-0700 repository directory, must
-be a regular non-symlink mode-0600 custom-format file, and is rehashed immediately before restore.
-Source, target, and artifact cleanup are mandatory even on failure. The ignored mode-0600 evidence
-contains only bounded hashes, counts, versions, timings, and checks. Six focused backup, artifact,
-cleanup, snapshot, and evidence tests join the existing database-safety and CI-contract coverage;
-59 focused tests, database typecheck, CI/environment/migration contracts, and the complete local
-31-migration isolated restore rehearsal pass. Protected hosted run `30507901986` passes Quality,
-PostgreSQL integration, and Security scans, including the same rehearsal after database foundation
-verification against the digest-pinned PostgreSQL 17 service.
-
-This proves repository-level synthetic logical recovery only. It does not claim provider-managed
-physical backup, encrypted isolated retention, WAL/PITR, production RPO/RTO, customer-data
-recovery, or production restore authority. Those remain Gate H owner-approved production work.
-No production service, credential, data, backup, retention rule, migration, deployment, DNS, or
-public launch changed.
-
-D-091 and OWN-017 approve Stripe Test Mode as the first fiat sandbox integration for RIT-063:
-one-time USD checkout only, synthetic US policy only, server-authoritative catalog prices, hosted
-Stripe pages, exact provider idempotency, no redirect-based fulfillment, and no live mode. The
-owner's instruction to approve OWN-002 cannot substitute for the provider-written primary and
-backup production underwriting evidence required by that existing gate, so OWN-002 remains
-Blocked for RIT-140 while the narrower sandbox approval is recorded separately.
-
-RIT-063 now exposes an authenticated, same-origin, CSRF-protected
-`POST /api/v1/checkout/stripe` boundary with the canonical product/path request and
-`orderId`/`checkoutUrl`/`expiresAt` response. The service accepts only non-production Stripe Test
-Mode configuration, resolves active one-time `pack_6`, `pack_15`, or `pack_40` prices from the
-immutable v1 catalog, evaluates the synthetic US/USD/card/Stripe Country Policy, requires exact
-refund and terms versions, and never accepts client money or fulfillment authority.
-
-The v2 persistence creates one server-owned order/item/attempt before provider invocation, derives
-provider idempotency from the public order and attempt number, recovers concurrent exact replay,
-rejects same-key changed requests, atomically attaches only one HTTPS Stripe checkout, and leaves
-all orders at `created` or `checkout_created`. Twelve-way PostgreSQL concurrency, changed-request,
-duplicate attachment, least-privilege, no-paid-state, no-Credit, and no-entitlement evidence pass.
-Forty-one focused configuration, adapter, service, and route tests; affected package typechecks and
-builds; configuration, architecture, environment, record, generated-evidence, and secret gates
-pass. The canonical Web build includes `/api/v1/checkout/stripe`.
-
-No Stripe credential, Price ID, provider account, external payment call, production policy,
-deployment, DNS, or public product launch was added. Real Stripe Test Mode network proof remains
-truthfully blocked until test credentials and exact test Price IDs are supplied through the secure
-configuration path.
-
-RIT-065 is Done through D-092. The webhook role no longer owns outbox delivery mutation; the
-independent `rituvia_payment_fulfillment` role leases ordered versions, rereads current order
-authority under serializable transactions, and can append only bounded grant/restriction/reversal
-evidence plus update exact projection/fulfillment/outbox columns. Its startup attestation also
-rejects any payment-event or journal read authority and any ledger mutation authority. Composite
-owner/source foreign keys prevent new cross-account fulfillment and allocation; any pre-existing
-unbound allocation fails fulfillment closed pending a separately approved audited backfill.
-Disputes move only unspent purchased Credits into a
-nonspendable held bucket; refunds convert active holds and reverse remaining available source
-value; reserved or consumed source value becomes `review_required`.
-
-The private `/api/v1/credits` restoration route returns only the authenticated owner's spendable
-projection with private/no-store headers. Privacy export includes v2 order, Credit, restriction,
-fulfillment, and entitlement evidence. Focused 51-test domain/configuration/worker/Web coverage,
-the 34-migration webhook and fulfillment PostgreSQL gates, privacy-export PostgreSQL gate, affected
-typechecks, and migration policy pass. The fulfillment gate now explicitly proves current-order
-convergence, active-reservation and consumed shortfall, and cross-account allocation rejection.
-It also proves startup denial after synthetic ledger-update or payment-event-read privilege drift.
-No Live Mode, refund initiation, provider dispute/refund route activation, subscription,
-reconciliation, production migration, deployment, DNS, or launch was added.
-
-RIT-066 is Done. `/en/plans` now renders only active server-catalogue one-time US/USD Credit packs
-with exact contents, calm price and refund disclosures, verified-account/18+ gating, and stable
-per-pack retry idempotency. The existing Stripe Test Mode service remains the only checkout
-authority; the client accepts only the reviewed hosted Stripe URL and never supplies money,
-eligibility or fulfillment facts. The private checkout-return API reads only the authenticated
-owner's order and matching current fulfillment version, so `paid` remains pending until active
-fulfillment and missing/cross-account orders remain indistinguishable.
-
-The focused 191-test Web subset, both affected package typechecks, the 34-migration commercial
-checkout and fulfillment database gates, the affected Web production build, and desktop/375px
-Chromium review pass. The focused mobile Axe run has zero violations, no horizontal overflow, and
-no unexpected console errors. The local passwordless start remained safely unavailable in the
-production-build browser environment, so no external Stripe Test Mode checkout was created; the
-return path, failure state, route contracts, CSRF, idempotency and URL boundaries remain covered by
-focused automated evidence.
-
-RIT-067 is Done. The existing worker now performs one bounded, circular and observation-idempotent
-daily Stripe Test scan for the configured account and compares provider Checkout/payment/settlement
-evidence with the internal order, attempt, purchased-Credit grant and current fulfillment version.
-Amount, currency, order, Checkout, PaymentIntent, state, missing/duplicate Credit issuance,
-fulfillment drift, provider API failure and missing provider settlement-availability evidence
-create digest-only append-only operations cases; no raw Stripe response or private user content is
-stored.
-
-The only automatic recovery is a missed successful webhook whose Test account, public order,
-Checkout, PaymentIntent, amount and currency all match exactly. The operations case commits first,
-then the existing payment-event reducer advances the order and writes the normal fulfillment
-outbox; mismatches never change orders, Credits, entitlements or projections. A dedicated
-least-privilege database role fails closed on privilege drift. The 97 focused
-configuration/architecture/payments/worker/Web tests and the webhook, fulfillment and
-reconciliation PostgreSQL gates pass against all 35 migrations. The database evidence includes a
-concurrent signed-webhook/reconciliation race, one outbox and Credit grant, 12-way duplicate run
-contention, observation-sensitive same-day cases and complete coverage of 101 candidates across
-two circular 100-row windows. Affected package typechecks and worker/Web builds pass.
-
-The requested footprint optimization disables unused production server source maps while keeping
-browser source maps disabled. A clean Web build falls from 46 MB to 20 MB, its static browser
-chunks remain 1.2 MB uncompressed in total, and the reviewed `/en/plans` route requires about
-66 KB gzip JavaScript plus 12,249 bytes gzip CSS. No UI framework, service or runtime dependency
-was added for this optimization.
-
-RIT-068 is Done through D-093. The authenticated same-origin route accepts only an order identifier
-and exact client idempotency; amount, reason, provider object, policy and Credit quantity remain
-server-owned. Eligibility is limited to the exact synthetic US/USD Stripe Test one-time Credit
-pack under `local.refund.v1`, and every source Credit must remain active, available, unreserved,
-unheld and unreversed.
-
-Before Stripe invocation, one serializable transaction creates the owner-scoped request and
-source-linked hold and moves the pack from purchased availability into the nonspendable held
-bucket. Stripe uses a deterministic provider idempotency key. Definitive rejection releases the
-hold; ambiguous failure keeps the durable request and exact replay authority. API acceptance is
-only `submitted`. The existing matched refund-event/outbox path records `confirmed`, links the
-payment event, converts the hold and appends one source-linked reversal. Duplicate success events
-cannot regress `refund_requested` to `paid`, and webhook-before-response order converges safely.
-
-The focused 74-test payments/Web slice and refund, fulfillment, webhook and privacy-export
-PostgreSQL gates pass against all 36 migrations. The refund gate proves twelve-way request
-contention, changed-provider conflict, rejection release, signed confirmation, webhook-first
-convergence, refund-versus-reservation serialization, composite owner constraints, append-only
-evidence and least privilege. Affected typechecks and migration policy pass. No dependency,
-microservice or runtime queue was added, and no Stripe Live call, production migration,
-deployment, DNS change, legal-policy activation or launch occurred.
-
-RIT-069 is Done at checkpoint revision `f1633b6`. The Stripe Test Mode adapter now accepts the
-already-supported signed `charge.dispute.created` event and binds the retrieved Charge,
-PaymentIntent and exact Checkout Session before normalization. Unpaid Checkout completion remains
-pending, asynchronous failure remains failed, and expiry remains expired; none grants value.
-Provider signature failures are normalized to one private invalid-webhook response.
-
-The database gate now delivers the same verified success event concurrently twenty times, records
-one transition and nineteen duplicates, and rejects a partial refund amount without changing the
-paid order or creating fulfillment work. Existing refund-first/success-second replay, full refund,
-dispute hold, consumed/reserved shortfall, exactly-once grant, reconciliation, owner return-status,
-and forged redirect-query controls remain intact.
-
-The focused payment matrix passes 18 files and nine PostgreSQL gates against all 36 migrations.
-After final fixture additions, the affected four files pass 32 tests. The milestone workspace run
-passes 2,241 unit tests with five skips, all 96 fixed AI eval cases, configuration and database
-foundation gates, formatting, linting, all 16 package typechecks, and the production build with an
-explicit local canonical origin. No Stripe network request, Live key, production payment,
-deployment, DNS change, legal-policy activation or public launch occurred.
-
-RIT-070 is complete. A local subscription root is reserved before any Stripe Test recurring
-Checkout is created, so concurrent open subscriptions fail before an external session exists and
-same-order retries recover safely. Signed subscription events enter through the exact webhook role,
-whose runtime attestation rejects schema creation, subscription mutation, Credit access, entitlement
-access, or privileged-role drift. Amount, currency, product, interval, order, account, invoice, and
-subscription facts must match the immutable local snapshot before an event is queued.
-
-The fulfillment worker reduces verified lifecycle events, maintains Plus access, and grants exactly
-8 subscription Credits per available month. Annual plans create twelve monthly allocations but
-release only the current one. Duplicate invoices/events/grants remain no-ops. Cancellation revokes
-future subscription allocations without touching purchased Credits. Full refunds are limited to
-the exact provider invoice; unconsumed linked Credits reverse without a negative projection, while
-restricted or conflicting cases create durable review records and the exact poison event is
-quarantined without blocking the queue. Subscription Checkout completion is signature-verified and
-acknowledged without granting value. Full subscription dispute workflow remains explicitly assigned
-to RIT-074.
-
-The focused six-file unit slice passes 59 tests. Payments, DB, Web, and Worker typechecks; DB,
-Payments, and Worker builds; formatting; lint; architecture; secret; migration; and diff checks pass.
-The isolated PostgreSQL gate applies all 38 migrations and proves role denial, 20-way event/grant
-idempotency, amount mismatch rejection, monthly/annual allocation, purchased-Credit preservation,
-invoice-scoped refund reversal across two paid periods, and nonnegative projection. No Stripe Live
-request, production recurring activation, deployment, DNS, or legal-policy activation occurred.
-
-RIT-073 is complete through D-094. The safe-off commerce administration kernel exposes one bounded,
-owner-only order timeline through reviewed security-barrier views. It requires recent account
-authentication, a recent same-session passkey assertion, reason and ticket references, and typed
-confirmation for reconciliation or refund commands. Raw commerce tables and private journals remain
-unreadable by the admin service role.
-
-Administrative commands are persisted before provider execution and use one durable operation
-identifier for executor idempotency. Requested, execution-started, succeeded, and failed evidence
-is append-only and digest-bound to operation, attempt, result, and database time. Exact retries
-converge across concurrent calls and policy-version changes, while changed order, amount, or
-currency fails closed. Reconciliation, refund, inspection, lease, and retry limits are
-explicit and lock-serialized. Every authenticated denial remains in the immutable audit chain; the
-kernel has no HTTP entrypoint, and a future route must add reviewed request-rate enforcement without
-dropping audit evidence.
-
-The focused security unit test, both affected package typechecks, DB build, architecture and
-migration policy pass. The isolated PostgreSQL gate applies all 39 migrations and proves immutable
-historical states, owner/passkey authorization, bounded access, concurrent idempotency, retry after
-synthetic provider failure, policy-version replay, audit and operation-event verification,
-automatic privilege-drift shutdown, raw-table denial, and append-only storage. The shared admin
-security PostgreSQL gate also passes. No admin HTTP route, production passkey issuer, Stripe Live
-executor, production migration, deployment, DNS change, legal-policy activation, or launch was
-added.
+`BACKLOG.md` is canonical. RIT-075, RIT-074, and RIT-168 are Done. RIT-169 is the sole Ready item:
+prepare a disabled, secretless standing-staging deployment preflight without creating or changing
+external resources. RIT-127 remains Blocked on the Owner's exact Option B plus durable atomic
+budget and fixed alert-delivery evidence; RIT-130 remains Planned behind RIT-127 and actual
+standing-staging/Gate H evidence. The recommended bounded Owner choices are in
+[docs/reports/RITUVIA_PRE_LAUNCH_BLOCKER_OWNER_DECISION_REQUEST_2026-08-03.md](docs/reports/RITUVIA_PRE_LAUNCH_BLOCKER_OWNER_DECISION_REQUEST_2026-08-03.md).
+Paid product expansion remains frozen.
 
 ## Update rules
 
-Codex must update this file whenever release stage, blockers, completed capabilities, environments, or quality state changes. Do not turn it into a changelog; keep only the current truth and link historical decisions to `DECISIONS.md`.
+Keep this file as current truth, not a changelog. Historical implementation detail belongs in Git,
+`records/tasks/`, `records/decisions/`, reports, and task-specific runbooks. Update this file when
+release stage, blockers, executable queue, environments, or verified capability changes.
 
 ---
 
@@ -3616,6 +2221,182 @@ effective until this register links it. Do not rewrite historical rationale; sup
   mutable-state history.
 - **Date:** 2026-07-31
 
+### [D-095 — Converge the current stage on the reflection core loop](records/decisions/D-095.md)
+
+- **Decision:** Freeze current-stage breadth and make the anonymous Question/Theme through Revisit
+  journey the sole owner-verifiable product goal; split user, owner, and engineering communication;
+  remove code only through a later evidence-bound task.
+- **Reason:** Internal capability and task completion no longer communicate a coherent user result,
+  while immediate deletion or a rewrite would discard proven safety and recovery evidence.
+- **Date:** 2026-07-31
+
+### [D-096 — Pin the repository and deterministic runtime to Node.js 26.5.1](records/decisions/D-096.md)
+
+- **Decision:** Supersede the active Node.js 24.18.0 toolchain and historical-time-zone runtime pin
+  with exact Node.js 26.5.1 while retaining pnpm 11.13.1, ICU 78.3, tzdata 2026b, and all historical
+  task and decision evidence unchanged.
+- **Reason:** The owner requested the latest Node.js release; one exact repository, CI, type, and
+  runtime-provenance contract prevents local/CI drift while preserving deterministic replay facts.
+- **Date:** 2026-07-31
+
+### [D-097 — Approve the free English beta profile, intake-first entry, and direct-sale model](records/decisions/D-097.md)
+
+- **Decision:** Make the nearest release target a protected English anonymous free closed beta;
+  route the primary homepage free-reading entry through the approved safety intake; and use direct
+  sale of named reports, subscriptions, or digital experiences without required Credit preload for
+  any later paid production offer.
+- **Reason:** The smallest reversible beta validates the core product before breadth, intake-first
+  navigation matches the approved question/theme journey, and direct sale resolves the conflict
+  between root payment authority and the production pack's prepaid-Credit model.
+- **Date:** 2026-07-31
+
+### [D-098 — Accept the retained core loop and resume protected-beta security preparation](records/decisions/D-098.md)
+
+- **Decision:** Accept the intake-first anonymous Question/Theme-through-Revisit journey and resume
+  exactly one dependency-satisfied protected-Beta preparation task at a time, beginning with the
+  versioned threat model in RIT-121; keep product expansion and every production gate frozen.
+- **Reason:** Owner acceptance closes the D-095 convergence gate, while the nearest approved release
+  still requires security and operations evidence before any protected Beta can be considered.
+- **Date:** 2026-08-01
+
+### [D-099 — Suppress one exact historical Gitleaks schema-version false positive](records/decisions/D-099.md)
+
+- **Decision:** Classify `commercial.fulfillment.v1` as a public idempotency schema-version label
+  and ignore only its exact historical commit/path/rule/line fingerprint while preserving the
+  default Gitleaks rules, full-history scan, redaction, and current/future finding behavior.
+- **Reason:** A narrow reviewed fingerprint closes a reproducible CI false positive without
+  treating a non-secret data-contract version as a credential or weakening secret detection.
+- **Date:** 2026-08-01
+
+### [D-100 — Use one privacy-minimal anonymous-session request budget for protected Beta](records/decisions/D-100.md)
+
+- **Decision:** Apply one PostgreSQL-backed fixed-row request budget to anonymous question intake
+  and protected-Beta mutations, keyed only by the existing active session and closed scope; fail
+  closed before private-body processing and collect no IP, user-agent, device, fingerprint, or
+  private text.
+- **Reason:** A durable shared guard closes distinct-request exhaustion without duplicating endpoint
+  logic or creating a new sensitive profiling system; production thresholds and ingress controls
+  remain behind OWN-019.
+- **Date:** 2026-08-01
+
+### [D-101 — Use fixed privacy-safe Beta SLOs and one global read-only containment mode](records/decisions/D-101.md)
+
+- **Decision:** Evaluate six fixed numeric protected-Beta SLOs with explicit freshness and
+  actionable fixed alert routing; add one server-only `normal`/`read_only` Web containment mode
+  that preserves signed payment webhooks, logout, and session revocation.
+- **Reason:** This closes the repository-side alert and containment gap by reusing the current proxy,
+  traces, and Feature Flag foundation instead of adding another monitoring/control platform; all
+  external and production bindings remain separately gated.
+- **Date:** 2026-08-01
+
+### [D-102 — Use one source-bound metadata-only operational case kernel](records/decisions/D-102.md)
+
+- **Decision:** Route new support, privacy, safety, and content-report sources into one
+  foreign-key-bound metadata-only case kernel with role-specific step-up, database-derived local
+  SLA/draft fields, append-only transitions, and tamper-evident audit; never copy private source
+  content or automatically send drafts.
+- **Reason:** One shared kernel closes triage and escalation gaps without four duplicated systems,
+  a new private-content store, hidden database routines, or an invented production support promise.
+- **Date:** 2026-08-01
+
+### [D-103 — Use a private offline owner operations dashboard before an admin route](records/decisions/D-103.md)
+
+- **Decision:** Compose the eight required Owner operations domains into one strict private,
+  digest-bound offline dashboard that labels environment, source, freshness, data quality,
+  approval, evidence, runbook, state, and known gaps; force unavailable, stale, future, or
+  synthetic evidence to `unknown` and retain explicit Owner deployment approval.
+- **Reason:** Current sources can support a truthful local release overview but not a secure live
+  admin route, production metrics, revenue/cost completeness, standing staging, or Gate H claim.
+- **Date:** 2026-08-02
+
+### [D-104 — Approve the exact protected-Beta abuse and ingress profile](records/decisions/D-104.md)
+
+- **Decision:** Approve `own-019.protected-beta-abuse.v1` exactly as recommended: maximum 25
+  invited English-speaking adults, deny-by-default single-use/revocable admission, protected edge
+  controls, exact session/intake/mutation limits, 72-hour dry run plus seven-day daily review, and
+  fixed safety/privacy/SLO/abuse rollback thresholds.
+- **Reason:** The approved bounded profile closes the Owner-policy dependency for release-evidence
+  preparation without authorizing staging creation, provider selection, deployment, public access,
+  or launch.
+- **Date:** 2026-08-02
+
+### [D-105 — Use fail-closed private cost guardrails before budget activation](records/decisions/D-105.md)
+
+- **Decision:** Add only a fixed-registry, private, safe-off daily cost simulation that rejects
+  self-asserted approval, keeps non-essential spend denied, protects essential controls as
+  alert-only, and executes no runtime action.
+- **Reason:** OWN-005 has not approved exact budgets, and a read-only aggregate cannot provide
+  concurrency-safe spend admission; durable atomic enforcement and fixed alert delivery remain
+  required before RIT-127 can complete.
+- **Date:** 2026-08-02
+
+### [D-106 — Preserve a zero-paid-provider protected-Beta cost posture](records/decisions/D-106.md)
+
+- **Decision:** Approve OWN-005 Option A exactly: keep non-essential paid providers disabled for
+  the protected free Beta, preserve essential controls, and allow repository-local RIT-128 drills
+  without inventing a budget or runtime spend authority.
+- **Reason:** Option A is the smallest honest posture before provider quotes exist; its explicit
+  safe-off boundary conflicts with marking RIT-127 Done, so exact Option B policy and durable atomic
+  enforcement/alert evidence remain required.
+- **Date:** 2026-08-02
+
+### [D-107 — Bind recurring reviews to local prompt-enforced read-only Codex automations](records/decisions/D-107.md)
+
+- **Decision:** Create exactly three paused Codex Desktop project schedules for daily maintenance,
+  Monday product review, and first-of-month risk audit; keep them paused pending OWN-020 because the
+  current project cron execution environment is local and recurring model-use is unapproved.
+- **Reason:** Existing prompts and structured output contracts were not scheduled, while unrestricted
+  local jobs could collide with human work or cross project/production gates.
+- **Date:** 2026-08-02
+
+### [D-108 — Keep recurring Codex reviews paused under OWN-020 Option A](records/decisions/D-108.md)
+
+- **Decision:** Approve OWN-020 Option A exactly; keep all three configured Codex review cards
+  paused with zero scheduled model use and require a new explicit decision before any activation.
+- **Reason:** The current local project execution is prompt-enforced rather than hard isolated, so
+  preserving the reviewed configuration without recurring execution is the safest reversible state.
+- **Date:** 2026-08-02
+
+### [D-109 — Derive Gate H evidence state from eight digest-bound controls](records/decisions/D-109.md)
+
+- **Decision:** Use one provider-neutral, no-secret contract that derives staging/Gate H state from
+  eight ordered, revision/freshness/environment/digest-bound controls and never accepts a caller's
+  completion or deployment claim.
+- **Reason:** Local SLO, restore, Game Day, and Owner-dashboard evidence cannot prove standing
+  staging, provider recovery, external security, support/admin operation, or rollback by itself.
+- **Date:** 2026-08-02
+
+### [D-110 — Compose exact payment route controls and forbid provider fallback](records/decisions/D-110.md)
+
+- **Decision:** Require exact country and checkout-kind flags plus one exact Country Policy route
+  before every new order, subscription reservation, provider call, or Checkout URL replay; reject
+  every fallback list and leave existing settlement paths outside the new-purchase gate.
+- **Reason:** Separate controls existed but were not composed at both purchase entries, allowing
+  inconsistent safe-off behavior and leaving no explicit proof that provider fallback is forbidden.
+- **Date:** 2026-08-03
+
+### [D-111 — Derive dispute support records from matched commerce facts only](records/decisions/D-111.md)
+
+- **Decision:** Keep each immutable matched payment event as the sole dispute fact and
+  asynchronously project only a current applied fulfilled Credit Pack dispute into one
+  immutable privacy-minimal support work item with fixed local SLA/draft metadata; do not rewrite
+  the historical case constraint or add a second mutable case state machine.
+- **Reason:** An independent idempotent projector gives operators a durable work item without
+  duplicating payment truth, exposing private content, or letting support failure roll back payment,
+  fulfillment, Credit restriction, or review evidence.
+- **Date:** 2026-08-03
+
+### [D-112 — Require one database-atomic invite before protected-Beta session issuance](records/decisions/D-112.md)
+
+- **Decision:** Require one opaque, unexpired, unconsumed, and unrevoked invite under the exact
+  D-104 policy before protected-Beta anonymous-session creation/resolution; enforce the 25-seat cap,
+  consume, replay, binding, and revocation in PostgreSQL, emit a raw invite only once to a private
+  mode-`0600` operator file, and use `/en/beta` with `Enter protected Beta` as the private entry.
+- **Reason:** The approved cohort needed deny-by-default admission that cannot be bypassed by an old
+  anonymous cookie, raced beyond 25 seats, replayed, enumerated, or leaked through URLs, storage,
+  logs, analytics, or operator output.
+- **Date:** 2026-08-03
+
 ---
 
 # File: `ROADMAP.md`
@@ -3868,149 +2649,162 @@ This is the persistent prioritized queue for Codex. It is intentionally detailed
 
 ## Task queue
 
-| ID      | Milestone | Priority | Status  | Task                                                                        | Dependencies                            | Primary role  | Done when                                                                                                                                                                                                                                                  |
-| ------- | --------- | -------: | ------- | --------------------------------------------------------------------------- | --------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RIT-000 | M0        |       P0 | Done    | Audit repository and establish evidence baseline                            | None                                    | architect     | Repository reality is documented; setup gaps and exact M0 plan are committed; status/backlog reconciled.                                                                                                                                                   |
-| RIT-001 | M0        |       P0 | Done    | Create pnpm/Turborepo strict TypeScript monorepo                            | RIT-000                                 | backend       | Clean install, lint, typecheck, unit test, and build work from a fresh clone.                                                                                                                                                                              |
-| RIT-002 | M0        |       P0 | Done    | Add environment validation and brand configuration                          | RIT-001                                 | backend       | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded.                                                                                                                                                       |
-| RIT-003 | M0        |       P0 | Done    | Create local PostgreSQL and Prisma foundation                               | RIT-001                                 | backend       | Local database starts reproducibly; initial migration and synthetic seed/test reset pass.                                                                                                                                                                  |
-| RIT-004 | M0        |       P0 | Done    | Create test harness and CI quality gates                                    | RIT-001,RIT-003,OWN-008                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                                                                                                                                                                         |
-| RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                     | RIT-001                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                                                                                                                                                                        |
-| RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                  | RIT-001,RIT-002                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                                                                                                                                                                |
-| RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                           | RIT-002,RIT-003                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                                                                                                                                                                           |
-| RIT-008 | M0        |       P1 | Done    | Create preview/staging/production environment documentation                 | RIT-002,RIT-004                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                                                     |
-| RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                  | RIT-000                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                                                                                                                                                                     |
-| RIT-010 | M1        |       P0 | Done    | Implement accessible Web shell and locale-prefixed routing                  | RIT-001,RIT-002,RIT-007                 | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                                                                                                                                                                 |
-| RIT-011 | M1        |       P0 | Done    | Implement design tokens and accessible component primitives                 | RIT-010                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                                                                                                                                                                 |
-| RIT-012 | M1        |       P0 | Done    | Build product positioning, methodology, safety, and privacy public pages    | RIT-010,RIT-011                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                                                                                                                                                                |
-| RIT-013 | M1        |       P1 | Done    | Add SEO metadata, canonical, robots, and sitemap foundation                 | RIT-010                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                                                                                                                                                                       |
-| RIT-014 | M1        |       P1 | Done    | Add accessibility and pseudolocale CI smoke                                 | RIT-010,RIT-011                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                                                                                                                                                                 |
-| RIT-015 | M1        |       P1 | Done    | Create error, empty, offline, and provider-unavailable patterns             | RIT-011                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                                                                                                                                                                            |
-| RIT-016 | M1        |       P2 | Done    | Clean up the public-shell rollout flag                                      | RIT-010,RIT-014                         | backend       | Protected v2/v1/v2 and v3/v2/v3 staging rollback windows pass; registry v3 removes the key, adapter, branches, and old-history influence.                                                                                                                  |
-| RIT-020 | M2        |       P0 | Done    | Implement anonymous subject/session and consent baseline                    | RIT-003,RIT-010                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                                                                                                                                                               |
-| RIT-021 | M2        |       P0 | Done    | Implement safe question/theme intake rules and UX                           | RIT-020,RIT-012,OWN-009                 | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                                                                                                                                                                    |
-| RIT-022 | M2        |       P0 | Done    | Create versioned tarot deck, spread, and content schema                     | RIT-003                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.                                                                                                                                                           |
-| RIT-023 | M2        |       P0 | Done    | Implement deterministic server-authoritative tarot engine                   | RIT-022                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                                                                                                                                                                       |
-| RIT-024 | M2        |       P0 | Done    | Implement tarot reading application service and API                         | RIT-020,RIT-021,RIT-023                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                                                                                                                                                                        |
-| RIT-025 | M2        |       P0 | Done    | Build one-card tarot intake, draw, and result UI                            | RIT-011,RIT-024                         | frontend      | Anonymous mobile user reaches a useful deterministic result in under three minutes.                                                                                                                                                                        |
-| RIT-026 | M2        |       P1 | Done    | Build three-card Situation/Action/Possibility flow                          | RIT-025                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                                                                                                                                                                      |
-| RIT-027 | M2        |       P1 | Done    | Add tarot limits, calm redraw behavior, and report control                  | RIT-024,RIT-025,RIT-026,OWN-010         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                                                                                                                                                                      |
-| RIT-028 | M2        |       P1 | Done    | Add deterministic tarot E2E and visual/accessibility tests                  | RIT-025,RIT-026,RIT-027,RIT-029         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error/resume/report scenarios.                                                                                                                                                                      |
-| RIT-029 | M2        |       P1 | Done    | Add private same-session tarot result resume                                | RIT-027                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage.                                                                                                                              |
-| RIT-030 | M3        |       P0 | Done    | Define AI provider interfaces and typed interpretation schemas              | RIT-001,RIT-023                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                                                                                                                                                               |
-| RIT-031 | M3        |       P0 | Done    | Implement curated content retrieval and prompt versioning                   | RIT-022,RIT-030                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                                                                                                                                                                     |
-| RIT-032 | M3        |       P0 | Done    | Implement pre-generation high-stakes and crisis policy                      | RIT-021,RIT-030                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                                                                                                                                                                     |
-| RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                   | RIT-030,RIT-031,RIT-032                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                                                                                                                                                               |
-| RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                          | RIT-033                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.                                                                                                                                                     |
-| RIT-035 | M3        |       P0 | Done    | Build tarot AI interpretation streaming/polling UX                          | RIT-025,RIT-033,RIT-034                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                                                                                                                                                                      |
-| RIT-036 | M3        |       P0 | Done    | Create AI fixed regression and adversarial eval suite                       | RIT-033,RIT-034                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                                                                                                                                                         |
-| RIT-037 | M3        |       P1 | Done    | Add exact-version interpretation reporting                                  | RIT-027,RIT-034,RIT-159                 | backend       | Exact owner/reading-bound categorical reporting passes contract, API, PostgreSQL race/restore/privilege, configuration, build, and Chromium accessibility gates without regeneration or private-output disclosure.                                         |
-| RIT-038 | M3        |       P1 | Done    | Add AI cost, latency, fallback, and safety dashboards                       | RIT-006,RIT-033                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                                                                                                                                                             |
-| RIT-040 | M4        |       P0 | Done    | Implement intention domain and composer                                     | RIT-025                                 | product       | User-owned intention/action, coercive-control reframing, privacy, edit/archive/delete pass.                                                                                                                                                                |
-| RIT-041 | M4        |       P0 | Done    | Implement ritual template and object domain                                 | RIT-003,RIT-011                         | backend       | Free/paid-capable objects are versioned; efficacy claims are structurally impossible.                                                                                                                                                                      |
-| RIT-042 | M4        |       P0 | Done    | Build accessible free candle and incense sanctuary                          | RIT-040,RIT-041                         | frontend      | Linear and 2D modes, reduced motion/audio off, exit/completion, graceful degradation pass.                                                                                                                                                                 |
-| RIT-043 | M4        |       P0 | Done    | Implement ritual completion and private journal                             | RIT-042                                 | backend       | Exact catalog/access snapshots, atomic entitlement/pass start, encrypted/minimized records, lifecycle failures, deletion, and no sensitive analytics pass.                                                                                                 |
-| RIT-044 | M4        |       P0 | Done    | Implement revisit scheduling and completion                                 | RIT-040,RIT-043                         | backend       | User-controlled schedule/time-zone/quiet-hours and non-prophetic comparison pass.                                                                                                                                                                          |
-| RIT-045 | M4        |       P1 | Done    | Implement consented transactional reminder adapter                          | RIT-044,RIT-002,RIT-055                 | operations    | Account-owned once-only email opt-in/withdrawal, locale/time-zone/quiet-hours authorization, lock-screen-safe copy, retry/dead-letter handling, privacy deletion/export, and safe-off provider evidence pass.                                              |
-| RIT-046 | M4        |       P0 | Done    | Instrument privacy-safe core loop and WMRS events                           | RIT-040,RIT-043,RIT-044                 | backend       | Typed allowlisted events reconstruct funnel without private free text.                                                                                                                                                                                     |
-| RIT-047 | M4        |       P0 | Done    | Add full-loop anonymous E2E tests                                           | RIT-042,RIT-043,RIT-044,RIT-046         | qa_security   | Question through revisit passes mobile, keyboard, reduced motion, failure, and deletion states.                                                                                                                                                            |
-| RIT-050 | M5        |       P0 | Done    | Implement auth provider abstraction and secure account sessions             | RIT-003,RIT-010                         | backend       | Magic link/passkey-ready sessions, enumeration/rate protections, revoke/logout pass.                                                                                                                                                                       |
-| RIT-051 | M5        |       P0 | Done    | Implement idempotent anonymous-to-account merge                             | RIT-020,RIT-050                         | backend       | Concurrent merge preserves ownership/history once and has rollback/audit tests.                                                                                                                                                                            |
-| RIT-052 | M5        |       P0 | Done    | Build account history, settings, and session management                     | RIT-050,RIT-051                         | frontend      | User can view/manage own data and sessions; IDOR tests cover all resources.                                                                                                                                                                                |
-| RIT-053 | M5        |       P0 | Done    | Implement privacy export workflow                                           | RIT-050,RIT-043                         | backend       | Recent-auth owner scope, complete retained-data package, dedicated-key expiring ciphertext, append-only lifecycle evidence, routes, focused tests, PostgreSQL gate, and affected builds pass.                                                              |
-| RIT-054 | M5        |       P0 | Done    | Implement selective and account deletion workflow                           | RIT-050,RIT-053                         | backend       | Recent-authenticated selective/account deletion crypto-shreds implemented private content, revokes authority, preserves required pseudonymous evidence, fences exports, and passes focused route/database/privilege/build gates.                           |
-| RIT-055 | M5        |       P1 | Done    | Implement consent and AI-personalization controls                           | RIT-050,RIT-030                         | product       | Account-owned append-only analytics/personalization/model-improvement purposes, exact notice versions, cross-session immediate withdrawal, strict API/UI, privacy export, and safe-off external paths pass focused gates.                                  |
-| RIT-056 | M5        |       P0 | Done    | Create admin roles, MFA requirement, and audit log foundation               | RIT-050,RIT-003                         | qa_security   | Default-deny role matrix, same-identity passkey MFA, recent reauth, append-only grants/revocations, digest-only hash-chain audit, atomic rollback, least-privilege DB role, and focused PostgreSQL recovery gates pass.                                    |
-| RIT-057 | M5        |       P0 | Done    | Run identity/privacy/authorization security suite                           | RIT-051,RIT-052,RIT-053,RIT-054,RIT-056 | qa_security   | Exact proxy/same-origin boundaries, request-scoped deletion RLS, cross-user/token/CSRF/export/deletion/log/metadata tests, recovery, production browser flows, and the one-time milestone matrix pass with no critical/high finding.                       |
-| RIT-060 | M6        |       P0 | Done    | Implement versioned Country Policy Engine                                   | RIT-007,RIT-003                         | payments_risk | Strict immutable server policy, country-evidence hierarchy, independent fiat/crypto approvals, DB-backed kill/rollback chain, exact order version, focused PostgreSQL and build gates pass.                                                                |
-| RIT-061 | M6        |       P0 | Done    | Implement catalog, product, price, and exact digital contents               | RIT-060,RIT-003                         | payments_risk | Immutable catalog/product/localization/price versions, exact Credit terms, integer USD, local-only seed, bounded DB reader, Web fail-closed endpoint, focused DB/build gates pass.                                                                         |
-| RIT-062 | M6        |       P0 | Done    | Implement order, payment attempt, ledger, and entitlement domain            | RIT-061                                 | backend       | Canonical v2 states, exact idempotency, append-only Credits/reservations/allocations, source-specific entitlements, 20-way no-overspend concurrency, least privilege, and restore pass.                                                                    |
-| RIT-063 | M6        |       P0 | Done    | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                         | payments_risk | Test-only Stripe Checkout API, v2 order/attempt persistence, exact idempotency, server catalog/policy pricing, CSRF, live-key rejection, focused PostgreSQL/security/build gates pass; real network proof remains credential-gated.                        |
-| RIT-064 | M6        |       P0 | Done    | Implement signed payment webhook ingestion and processing                   | RIT-063                                 | backend       | Test-only raw signature/replay, startup account attestation, same-database distinct-role binding, exact duplicate/conflict, account-bound out-of-order replay, monotonic/versioned outbox, and zero fulfillment pass.                                      |
-| RIT-065 | M6        |       P0 | Done    | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                         | backend       | Dedicated-role outbox consumption grants purchased Credits exactly once; disputes hold unspent source value, refunds reverse linked value, consumed shortfalls require review, and private owner restoration passes.                                       |
-| RIT-066 | M6        |       P0 | Done    | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                |
-| RIT-067 | M6        |       P0 | Done    | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                         | operations    | Daily bounded Stripe Test payment/order/Credit comparison, append-only discrepancy cases, provider settlement-availability evidence, and exact missed-webhook recovery pass focused gates; payout accounting remains explicitly out of scope.              |
-| RIT-068 | M6        |       P0 | Done    | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                         | payments_risk | Exact US/USD/Test eligibility, owner scope, request-time Credit hold, provider idempotency, submitted/confirmed truth, signed-event-linked reversal, rejection/retry and concurrency gates pass.                                                            |
-| RIT-069 | M6        |       P0 | Done    | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068 | qa_security   | Stripe Test Mode redirect/webhook races, invalid signatures, pending/failure/expiry, 20-way duplicate/out-of-order, partial/full refund, dispute, fulfillment and reconciliation fixtures pass; no Live activation.                                       |
-| RIT-070 | M7        |       P0 | Done    | Implement subscription lifecycle and entitlements                          | RIT-062,RIT-064                         | payments_risk | Local root is reserved before Stripe Test Checkout; signed facts are role-attested and order-bound; monthly/annual allocations grant 8 Credits exactly once; cancellation preserves purchases; invoice-scoped refunds, nonnegative projection, and durable review pass focused gates. |
-| RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                                          |
-| RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                                                |
-| RIT-073 | M7        |       P0 | Done    | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                 | backend       | Owner-only single-order facts, bounded timeline, recent same-session passkey reauth, reason/ticket/typed confirmation, explicit reconciliation/refund limits, idempotent executor retries, separate hash-chain audit, and immutable least-privilege PostgreSQL evidence pass. |
-| RIT-074 | M7        |       P1 | Ready   | Implement dispute/chargeback records and support workflow                   | RIT-067,RIT-073                         | payments_risk | Evidence uses commerce facts, not private journals; entitlement and audit behavior pass.                                                                                                                                                                   |
-| RIT-075 | M7        |       P1 | Planned | Add payment/provider kill switches and failover contract                    | RIT-060,RIT-063                         | operations    | Provider/country/method can be safely disabled; no implicit unapproved fallback.                                                                                                                                                                           |
-| RIT-080 | M8        |       P0 | Done    | Define numerology rule sets and source records                              | RIT-003,OWN-011                         | product       | Life Path/Birthday/Personal Year rules, examples, master numbers, locale limits approved.                                                                                                                                                                  |
-| RIT-081 | M8        |       P0 | Done    | Implement deterministic numerology engine                                   | RIT-080                                 | backend       | Formula steps and fixed/property tests cover edge dates and unsupported scripts.                                                                                                                                                                           |
-| RIT-082 | M8        |       P0 | Done    | Build public numerology calculators and result UI                           | RIT-011,RIT-081                         | frontend      | Anonymous exact-year calculation, transparent formulas, accessible recovery states, and zero implicit persistence pass.                                                                                                                                    |
-| RIT-083 | M8        |       P1 | Done    | Add numerology AI interpretation and evals                                  | RIT-033,RIT-034,RIT-081,OWN-012         | ai_safety     | AI cannot change numbers; content/source/safety/locale tests pass.                                                                                                                                                                                         |
-| RIT-084 | M8        |       P1 | Done    | Publish curated numerology SEO cluster                                      | RIT-013,RIT-080,RIT-082                 | growth_seo    | Unique useful pages, examples, source notes, schema/internal links pass quality checks.                                                                                                                                                                    |
-| RIT-090 | M9        |       P0 | Done    | Select and document licensed astrology engine                               | OWN-003                                 | architect     | D-069 supersedes the planned Professional path with whole-project AGPLv3, exact deployed Corresponding Source, the same pinned Swiss engine/source snapshot, independent evidence, and safe-off activation.                                                |
-| RIT-091 | M9        |       P0 | Done    | Implement location and historical time-zone adapter                         | RIT-090                                 | backend       | Explicit fold/gap handling, historical DST, exact provider/data/runtime versions, privacy-safe bounded caching, and fixtures pass through D-067.                                                                                                           |
-| RIT-092 | M9        |       P0 | Done    | Implement encrypted birth profile and uncertainty model                     | RIT-050,RIT-091                         | backend       | Exact/approx/unknown time, original/UTC/source, export/delete and privacy tests pass.                                                                                                                                                                      |
-| RIT-093 | M9        |       P0 | Done    | Implement astrology engine adapter and natal facts                          | RIT-090,RIT-091,RIT-092,OWN-013,OWN-015 | backend       | Runtime, SCA, component archive, 40-vector comparison, Linux sanitizers/fuzz, and exact-clean complete release-source archive pass; D-072 assigns deployed-source upload/readback/public-link proof to RIT-142/143.                                        |
-| RIT-094 | M9        |       P0 | Done    | Build natal chart and textual table UI                                      | RIT-011,RIT-093,OWN-014                 | frontend      | Private read-only saved-result API, strict facts projection, semantic tables, confidence states, and focused mobile/400%-zoom/keyboard/forced-colors/RTL browser evidence pass without activating astrology.                                               |
-| RIT-095 | M9        |       P1 | Done    | Add natal interpretation, fact verifier, and evals                          | RIT-033,RIT-034,RIT-093                 | ai_safety     | Recomputed aspects, minimized fact references, uncertainty/source authority, single-use verification, deterministic replacement, and fixed zero-call evals pass without activating AI.                                                                     |
-| RIT-096 | M9        |       P1 | Done    | Publish curated astrology education cluster                                 | RIT-013,RIT-093,OWN-016                 | growth_seo    | D-073 approves the checksummed English pack; five exact production-only index routes, source/methodology contract, strict doorway exclusions, build, and focused browser/accessibility evidence pass.                                                      |
-| RIT-100 | M10       |       P0 | Done    | Complete ICU i18n and content/translation workflow                          | RIT-010,RIT-012                         | localization  | Checksummed source/glossary records, strict ICU/status/review/source-binding gates, explicit formatters/fallback telemetry, process authorization, and focused Web integration pass without activating another locale.                                     |
-| RIT-101 | M10       |       P0 | Done    | Complete RTL architecture and Arabic pseudotranslation QA                   | RIT-100,RIT-011                         | localization  | Test-only `en-XA`/`ar-XB`, ICU-preserving expansion, locale-derived direction, logical CSS, structural bidi isolation, exact public/private output boundaries, and focused RTL/accessibility browser evidence pass without activating Arabic.              |
-| RIT-102 | M10       |       P1 | Done    | Add CJK and Devanagari typography/input QA                                  | RIT-100                                 | localization  | D-077 locale stacks, NFC/ZWJ private-text preservation, four CJK line-break profiles, actual platform fonts, hydrated IME rerender, ISO date, Axe, and privacy-safe browser evidence pass without locale activation.                                       |
-| RIT-103 | M10       |       P0 | Done    | Implement localized routes, slugs, hreflang, sitemaps, and redirects        | RIT-013,RIT-100                         | growth_seo    | D-076 stable-ID approval-bound routes, locale-derived SSR, reciprocal metadata, sitemap index/shards, exact redirect history, build, HTTP, and browser gates pass with English as the only published locale.                                               |
-| RIT-104 | M10       |       P1 | Done    | Localize transactional email/reminder/support templates                     | RIT-045,RIT-100                         | localization  | D-078 checksummed lifecycle catalogs, immutable queue binding, safe HTML/text rendering, date/time-zone/quiet-hours reauthorization, strict delivery suppression, preview-only fallback telemetry, GET-safe preferences, database and Chromium gates pass. |
-| RIT-105 | M10       |       P0 | Blocked | Select first Tier 1 locale and country beta                                 | OWN-004,RIT-100                         | product       | Owner selects evidence-backed locale/countries and approved review/support path.                                                                                                                                                                           |
-| RIT-106 | M10       |       P0 | Planned | Complete reviewed Tier 1 locale closed beta content                         | RIT-105,RIT-103,RIT-104                 | localization  | Core flow/legal/safety/payment copy is reviewed; no mixed language or missing support.                                                                                                                                                                     |
-| RIT-110 | M11       |       P0 | Done    | Implement structured editorial content repository and publishing workflow   | RIT-012,RIT-100                         | product       | Strict identity/source/claim/rights/review/version/localization/deprecation, private-preview, process-authorized publication, path/symlink, architecture, CI, and focused verification gates pass without activating content.                              |
-| RIT-111 | M11       |       P0 | Done    | Build tarot card library and spread guide cluster                           | RIT-022,RIT-110                         | growth_seo    | D-081-approved finite English content, shared editorial authority, 25 production-only routes, exact sitemap/robots containment, build budgets, 272 focused tests, and representative Chromium/Axe evidence pass without deployment or launch.              |
-| RIT-112 | M11       |       P1 | Done    | Build ritual and reflection guide cluster                                   | RIT-110,RIT-042                         | growth_seo    | D-082-approved finite English content, shared editorial authority, six production-only routes, exact sitemap/robots containment, focused build, 200 contract tests, and three-page Chromium/Axe evidence pass without deployment or launch.                |
-| RIT-113 | M11       |       P1 | Done    | Implement programmatic page inventory and quality gate                      | RIT-103,RIT-110                         | growth_seo    | D-083 binds exact 45-route source, intent, structure, internal-link, freshness, uniqueness, and exposure evidence; canonical, robots, sitemap, configuration, and build publication fail closed on any inventory drift.                                    |
-| RIT-114 | M11       |       P1 | Done    | Implement structured data and search crawl validation                       | RIT-103,RIT-111                         | growth_seo    | D-084 centralizes one visible-source graph per exact 45-page inventory record; full build/HTTP crawl, hidden-copy, private-canary, unsupported-claim, canonical, and Chromium injection gates pass.                                                        |
-| RIT-115 | M11       |       P1 | Done    | Implement redacted localized share cards                                    | RIT-025,RIT-100                         | frontend      | D-085 binds one-card-only exact SVG preview/download/file share to an allowlisted localized projection; theme redaction, private canaries, metadata, CSP, network, storage, 320px and Axe gates pass.                                                      |
-| RIT-116 | M11       |       P1 | Done    | Add GEO answer/source/entity templates and QA                               | RIT-110,RIT-111                         | growth_seo    | D-086 binds all exact 45 public routes to visible stable entities, closed claim classifications, approved source titles, current review dates, and fail-closed static/build/browser evidence without hidden or internal authority claims.                  |
-| RIT-117 | M11       |       P1 | Done    | Create SEO/GEO performance and freshness operations                         | RIT-114,RIT-116                         | operations    | D-087 binds exact 45-route offline aggregate crawl/index/query/referral evidence to freshness, low-sample suppression, reviewed content/rights authority, private digest-bound reports, and human-only gap briefs without provider or production actions.  |
-| RIT-120 | M12       |       P0 | Planned | Complete owner/admin operational dashboard                                  | RIT-038,RIT-073,RIT-117                 | operations    | Health, revenue, core loop, AI, queue, support, cost and approvals use source/freshness labels.                                                                                                                                                            |
-| RIT-121 | M12       |       P0 | Planned | Finalize threat model and remediate launch findings                         | RIT-057,RIT-069,RIT-095                 | qa_security   | Versioned threat model covers all integrations; no critical/high launch findings.                                                                                                                                                                          |
-| RIT-122 | M12       |       P0 | Planned | Implement rate limits, bot defense, abuse and denial-of-wallet controls     | RIT-024,RIT-033,RIT-063                 | qa_security   | Expensive/auth/checkout/support/privacy endpoints resist scripted abuse without sensitive profiling.                                                                                                                                                       |
-| RIT-123 | M12       |       P0 | Done    | Implement backups and isolated restore test                                 | RIT-003,RIT-008                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                               |
-| RIT-124 | M12       |       P0 | Planned | Implement SLOs, alerts, runbooks, and status controls                       | RIT-006,RIT-067                         | operations    | Actionable alerts link runbooks; kill switches/read-only mode and trace correlation are rehearsed.                                                                                                                                                         |
-| RIT-125 | M12       |       P1 | Planned | Implement support, privacy, safety, and content report queues               | RIT-056,RIT-068,RIT-110                 | operations    | Triage/SLA/escalation/permissions and draft automation preserve private-data boundaries.                                                                                                                                                                   |
-| RIT-126 | M12       |       P1 | Planned | Implement daily, weekly, and monthly Codex automation                       | RIT-004,RIT-120,RIT-124                 | operations    | Read-only checks/briefs/PRs run with structured output and no gated production actions.                                                                                                                                                                    |
-| RIT-127 | M12       |       P0 | Planned | Implement cost budgets, allocation, and anomaly controls                    | RIT-038,RIT-067,RIT-120                 | operations    | Per-provider/feature budgets and approved degradation/alerts prevent runaway spend.                                                                                                                                                                        |
-| RIT-128 | M12       |       P0 | Planned | Run incident tabletop and dependency/provider failure game day              | RIT-123,RIT-124,RIT-125                 | qa_security   | Security/payment/AI/outage scenarios produce evidence, fixes, and updated runbooks.                                                                                                                                                                        |
-| RIT-130 | M13       |       P0 | Planned | Prepare closed beta release evidence and invite controls                    | RIT-047,RIT-057,RIT-121,RIT-124         | product       | Scope, cohorts, consent, support, metrics, rollback and known risks are approved.                                                                                                                                                                          |
-| RIT-131 | M13       |       P0 | Planned | Run English closed beta and reconcile data quality                          | RIT-130                                 | operations    | Qualitative/quantitative evidence is collected ethically; metric definitions and gaps validated.                                                                                                                                                           |
-| RIT-132 | M13       |       P0 | Planned | Remediate beta safety, UX, accessibility, and reliability findings          | RIT-131                                 | qa_security   | All launch-blocking findings are closed with regression tests and user-impact evidence.                                                                                                                                                                    |
-| RIT-140 | M14       |       P0 | Blocked | Complete paid-launch external approvals                                     | OWN-001,OWN-002,OWN-004,OWN-005,RIT-132 | product       | Brand/entity/legal/tax/payment/country/budget approvals are recorded.                                                                                                                                                                                      |
-| RIT-141 | M14       |       P0 | Planned | Configure production payment, tax, legal, and country policy                | RIT-140,RIT-069,RIT-075                 | payments_risk | Exact approved settings are configured in staging, reviewed, and protected by owner gate.                                                                                                                                                                  |
-| RIT-142 | M14       |       P0 | Planned | Run complete launch and rollback rehearsal                                  | RIT-123,RIT-124,RIT-141                 | qa_security   | Release evidence, migration, smoke, payment, AI, privacy, backup, rollback, and exact deployed Corresponding Source upload/readback/public-link binding all pass.                                                                                          |
-| RIT-143 | M14       |       P0 | Blocked | Owner production go/no-go and limited rollout                               | RIT-142                                 | operations    | Owner approves; progressive launch thresholds and monitoring window are recorded.                                                                                                                                                                          |
-| RIT-144 | M14       |       P0 | Planned | Complete post-launch verification and economics baseline                    | RIT-143                                 | operations    | Health, core loop, payment, refund, AI, support, cost and contribution are reconciled.                                                                                                                                                                     |
-| RIT-145 | M14       |       P2 | Planned | Clean up country and fiat-checkout rollout flags                            | RIT-075,RIT-144                         | backend       | Both flags are retired safe-off for one registry window, then removed after rollback evidence passes.                                                                                                                                                      |
-| RIT-150 | M15       |       P1 | Planned | Create evidence-led locale/country expansion scorecard                      | RIT-144                                 | product       | Search, retention, payment, legal, culture, support and economics determine ranked candidates.                                                                                                                                                             |
-| RIT-151 | M15       |       P1 | Blocked | Pilot hosted non-custodial crypto checkout                                  | RIT-144,OWN-006                         | payments_risk | Separate provider/legal/country/asset approval and full payment tests pass.                                                                                                                                                                                |
-| RIT-152 | M15       |       P2 | Planned | Evaluate additional tarot/report/ritual products                            | RIT-144                                 | product       | User need, ethics, content rights, economics and experiments justify exact product.                                                                                                                                                                        |
-| RIT-153 | M15       |       P2 | Blocked | Propose first regional tradition pack                                       | RIT-144,OWN-007                         | localization  | Named experts/sources/rights/method/local law/payment/support/evals are approved.                                                                                                                                                                          |
-| RIT-154 | M15       |       P2 | Planned | Review architecture scaling evidence                                        | RIT-144                                 | architect     | Measured load/failure/deployment evidence determines whether any service extraction is warranted.                                                                                                                                                          |
-| RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                   | RIT-151                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence.                                                                                                                                                |
-| RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                        | RIT-031,RIT-110,RIT-153                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.                                                                                                                                                 |
-| RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                                | RIT-156                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.                                                                                                                                                |
-| RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP            | RIT-025,RIT-029,RIT-036                 | product       | Direct Sanctuary completion and new 22-card Major Arcana draws pass production-artifact Playwright while exact old-catalog replay and production gates remain closed.                                                                                      |
-| RIT-159 | Audit     |       P0 | Done    | Install and reconcile the 2026-07-23 production source-of-truth pack        | RIT-158                                 | architect     | Pack integrity, repository capability/gap/security matrix, schema/API adaptation plan, current quality gates, browser evidence, and truthful status reconciliation pass without activating production providers.                                           |
-| RIT-160 | M15       |       P2 | Planned | Clean up the astrology rollout flag                                         | RIT-144                                 | backend       | Flag is retired safe-off for one registry window, then removed after rollback evidence passes.                                                                                                                                                             |
-| OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance         | None                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                                                                                                                                                             |
-| OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval             | None                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                                                                                                                                                         |
-| OWN-003 | External  |       P0 | Done    | Select astrology engine/provider and license model                          | None                                    | owner         | D-069 selects Swiss Ephemeris 2.10.03/v2.10.3final under whole-project `AGPL-3.0-only` and supersedes the planned Professional License path.                                                                                                               |
-| OWN-004 | External  |       P0 | Blocked | Select company, legal launch markets, tax/MoR, and counsel                  | None                                    | owner         | D-079 records the IPO.ONE BVI direction, 18+ baseline, phased country/locale candidates, and refund direction; exact entity particulars, qualified legal review, final terms/privacy/refund language, and tax/MoR path remain required.                    |
-| OWN-005 | External  |       P0 | Blocked | Set operating and launch budget limits                                      | None                                    | owner         | Monthly, AI, infrastructure, refund/fraud and marketing budgets are configured.                                                                                                                                                                            |
-| OWN-006 | External  |       P1 | Blocked | Approve crypto provider, countries, assets, refund, and legal path          | None                                    | owner         | Written approval and non-custodial architecture scope are recorded.                                                                                                                                                                                        |
-| OWN-007 | External  |       P2 | Blocked | Approve regional-tradition expert and source program                        | None                                    | owner         | Qualified reviewers, sources, rights, scope, language and compensation are documented.                                                                                                                                                                     |
-| OWN-008 | External  |       P0 | Done    | Configure the GitHub remote and enforce CI checks                           | None                                    | owner         | D-090 records public AGPL source disclosure, protected `main`, and all three required CI jobs passing together.                                                                                                                                            |
-| OWN-009 | External  |       P0 | Done    | Approve English question-intake safety language and activation policy       | None                                    | owner         | Exact copy, English scope, generic emergency-resource strategy, and production-activation reference are recorded.                                                                                                                                          |
-| OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                    | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded.                                                                                                                                 |
-| OWN-011 | External  |       P0 | Done    | Approve the exact RITUVIA V1 date-numerology method                         | None                                    | owner         | Life Path aggregation, Birthday reduction, explicit Personal Year target, 11/22/33 preservation, source scope, and name/locale exclusions are approved.                                                                                                    |
-| OWN-012 | External  |       P1 | Done    | Approve English numerology interpretation content and paid-product mapping  | None                                    | owner         | Exact sourced meanings for all calculation/result pairs, rights, reviewer, prompt/fallback, English scope, and paid Deep Reading mapping are approved.                                                                                                     |
-| OWN-013 | External  |       P0 | Done    | Approve and establish the Swiss Ephemeris AGPL integration path             | OWN-003                                 | owner         | D-069 records whole-project `AGPL-3.0-only`, exact deployed Corresponding Source, preserved notices, no commercial contract/payment, and unchanged native/release evidence gates.                                                                          |
-| OWN-014 | External  |       P0 | Done    | Approve privacy-safe astrology location-search HTTP contract                | None                                    | owner         | D-068 approves authenticated same-origin CSRF-protected rate-limited POST JSON, no-store responses, and no raw-query logs/analytics/shared cache.                                                                                                          |
-| OWN-015 | External  |       P0 | Done    | Approve the exact Western astrology V1 calculation method                   | None                                    | owner         | D-070 approves Option A: tropical zodiac, True Node, eleven bodies, exact-time Placidus, fixed major-aspect orbs, strict approximate/unknown suppression, and no polar fallback.                                                                           |
-| OWN-016 | External  |       P1 | Done    | Approve exact English astrology education publication pack                  | None                                    | owner         | D-073 approves the reviewed and published checksums, RITUVIA-owned worldwide rights, owner review/date, exact five-route indexing scope, and continued prohibition of sign/personality and personalized doorway pages.                                     |
-| OWN-017 | External  |       P0 | Done    | Approve Stripe Test Mode sandbox integration scope                          | None                                    | owner         | D-091 approves Stripe-hosted one-time USD checkout development against synthetic US policy and server-authoritative catalog prices while keeping live mode and production underwriting closed.                                                             |
+| ID      | Milestone | Priority | Status  | Task                                                                        | Dependencies                                                            | Primary role  | Done when                                                                                                                                                                                                                                                                                                                          |
+| ------- | --------- | -------: | ------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RIT-000 | M0        |       P0 | Done    | Audit repository and establish evidence baseline                            | None                                                                    | architect     | Repository reality is documented; setup gaps and exact M0 plan are committed; status/backlog reconciled.                                                                                                                                                                                                                           |
+| RIT-001 | M0        |       P0 | Done    | Create pnpm/Turborepo strict TypeScript monorepo                            | RIT-000                                                                 | backend       | Clean install, lint, typecheck, unit test, and build work from a fresh clone.                                                                                                                                                                                                                                                      |
+| RIT-002 | M0        |       P0 | Done    | Add environment validation and brand configuration                          | RIT-001                                                                 | backend       | Server/client env boundaries are typed; .env.example has placeholders; no brand string is hardcoded.                                                                                                                                                                                                                               |
+| RIT-003 | M0        |       P0 | Done    | Create local PostgreSQL and Prisma foundation                               | RIT-001                                                                 | backend       | Local database starts reproducibly; initial migration and synthetic seed/test reset pass.                                                                                                                                                                                                                                          |
+| RIT-004 | M0        |       P0 | Done    | Create test harness and CI quality gates                                    | RIT-001,RIT-003,OWN-008                                                 | qa_security   | CI runs format/lint/type/unit/integration/build, secret scan, and migration check.                                                                                                                                                                                                                                                 |
+| RIT-005 | M0        |       P1 | Done    | Enforce package architecture boundaries                                     | RIT-001                                                                 | architect     | Lint/architecture tests prevent forbidden imports and circular domain dependencies.                                                                                                                                                                                                                                                |
+| RIT-006 | M0        |       P1 | Done    | Add observability, correlation IDs, and redaction baseline                  | RIT-001,RIT-002                                                         | operations    | Structured logs/traces work locally; sensitive-field tests prove redaction.                                                                                                                                                                                                                                                        |
+| RIT-007 | M0        |       P1 | Done    | Add feature flag and typed configuration registry                           | RIT-002,RIT-003                                                         | backend       | Server-side flags are versioned, default safe-off, and testable.                                                                                                                                                                                                                                                                   |
+| RIT-008 | M0        |       P1 | Done    | Create preview/staging/production environment documentation                 | RIT-002,RIT-004                                                         | operations    | Environment isolation, secrets, indexing, data, and deploy gates are documented/tested where possible.                                                                                                                                                                                                                             |
+| RIT-009 | M0        |       P1 | Done    | Add ADR, task, incident, experiment workflow to repository                  | RIT-000                                                                 | product       | Templates and contribution rules link decisions/tasks/tests without stale duplication.                                                                                                                                                                                                                                             |
+| RIT-010 | M1        |       P0 | Done    | Implement accessible Web shell and locale-prefixed routing                  | RIT-001,RIT-002,RIT-007                                                 | frontend      | Home/navigation/footer render responsively; keyboard/semantic and locale route tests pass.                                                                                                                                                                                                                                         |
+| RIT-011 | M1        |       P0 | Done    | Implement design tokens and accessible component primitives                 | RIT-010                                                                 | frontend      | Core controls include focus, disabled, loading, error, dark/system, reduced-motion states.                                                                                                                                                                                                                                         |
+| RIT-012 | M1        |       P0 | Done    | Build product positioning, methodology, safety, and privacy public pages    | RIT-010,RIT-011                                                         | product       | Pages explain category, AI, boundaries, privacy, and free ritual without misleading claims.                                                                                                                                                                                                                                        |
+| RIT-013 | M1        |       P1 | Done    | Add SEO metadata, canonical, robots, and sitemap foundation                 | RIT-010                                                                 | growth_seo    | Production/preview indexing rules and canonical tests pass; no private routes index.                                                                                                                                                                                                                                               |
+| RIT-014 | M1        |       P1 | Done    | Add accessibility and pseudolocale CI smoke                                 | RIT-010,RIT-011                                                         | qa_security   | Core shell passes automated a11y, keyboard smoke, text expansion, and RTL scaffold checks.                                                                                                                                                                                                                                         |
+| RIT-015 | M1        |       P1 | Done    | Create error, empty, offline, and provider-unavailable patterns             | RIT-011                                                                 | frontend      | Reusable patterns are accessible, localized, tested, and used by first feature.                                                                                                                                                                                                                                                    |
+| RIT-016 | M1        |       P2 | Done    | Clean up the public-shell rollout flag                                      | RIT-010,RIT-014                                                         | backend       | Protected v2/v1/v2 and v3/v2/v3 staging rollback windows pass; registry v3 removes the key, adapter, branches, and old-history influence.                                                                                                                                                                                          |
+| RIT-020 | M2        |       P0 | Done    | Implement anonymous subject/session and consent baseline                    | RIT-003,RIT-010                                                         | backend       | Anonymous ID/session expiry/consent are secure, privacy-minimal, and tested.                                                                                                                                                                                                                                                       |
+| RIT-021 | M2        |       P0 | Done    | Implement safe question/theme intake rules and UX                           | RIT-020,RIT-012,OWN-009                                                 | ai_safety     | Allowed/reframed/blocked/crisis states pass fixtures; raw text never reaches analytics.                                                                                                                                                                                                                                            |
+| RIT-022 | M2        |       P0 | Done    | Create versioned tarot deck, spread, and content schema                     | RIT-003                                                                 | product       | Deck/spread/content source/version model and initial rights-safe placeholder deck are validated.                                                                                                                                                                                                                                   |
+| RIT-023 | M2        |       P0 | Done    | Implement deterministic server-authoritative tarot engine                   | RIT-022                                                                 | backend       | CSPRNG interface, uniqueness, orientation, idempotency, and fixed test vectors pass.                                                                                                                                                                                                                                               |
+| RIT-024 | M2        |       P0 | Done    | Implement tarot reading application service and API                         | RIT-020,RIT-021,RIT-023                                                 | backend       | Policy/limits/ownership/idempotency create immutable reading facts and safe errors.                                                                                                                                                                                                                                                |
+| RIT-025 | M2        |       P0 | Done    | Build one-card tarot intake, draw, and result UI                            | RIT-011,RIT-024                                                         | frontend      | Anonymous mobile user reaches a useful deterministic result in under three minutes.                                                                                                                                                                                                                                                |
+| RIT-026 | M2        |       P1 | Done    | Build three-card Situation/Action/Possibility flow                          | RIT-025                                                                 | frontend      | Ordered positions and result semantics are accessible, responsive, and deterministic.                                                                                                                                                                                                                                              |
+| RIT-027 | M2        |       P1 | Done    | Add tarot limits, calm redraw behavior, and report control                  | RIT-024,RIT-025,RIT-026,OWN-010                                         | ai_safety     | Server limits and non-coercive UX prevent compulsive rerolls; reporting is auditable.                                                                                                                                                                                                                                              |
+| RIT-028 | M2        |       P1 | Done    | Add deterministic tarot E2E and visual/accessibility tests                  | RIT-025,RIT-026,RIT-027,RIT-029                                         | qa_security   | Core flows pass mobile/keyboard/reduced-motion/offline/error/resume/report scenarios.                                                                                                                                                                                                                                              |
+| RIT-029 | M2        |       P1 | Done    | Add private same-session tarot result resume                                | RIT-027                                                                 | frontend      | Browser stores only a bounded reading ID; owner-scoped GET restores a fixed result without redrawing or private-text storage.                                                                                                                                                                                                      |
+| RIT-030 | M3        |       P0 | Done    | Define AI provider interfaces and typed interpretation schemas              | RIT-001,RIT-023                                                         | architect     | Provider-agnostic interfaces and modality schemas compile and have fixtures.                                                                                                                                                                                                                                                       |
+| RIT-031 | M3        |       P0 | Done    | Implement curated content retrieval and prompt versioning                   | RIT-022,RIT-030                                                         | ai_safety     | Only approved exact-tradition/version content can enter prompts; provenance is stored.                                                                                                                                                                                                                                             |
+| RIT-032 | M3        |       P0 | Done    | Implement pre-generation high-stakes and crisis policy                      | RIT-021,RIT-030                                                         | ai_safety     | Reviewed fixtures route unsafe requests without continuing divination.                                                                                                                                                                                                                                                             |
+| RIT-033 | M3        |       P0 | Done    | Implement structured generation, validation, and fallback                   | RIT-030,RIT-031,RIT-032                                                 | backend       | Schema/fact validation, timeout, retry, safe template fallback, and redacted telemetry pass.                                                                                                                                                                                                                                       |
+| RIT-034 | M3        |       P0 | Done    | Implement post-generation fact and safety verifier                          | RIT-033                                                                 | ai_safety     | Fabricated facts, certainty, professional advice, paid efficacy, dependency, and injection are caught.                                                                                                                                                                                                                             |
+| RIT-035 | M3        |       P0 | Done    | Build tarot AI interpretation streaming/polling UX                          | RIT-025,RIT-033,RIT-034                                                 | frontend      | Provisional/final/fallback/error states are clear; AI label and boundary are visible.                                                                                                                                                                                                                                              |
+| RIT-036 | M3        |       P0 | Done    | Create AI fixed regression and adversarial eval suite                       | RIT-033,RIT-034                                                         | ai_safety     | Fact/schema validity and zero critical safety failures are enforced in release CI.                                                                                                                                                                                                                                                 |
+| RIT-037 | M3        |       P1 | Done    | Add exact-version interpretation reporting                                  | RIT-027,RIT-034,RIT-159                                                 | backend       | Exact owner/reading-bound categorical reporting passes contract, API, PostgreSQL race/restore/privilege, configuration, build, and Chromium accessibility gates without regeneration or private-output disclosure.                                                                                                                 |
+| RIT-038 | M3        |       P1 | Done    | Add AI cost, latency, fallback, and safety dashboards                       | RIT-006,RIT-033                                                         | operations    | Privacy-safe metrics expose model/prompt/content version and alert thresholds.                                                                                                                                                                                                                                                     |
+| RIT-040 | M4        |       P0 | Done    | Implement intention domain and composer                                     | RIT-025                                                                 | product       | User-owned intention/action, coercive-control reframing, privacy, edit/archive/delete pass.                                                                                                                                                                                                                                        |
+| RIT-041 | M4        |       P0 | Done    | Implement ritual template and object domain                                 | RIT-003,RIT-011                                                         | backend       | Free/paid-capable objects are versioned; efficacy claims are structurally impossible.                                                                                                                                                                                                                                              |
+| RIT-042 | M4        |       P0 | Done    | Build accessible free candle and incense sanctuary                          | RIT-040,RIT-041                                                         | frontend      | Linear and 2D modes, reduced motion/audio off, exit/completion, graceful degradation pass.                                                                                                                                                                                                                                         |
+| RIT-043 | M4        |       P0 | Done    | Implement ritual completion and private journal                             | RIT-042                                                                 | backend       | Exact catalog/access snapshots, atomic entitlement/pass start, encrypted/minimized records, lifecycle failures, deletion, and no sensitive analytics pass.                                                                                                                                                                         |
+| RIT-044 | M4        |       P0 | Done    | Implement revisit scheduling and completion                                 | RIT-040,RIT-043                                                         | backend       | User-controlled schedule/time-zone/quiet-hours and non-prophetic comparison pass.                                                                                                                                                                                                                                                  |
+| RIT-045 | M4        |       P1 | Done    | Implement consented transactional reminder adapter                          | RIT-044,RIT-002,RIT-055                                                 | operations    | Account-owned once-only email opt-in/withdrawal, locale/time-zone/quiet-hours authorization, lock-screen-safe copy, retry/dead-letter handling, privacy deletion/export, and safe-off provider evidence pass.                                                                                                                      |
+| RIT-046 | M4        |       P0 | Done    | Instrument privacy-safe core loop and WMRS events                           | RIT-040,RIT-043,RIT-044                                                 | backend       | Typed allowlisted events reconstruct funnel without private free text.                                                                                                                                                                                                                                                             |
+| RIT-047 | M4        |       P0 | Done    | Add full-loop anonymous E2E tests                                           | RIT-042,RIT-043,RIT-044,RIT-046                                         | qa_security   | Question through revisit passes mobile, keyboard, reduced motion, failure, and deletion states.                                                                                                                                                                                                                                    |
+| RIT-050 | M5        |       P0 | Done    | Implement auth provider abstraction and secure account sessions             | RIT-003,RIT-010                                                         | backend       | Magic link/passkey-ready sessions, enumeration/rate protections, revoke/logout pass.                                                                                                                                                                                                                                               |
+| RIT-051 | M5        |       P0 | Done    | Implement idempotent anonymous-to-account merge                             | RIT-020,RIT-050                                                         | backend       | Concurrent merge preserves ownership/history once and has rollback/audit tests.                                                                                                                                                                                                                                                    |
+| RIT-052 | M5        |       P0 | Done    | Build account history, settings, and session management                     | RIT-050,RIT-051                                                         | frontend      | User can view/manage own data and sessions; IDOR tests cover all resources.                                                                                                                                                                                                                                                        |
+| RIT-053 | M5        |       P0 | Done    | Implement privacy export workflow                                           | RIT-050,RIT-043                                                         | backend       | Recent-auth owner scope, complete retained-data package, dedicated-key expiring ciphertext, append-only lifecycle evidence, routes, focused tests, PostgreSQL gate, and affected builds pass.                                                                                                                                      |
+| RIT-054 | M5        |       P0 | Done    | Implement selective and account deletion workflow                           | RIT-050,RIT-053                                                         | backend       | Recent-authenticated selective/account deletion crypto-shreds implemented private content, revokes authority, preserves required pseudonymous evidence, fences exports, and passes focused route/database/privilege/build gates.                                                                                                   |
+| RIT-055 | M5        |       P1 | Done    | Implement consent and AI-personalization controls                           | RIT-050,RIT-030                                                         | product       | Account-owned append-only analytics/personalization/model-improvement purposes, exact notice versions, cross-session immediate withdrawal, strict API/UI, privacy export, and safe-off external paths pass focused gates.                                                                                                          |
+| RIT-056 | M5        |       P0 | Done    | Create admin roles, MFA requirement, and audit log foundation               | RIT-050,RIT-003                                                         | qa_security   | Default-deny role matrix, same-identity passkey MFA, recent reauth, append-only grants/revocations, digest-only hash-chain audit, atomic rollback, least-privilege DB role, and focused PostgreSQL recovery gates pass.                                                                                                            |
+| RIT-057 | M5        |       P0 | Done    | Run identity/privacy/authorization security suite                           | RIT-051,RIT-052,RIT-053,RIT-054,RIT-056                                 | qa_security   | Exact proxy/same-origin boundaries, request-scoped deletion RLS, cross-user/token/CSRF/export/deletion/log/metadata tests, recovery, production browser flows, and the one-time milestone matrix pass with no critical/high finding.                                                                                               |
+| RIT-060 | M6        |       P0 | Done    | Implement versioned Country Policy Engine                                   | RIT-007,RIT-003                                                         | payments_risk | Strict immutable server policy, country-evidence hierarchy, independent fiat/crypto approvals, DB-backed kill/rollback chain, exact order version, focused PostgreSQL and build gates pass.                                                                                                                                        |
+| RIT-061 | M6        |       P0 | Done    | Implement catalog, product, price, and exact digital contents               | RIT-060,RIT-003                                                         | payments_risk | Immutable catalog/product/localization/price versions, exact Credit terms, integer USD, local-only seed, bounded DB reader, Web fail-closed endpoint, focused DB/build gates pass.                                                                                                                                                 |
+| RIT-062 | M6        |       P0 | Done    | Implement order, payment attempt, ledger, and entitlement domain            | RIT-061                                                                 | backend       | Canonical v2 states, exact idempotency, append-only Credits/reservations/allocations, source-specific entitlements, 20-way no-overspend concurrency, least privilege, and restore pass.                                                                                                                                            |
+| RIT-063 | M6        |       P0 | Done    | Implement first fiat hosted-checkout sandbox adapter                        | RIT-062,OWN-017                                                         | payments_risk | Test-only Stripe Checkout API, v2 order/attempt persistence, exact idempotency, server catalog/policy pricing, CSRF, live-key rejection, focused PostgreSQL/security/build gates pass; real network proof remains credential-gated.                                                                                                |
+| RIT-064 | M6        |       P0 | Done    | Implement signed payment webhook ingestion and processing                   | RIT-063                                                                 | backend       | Test-only raw signature/replay, startup account attestation, same-database distinct-role binding, exact duplicate/conflict, account-bound out-of-order replay, monotonic/versioned outbox, and zero fulfillment pass.                                                                                                              |
+| RIT-065 | M6        |       P0 | Done    | Implement entitlement grant/revoke and purchase restoration                 | RIT-062,RIT-064                                                         | backend       | Dedicated-role outbox consumption grants purchased Credits exactly once; disputes hold unspent source value, refunds reverse linked value, consumed shortfalls require review, and private owner restoration passes.                                                                                                               |
+| RIT-066 | M6        |       P0 | Done    | Build product detail, checkout return, and order status UX                  | RIT-061,RIT-063,RIT-065                                                 | frontend      | Exact terms display; return remains pending until verified; retries never duplicate orders.                                                                                                                                                                                                                                        |
+| RIT-067 | M6        |       P0 | Done    | Implement reconciliation and discrepancy cases                              | RIT-064,RIT-065                                                         | operations    | Daily bounded Stripe Test payment/order/Credit comparison, append-only discrepancy cases, provider settlement-availability evidence, and exact missed-webhook recovery pass focused gates; payout accounting remains explicitly out of scope.                                                                                      |
+| RIT-068 | M6        |       P0 | Done    | Implement refund request and sandbox refund path                            | RIT-065,RIT-067                                                         | payments_risk | Exact US/USD/Test eligibility, owner scope, request-time Credit hold, provider idempotency, submitted/confirmed truth, signed-event-linked reversal, rejection/retry and concurrency gates pass.                                                                                                                                   |
+| RIT-069 | M6        |       P0 | Done    | Run full payment integrity matrix                                           | RIT-063,RIT-064,RIT-065,RIT-067,RIT-068                                 | qa_security   | Stripe Test Mode redirect/webhook races, invalid signatures, pending/failure/expiry, 20-way duplicate/out-of-order, partial/full refund, dispute, fulfillment and reconciliation fixtures pass; no Live activation.                                                                                                                |
+| RIT-070 | M7        |       P0 | Done    | Implement subscription lifecycle and entitlements                           | RIT-062,RIT-064                                                         | payments_risk | Local root is reserved before Stripe Test Checkout; signed facts are role-attested and order-bound; monthly/annual allocations grant 8 Credits exactly once; cancellation preserves purchases; invoice-scoped refunds, nonnegative projection, and durable review pass focused gates.                                              |
+| RIT-071 | M7        |       P1 | Planned | Create paid sanctuary themes and objects                                    | RIT-041,RIT-061,RIT-065                                                 | frontend      | Paid items enhance visuals/audio/persistence only; exact contents/accessibility/free parity pass.                                                                                                                                                                                                                                  |
+| RIT-072 | M7        |       P1 | Planned | Build orders, subscription, invoice, cancellation, and support account UI   | RIT-066,RIT-070                                                         | frontend      | Self-service history/management/refund/support is accessible and localized.                                                                                                                                                                                                                                                        |
+| RIT-073 | M7        |       P0 | Done    | Build commerce admin and immutable event timeline                           | RIT-056,RIT-067,RIT-070                                                 | backend       | Owner-only single-order facts, bounded timeline, recent same-session passkey reauth, reason/ticket/typed confirmation, explicit reconciliation/refund limits, idempotent executor retries, separate hash-chain audit, and immutable least-privilege PostgreSQL evidence pass.                                                      |
+| RIT-074 | M7        |       P1 | Done    | Implement dispute/chargeback records and support workflow                   | RIT-067,RIT-073                                                         | payments_risk | Existing matched dispute facts asynchronously project exactly once into immutable privacy-minimal support work items after current Credit Pack fulfillment; failures retry independently, exact role/RLS boundaries pass, and no second case state machine, paid UI, provider action, network, or private journal access is added. |
+| RIT-075 | M7        |       P1 | Done    | Add payment/provider kill switches and failover contract                    | RIT-060,RIT-063                                                         | operations    | D-110 composes exact country/fiat/crypto flags with Country Policy before new persistence/provider/URL replay, rejects every fallback, preserves existing settlement, and activates no provider, credential, deployment, or paid product.                                                                                          |
+| RIT-080 | M8        |       P0 | Done    | Define numerology rule sets and source records                              | RIT-003,OWN-011                                                         | product       | Life Path/Birthday/Personal Year rules, examples, master numbers, locale limits approved.                                                                                                                                                                                                                                          |
+| RIT-081 | M8        |       P0 | Done    | Implement deterministic numerology engine                                   | RIT-080                                                                 | backend       | Formula steps and fixed/property tests cover edge dates and unsupported scripts.                                                                                                                                                                                                                                                   |
+| RIT-082 | M8        |       P0 | Done    | Build public numerology calculators and result UI                           | RIT-011,RIT-081                                                         | frontend      | Anonymous exact-year calculation, transparent formulas, accessible recovery states, and zero implicit persistence pass.                                                                                                                                                                                                            |
+| RIT-083 | M8        |       P1 | Done    | Add numerology AI interpretation and evals                                  | RIT-033,RIT-034,RIT-081,OWN-012                                         | ai_safety     | AI cannot change numbers; content/source/safety/locale tests pass.                                                                                                                                                                                                                                                                 |
+| RIT-084 | M8        |       P1 | Done    | Publish curated numerology SEO cluster                                      | RIT-013,RIT-080,RIT-082                                                 | growth_seo    | Unique useful pages, examples, source notes, schema/internal links pass quality checks.                                                                                                                                                                                                                                            |
+| RIT-090 | M9        |       P0 | Done    | Select and document licensed astrology engine                               | OWN-003                                                                 | architect     | D-069 supersedes the planned Professional path with whole-project AGPLv3, exact deployed Corresponding Source, the same pinned Swiss engine/source snapshot, independent evidence, and safe-off activation.                                                                                                                        |
+| RIT-091 | M9        |       P0 | Done    | Implement location and historical time-zone adapter                         | RIT-090                                                                 | backend       | Explicit fold/gap handling, historical DST, exact provider/data/runtime versions, privacy-safe bounded caching, and fixtures pass through D-067.                                                                                                                                                                                   |
+| RIT-092 | M9        |       P0 | Done    | Implement encrypted birth profile and uncertainty model                     | RIT-050,RIT-091                                                         | backend       | Exact/approx/unknown time, original/UTC/source, export/delete and privacy tests pass.                                                                                                                                                                                                                                              |
+| RIT-093 | M9        |       P0 | Done    | Implement astrology engine adapter and natal facts                          | RIT-090,RIT-091,RIT-092,OWN-013,OWN-015                                 | backend       | Runtime, SCA, component archive, 40-vector comparison, Linux sanitizers/fuzz, and exact-clean complete release-source archive pass; D-072 assigns deployed-source upload/readback/public-link proof to RIT-142/143.                                                                                                                |
+| RIT-094 | M9        |       P0 | Done    | Build natal chart and textual table UI                                      | RIT-011,RIT-093,OWN-014                                                 | frontend      | Private read-only saved-result API, strict facts projection, semantic tables, confidence states, and focused mobile/400%-zoom/keyboard/forced-colors/RTL browser evidence pass without activating astrology.                                                                                                                       |
+| RIT-095 | M9        |       P1 | Done    | Add natal interpretation, fact verifier, and evals                          | RIT-033,RIT-034,RIT-093                                                 | ai_safety     | Recomputed aspects, minimized fact references, uncertainty/source authority, single-use verification, deterministic replacement, and fixed zero-call evals pass without activating AI.                                                                                                                                             |
+| RIT-096 | M9        |       P1 | Done    | Publish curated astrology education cluster                                 | RIT-013,RIT-093,OWN-016                                                 | growth_seo    | D-073 approves the checksummed English pack; five exact production-only index routes, source/methodology contract, strict doorway exclusions, build, and focused browser/accessibility evidence pass.                                                                                                                              |
+| RIT-100 | M10       |       P0 | Done    | Complete ICU i18n and content/translation workflow                          | RIT-010,RIT-012                                                         | localization  | Checksummed source/glossary records, strict ICU/status/review/source-binding gates, explicit formatters/fallback telemetry, process authorization, and focused Web integration pass without activating another locale.                                                                                                             |
+| RIT-101 | M10       |       P0 | Done    | Complete RTL architecture and Arabic pseudotranslation QA                   | RIT-100,RIT-011                                                         | localization  | Test-only `en-XA`/`ar-XB`, ICU-preserving expansion, locale-derived direction, logical CSS, structural bidi isolation, exact public/private output boundaries, and focused RTL/accessibility browser evidence pass without activating Arabic.                                                                                      |
+| RIT-102 | M10       |       P1 | Done    | Add CJK and Devanagari typography/input QA                                  | RIT-100                                                                 | localization  | D-077 locale stacks, NFC/ZWJ private-text preservation, four CJK line-break profiles, actual platform fonts, hydrated IME rerender, ISO date, Axe, and privacy-safe browser evidence pass without locale activation.                                                                                                               |
+| RIT-103 | M10       |       P0 | Done    | Implement localized routes, slugs, hreflang, sitemaps, and redirects        | RIT-013,RIT-100                                                         | growth_seo    | D-076 stable-ID approval-bound routes, locale-derived SSR, reciprocal metadata, sitemap index/shards, exact redirect history, build, HTTP, and browser gates pass with English as the only published locale.                                                                                                                       |
+| RIT-104 | M10       |       P1 | Done    | Localize transactional email/reminder/support templates                     | RIT-045,RIT-100                                                         | localization  | D-078 checksummed lifecycle catalogs, immutable queue binding, safe HTML/text rendering, date/time-zone/quiet-hours reauthorization, strict delivery suppression, preview-only fallback telemetry, GET-safe preferences, database and Chromium gates pass.                                                                         |
+| RIT-105 | M10       |       P0 | Blocked | Select first Tier 1 locale and country beta                                 | OWN-004,RIT-100                                                         | product       | Owner selects evidence-backed locale/countries and approved review/support path.                                                                                                                                                                                                                                                   |
+| RIT-106 | M10       |       P0 | Planned | Complete reviewed Tier 1 locale closed beta content                         | RIT-105,RIT-103,RIT-104                                                 | localization  | Core flow/legal/safety/payment copy is reviewed; no mixed language or missing support.                                                                                                                                                                                                                                             |
+| RIT-110 | M11       |       P0 | Done    | Implement structured editorial content repository and publishing workflow   | RIT-012,RIT-100                                                         | product       | Strict identity/source/claim/rights/review/version/localization/deprecation, private-preview, process-authorized publication, path/symlink, architecture, CI, and focused verification gates pass without activating content.                                                                                                      |
+| RIT-111 | M11       |       P0 | Done    | Build tarot card library and spread guide cluster                           | RIT-022,RIT-110                                                         | growth_seo    | D-081-approved finite English content, shared editorial authority, 25 production-only routes, exact sitemap/robots containment, build budgets, 272 focused tests, and representative Chromium/Axe evidence pass without deployment or launch.                                                                                      |
+| RIT-112 | M11       |       P1 | Done    | Build ritual and reflection guide cluster                                   | RIT-110,RIT-042                                                         | growth_seo    | D-082-approved finite English content, shared editorial authority, six production-only routes, exact sitemap/robots containment, focused build, 200 contract tests, and three-page Chromium/Axe evidence pass without deployment or launch.                                                                                        |
+| RIT-113 | M11       |       P1 | Done    | Implement programmatic page inventory and quality gate                      | RIT-103,RIT-110                                                         | growth_seo    | D-083 binds exact 45-route source, intent, structure, internal-link, freshness, uniqueness, and exposure evidence; canonical, robots, sitemap, configuration, and build publication fail closed on any inventory drift.                                                                                                            |
+| RIT-114 | M11       |       P1 | Done    | Implement structured data and search crawl validation                       | RIT-103,RIT-111                                                         | growth_seo    | D-084 centralizes one visible-source graph per exact 45-page inventory record; full build/HTTP crawl, hidden-copy, private-canary, unsupported-claim, canonical, and Chromium injection gates pass.                                                                                                                                |
+| RIT-115 | M11       |       P1 | Done    | Implement redacted localized share cards                                    | RIT-025,RIT-100                                                         | frontend      | D-085 binds one-card-only exact SVG preview/download/file share to an allowlisted localized projection; theme redaction, private canaries, metadata, CSP, network, storage, 320px and Axe gates pass.                                                                                                                              |
+| RIT-116 | M11       |       P1 | Done    | Add GEO answer/source/entity templates and QA                               | RIT-110,RIT-111                                                         | growth_seo    | D-086 binds all exact 45 public routes to visible stable entities, closed claim classifications, approved source titles, current review dates, and fail-closed static/build/browser evidence without hidden or internal authority claims.                                                                                          |
+| RIT-117 | M11       |       P1 | Done    | Create SEO/GEO performance and freshness operations                         | RIT-114,RIT-116                                                         | operations    | D-087 binds exact 45-route offline aggregate crawl/index/query/referral evidence to freshness, low-sample suppression, reviewed content/rights authority, private digest-bound reports, and human-only gap briefs without provider or production actions.                                                                          |
+| RIT-120 | M12       |       P0 | Done    | Complete owner/admin operational dashboard                                  | RIT-038,RIT-073,RIT-117                                                 | operations    | D-103 adds one strict private offline eight-section Owner surface with environment/source/freshness/data-quality/evidence labels, unknown suppression, digest-bound mode-0600 output, and explicit OWN-019/RIT-127/128/staging/Gate H state without an admin route or launch authority.                                            |
+| RIT-121 | M12       |       P0 | Done    | Finalize threat model and remediate launch findings                         | RIT-057,RIT-069,RIT-095                                                 | qa_security   | D-099 and the versioned protected-Beta threat model map every security row, preserve safe-off integrations, pass exact-toolchain security gates, and leave zero open Critical/High findings.                                                                                                                                       |
+| RIT-122 | M12       |       P0 | Done    | Implement rate limits, bot defense, abuse and denial-of-wallet controls     | RIT-024,RIT-033,RIT-063                                                 | qa_security   | D-100 adds a fail-closed fixed-row per-session intake/mutation budget, exact 429 recovery, least privilege, restore and production-artifact evidence without sensitive profiling.                                                                                                                                                  |
+| RIT-123 | M12       |       P0 | Done    | Implement backups and isolated restore test                                 | RIT-003,RIT-008                                                         | operations    | Automated backups and documented isolated restore produce verified evidence.                                                                                                                                                                                                                                                       |
+| RIT-124 | M12       |       P0 | Done    | Implement SLOs, alerts, runbooks, and status controls                       | RIT-006,RIT-067                                                         | operations    | D-101 fixes six privacy-safe Beta SLOs and alert routes, adds correlated global read-only containment, and rehearses the existing registry-v3 database kill switch without claiming external production monitoring.                                                                                                                |
+| RIT-125 | M12       |       P1 | Done    | Implement support, privacy, safety, and content report queues               | RIT-056,RIT-068,RIT-110                                                 | operations    | D-102 binds four queues to one metadata-only source-FK kernel with database-derived local SLA/drafts, role/passkey step-up, append-only transitions/audit, least privilege, and restore evidence; drafts never send and production support/SLA remain gated.                                                                       |
+| RIT-126 | M12       |       P1 | Blocked | Implement daily, weekly, and monthly Codex automation                       | RIT-004,RIT-120,RIT-124,OWN-020                                         | operations    | D-108 approves OWN-020 Option A and preserves three paused cards with zero scheduled model use; hard isolation, separately approved model use, and one clean validated run per card remain required.                                                                                                                               |
+| RIT-127 | M12       |       P0 | Blocked | Implement cost budgets, allocation, and anomaly controls                    | RIT-038,RIT-067,RIT-120                                                 | operations    | D-106 approves Option A safe-off and explicitly leaves RIT-127 Blocked; exact Option B policy bytes plus durable atomic reserve/commit/release/reconcile and fixed alert delivery remain required before completion.                                                                                                               |
+| RIT-128 | M12       |       P0 | Done    | Run incident tabletop and dependency/provider failure game day              | RIT-123,RIT-124,RIT-125                                                 | qa_security   | The fixed repository-local security/Web/AI/payment/notification/database/dependency matrix passes; one missing consolidated entry point was fixed, with zero open repository-scope Critical/High findings and external Gate H evidence still explicit.                                                                             |
+| RIT-129 | M13       |       P0 | Done    | Prepare provider-free staging and Gate H evidence contract                  | OWN-019,RIT-047,RIT-121,RIT-124,RIT-128                                 | operations    | D-109 adds eight ordered digest/revision/freshness/environment-bound controls, private exclusive reports, and fail-closed derived state; current Gate H remains incomplete and no provider, staging resource, deployment, or launch was activated.                                                                                 |
+| RIT-130 | M13       |       P0 | Planned | Prepare closed beta release evidence and invite controls                    | OWN-019,RIT-047,RIT-057,RIT-121,RIT-122,RIT-124,RIT-127,RIT-166,RIT-168 | product       | The D-097 English anonymous free-beta profile, cohorts, consent, support, metrics, rollback and known risks are approved and evidenced.                                                                                                                                                                                            |
+| RIT-131 | M13       |       P0 | Planned | Run English closed beta and reconcile data quality                          | RIT-130                                                                 | operations    | Qualitative/quantitative evidence is collected ethically; metric definitions and gaps validated.                                                                                                                                                                                                                                   |
+| RIT-132 | M13       |       P0 | Planned | Remediate beta safety, UX, accessibility, and reliability findings          | RIT-131                                                                 | qa_security   | All launch-blocking findings are closed with regression tests and user-impact evidence.                                                                                                                                                                                                                                            |
+| RIT-140 | M14       |       P0 | Blocked | Complete paid-launch external approvals                                     | OWN-001,OWN-002,OWN-004,OWN-005,OWN-018,RIT-132                         | product       | Brand/entity/legal/tax/payment/country/budget approvals and the exact production paid-offer authority are recorded.                                                                                                                                                                                                                |
+| RIT-141 | M14       |       P0 | Planned | Configure production payment, tax, legal, and country policy                | RIT-140,RIT-069,RIT-075                                                 | payments_risk | Exact approved settings are configured in staging, reviewed, and protected by owner gate.                                                                                                                                                                                                                                          |
+| RIT-142 | M14       |       P0 | Planned | Run complete launch and rollback rehearsal                                  | RIT-123,RIT-124,RIT-141                                                 | qa_security   | Release evidence, migration, smoke, payment, AI, privacy, backup, rollback, and exact deployed Corresponding Source upload/readback/public-link binding all pass.                                                                                                                                                                  |
+| RIT-143 | M14       |       P0 | Blocked | Owner production go/no-go and limited rollout                               | RIT-142                                                                 | operations    | Owner approves; progressive launch thresholds and monitoring window are recorded.                                                                                                                                                                                                                                                  |
+| RIT-144 | M14       |       P0 | Planned | Complete post-launch verification and economics baseline                    | RIT-143                                                                 | operations    | Health, core loop, payment, refund, AI, support, cost and contribution are reconciled.                                                                                                                                                                                                                                             |
+| RIT-145 | M14       |       P2 | Planned | Clean up country and fiat-checkout rollout flags                            | RIT-075,RIT-144                                                         | backend       | Both flags are retired safe-off for one registry window, then removed after rollback evidence passes.                                                                                                                                                                                                                              |
+| RIT-150 | M15       |       P1 | Planned | Create evidence-led locale/country expansion scorecard                      | RIT-144                                                                 | product       | Search, retention, payment, legal, culture, support and economics determine ranked candidates.                                                                                                                                                                                                                                     |
+| RIT-151 | M15       |       P1 | Blocked | Pilot hosted non-custodial crypto checkout                                  | RIT-144,OWN-006                                                         | payments_risk | Separate provider/legal/country/asset approval and full payment tests pass.                                                                                                                                                                                                                                                        |
+| RIT-152 | M15       |       P2 | Planned | Evaluate additional tarot/report/ritual products                            | RIT-144                                                                 | product       | User need, ethics, content rights, economics and experiments justify exact product.                                                                                                                                                                                                                                                |
+| RIT-153 | M15       |       P2 | Blocked | Propose first regional tradition pack                                       | RIT-144,OWN-007                                                         | localization  | Named experts/sources/rights/method/local law/payment/support/evals are approved.                                                                                                                                                                                                                                                  |
+| RIT-154 | M15       |       P2 | Planned | Review architecture scaling evidence                                        | RIT-144                                                                 | architect     | Measured load/failure/deployment evidence determines whether any service extraction is warranted.                                                                                                                                                                                                                                  |
+| RIT-155 | M15       |       P2 | Planned | Clean up the crypto-checkout rollout flag                                   | RIT-151                                                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after pilot rollback evidence.                                                                                                                                                                                                                        |
+| RIT-156 | M15       |       P2 | Planned | Implement the first approved regional tradition pack                        | RIT-031,RIT-110,RIT-153                                                 | localization  | Approved sources, reviewers, locale scope, safety evals, attribution and rollback pass in limited rollout.                                                                                                                                                                                                                         |
+| RIT-157 | M15       |       P2 | Planned | Clean up the regional-tradition rollout flag                                | RIT-156                                                                 | backend       | Flag is retired safe-off for one registry compatibility window, then removed after rollout evidence passes.                                                                                                                                                                                                                        |
+| RIT-158 | MVP       |       P0 | Done    | Deliver the owner-directed Lumora-reference local commercial MVP            | RIT-025,RIT-029,RIT-036                                                 | product       | Direct Sanctuary completion and new 22-card Major Arcana draws pass production-artifact Playwright while exact old-catalog replay and production gates remain closed.                                                                                                                                                              |
+| RIT-159 | Audit     |       P0 | Done    | Install and reconcile the 2026-07-23 production source-of-truth pack        | RIT-158                                                                 | architect     | Pack integrity, repository capability/gap/security matrix, schema/API adaptation plan, current quality gates, browser evidence, and truthful status reconciliation pass without activating production providers.                                                                                                                   |
+| RIT-160 | M15       |       P2 | Planned | Clean up the astrology rollout flag                                         | RIT-144                                                                 | backend       | Flag is retired safe-off for one registry window, then removed after rollback evidence passes.                                                                                                                                                                                                                                     |
+| RIT-161 | Reset     |       P0 | Done    | Converge the product on the anonymous reflection core loop                  | RIT-047,RIT-159                                                         | product       | Owner, user, and engineering documentation are separated; Keep/Freeze/Delete candidates are explicit; non-core queue expansion is paused; the production core loop is reverified without deleting code or weakening safety gates.                                                                                                  |
+| RIT-163 | Reset     |       P0 | Done    | Upgrade the pinned Node.js toolchain to 26.5.1                              | RIT-161                                                                 | architect     | Canonical runtime pins, CI contract, type declarations, deterministic time-zone provenance, documentation, and full workspace evidence agree on Node.js 26.5.1 without changing production activation.                                                                                                                             |
+| RIT-162 | Reset     |       P0 | Done    | Simplify the core-loop implementation and retire approved dead code         | RIT-161                                                                 | architect     | Dependency evidence approves exact removals; core navigation and implementation center the retained loop; obsolete compatibility, simulator, adapter, and documentation paths are removed only after focused rollback and browser evidence pass.                                                                                   |
+| RIT-164 | Reset     |       P0 | Done    | Reconcile the restored-schema drift baseline and backup recovery gate       | RIT-162,RIT-163                                                         | qa_security   | The exact restored-schema SQL delta is reviewed against immutable migrations and Prisma schema; any baseline or verifier correction is evidence-backed and reversible; local backup recovery and applicable CI contracts pass without production data.                                                                             |
+| RIT-165 | Reset     |       P0 | Done    | Publish the pre-launch execution plan and exact product user manual         | RIT-161,RIT-162                                                         | product       | One truth-labelled launch critical path and one detailed Chinese manual map every reachable workflow, route, visible control location, system behavior, state, recovery path, privacy boundary, and owner gate to current implementation evidence.                                                                                 |
+| RIT-166 | Reset     |       P0 | Done    | Route the primary free-reading entry through approved safety intake         | RIT-021,RIT-025,RIT-164                                                 | frontend      | The homepage begins the D-097 core journey at activated intake; allowed/reframed/blocked/crisis/offline/unavailable paths and the complete anonymous loop pass without account, payment, AI activation, or question persistence.                                                                                                   |
+| RIT-167 | Reset     |       P0 | Done    | Run the Owner core-loop acceptance walkthrough and record findings          | RIT-165,RIT-166                                                         | product       | The Owner follows the exact intake-first manual in a protected environment and records acceptance or a prioritized, reproducible problem list without restoring frozen expansion scope.                                                                                                                                            |
+| RIT-168 | M13       |       P0 | Done    | Implement protected-Beta invite admission and revocation contract           | OWN-019,RIT-020,RIT-122,RIT-166                                         | qa_security   | D-112 adds deny-by-default opaque single-use/revocable admission before session issuance, exact 25-seat atomic cap, old-cookie denial, private mode-0600 operator issuance/revocation, calm `/en/beta` recovery, PostgreSQL race/privilege/restore and browser evidence, with no staging/deployment/public access.                   |
+| RIT-169 | M13       |       P0 | Ready   | Prepare standing-staging deployment preflight and secretless IaC            | RIT-004,RIT-129,RIT-168                                                  | operations    | Produce one disabled, provider-reviewable protected-staging topology/configuration/secret contract and preflight evidence for Web, Worker, PostgreSQL/PITR, edge ingress, monitors, DAST and rollback without creating accounts, accepting vendor terms, placing credentials, changing DNS, deploying, scanning, restoring, or launching. |
+| OWN-001 | External  |       P0 | Blocked | Complete formal RITUVIA trademark, domain, and linguistic clearance         | None                                                                    | owner         | Professional search/opinion, domains/handles and filing decision are recorded.                                                                                                                                                                                                                                                     |
+| OWN-002 | External  |       P0 | Blocked | Obtain primary and backup payment provider written pre-approval             | None                                                                    | owner         | Exact business/products/countries/price/refund description is approved in writing.                                                                                                                                                                                                                                                 |
+| OWN-003 | External  |       P0 | Done    | Select astrology engine/provider and license model                          | None                                                                    | owner         | D-069 selects Swiss Ephemeris 2.10.03/v2.10.3final under whole-project `AGPL-3.0-only` and supersedes the planned Professional License path.                                                                                                                                                                                       |
+| OWN-004 | External  |       P0 | Blocked | Select company, legal launch markets, tax/MoR, and counsel                  | None                                                                    | owner         | D-079 records the IPO.ONE BVI direction, 18+ baseline, phased country/locale candidates, and refund direction; exact entity particulars, qualified legal review, final terms/privacy/refund language, and tax/MoR path remain required.                                                                                            |
+| OWN-005 | External  |       P0 | Blocked | Set operating and launch budget limits                                      | None                                                                    | owner         | D-106 approves Option A safe-off for the protected free Beta; the task remains Blocked for paid launch until provider quotes support exact Option B policy bytes, amounts, periods, alert routes, and allowed degradation.                                                                                                         |
+| OWN-006 | External  |       P1 | Blocked | Approve crypto provider, countries, assets, refund, and legal path          | None                                                                    | owner         | Written approval and non-custodial architecture scope are recorded.                                                                                                                                                                                                                                                                |
+| OWN-007 | External  |       P2 | Blocked | Approve regional-tradition expert and source program                        | None                                                                    | owner         | Qualified reviewers, sources, rights, scope, language and compensation are documented.                                                                                                                                                                                                                                             |
+| OWN-018 | External  |       P0 | Blocked | Complete external review of direct-sale production offers                   | None                                                                    | owner         | Under D-097, exact named direct-sale SKUs, entitlements, prices, refunds, and customer language receive provider/legal review; production offers require no prepaid Credits before paid UI or activation resumes.                                                                                                                  |
+| OWN-019 | External  |       P0 | Done    | Approve protected-Beta abuse thresholds and ingress profile                 | None                                                                    | owner         | D-104 approves `own-019.protected-beta-abuse.v1`: maximum 25 invited English-speaking adults, deny-by-default revocable single-use admission, protected edge controls, exact 30/60 issuance, 12/60 intake, 120/86400 mutation limits, staged observation, and fixed rollback thresholds without deployment or launch.              |
+| OWN-020 | External  |       P1 | Done    | Approve recurring Codex automation activation posture                       | None                                                                    | owner         | D-108 approves recommended Option A exactly: preserve all three paused cards with zero scheduled model use; RIT-126 remains Blocked until hard isolation, separately approved model use, and three clean validated runs exist.                                                                                                     |
+| OWN-008 | External  |       P0 | Done    | Configure the GitHub remote and enforce CI checks                           | None                                                                    | owner         | D-090 records public AGPL source disclosure, protected `main`, and all three required CI jobs passing together.                                                                                                                                                                                                                    |
+| OWN-009 | External  |       P0 | Done    | Approve English question-intake safety language and activation policy       | None                                                                    | owner         | Exact copy, English scope, generic emergency-resource strategy, and production-activation reference are recorded.                                                                                                                                                                                                                  |
+| OWN-010 | External  |       P1 | Done    | Approve tarot redraw, limit, report privacy, and inherited-retention policy | None                                                                    | owner         | Exact English copy, six report categories, no free text, inherited expiry, and local three-per-hour baseline are recorded.                                                                                                                                                                                                         |
+| OWN-011 | External  |       P0 | Done    | Approve the exact RITUVIA V1 date-numerology method                         | None                                                                    | owner         | Life Path aggregation, Birthday reduction, explicit Personal Year target, 11/22/33 preservation, source scope, and name/locale exclusions are approved.                                                                                                                                                                            |
+| OWN-012 | External  |       P1 | Done    | Approve English numerology interpretation content and paid-product mapping  | None                                                                    | owner         | Exact sourced meanings for all calculation/result pairs, rights, reviewer, prompt/fallback, English scope, and paid Deep Reading mapping are approved.                                                                                                                                                                             |
+| OWN-013 | External  |       P0 | Done    | Approve and establish the Swiss Ephemeris AGPL integration path             | OWN-003                                                                 | owner         | D-069 records whole-project `AGPL-3.0-only`, exact deployed Corresponding Source, preserved notices, no commercial contract/payment, and unchanged native/release evidence gates.                                                                                                                                                  |
+| OWN-014 | External  |       P0 | Done    | Approve privacy-safe astrology location-search HTTP contract                | None                                                                    | owner         | D-068 approves authenticated same-origin CSRF-protected rate-limited POST JSON, no-store responses, and no raw-query logs/analytics/shared cache.                                                                                                                                                                                  |
+| OWN-015 | External  |       P0 | Done    | Approve the exact Western astrology V1 calculation method                   | None                                                                    | owner         | D-070 approves Option A: tropical zodiac, True Node, eleven bodies, exact-time Placidus, fixed major-aspect orbs, strict approximate/unknown suppression, and no polar fallback.                                                                                                                                                   |
+| OWN-016 | External  |       P1 | Done    | Approve exact English astrology education publication pack                  | None                                                                    | owner         | D-073 approves the reviewed and published checksums, RITUVIA-owned worldwide rights, owner review/date, exact five-route indexing scope, and continued prohibition of sign/personality and personalized doorway pages.                                                                                                             |
+| OWN-017 | External  |       P0 | Done    | Approve Stripe Test Mode sandbox integration scope                          | None                                                                    | owner         | D-091 approves Stripe-hosted one-time USD checkout development against synthetic US policy and server-authoritative catalog prices while keeping live mode and production underwriting closed.                                                                                                                                     |
 
 ## Backlog maintenance
 
@@ -4052,6 +2846,48 @@ issuance, reversal, refunds, and production activation remain outside this slice
 complete with owner-scoped local-calendar scheduling, encrypted original/completion snapshots,
 append-only idempotency, reminder-safe quiet hours, lifecycle mutations, and production-artifact
 privacy/accessibility evidence. RIT-046 is now the next eligible highest-priority item.
+
+RIT-161 completed the core-loop convergence and froze non-core expansion. RIT-163 then upgraded the
+exact repository and CI runtime to Node.js 26.5.1. RIT-162 completed the approved dependency audit,
+removed only an uncalled Worker wrapper and a byte-duplicate report, and retained every candidate
+with an active caller or replay, privacy, payment, migration, audit, or recovery obligation. No
+product-expansion item became Ready at that closure; later Owner acceptance restored only bounded
+release-safety slices. RIT-165 then
+published the evidence-gated pre-launch plan and exact Chinese workflow/button manual without
+changing runtime behavior. RIT-164 reviewed all 161 restored-schema drift statements, updated only
+the evidence fingerprint, and restored the isolated local backup-recovery gate under Node 26.5.1.
+D-097 approves the protected English anonymous free-beta profile, intake-first homepage entry, and
+direct-sale/no-preload paid direction. RIT-166 now closes the bounded navigation/browser slice with
+an exact one-time theme handoff and no question persistence. On 2026-08-01 the Owner explicitly
+accepted the retained journey under RIT-167. D-098 resumes only the protected-Beta critical path.
+RIT-121 now closes the versioned threat model with zero open Critical/High findings. RIT-122 closes
+the repository-side protected-Beta abuse slice under D-100 with a fixed-row per-session intake and
+mutation budget, exact 429 recovery, least privilege, restore continuity, and no sensitive
+profiling. RIT-124 now closes the repository-side SLO, alert, runbook, correlated read-only, and
+registry-v3 kill-switch evidence under D-101 without claiming an external monitoring/status
+provider or Gate H completion. RIT-125 now closes the source-bound metadata-only support, privacy,
+safety, and content-report kernel under D-102 without adding private evidence, automatic sending,
+public support commitments, user/admin buttons, or production activation. RIT-120 now closes the
+private source/freshness-labelled Owner operations dashboard under D-103 without adding a Web/admin
+route, provider reader, production metric, or launch authority. D-105 adds only a fixed-registry,
+private, safe-off cost-policy simulation. D-106 approves Option A exactly and correctly keeps
+RIT-127 Blocked until exact Option B and durable atomic enforcement/alert evidence exist. RIT-128
+now closes the repository-local incident/provider game day with zero open scoped Critical/High
+findings and does not imply cost-control or Gate H completion.
+Product expansion remains frozen. D-104 closes OWN-019's exact protected-Beta policy approval, but
+RIT-130 remains Planned until RIT-127 is unblocked and completed and its own standing-staging,
+invite, monitoring, restore, independent-security, rollback, and release-evidence work are complete.
+RIT-126 prepared the exact three-card automation contract but remains Blocked under D-108 Option A:
+all cards are paused pending hard isolation, separately approved model use, and three observed clean
+runs. RIT-129 is Done under D-109 with a provider-free eight-control staging/Gate H evidence
+contract; its current result remains blocked/incomplete. RIT-130 remains dependency-blocked by
+RIT-127. RIT-075, RIT-074, and RIT-168 are now Done: provider-neutral purchase safe-off/no-fallback,
+asynchronous metadata-only dispute support, and deny-by-default atomic invite admission all close
+repository gaps without restoring paid UI, creating standing staging, or activating a provider.
+RIT-127 still needs exact Option B plus durable atomic budget and fixed alert-delivery evidence,
+while RIT-130 depends on RIT-127 and the remaining standing-staging/Gate H evidence. OWN-018 keeps
+paid product UI and activation blocked until exact
+direct-sale SKUs receive provider/legal review.
 
 When adding a task, include an outcome rather than a vague activity, explicit dependencies, a primary review role, and testable completion. Do not remove completed tasks; archive them to a dated release log only after a release if this file becomes unwieldy. Owner tasks remain blocked until the owner supplies evidence; Codex may prepare dossiers and code but may not mark external approval complete.
 
@@ -4253,6 +3089,24 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Decision | D-092 | Separate payment ingestion from source-linked fulfillment | [decisions/D-092.md](./decisions/D-092.md) |
 | Decision | D-093 | Hold unused Credits before a Stripe sandbox refund | [decisions/D-093.md](./decisions/D-093.md) |
 | Decision | D-094 | Separate commerce command acceptance from provider execution | [decisions/D-094.md](./decisions/D-094.md) |
+| Decision | D-095 | Converge the current stage on the reflection core loop | [decisions/D-095.md](./decisions/D-095.md) |
+| Decision | D-096 | Pin the repository and deterministic runtime to Node.js 26.5.1 | [decisions/D-096.md](./decisions/D-096.md) |
+| Decision | D-097 | Approve the free English beta profile, intake-first entry, and direct-sale model | [decisions/D-097.md](./decisions/D-097.md) |
+| Decision | D-098 | Accept the retained core loop and resume protected-beta security preparation | [decisions/D-098.md](./decisions/D-098.md) |
+| Decision | D-099 | Suppress one exact historical Gitleaks schema-version false positive | [decisions/D-099.md](./decisions/D-099.md) |
+| Decision | D-100 | Use one privacy-minimal anonymous-session request budget for protected Beta | [decisions/D-100.md](./decisions/D-100.md) |
+| Decision | D-101 | Use fixed privacy-safe Beta SLOs and one global read-only containment mode | [decisions/D-101.md](./decisions/D-101.md) |
+| Decision | D-102 | Use one source-bound metadata-only operational case kernel | [decisions/D-102.md](./decisions/D-102.md) |
+| Decision | D-103 | Use a private offline owner operations dashboard before an admin route | [decisions/D-103.md](./decisions/D-103.md) |
+| Decision | D-104 | Approve the exact protected-Beta abuse and ingress profile | [decisions/D-104.md](./decisions/D-104.md) |
+| Decision | D-105 | Use fail-closed private cost guardrails before budget activation | [decisions/D-105.md](./decisions/D-105.md) |
+| Decision | D-106 | Preserve a zero-paid-provider protected-Beta cost posture | [decisions/D-106.md](./decisions/D-106.md) |
+| Decision | D-107 | Bind recurring reviews to local prompt-enforced read-only Codex automations | [decisions/D-107.md](./decisions/D-107.md) |
+| Decision | D-108 | Keep recurring Codex reviews paused under OWN-020 Option A | [decisions/D-108.md](./decisions/D-108.md) |
+| Decision | D-109 | Derive Gate H evidence state from eight digest-bound controls | [decisions/D-109.md](./decisions/D-109.md) |
+| Decision | D-110 | Compose exact payment route controls and forbid provider fallback | [decisions/D-110.md](./decisions/D-110.md) |
+| Decision | D-111 | Derive dispute support records from matched commerce facts only | [decisions/D-111.md](./decisions/D-111.md) |
+| Decision | D-112 | Require one database-atomic invite before protected-Beta session issuance | [decisions/D-112.md](./decisions/D-112.md) |
 | Task | RIT-004 | Create the hosted CI quality gates | [tasks/RIT-004.md](./tasks/RIT-004.md) |
 | Task | RIT-008 | Document preview, staging, and production environments | [tasks/RIT-008.md](./tasks/RIT-008.md) |
 | Task | RIT-009 | Repository decision, task, incident, and experiment workflow | [tasks/RIT-009.md](./tasks/RIT-009.md) |
@@ -4310,6 +3164,8 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-069 | Full Payment Integrity Matrix and M6 Product Checkpoint | [tasks/RIT-069.md](./tasks/RIT-069.md) |
 | Task | RIT-070 | Subscription Lifecycle and Entitlements | [tasks/RIT-070.md](./tasks/RIT-070.md) |
 | Task | RIT-073 | Commerce Admin and Immutable Event Timeline | [tasks/RIT-073.md](./tasks/RIT-073.md) |
+| Task | RIT-074 | Dispute/chargeback records and support workflow | [tasks/RIT-074.md](./tasks/RIT-074.md) |
+| Task | RIT-075 | Payment/provider kill switches and no-fallback contract | [tasks/RIT-075.md](./tasks/RIT-075.md) |
 | Task | RIT-080 | Numerology rule sets and source records | [tasks/RIT-080.md](./tasks/RIT-080.md) |
 | Task | RIT-081 | Deterministic numerology engine | [tasks/RIT-081.md](./tasks/RIT-081.md) |
 | Task | RIT-082 | Public numerology calculator and result UI | [tasks/RIT-082.md](./tasks/RIT-082.md) |
@@ -4335,9 +3191,27 @@ Absence of an incident or experiment entry is not evidence that no event occurre
 | Task | RIT-115 | Redacted localized one-card share artifacts | [tasks/RIT-115.md](./tasks/RIT-115.md) |
 | Task | RIT-116 | Visible GEO answer, source, review, and entity authority | [tasks/RIT-116.md](./tasks/RIT-116.md) |
 | Task | RIT-117 | Offline SEO/GEO performance and freshness operations | [tasks/RIT-117.md](./tasks/RIT-117.md) |
+| Task | RIT-120 | Complete owner/admin operational dashboard | [tasks/RIT-120.md](./tasks/RIT-120.md) |
+| Task | RIT-121 | Finalize threat model and remediate launch findings | [tasks/RIT-121.md](./tasks/RIT-121.md) |
+| Task | RIT-122 | Implement rate limits, bot defense, abuse and denial-of-wallet controls | [tasks/RIT-122.md](./tasks/RIT-122.md) |
 | Task | RIT-123 | Implement backups and isolated restore test | [tasks/RIT-123.md](./tasks/RIT-123.md) |
+| Task | RIT-124 | Implement SLOs, alerts, runbooks, and status controls | [tasks/RIT-124.md](./tasks/RIT-124.md) |
+| Task | RIT-125 | Implement support, privacy, safety, and content report queues | [tasks/RIT-125.md](./tasks/RIT-125.md) |
+| Task | RIT-126 | Implement daily, weekly, and monthly Codex automation | [tasks/RIT-126.md](./tasks/RIT-126.md) |
+| Task | RIT-127 | Cost budgets, allocation, and anomaly controls | [tasks/RIT-127.md](./tasks/RIT-127.md) |
+| Task | RIT-128 | Incident tabletop and dependency/provider failure game day | [tasks/RIT-128.md](./tasks/RIT-128.md) |
+| Task | RIT-129 | Provider-free staging and Gate H evidence contract | [tasks/RIT-129.md](./tasks/RIT-129.md) |
 | Task | RIT-158 | Lumora-reference local commercial MVP | [tasks/RIT-158.md](./tasks/RIT-158.md) |
 | Task | RIT-159 | Production source-of-truth pack reality audit | [tasks/RIT-159.md](./tasks/RIT-159.md) |
+| Task | RIT-161 | Core-loop product convergence | [tasks/RIT-161.md](./tasks/RIT-161.md) |
+| Task | RIT-162 | Simplify the core-loop implementation and retire approved dead code | [tasks/RIT-162.md](./tasks/RIT-162.md) |
+| Task | RIT-163 | Upgrade the pinned Node.js toolchain to 26.5.1 | [tasks/RIT-163.md](./tasks/RIT-163.md) |
+| Task | RIT-164 | Reconcile the restored-schema drift baseline and backup recovery gate | [tasks/RIT-164.md](./tasks/RIT-164.md) |
+| Task | RIT-165 | Publish the pre-launch execution plan and exact product user manual | [tasks/RIT-165.md](./tasks/RIT-165.md) |
+| Task | RIT-166 | Route the primary free-reading entry through approved safety intake | [tasks/RIT-166.md](./tasks/RIT-166.md) |
+| Task | RIT-167 | Run the Owner core-loop acceptance walkthrough and record findings | [tasks/RIT-167.md](./tasks/RIT-167.md) |
+| Task | RIT-168 | Protected-Beta invite admission and revocation contract | [tasks/RIT-168.md](./tasks/RIT-168.md) |
+| Task | RIT-169 | Standing-staging deployment preflight and secretless IaC | [tasks/RIT-169.md](./tasks/RIT-169.md) |
 
 The index is discovery metadata only; canonical state and approvals remain in their named sources.
 
@@ -5346,9 +4220,12 @@ A separate `apps/admin` is optional. Prefer a protected route group in `apps/web
 
 `@rituvia/analytics` currently implements strict core-loop event contracts, bounded synthetic test
 storage, deterministic funnel/WMRS projections, and a fail-closed offline SEO/GEO operations
-projection over aggregate exports and reviewed public-content authority. Web composition supplies
-purpose-scoped identity and consent checks; production collection, persistence, browser ingestion,
-vendors, provider APIs, and network export remain safe-off.
+projection over aggregate exports and reviewed public-content authority. It also implements the
+`owner-operations.v1` private offline summary over exactly eight source envelopes; missing, stale,
+future, or synthetic evidence is forced to `unknown`, and the release panel never grants deployment
+authority. Web composition supplies purpose-scoped identity and consent checks; production
+collection, persistence, browser ingestion, admin routes, vendors, provider APIs, and network
+export remain safe-off.
 
 ## 4. System context
 
@@ -5414,7 +4291,7 @@ Location and historical time-zone resolution use a separate provider-neutral V1 
 intended production gazetteer is a self-hosted GeoNames export with an immutable snapshot version
 and SHA-256 digest; no request-time public geocoder dependency is allowed. `@rituvia/divination`
 owns strict search/result and local-time resolution facts only. `apps/web/server` owns the pinned
-Node `24.18.0` / ICU `78.3` / tzdata `2026b` runtime, timeout cancellation, and bounded private
+Node `26.5.1` / ICU `78.3` / tzdata `2026b` runtime, timeout cancellation, and bounded private
 process cache capped at 64 entries and 15 minutes. Cache keys are HMAC-only and partitioned by
 provider, adapter, and data versions. Resolution rereads the opaque location ID, never trusts
 client coordinates/zone data, never caches birth time, and returns explicit fold/gap states without
@@ -5619,6 +4496,12 @@ rows must match an exact active key, required owner-gate prefix, and scope shape
 update/delete/truncate history or change DDL, and no migration creates an enabled row. There is
 deliberately no activation endpoint: granting control credentials and recording the referenced
 owner approval remain operational approval actions.
+
+Payment purchase composition consumes the registry only through the server-owned Web loader. One
+pure payments contract joins country activation, fiat/crypto checkout activation, and the exact
+Country Policy route; it accepts no fallback provider and runs before new purchase persistence,
+provider invocation, subscription reservation, or existing Checkout URL disclosure. Settlement
+consumers remain separate so safe-off does not strand existing obligations.
 
 Registry upgrades are rolling-safe. Storage uniqueness is `(registryVersion, flagKey, version)`,
 and each deployed reader queries only its exact registry version, so v1, v2, and v3 histories can
@@ -6084,7 +4967,8 @@ disputes are not attempt states.
 Immutable, account-bound signed-webhook receipt metadata and one transactional state-change outbox
 row per applied provider event. The webhook role may append events/outbox rows and update bounded
 payment state, but cannot lease, complete, grant, hold, or reverse value. A separate fulfillment
-role owns bounded outbox delivery state.
+role owns bounded outbox delivery state. A matched, applied `payment_disputed` event is the durable
+dispute fact; RIT-074 deliberately does not copy it into a second dispute table.
 
 #### `credit_ledger_entry`, `credit_reservation`, `credit_allocation`, `credit_projection`
 
@@ -6125,9 +5009,18 @@ idempotency. Plus must originate from an order; permanent objects must originate
 consumption. Composite owner/source constraints and unique owner/type/fulfillment constraints
 prevent cross-account or double grants.
 
-#### `refund`, `dispute`
+#### `commercial_refund_request_v1`, dispute support
 
-Provider/internal references, amount, reason category, evidence/audit, approval state, impact on entitlements.
+Refund requests are separate owner/order/attempt/provider-bound aggregates with policy,
+idempotency, provider execution, confirmation, and Credit-hold evidence. Current Credit Pack
+disputes remain immutable payment events. After the matching outbox and fulfillment complete and
+the order still remains disputed, an independent idempotent projector creates one immutable
+metadata-only `commercial_dispute_support_projection_v1` work item linked directly to the payment
+event. It does not create a second dispute aggregate or a second mutable case state machine.
+Ignored-out-of-order, mismatched, unfulfilled, stale-version, subscription, and already-refunded
+observations do not open a current support work item. The projection stores no amount, provider
+object, payload, journal, prayer, question, reading, intention, birth data, attachment, or support
+free text.
 
 ### policy and operations
 
@@ -6249,6 +5142,26 @@ Do not invent final periods in code. Use policy configuration and legal approval
 - Use database constraints for states/foreign keys, not application checks alone.
 - Migrations are forward-compatible, reviewed, tested on production-like volume, and include rollback/roll-forward notes.
 - Seed data is synthetic and clearly marked.
+
+## 8. RIT-125 operational case classification
+
+RIT-125 adds one source-bound operational case kernel and no private evidence store.
+
+| Data                                                             | Classification                 | Handling                                                                                                               |
+| ---------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Support ticket and source UUIDs                                  | Personal pseudonymous          | Foreign-key-bound to one existing anonymous/user source; never shown as a public identifier                            |
+| Bounded support/report/privacy category                          | Sensitive personal categorical | Fixed allowlist only; no question, reading prose, journal, prayer, birth data, email, attachment, or arbitrary message |
+| Queue, priority, state, SLA timestamps, policy/template versions | Restricted operational         | Database-derived from source and reviewed local policy; not a public production promise                                |
+| Operator user/session/role, reason, ticket                       | Restricted security/operations | Recent-auth and same-session passkey required; append-only audit; no free-form operator notes                          |
+| Idempotency, canonical, before/after, and chain hashes           | Security/internal              | Fixed 32-byte digests; no raw key or private payload                                                                   |
+| Fixed English draft                                              | Internal support content       | Versioned allowlisted acknowledgement, always `draft_only_not_sent`                                                    |
+
+`support_ticket_v1` inherits the owning anonymous-subject expiry. Reading-report and privacy-export
+cases inherit their source expiry. Privacy-deletion and refund cases do not create an independent
+retention period; they remain bound to the existing source/audit obligation until an approved
+retention policy exists. No historical source row is backfilled by the migration. Deletion,
+retention changes, private evidence, attachments, or historical replay require separate review and
+applicable Owner/legal approval.
 
 ---
 
@@ -6662,6 +5575,13 @@ so enabling one route cannot authorize the other. A disabled successor is the ki
 is another immutable successor. Only a synthetic local policy is seeded. Staging and production
 remain empty and therefore deny paid authorization until separately approved policy publication.
 
+D-110 adds the application composition: every new purchase must also pass the exact country-scoped
+country and fiat/crypto checkout flags at the same server-owned instant. The route is bound to the
+exact provider and method, every fallback list is rejected, and safe-off is checked before local
+persistence, provider use, subscription reservation, or Checkout URL replay. Signed settlement,
+refund, dispute, fulfillment, entitlement, and reconciliation for existing obligations remain
+processable.
+
 ## 5. Order model
 
 Internal order is created before provider checkout and is authoritative for:
@@ -6756,6 +5676,16 @@ Daily reconciliation compares internal paid orders, provider payments, refunds, 
 - Revoke or adjust entitlements consistently with published terms.
 - Preserve legally required order/ledger records while deleting unnecessary sensitive content.
 - Prepare evidence from order/product/consent/delivery facts, never from invasive journal/prayer content.
+- The immutable matched payment event is the dispute fact; do not duplicate it in a second mutable
+  record or place dispute state on a payment attempt.
+- Project a support work item only after the applied signed dispute, matching outbox, current
+  order, and same-version Credit Pack fulfillment are complete. Projection retries independently
+  and cannot roll back payment ingestion, Credit hold, or shortfall evidence.
+- Ignored-out-of-order, mismatched, unfulfilled, stale, subscription, or already-refunded dispute
+  observations remain timeline evidence and do not open a current support work item.
+- Projection presence or absence is not a provider win/loss, refund, Credit restoration, customer
+  response, legal position, or a mutable operator case state. Those actions remain separately
+  authorized.
 
 ## 11. Tax and invoicing
 
@@ -7440,6 +6370,42 @@ arbitrary event properties, and cross-site tracking are prohibited. Referral exp
 explicit other/unknown and excluded aggregate buckets. Production analytics collection, provider
 connection, notice, retention/deletion, and activation remain separately owner-gated.
 
+### Cost guardrails v1 safe-off preparation
+
+`cost-guardrail.v1` consumes one exact 24-hour UTC provider/feature aggregate and either an
+unavailable or explicitly unapproved proposed policy. Provider and feature values come from finite
+code registries; arbitrary labels, identifiers, free text, private content, and raw provider
+payloads are rejected. Proposed lines must reconcile exactly to the proposed total, while missing,
+partial, stale, synthetic, unavailable, or unbudgeted cost never becomes zero or spend authority.
+
+The report always keeps `decisionStatus=blocked`, non-essential spend denied, and
+`automaticActionsExecuted=false`. It can simulate warning/exhaustion and essential alert-only
+behavior for review, but it exposes no admission API and cannot reserve money or execute
+degradation. OWN-005, a decision-bound policy digest, durable atomic reservation/reconciliation,
+provider ingestion, and fixed alert delivery are required before RIT-127 can complete.
+
+### Owner operations v1
+
+The `owner-operations.v1` policy is a private read-only summary, not optional product analytics and
+not a live admin control plane. It accepts exactly eight categorical source envelopes in canonical
+order: health, revenue, core loop, AI, queue, support, cost, and approvals. Each output shows the
+source environment/kind, observed-through time, exact window when present, maximum age, freshness,
+data quality, approval reference, evidence, runbook, state, and a fixed known gap.
+
+Health, queue, and support evidence expires after one hour; revenue, core-loop, AI, and cost evidence
+after 30 hours; approval state after 168 hours. Missing, future, stale, or synthetic evidence is
+forced to `unknown`. The v1 surface carries no arbitrary metric/value map, private content, user or
+session identifier, raw provider payload/error, or free-text operator note. Detailed quantitative
+reports remain in their named source systems and must retain their own denominator, window,
+low-sample, approval, and privacy contracts.
+
+The release panel displays D-106-approved OWN-005 Option A safe-off, D-104-approved OWN-019,
+RIT-127 blocked pending exact Option B and durable enforcement, completed repository-local RIT-128,
+the planned RIT-130 release-evidence task, standing staging, Gate H, and independent-security state.
+Even complete evidence remains subject to explicit Owner deployment approval. Production readers,
+Web/admin routes, automation, budgets, providers, deployment, and launch are separate tasks and
+gates.
+
 ## 8. Experiments
 
 Every experiment needs:
@@ -7507,6 +6473,32 @@ No decision should rely on a metric until its definition, denominator, source, f
 # File: `docs/10_SECURITY_PRIVACY_RELIABILITY.md`
 
 # Security, Privacy, and Reliability
+
+## 0. Current protected-Beta threat model
+
+The current D-097/D-098 English, anonymous, free, protected closed-Beta threat model is
+[RITUVIA RIT-121 Protected-Beta Threat Model](reports/RITUVIA_RIT_121_PROTECTED_BETA_THREAT_MODEL_2026-08-01.md).
+It maps every production security-matrix row to current Beta evidence, safe-off scope, or a later
+gate. RIT-121 closes the only reproduced security-job blocker with one exact historical Gitleaks
+fingerprint and leaves zero open Critical/High findings in the approved repository Beta scope.
+RIT-128 now adds the fixed repository-local incident/provider failure matrix, canonical webhook,
+kill-switch and isolated-restore drills, one consolidated operator entry point, and a second zero
+open Critical/High result for that bounded scope.
+
+This does not pass Gate H or authorize deployment. Standing allowlisted staging, DAST, independent
+penetration testing, general SAST/application SBOM/license evidence, managed secrets, external
+monitoring, and provider-level restore remain required before a protected Beta candidate can be
+approved.
+
+RIT-129's provider-free eight-control contract keeps local/CI evidence distinct from staging,
+provider, and external evidence. Gate H remains `incomplete`; see its runbook.
+
+RIT-168/D-112 now add the repository-local protected-Beta invite boundary: one opaque, single-use,
+revocable invite must be atomically consumed before protected-Beta anonymous-session creation; the
+cohort is capped at 25 issued seats and a pre-policy active cookie cannot bypass admission. Raw
+invites are never stored or logged and are emitted only once to an exclusive private operator file.
+This still does not prove external ingress, actual invitation delivery, standing staging, provider
+restore, external monitoring/security review, Gate H, deployment, or launch.
 
 ## 1. Security goals
 
@@ -7620,6 +6612,14 @@ Maintain a versioned threat model and update it for every major feature/provider
   exact table reads, exact inserts, and only lifecycle-column updates; reject DDL, delete,
   consent mutation, expiry/hash/ownership mutation, role switching, and reachable privileged
   membership.
+- When the exact protected-Beta invite policy is configured, reject missing, invalid, used,
+  expired, or revoked invites before creating a subject/session and reject any old unbound active
+  cookie. Atomically consume and bind the invite in the session-creation transaction; exact retry
+  may recover the same session, but changed replay and concurrent double use fail closed.
+- Keep the raw invite only in user form memory, one bounded same-origin body, and one private
+  operator output file. Never place it in URLs, referrers, browser storage, analytics, logs, error
+  responses, or the database. Store only its one-way digest and bounded state metadata. Revoking a
+  consumed invite also revokes its bound anonymous session.
 
 ## 4. Application security
 
@@ -7694,6 +6694,21 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Scraping controls that do not block legitimate accessibility/search crawlers.
 - Avoid invasive fingerprinting unless a documented risk/legal review approves it.
 - Abuse signals never become spiritual/profile judgments.
+
+RIT-122 adds one database-atomic, fixed-row anonymous-session admission budget for the approved
+protected-Beta core loop. `question_intake` and `protected_beta_mutation` are closed scopes; each
+active session can have at most one row per scope. Admission follows same-origin/session checks but
+precedes private-body reads and expensive domain work. Missing policy, unavailable storage,
+privilege drift, and invalid sessions fail closed; concurrent excess returns bounded `429` and
+`Retry-After` without automatic browser retry.
+
+The row contains only the anonymous-session foreign key, scope, window start, request count, and
+policy version. It does not collect raw questions, journal or intention text, email, IP address,
+user agent, device identifier, fingerprint, or arbitrary abuse attributes. Local acceptance uses
+12 intake checks per 60 seconds and 120 protected mutations per 86,400 seconds. D-104 approves the
+exact `own-019.protected-beta-abuse.v1` reference and complementary invite/edge profile for
+RIT-130 standing-staging evidence; session farming is not misrepresented as solved by the
+repository-only per-session budget, and the approval does not authorize deployment.
 
 ## 10. Privacy rights
 
@@ -7782,6 +6797,14 @@ Initial post-launch objectives:
 
 Finalize objectives before launch and align alerting/runbooks.
 
+D-101 now makes the six production-pack protected-Beta candidates executable as a fixed numeric
+repository contract: core-page availability `>=99.9%`, authentication verification p95 `<=1.5s`,
+order creation p95 `<=2s`, payment-webhook processing p95 `<=5s`, Deep Reading success `>=98%`
+excluding policy refusals, and lost/duplicate Credit entries exactly `0`. Every definition has an
+explicit freshness window, owner, severity, and one runbook path. Missing, stale, future, or invalid
+evidence is `unknown` and actionable, never healthy. RPO/RTO, payment-to-entitlement, and provider
+fallback objectives above retain their separate evidence requirements.
+
 ## 12. Resilience patterns
 
 - Timeouts and bounded retries with jitter.
@@ -7793,6 +6816,11 @@ Finalize objectives before launch and align alerting/runbooks.
 - Feature/kill switches per provider/country/modality.
 - Backpressure and concurrency limits.
 - No unbounded queues or retry storms.
+
+For payments, “fallback” never means an unapproved alternate provider. D-110 requires exact-route
+authorization and fails closed before new work. Checkout-control/configuration faults return a
+redacted unavailable result; signed webhooks, refunds, disputes, fulfillment, and reconciliation
+remain available for already-created obligations.
 
 ## 13. Backups and recovery
 
@@ -7864,13 +6892,20 @@ Traffic, latency, errors, saturation, queue depth/age, job failures, database po
 
 Propagate correlation through Web → database/outbox → worker → provider. Strip sensitive attributes.
 
-The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its current `http.proxy_handoff` span measures successful proxy handoff only; it does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. RIT-045 adds one narrow database-backed Revisit reminder reader/lease state machine, but it is not wired to the generic trace carrier, a scheduler process, production metrics, or a provider. Other Web → Worker → provider chains remain protocol evidence rather than deployed asynchronous paths. Baggage and tracestate are not accepted or propagated.
+The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its `http.proxy_handoff` span measures proxy handoff or the local read-only containment decision; correlated `503` containment is emitted as a retryable configuration failure, but the span still does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. RIT-045 adds one narrow database-backed Revisit reminder reader/lease state machine, but it is not wired to the generic trace carrier, a scheduler process, production metrics, or a provider. Other Web → Worker → provider chains remain protocol evidence rather than deployed asynchronous paths. Baggage and tracestate are not accepted or propagated.
 
-Production metrics, alert routes, retention, sampling, external exporters, and error-monitoring vendors remain later owner-reviewed work.
+The fixed D-101 evaluator and repository runbook now define objective/freshness assessment and alert
+routing. Aggregate metric collection, production retention/sampling, external exporters, paging,
+public status communication, and error-monitoring vendors remain later owner-reviewed work.
 
 ### Alerts
 
 Actionable, severity-based, with runbook and owner channel. Avoid alerting on normal user behavior or exposing content.
+
+The protected-Beta evaluator accepts only a fixed metric ID, numeric value, and observation time.
+Every breached or unknown result carries a fixed alert ID, owner, severity, runbook path, and
+correlation requirement. The operational procedure is
+[RIT-124 Protected Beta operations runbook](runbooks/RIT-124_BETA_OPERATIONS.md).
 
 ## 15. Incident severity
 
@@ -7929,6 +6964,25 @@ silent link-only fallback, provider request, public token, or analytics event. T
 only `img-src` with `blob:` and retains the existing closed connect, script, object, frame, worker,
 media, and external-image boundaries.
 
+## 19. Operational case access boundary
+
+The support, privacy, safety, and content-report queues expose metadata only. Every case has exactly
+one source foreign key, but the admin service role receives no read privilege on reading reports,
+privacy exports/deletions, refund requests, or private journals. It can select bounded case/event/
+audit metadata and append transitions/audit only; it cannot insert or mutate case rows, update,
+delete, truncate, own objects, create schema/database/roles, or read private sources.
+
+Queue access is role-specific and requires an active session, recent authentication, a passkey MFA
+assertion tied to the same session, a bounded reason code, and a ticket reference. Authenticated
+denials, successful reads, transitions, replay conflicts, missing cases, and state conflicts are
+recorded in a serialized SHA-256 audit chain. Case state is derived from append-only events under a
+transaction advisory lock; there is no mutable state shortcut or database routine.
+
+Fixed acknowledgement drafts contain no source content and are never sent automatically. If an
+operator needs private context, the workflow stops: there is no implicit support override or
+`admin.private_content.read` grant. A separately approved resource-scoped access design, retention
+decision, audit, and user/legal basis would be required.
+
 ---
 
 # File: `docs/11_AUTONOMOUS_OPERATIONS.md`
@@ -7943,18 +6997,18 @@ The goal is high automation with accountable intervention—not a falsely “hum
 
 ## 2. Virtual organization
 
-| Role | Codex configuration | Primary outputs |
-|---|---|---|
-| Product lead | `product` | PRD interpretation, priority, acceptance criteria, UX risks |
-| Architect | `architect` | Boundaries, ADRs, migration/scaling review |
-| Frontend/accessibility | `frontend` | UI implementation review, performance, a11y, RTL |
-| Backend/data | `backend` | APIs, domain, database, jobs, correctness |
-| AI safety | `ai_safety` | prompts, schemas, evals, red-team, cultural/safety boundaries |
-| Payments/risk | `payments_risk` | order/ledger/provider/webhook/country review |
-| Growth/SEO | `growth_seo` | content architecture, SEO/GEO, ethical lifecycle |
-| Localization | `localization` | locale/RTL/translation/cultural QA |
-| QA/security | `qa_security` | independent test, threat, release blocker review |
-| Operations | `operations` | monitoring, runbooks, cost, incident/reconciliation review |
+| Role                   | Codex configuration | Primary outputs                                               |
+| ---------------------- | ------------------- | ------------------------------------------------------------- |
+| Product lead           | `product`           | PRD interpretation, priority, acceptance criteria, UX risks   |
+| Architect              | `architect`         | Boundaries, ADRs, migration/scaling review                    |
+| Frontend/accessibility | `frontend`          | UI implementation review, performance, a11y, RTL              |
+| Backend/data           | `backend`           | APIs, domain, database, jobs, correctness                     |
+| AI safety              | `ai_safety`         | prompts, schemas, evals, red-team, cultural/safety boundaries |
+| Payments/risk          | `payments_risk`     | order/ledger/provider/webhook/country review                  |
+| Growth/SEO             | `growth_seo`        | content architecture, SEO/GEO, ethical lifecycle              |
+| Localization           | `localization`      | locale/RTL/translation/cultural QA                            |
+| QA/security            | `qa_security`       | independent test, threat, release blocker review              |
+| Operations             | `operations`        | monitoring, runbooks, cost, incident/reconciliation review    |
 
 The main Codex session is the orchestrator and primary writer. Subagents should mostly inspect and report. Parallel writes are limited to disjoint files with an explicit merge plan.
 
@@ -8076,24 +7130,30 @@ Automation may:
 
 Owner approval is required for legal/privacy/safety escalation, account suspension, fraud accusation, high-value refund, chargeback response, or any response using sensitive private evidence. Never expose journal/prayer content to support by default.
 
+RIT-074 may automatically project a current fulfilled payment dispute into one immutable,
+metadata-only support work item. That projector is independent from payment ingestion/fulfillment,
+sends nothing, calls no provider, and exposes no mutable triage/resolve action. Projection presence
+cannot be treated as a chargeback outcome, refund, Credit repair, fraud finding, or customer
+communication.
+
 ## 10. Approval matrix
 
-| Action | Automation | Codex preparation | Owner approval/execution |
-|---|---:|---:|---:|
-| Code implementation in branch | Yes | Yes | Merge policy |
-| Tests/docs/PR creation | Yes | Yes | Optional review except protected areas |
-| Production deploy | No | Yes | Yes |
-| Price/tax/refund/legal change | No | Yes | Yes |
-| New country/language paid launch | No | Yes | Yes |
-| Low-risk content draft | Yes | Yes | Publication policy |
-| Cultural/safety/legal content publish | No | Yes | Yes/qualified reviewer |
-| Provider sandbox integration | Yes | Yes | Credential/setup approval |
-| Provider production activation | No | Yes | Yes |
-| Low-value refund within approved policy | Optional later | Yes | Policy-defined |
-| Material refund/dispute | No | Yes | Yes |
-| Security containment kill switch | Preapproved narrow automation | Yes | Immediate notification |
-| Destructive migration/data action | No | Yes | Yes |
-| Marketing spend/mass outbound | No | Yes | Yes |
+| Action                                  |                    Automation | Codex preparation |               Owner approval/execution |
+| --------------------------------------- | ----------------------------: | ----------------: | -------------------------------------: |
+| Code implementation in branch           |                           Yes |               Yes |                           Merge policy |
+| Tests/docs/PR creation                  |                           Yes |               Yes | Optional review except protected areas |
+| Production deploy                       |                            No |               Yes |                                    Yes |
+| Price/tax/refund/legal change           |                            No |               Yes |                                    Yes |
+| New country/language paid launch        |                            No |               Yes |                                    Yes |
+| Low-risk content draft                  |                           Yes |               Yes |                     Publication policy |
+| Cultural/safety/legal content publish   |                            No |               Yes |                 Yes/qualified reviewer |
+| Provider sandbox integration            |                           Yes |               Yes |              Credential/setup approval |
+| Provider production activation          |                            No |               Yes |                                    Yes |
+| Low-value refund within approved policy |                Optional later |               Yes |                         Policy-defined |
+| Material refund/dispute                 |                            No |               Yes |                                    Yes |
+| Security containment kill switch        | Preapproved narrow automation |               Yes |                 Immediate notification |
+| Destructive migration/data action       |                            No |               Yes |                                    Yes |
+| Marketing spend/mass outbound           |                            No |               Yes |                                    Yes |
 
 ## 11. Production change process
 
@@ -8145,10 +7205,24 @@ The owner should have one daily surface showing:
 
 This is an operations dashboard, not a replacement for detailed source systems.
 
-RIT-038 provides the private, source-labeled AI operations input for this future surface through
-`pnpm report:ai-operations`. RIT-117 provides the equivalent SEO/GEO brief. RIT-120 may compose
-those contracts only after its remaining dependencies are complete; it must not bypass the
-safe-off admin boundary or present unavailable sources as zero.
+RIT-038 provides the private, source-labeled AI operations input through
+`pnpm report:ai-operations`. RIT-117 provides the equivalent SEO/GEO brief. RIT-120 now composes the
+daily release overview through `pnpm report:owner-operations`: exactly eight sections label source,
+environment, freshness, data quality, evidence, approval, runbook, and known gaps. It is a private
+mode-0600 offline artifact with no Web/Admin button or HTTP route. It does not bypass the safe-off
+admin boundary, replace detailed source systems, present unavailable sources as zero, or authorize
+deployment. RIT-126 now prepares three paused Codex Desktop reviews: daily maintenance at 08:30,
+Monday product review at 09:30, and first-of-month risk audit at 10:30 in `Asia/Shanghai`.
+
+The cards use the Git-indexed schedule manifest, shared scheduled read-only runner, existing review
+prompts, and bounded task-result schema. Codex project cron currently executes against the saved
+local project rather than a hard read-only worktree, so every run checks `git status --porcelain`
+and stops unavailable when the checkout is dirty. On a clean checkout it remains prompt-enforced
+read-only, uses only tracked/already-available aggregate evidence, and cannot write project state,
+create PRs, satisfy an Owner gate, access production/private content, contact providers/users, or
+execute deployment. OWN-020 must choose activation/local-execution/model-use posture before any
+**Run now** or scheduled call. Review the cards through Codex Desktop **Automations**; the exact
+workflow and rollback are in `docs/runbooks/RIT-126_CODEX_AUTOMATIONS.md`.
 
 ---
 
@@ -8476,15 +7550,23 @@ Exact routing may adapt to Next.js conventions, but domain contracts remain.
 ### Session/account
 
 - `POST /api/v1/anonymous/session`
-  - Exact same-origin POST with no query, body, content type, or alternate framework
-    representation; requires a high-entropy `Idempotency-Key`.
+  - Exact same-origin POST with no query and a high-entropy `Idempotency-Key`. When protected-Beta
+    invite policy is disabled or a currently bound protected session is resumed, the request has
+    no body/content type. Before first protected-Beta issuance it instead requires bounded JSON
+    containing exactly `inviteToken` and
+    `schemaVersion: protected-beta-admission.v1`; no alternate representation is accepted.
   - Returns `204` and creates or resumes only through the host-only
     `__Host-rituvia-anonymous-session` cookie. It never returns subject/session IDs or token
     material in a body.
   - A created cookie is `Secure`, `HttpOnly`, `SameSite=Strict`, `Path=/`, has no `Domain`, and uses
     the database-authoritative absolute expiry. Resume does not rotate or extend it.
-  - Disabled/unconfigured storage fails closed; rejected, conflicting, capacity-limited, and
-    unavailable requests use bounded no-store/noindex responses and never leak persistence detail.
+  - Under `own-019.protected-beta-invite.v1`, a valid unexpired/unconsumed/unrevoked invite is
+    consumed and bound in the same PostgreSQL transaction that creates the subject/session. A
+    pre-policy active cookie is not admission authority. Exact retry can recover a dropped response;
+    changed replay and concurrent double use fail closed.
+  - Missing, invalid, used, expired, or revoked admission returns generic no-store/noindex `403`
+    `BETA_ADMISSION_REQUIRED`. Disabled/unconfigured storage, conflicts, capacity limits, and
+    unavailable requests use bounded responses and never expose cohort, token, or persistence state.
 - `POST /api/v1/auth/start`
   - Exact same-origin JSON with only normalized `email` and reviewed local `returnTo`.
   - Returns the same `202` shape for every valid existing or unknown email:
@@ -8557,7 +7639,15 @@ training, marketing, and service-notification delivery remain separate safe-off 
 ### Safe intake
 
 - `POST /api/v1/intake/evaluate`
-  - Returns allowed, reframed, blocked, or crisis flow; never emits raw text to analytics.
+  - The browser first creates or resumes the required anonymous session through
+    `POST /api/v1/anonymous/session`; this is invisible and adds no user-facing button.
+  - Exact same-origin metadata and the active anonymous cookie are required before the server reads
+    the bounded private JSON body.
+  - A database-atomic session budget is consumed before evaluation. Excess returns `429` with a
+    bounded `Retry-After`; missing policy/storage/privilege authority returns `503`; invalid or
+    expired session returns `401`.
+  - Returns allowed, reframed, blocked, or crisis flow; never persists the question or emits raw
+    text to analytics, logs, metadata, URLs, or rate-limit records.
 
 ### Tarot
 
@@ -8601,6 +7691,16 @@ telemetry, no raw-query retention, and no shared cache.
 - `PATCH /api/v1/ritual-sessions/{id}`
 - `POST /api/v1/ritual-sessions/{id}/complete`
 - `POST /api/v1/journal-entries`
+- `PATCH /api/v1/journal-entries/{id}`
+- `DELETE /api/v1/journal-entries/{id}`
+
+Anonymous reflection creates and mutations, including intention, ritual, journal, Revisit, and
+reading-report writes, share one database-atomic `protected_beta_mutation` request budget after
+session/CSRF admission and before private-body parsing. A `429` response includes bounded
+`Retry-After`; clients must not retry automatically. Domain idempotency and revision checks still
+prevent duplicate or stale state. The request budget counts transport attempts, including exact
+idempotent replay, while existing endpoint-specific quotas retain their own replay rules.
+
 - `GET /api/v1/journal-entries/{id}`
 - `PATCH /api/v1/journal-entries/{id}`
 - `DELETE /api/v1/journal-entries/{id}`
@@ -8853,6 +7953,43 @@ Return user-safe retry information. Do not rely on client enforcement.
 - Stored JSON schemas have readers/migrations.
 - Job consumers handle current and supported prior versions.
 - Provider event adapters are fixture-tested against real documented payload versions.
+
+## 13. RIT-125 internal operational case contract
+
+RIT-125 intentionally adds no public or admin HTTP route. `createOperationalCaseService` is an
+internal server-only contract for the later RIT-120 dashboard integration:
+
+- `list({ queue, reasonCode, sessionToken, ticketReference })` returns at most the configured bounded
+  active cases in stable priority/due/opened/ID order;
+- `transition({ action, caseId, idempotencyKey, queue, reasonCode, sessionToken,
+  ticketReference })` accepts only `triage`, `escalate`, or `resolve` and returns the projected case;
+- every call performs role, recent-auth, same-session passkey, reason, ticket, database privilege,
+  and audit checks;
+- exact transition replay returns the current projected case; changed content with the same key is
+  a conflict; invalid state and cross-queue access fail closed;
+- responses contain category/state/priority/SLA/draft metadata only and never include source/private
+  content; every draft is explicitly not sent.
+
+Ordinary reading-report buttons continue to use their existing API. Privacy APIs and refund sources
+enqueue in the same source transaction. A categorical support-ticket table exists, but there is no
+ordinary Support button or support-ticket HTTP endpoint yet. Any future route must add the standard
+origin, CSRF/session, body, idempotency, rate-limit, private-cache, and proxy allowlist controls
+without broadening database privileges.
+
+## 14. RIT-120 private owner operations contract
+
+RIT-120 intentionally adds no public or admin HTTP route. `owner-operations-snapshot.v1` is one
+bounded regular JSON manifest containing `capturedAt`, environment, release state, and exactly eight
+ordered section envelopes. Each section accepts only a fixed ID/detail code, categorical state, and
+closed source metadata: kind, observed-through time, optional window, approval reference, and safe
+repository evidence path.
+
+`projectOwnerOperationsReport` validates exact own enumerable data without invoking accessors,
+rejects private/extra fields and unsafe paths, applies fixed section freshness, forces
+unavailable/stale/future/synthetic sources to `unknown`, and derives release-evidence state without
+deployment authority. `generateOwnerOperationsDashboardFiles` reads at most 1 MiB from one regular
+non-symlink input and creates exclusive no-follow mode-0600 JSON and Markdown bound to the exact
+input SHA-256 digest. It performs no network, provider, database, support, or deployment action.
 
 ---
 
@@ -9147,7 +8284,11 @@ For each provider adapter:
 - Invalid signature/replay.
 - Amount/currency/product mismatch.
 - Partial/full refund.
-- Dispute and chargeback win/loss.
+- Applied dispute hold and consumed/reserved shortfall.
+- Current fulfilled dispute support projection, duplicate replay, projection outage recovery, and
+  refund-before-projection exclusion.
+- Chargeback win/loss only after a provider outcome contract is separately implemented and
+  approved; do not infer it from support projection presence.
 - Subscription start/renew/fail/grace/cancel/change.
 - Provider timeout and reconciliation recovery.
 - Entitlement grant/revoke exactly once.
@@ -9377,6 +8518,68 @@ payload; canonical/Open Graph/Twitter output on the private page; an upload or e
 unexpected storage; unreleased object URLs; sub-44px controls; horizontal overflow; and blocking
 serious/critical Axe findings. Pure tests separately cover malformed URLs, unsafe text, XML
 escaping, production pseudolocale rejection, and serializer-only expanded LTR/RTL structure.
+
+## 17. Owner operations dashboard gate
+
+`pnpm check:owner-operations` builds the observability dependency and verifies all eight canonical
+sections, fixed source/freshness semantics, missing/stale/future/synthetic `unknown` suppression,
+release-gate consistency, private-field rejection, deterministic rendering, and the explicit
+D-104-approved OWN-019, D-106-approved OWN-005 Option A, RIT-127 Blocked, completed local RIT-128,
+and planned RIT-130 path.
+
+Focused Vitest coverage also proves exact-order parsing, accessor non-execution, unavailable-source
+null requirements, no false Gate H completion, digest binding, mode-0600 JSON/Markdown, no overwrite,
+symlink rejection, and removal of partial outputs. Because RIT-120 adds no HTTP/UI route, browser,
+keyboard, focus, no-store/noindex, and read-audit testing remains a mandatory prerequisite for any
+later protected admin route rather than being falsely claimed by the offline artifact.
+
+## 18. Cost guardrail safe-off gate
+
+`pnpm check:cost-guardrails` verifies fixed provider/feature registries, exact daily windows,
+proposed allocation reconciliation, partial/stale/synthetic/unavailable/unbudgeted cost, simulated
+warning/exhaustion actions, essential alert-only protection, denied spend authority, private-field
+and accessor rejection, deterministic rendering, digest binding, mode-0600 output, no overwrite,
+symlink rejection, and partial-output cleanup.
+
+The gate explicitly does not claim approved monetary limits, atomic runtime admission, provider
+ingestion, alert delivery, or RIT-127 completion. D-106-approved Option A preserves safe-off; exact
+Option B and future durable reserve/commit/release/reconcile evidence remain required.
+
+## 19. Incident and provider failure game-day gate
+
+`pnpm test:incident-game-day` composes the existing security, abuse, proxy containment, SLO, AI
+provider/runtime, payment/reconciliation, reminder-provider, Stripe sandbox webhook, dynamic
+kill-switch, isolated backup/restore, CI-contract, architecture, and secret checks into one manual
+repository-local exercise. The fixed matrix is documented in
+`docs/runbooks/RIT-128_INCIDENT_GAME_DAY.md`.
+
+The gate must finish with zero open repository-scope Critical/High findings, no private content in
+evidence, no provider or paid call, deterministic payment/webhook outcomes, restored safe-off
+control state, exact snapshot recovery, and a full-workspace closure pass. It does not represent
+standing staging, external pager/status delivery, provider-managed PITR/restore, live-provider kill
+switches, hosted DAST, an independent penetration test, customer communication, or Gate H.
+
+## 20. Recurring Codex automation gate
+
+`pnpm check:records` also validates `automation/rituvia-recurring-reviews.json` against exactly three
+RIT-126 schedules. The contract fixes the IDs, Asia/Shanghai cadence, model/reasoning, paused state,
+local execution truth, failed-run-only notifications, shared runner, existing review prompts, and
+bounded result schema.
+
+`tests/record-policy.test.ts` mutates execution environment, notification policy, tracked
+references, and the no-production runner clause. Every mutation must fail. This repository gate
+does not prove future Codex app state; operators compare the three automation cards to the manifest
+and pause them on drift or unexpected write/external behavior.
+
+## 21. Payment route-control gate
+
+- Independently test country and fiat/crypto checkout safe-off; never toggle them only as one unit.
+- Reject forged activation provenance, scope/time/registry drift, provider or method substitution,
+  crypto recurrence, and every non-empty fallback-provider list.
+- Prove denial occurs before order/subscription persistence, provider use, and attached Checkout URL
+  replay while existing webhook/refund/dispute/fulfillment/reconciliation paths stay unchanged.
+- Map eligibility denials to calm 403 responses and control-plane/configuration failures to redacted
+  503 responses.
 
 ---
 
@@ -9650,6 +8853,20 @@ zero. Cost coverage below 95% opens a human data-quality review. Because OWN-005
 daily or model budgets, RIT-038 does not invent a monetary anomaly threshold, pause traffic, switch
 models, or raise/lower runtime cost limits. Budget enforcement remains RIT-127.
 
+RIT-120 surfaces unavailable production cost as `unknown` rather than a compliant zero-cost state.
+D-105 adds `cost-guardrail.v1` only as a fixed-registry private safe-off simulation: proposed
+provider/feature lines reconcile exactly, missing/unbudgeted cost remains explicit, essential
+controls are alert-only, arbitrary labels are rejected, every non-essential spend authorization is
+denied, and no action executes. D-106 approves OWN-005 Option A exactly, preserving this safe-off
+posture for the protected free Beta. Option A explicitly leaves RIT-127 Blocked until exact Option B
+policy bytes plus durable atomic reserve/commit/release/reconcile and fixed alert-delivery evidence
+exist. It may not activate a paid vendor, raise spend, change a production model, or weaken
+safety/privacy to satisfy a budget.
+
+The exact Owner decision and remaining Option B table are in
+`docs/reports/RITUVIA_OWN_005_COST_BUDGET_DECISION_REQUEST_2026-08-02.md`. Production paid-provider
+budgets and runtime enforcement remain unavailable.
+
 ## 6. Infrastructure controls
 
 - Managed services with auto-scaling caps and budget alerts.
@@ -9912,10 +9129,11 @@ pending. The Professional contract and price links remain historical comparison 
 - OpenStreetMap Foundation public Nominatim usage policy:
   https://operations.osmfoundation.org/policies/nominatim/
 - Node.js `process.versions` runtime/ICU/tzdata provenance:
-  https://nodejs.org/download/release/v24.11.0/docs/api/process.html
+  https://nodejs.org/download/release/v26.5.1/docs/api/process.html
 
-D-067 selects a self-hosted GeoNames export as the intended production source and pins the
-historical resolver to Node `24.18.0`, ICU `78.3`, and tzdata `2026b`. No production GeoNames
+D-067 selects a self-hosted GeoNames export as the intended production source and originally
+pinned the historical resolver to Node `24.18.0`; D-096 supersedes only that runtime pin with Node
+`26.5.1`, ICU `78.3`, and tzdata `2026b`. No production GeoNames
 snapshot is imported: exact snapshot date, file inventory, SHA-256 digest, attribution placement,
 update/rollback procedure, search-index limits, and operations evidence remain required.
 
@@ -10284,6 +9502,9 @@ a `verified rehearsal` of one isolated loopback staging compatibility window, no
 standing staging service. The public GitHub repository in D-090 is source hosting, not product
 hosting, production deployment, DNS, indexing activation, or public product launch.
 
+RIT-129 adds a provider-neutral evidence contract, not an environment. Its fixed candidate,
+D-104, and eight-control projection remains incomplete without real staging/external evidence.
+
 ## 2. Environment matrix
 
 | Environment | `APP_ENV` | Current status | Purpose | Data | Access and network | Lifetime | Promotion source |
@@ -10401,6 +9622,20 @@ after isolated resources and audit/rollback controls exist. Production deploymen
 Environment variables do not grant product authority by themselves. Country policy, feature flags,
 provider approval, content/locale approval, and owner gates remain server-authoritative and
 fail-closed.
+
+When `APP_ENV=staging` or `APP_ENV=production` composes the protected anonymous-session policy, the
+configuration boundary requires the exact D-104 set together or refuses startup:
+
+- `RITUVIA_PROTECTED_BETA_INVITE_COHORT_LIMIT=25`;
+- `RITUVIA_PROTECTED_BETA_INVITE_POLICY_VERSION=own-019.protected-beta-invite.v1`;
+- `RITUVIA_ANONYMOUS_SESSION_RATE_LIMIT_POLICY_VERSION=own-019.protected-beta-abuse.v1`;
+- intake limit `12` per `60` seconds and mutation limit `120` per `86400` seconds; and
+- the D-104/D-097 anonymous-session expiry and issuance-capacity references already defined by the
+  typed configuration contract.
+
+An environment variable cannot enlarge the cohort or substitute a near-match policy. Local and CI
+may deliberately omit the invite policy for isolated compatibility tests; that state is not
+protected-Beta staging evidence.
 
 ## 8. Evidence and current implementation state
 
@@ -10545,6 +9780,11 @@ metadata, hashes, counts, durations, source revision/state, and cleanup results.
 connection URL, database name, password, secret, SQL, table row, private content, or customer
 identifier.
 
+The current reviewed non-empty Prisma drift fingerprint and its complete object-level rationale are
+recorded in `docs/reports/RITUVIA_RIT_164_SCHEMA_DRIFT_REVIEW_2026-07-31.md`. A future fingerprint
+change remains a failure until its SQL receives the same migration/object review; the report is not
+permission to accept a hash without inspecting the diff.
+
 This custom-format logical drill proves repository recovery behavior. It does not prove physical
 backup, WAL archiving, PITR, geographic isolation, provider retention, KMS recovery, or a production
 RPO/RTO.
@@ -10595,6 +9835,9 @@ Each provider-level rehearsal must record:
 - every participant and owner approval;
 - cleanup/revocation result, findings, remediation owner, and next due date.
 
+RIT-129 accepts only a clean-revision, digest-bound protected-staging
+`provider_restore_attestation`; local logical restore remains contextual only.
+
 Run the provider-level isolated restore before beta, before production launch, after a material
 database/provider/recovery-policy change, after a recovery incident, and at least quarterly until
 evidence justifies a different reviewed cadence. CI continues to run the synthetic logical drill
@@ -10610,6 +9853,2089 @@ Explicit owner approval remains required before:
 - restoring, mutating, deleting, routing, or replacing production data;
 - destructive migration, key destruction, or customer-impacting rollback; and
 - declaring Gate H, beta readiness, production readiness, or public launch complete.
+
+---
+
+# File: `docs/24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md`
+
+# RITUVIA Owner 产品能力图
+
+> 决策基准：D-095、D-098
+>
+> 当前阶段：核心闭环已验收，受保护英语封闭 Beta 准备
+>
+> 目的：用用户结果而不是代码数量管理产品
+
+## 1. 当前唯一目标
+
+让一名成年用户不注册、不付款，也能连续完成：
+
+`问题或主题 → 象征性解读 → 意图 → 小行动 → 免费仪式 → 私密记录 → Revisit`
+
+当前阶段不以增加模块、页面、接口、测试数量或任务完成数量为成功标准。
+
+## 2. Owner 验收路径
+
+1. 从首页 `Begin a free reading` 进入安全 intake。
+2. 验收 allowed、reframed、blocked 和 crisis 的继续/停止边界。
+3. 只在 allowed 或主动采用建议并重新通过后，完成单张塔罗。
+4. 理解结果的可能性、限制、反思问题和小行动。
+5. 进入 Sanctuary，保存一个由自己控制的意图和行动。
+6. 完成免费蜡烛或线香仪式。
+7. 写下并保存一段私密反思。
+8. 安排、打开并完成一次 Revisit。
+
+验收时不需要账户、付费、生产 AI、占星、邮件或管理后台。
+
+**验收结论（2026-08-01）**：Owner 在产品和逐按钮手册并排打开后明确回复“接受”，未提交
+优先问题清单。该结论接受当前匿名核心闭环，不等于批准封闭 Beta 部署、公开上线或付费生产。
+
+## 3. 两条状态轴
+
+### 3.1 实现现实
+
+| 状态 | Owner 含义 |
+| --- | --- |
+| 本地已验证 | 页面和后端链路可以在固定工具链的本地/受保护环境验收 |
+| 条件可用 | 需要账户、已有数据、配置或受控环境，不能视为普遍用户能力 |
+| 缺用户入口 | 后端能力存在，但普通用户没有完整入口 |
+| 未实现 | 当前没有完整用户和后端链路 |
+| 生产不可用 | 无论实现多少，尚无生产激活、部署或审批证据 |
+
+### 3.2 当前阶段处置
+
+| 状态 | Owner 含义 |
+| --- | --- |
+| Keep | 当前阶段必须顺畅工作，任何回归都优先修复 |
+| Retain | 已有价值可以继续使用，但当前不新增功能 |
+| Freeze | 不继续开发、不对外承诺、不生产启用 |
+| Approval | 需要外部证据或 Owner 单独批准，内部实现不能替代审批 |
+| Delete candidate | 仅表示需要依赖审计，尚未批准删除 |
+
+## 4. 能力地图
+
+| 用户结果 | 实现现实 | 当前处置 | 生产/审批 | Owner 判断方式或可见缺口 |
+| --- | --- | --- | --- | --- |
+| 理解产品和边界 | 本地已验证 | Keep | 生产不可用 | 首页自然说明“反思而非预测” |
+| 安全选择主题 | 本地已验证 | Keep | 生产不可用 | 用户能继续、改写或安全结束 |
+| 完成单张塔罗 | 本地已验证 | Keep | 生产不可用 | 三分钟内获得完整基础价值 |
+| 完成三张塔罗 | 本地已验证 | Retain | 生产不可用 | 不影响主线，不扩展新牌阵 |
+| 创建意图和小行动 | 本地已验证 | Keep | 生产不可用 | 内容以用户可控制的行动为中心 |
+| 完成免费仪式 | 本地已验证 | Keep | 生产不可用 | 蜡烛、线香和线性模式不要求付款 |
+| 保存私密反思 | 本地已验证 | Keep | 生产不可用 | 创建、修改、删除保持私密 |
+| 安排和完成 Revisit | 本地已验证 | Keep | 生产不可用 | 日期是邀请，不是命运验证 |
+| 数秘计算 | 本地已验证 | Retain | 生产不可用 | 公式透明，但不进入当前主验收路径 |
+| 登录和账户 | 条件可用 | Retain | 真实邮件等待审批 | 匿名主线不依赖登录 |
+| 分享卡 | 本地已验证 | Retain | 生产不可用 | 不包含私密内容 |
+| 付费 Deep Reading | 缺生产调用 | Freeze | AI、隐私和商业审批 | 免费基础解读必须独立完整 |
+| 西方占星 | 缺用户入口 | Freeze | 引擎开关、部署和来源发布证据 | 只有已保存结果查看器 |
+| Credits、结账和订阅 | 条件可用 | Freeze | D-097 冻结 Credit 生产合同；OWN-018 直接销售 SKU 及支付、法律、税务、国家审批 | 现有 Credit 内核仅作 Test Mode/历史证据；未来不要求预充，客户中心仍不完整，不收真钱 |
+| 邮件提醒 | 缺生产投递 | Freeze | 邮件供应商和域名审批 | Revisit 仍可在产品内完成 |
+| SEO/GEO 内容 | 本地已验证 | Retain | 发布和索引等待上线审批 | 保留已批准内容，不增加库存 |
+| 新语言和国家 | 未实现发布 | Approval | Owner、文化、法律和支持审批 | 只保留架构基础 |
+| 公开生产上线 | 未实现 | Approval | 完整上线门槛 | 当前没有公共生产服务 |
+
+## 5. Keep：当前必须保留
+
+- 英语产品外壳、方法、安全和隐私说明。
+- 匿名会话与安全主题入口。
+- 单张塔罗及其确定性结果。
+- 意图、小行动、免费蜡烛、免费线香、私密日记和 Revisit。
+- 支撑主线的最小数据库、加密、权限和恢复能力。
+- 键盘、屏幕阅读器、缩放、减少动态效果和移动端行为。
+- 直接覆盖核心闭环的构建、浏览器和隐私泄漏检查。
+- 生产能力默认关闭和全部既有人工审批门槛。
+
+## 6. Freeze：当前不得扩张
+
+- 新支付供应商、真实支付、Credits 产品和订阅功能。
+- 退款、争议、拒付、商业管理与运营后台的新界面或流程。
+- 生产 AI、更多模型、更多付费解释和 AI 个性化。
+- 占星出生资料创建、位置供应商和生产激活。
+- 新数秘体系、新塔罗牌阵和新区域传统。
+- 新公开内容集群、程序化 SEO/GEO 页面和增长自动化。
+- 新语言、国家、币种、加密资产和支付方式。
+- 与核心主线无直接关系的共享基础设施重构。
+
+冻结不是删除。安全修复、依赖修复、数据保护、备份恢复和防止核心回归仍可进行。
+
+## 7. Delete candidates：下一任务审计，不在本任务删除
+
+以下仅是候选类别，必须由 RIT-162 给出精确文件、调用关系、数据影响和回滚证据：
+
+- 仅用于浏览器模拟的本地结账界面和相关展示路径。
+- 已无活跃读取者且不承担历史回放义务的旧版兼容分支。
+- 没有生产授权、没有当前调用方且不服务核心恢复的供应商适配层。
+- 与当前能力重复的状态投影、转换器和展示组件。
+- 已被 Git 历史和正式记录替代、且不再承担当前状态职责的重复状态长文。
+
+任何迁移、审计、隐私、支付或历史回放约束不明确的代码都不能删除。
+
+RIT-162 的逐文件审计只批准两项删除：一个无调用的 Worker 可观测性包装文件，以及一个与
+生产资料包权威副本字节完全相同的重复报告。其余本地结账、兼容、供应商、隐私、迁移与
+回放候选均保留、隔离或等待先迁移调用方。完整证据见
+`reports/RITUVIA_RIT_162_DELETION_AUDIT_2026-07-31.md`。
+
+## 8. 冻结但仍有效的长期产品要求
+
+D-095 改变当前顺序，不取消生产资料包中的长期目的地：
+
+- Readings 总入口和 Daily Tarot。
+- 明确标注、按批准商业规则提供的 Deep Readings。
+- 独立 Journal 入口。
+- Account Billing、Orders、Privacy and Data。
+- About and Boundaries。
+
+这些能力只有在核心闭环获得 Owner 验收并满足各自审批后才能恢复开发。
+
+## 9. 当前可见缺口
+
+- 主导航和信息层级仍需进一步突出唯一核心路径。
+- 首页两个单张免费入口已先进入安全 intake；Owner 已接受当前四类安全边界和完整闭环。
+- 生产资料包要求的 Readings、Daily Tarot、独立 Journal、Account Billing/Orders/Privacy 和 About
+  目的地尚未形成完整用户表面。
+- 移动端当前使用换行堆叠导航，而不是生产资料包要求的语义折叠菜单。
+- 用户账户中的隐私导出、删除和商业信息仍未形成统一客户界面。
+- 占星只有已保存结果查看，不是完整用户流程。
+- 真实邮件、真实 AI 和真实支付均未开放。
+- 尚未进行受邀真实用户的闭环可理解性测试。
+- 视觉像素回归、Firefox/WebKit、手动辅助技术、站立 staging、provider-level PITR/restore、
+  上线安全运营和外部审批仍未闭合；本地恢复后 schema drift 已由 RIT-164 逐项审阅并通过。
+- Owner 运营面板已作为 private/offline 的 source/freshness 日报完成；它不是实时监控，也没有 Web
+  或 Admin Button，必须从仓库命令生成并在 Codex 右侧打开。
+
+这些缺口不再触发横向功能扩张。D-097 已批准免费英语封闭 Beta、intake-first 首页入口和直接销售/
+no-preload 方向。RIT-164 恢复证据、RIT-166 入口闭环和 RIT-167 Owner 验收均已关闭。D-098 只恢复
+封闭 Beta 关键路径；RIT-121/122/124/125 已关闭威胁、滥用、SLO/containment 和 metadata-only
+运营 case 内核。RIT-120 已在 D-103 下完成 private offline Owner 日报：健康、营收、核心闭环、AI、
+队列、支持、成本和批准均显示环境、来源、新鲜度、证据和缺口，缺数据不会显示成 `0` 或健康。
+普通用户 Support Button、Web Admin Dashboard、外部 Pager 和生产 SLA 仍不存在。D-105 只完成固定
+注册表的 private safe-off 成本模拟；D-106 已批准 OWN-005 Option A，明确保持零付费供应商状态，
+因此 RIT-127 仍等待 Option B 和原子预算/固定告警证据。RIT-128 仓库本地故障演练已完成：统一入口、
+17 文件 257 项故障测试、96 项 AI eval、并发 webhook、Worker 循环隔离、硬 timeout、kill-switch 和
+隔离恢复均通过；复核发现的三个 High 已修复并回归，仓库范围零开放 Critical/High。OWN-019 已按
+推荐方案在 D-104 下完成；站立 staging、邀请控制、provider restore、
+外部安全证据、Gate H、RIT-130 发布证据和单独部署批准仍阻塞 Beta。
+RIT-126 的三张 Codex 日/周/月复核卡在 D-108 Option A 下保持暂停。RIT-129 已完成八项离线
+staging/Gate H 证据合同但当前状态仍 incomplete。当前唯一 Ready 是 RIT-075：
+只补 provider/country/method safe-off 与 no-fallback 证据，不选择或激活供应商。
+支付、AI、占星、语言、国家和增长扩张仍未恢复。
+
+逐 Gate 上线方案见 `26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md`；逐路由、按钮和实现手册见
+`27_DETAILED_PRODUCT_USER_MANUAL_ZH.md`。
+
+## 10. 每次汇报只回答六件事
+
+1. 用户这次新增或改善了什么结果？
+2. 从哪里进入，最终得到什么？
+3. 哪些正常、错误、离线和恢复状态被实际验证？
+4. 哪些内容仍然不能使用？
+5. 有什么风险或 Owner 审批？
+6. 下一次只交付哪一个用户结果？
+
+任务编号、接口、数据库、迁移和测试明细放在工程附录，不放在第一屏汇报中。
+
+## 11. 恢复冻结范围的条件
+
+只有同时满足以下条件，某个冻结领域才可以重新进入 Ready：
+
+- Owner 已验收核心闭环。
+- 有明确的用户问题或商业证据。
+- 任务只承诺一个可验证结果。
+- 依赖、失败状态、风险、成本和回滚已写清。
+- 所需法律、支付、文化、语言或生产审批已经存在。
+
+生产资料包继续作为长期产品和安全方向；D-095 只改变当前执行顺序。
+
+---
+
+# File: `docs/25_PRODUCT_ENGINEERING_RUNBOOK.md`
+
+# RITUVIA Product Engineering Runbook
+
+## 1. Purpose
+
+This runbook owns implementation navigation for the D-095 core-loop convergence stage. It keeps
+routes, modules, commands, test evidence, and frozen-scope rules out of the plain-language user
+guide.
+
+It does not override `AGENTS.md`, `DECISIONS.md`, the production source-of-truth pack,
+`PROJECT_STATUS.md`, or `BACKLOG.md`.
+
+The evidence-gated launch sequence lives in `docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md`. The exact
+user-facing route, control-location, workflow, implementation, privacy, and recovery inventory lives
+in `docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md`; this runbook must not duplicate or contradict it.
+
+## 2. Current engineering outcome
+
+The sole active product outcome is:
+
+`Question/theme -> Interpretation -> Intention -> Small action -> Free ritual -> Private reflection -> Revisit`
+
+The journey must remain anonymous-first, payment-free, accessible, private by default, and useful
+without production AI.
+
+## 3. Current repository route path
+
+| Stage | User route | Main UI ownership |
+| --- | --- | --- |
+| Product entry | `/en` | `apps/web/app/[locale]/page.tsx` |
+| Approved primary safety intake | `/en/intake` | `apps/web/app/_components/question-intake-form.tsx` |
+| Primary reading | `/en/tarot/one-card` | `apps/web/app/_components/tarot-one-card-flow.tsx` |
+| Intention, action, ritual, journal | `/en/sanctuary` | `apps/web/app/_components/sanctuary-flow.tsx` |
+| Review | `/en/revisit` | `apps/web/app/_components/revisit-experience.tsx` |
+
+The three-card, numerology, account, sharing, and public education routes may remain operational,
+but they are not current-stage expansion targets. Astrology, commerce, production AI, and external
+delivery remain frozen or approval-gated.
+
+These are current repository paths, not a replacement for the production route contract. RIT-166
+implements D-097: both homepage one-card entries use intake, an allowed categorical theme transfers
+once through `question-intake-theme-handoff.ts`, and direct one-card URLs remain valid. Production
+accepts only activation reference `own-009.question-intake.en.v1`; missing or near-match references
+fail closed without a homepage bypass.
+The production pack still requires future Readings, Daily Tarot, standalone Journal, Account
+Billing, Account Orders, Account Privacy, and About destinations. D-095 freezes their implementation
+sequence. D-097 separately supersedes prepaid-Credit production product details with direct sale
+without required preload; it does not activate a paid offer.
+
+## 4. Architecture path
+
+```text
+Next.js page and component
+        -> same-origin route handler
+        -> apps/web/server composition
+        -> framework-independent domain package
+        -> PostgreSQL through reviewed persistence
+        -> worker only where durable asynchronous work is required
+```
+
+Keep the modular monolith. Do not create a new service, parallel domain model, replacement frontend,
+or second persistence path during convergence.
+
+## 5. Core implementation ownership
+
+| Concern | Primary location |
+| --- | --- |
+| User-facing English messages | `apps/web/app/_i18n` |
+| Shared locale and ICU contracts | `packages/i18n` |
+| Tarot facts and reviewed content | `packages/divination` |
+| Intention and reflection contracts | `packages/domain` |
+| Accessible primitives | `packages/ui` |
+| Web composition and privacy boundaries | `apps/web/server` |
+| Persistence and migrations | `packages/db` |
+| Core browser verification | `scripts/verify-full-loop-browser.mjs` |
+
+Domain facts must not move into React components. UI code must not decide draws, prices,
+eligibility, entitlements, or persistence ownership.
+
+## 6. Frozen engineering scope
+
+Do not start new implementation for:
+
+- payment, subscription, refund, dispute, or commerce-admin capability;
+- production model/provider calls or additional AI interpretation products;
+- astrology creation, provider data, or runtime activation;
+- additional locale publication or country activation;
+- new SEO/GEO content inventories;
+- provider, queue, cache, or service extraction not required by the retained journey.
+
+Permitted work inside frozen areas is limited to security fixes, privacy fixes, dependency safety,
+data recoverability, disabling unsafe behavior, and changes required to keep the retained journey
+building and testing.
+
+## 7. Local startup
+
+Use the repository-pinned Node.js and pnpm versions.
+
+For a fresh local environment:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm db:start
+pnpm db:setup
+```
+
+Run local configuration once, only when `.env.local` does not already exist:
+
+```bash
+pnpm mvp:local:configure
+```
+
+Build and start the Web application:
+
+```bash
+pnpm --filter @rituvia/web build
+pnpm --filter @rituvia/web start -H 127.0.0.1 -p 4175
+```
+
+Do not rerun local configuration over an existing `.env.local` unless rotating local-only keys is an
+explicit task outcome.
+
+### Protected-Beta abuse policy
+
+`pnpm mvp:local:configure` writes the local-only acceptance policy:
+
+```text
+RITUVIA_PROTECTED_BETA_ABUSE_POLICY_VERSION=local.protected-beta-abuse.v1
+RITUVIA_PROTECTED_BETA_MUTATION_LIMIT=120
+RITUVIA_PROTECTED_BETA_MUTATION_WINDOW_SECONDS=86400
+RITUVIA_QUESTION_INTAKE_RATE_LIMIT=12
+RITUVIA_QUESTION_INTAKE_RATE_WINDOW_SECONDS=60
+```
+
+All five values are one fail-closed configuration unit. Do not copy local thresholds into
+production. D-104 approves the exact `own-019.protected-beta-abuse.v1` cohort, invite,
+allowlist/edge, observation, and rollback profile for RIT-130 standing-staging evidence only. A
+missing/drifted policy or unavailable least-privilege database authority must make protected
+intake and anonymous mutations unavailable rather than silently bypass admission. D-104 does not
+select an edge provider, install credentials, deploy, change DNS, or authorize launch.
+
+The database guard is per active anonymous session, stores at most two fixed-scope rows, and stores
+no private text, IP, user agent, device identifier, or fingerprint. It complements rather than
+replaces the global anonymous-session issuance cap and RIT-130 protected ingress controls.
+
+### Provider-free staging and Gate H evidence
+
+RIT-129 has no Web/Admin Button or HTTP route. Run `pnpm check:staging-gate-h` from the repository to
+verify the contract. Use `pnpm report:staging-gate-h -- <arguments>` for reviewed private input,
+then open its Markdown in Codex. Current state is `blocked`/`incomplete` and
+`deploymentAuthorized=false`; exact arguments, eight gaps, recovery, and rollback are in
+`docs/runbooks/RIT-129_STAGING_GATE_H_EVIDENCE.md`.
+
+### Private Owner operations dashboard
+
+RIT-120 has no HTTP route or Admin Button. Generate the private daily overview from one strict
+source manifest:
+
+```bash
+pnpm report:owner-operations \
+  --as-of 2026-08-02T02:00:00.000Z \
+  --input /absolute/private/path/owner-operations-input.json \
+  --output-json /absolute/private/path/owner-operations-dashboard.json \
+  --output-markdown /absolute/private/path/owner-operations-dashboard.md
+```
+
+The manifest must contain all eight canonical sections. Missing, stale, future, or synthetic
+sources become `unknown`; never enter a guessed zero. Outputs are exclusive mode-0600 files and
+must not be committed when they contain runtime evidence. See
+`docs/runbooks/RIT-120_OWNER_OPERATIONS_DASHBOARD.md` for the exact input, daily review, failure,
+release-gate, and rollback workflow.
+
+### Private cost guardrail simulation
+
+RIT-127 has no HTTP route or Admin Button. Generate the D-105 safe-off simulation with:
+
+```bash
+pnpm report:cost-guardrails -- \
+  --as-of 2026-08-02T02:30:00.000Z \
+  --input /absolute/private/path/cost-guardrail-input.json \
+  --output-json /absolute/private/path/cost-guardrail-report.json \
+  --output-markdown /absolute/private/path/cost-guardrail-report.md
+```
+
+The v1 input accepts only finite provider/feature codes and `unavailable` or `proposed_policy`.
+Decision status remains blocked, non-essential spend stays denied, and no runtime action executes.
+See `docs/runbooks/RIT-127_COST_GUARDRAILS.md`; D-106-approved Option A preserves safe-off, while
+exact Option B and atomic runtime/alert evidence remain the RIT-127 blocker.
+
+### Incident and provider failure game day
+
+RIT-128 also has no Web/Admin Button or HTTP route. Run the fixed repository-local matrix manually:
+
+```bash
+pnpm test:incident-game-day
+```
+
+The command covers security, read-only containment, AI failure, payment reconciliation/webhook
+replay, notification failure, database kill-switch/restore, architecture, and secrets using
+synthetic fixtures and isolated PostgreSQL. It never contacts a live provider. See
+`docs/runbooks/RIT-128_INCIDENT_GAME_DAY.md` and
+`docs/reports/RITUVIA_RIT_128_INCIDENT_GAME_DAY_2026-08-02.md`. Passing it does not complete standing
+staging, provider-level restore, external paging/DAST/pentest, Gate H, deployment, or launch.
+
+### Codex recurring reviews
+
+RIT-126 has no RITUVIA Web/Admin Button or HTTP route. In Codex Desktop open **Automations**, then
+select `RITUVIA daily maintenance`, `RITUVIA weekly product review`, or
+`RITUVIA monthly risk audit`. D-108 approves OWN-020 Option A, so all three cards must remain
+**Paused**. Use **Edit** to inspect the schedule/prompt; do not use **Run now** or activate without a
+new explicit Owner decision.
+
+The cards are configured for 08:30 daily, 09:30 Monday, and 10:30 on day 1 of each month in
+Asia/Shanghai. They use local project execution because the current Codex automation surface does not expose hard
+read-only worktree execution. The shared runner stops on a dirty checkout and otherwise forbids
+writes, external/provider/private access, spend, project-state changes, and gated actions. Exact
+contract and recovery: `docs/runbooks/RIT-126_CODEX_AUTOMATIONS.md`.
+
+## 8. Focused verification
+
+Run the narrowest relevant check first:
+
+```bash
+pnpm test:full-loop-browser
+pnpm test:intention-browser
+pnpm test:ritual-browser
+pnpm test:revisit-browser
+pnpm format:check
+pnpm lint
+pnpm typecheck
+```
+
+Use the complete workspace, browser, and database matrices only for a release candidate, milestone
+integration, shared-runtime change, or a focused result that exposes cross-cutting risk.
+
+For documentation and record changes, also run:
+
+```bash
+pnpm check:records
+pnpm check:generated
+```
+
+At ordinary task closure, run the affected tests plus the repository architecture/evidence,
+formatting, lint, and type checks required by `AGENTS.md`. `pnpm check:evidence` owns architecture,
+environment, generated evidence, localization, records, migration, and secret-scan boundaries; do
+not replace it with a hand-maintained partial list.
+
+## 9. Core acceptance contract
+
+The production-artifact browser journey must prove:
+
+- no account is created for an anonymous user;
+- no payment request occurs;
+- the reading result is fixed and is not redrawn during reveal;
+- the intention and ritual tolerate exact retries without duplicate state;
+- a free reduced-motion linear ritual can complete;
+- a private journal entry can be created and deleted;
+- a Revisit can be scheduled, completed, and deleted;
+- private values do not enter URL, storage metadata, console, or unexpected requests;
+- mobile, keyboard, RTL structure, touch targets, and serious/critical Axe checks pass.
+
+## 10. Delete-candidate procedure
+
+RIT-162 must evaluate exact files, not broad module names. For every candidate:
+
+1. Identify all static and runtime callers.
+2. Identify database, migration, replay, export, deletion, audit, and rollback obligations.
+3. Identify current routes, flags, tests, records, and generated evidence that depend on it.
+4. Classify it as keep, consolidate, quarantine, or remove.
+5. Define the smallest reversible patch.
+6. Run focused tests before broader architecture, build, and core-loop gates.
+7. Update owner capability state and user-visible guidance only when behavior changes.
+
+Do not measure success by deleted lines alone. Success is a smaller change surface with the same or
+better core user result, privacy, accessibility, safety, and recoverability.
+
+The completed RIT-162 dependency matrix is recorded in
+`docs/reports/RITUVIA_RIT_162_DELETION_AUDIT_2026-07-31.md`. It approves only the exact uncalled
+Worker wrapper and byte-duplicate report; all candidates with active callers or durable obligations
+remain kept, quarantined, or consolidation-only.
+
+## 11. Scope reactivation
+
+A frozen area returns to active work only through an Owner-approved decision and a backlog task with
+a user outcome, exact scope, dependencies, failure states, tests, risk, and rollback. Production
+activation continues to require every existing human approval gate.
+
+## 12. Existing operational authorities
+
+Do not duplicate these contracts in this runbook:
+
+- Environment isolation and promotion: `docs/21_ENVIRONMENT_CONTRACT.md`.
+- Launch, go/no-go, and rollback: `docs/15_LAUNCH_RUNBOOK.md`.
+- Backup and recovery: `docs/22_BACKUP_RECOVERY.md`.
+- Production architecture, security, payments, AI, testing, and readiness: read the dated production
+  pack from `docs/codex/rituvia-production-2026-07-23/00_START_HERE.md` in its required order.
+- Payment/provider safe-off, Button locations, no-fallback boundary, recovery, and rollback:
+  `docs/runbooks/RIT-075_PAYMENT_PROVIDER_CONTROLS.md`.
+
+---
+
+# File: `docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md`
+
+# RITUVIA 从当前状态到上线前的执行方案
+
+> 基准日期：2026-08-03
+>
+> 适用范围：从当前本地/受保护环境状态，到 Owner 可以作出有限生产上线 go/no-go 决定之前
+>
+> 权威边界：本方案不替代 `AGENTS.md`、`DECISIONS.md`、生产资料包、环境合同、上线与恢复
+> runbook，也不批准部署、DNS、真实支付、生产 AI、法律文本或公开上线
+
+## 1. 先给结论
+
+项目还没有上线，不是因为核心闭环不存在，而是因为“代码能跑”和“可以安全服务真实用户”
+之间仍有五类缺口：
+
+1. **生产级恢复仍未闭合**：RIT-164 已逐项解释本地恢复后的 schema drift，并让仓库级恢复门通过；
+   provider-level PITR、外部备份隔离、生产 RPO/RTO 和跨环境恢复演练仍缺失。
+2. **核心入口已收口，其他产品表面仍未收口**：RIT-166 已让首页两个单张免费入口先进入安全
+   intake，并通过完整匿名闭环验证；Daily Tarot、Readings、独立 Journal、Account
+   Privacy/Billing/Orders 等生产资料包目的地仍没有完整用户入口，移动导航当前是换行堆叠，
+   不是资料包要求的语义折叠菜单。
+3. **已有能力不等于完整产品**：账户、隐私、支付、订阅、占星、AI 等存在大量后端和测试能力，
+   但部分没有按钮、没有完整客户工作流、默认关闭，或只允许本地/Test Mode。
+4. **上线运营门未完成**：威胁模型收口、滥用控制、SLO/告警、支持队列、成本上限、故障演练、
+   站立 staging、独立渗透测试和完整发布演练仍未完成。
+5. **外部和 Owner 门仍阻塞**：品牌、法律实体、国家、税务/MoR、支付承销、预算、法律文本、
+   支持方式、生产密钥、生产 AI 和最终公开发布均没有被本仓库自行批准。
+
+因此，接下来的目标不是继续横向堆功能，而是把现有能力压缩成一个可以逐门验收、逐步回滚的
+上线候选。**当前不仅是公开/付费生产 NO-GO，连受保护封闭 Beta 也尚未过门；封闭 Beta 是最近的
+安全目标，不是当前已经获得的状态。**
+
+## 2. Owner 已批准的两级首发定义
+
+### 2.1 已批准的最近首发：受保护英语封闭 Beta
+
+D-097 已将最近一个可以实际交付给外部测试者的“上线”定义为 Wave B / M13 封闭 Beta：
+
+- 受邀请成年用户；
+- 英语；
+- 受保护、noindex、allowlist 的 staging；
+- 只开放匿名免费核心闭环；
+- 使用 synthetic 或明确同意的专用 Beta 数据，绝不接入生产数据；
+- 不要求账户，不收真钱，不开放 Credits、订阅、生产 AI、占星激活、真实邮件、crypto、公开索引
+  或营销投放。
+
+这一级上线的目的，是验证产品是否真正可理解、可信、可访问、可恢复，不是把测试环境伪装成生产。
+
+### 2.2 完成封闭 Beta 后的目标：有限付费英语生产上线
+
+如果 Owner 所说的“上线”特指可收费的公开生产服务，则继续完成本方案 G6–G9，并把目标定义为：
+
+- 英语；
+- 18+；
+- 一个或少数经书面批准的国家；
+- 小规模、可停止、可回滚的 cohort；
+- 匿名免费核心闭环始终完整；
+- 账户是保存跨设备体验和商业能力的可选入口，不得阻挡首次免费价值；
+- 首发支付只使用经书面承销批准的 hosted fiat flow；
+- Deep Reading 只有在生产 AI、隐私、费用和安全门全部通过后才开放；
+- 西方占星只有在完整用户入口、运行开关、部署版本和 Corresponding Source 发布证据通过后才开放；
+- Coinbase/USDC、更多语言、更多国家、区域传统和增长自动化不与首发捆绑。
+
+### 2.3 为什么不建议“一次全部上线”
+
+加密支付、多语言、更多国家和区域传统会同时扩大法律、支付、文化、客服、退款、隐私和故障面。
+首发将这些能力保持 safe-off，并由 Country Policy 和服务端开关隐藏，比把未验证能力带入同一
+上线批次更安全，也更容易判断核心产品是否真正有用。
+
+### 2.4 付费产品方向已选择，外部合同仍待闭合
+
+根 `AGENTS.md` 的支付规则要求直接销售清楚描述的订阅、报告或数字体验，并明确“不要求用户先
+预充 Credits”；2026-07-23 生产资料包则定义 Plus、Credit packs 和按 Credit 消费的 Deep Reading。
+由于根规则优先级更高，这个差异不能由实现者静默选择更方便的一方。D-097 已由 Owner 明确选择：
+
+- 直接销售名称、范围和权益清楚的订阅、报告或数字体验；
+- 不要求用户预充 Credits；
+- 冻结 Credit packs 和按 Credit 消费作为生产产品合同；
+- 保留现有 Test Mode Credit/订阅/退款/对账实现作为历史回放与完整性证据，直到逐文件审计证明
+  哪些部分可以安全退休。
+
+该方向批准不等于生产商业合同已完成。OWN-018 仍要求精确 SKU、权益、价格、退款、客户文案以及
+法律和支付商书面 review；在这些证据完成前，不恢复生产付费 UI、定价或激活。
+
+### 2.5 首发不是删掉长期产品合同
+
+生产资料包要求的 Readings、Daily Tarot、独立 Journal、Account Billing、Orders、Privacy、About
+等非商业目的地继续作为长期产品表面要求；Plus、Credit packs 和按 Credit 消费的商业细节由 D-097
+的直接销售/no-preload 决定取代。首发范围的任何收缩都必须满足两个条件：
+
+1. 未开放能力在服务端、路由、导航和文案上都不会伪装成可用；
+2. Owner 用明确决定批准该 launch profile；Codex 不能把“默认关闭”自行解释为产品合同变更。
+
+## 3. 当前真实起点
+
+| 领域                   | 当前真实状态                                                                        | 上线前还缺什么                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 匿名核心闭环           | 本地生产构建已验证；首页已 intake-first                                             | Owner 完整走查、真实受邀用户理解性测试、其余导航收口                                 |
+| 塔罗                   | 单张、三张、恢复、分享、报告存在                                                    | Daily Tarot 和 Readings 总入口；生产 UI fidelity 复核                                |
+| 意图/仪式/日记/Revisit | 匿名完整链路存在，免费线香和蜡烛存在                                                | 产品入口收口；提醒生产投递另行审批                                                   |
+| 数秘                   | 匿名计算器和公开方法页存在                                                          | 决定是否进入首发导航；保持公式和隐私证据                                             |
+| 账户                   | 本地安全登录、资料、历史、会话存在                                                  | 生产邮件/身份供应商；完整隐私和商业客户入口                                          |
+| 隐私                   | 导出、删除、授权和加密后端通过专项证据；综合浏览器仍有 V1/V2 断言漂移               | 修复浏览器证据；补普通用户按钮/状态页和生产留存/法律/交付运维                        |
+| 占星                   | 引擎、加密数据、只读结果查看器存在                                                  | 创建入口、真实位置数据、safe-off 激活、部署源码证据                                  |
+| AI                     | 结构、安全、验证和 fallback 基础存在                                                | 生产供应商、私密内容条款、双语/首发范围 eval、成本门                                 |
+| Credits/支付           | Credit 内核仅保留为 Test Mode/历史完整性证据；D-097 冻结其生产产品合同              | 设计直接销售 SKU；客户中心、争议支持、kill switch、书面承销、生产配置                |
+| 订阅                   | Test Mode 后端生命周期存在；生产 offer 尚未定义                                     | 按直接销售/no-preload 重新定义购买、管理、取消、发票、恢复和审批                     |
+| 内容/SEO               | 45 个英语公开内容路由在仓库中通过质量门                                             | 站立生产环境、域名、robots/sitemap/indexing Owner 批准                               |
+| 环境                   | Local 已实现；staging 只有演练证据                                                  | 独立站立 staging、隔离密钥/数据/供应商、不可变晋级                                   |
+| 恢复                   | RIT-164 仓库级恢复和 schema drift 审阅通过                                          | 生产备份/PITR/外部恢复演练                                                           |
+| 运营                   | 有基础日志、审计、对账和 runbook                                                    | SLO、告警、支持、状态页、预算、game day、渗透测试                                    |
+| 配置边界               | 类型化配置、精确 intake activation、隔离生产构建和 finite-route/direct-RSC 门已通过 | 在 release evidence 中持续运行；不得用近似 activation reference 或客户端 secret 绕过 |
+
+## 4. 唯一关键路径
+
+```mermaid
+flowchart TD
+  A["G0 核心闭环 Owner 验收"] --> B["G1 RIT-164 恢复证据已闭合"]
+  B --> C["G2 产品表面与用户入口收口"]
+  C --> D["G3 身份 隐私 商业 AI 完整工作流"]
+  D --> E["G4 安全 运营 支持 成本闭合"]
+  E --> F["G5 英语封闭 Beta"]
+  F --> G["G6 修复 Beta 上线阻塞项"]
+  G --> H["G7 外部与 Owner 商业批准"]
+  H --> I["G8 站立 Staging 与完整发布演练"]
+  I --> J["G9 Owner 生产 Go No-Go"]
+```
+
+任何一个 Gate 没有证据，就不能用后面的“演练成功”掩盖前面的缺口。
+
+## 5. Gate 逐项方案
+
+### G0 — Owner 验收唯一核心闭环
+
+**当前状态：已通过。** 2026-08-01，Owner 在受保护本地产品与逐按钮手册并排打开后明确回复
+“接受”，未提交优先问题清单。RIT-167 和 D-098 记录该结论；它不批准 Beta 部署或生产上线。
+
+**目标**：Owner 能从 `/en` 开始，不注册、不付款，完成单张解读、意图、小行动、免费仪式、
+私密反思和 Revisit，并明确指出不理解、找不到或不可信的步骤。
+
+**执行**：
+
+1. 使用本手册的“核心闭环”逐按钮走查。
+2. 分别检查桌面、320px 移动端、键盘、减少动态模式。
+3. 记录每一个入口、文案、顺序和恢复问题；不在验收中顺带扩展新产品。
+4. Owner 明确给出“接受核心闭环”或带优先级的问题清单。
+
+**通过证据**：连续完成；免费价值不需要账户或支付；没有私密文本泄漏；用户知道可以停止；
+Owner 的验收结论进入记录。
+
+**失败处理/回滚**：冻结非核心范围，只修影响主线的 P0/P1 问题；不恢复商业、占星或增长扩张。
+
+### G1 — RIT-164 仓库级恢复阻塞已关闭
+
+**当前状态**：2026-07-31 已完成。161 条差异全部映射到不可变 migration，Node 26.5.1 下的
+本地隔离备份、恢复、快照一致性、最小权限和清理验证通过。生产 provider 级恢复仍属于 G4/G8。
+
+**目标**：解释恢复后 schema fingerprint 的每一处差异，并让备份恢复 gate 在 Node 26.5.1 下通过。
+
+**执行**：
+
+1. 复现实际 fingerprint 和规范化 SQL。
+2. 对照 39 个不可变 migration、Prisma schema、grant、view、trigger 和近期商业表逐项解释。
+3. 只修验证器或经审阅的基线，不修改历史 migration，不降低 fail-closed 检查。
+4. 重跑恢复、migration、记录和生成证据 gate。
+
+**通过证据**：`pnpm test:backup-recovery-database` 通过；差异报告可审阅；没有生产数据或凭据。
+
+**失败处理/回滚**：恢复旧验证器/基线；保持发布阻塞，不能用跳过或更新 hash 代替解释。
+
+### G2 — 产品表面与用户入口收口
+
+**目标**：导航、页面和按钮与首发产品合同一致；用户不会遇到“后端有、前端找不到”或“按钮看似
+可用、实际安全关闭”的产品。
+
+**必须解决的已知项目**：
+
+- **已完成**：D-097/RIT-166 已让首页 `Begin a free reading` 和 `Draw one card` 先进入
+  `/en/intake`；只有 allowed 或用户主动采用建议并重新通过的结果可以继续，blocked/crisis 无解读入口。
+- 增加或明确处理 Readings、Daily Tarot、独立 Journal、About、Account Billing、Orders、
+  Privacy 等生产资料包目的地。
+- 把移动导航改为资料包要求的语义折叠菜单，或通过 ADR、前后截图和 Owner 批准接受差异。
+- 为隐私导出、下载、选择性删除和账户删除提供完整用户界面；当前只有 API/测试，没有按钮。
+- 明确占星创建入口的首发处置；当前只有“查看已经保存的结果”。
+- 所有 safe-off 能力从导航、卡片、CTA 和搜索暴露中一致隐藏或显示真实不可用状态。
+
+**通过证据**：路由/按钮 inventory 与实际构建一致；黄金截图未被擅自更新；桌面、移动、键盘、
+400% zoom、reduced motion、Firefox、WebKit、VoiceOver/NVDA 手动证据通过；不存在开发/Test Mode
+语言泄漏到生产 UI。还必须实现对黄金截图的实际像素/视觉比较；当前 PNG 尺寸、metadata 和隐私
+canary 检查不能替代视觉 fidelity regression。当前专用浏览器门尚未覆盖私密三张塔罗、Plans 和
+checkout 客户路径；它们若进入首发范围，必须补齐独立的 UI/E2E、失败恢复和无障碍证据。
+
+**失败处理/回滚**：按功能开关隐藏未完成入口；保留免费核心闭环；不以假按钮、静态模拟或
+浏览器 local state 填补缺口。
+
+### G3 — 完成首发范围内的完整用户工作流
+
+**目标**：首发中显示的每项能力都从按钮一直通到服务端权威、数据、失败恢复和客户支持。
+
+**执行顺序**：
+
+1. 账户/身份：生产邮件或已批准身份供应商、登录恢复、匿名数据只合并一次、会话撤销。
+2. 隐私：账户中的导出、下载、删除、状态、失败、重试、最近认证和支持入口。
+   同时把综合隐私浏览器门从过期的 export V1 预期更新为当前权威的 V2 contract，并证明不是通过
+   降低断言或跳过测试获得绿色。
+3. 商业客户界面：按 D-097 重定义并执行 RIT-072；直接销售订单、收据/发票、订阅、取消、恢复、
+   退款/支持状态完整，不提供预充 Credit pack 入口。
+4. 争议与支持：RIT-074 已完成 existing payment-event 到 immutable metadata-only support work item
+   的异步投影；
+   不把私密日记当支付证据，真实 chargeback response 仍由 Owner/provider gate 控制。
+5. 支付 kill switch：RIT-075/D-110 已完成 repository-local 合同；新购买按
+   country/fiat-or-crypto/provider/method 精确安全关闭，没有隐式 fallback，生产控制写入与激活仍需
+   staging/Owner 证据。
+6. AI：生产供应商仍关闭，先完成首发 prompt/schema/model/content 版本、eval、费用、超时、fallback、
+   直接购买 entitlement、失败释放和无重复收费证据。
+7. 占星：只有首发决定包含时，才完成出生资料创建、位置数据、运行开关和完整隐私路径。
+
+付费产品方向已经由 D-097 解决为直接销售/no-preload，但仍受 OWN-018 的精确 SKU、法律和支付 review
+阻塞；不能因为 Test Mode 流程存在就先做生产 UI 或定价承诺。
+
+**通过证据**：生产资料包的 required E2E journeys 对首发范围 100% 通过；任何未纳入首发的能力
+都有服务端 safe-off、无入口和 Owner 记录。
+
+**失败处理/回滚**：禁用具体 feature/provider/country；保留账户和免费核心；支付返回页永不自行
+授予权益，AI 失败永不形成最终收费或消费。旧 Credit 行为只允许在隔离 Test Mode 回放。
+
+### G4 — 安全、运营、支持和成本闭合
+
+**目标**：不是只“发现错误”，而是有人能看见、停止、恢复和向用户解释错误。
+
+**对应工作**：
+
+- RIT-120：Owner/admin 运营面板；
+- RIT-121：最终威胁模型和 Critical/High 清零；
+- RIT-122：速率、bot、滥用和 denial-of-wallet 控制；
+- RIT-124：SLO、告警、runbook、状态和只读/kill-switch 演练；
+- RIT-125：支持、隐私、安全和内容报告队列；
+- RIT-127：AI、基础设施、退款/欺诈和营销预算/异常上限；
+- RIT-128：安全、支付、AI、供应商和数据库故障 tabletop/game day。
+
+RIT-121 已确认完整历史 Gitleaks 命中的是公开幂等 schema 版本，并只加入该历史提交、路径、规则和
+行号的精确 fingerprint；默认规则、全历史扫描、redaction 和未来发现行为不变。重跑覆盖 85 个提交
+且无剩余泄漏；不得把该精确例外扩展为路径、正则或全局关闭。
+
+RIT-122 已完成仓库侧受保护 Beta admission：问题 intake 和匿名私密修改共享两个固定 scope 的
+数据库原子 session 预算，超限返回有界 `429`/`Retry-After`，浏览器不自动重试，也不采集问题、
+IP、User-Agent、设备 ID 或指纹。它没有解决 session farming 或部署边缘防护；D-104 已精确批准
+`own-019.protected-beta-abuse.v1` 的阈值、邀请 cohort、allowlist/edge、观察窗口和回滚阈值，但
+RIT-130 仍须在 standing staging 中实现和验证这些控制，批准本身不构成部署或 Beta candidate。
+
+RIT-125 已完成仓库侧四类运营 case 内核：新 reading report、privacy export/deletion 和 refund source
+在同一事务入队，queue/priority/local SLA/draft/expiry 由数据库 source 派生；operator 必须具备对应
+role、最近认证、同 session passkey MFA、reason 和 ticket。case、draft 和 audit 不复制问题、解读、
+日记、出生资料或 email，固定 draft 不自动发送。当前仍没有普通用户 Support/Case Status Button、
+Admin Dashboard、admin HTTP route、外部 Pager 或正式 SLA；RIT-120 负责把安全 projection 接入 Owner
+运营面板，生产 contact/营业时间/承诺/retention 仍需批准。
+
+生产恢复还必须在经批准的托管环境中配置加密备份/PITR，并完成隔离 provider-level restore；
+当前仓库 synthetic logical restore 不能替代该证据。目标 RPO 不超过 15 分钟、RTO 不超过 4 小时，
+仍需结合实际供应商和 Owner 批准确认。
+
+**通过证据**：0 个开放 Critical/High；告警能到负责人并关联 runbook；恢复、对账、dead-letter、
+provider outage、kill switch、只读模式和状态沟通演练通过；支持 SLA 和升级责任明确。
+
+**失败处理/回滚**：降低 cohort、关闭付费/AI/占星、进入只读或维护模式；未知私密数据风险直接
+停止，不以继续观察代替隔离。
+
+### G5 — 英语封闭 Beta
+
+**目标**：用受邀成年测试者验证可理解性、信任、安全、无障碍和恢复，而不是验证“测试数很多”。
+
+**执行**：RIT-130 准备范围、邀请、同意、支持、指标和回滚；RIT-131 执行；只收集必要的事件，
+不收集问题、意图、日记、出生资料或自由文本。
+
+**必须观察**：
+
+- 用户能否找到首次入口；
+- 是否理解“反思而非预测”；
+- 在哪里退出、重试和恢复；
+- 从解读到小行动、仪式、日记和 Revisit 的完成/放弃原因；
+- 移动、键盘、屏幕阅读器、放大和低速/离线问题；
+- 支持、安全和隐私报告是否能够被及时处理。
+
+**通过证据**：数据质量已验证；质性反馈可追溯到工作流；没有开放上线阻塞项。
+
+**失败处理/回滚**：停止邀请、关闭受影响入口、保留数据最小化；进入 RIT-132 修复，不扩大 cohort。
+
+### G6 — 修复 Beta 上线阻塞项
+
+**目标**：RIT-132 只关闭 Beta 暴露的安全、UX、无障碍和可靠性阻塞项，并加入回归证据。
+
+**通过证据**：问题可复现、修复可验证、风险有回滚；核心路径和受影响 package/browser/database
+gate 通过。
+
+**失败处理/回滚**：未关闭问题保持发布阻塞；不得把“用户可以绕开”当作完成。
+
+### G7 — 外部与 Owner 商业批准
+
+**目标**：完成 RIT-140 的依赖，不用内部代码替代外部书面证据。
+
+| 阻塞项                           | 必须由谁完成                    | 最小证据                                                                        |
+| -------------------------------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| OWN-001 品牌/域名/语言 clearance | Owner + 专业顾问                | 检索/意见、域名/账号、申请决定                                                  |
+| OWN-002 支付承销                 | Owner + 主/备支付商             | 精确产品、国家、价格、退款的书面批准                                            |
+| OWN-004 实体/国家/税务/MoR/法律  | Owner + 合资格顾问              | 卖方、国家、18+、税务、条款/隐私/退款                                           |
+| OWN-005 预算                     | Owner                           | 月度、AI、基础设施、退款/欺诈、营销上限                                         |
+| OWN-018 直接销售 offer 外部闭合  | Owner + 法律/支付 review        | 符合 D-097 的唯一直接销售 SKU、权益、价格、退款和客户文案；不得要求预充 Credits |
+| 生产 AI/私密内容                 | Owner + provider/privacy review | 模型、数据条款、保留、地区、费用、安全批准                                      |
+| 支持和 SLA                       | Owner                           | 联系方式、营业/响应、升级和事件沟通责任                                         |
+
+**失败处理/回滚**：保持 Stripe Live、生产 AI、公开索引和生产发布关闭；继续只做独立的非生产工作。
+
+### G8 — 站立 Staging 和完整上线/回滚演练
+
+**目标**：RIT-141 和 RIT-142 在隔离的 production-like staging 上对 exact release candidate 演练，
+而不是把本地构建当 staging。
+
+**必须完成**：
+
+1. 独立数据库、缓存/队列、对象存储、密钥、供应商 sandbox、邮件测试域和观测目的地。
+2. 不可变构建、SBOM、配置和完整 Corresponding Source 绑定到 exact SHA。
+3. migration、备份、恢复、roll-forward/rollback、seed-free smoke。
+4. 核心、账户、隐私、支付、退款/取消、AI、安全、无障碍、搜索和支持 journeys。
+5. kill switch、provider outage、queue pause/replay、只读模式和应用 artifact 回滚。
+6. 对应源码 archive 上传、回读、digest 和公开源码链接绑定。
+
+**通过证据**：所有 release acceptance 数字达标；演练记录包含 commit SHA、命令、退出码、版本、
+trace/screenshot、provider fixture、限制和剩余 gate。
+
+**失败处理/回滚**：不晋级；修复后创建新的不可变 release candidate 并重复受影响及完整演练。
+
+### G9 — Owner 生产 Go/No-Go
+
+**目标**：Owner 审阅 RIT-143 清单并决定 limited production launch；Codex 不能代签。
+
+**Go 必须同时满足**：
+
+- Gate A–H 对首发 profile 的证据完整；
+- Gate I 的外部/商业批准齐全；
+- production secrets 只在 secret manager 中；
+- cohort、country、provider、预算和 stop threshold 已配置；
+- 监控、支持、状态、备份、恢复、回滚和责任人在岗；
+- 功能逐个开启，不一次打开所有 provider；
+- 任何排除功能都保持无入口、服务端 safe-off 和可审计。
+
+**No-Go 条件**：恢复失败、私密数据风险、金钱/权益不一致、国家/法律暴露、Critical/High、核心
+严重不可用、取消/退款不可用、生产来源义务未满足、没有可执行回滚。
+
+## 6. 当前生产资料包 Gate 状态
+
+| Gate                        | 当前判断                                | 说明                                                                                                                                                                                                                                                                                     |
+| --------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A Repository reality        | **当前 release candidate 不通过**       | 已审计，但当前工作树有 staged 未提交变更；必须在 clean exact SHA 上重建全部发布证据                                                                                                                                                                                                      |
+| B Foundation/UI fidelity    | **部分通过**                            | Chromium 核心浏览器通过；生产目的地、移动语义菜单、pixel visual regression、Firefox/WebKit 和手动 AT 未闭合                                                                                                                                                                              |
+| C Identity/private data     | **当前综合门不通过**                    | 本地账户、授权、加密、导出删除后端通过，但隐私浏览器仍期待 export V1、实现已是 V2；生产身份和完整用户按钮也缺失                                                                                                                                                                          |
+| D Credits/entitlements      | **旧内核冻结，直接销售合同阻塞**        | D-097 已选择直接销售/no-preload；Credit 内核只保留 Test Mode/历史证据，OWN-018 外部合同未闭合                                                                                                                                                                                            |
+| E Stripe Test Mode          | **大部分内核通过，产品/外部证据未闭合** | Test Mode 支付完整性、RIT-074 dispute support 和 RIT-075 provider safe-off/no-fallback 已通过；RIT-072 和承销仍缺                                                                                                                                                                         |
+| F USDC/Base test            | **已排除首发**                          | D-097 已批准免费封闭 Beta profile；保持关闭，不能显示为可用                                                                                                                                                                                                                              |
+| G AI test integration       | **基础实现存在，生产 Gate 未通过**      | 结构/eval/fallback 有证据；生产 provider、隐私、费用和首发 eval 缺失                                                                                                                                                                                                                     |
+| H Operational/security beta | **未通过**                              | RIT-168 已完成仓库内 25-seat invite/session 原子准入、撤销和 `/en/beta`；但 RIT-129 派生状态仍是 blocked/incomplete，站立 staging、实际邀请/edge、真实告警送达、provider restore、staging outage/rollback、外部 DAST/渗透测试和 staging support/admin 仍缺，且 RIT-127 等待 Option B/原子预算证据 |
+| I Legal/commercial approval | **Blocked**                             | OWN-001/002/004/005 和相关 Owner 决定未完成                                                                                                                                                                                                                                              |
+| J Limited production launch | **Blocked**                             | 依赖完整演练和 Owner go/no-go；当前无 standing staging 或生产服务，封闭 Beta 也仍是 NO-GO                                                                                                                                                                                                |
+
+## 7. 工作顺序和并行边界
+
+### 主线必须串行
+
+封闭 Beta：`G0 → G1 → G2 → G3（只完成免费 Beta 适用部分）→ G4 → G5`
+
+有限付费生产：`G5 → G6 → G7 → G8 → G9`
+
+其中外部批准材料可以从现在开始准备，但在 G7 前不能被内部假设替代。
+
+### 可以并行的只读/准备工作
+
+- 品牌、法律、支付承销和预算材料准备；
+- staging 资源设计和 IaC review，不创建/激活生产资源；
+- 威胁模型、支持流程、SLO 和 game-day 场景草案；
+- 用户手册、客服 runbook、可访问性人工检查清单；
+- provider sandbox fixture 和生产配置模板；
+- 受邀 Beta 招募和同意材料草案，实际发送仍需批准。
+
+### 不得并行激活
+
+- Stripe Live、真实 Coinbase/USDC；
+- 生产 AI 处理私密内容；
+- 公开 DNS、索引和生产发布；
+- 法律/隐私/退款政策生效；
+- 不可逆生产 migration、生产数据修改、密钥销毁或备份删除。
+
+## 8. 每个任务的交付格式
+
+以后每个上线前任务必须用同一格式收口：
+
+1. **用户结果**：用户从哪里进入，最终得到什么。
+2. **当前状态**：本地、staging、Test Mode、safe-off、生产可用中的哪一个。
+3. **正常路径**：按钮、API、数据和完成状态。
+4. **失败与恢复**：loading、empty、error、offline、retry、重复请求、恢复和回滚。
+5. **安全与隐私**：所有权、CSRF、加密、日志/分析、删除/导出和 negative tests。
+6. **验证**：受影响 package、数据库、浏览器、无障碍、安全和生成证据。
+7. **Owner gate**：哪些只是准备，哪些需要明确批准。
+8. **下一项**：只推荐一个 Ready 任务。
+
+## 9. 当前下一步
+
+RIT-164、RIT-166、RIT-167、RIT-120、RIT-121、RIT-122、RIT-124、RIT-125 和 RIT-168 已完成，Owner 已接受 intake-first 核心闭环，
+版本化威胁模型保持零开放 Critical/High，仓库侧匿名 admission 已通过并发、权限、恢复、构建和
+Chromium 全闭环；D-101 已固定六项 Beta SLO、告警责任/runbook、关联 ID、全局 Web 只读控制，
+并通过 registry v3 的数据库 `off → on → off` Kill Switch 与恢复演练。当前仍没有外部监控、Pager、
+公开状态页、动态全局控制面或 Gate H 通过证据。四类 metadata-only 运营 case 已通过角色/MFA、
+SLA、幂等状态、审计链和恢复验证。D-103 已把八个运营域汇入 private/offline、source/freshness
+标注、缺失即 unknown 的 Owner 日报；入口是 `pnpm report:owner-operations`，没有 Web/Admin Button，
+也不代表实时生产监控。D-098 只恢复受保护封闭 Beta 关键路径；D-105 只新增固定注册表的 private
+safe-off 成本模拟，D-106 批准 Option A 并明确让 RIT-127 等待 Option B 和原子预算/固定告警证据。
+RIT-128 已完成仓库本地安全、AI、支付、通知、数据库、依赖故障矩阵和统一 runbook，且零开放
+Critical/High；它不代表 standing staging 或 Gate H。OWN-019 已按推荐方案在 D-104 下完成，固定
+`own-019.protected-beta-abuse.v1` 的精确 abuse 阈值、邀请 cohort、allowlist/edge、观察期和回滚
+profile；D-112 已补齐 25-seat 原子邀请准入/撤销、旧 cookie 拒绝、私有运营发放命令和 `/en/beta`
+Button。站立 staging、实际邀请发送/edge、provider restore、外部安全证据、Gate H 和 RIT-130 发布包继续
+保持 NO-GO，且任何部署仍需单独批准。RIT-130 已把 RIT-127 写成显式依赖。D-108 已批准 OWN-020
+Option A：RIT-126 的三张 Codex 定时复核卡继续暂停且不产生定时模型调用；硬隔离、单独模型使用批准
+和三次 clean-run 证据仍缺失。RIT-129 已在 D-109 下完成 provider-free staging/Gate H 证据合同，
+但当前八项派生状态全部 blocked，Gate H 仍 incomplete；没有部署或供应商激活。RIT-075 和 RIT-074
+现已分别完成 provider/country/method safe-off/no-fallback 与 existing payment-event 到 immutable
+metadata-only support work item 的异步投影；都没有选择/激活供应商或恢复付费产品范围。RIT-127 仍
+等待精确 Option B、durable atomic budget 和固定告警送达证据，RIT-130 继续被 RIT-127 和其他
+Gate H 外部证据阻塞。Owner 的推荐选择和精确批准文本已集中在
+`docs/reports/RITUVIA_PRE_LAUNCH_BLOCKER_OWNER_DECISION_REQUEST_2026-08-03.md`。这些状态不恢复商业、占星、生产 AI、
+语言、国家或增长扩张。
+
+---
+
+# File: `docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md`
+
+# RITUVIA 产品功能与逐按钮用户手册
+
+> 版本基准：2026-08-03 的当前仓库和生产构建
+>
+> 当前界面语言：英语；本手册用中文解释，按钮名保留界面中的准确英文
+>
+> 当前环境：本地或受保护评审环境；没有公共生产服务
+>
+> 适用对象：Owner、测试用户、客服、产品、QA 和工程人员
+
+## 1. 先看状态标签
+
+本手册不会把“仓库里有代码”写成“用户已经能在生产使用”。每个功能使用以下标签：
+
+| 标签           | 含义                                             |
+| -------------- | ------------------------------------------------ |
+| **本地可用**   | 当前生产构建可在本地/受保护环境完成该用户流程    |
+| **条件可用**   | 需要既有数据、登录、特定开关或受控配置           |
+| **Test Mode**  | 只允许本地或供应商测试模式；不收真钱             |
+| **Safe-off**   | 代码可能存在，但服务端默认关闭，不能当作可用产品 |
+| **缺用户入口** | API/后端存在，页面没有普通用户按钮或完整工作流   |
+| **首发缺口**   | 生产资料包要求存在，但当前仓库产品表面尚未完成   |
+| **Owner gate** | 需要 Owner 或外部书面批准；测试通过不能代替批准  |
+
+## 2. 最重要的使用原则
+
+- RITUVIA 提供象征性反思，不预测确定未来。
+- 你可以在任何一步停止；不需要为了得到基本价值而注册、付费或连续抽取。
+- 卡牌抽取、数秘和占星事实由确定性/受测系统产生，AI 不能改变这些事实。
+- 免费蜡烛和线香仪式始终保留；付费不表示更灵验、更幸运或更有效。
+- 问题、意图、日记、出生资料和 Revisit 内容默认私密。
+- 遇到立即危险、医疗、法律、财务或其他高风险判断，应停止象征性解读并寻求当地紧急服务或
+  合资格专业支持。
+
+## 3. 全站界面和按钮位置
+
+### 3.1 桌面端页头
+
+页头固定在页面最上方，向下滚动时仍可见：
+
+| 位置 | 控件                   | 作用                                     |
+| ---- | ---------------------- | ---------------------------------------- |
+| 左侧 | `RITUVIA` 品牌链接     | 返回 `/en` 首页                          |
+| 中间 | `Home`                 | 返回首页                                 |
+| 中间 | `Sanctuary`            | 进入 `/en/sanctuary`                     |
+| 中间 | `Methodology`          | 查看方法说明 `/en/methodology`           |
+| 中间 | `Safety`               | 查看安全边界 `/en/safety`                |
+| 右侧 | `Language` 下拉框      | 当前只有 `English`，不能切换到未发布语言 |
+| 最右 | `Sign in` 或 `Account` | 未登录时进入登录页；登录后进入账户页     |
+
+`Privacy` 不在桌面主导航中，只在页脚公共链接中出现。
+
+### 3.2 平板和移动端页头
+
+- 58rem 以下：品牌和账户区域在第一行，主导航进入第二行。
+- 40rem 以下：品牌、导航、语言和账户区域纵向/换行排列。
+- **当前没有汉堡菜单按钮**；不要寻找三横线图标。
+- 生产资料包要求未来使用语义移动菜单，当前换行布局属于上线前需要收口的 UI gap。
+
+### 3.3 页脚
+
+每个公共框架页面底部都有 `Home`、`Sanctuary`、`Methodology`、`Safety`、`Privacy`。如果在
+页面顶部找不到 `Privacy`，滚动到底部即可。
+
+### 3.4 键盘和辅助技术
+
+- 页面第一个可聚焦链接是 `Skip to main content`；按 Tab 后 Enter 可跳过页头。
+- 所有核心按钮可用 Tab/Shift+Tab 定位，Enter 或 Space 激活。
+- 焦点会在结果、错误、仪式和恢复状态出现后移动到相应区域。
+- 选择 `Use accessible linear mode` 可将仪式改为不依赖动画、拖拽或精确计时的线性步骤。
+- 系统开启 reduced motion 时，仪式装饰动画会停止，但文字和按钮保持完整。
+
+## 4. 当前路由总图
+
+当前生产构建共有 **58 个 `/en` 页面路径**：45 个公共内容 URL 和 13 个私密/交易工作流页面。
+根路径 `/` 只负责重定向到 `/en`；它不是第二个首页，也不代表其他语言已经发布。
+
+### 4.1 有页面且有普通用户入口
+
+| 路由                      | 页面                | 主要入口                                              | 当前状态                   |
+| ------------------------- | ------------------- | ----------------------------------------------------- | -------------------------- |
+| `/en`                     | 首页                | 根地址/品牌/Home                                      | 本地可用                   |
+| `/en/intake`              | 安全问句检查        | 首页 `Begin a free reading` / `Draw one card`         | 条件可用；获准环境本地可用 |
+| `/en/tarot/one-card`      | 单张塔罗            | intake allowed 结果；也可直接打开 URL                 | 本地可用                   |
+| `/en/tarot/three-card`    | 三张塔罗            | 首页 `Draw three cards`                               | 本地可用                   |
+| `/en/sanctuary`           | 意图、仪式、日记    | 页头 `Sanctuary` / 首页 Sanctuary CTA                 | 本地可用                   |
+| `/en/revisit`             | Revisit             | Sanctuary 已保存意图后的 `Schedule a private Revisit` | 本地可用                   |
+| `/en/sign-in`             | 登录                | 页头 `Sign in`                                        | 本地可用；生产邮件未批准   |
+| `/en/account`             | 账户                | 页头 `Account`                                        | 条件可用                   |
+| `/en/readings/numerology` | 数秘计算器          | 首页卡片（开关启用时）/ `/en/numerology`              | 条件可用                   |
+| `/en/readings/astrology`  | 已保存占星结果      | `/en/astrology` 教育页 CTA                            | 条件可用；只读、Safe-off   |
+| `/en/plans`               | 一次性 Credit packs | 登录账户 `View Credit packs`                          | Test Mode/Freeze           |
+| `/en/checkout/return`     | 支付返回状态        | hosted checkout 返回                                  | Test Mode/Freeze           |
+
+### 4.2 页面存在，但当前没有正常导航入口
+
+| 路由                 | 说明                                         | 当前状态        |
+| -------------------- | -------------------------------------------- | --------------- |
+| `/en/beta`           | 私密邀请准入；只通过一对一邀请链接进入       | 条件可用        |
+| `/en/checkout/local` | 本地测试付款页面，只从本地测试 checkout 返回 | Local Test only |
+
+### 4.3 后端存在，但没有普通用户按钮
+
+| 能力                        | 当前实际情况                                                                                 |
+| --------------------------- | -------------------------------------------------------------------------------------------- |
+| 隐私导出/下载               | API 和专项浏览器证据存在；账户页没有 `Export my data` 按钮                                   |
+| 选择性删除/账户删除         | API/后端存在；账户页没有完整删除确认工作流                                                   |
+| 订单/账单/发票/订阅管理     | 后端基础存在；没有独立 Billing/Orders 客户页                                                 |
+| 出生资料创建/占星计算       | 加密后端存在；当前只读页面不收集出生资料，也不创建计算                                       |
+| 生产邮件提醒                | Revisit 可保存偏好；真实投递仍依赖供应商和域名批准                                           |
+| 订阅购买/取消               | Test Mode 后端生命周期存在；当前 Plans 页面只展示一次性 Credit packs                         |
+| 支持/隐私/安全/内容运营队列 | 后端队列、权限、SLA 状态和审计存在；没有普通用户 `Support` Button                            |
+| Owner 运营面板              | private/offline 日报已存在；没有 Web 路由、导航项或 Admin Dashboard Button，使用仓库命令生成 |
+
+### 4.4 Owner 如何打开运营面板
+
+**适用对象：Owner/受权工程与运营人员，不是普通用户。**
+
+按钮位置：**没有按钮**。当前入口是仓库根目录命令：
+
+```bash
+pnpm report:owner-operations \
+  --as-of <UTC时间> \
+  --input <绝对路径/owner-operations-input.json> \
+  --output-json <绝对路径/owner-operations-dashboard.json> \
+  --output-markdown <绝对路径/owner-operations-dashboard.md>
+```
+
+生成后，在 Codex 右侧边栏打开 Markdown 文件。面板按顺序显示八区：Health、Revenue、Core loop、
+AI、Queue、Support、Cost、Approvals。每区都要先看：
+
+1. `Status`：`nominal`、`attention`、`blocked`、`not_applicable` 或 `unknown`；
+2. `Source` 与 `Environment`：数据来自 durable aggregate、本地验证、Owner 记录、synthetic 还是
+   unavailable，以及属于 local/CI/staging/production 哪个环境；
+3. `Freshness`、`Observed through`、`Maximum age`：数据是否仍在有效期；
+4. `Approval`、`Evidence`、`Runbook`：批准和处理依据在哪里；
+5. `Known gap`：还缺什么，不能把 `unknown` 理解为 `0`、健康或可上线。
+
+顶部 Release gates 当前应显示：下一项 OWN 批准仍是 `OWN-005` 的 exact Option B、RIT-127
+`blocked_by_Option-B-and-runtime-evidence`、下一任务序列 `RIT-130`、standing staging
+`unavailable`、Gate H `incomplete`、independent security review `pending`。D-104 已精确批准
+OWN-019 profile，D-106 已批准 OWN-005 Option A safe-off，RIT-128 本地故障演练已完成；即使未来
+显示 `evidence_ready`，部署仍必须由 Owner 另行批准。
+
+完整输入规则、失败恢复、日检和回滚见
+`docs/runbooks/RIT-120_OWNER_OPERATIONS_DASHBOARD.md`。OWN-019 的已批准精确 profile 见
+`docs/reports/RITUVIA_OWN_019_DECISION_REQUEST_2026-08-02.md` 和 D-104。
+
+### 4.4.1 Owner 如何打开 staging / Gate H 证据报告
+
+**这里也没有产品网页或 Admin Button。** 工程人员先在终端运行
+`pnpm check:staging-gate-h`；私有 manifest 用 `pnpm report:staging-gate-h -- <arguments>`，再在
+Codex 右侧打开 Markdown。固定检查 staging、invite、monitor、PITR、outage、外部安全、support/admin
+和 rollback；当前必须是 `blocked`、Gate H `incomplete`、`deploymentAuthorized=false`。即使变为
+`evidence_ready_for_owner_review` 也不能部署。完整参数与恢复见 RIT-129 runbook。
+
+### 4.5 Owner 如何打开和控制 Codex 定时复核
+
+**适用对象：Owner/受权工程与运营人员，不是普通用户。产品网页没有这个 Button。**
+
+1. 在 Codex Desktop 左侧边栏打开 **Automations**。
+2. 选择 `RITUVIA daily maintenance`、`RITUVIA weekly product review` 或
+   `RITUVIA monthly risk audit` 卡片。
+3. D-108 已批准 OWN-020 Option A，当前三张卡均应显示 **Paused**。点击 **Edit** 可以核对时间和
+   提示词；没有新的明确 Owner 决定前不要点击 **Run now**，也不要激活调度。
+
+三条任务按上海时区配置为每天 08:30、周一 09:30、每月 1 日 10:30；当前暂停，不产生定时模型
+调用。未来获批后，正常成功只生成单独的 Codex task，不写入 RITUVIA 数据库，也不通知产品用户；
+只有失败运行触发通知。
+
+当前 Codex 项目定时任务使用本地项目执行，不是硬只读沙箱。因此每次先检查工作区：只要有未提交
+修改，就返回 unavailable 并停止；工作区干净时才读取仓库和已经存在的聚合证据。它不能修改文件、
+创建 PR、改 Backlog/Decision、访问生产/私密内容、联系供应商/用户、花钱、部署或通过 Owner gate。
+详细流程和回滚见 `docs/runbooks/RIT-126_CODEX_AUTOMATIONS.md`。
+激活差异和精确选项见
+`docs/reports/RITUVIA_RIT_126_AUTOMATION_ACTIVATION_DECISION_REQUEST_2026-08-02.md`。
+
+### 4.6 生产资料包要求但当前缺失的目的地
+
+当前没有完整的 `/en/readings`、`/en/readings/daily-tarot`、`/en/readings/tarot`、
+`/en/readings/deep`、`/en/journal`、`/en/account/billing`、`/en/account/orders`、
+`/en/account/privacy` 和 `/en/about` 用户目的地。这些是上线前产品表面缺口，不应通过猜 URL 使用。
+
+### 4.7 工作流 0：进入 protected Beta
+
+**状态：仓库/本地可用；真实邀请执行、standing staging 和上线仍是 Owner gate。**
+
+普通用户导航里没有 Beta 链接。受邀用户从运营人员一对一发送的私密地址打开 `/en/beta`：
+
+1. 页面主标题下方是 `Protected Beta invite` 输入框。
+2. 把完整邀请码粘贴到该输入框；不要把邀请码手工加到 URL。
+3. 表单最底部的主 Button 是 `Enter protected Beta`。
+4. 成功后页面进入 `/en/intake`；先完成安全问句检查，再开始免费核心闭环。
+
+邀请码只存在于当前表单内存和一次同源请求正文，不进入 URL、referrer、localStorage、
+sessionStorage、analytics 或错误文案。缺失、无效、已使用、过期或已撤销都显示同一类平静提示，
+不会暴露内部状态；服务暂时不可用时由用户明确重试，系统不自动循环提交。旧的匿名 cookie 不能绕过
+Beta 准入。若怀疑邀请码泄露，停止尝试并联系私密 Beta 协调人员，由受权操作员撤销。
+
+**Owner/运营发放入口：没有 Web/Admin Button。** 在仓库终端用控制角色运行：
+
+```bash
+DATABASE_URL='postgresql://CONTROL_ROLE@HOST/DB?sslmode=require' \
+  pnpm beta:invite -- create \
+  --idempotency-key 'beta-wave-1-seat-001' \
+  --ttl-seconds 604800 \
+  --output '/absolute/private/path/beta-wave-1-seat-001.json'
+```
+
+输出文件必须位于仓库外、以 `0600` 新建且不可覆盖；原始邀请码不打印到终端。推荐按 5 + 10 + 10
+三批发放，每批后复核滥用、安全、隐私、支持和 SLO。撤销命令、失败恢复和权限边界见
+`docs/runbooks/RIT-168_PROTECTED_BETA_INVITES.md`。
+
+## 5. 工作流 A：从首页开始
+
+**状态：本地可用。**
+
+### 5.1 进入
+
+打开 `/en`。页面顶部 Hero 区域位于页头下方，是第一屏主要内容。
+
+### 5.2 第一屏按钮
+
+| 按钮                   | 位置                        | 作用                         |
+| ---------------------- | --------------------------- | ---------------------------- |
+| `Begin a free reading` | Hero 文案下方，第一个主按钮 | 进入安全 intake `/en/intake` |
+| `Enter the sanctuary`  | Hero 文案下方，第二个次按钮 | 进入 `/en/sanctuary`         |
+
+在 40rem 以下，两枚按钮会纵向排列并占满可用宽度。
+
+### 5.3 页面中部入口
+
+向下滚动到 `The oracle` 卡片区：
+
+- `Draw one card`：第一张卡片底部；进入安全 intake，再按结果决定是否进入单张塔罗。
+- `Draw three cards`：第二张卡片底部；进入三张塔罗。
+- `Visit the sanctuary`：第三张卡片底部；进入 Sanctuary。
+- `Calculate my numbers`：仅当数秘开关启用时出现；进入数秘计算器。
+
+继续下滚还能看到 `Enter my sanctuary` 和 `Review the privacy design`。
+
+### 5.4 系统如何实现
+
+首页由服务端渲染；入口来自版本化英语消息和服务端功能状态。首页不接收问题、日记或其他私密
+输入，也不在客户端决定抽牌、价格或功能资格。
+
+### 5.5 当前注意事项
+
+两个单张免费入口都必须先经过 `/en/intake`。只有配置精确 activation reference
+`own-009.question-intake.en.v1` 的获准环境会开放 intake；缺失或近似值会返回 404，首页不会提供
+绕过链接。直接打开 `/en/tarot/one-card` 仍是有效技术路径，但不替代受保护 Beta 的 intake-first
+验收合同，也不能用来绕过安全结果。
+
+## 6. 工作流 B：安全检查一个问题
+
+**状态：获准环境本地可用；需要精确 activation reference，默认配置可能返回 404。**
+
+### 6.1 进入
+
+在获准本地/受保护环境，从首页点击 `Begin a free reading`，或在 `The oracle` 第一张卡片点击
+`Draw one card`。两者都进入 `/en/intake`。如果返回 404，不要改 URL 绕过；应由环境负责人确认
+是否配置了精确批准值 `own-009.question-intake.en.v1`。
+
+### 6.2 操作顺序和按钮位置
+
+1. 在主内容顶部 `Reflection theme` 单选组选择一个主题。
+2. 在其下方 `Optional question` 文本框填写问题；可以留空。
+3. 点击表单底部 `Review my question`。
+4. 结果显示在表单下方：
+   - 允许：点击 `Continue to a private one-card reflection`；旁边有 `Review another question`。
+   - 建议改写：没有继续解读按钮；点击 `Use the suggested question` 后，焦点返回问题框，必须再次
+     点击 `Review my question`，重新得到 allowed 后才能继续。
+   - 阻止：问题原文会从页面状态清除，也没有继续解读按钮；可点击 `Use the safer question`，再
+     点击 `Review my question` 重新检查。
+   - 紧急状态：问题原文会清除，只显示立即支持说明，没有建议采用或继续解读按钮。
+   - 请求过快：显示 `Question checks are temporarily limited`；没有 `Try again` 按钮，不会自动重试，
+     草稿继续留在当前页面。稍后修改或重新提交前先等待，不要新建 session 绕过。
+   - 网络/服务错误：结果卡片中点击 `Try again` 或 `Check connection and try again`。
+
+### 6.3 系统如何实现
+
+- 点击 `Review my question` 后，浏览器先在后台调用 `POST /api/v1/anonymous/session` 创建或恢复私密
+  匿名 session，再调用 `POST /api/v1/intake/evaluate` 发送主题和可选问题。这个后台步骤没有额外
+  Button，也不要求注册。
+- 服务器执行预先审阅的安全/自主性规则，返回 allowed、reframed、blocked 或 crisis。
+- 在读取问题正文前，服务器先按当前匿名 session 消耗数据库原子 intake 请求预算；超出时返回
+  `429` 和有上限的 `Retry-After`，配置、数据库或最小权限证明不可用时 fail closed。
+- 问题只在本次内存请求中检查，不放入 URL、页面 metadata、产品 analytics 或持久 intake 表。
+- 限流记录只保存 session 外键、固定 scope、窗口、计数和策略版本，不保存问题、IP、User-Agent、
+  设备 ID 或指纹。
+- allowed 只把十个批准主题之一写入当前 tab 的一次性 session handoff；进入单张页时立即读取并删除。
+- 后续塔罗请求不会复制问题自由文本，只发送已验证主题；浏览器返回键也不会恢复 intake 草稿。
+
+### 6.4 安全结果
+
+- `allowed`：可以继续，但系统仍不保证结果。
+- `reframed`：原问题要求确定性或不在自主性边界内；必须由用户主动采用建议。
+- `blocked`：高风险/有害请求不进入象征性解读。
+- `crisis`：停止产品流程，优先联系当地紧急服务或可信任的人；该状态没有继续解读按钮。
+
+### 6.5 失败和恢复
+
+草稿只留在当前页面；系统不会后台自动重试。离线时先重连，再点击明确的重试按钮，避免连续提交。
+出现 `Question checks are temporarily limited` 时没有立即重试按钮；草稿不会清除，按提示等待后再
+明确提交一次。
+如果浏览器阻止 session storage，allowed 仍可进入单张页，但不会预选主题，用户需在单张页重新选择；
+系统不会为此持久化问题或降低安全分类。
+
+## 7. 工作流 C：单张塔罗
+
+**状态：匿名、本地可用；不需要账户或支付。**
+
+### 7.1 进入
+
+从首页点击 `Begin a free reading` 或 `Draw one card`，先完成 `/en/intake`；在 allowed 结果点击
+`Continue to a private one-card reflection` 后进入 `/en/tarot/one-card`。批准主题会预先选中一次。
+直接打开 `/en/tarot/one-card` 仍有效，此时用户在页面内自行选择主题。
+
+### 7.2 抽牌
+
+1. 页面标题下方第一个面板是主题表单。
+2. 在 `Reflection theme` 选择一个主题。
+3. 点击表单底部 `Draw one card`。
+4. 等待时按钮显示 `Preparing your private draw`；页面显示创建/恢复私密 session 和固定抽牌状态。
+5. 服务器固定卡牌后，表单下方出现 `Your card is ready` 面板。
+6. 点击该面板中的 `Reveal my card`。
+
+### 7.3 结果怎么读
+
+结果面板依次显示：
+
+- 卡牌名称和 `Upright`/`Reversed`；
+- `What this may invite you to notice`；
+- `Core themes`；
+- 建设性可能性和张力；
+- `What this cannot determine`；
+- `A question to reflect on`；
+- `One small action`。
+
+这些是反思材料，不是命令、诊断或保证。
+
+### 7.4 结果底部按钮
+
+结果面板靠近底部、在分享/可选解释/报告区域之后：
+
+| 控件                              | 位置             | 作用                                     |
+| --------------------------------- | ---------------- | ---------------------------------------- |
+| `Continue to a private intention` | 完成区主按钮     | 将当前 reading ID 安全交给 Sanctuary     |
+| `Read the methodology`            | 主按钮旁的次按钮 | 查看确定性抽牌与解释边界                 |
+| `Start a new reflection`          | 完成区更下方     | 创建新的独立请求；不会提高当前结果确定性 |
+
+### 7.5 刷新恢复
+
+当前 tab 的 session storage 只临时保存随机 reading ID。刷新后系统用该 ID 向服务器恢复同一个
+固定结果，不保存结果文本、问题或账户资料。恢复失败时：
+
+- `Try to restore the saved result`：重试同一个 ID；
+- `Choose a new theme instead`：放弃恢复并回到主题选择；
+- 冲突时 `Start over with no saved attempt`；
+- 达到频率限制时 `Return to theme selection`，并遵守服务器等待时间。
+
+### 7.6 系统如何实现
+
+- 浏览器先通过 `/api/v1/anonymous/session` 建立/恢复匿名 session 和 CSRF。
+- `POST /api/v1/readings/tarot` 只提交主题、reading type 和幂等请求。
+- `packages/divination` 使用服务端随机接口固定不重复卡牌、方向和位置。
+- `packages/domain` 校验所有权、限制、状态和幂等；`packages/db` 持久化不可变 reading facts。
+- React 只负责显示；`Reveal my card` 不再次请求抽牌。
+
+### 7.7 失败和恢复
+
+离线、session、服务不可用和普通错误都不会自动重抽。使用 `Try the same draw again` 或
+`Confirm the session and try again` 会保留同一请求的幂等语义。
+
+私密塔罗不是纯静态页面：完整抽牌、恢复、意图交接和报告需要本地数据库、迁移、完整性密钥和
+会话配置。非 local 环境如果没有经批准的完整运行配置，服务端会安全关闭；页面存在不等于流程可用。
+
+## 8. 工作流 D：三张塔罗
+
+**状态：匿名、本地可用；当前 Retain，不是扩张主线。**
+
+### 8.1 进入和按钮
+
+1. 首页 `The oracle` 的第二张卡片点击 `Draw three cards`。
+2. 在 `/en/tarot/three-card` 选择 `Reflection theme`。
+3. 点击表单底部 `Draw three cards`。
+4. 服务器固定三张牌和顺序后，点击 `Reveal the three cards`。
+
+### 8.2 结果顺序
+
+三个位置固定为 Situation、Action、Possibility。页面对每张牌显示与单张相同的边界、可能性、
+问题和小行动，不把第三张解释成确定未来。
+
+### 8.3 后续和恢复
+
+结果底部同样有 `Continue to a private intention`、`Read the methodology` 和
+`Start a new reflection`。恢复会返回相同三张牌、相同顺序，不重抽。
+
+### 8.4 系统如何实现
+
+与单张使用同一服务端应用服务和持久化内核，只是 reading type、spread 和位置数不同；UI 不创建
+第二套业务逻辑。
+
+## 9. 工作流 E：分享、可选解释和报告
+
+### 9.1 隐私安全分享卡
+
+**状态：单张结果中本地可用。**
+
+在单张结果的 `Optional sharing` 区域：
+
+1. `Include my selected reflection theme` 复选框默认开启；主题敏感时先关闭。
+2. 点击 `Preview share card`；预览在同一区域出现。
+3. 预览后可点击 `Download privacy-safe SVG`。
+4. 设备支持 Web Share 文件能力时，会出现 `Open device share sheet`。
+5. 点击 `Hide share preview` 隐藏预览。
+
+分享卡只允许卡名、方向、可选主题、通用反思句、公开 Tarot URL 和品牌；不包含问题、reading ID、
+解释、出生资料、意图、日记或账户信息。SVG 在浏览器本地生成，下载不会上传文件。
+
+### 9.2 可选 AI 深度解释
+
+**状态：当前服务端刻意返回 unavailable；生产 AI 未批准，不能当作线上能力。**
+
+结果中的 `Optional AI perspective` 面板位于分享区域后：
+
+- `Explore the deeper interpretation`：显式开始；不重抽。
+- 处理中 `Stop checking`：停止当前轮询。
+- 可恢复失败时 `Try the same request again`：使用同一 operation，避免重复生成。
+
+当前 interpretation `POST`/`GET` 路径没有组合生产 provider 或生成 worker，会安全返回 unavailable；
+固定卡牌和 reviewed base meaning 仍完整。未来只有结构、内容和独立安全检查通过的结果才可显示
+`AI-generated interpretation · independently checked`；否则只能显示 reviewed non-AI fallback 或
+不显示增强内容。
+
+已保留的实现边界是：UI 只发送 reading ID；服务端读取固定 facts、版本化检索内容和 prompt，调用
+受控适配器并验证 schema、事实、安全和单次使用绑定。当前该生成组合未启用。AI 永远不抽牌、
+不定价、不授权、不决定 Credit。
+
+### 9.3 报告一个问题
+
+**状态：本地可用，无自由文本。**
+
+在结果下方展开 `Report an issue with this reading`：
+
+1. `Issue category` 选择 Accessibility、Cultural context、Factual accuracy、Rights or attribution、
+   Safety 或 Translation。
+2. `Report target` 选择整次 reading 或具体位置。
+3. 点击 `Send report`。
+4. 普通可恢复失败时点击 `Try the same report again`；若选项和已保存请求冲突，点击
+   `Start a new report request`。若达到频率限制，页面保留所选 category/target、禁用选择并隐藏重试，
+   不会自动再次提交；请稍后重新打开页面。
+
+AI 解释内部另有 `Report an issue with this interpretation`。报告只记录枚举 category/target 和
+精确请求标识，不包含自由文本、问题、解释正文或日记。
+
+报告创建成功后，同一数据库事务会创建运营 case：`safety` 进入安全队列，其他枚举 category 进入
+内容报告队列。case 只保存 source ID、category、优先级、本地 SLA 时间、状态和固定 draft 版本，
+不会复制 reading/interpretation 文本。这个后台入队没有额外 Button，也不会自动发送回复。普通用户
+目前看不到 case ID、处理状态或客服消息；这些仍是上线前用户支持界面缺口。
+
+## 10. 工作流 F：创建和管理意图
+
+**状态：匿名、本地可用。**
+
+### 10.1 进入
+
+推荐从塔罗结果底部点击 `Continue to a private intention`。也可从页头或首页进入
+`/en/sanctuary`，但如果要关联 reading，必须先在同一 tab 完成 reading。
+
+### 10.2 表单顺序
+
+Sanctuary 主内容第一个大面板是 `Set an intention`：
+
+1. 在 `Choose an intention theme` 选择如 `Peace and clarity`。
+2. 可从模板开始，但要在 `Your intention` 写成自己的话。
+3. 在 `One small real-world action` 写一个自己能够完成的行动。
+4. `Optional revisit date` 可选。
+5. 点击表单底部 `Continue with this intention`。
+
+若文案试图控制他人，页面显示建议；点击 `Use the suggested intention` 后再提交。
+
+### 10.3 已保存后的按钮
+
+保存后，表单底部和意图卡片下方出现：
+
+| 按钮                         | 作用                                                  |
+| ---------------------------- | ----------------------------------------------------- |
+| `Save intention changes`     | 修改后保存；使用 revision 防止覆盖其他 session 的变化 |
+| `Schedule a private Revisit` | 把意图 ID 临时交给 `/en/revisit`                      |
+| `Mark complete`              | 先出现确认，再完成                                    |
+| `Archive intention`          | 先出现确认；归档后不能启动新仪式                      |
+| `Delete intention`           | 危险按钮；确认后立即删除，当前页面不能恢复            |
+| `Cancel`                     | 取消 lifecycle 确认                                   |
+
+### 10.4 系统如何实现
+
+UI 通过 `/api/v1/intentions` 和 `/api/v1/intentions/{id}`，使用匿名 session/account owner、CSRF、
+幂等 key 和 optimistic revision。`packages/domain/src/intention.ts` 负责意图文本、用户自主性和状态；
+`packages/db/src/reflection-persistence.ts` 负责所有权和事务。私密文本不进入 analytics、URL 或公共
+metadata。
+
+### 10.5 失败恢复
+
+- 离线：文本留在页面，重连后再保存。
+- 普通失败：不标记完成、不收费；使用原表单重试。
+- 私密修改过快：页面顶部显示 `Private changes are temporarily limited`，当前页面的意图、仪式和
+  日记写入 Button 会禁用，系统不自动重试；内容仍留在页面，稍后重新加载再继续。
+- revision 冲突：重新加载最新资源，不盲目覆盖。
+- 删除：属于明确、不可在 UI 中撤销的动作，确认前检查内容。
+
+## 11. 工作流 G：完成免费仪式
+
+**状态：匿名、本地可用；`Quiet candle` 和 `Quiet incense` 永远免费。**
+
+### 11.1 选择仪式
+
+Sanctuary 第二个大面板是 `Choose a free ritual or symbolic object`。每个对象显示名称、说明、
+`Free`/`Owned`/`One-time purchase` 状态和卡片底部按钮。
+
+- 免费对象：点击 `Begin free ritual`。
+- 已拥有对象：点击 `Place in my sanctuary`。
+- 未拥有付费对象：可能显示 `Sign in to purchase` 或 `Continue to secure checkout`；当前商业能力
+  冻结，不要用它判断真实支付可用。
+- catalog 失败：点击 `Retry catalog`；即使付费 catalog 降级，免费对象必须保留。
+
+必须先有 active intention，否则页面提示先设置意图。
+
+### 11.2 仪式全屏/大面板顶部按钮
+
+进入仪式后，标题右侧/顶部 action 区：
+
+| 按钮                             | 作用                           |
+| -------------------------------- | ------------------------------ |
+| `Exit ritual`                    | 退出，不强迫完成               |
+| `Pause ritual` / `Resume ritual` | 暂停或恢复                     |
+| `Complete now`                   | 跳过剩余视觉步骤，直接请求完成 |
+
+### 11.3 模式和步骤按钮
+
+- `Use accessible linear mode`：切换到线性模式。
+- `Use standard 2D mode`：返回标准视觉模式。
+- `Previous step`：回到上一步。
+- `Continue`：进入下一步；暂停时不可用。
+- 最后一步 `Complete this ritual`：记录完成。
+
+仪式不播放声音；页面明确显示 `Audio: Off. No sound will start.`。
+
+### 11.4 完成后的按钮
+
+完成面板显示后：
+
+- `Continue to private reflection`：关闭仪式并把焦点带到日记区。
+- `Return to Sanctuary`：返回 Sanctuary 面板，不强迫写日记。
+
+### 11.5 系统如何实现
+
+`POST /api/v1/ritual-sessions` 原子创建 session；完成调用 `/api/v1/ritual-sessions/{id}/complete`。
+domain 验证意图状态、对象可用性、pass/entitlement 和幂等；数据库防止同一 consumable pass 被并发
+使用。客户端当前步骤可以留在页面，但完成状态以服务端为准。
+
+### 11.6 失败恢复
+
+- 离线：当前步骤留在页面；可以退出而不记录，或重连后完成。
+- 完成请求失败：意图和步骤仍在，使用同一完成操作重试，不创建第二个 ritual session。
+- 出现 `Private changes are temporarily limited`：退出当前写入状态，按钮保持禁用；稍后重新加载，
+  让页面从服务端恢复实际 ritual 状态后再继续，不要创建新匿名 session 绕过。
+- reduced motion/linear mode 不降低功能完整性。
+
+## 12. 工作流 H：私密日记
+
+**状态：与 Sanctuary 仪式关联，本地可用；当前没有独立 `/en/journal` 页面。**
+
+### 12.1 创建
+
+仪式完成后点击 `Continue to private reflection`。在 `Private reflection` 区域：
+
+1. 在 `Your private journal entry` 文本框输入内容。
+2. 点击文本框下方 `Save private reflection`。
+
+必须先完成意图和仪式；空文本不能保存。
+
+### 12.2 修改和删除
+
+- 保存后按钮变为 `Save reflection changes`。
+- `Delete private reflection` 会先显示确认；确认后删除。
+- 删除后回到可新建状态；当前页面不能恢复已删除正文。
+- 完成状态底部提供 `View my account` 和 `Start another free reflection`；两者都不是强制下一步。
+
+### 12.3 系统如何实现
+
+UI 调用 `/api/v1/journal-entries` 和 `/api/v1/journal-entries/{id}`。服务端验证同一 owner、关联 intention
+和已完成 ritual，使用幂等 key/revision；私密正文由受控持久化保存，不进入 analytics、URL、公开
+metadata、支付 metadata 或分享卡。
+
+### 12.4 失败恢复
+
+离线或保存失败时，正文继续留在文本框，系统不自动重试。重连后点击同一保存按钮。删除必须明确
+确认，不能通过网络重放误删其他用户资源。若显示 `Private changes are temporarily limited`，正文
+仍留在文本框，但保存/删除 Button 会禁用；稍后重新加载再继续，不会后台自动保存或删除。
+
+## 13. 工作流 I：Revisit
+
+**状态：匿名、本地可用；邮件提醒生产投递未批准。**
+
+### 13.1 进入和安排
+
+在 Sanctuary 保存意图后点击 `Schedule a private Revisit`，进入 `/en/revisit`。页面顶部 schedule
+面板会读取该意图：
+
+1. 选择 `Tomorrow`、`In seven days` 或 `Choose a date`。
+2. 需要时检查/编辑 `Time zone`。
+3. 如需提醒安静时段，展开/填写后点击 `Store quiet hours` 保存该偏好。
+4. 点击 `Schedule this Revisit`。
+
+如果没有从 Sanctuary 带入意图，页面会显示 empty state；当前没有通用意图选择器。
+
+### 13.2 管理已安排 Revisit
+
+每个 `revisit-card` 中：
+
+- `Save new date`：改期。
+- `Complete this Revisit`：打开完成表单。
+- `Archive`：确认后归档，可读但不能再完成。
+- `Delete`：确认后立即删除。
+- 确认区域中的 `Cancel`：退出当前确认。
+
+### 13.3 完成
+
+点击 `Complete this Revisit` 后：
+
+1. 在 `What happened, and what do you understand now?` 输入反思。
+2. 从 outcome tags 最多选择三个，如 `I took the action`、`I made partial progress`、`Not yet`。
+3. 再点击 `Complete this Revisit` 保存。
+
+标签只用于整理经历，不表示预言应验。
+
+若达到匿名受保护 Beta 写入上限，页面显示 `Pause before another private change`，保留当前尚未提交的
+排期或反思输入，并在当前页面禁用 `Schedule this Revisit`、完成、改期、归档和删除操作；页面不显示
+`Retry`，也不会自动再次请求。请等待后刷新页面，再由用户主动决定是否继续。
+
+### 13.4 邮件提醒
+
+已登录账户可能看到 `Email me once when this Revisit date arrives`。当前：
+
+- 未登录会提示 `Sign in to turn on an account-owned email reminder.`
+- 保存偏好不等于邮件已经能生产投递。
+- 提醒模板不得包含意图、问题、仪式、日记或关系细节。
+- 可在投递前关闭；失败只停止提醒，不影响 Revisit 本身。
+
+### 13.5 系统如何实现
+
+UI 使用 `/api/v1/revisits`、`/api/v1/revisits/{id}`、`/complete` 和 `/reminder`。domain 固定本地日期、
+IANA 时区、状态和 outcome 枚举；数据库 owner scope、revision 和幂等确保重试不创建重复 Revisit。
+提醒是独立 account-owned preference 和 durable job，不改变 Revisit 是否可完成。当前提醒执行例程
+虽存在，但没有组合进正在运行的 worker main，投递 adapter 也保持关闭；因此保存提醒偏好不能视为
+当前会发送邮件。
+
+## 14. 工作流 J：登录和账户
+
+**状态：本地登录可用；生产邮件/第三方身份未批准。**
+
+### 14.1 登录
+
+1. 页头最右点击 `Sign in`。
+2. `/en/sign-in` 的 `Email address` 输入邮箱。
+3. 点击表单底部 `Continue securely`。
+4. 本地环境会出现 `Complete local sign-in`；这是 Local Test only，不会发送邮件。
+5. 生产环境未来应显示 `Check your email`，使用短时一次性链接完成。
+
+错误状态包括离线、限流、无效/过期链接和服务不可用。当前没有独立的登录 `Try again` 按钮；表单
+仍保留，修正/确认邮箱或恢复连接后再次点击 `Continue securely`。不要重复使用过期链接。
+
+### 14.2 账户页面布局
+
+登录后页头按钮变为 `Account`。`/en/account` 从上到下包含：
+
+1. `Profile preferences`；
+2. `Paid experience eligibility`；
+3. `Personalization choices`；
+4. `Your history`；
+5. `Signed-in sessions`；
+6. 页面底部账户 action。
+
+### 14.3 Profile 和年龄
+
+- `Save profile`：位于 profile 表单底部，保存 display name、语言/时区等受控资料。
+- `Save 18+ confirmation`：位于付费资格区；只影响付费 eligibility，不影响免费匿名路径。
+- 冲突时页面要求重新加载，不覆盖另一个 session 的更新。
+
+### 14.4 隐私选择
+
+每个 consent 使用独立 checkbox/switch，默认关闭；analytics、personalization 和 model improvement
+互不授权。失败时旧 safe-off 状态保持。当前生产 analytics/训练路径仍未因此自动开启。
+
+### 14.5 历史
+
+- `Load older history`：历史列表底部加载下一页。
+- reading 项目中的 `Open this reading`：把 UUID-only handoff 放入当前 tab，并恢复确切 reading。
+- 历史只显示最小 metadata 和状态，不显示问题、意图、日记或 Revisit 反思正文。
+
+### 14.6 Session 管理
+
+- 其他 session 卡片中的 `Sign out this other session`：确认后撤销指定 session。
+- `Sign out all sessions`：确认后撤销当前和全部其他 session。
+- `Sign out`：只退出当前 session。
+- 操作只有在服务端持久撤销成功后才向用户报告成功。
+
+### 14.7 系统如何实现
+
+登录开始使用 `/api/v1/auth/start`，callback 消耗短时 hashed challenge 并原子创建 account/session。
+匿名资源通过 append-only account link 合并一次，而不是复制私密正文。Cookie 是 HttpOnly host-only
+session；修改操作使用 session-bound CSRF。账户、历史、consent 和 session API 不接受客户端 owner ID。
+
+## 15. 工作流 K：隐私导出和删除
+
+**状态：后端和测试存在，普通用户界面缺失。**
+
+### 15.1 当前没有的按钮
+
+账户页当前没有以下按钮：
+
+- `Export my data`；
+- `Download export`；
+- `Delete selected data`；
+- `Delete account`。
+
+因此普通用户不应尝试直接调用 API。上线前必须补充 `/en/account/privacy` 或等价完整工作流，包括
+最近认证、范围说明、状态、下载、确认、失败、重试、取消和支持路径。
+
+### 15.2 已实现的后端行为
+
+- `POST /api/v1/privacy/export` 创建加密、短时、owner-scoped export。
+- metadata 和下载要求同一账户、same-origin、最近认证和有效 session。
+- 下载包排除 cookie、CSRF、密钥和不必要的服务秘密。
+- `POST /api/v1/privacy/deletions` 支持受控 scope 和幂等重放。
+- 账户删除会撤销 session，并使旧 session 无法读取账户或 export。
+- 出生资料/占星 payload 使用 crypto-shred 语义处理受保护内容。
+- 新的 export 或 deletion request 会在同一事务进入 privacy 运营队列；case 不复制导出内容、删除
+  数据或 email。当前没有用户可见状态按钮，也没有自动消息发送。
+
+这些行为是实现事实，不是当前“用户可自助完成”的产品事实。
+
+### 15.3 支持与运营队列当前怎么用
+
+- 全站当前没有普通用户 `Support`、`Contact support` 或 `Track my case` Button。
+- 阅读结果只有 `Report an issue with this reading` 和 `Send report`，位置见工作流 E。
+- 隐私导出/删除没有普通用户 Button，位置不存在，不能让测试用户猜 URL 或手工调用 API。
+- Admin 端也没有 `Support queue`、`Privacy queue`、`Safety queue`、`Content reports`、`Triage`、
+  `Escalate` 或 `Resolve` Button；RIT-120 只完成 private/offline Owner 日报，没有实现 Web Admin
+  Dashboard 或上述操作 Button。
+- 后端已经按角色隔离四类队列，要求最近登录、同一 session 的 passkey MFA、reason 和 ticket；固定
+  英语 acknowledgement 始终标记为 draft-only，不会自动发给用户。
+- 本地测试 SLA（15 分钟至 72 小时）只是验收数据，不是对用户公开的生产承诺。支持邮箱、营业时间、
+  正式响应/解决时间、升级责任和历史回填仍需 Owner 批准。
+
+## 16. 工作流 L：数秘计算
+
+**状态：开关启用时匿名本地可用；不持久保存出生日期。**
+
+### 16.1 进入
+
+- 首页出现数秘卡片时点击 `Calculate my numbers`；或
+- 在 `/en/numerology` 公共方法页点击 `Open the private calculator`；进入
+  `/en/readings/numerology`。
+
+计算器页面标题区域还提供 `Learn the public method before calculating`，用于先回看公开方法。
+
+### 16.2 操作
+
+1. `Birth date` 输入 Gregorian `YYYY-MM-DD`。
+2. `Target year` 输入 1000–9999 的四位年份；系统不会猜当前年。
+3. 点击表单底部 `Calculate my numbers`。
+4. 结果显示 Life Path、Birthday Number、Personal Year 的 source digits、initial value、reduction
+   steps、结果和 engine/rule version。
+5. 点击结果/表单区域中的 `Clear birth data and start again` 清空。
+
+### 16.3 系统如何实现
+
+浏览器向 `/api/v1/numerology/calculate` 发送同源私密请求。`packages/divination` 使用纯函数解析
+Gregorian date，执行版本化 reduction，保留 approved 11/22/33 master number；服务端返回每一步证据。
+AI 不能改数字。出生日期不进入 URL、存储、日志或 analytics。
+
+### 16.4 失败恢复
+
+- 输入错误：页面指出日期或目标年字段。
+- 离线：`Check connection and try again`。
+- 服务/验证失败：`Try again`；不会自动发送。
+- 结果不能通过 response contract 时不显示部分数字。
+
+## 17. 工作流 M：查看已保存占星结果
+
+**状态：只读、条件可用、Safe-off；不是完整占星创建流程。**
+
+### 17.1 进入
+
+从 `/en/astrology` 公共教育页点击 `Open the private saved-chart viewer`，进入
+`/en/readings/astrology`。
+
+### 17.2 页面可能状态
+
+- 未登录：`Sign in to view saved charts`。
+- 加载：`Loading your saved chart`。
+- 没有结果：`There is no saved chart yet`；页面不会索取出生资料。
+- 验证失败/暂不可用：`Try loading again`。
+- 离线：`Check connection and try again`。
+- 有结果：显示 wheel 视觉辅助、placements、houses、angles、major aspects、confidence 和 method/source。
+
+### 17.3 当前没有的按钮
+
+没有 `Create birth profile`、`Search birthplace` 或 `Calculate natal chart`。这不是隐藏操作；完整用户
+入口尚未实现。
+
+### 17.4 系统如何实现
+
+页面只调用 `GET /api/v1/readings/astrology/natal` 读取当前账户最新 owner-scoped 结果。服务端通过
+feature flag 后才加载 pinned Swiss Ephemeris native runtime；准确时间可显示 approved placements、
+Placidus houses、angles 和 aspects；近似时间抑制 houses/angles/aspects；未知时间不伪造 noon chart。
+返回结果必须通过严格 contract，任何不可信输出都不显示 partial fallback。
+
+出生资料和计算 payload 加密保存，export/deletion 有独立证据。生产激活还需要 exact deployed source
+archive、公开 source link 和 Owner gate。
+
+## 18. 工作流 N：冻结的 Credit packs/Test Mode 支付
+
+**状态：Freeze；本地/Test Mode 历史能力，不是获批的生产产品或真钱流程。**
+
+D-097 已选择未来生产付费采用直接销售名称和权益清楚的报告、订阅或数字体验，不要求用户预充
+Credits。以下内容仅说明当前仓库仍可见的 Test Mode 实现，不能用来设计生产 offer 或客服承诺。
+
+### 18.1 Plans 页面
+
+登录账户中点击 `View Credit packs` 进入 `/en/plans`。页面只显示一次性 Test Mode pack，不是订阅
+管理页；该入口将在后续产品表面任务中删除、隐藏或替换为经批准的直接销售入口。
+
+每个 pack 卡片底部根据状态显示：
+
+- 未登录：`Sign in`；
+- 未完成 18+：`Open my account`；
+- 可进入测试 checkout：`Continue to secure checkout`；
+- 暂不可用：`Check again`。
+
+### 18.2 Hosted checkout
+
+未来获批的直接销售设计仍必须跳转到 provider-hosted page；浏览器只提交 product code 和幂等 key，
+不提交价格、权益或成功状态。卡数据不能进入 RITUVIA 服务。
+
+本地测试可能进入 `/en/checkout/local` 并显示 `Complete local test payment`。该页面明确不收卡、不收
+真钱、不能在非 local 环境运行。
+
+### 18.3 返回页
+
+`/en/checkout/return?order_id=...` 从服务端轮询 verified order：
+
+- pending：不要重复付款；等待或稍后回到账户。
+- success：只有 provider event 和 fulfillment 完成才显示成功。
+- failed/unavailable：点击 `Check again`，或 `View my account` / `Return to sanctuary`。
+
+浏览器 redirect 永远不授予 Credit。
+
+### 18.4 系统如何实现
+
+当前 Test Mode 服务端 catalog 固定产品/价格/国家/provider eligibility；Order、attempt、signed
+webhook、append-only Credit ledger、fulfillment、reconciliation、refund、dispute hold 和 subscription
+lifecycle 使用事务、幂等、outbox 和 least-privilege role。重复/乱序 webhook 不重复发放；退款和消费
+竞争使用确定规则。RIT-074 不再复制一张 dispute 表，而是直接把 matched payment event 当争议事实；
+只有 signed、applied、outbox 已完成、order 当前仍 disputed、同版本 Credit Pack fulfillment 已完成的
+事实，才由独立 Worker 幂等投影成 immutable metadata-only support work item。它不是第二套可变 case
+状态机，也没有 triage/resolve Button；Support 投影故障不会回滚支付或 Credit hold。这些完整性边界
+可以复用于未来直接销售，但 Credit 产品语义不再是生产合同。
+
+### 18.5 当前缺口
+
+- 没有完整 Orders/Billing/Invoice/Portal/Subscription/Cancel/Support 客户界面；
+- 没有“提交/查看 Chargeback”、上传争议证据、Admin 处理或 Owner provider-response Button；争议
+  工作项当前只存在于后台 immutable metadata projection，不能手工 triage/resolve，且不会自动发消息
+  或联系 provider；
+- 没有生产 provider written approval、国家/税务/法律/descriptor/预算批准；
+- Stripe Live 和真实支付保持关闭；
+- D-097 已把 Coinbase/USDC 排除在批准的首次封闭 Beta 之外；
+- 直接销售的精确 SKU、价格、权益、退款和客户文案仍需 OWN-018 的法律/支付 review；
+- 任何本地成功状态都不能解释为生产购买。
+
+此外，当前存在两套尚未统一的商业实现：Sanctuary 对象仍走旧 order/entitlement/local-checkout
+路径，Plans/Credit packs 走较新的 commercial order/Credit/worker 路径。它们没有统一的用户购买
+历史，不能在手册或客服话术中描述成同一个完整商业工作流。
+
+### 18.6 Payment kill switch 在哪里、如何影响用户
+
+当前没有 Web/Admin `Payment kill switch` Button，也没有普通用户可操作的开关。服务端在每次新订单、
+订阅预留、provider 调用和旧 Checkout URL 回放之前，组合精确国家开关、fiat/crypto 开关与 Country
+Policy。checkout 关闭或控制读取故障时，用户只看到脱敏 unavailable/retry 状态；国家、provider 或
+method 未获批准时看到平静的不适用状态。系统不会自动切换 provider。
+
+关闭新购买不关闭已有义务：signed webhook、退款、争议、fulfillment、entitlement 和 reconciliation
+仍继续处理。关闭前已被用户复制的 provider URL 无法由 RITUVIA 撤销；普通用户不要继续尝试付款，
+应回到账户/支持状态。完整操作与恢复边界见
+`docs/runbooks/RIT-075_PAYMENT_PROVIDER_CONTROLS.md`。
+
+## 19. 工作流 O：公共知识内容
+
+**状态：45 个英语页面在仓库内通过内容/构建门；公开生产和索引未批准。**
+
+### 19.1 公共入口
+
+页头：`Methodology`、`Safety`；页脚额外有 `Privacy`。首页/结果页还会链接到 Tarot、Numerology、
+Astrology 和 Ritual guides。
+
+公共页面不接收私密输入。每个 hub/guide 底部提供下一个相关页面或实际体验 CTA。
+
+准确 CTA 按页面家族如下：
+
+- 信任/方法页：`Return to the reflection path`、`Review the privacy design`、`Read the methodology`；
+- 数秘页：`Open the private calculator`、`Review the safety standard`、`Read the privacy boundary`、
+  `Back to the numerology library`；
+- 占星页：`Open the private saved-chart viewer`、`Read the safety boundaries`、
+  `Read the privacy approach`、`Back to the astrology library`；
+- Tarot 页：`Try a private one-card reflection`、`Read the safety approach`、
+  `Previous Major Arcana`、`Next Major Arcana`、`Back to the Tarot library`；
+- 仪式页：`Open the private Sanctuary`、`Read the safety approach`、
+  `Back to ritual and reflection guides`。
+
+### 19.2 路由家族
+
+- 基础：`/en`、`/en/methodology`、`/en/safety`、`/en/privacy`。
+- 数秘：`/en/numerology` 加 4 个方法页。
+- 占星：`/en/astrology` 加 4 个方法页。
+- Tarot：`/en/tarot`、22 张 Major Arcana 页面、2 个 spread guide。
+- 仪式：`/en/rituals` 加蜡烛、线香、意图/行动、私密日记、Revisit 5 个 guide。
+
+完整 URL inventory 在本手册附录 A。
+
+### 19.3 系统如何实现
+
+路由来自 approved、checksummed editorial inventory；每页包含 source/review authority、canonical、
+hreflang、structured data 和明确内部链接。生产以外环境必须 noindex；公开域名、DNS、sitemap 和
+indexing activation 需要 Owner 单独批准。
+
+## 20. 通用错误、离线和恢复
+
+| 状态                 | 用户看到什么                                                        | 应该怎么做                                       |
+| -------------------- | ------------------------------------------------------------------- | ------------------------------------------------ |
+| Loading              | `Preparing…`、`Loading…` 或 skeleton                                | 等待；不要连续点击                               |
+| Empty                | 没有 reading/history/chart/Revisit                                  | 按页面说明先完成前置步骤                         |
+| Validation           | 字段旁错误                                                          | 修正字段后再提交                                 |
+| Offline              | 全局顶部连接提示；具体表单可能另有 `Check connection and try again` | 全局提示没有重试按钮；重连后在原表单明确提交一次 |
+| Provider unavailable | `temporarily unavailable`                                           | 保留免费路径；稍后重试                           |
+| Conflict             | 另一个 session/revision 已改变                                      | 重新加载，不覆盖旧版本                           |
+| Rate limited         | 要求暂停并显示等待                                                  | 等待，不创建新 session 绕过                      |
+| Unauthorized         | `Sign in`                                                           | 使用同一账户登录，再回到原工作流                 |
+| Deleted/not found    | 资源不可用                                                          | 不伪造恢复；必要时新建                           |
+
+全局错误页提供 `Try again` 和 `Return home`；全局离线 notice 本身没有 retry 按钮。系统不会在你
+不知情时自动重复提交私密、支付或删除操作。
+
+## 21. 隐私和浏览器存储说明
+
+| 数据              | 当前用途                              | 不应出现的位置                                                           |
+| ----------------- | ------------------------------------- | ------------------------------------------------------------------------ |
+| Beta 邀请码       | 一次准入表单内存和同源请求正文        | URL、referrer、浏览器存储、日志、analytics、工单、共享表格、Git          |
+| 问题自由文本      | 安全 intake 内存检查                  | URL、metadata、analytics、持久 intake 表、浏览器历史、reading/report/log |
+| Intake 主题代码   | 当前 tab 一次性交给单张页，读取后删除 | 跨 tab 复制、长期存储、问题原文容器                                      |
+| Reading ID        | 当前 tab 刷新恢复                     | 分享卡、公开 URL、analytics                                              |
+| 意图/小行动       | owner-scoped 私密资源                 | 公开页面、支付 metadata、分享卡                                          |
+| 日记/Revisit 反思 | owner-scoped 私密资源                 | URL、日志、analytics、通知                                               |
+| 出生资料          | 加密 account profile                  | 公共占星页、普通日志、支付 metadata                                      |
+| Email             | 登录/必要服务                         | spiritual profiling、分享、公共页面                                      |
+| 支付事件          | 订单、对账、退款                      | 私密反思正文                                                             |
+
+不要把不希望他人看到的内容手工放入截图或系统分享说明。使用公共设备后，先完成可靠的 `Sign out`；
+敏感情况下使用 `Sign out all sessions`。
+
+## 22. 工作流到实现的总映射
+
+| 工作流    | UI                                                              | API                                           | 服务/domain                                                        | 持久化/恢复                                                                     |
+| --------- | --------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Beta 准入 | `protected-beta-admission-form.tsx`                              | `/api/v1/anonymous/session`                   | invite control + anonymous identity                                | invite digest/状态 + 原子 session 绑定；原始 token 不持久化                     |
+| 问题检查  | `question-intake-form.tsx` + `question-intake-theme-handoff.ts` | anonymous session + `/api/v1/intake/evaluate` | question-intake policy + session intake budget                     | 不持久 intake 文本；一次性分类主题交接；每 session 固定计数行                   |
+| 塔罗      | `tarot-one-card-flow.tsx`                                       | session/readings APIs                         | tarot service + deterministic draw/content                         | immutable facts + ID-only tab restore                                           |
+| AI 解释   | `tarot-interpretation-panel.tsx`                                | reading interpretation API；当前 unavailable  | versioned retrieval/prompt/safety/verifier；provider/worker 未组合 | operation/idempotency + reviewed base meaning                                   |
+| 意图      | `sanctuary-flow.tsx`                                            | intentions APIs                               | intention domain + shared mutation budget                          | owner/revision/idempotency；限流后页面锁定写入                                  |
+| 仪式      | `sanctuary-ritual-experience.tsx`                               | ritual-session APIs                           | ritual domain/catalog/entitlement + shared mutation budget         | atomic start/complete/replay；每 session 固定计数行                             |
+| 日记      | `sanctuary-flow.tsx`                                            | journal-entry APIs                            | ritual-journal domain + shared mutation budget                     | private owner/revision/delete；限流后不自动重试                                 |
+| Revisit   | `revisit-experience.tsx`                                        | revisits/reminder APIs                        | revisit/reminder domain + shared mutation budget；投递未组合       | local date/time zone/revision/job；429 有界等待、当前页锁定匿名写入且无即时重试 |
+| 登录/账户 | `sign-in-form.tsx`, `account-experience.tsx`                    | auth/me/session/consent APIs                  | account/auth/session services                                      | hashed challenge, HttpOnly session, merge link                                  |
+| 隐私      | 当前无 UI                                                       | privacy export/deletion APIs                  | privacy services/crypto                                            | encrypted export, idempotent delete, session fencing                            |
+| 运营 case | 阅读报告 Button；其他入口当前无 UI                              | 当前无 admin/support HTTP route               | operational case service + role/MFA policy                         | source-bound case + append-only event/audit + draft-only template               |
+| 数秘      | `numerology-calculator.tsx`                                     | numerology calculate API                      | pure versioned numerology engine                                   | 无出生日期持久化                                                                |
+| 占星      | `astrology-natal-result.tsx`                                    | astrology natal read API                      | feature flag + native engine adapter                               | encrypted profile/calculation + strict read projection                          |
+| 支付      | plans/checkout components                                       | catalog/order/checkout/webhook APIs           | payment adapters + ledger/fulfillment                              | transactions/outbox/reconciliation/refund                                       |
+| 公共内容  | publication components                                          | server rendering                              | approved editorial registry                                        | checksummed inventory/build evidence                                            |
+
+## 23. 上线前仍不能告诉用户“已经可用”的功能
+
+- 公共生产网站、域名和搜索索引；
+- Stripe Live、真实信用卡/Apple Pay/Google Pay 收款；
+- Coinbase/USDC；
+- 生产 AI 处理私密内容；
+- 生产邮件登录和 Revisit 投递；
+- 自助隐私导出/删除按钮；
+- 普通用户 Support/Case Status 按钮，以及 Admin 队列/Triage/Escalate/Resolve 按钮；
+- 完整订阅、账单、发票、订单、退款和争议客户中心；
+- 完整出生资料创建和占星计算入口；
+- Simplified Chinese 或其他语言发布；
+- 已批准国家之外的服务、支付或法律政策；
+- 比免费仪式“更有效”的任何付费承诺。
+
+## 24. 支持人员收集问题时需要什么
+
+当前没有产品内 Support Button。若 Owner 在封闭 Beta 中另行批准一个临时联系渠道，支持人员只能按
+该批准渠道收集以下最小信息；不能把本地队列 SLA 写成对外承诺。阅读页面的 `Send report` 会自动
+进入安全或内容队列，不需要用户再提交一次私密说明。
+
+请记录：
+
+1. 页面 URL（不要把私密文本放进 URL）；
+2. 点击的准确英文按钮名；
+3. 桌面/移动、浏览器、键盘/屏幕阅读器/reduced motion；
+4. 是否离线、刷新、重复点击或跨设备；
+5. 发生的大致时间和可公开的 request/correlation ID（如果页面提供）；
+6. 是否涉及账户、支付、隐私删除或安全风险。
+
+不要索取问题、日记、出生资料、密码、magic link、cookie、CSRF、私钥、完整支付数据或生产密钥。
+不要把邮件/聊天全文粘贴进 case；当前 case 只允许固定 category、状态、reason、ticket 和哈希证据。
+
+## 附录 A：45 个公共内容 URL
+
+### 基础页面
+
+`/en`、`/en/methodology`、`/en/safety`、`/en/privacy`
+
+### 数秘
+
+`/en/numerology`、`/en/numerology/life-path-number`、`/en/numerology/birthday-number`、
+`/en/numerology/personal-year-number`、`/en/numerology/master-numbers`
+
+### 西方占星
+
+`/en/astrology`、`/en/astrology/natal-chart-calculation`、
+`/en/astrology/birth-time-uncertainty`、`/en/astrology/houses-and-major-aspects`、
+`/en/astrology/sources-and-methodology`
+
+### Tarot
+
+`/en/tarot`、`/en/tarot/the-fool`、`/en/tarot/the-magician`、
+`/en/tarot/the-high-priestess`、`/en/tarot/the-empress`、`/en/tarot/the-emperor`、
+`/en/tarot/the-hierophant`、`/en/tarot/the-lovers`、`/en/tarot/the-chariot`、
+`/en/tarot/strength`、`/en/tarot/the-hermit`、`/en/tarot/wheel-of-fortune`、
+`/en/tarot/justice`、`/en/tarot/the-hanged-man`、`/en/tarot/death`、
+`/en/tarot/temperance`、`/en/tarot/the-devil`、`/en/tarot/the-tower`、
+`/en/tarot/the-star`、`/en/tarot/the-moon`、`/en/tarot/the-sun`、
+`/en/tarot/judgement`、`/en/tarot/the-world`、`/en/tarot/one-card-spread`、
+`/en/tarot/situation-action-possibility-spread`
+
+### 仪式与反思
+
+`/en/rituals`、`/en/rituals/virtual-candle-reflection`、
+`/en/rituals/virtual-incense-reflection`、`/en/rituals/intention-and-small-action`、
+`/en/rituals/private-reflection-journal`、`/en/rituals/revisit-a-reflection`
+
+## 附录 B：最短核心闭环按钮清单
+
+0. Protected Beta 私密入口 `Enter protected Beta`（只适用于受邀环境）
+1. 首页第一屏 `Begin a free reading`
+2. Intake 表单底部 `Review my question`
+3. Allowed 结果卡 `Continue to a private one-card reflection`
+4. 单张页主题表单底部 `Draw one card`
+5. Ready 面板 `Reveal my card`
+6. 结果底部 `Continue to a private intention`
+7. Sanctuary 意图主题 `Peace and clarity`
+8. 意图表单底部 `Continue with this intention`
+9. 免费对象卡片底部 `Begin free ritual`
+10. 仪式顶部 `Complete now`，或逐步 `Continue` 后 `Complete this ritual`
+11. 完成面板 `Continue to private reflection`
+12. 日记文本框下方 `Save private reflection`
+13. 意图区 `Schedule a private Revisit`
+14. Revisit schedule 面板 `Schedule this Revisit`
+15. Revisit 卡片 `Complete this Revisit`
+16. 完成表单再次 `Complete this Revisit`
+
+如果其中任何一个按钮不存在、不可聚焦、无法理解或产生了与本手册不同的结果，应视为产品或手册
+漂移，不能要求用户自己寻找替代路径。
+
+## 附录 C：按钮位置速查表
+
+| 页面/区域          | 准确英文按钮或链接                                                                                                                             | 位置                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Protected Beta     | `Enter protected Beta`                                                                                                                         | `/en/beta` 邀请输入框下方的主 Button                                |
+| 全站页头           | `Home` / `Sanctuary` / `Methodology` / `Safety`                                                                                                | 桌面页头中部；移动端页头导航换行区                                  |
+| 全站页头           | `Sign in` / `Account`                                                                                                                          | 桌面最右；移动端语言控件旁/下方                                     |
+| 全站页脚           | `Privacy`                                                                                                                                      | 每页最底部 footer 链接组                                            |
+| 首页 Hero          | `Begin a free reading`                                                                                                                         | 第一屏文案下方第一枚主按钮                                          |
+| 首页 Hero          | `Enter the sanctuary`                                                                                                                          | 第一屏文案下方第二枚次按钮                                          |
+| 首页 Oracle        | `Draw one card` / `Draw three cards` / `Visit the sanctuary`                                                                                   | 各功能卡片底部                                                      |
+| 安全 intake        | `Review my question`                                                                                                                           | 主题和可选问题表单底部                                              |
+| 安全 intake 结果   | `Continue to a private one-card reflection` / `Review another question`                                                                        | allowed 结果卡底部                                                  |
+| 安全 intake 结果   | `Use the suggested question` / `Use the safer question`                                                                                        | reframed/blocked 结果卡底部；采用后仍须重新 Review，crisis 无此按钮 |
+| 塔罗主题表单       | `Draw one card` / `Draw three cards`                                                                                                           | 主题单选组下方                                                      |
+| 塔罗 Ready 面板    | `Reveal my card` / `Reveal the three cards`                                                                                                    | 卡背图和状态说明旁/下方                                             |
+| 塔罗恢复/错误      | `Try to restore the saved result` / `Choose a new theme instead`                                                                               | 恢复错误卡底部                                                      |
+| 塔罗恢复/错误      | `Try the same draw again` / `Confirm the session and try again`                                                                                | 对应错误卡底部                                                      |
+| 单张分享区         | `Preview share card` / `Hide share preview`                                                                                                    | `Optional sharing` 区域动作行                                       |
+| 单张分享区         | `Download privacy-safe SVG` / `Open device share sheet`                                                                                        | 已生成预览的动作行                                                  |
+| 可选解释区         | `Explore the deeper interpretation`                                                                                                            | 固定卡牌结果之后的 AI 面板                                          |
+| 可选解释区         | `Stop checking` / `Try the same request again`                                                                                                 | processing 或 recoverable failure 状态                              |
+| 塔罗报告           | `Report an issue with this reading`                                                                                                            | 结果靠下的折叠 summary                                              |
+| 塔罗报告           | `Send report` / `Try the same report again`                                                                                                    | 展开报告表单底部/普通错误状态；429 不显示重试                       |
+| 全站支持           | 当前没有 `Support` / `Contact support` / `Track my case`                                                                                       | Button 不存在；不要猜 URL                                           |
+| Admin 队列         | 当前没有 `Triage` / `Escalate` / `Resolve`                                                                                                     | Web Dashboard/Button 不存在；RIT-120 仅完成 private/offline 日报    |
+| 塔罗完成区         | `Continue to a private intention`                                                                                                              | 结果面板底部主按钮                                                  |
+| 塔罗完成区         | `Read the methodology` / `Start a new reflection`                                                                                              | 主按钮旁和更下方                                                    |
+| Sanctuary 意图     | `Continue with this intention` / `Save intention changes`                                                                                      | 意图表单底部                                                        |
+| Sanctuary 意图     | `Schedule a private Revisit`                                                                                                                   | 意图保存后的 action 行第一项                                        |
+| Sanctuary 意图     | `Mark complete` / `Archive intention` / `Delete intention`                                                                                     | 已保存意图的 action 行                                              |
+| Sanctuary 意图确认 | `Cancel`                                                                                                                                       | lifecycle 确认 action 行                                            |
+| Sanctuary 对象卡   | `Begin free ritual` / `Place in my sanctuary`                                                                                                  | 每个 ritual object 卡片底部                                         |
+| Sanctuary catalog  | `Retry catalog`                                                                                                                                | catalog error/degraded 提示下方                                     |
+| 仪式顶部           | `Exit ritual` / `Pause ritual` / `Resume ritual` / `Complete now`                                                                              | 仪式标题右侧/顶部 action 区                                         |
+| 仪式模式/步骤      | `Use accessible linear mode` / `Use standard 2D mode`                                                                                          | 模式说明下方                                                        |
+| 仪式模式/步骤      | `Previous step` / `Continue` / `Complete this ritual`                                                                                          | 当前步骤底部导航                                                    |
+| 仪式完成           | `Continue to private reflection` / `Return to Sanctuary`                                                                                       | 完成面板动作区                                                      |
+| 私密日记           | `Save private reflection` / `Save reflection changes`                                                                                          | 日记文本框下方                                                      |
+| 私密日记           | `Delete private reflection`                                                                                                                    | 已保存日记动作区                                                    |
+| Sanctuary 完成     | `View my account` / `Start another free reflection`                                                                                            | 完成状态底部动作区                                                  |
+| Revisit 排期       | `Store quiet hours`                                                                                                                            | schedule 面板提醒/安静时段区域                                      |
+| Revisit 排期       | `Schedule this Revisit`                                                                                                                        | schedule 表单底部                                                   |
+| Revisit 卡片       | `Save new date` / `Complete this Revisit` / `Archive` / `Delete`                                                                               | 每张 Revisit 卡片动作区；429 后当前页禁用                           |
+| 登录               | `Continue securely`                                                                                                                            | Email 表单底部                                                      |
+| 本地登录           | `Complete local sign-in`                                                                                                                       | 本地 preview 成功提示内；Local Test only                            |
+| 账户 Profile       | `Save profile` / `Save 18+ confirmation`                                                                                                       | 各自表单底部                                                        |
+| 账户 History       | `Load older history` / `Open this reading`                                                                                                     | history 列表底部/reading 项目中                                     |
+| 账户 Session       | `Sign out this other session`                                                                                                                  | 其他 session 卡片内                                                 |
+| 账户底部           | `Sign out all sessions` / `Sign out`                                                                                                           | session/账户动作区                                                  |
+| 数秘表单           | `Calculate my numbers`                                                                                                                         | Birth date 和 Target year 下方                                      |
+| 数秘结果           | `Clear birth data and start again`                                                                                                             | 计算结果/表单动作区                                                 |
+| 数秘计算器标题区   | `Learn the public method before calculating`                                                                                                   | 页面标题/说明区域                                                   |
+| 占星未登录         | `Sign in to view saved charts`                                                                                                                 | unauthorized 状态卡                                                 |
+| 占星错误           | `Try loading again` / `Check connection and try again`                                                                                         | error/offline 状态卡                                                |
+| Plans pack 卡      | `Sign in` / `Open my account` / `Continue to secure checkout` / `Check again`                                                                  | 每个 pack 卡底部，按资格显示                                        |
+| 本地 checkout      | `Complete local test payment`                                                                                                                  | `/en/checkout/local` 主面板；Local Test only                        |
+| Checkout return    | `Check again` / `View my account` / `Return to sanctuary`                                                                                      | pending/error/success 状态卡动作区                                  |
+| 公共信任/方法页    | `Return to the reflection path` / `Review the privacy design` / `Read the methodology`                                                         | 页面底部相关路径区                                                  |
+| 公共数秘页         | `Open the private calculator` / `Review the safety standard` / `Read the privacy boundary` / `Back to the numerology library`                  | hub/guide 底部 CTA 区                                               |
+| 公共占星页         | `Open the private saved-chart viewer` / `Read the safety boundaries` / `Read the privacy approach` / `Back to the astrology library`           | hub/guide 底部 CTA 区                                               |
+| 公共 Tarot 页      | `Try a private one-card reflection` / `Read the safety approach` / `Previous Major Arcana` / `Next Major Arcana` / `Back to the Tarot library` | hub/卡牌/guide 导航区                                               |
+| 公共仪式页         | `Open the private Sanctuary` / `Read the safety approach` / `Back to ritual and reflection guides`                                             | hub/guide 底部 CTA 区                                               |
+
+没有列出 `Export my data`、`Delete account`、`Manage subscription`、`Create birth profile` 或
+`Calculate natal chart`，因为当前普通用户界面没有这些按钮；这正是上线前必须补齐或明确排除的
+产品事实。
 
 ---
 
@@ -10648,6 +11974,29 @@ conflicting product details while preserving stricter repository safety and appr
 21. `20_AI_GROWTH_ENGINE.md` — AI-native SEO/GEO/content/lifecycle/social/paid-growth operating system.
 22. `21_ENVIRONMENT_CONTRACT.md` — testable local/preview/staging/production isolation, secret, data, indexing, promotion, recovery, and approval gates.
 23. `22_BACKUP_RECOVERY.md` — PostgreSQL backup/PITR requirements, automated synthetic logical restore, production restore procedure, evidence, and owner gates.
+24. `23_PRODUCT_FUNCTIONS_AND_USER_GUIDE_ZH.md` — plain-language Chinese user guide for the retained reflection loop, privacy, safety, accessibility, and recovery.
+25. `24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md` — Owner-facing stage goal, capability status, Keep/Freeze/Delete candidates, gaps, and decision rules.
+26. `25_PRODUCT_ENGINEERING_RUNBOOK.md` — engineering-only route/module map, frozen scope, local startup, verification, and safe-removal procedure.
+27. `26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md` — evidence-gated path from the current local state through protected English beta, external approvals, staging rehearsal, and Owner production go/no-go.
+28. `27_DETAILED_PRODUCT_USER_MANUAL_ZH.md` — detailed Chinese route, control-location, workflow, implementation, privacy, recovery, and current-activation manual.
+29. `reports/RITUVIA_RIT_162_DELETION_AUDIT_2026-07-31.md` — exact Keep/Consolidate/Quarantine/Remove evidence and rollback for RIT-162.
+30. `reports/RITUVIA_RIT_121_PROTECTED_BETA_THREAT_MODEL_2026-08-01.md` — versioned protected-English-anonymous-free-Beta assets, boundaries, threat register, security-matrix disposition, findings, evidence gaps, and rollback.
+31. `runbooks/RIT-124_BETA_OPERATIONS.md` — fixed protected-Beta SLO/alert contract, correlated Web read-only containment, dynamic kill-switch drill, rollback, and unimplemented external bindings.
+32. `runbooks/RIT-125_CASE_OPERATIONS.md` — source-bound support, privacy, safety, and content-report case intake, role/passkey triage, fixed local SLA/draft rules, rollback, and intentionally absent user/admin buttons.
+33. `runbooks/RIT-120_OWNER_OPERATIONS_DASHBOARD.md` — private eight-section Owner operations dashboard input, freshness, release-gate, command, failure, verification, button-location, and rollback contract.
+34. `reports/RITUVIA_OWN_019_DECISION_REQUEST_2026-08-02.md` — D-104-approved exact protected-Beta cohort, ingress, abuse limits, observation, rollback, evidence, and recorded Owner response; approval does not authorize deployment.
+35. `runbooks/RIT-127_COST_GUARDRAILS.md` — fixed-registry safe-off cost simulation, private command, allocation/reporting rules, essential-service protection, missing runtime contract, verification, and rollback.
+36. `reports/RITUVIA_OWN_005_COST_BUDGET_DECISION_REQUEST_2026-08-02.md` — D-106-approved Option A safe-off decision and the exact Option B authority/evidence still required before RIT-127 completion.
+37. `runbooks/RIT-128_INCIDENT_GAME_DAY.md` — fixed repository-local security, containment, AI, payment, notification, database, dependency, evidence, response, and rollback matrix with no Web/Admin Button.
+38. `reports/RITUVIA_RIT_128_INCIDENT_GAME_DAY_2026-08-02.md` — executed RIT-128 scenario results, remediation, zero scoped Critical/High findings, remaining external Gate H gaps, and rollback evidence.
+39. `runbooks/RIT-126_CODEX_AUTOMATIONS.md` — three paused Codex Desktop daily/weekly/monthly review cards, exact button locations, local prompt-enforced read-only boundary, structured result contract, failure recovery, and pause-first rollback.
+40. `reports/RITUVIA_RIT_126_AUTOMATION_ACTIVATION_DECISION_REQUEST_2026-08-02.md` — D-108-approved Option A paused RIT-126 state; future activation or removal requires a new explicit Owner decision.
+41. `runbooks/RIT-129_STAGING_GATE_H_EVIDENCE.md` — provider-free eight-control staging/Gate H evidence input, terminal entry, private outputs, derived state, current blockers, failure recovery, and rollback.
+42. `reports/RITUVIA_RIT_129_STAGING_GATE_H_EVIDENCE_2026-08-02.md` — executed local contract result, independent review, eight blocked external/staging controls, zero deployment/provider actions, and remaining release gates.
+43. `runbooks/RIT-075_PAYMENT_PROVIDER_CONTROLS.md` — exact country/fiat/crypto/provider/method safe-off, no-fallback proof, user/Button locations, settlement boundary, failure recovery, and rollback.
+44. `runbooks/RIT-074_DISPUTE_SUPPORT.md` — existing payment-event dispute facts, asynchronous immutable metadata-only support-work-item projection, fixed local SLA/template, absent Button/provider actions, failure isolation, and rollback.
+45. `runbooks/RIT-168_PROTECTED_BETA_INVITES.md` — exact 25-seat opaque invite admission, private `/en/beta` Button workflow, operator issuance/revocation, privacy, failure recovery, verification, and external release boundary.
+46. `reports/RITUVIA_PRE_LAUNCH_BLOCKER_OWNER_DECISION_REQUEST_2026-08-03.md` — recommended exact Owner options for RIT-127 budget, standing staging/domain, invite waves, provider restore, monitoring, external security, Gate H, and deployment HOLD.
 
 When a decision changes a specification, update the specification, tests/backlog, and append/supersede the decision in `DECISIONS.md` in the same change.
 
@@ -11084,6 +12433,31 @@ leaving additive tables intact. Removing tables or records requires a later dest
 backup/restore evidence, retention review, and explicit owner approval. Logical backup/restore tests
 preserve non-empty session and consent history and re-attest the restored runtime privileges.
 
+## RIT-122 protected-Beta admission classification
+
+The expand-only migration adds `anonymous_session_rate_limit`. Each active anonymous session can
+hold at most one row for `question_intake` and one row for `protected_beta_mutation`; it creates no
+session, content, policy activation, network identifier, device signal, or production value.
+
+| Data                       | Classification             | Baseline handling                                          |
+| -------------------------- | -------------------------- | ---------------------------------------------------------- |
+| Anonymous session UUID     | Personal pseudonymous      | Existing private session reference; no new stable identity |
+| Fixed scope                | Internal security          | Two database-constrained values only                       |
+| Window timestamp and count | Internal security          | PostgreSQL clock and atomic upsert; no event history       |
+| Policy version             | Internal policy provenance | Bounded identifier; no legal copy or private content       |
+
+The table never stores a question, intention, action, journal text, IP address, user agent, device
+fingerprint, raw cookie, or raw idempotency key. Runtime receives exact `SELECT` and `INSERT` plus
+updates only to window, count, and policy version; it cannot rewrite the owning session or scope,
+delete/truncate records, or use DDL. Missing configuration, table, privileges, or database access
+fails closed before private intake evaluation or protected-Beta reflection mutation work.
+
+Rollback disables the two configured policies and reverts route admission calls while leaving the
+additive rows untouched. Dropping the table or deleting production rows requires a later reviewed
+forward migration, current recovery evidence, privacy review, and explicit owner approval. The
+focused integration test proves concurrent caps, scope isolation, bounded `Retry-After`, least
+privilege, logical dump/restore, and continued enforcement after restore.
+
 ## RIT-024 tarot reading persistence classification
 
 The expand-only tarot migration adds immutable `reading` and one-to-one `tarot_draw` tables. It
@@ -11331,6 +12705,71 @@ PostgreSQL key. The isolated drill applies all 28 migrations, rejects the histor
 invalid activation evidence, records off-to-on-to-emergency-off history, proves runtime/control
 least privilege, and restores the same latest-off state from a logical dump. Rollback stops the
 writer and appends a newer off version if necessary; immutable flag history is not deleted.
+
+## RIT-125 operational case queue classification
+
+The expand-only migration adds `support_ticket_v1`, `operational_case_v1`,
+`operational_case_event_v1`, and `operational_case_audit_event_v1`. It creates no ticket, case,
+operator, policy activation, production SLA, contact channel, private evidence, attachment, draft
+delivery, or historical backfill. It adds no function, procedure, trigger, security definer,
+privilege grant, destructive statement, or data rewrite.
+
+Every case has exactly one explicit source foreign key. Application services insert a new source
+and derive its case in the same transaction. RLS constrains source/queue/category/priority/local
+due/template/expiry mapping, while runtime provisioning grants only the exact insert columns to
+approved source roles. The admin service receives metadata SELECT and append-only event/audit INSERT
+only; source/private reads and all case/event/audit mutation remain denied.
+
+Rollback stops enqueue and admin-service use while leaving additive records and audit evidence
+intact. Dropping tables, deleting records, changing retention, backfilling historical sources, or
+activating a production support/SLA policy requires a later reviewed forward migration, current
+backup/restore evidence, privacy/legal review, and explicit Owner approval. The isolated test
+applies the migration twice, exercises all four queues and role boundaries, verifies the audit
+chain, and restores non-empty synthetic state into a second isolated database.
+
+## RIT-074 commercial dispute support projection classification
+
+The expand-only migration adds one immutable `commercial_dispute_support_projection_v1` table with
+a unique `commercial_payment_event_id` foreign key, fixed metadata constraint, due-order index,
+forced RLS, and exact projector policies. It does not alter the historical `operational_case_v1`
+constraint and creates no duplicate dispute table, second mutable case state machine, function,
+procedure, trigger, security definer, historical backfill, provider connection, UI, message,
+response, refund, or production policy.
+
+The existing immutable matched `commercial_payment_event_v2` row remains the sole dispute fact.
+Only an applied signed dispute with a completed exact outbox, a currently disputed order, and a
+same-version disputed/review-required Credit Pack fulfillment may be inserted as one fixed
+high-priority metadata work item. Ignored, mismatched, stale, unfulfilled, subscription, and
+already-refunded observations fail closed. The fulfillment role receives only the exact safe
+payment-event read columns, one projection-key read column, and fixed projection insert columns;
+provider object/amount/payload details, private journals, and all projection mutation remain
+denied.
+
+Projection runs asynchronously after payment ingestion and fulfillment, so a projection-write failure
+cannot roll back payment truth, order state, Credit restriction, refund conversion, or shortfall
+review. Rollback stops the projector and retains immutable payment/projection evidence. Dropping
+the table/index/policies, deleting records, backfilling production history, or reverting a
+production migration requires a separately reviewed forward migration, current backup/restore
+evidence, and explicit Owner approval.
+
+## RIT-168 protected-Beta invite admission classification
+
+The expand-only migration adds `protected_beta_invite_cohort_v1` and
+`protected_beta_invite_v1`. It seeds no cohort or invite and performs no historical backfill,
+provider call, message delivery, account creation, fingerprinting, public access, or deployment.
+The database enforces one exact 25-seat cohort policy, bounded token-digest/idempotency metadata,
+single consumption, expiry, explicit revocation, and optional one-to-one anonymous-session binding.
+
+Runtime receives exact admission columns and may update only consumption/session binding. Control
+may issue/revoke through exact columns but cannot read the invite token digest. Neither role can
+read private journals or mutate immutable identity/expiry evidence. Creation, consumption,
+lost-response replay, revocation, and the cohort counter run in explicit transactions; concurrent
+seat 26 and double consumption fail closed.
+
+Rollback disables invite service composition and preserves immutable state. Dropping tables,
+deleting records, changing retention, backfilling, increasing the cohort, or applying/reverting a
+production migration requires a separately reviewed forward migration, current provider restore
+evidence, privacy/security review, and explicit Owner approval.
 
 ---
 
@@ -12071,6 +13510,21 @@ so task state, dependency readiness, exact record paths, and tracked evidence so
 
 Never schedule autonomous production deployment until the owner has explicitly designed a narrow, reversible, monitored approval policy and documented it in `DECISIONS.md`.
 
+## Prepared RITUVIA review schedules
+
+| Automation | Local schedule (`Asia/Shanghai`) | Prompt |
+| --- | --- | --- |
+| `rituvia-daily-maintenance` | Daily at 08:30 | `automation/prompts/daily-maintenance.md` |
+| `rituvia-weekly-product-review` | Monday at 09:30 | `automation/prompts/weekly-product-review.md` |
+| `rituvia-monthly-risk-audit` | Day 1 at 10:30 | `automation/prompts/monthly-risk-audit.md` |
+
+The three cards are paused pending OWN-020. The exact contract is
+`automation/rituvia-recurring-reviews.json`. If activated, every card first applies
+`automation/scheduled-read-only-runner.md`, uses failed-run-only notifications, and stops when the
+local checkout is dirty. Codex project cron currently uses local execution, so this is
+prompt-enforced read-only rather than a hard read-only sandbox. Review the cards in Codex Desktop
+**Automations**; see `docs/runbooks/RIT-126_CODEX_AUTOMATIONS.md`.
+
 ---
 
 # File: `automation/prompts/continue-next-task.md`
@@ -12725,6 +14179,12 @@ jobs:
         run: pnpm check:environment-contract
       - name: Verify offline AI operations
         run: pnpm check:ai-operations
+      - name: Verify cost guardrail policy and private report
+        run: pnpm check:cost-guardrails
+      - name: Verify private Owner operations dashboard
+        run: pnpm check:owner-operations
+      - name: Verify staging and Gate H evidence contract
+        run: pnpm check:staging-gate-h
       - name: Verify localization workflow
         run: pnpm check:localization
       - name: Verify editorial content workflow
@@ -13415,6 +14875,28 @@ existing path. The strict input excludes user/reading identifiers, questions, pr
 retrieved excerpts, detailed safety categories, and raw provider errors. Until production AI and
 an approved durable export exist, the truthful operational input is `unavailable`.
 
+`pnpm check:cost-guardrails` verifies the D-105 fixed-registry safe-off cost simulation and private
+report files. `pnpm report:cost-guardrails -- --as-of <ISO timestamp> --input <aggregate.json>
+--output-json <report.json> --output-markdown <brief.md>` writes new digest-bound mode-0600 files
+only. The v1 report never authorizes spend or executes degradation; D-106-approved Option A remains
+safe-off, while exact Option B and durable atomic runtime evidence are required for RIT-127.
+
+`pnpm test:incident-game-day` runs the RIT-128 manual repository-local failure matrix across fixed
+security, containment, AI, payment, notification, database kill-switch/restore, CI-contract,
+architecture, and secret checks. It uses synthetic fixtures and isolated PostgreSQL only; it is not
+a live-provider, standing-staging, external paging/DAST/pentest, deployment, or Gate H command.
+
+`pnpm check:staging-gate-h` verifies the RIT-129 provider-free eight-control evidence contract and
+the current blocked/incomplete projection. `pnpm report:staging-gate-h -- <arguments>` verifies
+bounded non-symlink evidence/digests and writes new mode-0600 reports. It cannot accept Gate H
+completion or authorize provider, secret, DNS, deployment, or launch actions.
+
+`pnpm check:records` validates the RIT-126 recurring-review manifest and shared scheduled read-only
+runner in addition to the durable-record graph. It fixes three paused Asia/Shanghai schedules,
+local-execution truth, failed-run-only notifications, model/reasoning, tracked runner/prompt/schema
+bindings, dirty-checkout stop, and no production/private/network authority. This verifies repository
+intent; operators still compare the external Codex Desktop cards with the manifest.
+
 `pnpm check:search-operations` verifies the RIT-117 offline SEO/GEO operations contract against
 the exact 45-route inventory. It covers unavailable, synthetic, stale, current, low-sample,
 private-field, source-authority, recommendation, and deterministic-rendering cases without making
@@ -13566,7 +15048,6 @@ SOURCE_FILES = [
     ".gitattributes",
     "README.md",
     "MANIFEST.md",
-    "QA_REPORT.md",
     "OWNER_OPERATING_GUIDE_ZH.md",
     "CODEX_MASTER_PROMPT.md",
     "AGENTS.md",
@@ -13603,6 +15084,10 @@ SOURCE_FILES = [
         "ENVIRONMENT_CONTRACT",
         "BACKUP_RECOVERY",
     ])],
+    "docs/24_OWNER_PRODUCT_CAPABILITY_MAP_ZH.md",
+    "docs/25_PRODUCT_ENGINEERING_RUNBOOK.md",
+    "docs/26_PRE_LAUNCH_EXECUTION_PLAN_ZH.md",
+    "docs/27_DETAILED_PRODUCT_USER_MANUAL_ZH.md",
     "docs/README.md",
     "apps/admin/AGENTS.md",
     "apps/web/AGENTS.md",
@@ -13663,6 +15148,11 @@ SOURCE_FILES = [
     "reference/README.md",
 ]
 
+LINKED_FILES = [
+    "QA_REPORT.md",
+    "docs/23_PRODUCT_FUNCTIONS_AND_USER_GUIDE_ZH.md",
+]
+
 LANGUAGES = {
     ".gitignore": "gitignore",
     ".json": "json",
@@ -13683,7 +15173,7 @@ def snapshot_date() -> str:
 
 
 def render_manual() -> str:
-    for item in SOURCE_FILES:
+    for item in [*SOURCE_FILES, *LINKED_FILES]:
         require_regular_repository_file(ROOT, ROOT / item)
 
     lines = [
@@ -13709,6 +15199,10 @@ def render_manual() -> str:
         "## Included files",
         "",
         *[f"- `{path}`" for path in SOURCE_FILES],
+        "",
+        "## Linked canonical files not duplicated here",
+        "",
+        *[f"- `{path}`" for path in LINKED_FILES],
     ]
 
     for rel in SOURCE_FILES:

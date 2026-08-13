@@ -34,7 +34,8 @@ describe("server-rendered public shell", () => {
     expect(html).toContain('<label class="locale-label" for="locale-select">');
     expect(html).toContain('aria-describedby="locale-hint"');
     expect(html).toContain("<noscript>");
-    expect(html).toContain('href="/en/tarot/one-card"');
+    expect(html.match(/href="\/en\/intake"/gu)).toHaveLength(2);
+    expect(html).not.toContain('href="/en/tarot/one-card"');
     expect(html).toContain('href="/en/tarot/three-card"');
     expect(html).toContain('href="/en/sanctuary"');
     expect(html).toContain('href="/en/readings/numerology"');

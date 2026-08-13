@@ -17,6 +17,33 @@ const request = Object.freeze({
   successPath: "/en/checkout/return",
 });
 
+const paymentActivation = (countryEnabled: boolean, checkoutEnabled: boolean) => ({
+  checkoutActivation: {
+    countryCode: "US",
+    evaluation: {
+      enabled: checkoutEnabled,
+      evaluatedAt: now,
+      flagKey: "payments.fiat_checkout" as const,
+      reason: checkoutEnabled ? ("enabled" as const) : ("configured-off" as const),
+      registryVersion: 3,
+      source: "version" as const,
+      version: 1,
+    },
+  },
+  countryActivation: {
+    countryCode: "US",
+    evaluation: {
+      enabled: countryEnabled,
+      evaluatedAt: now,
+      flagKey: "market.country_activation" as const,
+      reason: countryEnabled ? ("enabled" as const) : ("configured-off" as const),
+      registryVersion: 3,
+      source: "version" as const,
+      version: 1,
+    },
+  },
+});
+
 const policy = (refundPolicyVersion = "test:local:refund.v1", subscription = false) =>
   parseCountryPolicyVersionV1({
     approvalMode: "local_test",
@@ -90,6 +117,9 @@ const attachedRecord = Object.freeze({
 });
 
 const harness = (options?: {
+  checkoutEnabled?: boolean;
+  countryEnabled?: boolean;
+  paymentControlFailure?: boolean;
   policyRefundVersion?: string;
   replay?: boolean;
   subscription?: boolean;
@@ -167,11 +197,18 @@ const harness = (options?: {
     catalog: {
       readActive: async () => parseCatalogVersionV1(rituviaCatalog20260723LocalData),
     },
-    clock: () => now,
     countryPolicies: {
       read: async () => [policy(options?.policyRefundVersion, subscription)],
     },
     environment: "local",
+    paymentControls: {
+      read: async () => {
+        if (options?.paymentControlFailure === true) {
+          throw new Error("synthetic control read failure");
+        }
+        return paymentActivation(options?.countryEnabled ?? true, options?.checkoutEnabled ?? true);
+      },
+    },
     providerAccountFingerprint: "acct_12345678",
     paymentProvider: {
       createCheckout,
@@ -368,5 +405,57 @@ describe("Stripe sandbox checkout application service", () => {
     ).rejects.toMatchObject({ code: "not_eligible" });
     expect(mismatchedPolicy.createOrReplayStripeCheckout).not.toHaveBeenCalled();
     expect(mismatchedPolicy.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it("does not reserve locally or call Stripe while the country route is disabled", async () => {
+    const disabled = harness({ countryEnabled: false });
+    await expect(
+      disabled.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request,
+        sessionToken: "session-token",
+      }),
+    ).rejects.toMatchObject({ code: "not_eligible" });
+    expect(disabled.createOrReplayStripeCheckout).not.toHaveBeenCalled();
+    expect(disabled.createCheckout).not.toHaveBeenCalled();
+    expect(disabled.createSubscriptionCheckout).not.toHaveBeenCalled();
+  });
+
+  it("blocks attached-URL replay and subscriptions while fiat Checkout is disabled", async () => {
+    const replay = harness({ checkoutEnabled: false, replay: true });
+    await expect(
+      replay.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request,
+        sessionToken: "session-token",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(replay.createOrReplayStripeCheckout).not.toHaveBeenCalled();
+    expect(replay.createCheckout).not.toHaveBeenCalled();
+
+    const subscription = harness({ checkoutEnabled: false, subscription: true });
+    await expect(
+      subscription.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request: { ...request, productCode: "plus_monthly" },
+        sessionToken: "session-token",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(subscription.createOrReplayStripeCheckout).not.toHaveBeenCalled();
+    expect(subscription.createOrReplaySubscription).not.toHaveBeenCalled();
+    expect(subscription.createSubscriptionCheckout).not.toHaveBeenCalled();
+  });
+
+  it("maps payment-control read failure to unavailable before persistence", async () => {
+    const failed = harness({ paymentControlFailure: true });
+    await expect(
+      failed.service.createCheckout({
+        idempotencyKey: "abcdefghijklmnopqrstuv",
+        request,
+        sessionToken: "session-token",
+      }),
+    ).rejects.toMatchObject({ code: "unavailable" });
+    expect(failed.createOrReplayStripeCheckout).not.toHaveBeenCalled();
+    expect(failed.createCheckout).not.toHaveBeenCalled();
   });
 });

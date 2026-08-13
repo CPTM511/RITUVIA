@@ -1,5 +1,31 @@
 # Security, Privacy, and Reliability
 
+## 0. Current protected-Beta threat model
+
+The current D-097/D-098 English, anonymous, free, protected closed-Beta threat model is
+[RITUVIA RIT-121 Protected-Beta Threat Model](reports/RITUVIA_RIT_121_PROTECTED_BETA_THREAT_MODEL_2026-08-01.md).
+It maps every production security-matrix row to current Beta evidence, safe-off scope, or a later
+gate. RIT-121 closes the only reproduced security-job blocker with one exact historical Gitleaks
+fingerprint and leaves zero open Critical/High findings in the approved repository Beta scope.
+RIT-128 now adds the fixed repository-local incident/provider failure matrix, canonical webhook,
+kill-switch and isolated-restore drills, one consolidated operator entry point, and a second zero
+open Critical/High result for that bounded scope.
+
+This does not pass Gate H or authorize deployment. Standing allowlisted staging, DAST, independent
+penetration testing, general SAST/application SBOM/license evidence, managed secrets, external
+monitoring, and provider-level restore remain required before a protected Beta candidate can be
+approved.
+
+RIT-129's provider-free eight-control contract keeps local/CI evidence distinct from staging,
+provider, and external evidence. Gate H remains `incomplete`; see its runbook.
+
+RIT-168/D-112 now add the repository-local protected-Beta invite boundary: one opaque, single-use,
+revocable invite must be atomically consumed before protected-Beta anonymous-session creation; the
+cohort is capped at 25 issued seats and a pre-policy active cookie cannot bypass admission. Raw
+invites are never stored or logged and are emitted only once to an exclusive private operator file.
+This still does not prove external ingress, actual invitation delivery, standing staging, provider
+restore, external monitoring/security review, Gate H, deployment, or launch.
+
 ## 1. Security goals
 
 Protect private spiritual/reflection data, identity, money, entitlements, content integrity, and the ability to recover. Assume the product will attract account takeover, scraping, prompt injection, payment abuse, content attacks, and privacy scrutiny.
@@ -112,6 +138,14 @@ Maintain a versioned threat model and update it for every major feature/provider
   exact table reads, exact inserts, and only lifecycle-column updates; reject DDL, delete,
   consent mutation, expiry/hash/ownership mutation, role switching, and reachable privileged
   membership.
+- When the exact protected-Beta invite policy is configured, reject missing, invalid, used,
+  expired, or revoked invites before creating a subject/session and reject any old unbound active
+  cookie. Atomically consume and bind the invite in the session-creation transaction; exact retry
+  may recover the same session, but changed replay and concurrent double use fail closed.
+- Keep the raw invite only in user form memory, one bounded same-origin body, and one private
+  operator output file. Never place it in URLs, referrers, browser storage, analytics, logs, error
+  responses, or the database. Store only its one-way digest and bounded state metadata. Revoking a
+  consumed invite also revokes its bound anonymous session.
 
 ## 4. Application security
 
@@ -186,6 +220,21 @@ Maintain a versioned threat model and update it for every major feature/provider
 - Scraping controls that do not block legitimate accessibility/search crawlers.
 - Avoid invasive fingerprinting unless a documented risk/legal review approves it.
 - Abuse signals never become spiritual/profile judgments.
+
+RIT-122 adds one database-atomic, fixed-row anonymous-session admission budget for the approved
+protected-Beta core loop. `question_intake` and `protected_beta_mutation` are closed scopes; each
+active session can have at most one row per scope. Admission follows same-origin/session checks but
+precedes private-body reads and expensive domain work. Missing policy, unavailable storage,
+privilege drift, and invalid sessions fail closed; concurrent excess returns bounded `429` and
+`Retry-After` without automatic browser retry.
+
+The row contains only the anonymous-session foreign key, scope, window start, request count, and
+policy version. It does not collect raw questions, journal or intention text, email, IP address,
+user agent, device identifier, fingerprint, or arbitrary abuse attributes. Local acceptance uses
+12 intake checks per 60 seconds and 120 protected mutations per 86,400 seconds. D-104 approves the
+exact `own-019.protected-beta-abuse.v1` reference and complementary invite/edge profile for
+RIT-130 standing-staging evidence; session farming is not misrepresented as solved by the
+repository-only per-session budget, and the approval does not authorize deployment.
 
 ## 10. Privacy rights
 
@@ -274,6 +323,14 @@ Initial post-launch objectives:
 
 Finalize objectives before launch and align alerting/runbooks.
 
+D-101 now makes the six production-pack protected-Beta candidates executable as a fixed numeric
+repository contract: core-page availability `>=99.9%`, authentication verification p95 `<=1.5s`,
+order creation p95 `<=2s`, payment-webhook processing p95 `<=5s`, Deep Reading success `>=98%`
+excluding policy refusals, and lost/duplicate Credit entries exactly `0`. Every definition has an
+explicit freshness window, owner, severity, and one runbook path. Missing, stale, future, or invalid
+evidence is `unknown` and actionable, never healthy. RPO/RTO, payment-to-entitlement, and provider
+fallback objectives above retain their separate evidence requirements.
+
 ## 12. Resilience patterns
 
 - Timeouts and bounded retries with jitter.
@@ -285,6 +342,11 @@ Finalize objectives before launch and align alerting/runbooks.
 - Feature/kill switches per provider/country/modality.
 - Backpressure and concurrency limits.
 - No unbounded queues or retry storms.
+
+For payments, “fallback” never means an unapproved alternate provider. D-110 requires exact-route
+authorization and fails closed before new work. Checkout-control/configuration faults return a
+redacted unavailable result; signed webhooks, refunds, disputes, fulfillment, and reconciliation
+remain available for already-created obligations.
 
 ## 13. Backups and recovery
 
@@ -356,13 +418,20 @@ Traffic, latency, errors, saturation, queue depth/age, job failures, database po
 
 Propagate correlation through Web → database/outbox → worker → provider. Strip sensitive attributes.
 
-The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its current `http.proxy_handoff` span measures successful proxy handoff only; it does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. RIT-045 adds one narrow database-backed Revisit reminder reader/lease state machine, but it is not wired to the generic trace carrier, a scheduler process, production metrics, or a provider. Other Web → Worker → provider chains remain protocol evidence rather than deployed asynchronous paths. Baggage and tracestate are not accepted or propagated.
+The M0 Web proxy ignores and overwrites client request/trace state, returns only a server-generated correlation ID as `x-request-id`, and injects server-generated correlation plus W3C `traceparent` for downstream server handling. Its `http.proxy_handoff` span measures proxy handoff or the local read-only containment decision; correlated `503` containment is emitted as a retryable configuration failure, but the span still does not claim downstream status or full request duration. The versioned job carrier survives JSON persistence and rotates span IDs, but production continuation is isolated behind a Worker-only capability and an unconstructible persisted-envelope type. RIT-045 adds one narrow database-backed Revisit reminder reader/lease state machine, but it is not wired to the generic trace carrier, a scheduler process, production metrics, or a provider. Other Web → Worker → provider chains remain protocol evidence rather than deployed asynchronous paths. Baggage and tracestate are not accepted or propagated.
 
-Production metrics, alert routes, retention, sampling, external exporters, and error-monitoring vendors remain later owner-reviewed work.
+The fixed D-101 evaluator and repository runbook now define objective/freshness assessment and alert
+routing. Aggregate metric collection, production retention/sampling, external exporters, paging,
+public status communication, and error-monitoring vendors remain later owner-reviewed work.
 
 ### Alerts
 
 Actionable, severity-based, with runbook and owner channel. Avoid alerting on normal user behavior or exposing content.
+
+The protected-Beta evaluator accepts only a fixed metric ID, numeric value, and observation time.
+Every breached or unknown result carries a fixed alert ID, owner, severity, runbook path, and
+correlation requirement. The operational procedure is
+[RIT-124 Protected Beta operations runbook](runbooks/RIT-124_BETA_OPERATIONS.md).
 
 ## 15. Incident severity
 
@@ -420,3 +489,22 @@ sharing is available only when the browser proves it can share the exact SVG fil
 silent link-only fallback, provider request, public token, or analytics event. The CSP expands
 only `img-src` with `blob:` and retains the existing closed connect, script, object, frame, worker,
 media, and external-image boundaries.
+
+## 19. Operational case access boundary
+
+The support, privacy, safety, and content-report queues expose metadata only. Every case has exactly
+one source foreign key, but the admin service role receives no read privilege on reading reports,
+privacy exports/deletions, refund requests, or private journals. It can select bounded case/event/
+audit metadata and append transitions/audit only; it cannot insert or mutate case rows, update,
+delete, truncate, own objects, create schema/database/roles, or read private sources.
+
+Queue access is role-specific and requires an active session, recent authentication, a passkey MFA
+assertion tied to the same session, a bounded reason code, and a ticket reference. Authenticated
+denials, successful reads, transitions, replay conflicts, missing cases, and state conflicts are
+recorded in a serialized SHA-256 audit chain. Case state is derived from append-only events under a
+transaction advisory lock; there is no mutable state shortcut or database routine.
+
+Fixed acknowledgement drafts contain no source content and are never sent automatically. If an
+operator needs private context, the workflow stops: there is no implicit support override or
+`admin.private_content.read` grant. A separately approved resource-scoped access design, retention
+decision, audit, and user/legal basis would be required.

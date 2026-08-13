@@ -107,6 +107,23 @@ export {
   type CommercialRefundEligibilitySnapshot,
 } from "./commercial-refund.js";
 export {
+  evaluatePaymentRouteControl,
+  paymentRouteControlReasons,
+  paymentRouteControlSchemaVersion,
+  type PaymentActivationControlsV1,
+  type PaymentCheckoutFlagKey,
+  type PaymentControlFlagEvaluationV1,
+  type PaymentCountryPolicyDecisionV1,
+  type PaymentRouteControlDecisionV1,
+  type PaymentRouteControlEvidenceV1,
+  type PaymentRouteControlInputV1,
+  type PaymentRouteControlReason,
+  type PaymentRouteKind,
+  type PaymentRouteMethod,
+  type PaymentRouteV1,
+  type ScopedPaymentControlFlagEvaluationV1,
+} from "./payment-route-control.js";
+export {
   allocateCreditSources,
   applyCreditProjection,
   commercialEntitlementEvents,

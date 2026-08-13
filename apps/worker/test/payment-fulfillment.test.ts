@@ -6,7 +6,10 @@ import {
 } from "@rituvia/db";
 import { planCommercialCreditPackFulfillment } from "@rituvia/payments";
 
-import { runOneCommercialPaymentFulfillment } from "../src/payment-fulfillment.js";
+import {
+  runCommercialPaymentFulfillmentLoop,
+  runOneCommercialPaymentFulfillment,
+} from "../src/payment-fulfillment.js";
 
 const claim = Object.freeze({
   attempt: 1,
@@ -137,5 +140,28 @@ describe("commercial payment fulfillment worker", () => {
         retryAt: null,
       }),
     );
+  });
+
+  it("contains a claim outage and resumes without stopping unrelated loops", async () => {
+    const controller = new AbortController();
+    const events: string[] = [];
+    const persistence = store({
+      claimNextPaymentState: vi
+        .fn<CommercialFulfillmentPersistence["claimNextPaymentState"]>()
+        .mockRejectedValueOnce(new Error("private database details"))
+        .mockImplementationOnce(async () => {
+          controller.abort();
+          return null;
+        }),
+    });
+    await runCommercialPaymentFulfillmentLoop({
+      failureDelayMilliseconds: 1,
+      observe: ({ disposition }) => events.push(disposition),
+      plan: planCommercialCreditPackFulfillment,
+      signal: controller.signal,
+      store: persistence,
+    });
+    expect(persistence.claimNextPaymentState).toHaveBeenCalledTimes(2);
+    expect(events).toEqual(["persistence_unavailable", "idle"]);
   });
 });

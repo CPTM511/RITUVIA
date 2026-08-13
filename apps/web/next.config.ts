@@ -4,7 +4,7 @@ import type { NextConfig } from "next";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
-loadEnvConfig(repositoryRoot, process.env.NODE_ENV === "development");
+loadEnvConfig(repositoryRoot, process.env.NODE_ENV === "development", undefined, true);
 parseBuildConfiguration(process.env);
 
 const nextConfig: NextConfig = {

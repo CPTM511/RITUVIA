@@ -122,6 +122,31 @@ leaving additive tables intact. Removing tables or records requires a later dest
 backup/restore evidence, retention review, and explicit owner approval. Logical backup/restore tests
 preserve non-empty session and consent history and re-attest the restored runtime privileges.
 
+## RIT-122 protected-Beta admission classification
+
+The expand-only migration adds `anonymous_session_rate_limit`. Each active anonymous session can
+hold at most one row for `question_intake` and one row for `protected_beta_mutation`; it creates no
+session, content, policy activation, network identifier, device signal, or production value.
+
+| Data                       | Classification             | Baseline handling                                          |
+| -------------------------- | -------------------------- | ---------------------------------------------------------- |
+| Anonymous session UUID     | Personal pseudonymous      | Existing private session reference; no new stable identity |
+| Fixed scope                | Internal security          | Two database-constrained values only                       |
+| Window timestamp and count | Internal security          | PostgreSQL clock and atomic upsert; no event history       |
+| Policy version             | Internal policy provenance | Bounded identifier; no legal copy or private content       |
+
+The table never stores a question, intention, action, journal text, IP address, user agent, device
+fingerprint, raw cookie, or raw idempotency key. Runtime receives exact `SELECT` and `INSERT` plus
+updates only to window, count, and policy version; it cannot rewrite the owning session or scope,
+delete/truncate records, or use DDL. Missing configuration, table, privileges, or database access
+fails closed before private intake evaluation or protected-Beta reflection mutation work.
+
+Rollback disables the two configured policies and reverts route admission calls while leaving the
+additive rows untouched. Dropping the table or deleting production rows requires a later reviewed
+forward migration, current recovery evidence, privacy review, and explicit owner approval. The
+focused integration test proves concurrent caps, scope isolation, bounded `Retry-After`, least
+privilege, logical dump/restore, and continued enforcement after restore.
+
 ## RIT-024 tarot reading persistence classification
 
 The expand-only tarot migration adds immutable `reading` and one-to-one `tarot_draw` tables. It
@@ -369,3 +394,68 @@ PostgreSQL key. The isolated drill applies all 28 migrations, rejects the histor
 invalid activation evidence, records off-to-on-to-emergency-off history, proves runtime/control
 least privilege, and restores the same latest-off state from a logical dump. Rollback stops the
 writer and appends a newer off version if necessary; immutable flag history is not deleted.
+
+## RIT-125 operational case queue classification
+
+The expand-only migration adds `support_ticket_v1`, `operational_case_v1`,
+`operational_case_event_v1`, and `operational_case_audit_event_v1`. It creates no ticket, case,
+operator, policy activation, production SLA, contact channel, private evidence, attachment, draft
+delivery, or historical backfill. It adds no function, procedure, trigger, security definer,
+privilege grant, destructive statement, or data rewrite.
+
+Every case has exactly one explicit source foreign key. Application services insert a new source
+and derive its case in the same transaction. RLS constrains source/queue/category/priority/local
+due/template/expiry mapping, while runtime provisioning grants only the exact insert columns to
+approved source roles. The admin service receives metadata SELECT and append-only event/audit INSERT
+only; source/private reads and all case/event/audit mutation remain denied.
+
+Rollback stops enqueue and admin-service use while leaving additive records and audit evidence
+intact. Dropping tables, deleting records, changing retention, backfilling historical sources, or
+activating a production support/SLA policy requires a later reviewed forward migration, current
+backup/restore evidence, privacy/legal review, and explicit Owner approval. The isolated test
+applies the migration twice, exercises all four queues and role boundaries, verifies the audit
+chain, and restores non-empty synthetic state into a second isolated database.
+
+## RIT-074 commercial dispute support projection classification
+
+The expand-only migration adds one immutable `commercial_dispute_support_projection_v1` table with
+a unique `commercial_payment_event_id` foreign key, fixed metadata constraint, due-order index,
+forced RLS, and exact projector policies. It does not alter the historical `operational_case_v1`
+constraint and creates no duplicate dispute table, second mutable case state machine, function,
+procedure, trigger, security definer, historical backfill, provider connection, UI, message,
+response, refund, or production policy.
+
+The existing immutable matched `commercial_payment_event_v2` row remains the sole dispute fact.
+Only an applied signed dispute with a completed exact outbox, a currently disputed order, and a
+same-version disputed/review-required Credit Pack fulfillment may be inserted as one fixed
+high-priority metadata work item. Ignored, mismatched, stale, unfulfilled, subscription, and
+already-refunded observations fail closed. The fulfillment role receives only the exact safe
+payment-event read columns, one projection-key read column, and fixed projection insert columns;
+provider object/amount/payload details, private journals, and all projection mutation remain
+denied.
+
+Projection runs asynchronously after payment ingestion and fulfillment, so a projection-write failure
+cannot roll back payment truth, order state, Credit restriction, refund conversion, or shortfall
+review. Rollback stops the projector and retains immutable payment/projection evidence. Dropping
+the table/index/policies, deleting records, backfilling production history, or reverting a
+production migration requires a separately reviewed forward migration, current backup/restore
+evidence, and explicit Owner approval.
+
+## RIT-168 protected-Beta invite admission classification
+
+The expand-only migration adds `protected_beta_invite_cohort_v1` and
+`protected_beta_invite_v1`. It seeds no cohort or invite and performs no historical backfill,
+provider call, message delivery, account creation, fingerprinting, public access, or deployment.
+The database enforces one exact 25-seat cohort policy, bounded token-digest/idempotency metadata,
+single consumption, expiry, explicit revocation, and optional one-to-one anonymous-session binding.
+
+Runtime receives exact admission columns and may update only consumption/session binding. Control
+may issue/revoke through exact columns but cannot read the invite token digest. Neither role can
+read private journals or mutate immutable identity/expiry evidence. Creation, consumption,
+lost-response replay, revocation, and the cohort counter run in explicit transactions; concurrent
+seat 26 and double consumption fail closed.
+
+Rollback disables invite service composition and preserves immutable state. Dropping tables,
+deleting records, changing retention, backfilling, increasing the cohort, or applying/reverting a
+production migration requires a separately reviewed forward migration, current provider restore
+evidence, privacy/security review, and explicit Owner approval.

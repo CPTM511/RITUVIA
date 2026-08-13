@@ -45,6 +45,12 @@ jobs:
         run: pnpm check:environment-contract
       - name: Verify offline AI operations
         run: pnpm check:ai-operations
+      - name: Verify cost guardrail policy and private report
+        run: pnpm check:cost-guardrails
+      - name: Verify private Owner operations dashboard
+        run: pnpm check:owner-operations
+      - name: Verify staging and Gate H evidence contract
+        run: pnpm check:staging-gate-h
       - name: Verify localization workflow
         run: pnpm check:localization
       - name: Verify editorial content workflow

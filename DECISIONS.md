@@ -915,3 +915,179 @@ effective until this register links it. Do not rewrite historical rationale; sup
   must remain useful without raw commerce reads, direct payment mutations, unbounded retries, or
   mutable-state history.
 - **Date:** 2026-07-31
+
+### [D-095 — Converge the current stage on the reflection core loop](records/decisions/D-095.md)
+
+- **Decision:** Freeze current-stage breadth and make the anonymous Question/Theme through Revisit
+  journey the sole owner-verifiable product goal; split user, owner, and engineering communication;
+  remove code only through a later evidence-bound task.
+- **Reason:** Internal capability and task completion no longer communicate a coherent user result,
+  while immediate deletion or a rewrite would discard proven safety and recovery evidence.
+- **Date:** 2026-07-31
+
+### [D-096 — Pin the repository and deterministic runtime to Node.js 26.5.1](records/decisions/D-096.md)
+
+- **Decision:** Supersede the active Node.js 24.18.0 toolchain and historical-time-zone runtime pin
+  with exact Node.js 26.5.1 while retaining pnpm 11.13.1, ICU 78.3, tzdata 2026b, and all historical
+  task and decision evidence unchanged.
+- **Reason:** The owner requested the latest Node.js release; one exact repository, CI, type, and
+  runtime-provenance contract prevents local/CI drift while preserving deterministic replay facts.
+- **Date:** 2026-07-31
+
+### [D-097 — Approve the free English beta profile, intake-first entry, and direct-sale model](records/decisions/D-097.md)
+
+- **Decision:** Make the nearest release target a protected English anonymous free closed beta;
+  route the primary homepage free-reading entry through the approved safety intake; and use direct
+  sale of named reports, subscriptions, or digital experiences without required Credit preload for
+  any later paid production offer.
+- **Reason:** The smallest reversible beta validates the core product before breadth, intake-first
+  navigation matches the approved question/theme journey, and direct sale resolves the conflict
+  between root payment authority and the production pack's prepaid-Credit model.
+- **Date:** 2026-07-31
+
+### [D-098 — Accept the retained core loop and resume protected-beta security preparation](records/decisions/D-098.md)
+
+- **Decision:** Accept the intake-first anonymous Question/Theme-through-Revisit journey and resume
+  exactly one dependency-satisfied protected-Beta preparation task at a time, beginning with the
+  versioned threat model in RIT-121; keep product expansion and every production gate frozen.
+- **Reason:** Owner acceptance closes the D-095 convergence gate, while the nearest approved release
+  still requires security and operations evidence before any protected Beta can be considered.
+- **Date:** 2026-08-01
+
+### [D-099 — Suppress one exact historical Gitleaks schema-version false positive](records/decisions/D-099.md)
+
+- **Decision:** Classify `commercial.fulfillment.v1` as a public idempotency schema-version label
+  and ignore only its exact historical commit/path/rule/line fingerprint while preserving the
+  default Gitleaks rules, full-history scan, redaction, and current/future finding behavior.
+- **Reason:** A narrow reviewed fingerprint closes a reproducible CI false positive without
+  treating a non-secret data-contract version as a credential or weakening secret detection.
+- **Date:** 2026-08-01
+
+### [D-100 — Use one privacy-minimal anonymous-session request budget for protected Beta](records/decisions/D-100.md)
+
+- **Decision:** Apply one PostgreSQL-backed fixed-row request budget to anonymous question intake
+  and protected-Beta mutations, keyed only by the existing active session and closed scope; fail
+  closed before private-body processing and collect no IP, user-agent, device, fingerprint, or
+  private text.
+- **Reason:** A durable shared guard closes distinct-request exhaustion without duplicating endpoint
+  logic or creating a new sensitive profiling system; production thresholds and ingress controls
+  remain behind OWN-019.
+- **Date:** 2026-08-01
+
+### [D-101 — Use fixed privacy-safe Beta SLOs and one global read-only containment mode](records/decisions/D-101.md)
+
+- **Decision:** Evaluate six fixed numeric protected-Beta SLOs with explicit freshness and
+  actionable fixed alert routing; add one server-only `normal`/`read_only` Web containment mode
+  that preserves signed payment webhooks, logout, and session revocation.
+- **Reason:** This closes the repository-side alert and containment gap by reusing the current proxy,
+  traces, and Feature Flag foundation instead of adding another monitoring/control platform; all
+  external and production bindings remain separately gated.
+- **Date:** 2026-08-01
+
+### [D-102 — Use one source-bound metadata-only operational case kernel](records/decisions/D-102.md)
+
+- **Decision:** Route new support, privacy, safety, and content-report sources into one
+  foreign-key-bound metadata-only case kernel with role-specific step-up, database-derived local
+  SLA/draft fields, append-only transitions, and tamper-evident audit; never copy private source
+  content or automatically send drafts.
+- **Reason:** One shared kernel closes triage and escalation gaps without four duplicated systems,
+  a new private-content store, hidden database routines, or an invented production support promise.
+- **Date:** 2026-08-01
+
+### [D-103 — Use a private offline owner operations dashboard before an admin route](records/decisions/D-103.md)
+
+- **Decision:** Compose the eight required Owner operations domains into one strict private,
+  digest-bound offline dashboard that labels environment, source, freshness, data quality,
+  approval, evidence, runbook, state, and known gaps; force unavailable, stale, future, or
+  synthetic evidence to `unknown` and retain explicit Owner deployment approval.
+- **Reason:** Current sources can support a truthful local release overview but not a secure live
+  admin route, production metrics, revenue/cost completeness, standing staging, or Gate H claim.
+- **Date:** 2026-08-02
+
+### [D-104 — Approve the exact protected-Beta abuse and ingress profile](records/decisions/D-104.md)
+
+- **Decision:** Approve `own-019.protected-beta-abuse.v1` exactly as recommended: maximum 25
+  invited English-speaking adults, deny-by-default single-use/revocable admission, protected edge
+  controls, exact session/intake/mutation limits, 72-hour dry run plus seven-day daily review, and
+  fixed safety/privacy/SLO/abuse rollback thresholds.
+- **Reason:** The approved bounded profile closes the Owner-policy dependency for release-evidence
+  preparation without authorizing staging creation, provider selection, deployment, public access,
+  or launch.
+- **Date:** 2026-08-02
+
+### [D-105 — Use fail-closed private cost guardrails before budget activation](records/decisions/D-105.md)
+
+- **Decision:** Add only a fixed-registry, private, safe-off daily cost simulation that rejects
+  self-asserted approval, keeps non-essential spend denied, protects essential controls as
+  alert-only, and executes no runtime action.
+- **Reason:** OWN-005 has not approved exact budgets, and a read-only aggregate cannot provide
+  concurrency-safe spend admission; durable atomic enforcement and fixed alert delivery remain
+  required before RIT-127 can complete.
+- **Date:** 2026-08-02
+
+### [D-106 — Preserve a zero-paid-provider protected-Beta cost posture](records/decisions/D-106.md)
+
+- **Decision:** Approve OWN-005 Option A exactly: keep non-essential paid providers disabled for
+  the protected free Beta, preserve essential controls, and allow repository-local RIT-128 drills
+  without inventing a budget or runtime spend authority.
+- **Reason:** Option A is the smallest honest posture before provider quotes exist; its explicit
+  safe-off boundary conflicts with marking RIT-127 Done, so exact Option B policy and durable atomic
+  enforcement/alert evidence remain required.
+- **Date:** 2026-08-02
+
+### [D-107 — Bind recurring reviews to local prompt-enforced read-only Codex automations](records/decisions/D-107.md)
+
+- **Decision:** Create exactly three paused Codex Desktop project schedules for daily maintenance,
+  Monday product review, and first-of-month risk audit; keep them paused pending OWN-020 because the
+  current project cron execution environment is local and recurring model-use is unapproved.
+- **Reason:** Existing prompts and structured output contracts were not scheduled, while unrestricted
+  local jobs could collide with human work or cross project/production gates.
+- **Date:** 2026-08-02
+
+### [D-108 — Keep recurring Codex reviews paused under OWN-020 Option A](records/decisions/D-108.md)
+
+- **Decision:** Approve OWN-020 Option A exactly; keep all three configured Codex review cards
+  paused with zero scheduled model use and require a new explicit decision before any activation.
+- **Reason:** The current local project execution is prompt-enforced rather than hard isolated, so
+  preserving the reviewed configuration without recurring execution is the safest reversible state.
+- **Date:** 2026-08-02
+
+### [D-109 — Derive Gate H evidence state from eight digest-bound controls](records/decisions/D-109.md)
+
+- **Decision:** Use one provider-neutral, no-secret contract that derives staging/Gate H state from
+  eight ordered, revision/freshness/environment/digest-bound controls and never accepts a caller's
+  completion or deployment claim.
+- **Reason:** Local SLO, restore, Game Day, and Owner-dashboard evidence cannot prove standing
+  staging, provider recovery, external security, support/admin operation, or rollback by itself.
+- **Date:** 2026-08-02
+
+### [D-110 — Compose exact payment route controls and forbid provider fallback](records/decisions/D-110.md)
+
+- **Decision:** Require exact country and checkout-kind flags plus one exact Country Policy route
+  before every new order, subscription reservation, provider call, or Checkout URL replay; reject
+  every fallback list and leave existing settlement paths outside the new-purchase gate.
+- **Reason:** Separate controls existed but were not composed at both purchase entries, allowing
+  inconsistent safe-off behavior and leaving no explicit proof that provider fallback is forbidden.
+- **Date:** 2026-08-03
+
+### [D-111 — Derive dispute support records from matched commerce facts only](records/decisions/D-111.md)
+
+- **Decision:** Keep each immutable matched payment event as the sole dispute fact and
+  asynchronously project only a current applied fulfilled Credit Pack dispute into one
+  immutable privacy-minimal support work item with fixed local SLA/draft metadata; do not rewrite
+  the historical case constraint or add a second mutable case state machine.
+- **Reason:** An independent idempotent projector gives operators a durable work item without
+  duplicating payment truth, exposing private content, or letting support failure roll back payment,
+  fulfillment, Credit restriction, or review evidence.
+- **Date:** 2026-08-03
+
+### [D-112 — Require one database-atomic invite before protected-Beta session issuance](records/decisions/D-112.md)
+
+- **Decision:** Require one opaque, unexpired, unconsumed, and unrevoked invite under the exact
+  D-104 policy before protected-Beta anonymous-session creation/resolution; enforce the 25-seat cap,
+  consume, replay, binding, and revocation in PostgreSQL, emit a raw invite only once to a private
+  mode-`0600` operator file, and use `/en/beta` with `Enter protected Beta` as the private entry.
+- **Reason:** The approved cohort needed deny-by-default admission that cannot be bypassed by an old
+  anonymous cookie, raced beyond 25 seats, replayed, enumerated, or leaked through URLs, storage,
+  logs, analytics, or operator output.
+- **Date:** 2026-08-03

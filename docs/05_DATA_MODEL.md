@@ -401,7 +401,8 @@ disputes are not attempt states.
 Immutable, account-bound signed-webhook receipt metadata and one transactional state-change outbox
 row per applied provider event. The webhook role may append events/outbox rows and update bounded
 payment state, but cannot lease, complete, grant, hold, or reverse value. A separate fulfillment
-role owns bounded outbox delivery state.
+role owns bounded outbox delivery state. A matched, applied `payment_disputed` event is the durable
+dispute fact; RIT-074 deliberately does not copy it into a second dispute table.
 
 #### `credit_ledger_entry`, `credit_reservation`, `credit_allocation`, `credit_projection`
 
@@ -442,9 +443,18 @@ idempotency. Plus must originate from an order; permanent objects must originate
 consumption. Composite owner/source constraints and unique owner/type/fulfillment constraints
 prevent cross-account or double grants.
 
-#### `refund`, `dispute`
+#### `commercial_refund_request_v1`, dispute support
 
-Provider/internal references, amount, reason category, evidence/audit, approval state, impact on entitlements.
+Refund requests are separate owner/order/attempt/provider-bound aggregates with policy,
+idempotency, provider execution, confirmation, and Credit-hold evidence. Current Credit Pack
+disputes remain immutable payment events. After the matching outbox and fulfillment complete and
+the order still remains disputed, an independent idempotent projector creates one immutable
+metadata-only `commercial_dispute_support_projection_v1` work item linked directly to the payment
+event. It does not create a second dispute aggregate or a second mutable case state machine.
+Ignored-out-of-order, mismatched, unfulfilled, stale-version, subscription, and already-refunded
+observations do not open a current support work item. The projection stores no amount, provider
+object, payload, journal, prayer, question, reading, intention, birth data, attachment, or support
+free text.
 
 ### policy and operations
 
@@ -566,3 +576,23 @@ Do not invent final periods in code. Use policy configuration and legal approval
 - Use database constraints for states/foreign keys, not application checks alone.
 - Migrations are forward-compatible, reviewed, tested on production-like volume, and include rollback/roll-forward notes.
 - Seed data is synthetic and clearly marked.
+
+## 8. RIT-125 operational case classification
+
+RIT-125 adds one source-bound operational case kernel and no private evidence store.
+
+| Data                                                             | Classification                 | Handling                                                                                                               |
+| ---------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Support ticket and source UUIDs                                  | Personal pseudonymous          | Foreign-key-bound to one existing anonymous/user source; never shown as a public identifier                            |
+| Bounded support/report/privacy category                          | Sensitive personal categorical | Fixed allowlist only; no question, reading prose, journal, prayer, birth data, email, attachment, or arbitrary message |
+| Queue, priority, state, SLA timestamps, policy/template versions | Restricted operational         | Database-derived from source and reviewed local policy; not a public production promise                                |
+| Operator user/session/role, reason, ticket                       | Restricted security/operations | Recent-auth and same-session passkey required; append-only audit; no free-form operator notes                          |
+| Idempotency, canonical, before/after, and chain hashes           | Security/internal              | Fixed 32-byte digests; no raw key or private payload                                                                   |
+| Fixed English draft                                              | Internal support content       | Versioned allowlisted acknowledgement, always `draft_only_not_sent`                                                    |
+
+`support_ticket_v1` inherits the owning anonymous-subject expiry. Reading-report and privacy-export
+cases inherit their source expiry. Privacy-deletion and refund cases do not create an independent
+retention period; they remain bound to the existing source/audit obligation until an approved
+retention policy exists. No historical source row is backfilled by the migration. Deletion,
+retention changes, private evidence, attachments, or historical replay require separate review and
+applicable Owner/legal approval.

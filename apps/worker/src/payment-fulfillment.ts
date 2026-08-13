@@ -17,6 +17,7 @@ export type CommercialPaymentFulfillmentWorkerEvent = Readonly<{
     | "granted_and_held"
     | "held"
     | "idle"
+    | "persistence_unavailable"
     | "retried"
     | "review_required"
     | "stale"
@@ -143,15 +144,33 @@ const abortableDelay = (signal: AbortSignal, milliseconds: number): Promise<void
   });
 
 export const runCommercialPaymentFulfillmentLoop = async (input: {
+  failureDelayMilliseconds?: number;
   observe?: (event: CommercialPaymentFulfillmentWorkerEvent) => void;
   plan: CommercialCreditPackFulfillmentPlanner;
   signal: AbortSignal;
   store: CommercialFulfillmentPersistence;
 }): Promise<void> => {
+  const failureDelayMilliseconds = input.failureDelayMilliseconds ?? 1_000;
+  if (
+    !Number.isSafeInteger(failureDelayMilliseconds) ||
+    failureDelayMilliseconds < 1 ||
+    failureDelayMilliseconds > 60_000
+  ) {
+    throw new TypeError("Commercial fulfillment failure delay is invalid.");
+  }
   while (!input.signal.aborted) {
-    const result = await runOneCommercialPaymentFulfillment(input);
-    if (result === "idle" || result === "retried") {
-      await abortableDelay(input.signal, result === "idle" ? 1_000 : 250);
+    try {
+      const result = await runOneCommercialPaymentFulfillment(input);
+      if (result === "idle" || result === "retried") {
+        await abortableDelay(input.signal, result === "idle" ? 1_000 : 250);
+      }
+    } catch {
+      input.observe?.({
+        attempt: 0,
+        disposition: "persistence_unavailable",
+        paymentStateVersion: 0,
+      });
+      await abortableDelay(input.signal, failureDelayMilliseconds);
     }
   }
 };

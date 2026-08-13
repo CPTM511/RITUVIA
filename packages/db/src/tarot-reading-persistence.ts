@@ -9,6 +9,7 @@ import {
 
 import { Prisma, type PrismaClient } from "./generated/prisma/client.js";
 import { assertAnonymousIdentityRuntimeDatabasePrivileges } from "./anonymous-identity.js";
+import { enqueueOperationalCase } from "./operational-cases.js";
 
 const requestSchemaVersion = "tarot-reading-create.v1" as const;
 const executionSchemaVersion = "tarot-draw-execution.v1" as const;
@@ -267,6 +268,10 @@ type TarotPrivilegeAttestation = Readonly<{
   canMutateDraw: boolean;
   canMutateReading: boolean;
   canInsertReport: boolean;
+  canInsertOperationalCase: boolean;
+  hasExactOperationalCaseInsertColumns: boolean;
+  canReadOperationalCase: boolean;
+  canMutateOperationalCase: boolean;
   hasExactReportInsertColumns: boolean;
   canMutateReport: boolean;
   canReadDraw: boolean;
@@ -299,6 +304,7 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
                   'public.reading'::regclass,
                   'public.tarot_draw'::regclass,
                   'public.reading_report'::regclass,
+                  'public.operational_case_v1'::regclass,
                   'public.interpretation'::regclass,
                   'public.interpretation_verification'::regclass,
                   'public.account_session'::regclass,
@@ -371,6 +377,32 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
            ) AS "hasExactReportInsertColumns",
            (has_table_privilege(current_user, 'public.reading_report', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
              OR has_any_column_privilege(current_user, 'public.reading_report', 'UPDATE')) AS "canMutateReport",
+           has_any_column_privilege(current_user, 'public.operational_case_v1', 'INSERT')
+             AS "canInsertOperationalCase",
+           NOT EXISTS (
+             SELECT 1
+               FROM pg_attribute AS attribute
+              WHERE attribute.attrelid = 'public.operational_case_v1'::regclass
+                AND attribute.attnum > 0
+                AND NOT attribute.attisdropped
+                AND has_column_privilege(
+                  current_user, attribute.attrelid, attribute.attname, 'INSERT'
+                ) IS DISTINCT FROM (
+                  attribute.attname = ANY(ARRAY[
+                    'queue_kind', 'source_kind', 'source_id', 'support_ticket_id',
+                    'reading_report_id', 'privacy_export_id',
+                    'privacy_deletion_request_id', 'commercial_refund_request_id',
+                    'category_code', 'priority', 'policy_version', 'draft_template_code',
+                    'draft_template_version', 'draft_locale', 'opened_at',
+                    'first_response_due_at', 'resolution_due_at', 'expires_at'
+                  ])
+                )
+           ) AS "hasExactOperationalCaseInsertColumns",
+           has_table_privilege(current_user, 'public.operational_case_v1', 'SELECT')
+             AS "canReadOperationalCase",
+           (has_table_privilege(current_user, 'public.operational_case_v1', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
+             OR has_any_column_privilege(current_user, 'public.operational_case_v1', 'UPDATE'))
+             AS "canMutateOperationalCase",
            has_table_privilege(current_user, 'public.interpretation', 'SELECT') AS "canReadInterpretation",
            (has_column_privilege(current_user, 'public.interpretation_verification', 'interpretation_id', 'SELECT')
              AND has_column_privilege(current_user, 'public.interpretation_verification', 'anonymous_subject_id', 'SELECT')
@@ -407,6 +439,10 @@ export const assertTarotReadingRuntimeDatabasePrivileges = async (
     !row.canInsertDraw ||
     !row.canInsertReading ||
     !row.canInsertReport ||
+    !row.canInsertOperationalCase ||
+    !row.hasExactOperationalCaseInsertColumns ||
+    row.canReadOperationalCase ||
+    row.canMutateOperationalCase ||
     !row.hasExactReportInsertColumns ||
     row.canMutateDraw ||
     row.canMutateReading ||
@@ -1082,7 +1118,9 @@ export const createTarotReadingPersistence = (
           const interpretationId = interpretationTarget?.id ?? null;
           const interpretationParentStatus = interpretationTarget?.parentStatus ?? null;
           const interpretationVerificationStatus = interpretationTarget?.verificationStatus ?? null;
-          const inserted = await transaction.$queryRaw<Array<{ id: string }>>`
+          const inserted = await transaction.$queryRaw<
+            Array<{ createdAt: Date; expiresAt: Date; id: string }>
+          >`
             INSERT INTO reading_report (
               reading_id, anonymous_subject_id, category, target_kind, target_position_id,
               interpretation_id, interpretation_parent_status,
@@ -1099,7 +1137,7 @@ export const createTarotReadingPersistence = (
               ${digestBytes(activeCandidate.canonicalRequestDigest)}, CURRENT_TIMESTAMP,
               ${new Date(reading.expiresAt)}
             )
-            RETURNING id
+            RETURNING id, created_at AS "createdAt", expires_at AS "expiresAt"
           `;
           if (
             inserted.length !== 1 ||
@@ -1108,6 +1146,10 @@ export const createTarotReadingPersistence = (
           ) {
             throw new TarotReadingPersistenceError("TAROT_READING_PERSISTENCE_UNAVAILABLE");
           }
+          await enqueueOperationalCase(transaction, {
+            sourceId: inserted[0].id,
+            sourceKind: "reading_report",
+          });
           return Object.freeze({ kind: "created" as const });
         },
         { maxWait: 5_000, timeout: 10_000 },

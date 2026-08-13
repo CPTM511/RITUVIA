@@ -5,6 +5,10 @@ import { getWebRuntimeConfiguration } from "../../../../config/server";
 import { accountSessionCookieName } from "../../../../server/account-auth";
 import { ReflectionLoopApplicationError } from "../../../../server/reflection-loop";
 import {
+  admitWebProtectedBetaRequest,
+  ProtectedBetaAdmissionError,
+} from "../../../../server/protected-beta-abuse";
+import {
   deriveSessionCsrfToken,
   hasValidSessionCsrfToken,
   sessionCsrfHeaderName,
@@ -27,6 +31,7 @@ export type ReflectionProblemCode =
   | "REFLECTION_ENTITLEMENT_REQUIRED"
   | "REFLECTION_IDEMPOTENCY_KEY_INVALID"
   | "REFLECTION_NOT_FOUND"
+  | "REFLECTION_RATE_LIMITED"
   | "REFLECTION_REQUEST_REJECTED"
   | "REFLECTION_SCHEDULE_INVALID"
   | "REFLECTION_SESSION_REQUIRED"
@@ -268,6 +273,47 @@ export const reflectionNotFoundProblem = (request: NextRequest, instance: string
     title: "Private reflection not found",
   });
 
+const admitReflectionMutation = async (
+  request: NextRequest,
+  instance: string,
+  anonymousSessionToken: string | undefined,
+): Promise<NextResponse | null> => {
+  if (anonymousSessionToken === undefined) return null;
+  try {
+    await admitWebProtectedBetaRequest(anonymousSessionToken, "protected_beta_mutation");
+    return null;
+  } catch (error) {
+    if (error instanceof ProtectedBetaAdmissionError) {
+      if (error.code === "rate_limited") {
+        return reflectionProblem(request, {
+          code: "REFLECTION_RATE_LIMITED",
+          detail: "Pause before making another private reflection change.",
+          instance,
+          retryAfterSeconds: error.retryAfterSeconds,
+          status: 429,
+          title: "Private reflection changes are temporarily limited",
+        });
+      }
+      if (error.code === "session_required") {
+        return reflectionProblem(request, {
+          code: "REFLECTION_SESSION_REQUIRED",
+          detail: "A private anonymous session is required.",
+          instance,
+          status: 401,
+          title: "Private session required",
+        });
+      }
+    }
+    return reflectionProblem(request, {
+      code: "REFLECTION_UNAVAILABLE",
+      detail: "The private reflection service is temporarily unavailable.",
+      instance,
+      status: 503,
+      title: "Private reflection unavailable",
+    });
+  }
+};
+
 export type ReflectionCreateFunction<Resource> = (
   body: unknown,
   idempotencyKey: string,
@@ -360,6 +406,8 @@ export const handleReflectionCreate = async <Resource>(
       title: "Request rejected",
     });
   }
+  const admission = await admitReflectionMutation(request, input.path, anonymousSessionToken);
+  if (admission !== null) return admission;
   try {
     const body = await readReflectionBoundedJson(request);
     if (accountSessionToken !== undefined && anonymousSessionToken !== undefined) {
@@ -600,6 +648,12 @@ export const handleReflectionMutation = async <Resource>(
       title: "Request rejected",
     });
   }
+  const admission = await admitReflectionMutation(
+    request,
+    input.path,
+    session.anonymousSessionToken,
+  );
+  if (admission !== null) return admission;
   try {
     const body = await readReflectionBoundedJson(request);
     if (session.accountSessionToken !== undefined && session.anonymousSessionToken !== undefined) {

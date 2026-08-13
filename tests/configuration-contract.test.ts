@@ -181,6 +181,9 @@ describe("source configuration boundaries", () => {
       expect(source).toContain('from "@next/env"');
       expect(source).toContain("loadEnvConfig(repositoryRoot");
     }
+    expect(sources[0]).toContain(
+      'loadEnvConfig(repositoryRoot, process.env.NODE_ENV === "development", undefined, true)',
+    );
     expect(sources[2]).not.toContain("--env-file");
   });
 

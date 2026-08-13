@@ -236,6 +236,42 @@ arbitrary event properties, and cross-site tracking are prohibited. Referral exp
 explicit other/unknown and excluded aggregate buckets. Production analytics collection, provider
 connection, notice, retention/deletion, and activation remain separately owner-gated.
 
+### Cost guardrails v1 safe-off preparation
+
+`cost-guardrail.v1` consumes one exact 24-hour UTC provider/feature aggregate and either an
+unavailable or explicitly unapproved proposed policy. Provider and feature values come from finite
+code registries; arbitrary labels, identifiers, free text, private content, and raw provider
+payloads are rejected. Proposed lines must reconcile exactly to the proposed total, while missing,
+partial, stale, synthetic, unavailable, or unbudgeted cost never becomes zero or spend authority.
+
+The report always keeps `decisionStatus=blocked`, non-essential spend denied, and
+`automaticActionsExecuted=false`. It can simulate warning/exhaustion and essential alert-only
+behavior for review, but it exposes no admission API and cannot reserve money or execute
+degradation. OWN-005, a decision-bound policy digest, durable atomic reservation/reconciliation,
+provider ingestion, and fixed alert delivery are required before RIT-127 can complete.
+
+### Owner operations v1
+
+The `owner-operations.v1` policy is a private read-only summary, not optional product analytics and
+not a live admin control plane. It accepts exactly eight categorical source envelopes in canonical
+order: health, revenue, core loop, AI, queue, support, cost, and approvals. Each output shows the
+source environment/kind, observed-through time, exact window when present, maximum age, freshness,
+data quality, approval reference, evidence, runbook, state, and a fixed known gap.
+
+Health, queue, and support evidence expires after one hour; revenue, core-loop, AI, and cost evidence
+after 30 hours; approval state after 168 hours. Missing, future, stale, or synthetic evidence is
+forced to `unknown`. The v1 surface carries no arbitrary metric/value map, private content, user or
+session identifier, raw provider payload/error, or free-text operator note. Detailed quantitative
+reports remain in their named source systems and must retain their own denominator, window,
+low-sample, approval, and privacy contracts.
+
+The release panel displays D-106-approved OWN-005 Option A safe-off, D-104-approved OWN-019,
+RIT-127 blocked pending exact Option B and durable enforcement, completed repository-local RIT-128,
+the planned RIT-130 release-evidence task, standing staging, Gate H, and independent-security state.
+Even complete evidence remains subject to explicit Owner deployment approval. Production readers,
+Web/admin routes, automation, budgets, providers, deployment, and launch are separate tasks and
+gates.
+
 ## 8. Experiments
 
 Every experiment needs:

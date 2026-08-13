@@ -16,6 +16,7 @@ import {
 } from "./local-postgres.mjs";
 
 const flagKey = "experience.astrology";
+const registryVersion = 3;
 
 const expectPostgresError = async (
   operation: () => Promise<unknown>,
@@ -51,11 +52,12 @@ const insertVersion = async (
         registry_version, flag_key, version, state, country_codes, locale_tags,
         effective_at, change_reference, approval_reference, actor_id
       ) VALUES (
-        1, $1, $2, $3, $4::text[], $5::text[], clock_timestamp() + interval '1 second',
-        'RIT-093', $6, 'rituvia.astrology.drill'
+        $1, $2, $3, $4, $5::text[], $6::text[], clock_timestamp() + interval '1 second',
+        'RIT-093', $7, 'rituvia.astrology.drill'
       )
     `,
     [
+      registryVersion,
       flagKey,
       input.version,
       input.state,
@@ -69,7 +71,7 @@ const insertVersion = async (
 const readLatestState = async (
   database: ReturnType<typeof createDatabaseClient>,
 ): Promise<"off" | "on" | null> => {
-  const versions = await readFeatureFlagVersions(database, 1);
+  const versions = await readFeatureFlagVersions(database, registryVersion);
   const latest = versions.filter((version) => version.flagKey === flagKey).at(-1);
   if (latest === undefined) return null;
   assert(latest.state === "off" || latest.state === "on");
@@ -105,12 +107,13 @@ await withLocalPostgresLease(async (lease) => {
                 registry_version, flag_key, version, state, effective_at,
                 change_reference, actor_id
               ) VALUES (
-                1, 'astrology_enabled', 1, 'off', clock_timestamp() + interval '1 second',
+                $1, 'astrology_enabled', 1, 'off', clock_timestamp() + interval '1 second',
                 'RIT-093', 'rituvia.astrology.drill'
               )
             `,
+            [registryVersion],
           ),
-        ["23514"],
+        ["23514", "42501"],
       );
       await expectPostgresError(
         () =>
@@ -172,11 +175,6 @@ await withLocalPostgresLease(async (lease) => {
           roles: ["rituvia_feature_flag_writer"],
         },
         {
-          command: "INSERT",
-          policyName: "feature_flag_version_astrology_append",
-          roles: ["rituvia_feature_flag_writer"],
-        },
-        {
           command: "SELECT",
           policyName: "feature_flag_version_read",
           roles: ["rituvia_feature_flag_reader"],
@@ -190,7 +188,7 @@ await withLocalPostgresLease(async (lease) => {
               registry_version, flag_key, version, state, effective_at,
               change_reference, actor_id
             ) VALUES (
-              1, ${flagKey}, 4, 'off', clock_timestamp() + interval '1 second',
+              ${registryVersion}, ${flagKey}, 4, 'off', clock_timestamp() + interval '1 second',
               'RIT-093', 'rituvia.astrology.runtime'
             )
           `,
@@ -212,7 +210,10 @@ await withLocalPostgresLease(async (lease) => {
       try {
         await assertFeatureFlagRuntimeDatabasePrivileges(restoredApplication);
         assert.equal(await readLatestState(restoredApplication), "off");
-        const restoredVersions = await readFeatureFlagVersions(restoredApplication, 1);
+        const restoredVersions = await readFeatureFlagVersions(
+          restoredApplication,
+          registryVersion,
+        );
         assert.deepEqual(
           restoredVersions
             .filter((version) => version.flagKey === flagKey)

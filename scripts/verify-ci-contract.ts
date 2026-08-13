@@ -36,6 +36,7 @@ const toolchainFindings = auditToolchainVersions({
   nodeVersion: (await readFile(path.join(repositoryRoot, ".node-version"), "utf8")).trim(),
   packageManager: packageJson.packageManager,
   pnpmEngine: packageJson.engines?.pnpm,
+  runtimeNodeVersion: process.versions.node,
   workspaceNodeVersion: workspace.nodeVersion,
 });
 const scriptFindings = auditCiScripts(packageJson.scripts);

@@ -2005,6 +2005,13 @@ await withLocalPostgresLease(async (lease) => {
       } finally {
         await restoredRuntime.$disconnect();
       }
+      await adminSql.query(
+        `DELETE FROM operational_case_v1
+          WHERE reading_report_id IN (
+            SELECT id FROM reading_report WHERE interpretation_id = $1::uuid
+          )`,
+        [winningClaim.interpretationId],
+      );
       await adminSql.query("DELETE FROM reading_report WHERE interpretation_id = $1::uuid", [
         winningClaim.interpretationId,
       ]);
