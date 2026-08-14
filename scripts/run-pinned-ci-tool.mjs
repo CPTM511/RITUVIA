@@ -44,6 +44,8 @@ const historicalGitleaksIgnoreFingerprints = Object.freeze([
   "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:804",
   "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:905",
   "b78b1a4a0b7d436bf2ec10a2414e993c17eed408:packages/db/scripts/verify-tarot-reading-persistence.ts:generic-api-key:929",
+  "b99f5234c99f842f3616c773e7871cb6b612db77:packages/db/src/commercial-fulfillment-persistence.ts:generic-api-key:8",
+  "88141a2a91641c60347bd5bfe24085e015790dc6:packages/observability/src/beta-operations.ts:generic-api-key:3",
 ]);
 
 const allowedDownloadHost = (hostname) =>
